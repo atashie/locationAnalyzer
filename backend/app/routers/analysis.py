@@ -1,11 +1,13 @@
 """Analysis API endpoints."""
 
 from fastapi import APIRouter, HTTPException, Query
+from typing import List
 
 from app.core.constants import POI_TYPES
 from app.models.schemas import (
     AnalysisRequest,
     AnalysisResponse,
+    Criterion,
     CriterionResult,
     ErrorResponse,
     LocationValidation,
@@ -16,6 +18,58 @@ from app.services.geocoding import validate_location
 from app.services.location_analyzer import LocationAnalyzer
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
+
+
+def _calculate_criterion_priority(criterion: Criterion) -> tuple:
+    """
+    Calculate priority score for smart query ordering.
+
+    Lower score = higher priority (applied first).
+
+    Priority rules:
+    1. Single location > POI type (single locations are very restrictive)
+    2. Distance mode > Walk > Bike > Drive (smaller effective radius first)
+    3. Smaller value = higher priority
+
+    Returns tuple for sorting: (type_score, mode_score, value)
+    """
+    # Type score: location (single point) is more restrictive than POI (many points)
+    type_score = 0 if criterion.type.value == "location" else 1
+
+    # Mode score: distance is most restrictive, then walk, bike, drive
+    mode_scores = {
+        "distance": 0,
+        "walk": 1,
+        "bike": 2,
+        "drive": 3,
+    }
+    mode_score = mode_scores.get(criterion.mode.value, 0)
+
+    # Value: smaller values are more restrictive
+    # Normalize: for distance use miles directly, for time convert to equivalent miles
+    if criterion.mode.value == "distance":
+        normalized_value = criterion.value
+    elif criterion.mode.value == "walk":
+        # 3 mph walking speed, adjusted
+        normalized_value = (criterion.value / 60) * 3 / 1.2
+    elif criterion.mode.value == "bike":
+        # 12 mph biking speed, adjusted
+        normalized_value = (criterion.value / 60) * 12 / 1.3
+    else:  # drive
+        # 30 mph driving speed, adjusted
+        normalized_value = (criterion.value / 60) * 30 / 1.5
+
+    return (type_score, mode_score, normalized_value)
+
+
+def _order_criteria_smart(criteria: List[Criterion]) -> List[Criterion]:
+    """
+    Reorder criteria to apply most restrictive first.
+
+    This optimization reduces the polygon size early, making subsequent
+    POI queries faster since they query a smaller geographic area.
+    """
+    return sorted(criteria, key=_calculate_criterion_priority)
 
 
 @router.post(
@@ -40,8 +94,12 @@ async def analyze_location(request: AnalysisRequest) -> AnalysisResponse:
             max_radius_miles=request.radius_miles,
         )
 
-        # Apply each criterion
-        for criterion in request.criteria:
+        # Smart ordering: apply most restrictive criteria first
+        # This reduces polygon size early, making subsequent POI queries faster
+        ordered_criteria = _order_criteria_smart(request.criteria)
+
+        # Apply each criterion in optimized order
+        for criterion in ordered_criteria:
             if criterion.type.value == "poi":
                 analyzer.add_simple_buffer_criterion(
                     poi_type=POI_TYPES.get(criterion.poi_type),

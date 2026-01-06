@@ -7,7 +7,11 @@ import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import Point
 
-from app.core.constants import BUFFER_ADJUSTMENTS, TRAVEL_SPEEDS
+from app.core.constants import (
+    BUFFER_ADJUSTMENTS,
+    MAX_QUERY_EXPANSION_MILES,
+    TRAVEL_SPEEDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +48,13 @@ class LocationAnalyzer:
         self.crs = "EPSG:4326"
 
         # Get UTM CRS for accurate distance calculations
-        utm_crs = self._estimate_utm_crs(self.center_point.x, self.center_point.y)
+        self.utm_crs = self._estimate_utm_crs(self.center_point.x, self.center_point.y)
 
         # Create initial search boundary
         center_gdf = gpd.GeoDataFrame(
             [{"geometry": self.center_point}], crs=self.crs
         )
-        center_projected = center_gdf.to_crs(utm_crs)
+        center_projected = center_gdf.to_crs(self.utm_crs)
 
         buffer_meters = max_radius_miles * 1609.34
         search_boundary = center_projected.buffer(buffer_meters)
@@ -73,11 +77,50 @@ class LocationAnalyzer:
 
     def _calculate_area_sq_miles(self, geometry) -> float:
         """Calculate area in square miles."""
-        utm_crs = self._estimate_utm_crs(self.center_point.x, self.center_point.y)
         gdf = gpd.GeoDataFrame([{"geometry": geometry}], crs=self.crs)
-        gdf_projected = gdf.to_crs(utm_crs)
+        gdf_projected = gdf.to_crs(self.utm_crs)
         area_sq_m = gdf_projected.geometry.area.iloc[0]
         return area_sq_m / 2589988.11  # Square meters to square miles
+
+    def _create_expanded_query_area(self, expansion_miles: float) -> Any:
+        """
+        Create an expanded query area for POI searches.
+
+        This ensures we capture POIs just outside the current boundary that
+        could still serve points within the boundary (important for travel-time
+        criteria where a POI outside the boundary may be within travel time of
+        interior points).
+
+        Args:
+            expansion_miles: How many miles to expand beyond current area
+
+        Returns:
+            Expanded polygon geometry for querying
+        """
+        # Cap the expansion to avoid massive queries
+        capped_expansion = min(expansion_miles, MAX_QUERY_EXPANSION_MILES)
+
+        if capped_expansion <= 0:
+            return self.current_search_area
+
+        # Convert current area to UTM, buffer, convert back
+        current_gdf = gpd.GeoDataFrame(
+            [{"geometry": self.current_search_area}], crs=self.crs
+        )
+        current_projected = current_gdf.to_crs(self.utm_crs)
+
+        expansion_meters = capped_expansion * 1609.34
+        expanded = current_projected.geometry.buffer(expansion_meters)
+
+        expanded_gdf = gpd.GeoDataFrame(
+            [{"geometry": expanded.iloc[0]}], crs=self.utm_crs
+        ).to_crs(self.crs)
+
+        # Also cap to original search boundary to avoid querying beyond user's intent
+        expanded_area = expanded_gdf.geometry.iloc[0].intersection(self.search_boundary)
+
+        logger.debug(f"Expanded query area by {capped_expansion:.1f} miles")
+        return expanded_area
 
     def add_simple_buffer_criterion(
         self,
@@ -98,19 +141,25 @@ class LocationAnalyzer:
         Returns:
             GeoDataFrame with result geometry, or None if no POIs found
         """
-        pois = self._get_pois(poi_type, specific_location)
+        # For distance criteria, expand query area by the buffer distance
+        # This captures POIs just outside current boundary that could serve interior points
+        if poi_type and not specific_location:
+            query_area = self._create_expanded_query_area(max_distance_miles)
+        else:
+            query_area = self.current_search_area
+
+        pois = self._get_pois(poi_type, specific_location, query_area)
         if pois is None or len(pois) == 0:
             logger.warning(f"No POIs found for criterion: {criterion_name}")
             return None
 
-        utm_crs = self._estimate_utm_crs(self.center_point.x, self.center_point.y)
-        pois_projected = pois.to_crs(utm_crs)
+        pois_projected = pois.to_crs(self.utm_crs)
         buffer_meters = max_distance_miles * 1609.34
         buffers = pois_projected.geometry.buffer(buffer_meters)
 
-        combined_buffer = buffers.unary_union
+        combined_buffer = buffers.union_all()
         result_gdf = gpd.GeoDataFrame(
-            [{"geometry": combined_buffer}], crs=utm_crs
+            [{"geometry": combined_buffer}], crs=self.utm_crs
         ).to_crs(self.crs)
         result_geometry = result_gdf.geometry.iloc[0].intersection(
             self.current_search_area
@@ -161,19 +210,26 @@ class LocationAnalyzer:
         adjustment = BUFFER_ADJUSTMENTS.get(travel_mode, 1.2)
         adjusted_distance = max_distance_miles / adjustment
 
-        pois = self._get_pois(poi_type, specific_location)
+        # For travel-time criteria, expand query area by the max travel distance
+        # This ensures we capture POIs outside the current boundary that are still
+        # within travel time of points inside the boundary
+        if poi_type and not specific_location:
+            query_area = self._create_expanded_query_area(adjusted_distance)
+        else:
+            query_area = self.current_search_area
+
+        pois = self._get_pois(poi_type, specific_location, query_area)
         if pois is None or len(pois) == 0:
             logger.warning(f"No POIs found for criterion: {criterion_name}")
             return None
 
-        utm_crs = self._estimate_utm_crs(self.center_point.x, self.center_point.y)
-        pois_projected = pois.to_crs(utm_crs)
+        pois_projected = pois.to_crs(self.utm_crs)
         buffer_meters = adjusted_distance * 1609.34
         buffers = pois_projected.geometry.buffer(buffer_meters)
 
-        combined_buffer = buffers.unary_union
+        combined_buffer = buffers.union_all()
         result_gdf = gpd.GeoDataFrame(
-            [{"geometry": combined_buffer}], crs=utm_crs
+            [{"geometry": combined_buffer}], crs=self.utm_crs
         ).to_crs(self.crs)
         result_geometry = result_gdf.geometry.iloc[0].intersection(
             self.current_search_area
@@ -197,8 +253,19 @@ class LocationAnalyzer:
         self,
         poi_type: Optional[Dict[str, str]] = None,
         specific_location: Optional[str] = None,
+        query_area: Optional[Any] = None,
     ) -> Optional[gpd.GeoDataFrame]:
-        """Get POIs from either type search or specific location."""
+        """
+        Get POIs from either type search or specific location.
+
+        Args:
+            poi_type: OSM tags for POI search
+            specific_location: Specific location/address
+            query_area: Optional custom query area (defaults to current_search_area)
+
+        Returns:
+            GeoDataFrame of POIs or None if not found
+        """
         if specific_location:
             try:
                 location_gdf = ox.geocode_to_gdf(specific_location)
@@ -216,10 +283,10 @@ class LocationAnalyzer:
                 crs=self.crs,
             )
         elif poi_type:
+            # Use provided query_area or fall back to current_search_area
+            search_polygon = query_area if query_area is not None else self.current_search_area
             try:
-                pois = ox.features_from_polygon(
-                    self.current_search_area, tags=poi_type
-                )
+                pois = ox.features_from_polygon(search_polygon, tags=poi_type)
                 return pois
             except Exception as e:
                 logger.error(f"No POIs found: {e}")

@@ -17,10 +17,12 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 | File | Purpose |
 |------|---------|
 | `/backend/app/services/location_analyzer.py` | Core geospatial logic (ported from PoC) |
-| `/backend/app/routers/analysis.py` | API endpoints |
+| `/backend/app/routers/analysis.py` | API endpoints + smart query ordering |
 | `/backend/app/core/constants.py` | POI types, travel speeds, config |
-| `/frontend/src/components/Map/` | Leaflet map display |
-| `/frontend/src/components/SearchForm/` | Criteria input UI |
+| `/backend/performance_test.py` | Performance benchmarking suite |
+| `/frontend/src/components/Map/Map.tsx` | Leaflet map with dynamic updates |
+| `/frontend/src/components/SearchForm/SearchForm.tsx` | Criteria form + loading indicator |
+| `/frontend/src/components/SearchForm/CriterionCard.tsx` | Individual criterion editor |
 | `/distanceFinder/app.py` | Original Streamlit PoC (reference only) |
 
 ## Commands
@@ -47,9 +49,11 @@ cd frontend && npm test
 ## Architecture Notes
 
 - **Progressive filtering:** Each criterion narrows the search area, making subsequent queries faster
-- **Two-stage search:** For travel-time criteria, apply buffer first, then network analysis on smaller area
+- **Smart query ordering:** Backend reorders criteria (single location → POI, distance → walk → bike → drive)
 - **Convex-hull isochrones:** MVP uses simple convex hull; V1 will use Valhalla for accurate road-network isochrones
 - **Data flow:** User input → FastAPI → OSMnx/GeoPandas → GeoJSON → Leaflet map
+- **Map updates:** Uses `useMap()` hook + dynamic `key` on GeoJSON to handle react-leaflet immutability
+- **Performance:** OSM POI queries are the bottleneck (95%+ of time); use "Specific Place" when possible
 
 ## API Endpoints
 

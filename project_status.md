@@ -1,23 +1,23 @@
 # Distance Finder - Project Status
 
-**Last Updated:** 2025-01-06
+**Last Updated:** 2026-01-06
 
 ---
 
-## Current Phase: MVP Development - Setup
+## Current Phase: MVP Development - Feature Complete
 
-We are in the initial setup phase, establishing project structure and development environment.
+The MVP is functionally complete with working frontend and backend. Current focus is on performance optimization and UX improvements.
 
 ---
 
 ## Progress Overview
 
 ```
-Setup          [████████░░░░░░░░░░░░] 40%
-Backend        [████░░░░░░░░░░░░░░░░] 20%
-Frontend       [░░░░░░░░░░░░░░░░░░░░]  0%
-Integration    [░░░░░░░░░░░░░░░░░░░░]  0%
-Deployment     [░░░░░░░░░░░░░░░░░░░░]  0%
+Setup          [████████████████████] 100%
+Backend        [████████████████████] 100%
+Frontend       [████████████████████] 100%
+Integration    [████████████████░░░░]  80%
+Deployment     [░░░░░░░░░░░░░░░░░░░░]   0%
 ```
 
 ---
@@ -25,7 +25,7 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]  0
 ## Completed Tasks
 
 ### Project Setup
-- [x] Create GitHub repository (git@github.com:atashie/locationAnalyzer.git)
+- [x] Create GitHub repository
 - [x] Initialize git and connect remote
 - [x] Create `.gitignore`
 - [x] Create `.env.example`
@@ -34,8 +34,10 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]  0
 - [x] Create `architecture.md` (system design)
 - [x] Create `changelog.md` (version history)
 - [x] Create `project_status.md` (this file)
+- [x] Set up VS Code configuration
+- [x] Create Claude slash commands
 
-### Backend Structure
+### Backend
 - [x] Create FastAPI project structure
 - [x] Implement `core/config.py` (settings management)
 - [x] Implement `core/constants.py` (POI types, travel speeds)
@@ -45,45 +47,69 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]  0
 - [x] Implement `routers/analysis.py` (API endpoints)
 - [x] Implement `main.py` (FastAPI app entry)
 - [x] Create `requirements.txt`
+- [x] Set up virtual environment and install dependencies
+- [x] **Smart query ordering** - reorder criteria for performance
+- [x] Test API endpoints
+
+### Frontend
+- [x] Initialize Vite + React + TypeScript project
+- [x] Configure Tailwind CSS
+- [x] Set up react-leaflet for map display
+- [x] Create Map component with GeoJSON support
+- [x] Create SearchForm component
+- [x] Create ResultsSummary component
+- [x] Create CriterionCard component
+- [x] Implement criteria builder (add/edit/remove)
+- [x] Connect to backend API with React Query
+- [x] **Loading indicator** with elapsed time counter
+- [x] **Time estimation** and slow query warnings
+- [x] **Map update fix** - proper re-rendering on new results
+
+### Performance Analysis
+- [x] Create performance test suite (`performance_test.py`)
+- [x] Identify bottleneck: OSM POI queries (95%+ of time)
+- [x] Document optimization strategies
 
 ---
 
 ## In Progress
 
-- [ ] Set up backend virtual environment and install dependencies
-- [ ] Test backend API endpoints
+- [ ] Final testing and bug fixes
+- [ ] Prepare for deployment
 
 ---
 
 ## Next Steps
 
 ### Immediate (This Session)
-1. Create backend virtual environment
-2. Install Python dependencies
-3. Test API endpoints work
-4. Set up frontend with Vite
-5. Create VS Code configuration
-6. Create Claude slash commands
-7. Make initial git commit
+1. Commit and push latest changes
+2. Test all features end-to-end
 
-### Short-term (MVP Completion)
-1. Build React components (Map, SearchForm, ResultsSummary)
-2. Implement API client and React Query hooks
-3. Style with Tailwind CSS
-4. End-to-end integration testing
-5. Deploy to free-tier hosting
+### Short-term (Performance Optimization)
+1. Add POI query caching
+2. Implement request timeout with graceful degradation
+3. Consider pre-computing POI data for target metro areas
 
-### Medium-term (V1)
+### Medium-term (Deployment)
+1. Deploy backend to Railway/Render
+2. Deploy frontend to Vercel/Netlify
+3. Set up production environment variables
+4. Configure production CORS origins
+
+### Long-term (V1)
 1. Integrate Valhalla for accurate isochrones
 2. Add Yelp Fusion API for business details
-3. Pre-compute isochrone tiles for RDU area
-4. Implement user accounts
+3. Implement user accounts and saved searches
 
 ---
 
-## Blockers
+## Known Issues
 
-None currently.
+| Issue | Severity | Status |
+|-------|----------|--------|
+| OSM queries can take 1-8+ minutes | High | Documented, warnings added |
+| No request timeout | Medium | Planned for v0.2.0 |
+| No caching layer | Medium | Planned for v0.2.0 |
 
 ---
 
@@ -100,6 +126,7 @@ None currently.
 | POI data (MVP) | OpenStreetMap | 2025-01-06 |
 | Business data (V1) | Yelp Fusion API | 2025-01-06 |
 | Target region (V1) | Raleigh-Durham-Chapel Hill, NC | 2025-01-06 |
+| Query optimization | Smart ordering (restrictive first) | 2026-01-06 |
 
 ---
 
@@ -122,30 +149,54 @@ None currently.
 | `backend/app/core/config.py` | Complete | Settings |
 | `backend/app/core/constants.py` | Complete | POI types |
 | `backend/app/models/schemas.py` | Complete | Pydantic models |
-| `backend/app/routers/analysis.py` | Complete | API routes |
+| `backend/app/routers/analysis.py` | Complete | API routes + smart ordering |
 | `backend/app/services/location_analyzer.py` | Complete | Core logic |
 | `backend/app/services/geocoding.py` | Complete | Geocoding |
 | `backend/requirements.txt` | Complete | Dependencies |
+| `backend/performance_test.py` | Complete | Benchmarking suite |
 
 ### Frontend
 | File | Status | Description |
 |------|--------|-------------|
-| `frontend/` | Placeholder | Awaiting Vite scaffold |
+| `frontend/src/App.tsx` | Complete | Main app |
+| `frontend/src/components/Map/Map.tsx` | Complete | Leaflet map with updates |
+| `frontend/src/components/SearchForm/SearchForm.tsx` | Complete | Form + loading indicator |
+| `frontend/src/components/SearchForm/CriterionCard.tsx` | Complete | Criterion editor |
+| `frontend/src/components/ResultsSummary/ResultsSummary.tsx` | Complete | Results display |
+| `frontend/src/hooks/useAnalysis.ts` | Complete | API hooks |
+| `frontend/src/api/client.ts` | Complete | Axios client |
+| `frontend/src/types/index.ts` | Complete | TypeScript types |
 
 ### Configuration
 | File | Status | Description |
 |------|--------|-------------|
 | `.env.example` | Complete | Env template |
 | `.gitignore` | Complete | Git ignores |
-| `.vscode/` | Pending | VS Code config |
-| `.claude/commands/` | Pending | Slash commands |
+| `.vscode/settings.json` | Complete | VS Code config |
+| `.vscode/extensions.json` | Complete | Recommended extensions |
+| `.claude/commands/` | Complete | Slash commands |
 
 ---
 
 ## Metrics
 
-- **Files Created:** 18
-- **Lines of Code:** ~1,200 (estimated)
+- **Files Created:** 35+
+- **Lines of Code:** ~3,000 (estimated)
 - **API Endpoints:** 4
 - **POI Types Supported:** 25
+- **React Components:** 5
 - **Test Coverage:** 0% (tests not yet written)
+
+---
+
+## Performance Benchmarks
+
+Based on 35 tests with 0-4 criteria:
+
+| Scenario | Time Range |
+|----------|------------|
+| Cached queries | 12-50ms |
+| Uncached POI query | 30s - 8+ minutes |
+| Single location criterion | 1-2s |
+
+**Bottleneck:** `ox.features_from_polygon()` - OSM Overpass API queries account for 95%+ of execution time on uncached requests.

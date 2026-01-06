@@ -157,6 +157,58 @@ After "School within 1mi": 42 sq mi (final result)
 
 This reduces OSM query sizes and computation time for each subsequent criterion.
 
+### Smart Query Ordering
+
+The backend automatically reorders criteria to maximize the progressive filtering benefit:
+
+```
+Priority Order:
+1. Single location criteria (fastest, most restrictive)
+2. Distance mode before travel time modes
+3. Walk < Bike < Drive (smaller effective radius first)
+4. Smaller values before larger values
+
+Example: User submits:
+  - "10 min drive from Coffee Shop" (slow, large area)
+  - "1 mile from Duke Hospital" (fast, small area)
+
+System reorders to:
+  1. "1 mile from Duke Hospital" → shrinks polygon first
+  2. "10 min drive from Coffee Shop" → queries smaller area
+```
+
+This optimization is implemented in `backend/app/routers/analysis.py` via `_order_criteria_smart()`.
+
+### Query Area Expansion
+
+For POI-based criteria (not specific locations), the system expands the query area beyond the current polygon boundary. This ensures POIs just outside the current boundary—which could still serve points inside the boundary—are captured:
+
+```
+Problem without expansion:
+┌─────────────────────────┐
+│   Current Polygon       │   ⭐ POI (just outside)
+│                         │
+│      ⚫ Point A         │
+│                         │
+└─────────────────────────┘
+
+Point A is within 1 mile of the POI, but the POI wouldn't
+be found because it's outside the query boundary.
+
+Solution with expansion:
+┌───────────────────────────────┐
+│   Expanded Query Area         │
+│  ┌─────────────────────────┐  │
+│  │   Current Polygon       │  │  ⭐ POI (now included)
+│  │                         │  │
+│  │      ⚫ Point A         │  │
+│  │                         │  │
+│  └─────────────────────────┘  │
+└───────────────────────────────┘
+```
+
+The expansion is capped at `MAX_QUERY_EXPANSION_MILES = 5.0` to prevent massive OSM queries. This is implemented in `backend/app/services/location_analyzer.py` via `_create_expanded_query_area()`.
+
 ---
 
 ## API Design

@@ -44,3 +44,8 @@ BUFFER_ADJUSTMENTS: Dict[str, float] = {
     "bike": 1.3,    # Cycling paths deviate ~30%
     "drive": 1.5,   # Roads deviate ~50%
 }
+
+# Maximum distance to expand query area beyond current search polygon
+# This ensures we capture POIs just outside the boundary that could still
+# serve points within the boundary. Capped to prevent massive OSM queries.
+MAX_QUERY_EXPANSION_MILES: float = 5.0
