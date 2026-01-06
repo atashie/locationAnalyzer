@@ -15,11 +15,12 @@ const generateId = () => `criterion-${++criterionIdCounter}`;
 // Default values for new criteria
 const createDefaultCriterion = (): CriterionFormData => ({
   id: generateId(),
-  type: 'poi',
+  type: 'location',
   poi_type: '',
   location: '',
   mode: 'distance',
   value: 1,
+  complexQuery: false,
 });
 
 // High-density POI types that result in slow queries

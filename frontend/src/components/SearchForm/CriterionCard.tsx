@@ -47,17 +47,6 @@ export function CriterionCard({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => onChange(criterion.id, { type: 'poi' as CriterionType })}
-          className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
-            criterion.type === 'poi'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          Amenity Type
-        </button>
-        <button
-          type="button"
           onClick={() => onChange(criterion.id, { type: 'location' as CriterionType })}
           className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
             criterion.type === 'location'
@@ -67,26 +56,55 @@ export function CriterionCard({
         >
           Specific Place
         </button>
+        <button
+          type="button"
+          onClick={() => onChange(criterion.id, { type: 'poi' as CriterionType })}
+          className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
+            criterion.type === 'poi'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          Amenity Type
+        </button>
       </div>
 
       {/* POI Type or Location input */}
       {criterion.type === 'poi' ? (
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Amenity Type
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Amenity Type
+            </label>
+            <select
+              value={criterion.poi_type}
+              onChange={(e) => onChange(criterion.id, { poi_type: e.target.value })}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border"
+            >
+              <option value="">Select an amenity...</option>
+              {poiTypes.map((poi) => (
+                <option key={poi.name} value={poi.name}>
+                  {poi.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* Complex Query toggle */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={criterion.complexQuery}
+              onChange={(e) => onChange(criterion.id, {
+                complexQuery: e.target.checked,
+                // Reset to distance mode when disabling complex query
+                mode: e.target.checked ? criterion.mode : 'distance'
+              })}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-xs text-gray-600">
+              Complex Query <span className="text-gray-400">(may take some time)</span>
+            </span>
           </label>
-          <select
-            value={criterion.poi_type}
-            onChange={(e) => onChange(criterion.id, { poi_type: e.target.value })}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border"
-          >
-            <option value="">Select an amenity...</option>
-            {poiTypes.map((poi) => (
-              <option key={poi.name} value={poi.name}>
-                {poi.name}
-              </option>
-            ))}
-          </select>
         </div>
       ) : (
         <div>
@@ -114,11 +132,20 @@ export function CriterionCard({
             onChange={(e) => onChange(criterion.id, { mode: e.target.value as TravelMode })}
             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border"
           >
-            {TRAVEL_MODES.map((mode) => (
-              <option key={mode.value} value={mode.value}>
-                {mode.label}
-              </option>
-            ))}
+            {TRAVEL_MODES
+              .filter((mode) => {
+                // For POI type without complex query, only show Distance
+                if (criterion.type === 'poi' && !criterion.complexQuery) {
+                  return mode.value === 'distance';
+                }
+                // For Location type or POI with complex query, show all modes
+                return true;
+              })
+              .map((mode) => (
+                <option key={mode.value} value={mode.value}>
+                  {mode.label}
+                </option>
+              ))}
           </select>
         </div>
         <div>

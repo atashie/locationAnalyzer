@@ -62,4 +62,5 @@ export interface CriterionFormData {
   location: string;
   mode: TravelMode;
   value: number;
+  complexQuery: boolean;
 }
