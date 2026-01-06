@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(python -m venv:*)",
+      "Bash(where:*)",
+      "Bash(py --list:*)",
+      "Bash(py -3 -m venv .venv)",
+      "Bash(.venvScriptspip install -r requirements.txt)",
+      "Bash(\".venv/Scripts/pip.exe\" install -r requirements.txt)",
+      "Bash(\".venv/Scripts/python.exe\" -c \"from app.main import app; print\\(''Backend imports OK''\\)\")",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}
