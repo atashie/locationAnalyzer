@@ -3,23 +3,27 @@ import { Map } from './components/Map/Map'
 import { SearchForm } from './components/SearchForm/SearchForm'
 import { ResultsSummary } from './components/ResultsSummary/ResultsSummary'
 import { useAnalysis } from './hooks/useAnalysis'
-import type { AnalysisResponse } from './types'
+import type { AnalysisResponse, Criterion } from './types'
 
 function App() {
   const [result, setResult] = useState<AnalysisResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const analysis = useAnalysis()
 
-  const handleSearch = async (center: string, radiusMiles: number) => {
+  const handleSearch = async (center: string, radiusMiles: number, criteria: Criterion[]) => {
+    setError(null)
     try {
       const response = await analysis.mutateAsync({
         center,
         radius_miles: radiusMiles,
-        criteria: [], // TODO: Add criteria from form
+        criteria,
       })
       setResult(response)
-    } catch (error) {
-      console.error('Analysis failed:', error)
-      // TODO: Add proper error handling UI
+    } catch (err) {
+      console.error('Analysis failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Analysis failed. Please try again.'
+      setError(errorMessage)
+      setResult(null)
     }
   }
 
@@ -47,6 +51,21 @@ function App() {
                 isLoading={analysis.isPending}
               />
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">Analysis Error</h3>
+                    <p className="text-sm text-red-700 mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-lg shadow p-4">
               <h2 className="text-lg font-semibold mb-4">Results</h2>

@@ -12,7 +12,9 @@
       "Bash(\".venv/Scripts/python.exe\" -c \"from app.main import app; print\\(''Backend imports OK''\\)\")",
       "Bash(npm install)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
