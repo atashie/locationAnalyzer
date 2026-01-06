@@ -6,7 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.0.0] - 2026-01-06 - MVP Release 🎉
+## [1.1.0] - 2026-01-06 - POI Explorer
+
+### Added
+- **POI Explorer** - Browse businesses within your search result polygon
+  - New `POST /api/v1/pois` endpoint for querying POIs in a polygon
+  - Category dropdown in Results panel to select business type
+  - POI list with names and addresses
+  - Clickable map markers (red circles) with popup details
+  - Shows name, address, hours, phone, and website link
+- **Backend POI Query Method** - `query_pois_in_polygon()` in LocationAnalyzer
+  - Extracts business metadata (name, address, hours, phone, website)
+  - Handles both Point and Polygon geometries
+  - Returns structured data + GeoJSON
+- **Frontend POI Types** - New TypeScript interfaces for POI data
+
+### Changed
+- ResultsSummary component now accepts POI-related props
+- Map component renders POI markers with CircleMarker
+- App.tsx manages POI state and fetches POI types on mount
+
+---
+
+## [1.0.0] - 2026-01-06 - MVP Release
 
 ### Deployment
 - **Production deployment complete**
@@ -126,13 +148,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 |---------|------|-----------|
 | 0.0.1 | 2025-01-06 | Project initialization, PoC |
 | 0.1.0 | 2025-01-06 | Backend + Frontend MVP structure |
-| **1.0.0** | **2026-01-06** | **MVP Release - Production deployment** |
+| 1.0.0 | 2026-01-06 | MVP Release - Production deployment |
+| **1.1.0** | **2026-01-06** | **POI Explorer - Browse businesses in area** |
 
 ---
 
 ## Upcoming Releases
 
-### v1.1.0 (Performance Target)
+### v1.2.0 (Tripadvisor Integration)
+- [ ] Tripadvisor Locations API integration
+- [ ] Display ratings and reviews for POIs
+- [ ] Toggle between OSM-only and Tripadvisor-enriched data
+
+### v1.3.0 (Performance Target)
 - [ ] POI query caching layer
 - [ ] Pre-computed data for RDU metro area
 - [ ] Request timeout handling
@@ -140,5 +168,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### v2.0.0 (V2 Target)
 - [ ] Valhalla isochrone integration
-- [ ] Yelp API for business details
 - [ ] User accounts and saved searches

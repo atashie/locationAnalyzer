@@ -3,6 +3,7 @@ import type {
   AnalysisRequest,
   AnalysisResponse,
   LocationValidation,
+  POIsResponse,
   POITypesResponse,
 } from '../types';
 
@@ -47,6 +48,20 @@ export const api = {
    */
   healthCheck: async (): Promise<{ status: string }> => {
     const response = await apiClient.get<{ status: string }>('/health');
+    return response.data;
+  },
+
+  /**
+   * Query POIs within a polygon
+   */
+  queryPOIs: async (
+    polygon: GeoJSON.FeatureCollection,
+    poiType: string
+  ): Promise<POIsResponse> => {
+    const response = await apiClient.post<POIsResponse>('/pois', {
+      polygon: polygon,
+      poi_type: poiType,
+    });
     return response.data;
   },
 };

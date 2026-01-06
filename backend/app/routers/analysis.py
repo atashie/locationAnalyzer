@@ -11,6 +11,9 @@ from app.models.schemas import (
     CriterionResult,
     ErrorResponse,
     LocationValidation,
+    POIFeature,
+    POIRequest,
+    POIsResponse,
     POIType,
     POITypesResponse,
 )
@@ -186,6 +189,57 @@ async def get_poi_types() -> POITypesResponse:
     """
     poi_types = [POIType(name=name, tags=tags) for name, tags in POI_TYPES.items()]
     return POITypesResponse(poi_types=poi_types)
+
+
+@router.post(
+    "/pois",
+    response_model=POIsResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def query_pois(request: POIRequest) -> POIsResponse:
+    """
+    Query POIs within a GeoJSON polygon.
+
+    - **polygon**: GeoJSON Feature, FeatureCollection, or Geometry
+    - **poi_type**: Type of POI to search for (e.g., 'Restaurant')
+
+    Returns a list of POIs with business details and a GeoJSON FeatureCollection.
+    """
+    from shapely.geometry import shape
+
+    try:
+        # Parse polygon from GeoJSON (handle Feature, FeatureCollection, or raw geometry)
+        polygon_data = request.polygon
+        if polygon_data.get("type") == "FeatureCollection":
+            if not polygon_data.get("features"):
+                raise ValueError("FeatureCollection has no features")
+            geom = shape(polygon_data["features"][0]["geometry"])
+        elif polygon_data.get("type") == "Feature":
+            geom = shape(polygon_data["geometry"])
+        else:
+            # Assume it's a raw geometry
+            geom = shape(polygon_data)
+
+        # Create a minimal analyzer just for the POI query
+        # We don't need geocoding since we already have the polygon
+        analyzer = LocationAnalyzer.__new__(LocationAnalyzer)
+        analyzer.crs = "EPSG:4326"
+
+        # Query POIs
+        poi_list, geojson = analyzer.query_pois_in_polygon(geom, request.poi_type)
+
+        return POIsResponse(
+            success=True,
+            poi_type=request.poi_type,
+            total_found=len(poi_list),
+            pois=[POIFeature(**p) for p in poi_list],
+            geojson=geojson,
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"POI query failed: {str(e)}")
 
 
 @router.get("/health")

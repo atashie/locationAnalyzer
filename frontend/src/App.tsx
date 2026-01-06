@@ -1,17 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Map } from './components/Map/Map'
 import { SearchForm } from './components/SearchForm/SearchForm'
 import { ResultsSummary } from './components/ResultsSummary/ResultsSummary'
 import { useAnalysis } from './hooks/useAnalysis'
-import type { AnalysisResponse, Criterion } from './types'
+import { api } from './api/client'
+import type { AnalysisResponse, Criterion, POIFeature } from './types'
 
 function App() {
   const [result, setResult] = useState<AnalysisResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const analysis = useAnalysis()
 
+  // POI explorer state
+  const [poiTypes, setPoiTypes] = useState<string[]>([])
+  const [selectedPOIType, setSelectedPOIType] = useState<string>('')
+  const [pois, setPois] = useState<POIFeature[]>([])
+  const [isLoadingPOIs, setIsLoadingPOIs] = useState(false)
+
+  // Fetch POI types on mount
+  useEffect(() => {
+    api.getPOITypes()
+      .then((response) => {
+        setPoiTypes(response.poi_types.map((pt) => pt.name))
+      })
+      .catch((err) => {
+        console.error('Failed to fetch POI types:', err)
+      })
+  }, [])
+
   const handleSearch = async (center: string, radiusMiles: number, criteria: Criterion[]) => {
     setError(null)
+    // Clear POI state when starting a new search
+    setPois([])
+    setSelectedPOIType('')
+
     try {
       const response = await analysis.mutateAsync({
         center,
@@ -24,6 +46,26 @@ function App() {
       const errorMessage = err instanceof Error ? err.message : 'Analysis failed. Please try again.'
       setError(errorMessage)
       setResult(null)
+    }
+  }
+
+  const handlePOITypeSelect = async (poiType: string) => {
+    setSelectedPOIType(poiType)
+
+    if (!poiType || !result?.geojson) {
+      setPois([])
+      return
+    }
+
+    setIsLoadingPOIs(true)
+    try {
+      const response = await api.queryPOIs(result.geojson, poiType)
+      setPois(response.pois)
+    } catch (err) {
+      console.error('POI query failed:', err)
+      setPois([])
+    } finally {
+      setIsLoadingPOIs(false)
     }
   }
 
@@ -69,7 +111,14 @@ function App() {
 
             <div className="bg-white rounded-lg shadow p-4">
               <h2 className="text-lg font-semibold mb-4">Results</h2>
-              <ResultsSummary result={result} />
+              <ResultsSummary
+                result={result}
+                poiTypes={poiTypes}
+                selectedPOIType={selectedPOIType}
+                onPOITypeSelect={handlePOITypeSelect}
+                pois={pois}
+                isLoadingPOIs={isLoadingPOIs}
+              />
             </div>
           </div>
 
@@ -81,6 +130,7 @@ function App() {
                 geojson={result?.geojson}
                 markerPosition={result ? [result.center_lat, result.center_lon] : undefined}
                 markerLabel={result?.center}
+                pois={pois}
               />
             </div>
           </div>

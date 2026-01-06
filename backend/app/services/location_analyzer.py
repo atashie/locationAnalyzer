@@ -2,7 +2,8 @@
 
 import logging
 import math
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any, Dict, List, Optional, Tuple
 
 import geopandas as gpd
 import osmnx as ox
@@ -374,3 +375,72 @@ class LocationAnalyzer:
             ],
             crs=self.crs,
         )
+
+    def query_pois_in_polygon(
+        self, polygon: Polygon, poi_type_key: str
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Query POIs within a polygon and return structured data.
+
+        Args:
+            polygon: Shapely Polygon to search within
+            poi_type_key: POI type name from POI_TYPES (e.g., 'Restaurant')
+
+        Returns:
+            Tuple of (list of POI dicts, GeoJSON FeatureCollection)
+
+        Raises:
+            ValueError: If poi_type_key is not recognized
+        """
+        from app.core.constants import POI_TYPES
+
+        poi_tags = POI_TYPES.get(poi_type_key)
+        if not poi_tags:
+            raise ValueError(f"Unknown POI type: {poi_type_key}")
+
+        try:
+            pois_gdf = ox.features_from_polygon(polygon, tags=poi_tags)
+        except Exception as e:
+            logger.warning(f"No POIs found for {poi_type_key}: {e}")
+            return [], {"type": "FeatureCollection", "features": []}
+
+        if pois_gdf.empty:
+            return [], {"type": "FeatureCollection", "features": []}
+
+        # Extract structured POI data
+        poi_list = []
+        for idx, row in pois_gdf.iterrows():
+            geom = row.geometry
+
+            # Handle both Point and Polygon geometries (buildings are often polygons)
+            if geom.geom_type == "Polygon" or geom.geom_type == "MultiPolygon":
+                centroid = geom.centroid
+                lat, lon = centroid.y, centroid.x
+            else:
+                lat, lon = geom.y, geom.x
+
+            # Build address from components if available
+            address_parts = []
+            if "addr:housenumber" in row and row["addr:housenumber"]:
+                address_parts.append(str(row["addr:housenumber"]))
+            if "addr:street" in row and row["addr:street"]:
+                address_parts.append(str(row["addr:street"]))
+            address = " ".join(address_parts) if address_parts else None
+
+            poi_list.append({
+                "id": str(idx),
+                "name": row.get("name", "Unknown") if "name" in row else "Unknown",
+                "poi_type": poi_type_key,
+                "lat": lat,
+                "lon": lon,
+                "address": address,
+                "opening_hours": row.get("opening_hours") if "opening_hours" in row else None,
+                "phone": row.get("phone") if "phone" in row else None,
+                "website": row.get("website") if "website" in row else None,
+            })
+
+        # Convert to GeoJSON
+        geojson = json.loads(pois_gdf.to_json())
+
+        logger.info(f"Found {len(poi_list)} POIs of type {poi_type_key}")
+        return poi_list, geojson

@@ -4,9 +4,9 @@
 
 ---
 
-## Current Phase: MVP Complete - Deployed to Production 🎉
+## Current Phase: v1.1.0 - POI Explorer Feature Added
 
-The MVP is fully deployed and operational.
+The app now includes a POI Explorer to browse businesses within the search result polygon.
 
 ### Production URLs
 
@@ -90,12 +90,22 @@ Deployment     [████████████████████] 10
 - [x] Configure production CORS
 - [x] Verify end-to-end functionality
 
+### v1.1.0 - POI Explorer
+- [x] Add POI schemas (POIFeature, POIRequest, POIsResponse)
+- [x] Add `query_pois_in_polygon()` method to LocationAnalyzer
+- [x] Add `POST /api/v1/pois` endpoint
+- [x] Add POI types to frontend
+- [x] Add `queryPOIs()` API method
+- [x] Add POI markers with popups to Map component
+- [x] Add category dropdown to ResultsSummary
+- [x] Wire up POI state in App.tsx
+
 ---
 
-## Next Steps (V1)
-1. Integrate Valhalla for accurate isochrones
-2. Add Yelp Fusion API for business details
-3. Implement user accounts and saved searches
+## Next Steps (v1.2.0)
+1. Integrate Tripadvisor Locations API for ratings/reviews
+2. Toggle between OSM-only and Tripadvisor-enriched data
+3. Display star ratings on POI markers
 
 ---
 
@@ -120,7 +130,8 @@ Deployment     [████████████████████] 10
 | MVP isochrones | Convex hull buffers | 2025-01-06 |
 | V1 isochrones | Self-hosted Valhalla | 2025-01-06 |
 | POI data (MVP) | OpenStreetMap | 2025-01-06 |
-| Business data (V1) | Yelp Fusion API | 2025-01-06 |
+| Business data (v1.1) | OpenStreetMap POI query | 2026-01-06 |
+| Business data (v1.2) | Tripadvisor Locations API | Planned |
 | Target region (V1) | Raleigh-Durham-Chapel Hill, NC | 2025-01-06 |
 | Query optimization | Smart ordering (restrictive first) | 2026-01-06 |
 | Backend hosting | Railway | 2026-01-06 |

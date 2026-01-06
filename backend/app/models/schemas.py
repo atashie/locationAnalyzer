@@ -130,3 +130,45 @@ class ErrorResponse(BaseModel):
 
     error: str
     detail: Optional[str] = None
+
+
+class POIFeature(BaseModel):
+    """A single POI with business details from OpenStreetMap."""
+
+    id: str
+    name: str
+    poi_type: str
+    lat: float
+    lon: float
+    address: Optional[str] = None
+    opening_hours: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+
+
+class POIRequest(BaseModel):
+    """Request for POI query within a polygon."""
+
+    polygon: Dict[str, Any] = Field(..., description="GeoJSON Feature or FeatureCollection")
+    poi_type: str = Field(..., description="POI type name (e.g., 'Restaurant')")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "polygon": {
+                    "type": "FeatureCollection",
+                    "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": []}}]
+                },
+                "poi_type": "Restaurant"
+            }
+        }
+
+
+class POIsResponse(BaseModel):
+    """Response for POI query within a polygon."""
+
+    success: bool
+    poi_type: str
+    total_found: int
+    pois: List[POIFeature]
+    geojson: Dict[str, Any] = Field(..., description="GeoJSON FeatureCollection of POIs")

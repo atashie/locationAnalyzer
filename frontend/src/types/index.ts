@@ -53,6 +53,26 @@ export interface POITypesResponse {
   poi_types: POIType[];
 }
 
+export interface POIFeature {
+  id: string;
+  name: string;
+  poi_type: string;
+  lat: number;
+  lon: number;
+  address?: string;
+  opening_hours?: string;
+  phone?: string;
+  website?: string;
+}
+
+export interface POIsResponse {
+  success: boolean;
+  poi_type: string;
+  total_found: number;
+  pois: POIFeature[];
+  geojson: GeoJSON.FeatureCollection;
+}
+
 // UI State Types
 
 export interface CriterionFormData {

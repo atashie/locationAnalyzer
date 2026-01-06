@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, CircleMarker } from 'react-leaflet';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import type { POIFeature } from '../../types';
 
 // Fix for default marker icons in Leaflet with Vite
 import L from 'leaflet';
@@ -21,6 +22,7 @@ interface MapProps {
   geojson?: GeoJSON.FeatureCollection;
   markerPosition?: [number, number];
   markerLabel?: string;
+  pois?: POIFeature[];
 }
 
 const DEFAULT_CENTER: LatLngExpression = [35.994, -78.899]; // Durham, NC
@@ -77,6 +79,7 @@ export function Map({
   geojson,
   markerPosition,
   markerLabel,
+  pois,
 }: MapProps) {
   // Generate a unique key for GeoJSON to force re-render when data changes
   // This is necessary because react-leaflet's GeoJSON doesn't update on data prop changes
@@ -118,6 +121,56 @@ export function Map({
           }}
         />
       )}
+
+      {/* POI markers */}
+      {pois && pois.map((poi) => (
+        <CircleMarker
+          key={poi.id}
+          center={[poi.lat, poi.lon]}
+          radius={8}
+          pathOptions={{
+            fillColor: '#ef4444',
+            fillOpacity: 0.8,
+            color: '#b91c1c',
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <div className="max-w-xs">
+              <h3 className="font-bold text-sm mb-1">{poi.name}</h3>
+              <p className="text-xs text-gray-500 mb-2">{poi.poi_type}</p>
+              {poi.address && (
+                <p className="text-xs text-gray-600 mb-1">{poi.address}</p>
+              )}
+              {poi.opening_hours && (
+                <p className="text-xs text-gray-600 mb-1">
+                  <span className="font-medium">Hours:</span> {poi.opening_hours}
+                </p>
+              )}
+              {poi.phone && (
+                <p className="text-xs text-gray-600 mb-1">
+                  <span className="font-medium">Phone:</span>{' '}
+                  <a href={`tel:${poi.phone}`} className="text-blue-600 hover:underline">
+                    {poi.phone}
+                  </a>
+                </p>
+              )}
+              {poi.website && (
+                <p className="text-xs">
+                  <a
+                    href={poi.website.startsWith('http') ? poi.website : `https://${poi.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Visit Website
+                  </a>
+                </p>
+              )}
+            </div>
+          </Popup>
+        </CircleMarker>
+      ))}
     </MapContainer>
   );
 }
