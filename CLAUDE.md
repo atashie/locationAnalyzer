@@ -12,6 +12,14 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 
 - **GitHub:** git@github.com:atashie/locationAnalyzer.git
 
+## Production URLs
+
+| Environment | URL |
+|-------------|-----|
+| **Frontend** | https://location-analyzer-three.vercel.app |
+| **Backend API** | https://locationanalyzer-production.up.railway.app |
+| **API Docs** | https://locationanalyzer-production.up.railway.app/docs |
+
 ## Key Files
 
 | File | Purpose |
@@ -23,6 +31,9 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 | `/frontend/src/components/Map/Map.tsx` | Leaflet map with dynamic updates |
 | `/frontend/src/components/SearchForm/SearchForm.tsx` | Criteria form + loading indicator |
 | `/frontend/src/components/SearchForm/CriterionCard.tsx` | Individual criterion editor |
+| `/Dockerfile` | Production container config for Railway |
+| `/railway.toml` | Railway deployment configuration |
+| `/DEPLOYMENT.md` | Step-by-step deployment guide |
 | `/distanceFinder/app.py` | Original Streamlit PoC (reference only) |
 
 ## Commands
@@ -139,3 +150,4 @@ Project documentation is maintained in the following files. Update these after m
 | [architecture.md](./architecture.md) | System design, component interactions, and data flow diagrams |
 | [changelog.md](./changelog.md) | Version history and release notes |
 | [project_status.md](./project_status.md) | Current progress, completed tasks, and next steps |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Step-by-step deployment guide for Railway and Vercel |

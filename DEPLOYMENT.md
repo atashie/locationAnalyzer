@@ -114,7 +114,6 @@ After getting your Vercel URL:
 
 ## Production URLs
 
-After deployment, record your URLs here:
-
-- **Backend API**: `https://_________________.up.railway.app`
-- **Frontend App**: `https://_________________.vercel.app`
+- **Backend API**: https://locationanalyzer-production.up.railway.app
+- **Frontend App**: https://location-analyzer-three.vercel.app
+- **API Documentation**: https://locationanalyzer-production.up.railway.app/docs

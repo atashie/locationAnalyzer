@@ -4,9 +4,17 @@
 
 ---
 
-## Current Phase: MVP Development - Feature Complete
+## Current Phase: MVP Complete - Deployed to Production 🎉
 
-The MVP is functionally complete with working frontend and backend. Current focus is on performance optimization and UX improvements.
+The MVP is fully deployed and operational.
+
+### Production URLs
+
+| Component | URL |
+|-----------|-----|
+| **Frontend** | https://location-analyzer-three.vercel.app |
+| **Backend API** | https://locationanalyzer-production.up.railway.app |
+| **API Docs** | https://locationanalyzer-production.up.railway.app/docs |
 
 ---
 
@@ -16,8 +24,8 @@ The MVP is functionally complete with working frontend and backend. Current focu
 Setup          [████████████████████] 100%
 Backend        [████████████████████] 100%
 Frontend       [████████████████████] 100%
-Integration    [████████████████░░░░]  80%
-Deployment     [░░░░░░░░░░░░░░░░░░░░]   0%
+Integration    [████████████████████] 100%
+Deployment     [████████████████████] 100%
 ```
 
 ---
@@ -70,33 +78,21 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]   
 - [x] Identify bottleneck: OSM POI queries (95%+ of time)
 - [x] Document optimization strategies
 
+### UX Improvements
+- [x] "Specific Place" as default criterion type
+- [x] "Complex Query" toggle for Amenity Type searches
+- [x] Realistic irregular buffers for travel-time calculations
+
+### Deployment
+- [x] Create Dockerfile for Railway
+- [x] Deploy backend to Railway
+- [x] Deploy frontend to Vercel
+- [x] Configure production CORS
+- [x] Verify end-to-end functionality
+
 ---
 
-## In Progress
-
-- [ ] Final testing and bug fixes
-- [ ] Prepare for deployment
-
----
-
-## Next Steps
-
-### Immediate (This Session)
-1. Commit and push latest changes
-2. Test all features end-to-end
-
-### Short-term (Performance Optimization)
-1. Add POI query caching
-2. Implement request timeout with graceful degradation
-3. Consider pre-computing POI data for target metro areas
-
-### Medium-term (Deployment)
-1. Deploy backend to Railway/Render
-2. Deploy frontend to Vercel/Netlify
-3. Set up production environment variables
-4. Configure production CORS origins
-
-### Long-term (V1)
+## Next Steps (V1)
 1. Integrate Valhalla for accurate isochrones
 2. Add Yelp Fusion API for business details
 3. Implement user accounts and saved searches
@@ -127,6 +123,9 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]   
 | Business data (V1) | Yelp Fusion API | 2025-01-06 |
 | Target region (V1) | Raleigh-Durham-Chapel Hill, NC | 2025-01-06 |
 | Query optimization | Smart ordering (restrictive first) | 2026-01-06 |
+| Backend hosting | Railway | 2026-01-06 |
+| Frontend hosting | Vercel | 2026-01-06 |
+| Travel-time buffers | Realistic irregular shapes | 2026-01-06 |
 
 ---
 
@@ -141,6 +140,7 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]   
 | `changelog.md` | Complete | Version history |
 | `project_status.md` | Complete | This file |
 | `brainstorm.md` | Complete | Original requirements |
+| `DEPLOYMENT.md` | Complete | Deployment guide |
 
 ### Backend
 | File | Status | Description |
@@ -150,10 +150,12 @@ Deployment     [░░░░░░░░░░░░░░░░░░░░]   
 | `backend/app/core/constants.py` | Complete | POI types |
 | `backend/app/models/schemas.py` | Complete | Pydantic models |
 | `backend/app/routers/analysis.py` | Complete | API routes + smart ordering |
-| `backend/app/services/location_analyzer.py` | Complete | Core logic |
+| `backend/app/services/location_analyzer.py` | Complete | Core logic + realistic buffers |
 | `backend/app/services/geocoding.py` | Complete | Geocoding |
 | `backend/requirements.txt` | Complete | Dependencies |
 | `backend/performance_test.py` | Complete | Benchmarking suite |
+| `Dockerfile` | Complete | Production container config |
+| `railway.toml` | Complete | Railway deployment config |
 
 ### Frontend
 | File | Status | Description |

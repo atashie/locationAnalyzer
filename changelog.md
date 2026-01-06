@@ -6,7 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-01-06 - MVP Release 🎉
+
+### Deployment
+- **Production deployment complete**
+  - Backend deployed to Railway: https://locationanalyzer-production.up.railway.app
+  - Frontend deployed to Vercel: https://location-analyzer-three.vercel.app
+  - API documentation at: https://locationanalyzer-production.up.railway.app/docs
+- **Dockerfile** for containerized backend deployment
+- **railway.toml** for Railway-specific configuration
+- **DEPLOYMENT.md** guide for step-by-step deployment instructions
 
 ### Added
 - **Criteria Builder UI** - Full-featured criteria management in SearchForm
@@ -40,6 +49,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Captures POIs just outside boundary that are within travel distance of interior points
   - Capped at 5 miles to prevent massive OSM queries
   - Ensures no valid areas are incorrectly filtered out
+- **Complex Query Toggle** - UX improvement for Amenity Type searches
+  - "Specific Place" is now default criterion type
+  - Walk/bike/drive modes only available when "Complex Query" is enabled
+  - Helps users avoid slow queries by default
+- **Realistic Travel-Time Buffers** - Organic isochrone shapes
+  - Uses sine wave variation instead of perfect circles
+  - Mode-specific variation: walk (15%), bike (20%), drive (25%)
+  - Creates more realistic-looking travel time polygons
 
 ### Changed
 - SearchForm now disables inputs during loading
@@ -47,11 +64,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - CORS default now includes port 5174 for Vite fallback
 - LocationAnalyzer now uses expanded query areas for POI searches
 - Replaced deprecated `unary_union` with `union_all()` in GeoPandas calls
+- Default criterion type changed to "Specific Place" (faster queries)
 
 ### Fixed
 - Map not updating on subsequent queries (react-leaflet immutability issue)
 - Results panel updating but map staying static
 - GeoJSON layer not re-rendering when data changes
+- Dockerfile PORT variable for Railway dynamic port assignment
 
 ---
 
@@ -107,19 +126,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 |---------|------|-----------|
 | 0.0.1 | 2025-01-06 | Project initialization, PoC |
 | 0.1.0 | 2025-01-06 | Backend + Frontend MVP structure |
-| Unreleased | - | Criteria builder, smart ordering, UX improvements |
+| **1.0.0** | **2026-01-06** | **MVP Release - Production deployment** |
 
 ---
 
 ## Upcoming Releases
 
-### v0.2.0 (Performance Target)
+### v1.1.0 (Performance Target)
 - [ ] POI query caching layer
 - [ ] Pre-computed data for RDU metro area
 - [ ] Request timeout handling
 - [ ] Partial results on slow queries
 
-### v1.0.0 (V1 Target)
+### v2.0.0 (V2 Target)
 - [ ] Valhalla isochrone integration
 - [ ] Yelp API for business details
 - [ ] User accounts and saved searches
