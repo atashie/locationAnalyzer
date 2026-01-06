@@ -26,10 +26,9 @@ COPY backend/app/ ./app/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+
+# Railway assigns PORT dynamically, default to 8000 for local testing
 ENV PORT=8000
 
-# Expose port
-EXPOSE 8000
-
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application using shell form to expand $PORT variable
+CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
