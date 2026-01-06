@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     backend_port: int = 8000
 
     # CORS
-    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000"
 
     # Rate limits
     max_search_radius_miles: float = 25.0
