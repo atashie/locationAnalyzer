@@ -6,9 +6,21 @@ import json
 from typing import Any, Dict, List, Optional, Tuple
 
 import geopandas as gpd
+import numpy as np
 import osmnx as ox
 from shapely.geometry import Point, Polygon
 from shapely.ops import unary_union
+
+
+def _safe_str(value: Any) -> Optional[str]:
+    """Convert value to string, returning None for NaN/None/empty values."""
+    if value is None:
+        return None
+    if isinstance(value, float) and np.isnan(value):
+        return None
+    if value == "":
+        return None
+    return str(value)
 
 from app.core.constants import (
     BUFFER_ADJUSTMENTS,
@@ -421,22 +433,29 @@ class LocationAnalyzer:
 
             # Build address from components if available
             address_parts = []
-            if "addr:housenumber" in row and row["addr:housenumber"]:
-                address_parts.append(str(row["addr:housenumber"]))
-            if "addr:street" in row and row["addr:street"]:
-                address_parts.append(str(row["addr:street"]))
+            housenumber = _safe_str(row.get("addr:housenumber")) if "addr:housenumber" in row else None
+            street = _safe_str(row.get("addr:street")) if "addr:street" in row else None
+            if housenumber:
+                address_parts.append(housenumber)
+            if street:
+                address_parts.append(street)
             address = " ".join(address_parts) if address_parts else None
+
+            # Get name, handling NaN values
+            name = _safe_str(row.get("name")) if "name" in row else None
+            if not name:
+                name = "Unknown"
 
             poi_list.append({
                 "id": str(idx),
-                "name": row.get("name", "Unknown") if "name" in row else "Unknown",
+                "name": name,
                 "poi_type": poi_type_key,
                 "lat": lat,
                 "lon": lon,
                 "address": address,
-                "opening_hours": row.get("opening_hours") if "opening_hours" in row else None,
-                "phone": row.get("phone") if "phone" in row else None,
-                "website": row.get("website") if "website" in row else None,
+                "opening_hours": _safe_str(row.get("opening_hours")) if "opening_hours" in row else None,
+                "phone": _safe_str(row.get("phone")) if "phone" in row else None,
+                "website": _safe_str(row.get("website")) if "website" in row else None,
             })
 
         # Convert to GeoJSON
