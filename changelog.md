@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.3.0] - 2026-01-07 - TripAdvisor Integration
+
+### Added
+- **TripAdvisor Enrichment** - Ratings, reviews, photos for POIs
+  - On-demand fetching when user clicks POI marker
+  - Displays: rating (stars), review count, price level, ranking
+  - Shows cuisine types for restaurants
+  - Photo thumbnails in popup (up to 2)
+  - Direct link to TripAdvisor page
+- **TripAdvisor API Client** - Full integration with caching
+  - `GET /api/v1/poi/tripadvisor` endpoint for enrichment
+  - `GET /api/v1/tripadvisor/usage` for API usage stats
+  - 7-day cache for matches and no-matches
+  - Monthly usage tracking (5000 calls/month free tier)
+- **Frontend POI Popup** - Enhanced popup with TripAdvisor data
+  - Shows "Loading TripAdvisor..." while fetching
+  - Graceful fallback if no TripAdvisor match found
+  - Combined view of OSM + TripAdvisor data
+
+### Configuration
+- `TRIPADVISOR_API_KEY` - API key from TripAdvisor Content API
+- `TRIPADVISOR_ENABLED` - Toggle TripAdvisor integration (default: true)
+- `TRIPADVISOR_MONTHLY_LIMIT` - API call budget (default: 5000)
+
+---
+
 ## [1.2.0] - 2026-01-06 - Performance & Valhalla
 
 ### Added
@@ -176,16 +202,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 | 0.1.0 | 2025-01-06 | Backend + Frontend MVP structure |
 | 1.0.0 | 2026-01-06 | MVP Release - Production deployment |
 | 1.1.0 | 2026-01-06 | POI Explorer - Browse businesses in area |
-| **1.2.0** | **2026-01-06** | **Performance & Valhalla - 4-80x faster queries** |
+| 1.2.0 | 2026-01-06 | Performance & Valhalla - 4-80x faster queries |
+| **1.3.0** | **2026-01-07** | **TripAdvisor Integration - Ratings & reviews** |
 
 ---
 
 ## Upcoming Releases
-
-### v1.3.0 (Tripadvisor Integration)
-- [ ] Tripadvisor Locations API integration
-- [ ] Display ratings and reviews for POIs
-- [ ] Toggle between OSM-only and Tripadvisor-enriched data
 
 ### v1.4.0 (Advanced Performance)
 - [ ] Pre-computed data for RDU metro area

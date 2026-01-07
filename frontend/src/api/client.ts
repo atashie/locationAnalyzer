@@ -5,6 +5,8 @@ import type {
   LocationValidation,
   POIsResponse,
   POITypesResponse,
+  TripAdvisorEnrichment,
+  TripAdvisorUsage,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -62,6 +64,29 @@ export const api = {
       polygon: polygon,
       poi_type: poiType,
     });
+    return response.data;
+  },
+
+  /**
+   * Get TripAdvisor enrichment data for a POI
+   */
+  getTripAdvisorEnrichment: async (
+    name: string,
+    lat: number,
+    lon: number,
+    poiType: string = 'Restaurant'
+  ): Promise<TripAdvisorEnrichment> => {
+    const response = await apiClient.get<TripAdvisorEnrichment>('/poi/tripadvisor', {
+      params: { name, lat, lon, poi_type: poiType },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get TripAdvisor API usage statistics
+   */
+  getTripAdvisorUsage: async (): Promise<TripAdvisorUsage> => {
+    const response = await apiClient.get<TripAdvisorUsage>('/tripadvisor/usage');
     return response.data;
   },
 };

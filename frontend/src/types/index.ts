@@ -84,3 +84,25 @@ export interface CriterionFormData {
   value: number;
   complexQuery: boolean;
 }
+
+// TripAdvisor Types
+
+export interface TripAdvisorEnrichment {
+  found: boolean;
+  location_id?: string;
+  rating?: number;
+  num_reviews?: number;
+  price_level?: string;
+  ranking_string?: string;
+  tripadvisor_url?: string;
+  photos: string[];
+  cuisine?: string[];
+  error?: string;
+}
+
+export interface TripAdvisorUsage {
+  enabled: boolean;
+  monthly_limit: number;
+  current_usage: number;
+  limit_reached: boolean;
+}

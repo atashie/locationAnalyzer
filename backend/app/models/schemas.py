@@ -172,3 +172,18 @@ class POIsResponse(BaseModel):
     total_found: int
     pois: List[POIFeature]
     geojson: Dict[str, Any] = Field(..., description="GeoJSON FeatureCollection of POIs")
+
+
+class TripAdvisorEnrichment(BaseModel):
+    """TripAdvisor enrichment data for a POI."""
+
+    found: bool = Field(..., description="Whether a TripAdvisor match was found")
+    location_id: Optional[str] = Field(None, description="TripAdvisor location ID")
+    rating: Optional[float] = Field(None, description="Average rating (1-5)")
+    num_reviews: Optional[int] = Field(None, description="Number of reviews")
+    price_level: Optional[str] = Field(None, description="Price level ($, $$, $$$, $$$$)")
+    ranking_string: Optional[str] = Field(None, description="Ranking (e.g., '#1 of 150 Restaurants')")
+    tripadvisor_url: Optional[str] = Field(None, description="URL to TripAdvisor page")
+    photos: List[str] = Field(default=[], description="Photo URLs (up to 3)")
+    cuisine: Optional[List[str]] = Field(None, description="Cuisine types")
+    error: Optional[str] = Field(None, description="Error message if enrichment failed")

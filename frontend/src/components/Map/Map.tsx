@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, CircleMarker } from 'react-leaflet';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { POIFeature } from '../../types';
+import type { POIFeature, TripAdvisorEnrichment } from '../../types';
+import { api } from '../../api/client';
 
 // Fix for default marker icons in Leaflet with Vite
 import L from 'leaflet';
@@ -73,6 +74,139 @@ function MapUpdater({
   return null;
 }
 
+/**
+ * POI Popup component that fetches TripAdvisor data on open.
+ */
+function POIPopup({ poi }: { poi: POIFeature }) {
+  const [tripAdvisor, setTripAdvisor] = useState<TripAdvisorEnrichment | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+
+  const fetchTripAdvisor = useCallback(async () => {
+    if (fetched || loading) return;
+    setLoading(true);
+    try {
+      const data = await api.getTripAdvisorEnrichment(
+        poi.name,
+        poi.lat,
+        poi.lon,
+        poi.poi_type
+      );
+      setTripAdvisor(data);
+    } catch (error) {
+      console.error('Failed to fetch TripAdvisor data:', error);
+      setTripAdvisor({ found: false, photos: [], error: 'Failed to load' });
+    } finally {
+      setLoading(false);
+      setFetched(true);
+    }
+  }, [poi, fetched, loading]);
+
+  // Fetch when popup opens (component mounts)
+  useEffect(() => {
+    fetchTripAdvisor();
+  }, [fetchTripAdvisor]);
+
+  return (
+    <div className="max-w-xs min-w-[200px]">
+      <h3 className="font-bold text-sm mb-1">{poi.name}</h3>
+      <p className="text-xs text-gray-500 mb-2">{poi.poi_type}</p>
+
+      {/* TripAdvisor Section */}
+      {loading && (
+        <p className="text-xs text-gray-400 italic mb-2">Loading TripAdvisor...</p>
+      )}
+
+      {tripAdvisor && tripAdvisor.found && (
+        <div className="mb-2 p-2 bg-gray-50 rounded border border-gray-200">
+          <div className="flex items-center gap-2 mb-1">
+            {tripAdvisor.rating && (
+              <span className="text-sm font-medium">
+                ⭐ {tripAdvisor.rating.toFixed(1)}
+              </span>
+            )}
+            {tripAdvisor.num_reviews && (
+              <span className="text-xs text-gray-500">
+                ({tripAdvisor.num_reviews.toLocaleString()} reviews)
+              </span>
+            )}
+            {tripAdvisor.price_level && (
+              <span className="text-xs text-green-600 font-medium">
+                {tripAdvisor.price_level}
+              </span>
+            )}
+          </div>
+          {tripAdvisor.ranking_string && (
+            <p className="text-xs text-gray-600 mb-1">{tripAdvisor.ranking_string}</p>
+          )}
+          {tripAdvisor.cuisine && tripAdvisor.cuisine.length > 0 && (
+            <p className="text-xs text-gray-500 mb-1">
+              {tripAdvisor.cuisine.slice(0, 3).join(', ')}
+            </p>
+          )}
+          {tripAdvisor.photos && tripAdvisor.photos.length > 0 && (
+            <div className="flex gap-1 mt-2 overflow-x-auto">
+              {tripAdvisor.photos.slice(0, 2).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${poi.name} photo ${i + 1}`}
+                  className="w-16 h-16 object-cover rounded"
+                />
+              ))}
+            </div>
+          )}
+          {tripAdvisor.tripadvisor_url && (
+            <a
+              href={tripAdvisor.tripadvisor_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-green-600 hover:underline block mt-1"
+            >
+              View on TripAdvisor →
+            </a>
+          )}
+        </div>
+      )}
+
+      {tripAdvisor && !tripAdvisor.found && !tripAdvisor.error && (
+        <p className="text-xs text-gray-400 italic mb-2">No TripAdvisor data</p>
+      )}
+
+      {/* OSM Data Section */}
+      {poi.address && (
+        <p className="text-xs text-gray-600 mb-1">📍 {poi.address}</p>
+      )}
+      {poi.opening_hours && (
+        <p className="text-xs text-gray-600 mb-1">
+          🕐 {poi.opening_hours}
+        </p>
+      )}
+      {poi.phone && (
+        <p className="text-xs text-gray-600 mb-1">
+          📞{' '}
+          <a href={`tel:${poi.phone}`} className="text-blue-600 hover:underline">
+            {poi.phone}
+          </a>
+        </p>
+      )}
+      {poi.website && (
+        <p className="text-xs">
+          🔗{' '}
+          <a
+            href={poi.website.startsWith('http') ? poi.website : `https://${poi.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            Website
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function Map({
   center = DEFAULT_CENTER as [number, number],
   zoom = DEFAULT_ZOOM,
@@ -136,38 +270,7 @@ export function Map({
           }}
         >
           <Popup>
-            <div className="max-w-xs">
-              <h3 className="font-bold text-sm mb-1">{poi.name}</h3>
-              <p className="text-xs text-gray-500 mb-2">{poi.poi_type}</p>
-              {poi.address && (
-                <p className="text-xs text-gray-600 mb-1">{poi.address}</p>
-              )}
-              {poi.opening_hours && (
-                <p className="text-xs text-gray-600 mb-1">
-                  <span className="font-medium">Hours:</span> {poi.opening_hours}
-                </p>
-              )}
-              {poi.phone && (
-                <p className="text-xs text-gray-600 mb-1">
-                  <span className="font-medium">Phone:</span>{' '}
-                  <a href={`tel:${poi.phone}`} className="text-blue-600 hover:underline">
-                    {poi.phone}
-                  </a>
-                </p>
-              )}
-              {poi.website && (
-                <p className="text-xs">
-                  <a
-                    href={poi.website.startsWith('http') ? poi.website : `https://${poi.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Visit Website
-                  </a>
-                </p>
-              )}
-            </div>
+            <POIPopup poi={poi} />
           </Popup>
         </CircleMarker>
       ))}

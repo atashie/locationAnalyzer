@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     valhalla_timeout: int = 30
     valhalla_enabled: bool = True
 
+    # TripAdvisor API settings
+    tripadvisor_api_key: str = ""
+    tripadvisor_enabled: bool = True
+    tripadvisor_monthly_limit: int = 5000
+    tripadvisor_cache_dir: str = "./cache/tripadvisor"
+    tripadvisor_timeout: int = 10
+
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins string into list."""

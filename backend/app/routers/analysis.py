@@ -36,9 +36,11 @@ from app.models.schemas import (
     POIsResponse,
     POIType,
     POITypesResponse,
+    TripAdvisorEnrichment,
 )
 from app.services.geocoding import validate_location
 from app.services.location_analyzer import LocationAnalyzer
+from app.services.tripadvisor import enrich_poi_with_tripadvisor, get_tripadvisor_client
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
@@ -330,3 +332,46 @@ async def query_pois(request: POIRequest) -> POIsResponse:
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@router.get(
+    "/poi/tripadvisor",
+    response_model=TripAdvisorEnrichment,
+    responses={400: {"model": ErrorResponse}},
+)
+async def get_tripadvisor_enrichment(
+    name: str = Query(..., description="POI name"),
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+    poi_type: str = Query(default="Restaurant", description="POI type"),
+) -> TripAdvisorEnrichment:
+    """
+    Fetch TripAdvisor enrichment data for a POI.
+
+    Returns rating, reviews, price level, photos, and TripAdvisor URL.
+    Falls back gracefully if no match found or API limit reached.
+
+    **Rate Limited:** Max 5000 API calls per month (free tier).
+    Results are cached to minimize API usage.
+    """
+    try:
+        result = enrich_poi_with_tripadvisor(name, lat, lon, poi_type)
+        return TripAdvisorEnrichment(**result)
+    except Exception as e:
+        logger.exception(f"TripAdvisor enrichment failed: {e}")
+        return TripAdvisorEnrichment(
+            found=False,
+            error=f"Enrichment failed: {str(e)}",
+        )
+
+
+@router.get("/tripadvisor/usage")
+async def get_tripadvisor_usage() -> dict:
+    """Get TripAdvisor API usage statistics for the current month."""
+    client = get_tripadvisor_client()
+    return {
+        "enabled": client.enabled,
+        "monthly_limit": client.monthly_limit,
+        "current_usage": client.get_monthly_usage(),
+        "limit_reached": client.is_limit_reached(),
+    }
