@@ -218,11 +218,17 @@ export function PremiumSearchPanel({
             </div>
           )}
 
-          {/* API Usage Warning */}
-          <p className="text-xs text-gray-500 italic">
-            Premium search uses TripAdvisor API (5000 calls/month limit).
-            Results are cached to reduce usage.
-          </p>
+          {/* Warnings */}
+          <div className="space-y-1">
+            <p className="text-xs text-amber-600">
+              <span className="font-medium">Note:</span> Search is limited to 5 polygon areas.
+              Complex multi-polygon results may not cover all regions.
+            </p>
+            <p className="text-xs text-gray-500 italic">
+              Premium search uses TripAdvisor API (5000 calls/month limit).
+              Only locations inside your analysis polygon are shown.
+            </p>
+          </div>
         </div>
       )}
 

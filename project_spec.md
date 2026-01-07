@@ -14,12 +14,16 @@ Build a web application that helps non-tech-savvy users find locations based on 
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React App     │────▶│   FastAPI       │────▶│   OSM / Yelp    │
-│   (Frontend)    │     │   (Backend)     │     │   (Data)        │
+│   React App     │────▶│   FastAPI       │────▶│   External APIs │
+│   (Frontend)    │     │   (Backend)     │     │                 │
+│   - Vite        │     │   - OSMnx       │     │   - OSM         │
+│   - Leaflet     │     │   - GeoPandas   │     │   - TripAdvisor │
+│   - Tailwind    │     │   - Shapely     │     │   - Valhalla    │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                       │
         ▼                       ▼
-   Leaflet Maps          GeoPandas/OSMnx
+   Interactive Map       Geospatial Analysis
+   Premium Search        Polygon Filtering
 ```
 
 ---
@@ -175,13 +179,45 @@ distanceFinder/
 
 ---
 
-## V1 Roadmap (Post-MVP)
+## V1 Roadmap (Post-MVP) - COMPLETED
 
-1. **Yelp Integration** - Add endpoint to fetch businesses within result polygon
-2. **Valhalla Isochrones** - Replace convex-hull with accurate road-network isochrones
-3. **Pre-computed Tiles** - Cache isochrones for RDU metro area
-4. **Enhanced UI** - Business cards with ratings, photos, hours
-5. **Saved Searches** - User accounts with search history
+1. ~~**Yelp Integration**~~ **TripAdvisor Integration** - Premium Search with ratings, reviews, photos
+2. **Valhalla Isochrones** - Accurate road-network isochrones via public Valhalla server
+3. **POI Explorer** - Browse OSM businesses within analysis polygon
+4. **Enhanced UI** - Business cards with TripAdvisor data, cuisine tags, price levels
+5. **Polygon Filtering** - Premium results filtered to only show locations inside analysis area
+
+## Current Features (as of v1.4)
+
+### Core Analysis
+- Multi-criteria search with up to 8 criteria
+- POI-based and location-based filtering
+- Travel time isochrones (walk/bike/drive) via Valhalla
+- Distance-based buffers as fallback
+- Smart query ordering for performance
+
+### Premium Search (TripAdvisor)
+- Search restaurants, hotels, attractions within analysis polygon
+- Centroid-based search algorithm (up to 5 polygon areas)
+- Polygon containment filtering - only shows locations inside your area
+- Rich data: ratings, reviews, price levels, photos, cuisine tags
+- API usage tracking (5000 calls/month limit)
+
+### POI Explorer
+- Query OSM POIs within result polygon
+- View business details from OpenStreetMap data
+
+### Limitations
+- **Centroid limit**: Premium Search queries up to 5 polygon centroids
+- **API budget**: TripAdvisor free tier = 5000 calls/month
+- **Search radius**: Maximum 25 miles
+
+## V2 Roadmap (Future)
+
+1. **Pre-computed Tiles** - Cache isochrones for RDU metro area
+2. **Saved Searches** - User accounts with search history
+3. **AI Integration** - Natural language query interface
+4. **Additional Providers** - Google Places, Yelp as Premium Search options
 
 ---
 

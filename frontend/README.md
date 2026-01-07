@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# Location Analyzer - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript frontend for the Location Analyzer application.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 18** with TypeScript
+- **Vite** for fast development and builds
+- **Tailwind CSS** for styling
+- **Leaflet** + react-leaflet for maps
+- **Axios** for API calls
+- **React Query** for data fetching
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Install dependencies
+npm install
 
-## Expanding the ESLint configuration
+# Start development server
+npm run dev
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env` file:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 ```
+
+For production (Vercel), set `VITE_API_BASE_URL` to your Railway backend URL.
+
+## Project Structure
+
+```
+src/
+├── api/
+│   └── client.ts          # API client with all endpoints
+├── components/
+│   ├── Map/               # Leaflet map with markers and popups
+│   ├── SearchForm/        # Criteria input form
+│   ├── ResultsSummary/    # Analysis results display
+│   └── PremiumSearchPanel/ # TripAdvisor Premium Search
+├── hooks/
+│   └── useAnalysis.ts     # React Query hook for analysis
+├── types/
+│   └── index.ts           # TypeScript interfaces
+├── App.tsx                # Main app component
+└── main.tsx               # Entry point
+```
+
+## Key Components
+
+### Map
+- Displays analysis polygon (blue)
+- Shows OSM POI markers (red circles)
+- Shows Premium Search results (purple/gold circles)
+- Interactive popups with business details
+
+### SearchForm
+- Location input with validation
+- Radius selector (1-25 miles)
+- Multi-criteria builder (POI type or specific location)
+- Travel mode selection (distance/walk/bike/drive)
+
+### PremiumSearchPanel
+- Toggle to enable Premium features
+- TripAdvisor category/subcategory selection
+- Max locations input
+- Results summary with API usage stats
+
+> **Note**: Premium Search is limited to 5 polygon areas. Complex multi-polygon results may not cover all regions.
+
+## Deployment
+
+The frontend is deployed to Vercel with automatic deploys from the `master` branch.
+
+Production URL: Set in Vercel environment variables.
