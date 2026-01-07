@@ -184,7 +184,10 @@ class TripAdvisorClient:
         self, lat: float, lon: float, category: str = "restaurants"
     ) -> List[Dict[str, Any]]:
         """
-        Search for nearby locations using TripAdvisor's nearby_search API.
+        Search for nearby locations using TripAdvisor's location/search API.
+
+        Note: The nearby_search endpoint requires a paid plan, so we use
+        location/search with category as search query and latLong for bias.
 
         Args:
             lat: Latitude of search center
@@ -200,13 +203,23 @@ class TripAdvisorClient:
         if self.is_limit_reached():
             return []
 
+        # Map category to search query
+        search_queries = {
+            "restaurants": "restaurant",
+            "hotels": "hotel",
+            "attractions": "things to do",
+            "geos": "places",
+        }
+        search_query = search_queries.get(category, category)
+
         params = {
+            "searchQuery": search_query,
             "latLong": f"{lat},{lon}",
             "category": category,
             "language": "en",
         }
 
-        result = self._make_request("/location/nearby_search", params)
+        result = self._make_request("/location/search", params)
         if not result or "data" not in result:
             return []
 
