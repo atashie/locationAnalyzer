@@ -1,9 +1,29 @@
 """Analysis API endpoints."""
 
+import json
+import logging
+
+import numpy as np
+import osmnx as ox
 from fastapi import APIRouter, HTTPException, Query
-from typing import List
+from typing import Any, List, Optional
 
 from app.core.constants import POI_TYPES
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_str(value: Any) -> Optional[str]:
+    """Convert value to string, returning None for NaN/None/empty values."""
+    if value is None:
+        return None
+    if isinstance(value, float) and np.isnan(value):
+        return None
+    if value == "":
+        return None
+    return str(value)
+
+
 from app.models.schemas import (
     AnalysisRequest,
     AnalysisResponse,
@@ -220,25 +240,89 @@ async def query_pois(request: POIRequest) -> POIsResponse:
             # Assume it's a raw geometry
             geom = shape(polygon_data)
 
-        # Create a minimal analyzer just for the POI query
-        # We don't need geocoding since we already have the polygon
-        analyzer = LocationAnalyzer.__new__(LocationAnalyzer)
-        analyzer.crs = "EPSG:4326"
+        # Get POI tags for the requested type
+        poi_tags = POI_TYPES.get(request.poi_type)
+        if not poi_tags:
+            raise ValueError(f"Unknown POI type: {request.poi_type}")
 
-        # Query POIs
-        poi_list, geojson = analyzer.query_pois_in_polygon(geom, request.poi_type)
+        # Query OSM directly with the provided polygon
+        try:
+            pois_gdf = ox.features_from_polygon(geom, tags=poi_tags)
+        except Exception as e:
+            logger.warning(f"No POIs found for {request.poi_type}: {e}")
+            return POIsResponse(
+                success=True,
+                poi_type=request.poi_type,
+                total_found=0,
+                pois=[],
+                geojson={"type": "FeatureCollection", "features": []},
+            )
+
+        if pois_gdf.empty:
+            return POIsResponse(
+                success=True,
+                poi_type=request.poi_type,
+                total_found=0,
+                pois=[],
+                geojson={"type": "FeatureCollection", "features": []},
+            )
+
+        # Extract structured POI data
+        poi_list = []
+        for idx, row in pois_gdf.iterrows():
+            geom_row = row.geometry
+
+            # Handle both Point and Polygon geometries (buildings are often polygons)
+            if geom_row.geom_type == "Polygon" or geom_row.geom_type == "MultiPolygon":
+                centroid = geom_row.centroid
+                lat, lon = centroid.y, centroid.x
+            else:
+                lat, lon = geom_row.y, geom_row.x
+
+            # Build address from components if available
+            address_parts = []
+            housenumber = _safe_str(row.get("addr:housenumber")) if "addr:housenumber" in row else None
+            street = _safe_str(row.get("addr:street")) if "addr:street" in row else None
+            if housenumber:
+                address_parts.append(housenumber)
+            if street:
+                address_parts.append(street)
+            address = " ".join(address_parts) if address_parts else None
+
+            # Get name, handling NaN values
+            name = _safe_str(row.get("name")) if "name" in row else None
+            if not name:
+                name = "Unknown"
+
+            poi_list.append({
+                "id": str(idx),
+                "name": name,
+                "poi_type": request.poi_type,
+                "lat": lat,
+                "lon": lon,
+                "address": address,
+                "opening_hours": _safe_str(row.get("opening_hours")) if "opening_hours" in row else None,
+                "phone": _safe_str(row.get("phone")) if "phone" in row else None,
+                "website": _safe_str(row.get("website")) if "website" in row else None,
+            })
+
+        # Convert to GeoJSON
+        geojson_data = json.loads(pois_gdf.to_json())
+
+        logger.info(f"Found {len(poi_list)} POIs of type {request.poi_type}")
 
         return POIsResponse(
             success=True,
             poi_type=request.poi_type,
             total_found=len(poi_list),
             pois=[POIFeature(**p) for p in poi_list],
-            geojson=geojson,
+            geojson=geojson_data,
         )
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.exception(f"POI query failed: {e}")
         raise HTTPException(status_code=500, detail=f"POI query failed: {str(e)}")
 
 
