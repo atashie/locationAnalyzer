@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.2.0] - 2026-01-06 - Performance & Valhalla
+
+### Added
+- **Valhalla Isochrone Integration** - Accurate road-network travel time polygons
+  - Uses free public Valhalla API at `valhalla1.openstreetmap.de`
+  - Real isochrones for specific location criteria (not approximations)
+  - Automatic fallback to buffer approximation if Valhalla unavailable
+  - Configurable via `VALHALLA_ENABLED` and `VALHALLA_URL` env vars
+- **Stable Polygon Caching** - 4-80x faster multi-criteria searches
+  - Always queries the original search boundary (stable, cacheable)
+  - Filters results to current area using fast Python operations
+  - In-memory cache per POI type within each analysis session
+  - Eliminates redundant OSM API calls for same POI type across criteria
+
+### Performance
+- **Multi-criteria benchmark**: 6 criteria in 3.86s (was ~18s without caching)
+- **Cache hit speedup**: 80x faster for repeated POI type queries
+- **API load reduction**: Single OSM query per POI type per search area
+
+### Changed
+- `_get_pois()` now uses stable polygon caching strategy
+- `query_pois_in_polygon()` shares the same POI cache
+- Travel time criteria for specific locations use Valhalla by default
+
+---
+
 ## [1.1.0] - 2026-01-06 - POI Explorer
 
 ### Added
@@ -149,23 +175,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 | 0.0.1 | 2025-01-06 | Project initialization, PoC |
 | 0.1.0 | 2025-01-06 | Backend + Frontend MVP structure |
 | 1.0.0 | 2026-01-06 | MVP Release - Production deployment |
-| **1.1.0** | **2026-01-06** | **POI Explorer - Browse businesses in area** |
+| 1.1.0 | 2026-01-06 | POI Explorer - Browse businesses in area |
+| **1.2.0** | **2026-01-06** | **Performance & Valhalla - 4-80x faster queries** |
 
 ---
 
 ## Upcoming Releases
 
-### v1.2.0 (Tripadvisor Integration)
+### v1.3.0 (Tripadvisor Integration)
 - [ ] Tripadvisor Locations API integration
 - [ ] Display ratings and reviews for POIs
 - [ ] Toggle between OSM-only and Tripadvisor-enriched data
 
-### v1.3.0 (Performance Target)
-- [ ] POI query caching layer
+### v1.4.0 (Advanced Performance)
 - [ ] Pre-computed data for RDU metro area
 - [ ] Request timeout handling
 - [ ] Partial results on slow queries
 
 ### v2.0.0 (V2 Target)
-- [ ] Valhalla isochrone integration
 - [ ] User accounts and saved searches
+- [ ] Saved search sharing

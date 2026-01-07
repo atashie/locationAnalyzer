@@ -80,6 +80,10 @@ class LocationAnalyzer:
         # Storage for results
         self.criteria_results: List[Dict[str, Any]] = []
 
+        # POI cache: query stable boundary once, filter to current area
+        # Key: str(poi_tags), Value: GeoDataFrame of all POIs in search_boundary
+        self._poi_cache: Dict[str, gpd.GeoDataFrame] = {}
+
         logger.info(f"Search area initialized: {max_radius_miles} mile radius")
 
     def _estimate_utm_crs(self, lon: float, lat: float) -> str:
@@ -382,10 +386,14 @@ class LocationAnalyzer:
         """
         Get POIs from either type search or specific location.
 
+        Uses stable polygon caching: always queries the original search_boundary
+        (which is cacheable by OSMnx), then filters to the current query_area.
+        This dramatically improves performance for multi-criteria searches.
+
         Args:
             poi_type: OSM tags for POI search
             specific_location: Specific location/address
-            query_area: Optional custom query area (defaults to current_search_area)
+            query_area: Optional custom query area for filtering (defaults to current_search_area)
 
         Returns:
             GeoDataFrame of POIs or None if not found
@@ -407,14 +415,40 @@ class LocationAnalyzer:
                 crs=self.crs,
             )
         elif poi_type:
-            # Use provided query_area or fall back to current_search_area
-            search_polygon = query_area if query_area is not None else self.current_search_area
-            try:
-                pois = ox.features_from_polygon(search_polygon, tags=poi_type)
-                return pois
-            except Exception as e:
-                logger.error(f"No POIs found: {e}")
-                return None
+            # Stable polygon caching strategy:
+            # 1. Always query the ORIGINAL search_boundary (stable, cacheable)
+            # 2. Cache the result by poi_type
+            # 3. Filter to the current query_area
+            cache_key = str(sorted(poi_type.items()))
+            filter_area = query_area if query_area is not None else self.current_search_area
+
+            # Check in-memory cache first
+            if cache_key in self._poi_cache:
+                all_pois = self._poi_cache[cache_key]
+                logger.debug(f"POI cache hit for {cache_key}: {len(all_pois)} POIs")
+            else:
+                # Query the STABLE search_boundary (not the dynamic query_area)
+                # This makes OSMnx disk cache effective across criteria
+                try:
+                    all_pois = ox.features_from_polygon(
+                        self.search_boundary, tags=poi_type
+                    )
+                    self._poi_cache[cache_key] = all_pois
+                    logger.info(
+                        f"POI cache miss for {cache_key}: fetched {len(all_pois)} POIs from stable boundary"
+                    )
+                except Exception as e:
+                    logger.error(f"No POIs found: {e}")
+                    return None
+
+            # Filter to current query area (fast Python operation)
+            if all_pois is not None and not all_pois.empty:
+                filtered_pois = all_pois[all_pois.geometry.intersects(filter_area)]
+                logger.debug(
+                    f"Filtered {len(all_pois)} -> {len(filtered_pois)} POIs for current area"
+                )
+                return filtered_pois
+            return None
         else:
             return None
 
@@ -439,6 +473,9 @@ class LocationAnalyzer:
         """
         Query POIs within a polygon and return structured data.
 
+        Uses stable polygon caching: queries the original search_boundary,
+        then filters to the requested polygon.
+
         Args:
             polygon: Shapely Polygon to search within
             poi_type_key: POI type name from POI_TYPES (e.g., 'Restaurant')
@@ -455,8 +492,24 @@ class LocationAnalyzer:
         if not poi_tags:
             raise ValueError(f"Unknown POI type: {poi_type_key}")
 
+        # Use stable polygon caching strategy
+        cache_key = str(sorted(poi_tags.items()))
+
         try:
-            pois_gdf = ox.features_from_polygon(polygon, tags=poi_tags)
+            # Check in-memory cache first
+            if cache_key in self._poi_cache:
+                all_pois = self._poi_cache[cache_key]
+                logger.debug(f"POI Explorer cache hit for {poi_type_key}: {len(all_pois)} POIs")
+            else:
+                # Query the STABLE search_boundary (cacheable)
+                all_pois = ox.features_from_polygon(self.search_boundary, tags=poi_tags)
+                self._poi_cache[cache_key] = all_pois
+                logger.info(f"POI Explorer cache miss for {poi_type_key}: fetched {len(all_pois)} POIs")
+
+            # Filter to requested polygon
+            pois_gdf = all_pois[all_pois.geometry.intersects(polygon)]
+            logger.debug(f"Filtered to {len(pois_gdf)} POIs in requested polygon")
+
         except Exception as e:
             logger.warning(f"No POIs found for {poi_type_key}: {e}")
             return [], {"type": "FeatureCollection", "features": []}
