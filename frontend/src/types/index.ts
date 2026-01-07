@@ -106,3 +106,59 @@ export interface TripAdvisorUsage {
   current_usage: number;
   limit_reached: boolean;
 }
+
+// Premium Search Types
+
+export type TripAdvisorCategory = 'restaurants' | 'hotels' | 'attractions' | 'geos';
+
+export const TRIPADVISOR_SUBCATEGORIES: Record<TripAdvisorCategory, string[]> = {
+  restaurants: [
+    'fine_dining', 'casual_dining', 'fast_food', 'cafes',
+    'bakeries', 'bars', 'pizza', 'seafood', 'italian', 'asian'
+  ],
+  hotels: [
+    'luxury', 'boutique', 'budget', 'resort', 'bed_and_breakfast'
+  ],
+  attractions: [
+    'museums', 'parks', 'tours', 'nightlife', 'spas',
+    'shopping', 'outdoor_activities', 'water_sports'
+  ],
+  geos: []
+};
+
+export interface PremiumSearchRequest {
+  geojson: GeoJSON.FeatureCollection;
+  category: TripAdvisorCategory;
+  subcategory?: string;
+  max_locations: number;
+}
+
+export interface PremiumLocation {
+  location_id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  category: string;
+  address?: string;
+  rating?: number;
+  num_reviews?: number;
+  price_level?: string;
+  ranking_string?: string;
+  web_url?: string;
+  photos: string[];
+  cuisine?: string[];
+  phone?: string;
+  website?: string;
+  description?: string;
+}
+
+export interface PremiumSearchResponse {
+  success: boolean;
+  provider: string;
+  category: string;
+  total_found: number;
+  locations: PremiumLocation[];
+  centroids_searched: number;
+  api_calls_used: number;
+  geojson: GeoJSON.FeatureCollection;
+}

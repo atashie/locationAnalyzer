@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, CircleMarker } from 'react-leaflet';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { POIFeature, TripAdvisorEnrichment } from '../../types';
-import { api } from '../../api/client';
+import type { POIFeature, PremiumLocation } from '../../types';
 
 // Fix for default marker icons in Leaflet with Vite
 import L from 'leaflet';
@@ -24,6 +23,7 @@ interface MapProps {
   markerPosition?: [number, number];
   markerLabel?: string;
   pois?: POIFeature[];
+  premiumLocations?: PremiumLocation[];
 }
 
 const DEFAULT_CENTER: LatLngExpression = [35.994, -78.899]; // Durham, NC
@@ -75,112 +75,19 @@ function MapUpdater({
 }
 
 /**
- * POI Popup component that fetches TripAdvisor data on open.
+ * Simple POI Popup showing only OSM data (no TripAdvisor fetching).
  */
 function POIPopup({ poi }: { poi: POIFeature }) {
-  const [tripAdvisor, setTripAdvisor] = useState<TripAdvisorEnrichment | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
-
-  const fetchTripAdvisor = useCallback(async () => {
-    if (fetched || loading) return;
-    setLoading(true);
-    try {
-      const data = await api.getTripAdvisorEnrichment(
-        poi.name,
-        poi.lat,
-        poi.lon,
-        poi.poi_type
-      );
-      setTripAdvisor(data);
-    } catch (error) {
-      console.error('Failed to fetch TripAdvisor data:', error);
-      setTripAdvisor({ found: false, photos: [], error: 'Failed to load' });
-    } finally {
-      setLoading(false);
-      setFetched(true);
-    }
-  }, [poi, fetched, loading]);
-
-  // Fetch when popup opens (component mounts)
-  useEffect(() => {
-    fetchTripAdvisor();
-  }, [fetchTripAdvisor]);
-
   return (
     <div className="max-w-xs min-w-[200px]">
       <h3 className="font-bold text-sm mb-1">{poi.name}</h3>
       <p className="text-xs text-gray-500 mb-2">{poi.poi_type}</p>
 
-      {/* TripAdvisor Section */}
-      {loading && (
-        <p className="text-xs text-gray-400 italic mb-2">Loading TripAdvisor...</p>
-      )}
-
-      {tripAdvisor && tripAdvisor.found && (
-        <div className="mb-2 p-2 bg-gray-50 rounded border border-gray-200">
-          <div className="flex items-center gap-2 mb-1">
-            {tripAdvisor.rating && (
-              <span className="text-sm font-medium">
-                ⭐ {tripAdvisor.rating.toFixed(1)}
-              </span>
-            )}
-            {tripAdvisor.num_reviews && (
-              <span className="text-xs text-gray-500">
-                ({tripAdvisor.num_reviews.toLocaleString()} reviews)
-              </span>
-            )}
-            {tripAdvisor.price_level && (
-              <span className="text-xs text-green-600 font-medium">
-                {tripAdvisor.price_level}
-              </span>
-            )}
-          </div>
-          {tripAdvisor.ranking_string && (
-            <p className="text-xs text-gray-600 mb-1">{tripAdvisor.ranking_string}</p>
-          )}
-          {tripAdvisor.cuisine && tripAdvisor.cuisine.length > 0 && (
-            <p className="text-xs text-gray-500 mb-1">
-              {tripAdvisor.cuisine.slice(0, 3).join(', ')}
-            </p>
-          )}
-          {tripAdvisor.photos && tripAdvisor.photos.length > 0 && (
-            <div className="flex gap-1 mt-2 overflow-x-auto">
-              {tripAdvisor.photos.slice(0, 2).map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${poi.name} photo ${i + 1}`}
-                  className="w-16 h-16 object-cover rounded"
-                />
-              ))}
-            </div>
-          )}
-          {tripAdvisor.tripadvisor_url && (
-            <a
-              href={tripAdvisor.tripadvisor_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-green-600 hover:underline block mt-1"
-            >
-              View on TripAdvisor →
-            </a>
-          )}
-        </div>
-      )}
-
-      {tripAdvisor && !tripAdvisor.found && !tripAdvisor.error && (
-        <p className="text-xs text-gray-400 italic mb-2">No TripAdvisor data</p>
-      )}
-
-      {/* OSM Data Section */}
       {poi.address && (
         <p className="text-xs text-gray-600 mb-1">📍 {poi.address}</p>
       )}
       {poi.opening_hours && (
-        <p className="text-xs text-gray-600 mb-1">
-          🕐 {poi.opening_hours}
-        </p>
+        <p className="text-xs text-gray-600 mb-1">🕐 {poi.opening_hours}</p>
       )}
       {poi.phone && (
         <p className="text-xs text-gray-600 mb-1">
@@ -207,6 +114,117 @@ function POIPopup({ poi }: { poi: POIFeature }) {
   );
 }
 
+/**
+ * Premium Location Popup with rich TripAdvisor data.
+ */
+function PremiumLocationPopup({ location }: { location: PremiumLocation }) {
+  return (
+    <div className="max-w-xs min-w-[240px]">
+      {/* Header with name and rating */}
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h3 className="font-bold text-sm">{location.name}</h3>
+          <p className="text-xs text-purple-600 font-medium capitalize">{location.category}</p>
+        </div>
+        {location.rating && (
+          <div className="flex items-center gap-1 bg-purple-100 px-2 py-1 rounded">
+            <span className="text-sm">⭐</span>
+            <span className="text-sm font-bold text-purple-800">
+              {location.rating.toFixed(1)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Rating details */}
+      <div className="flex items-center gap-2 mb-2">
+        {location.num_reviews && (
+          <span className="text-xs text-gray-500">
+            {location.num_reviews.toLocaleString()} reviews
+          </span>
+        )}
+        {location.price_level && (
+          <span className="text-xs text-green-600 font-medium">
+            {location.price_level}
+          </span>
+        )}
+      </div>
+
+      {/* Ranking */}
+      {location.ranking_string && (
+        <p className="text-xs text-gray-600 mb-2 italic">
+          {location.ranking_string}
+        </p>
+      )}
+
+      {/* Cuisine */}
+      {location.cuisine && location.cuisine.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {location.cuisine.slice(0, 4).map((c, i) => (
+            <span
+              key={i}
+              className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Photos */}
+      {location.photos && location.photos.length > 0 && (
+        <div className="flex gap-1 mb-2 overflow-x-auto">
+          {location.photos.slice(0, 3).map((url, i) => (
+            <img
+              key={i}
+              src={url}
+              alt={`${location.name} photo ${i + 1}`}
+              className="w-20 h-20 object-cover rounded"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Address and contact */}
+      {location.address && (
+        <p className="text-xs text-gray-600 mb-1">📍 {location.address}</p>
+      )}
+      {location.phone && (
+        <p className="text-xs text-gray-600 mb-1">
+          📞{' '}
+          <a href={`tel:${location.phone}`} className="text-blue-600 hover:underline">
+            {location.phone}
+          </a>
+        </p>
+      )}
+
+      {/* Links */}
+      <div className="flex gap-3 mt-2">
+        {location.web_url && (
+          <a
+            href={location.web_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-green-600 hover:underline font-medium"
+          >
+            TripAdvisor →
+          </a>
+        )}
+        {location.website && (
+          <a
+            href={location.website.startsWith('http') ? location.website : `https://${location.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Website →
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Map({
   center = DEFAULT_CENTER as [number, number],
   zoom = DEFAULT_ZOOM,
@@ -214,6 +232,7 @@ export function Map({
   markerPosition,
   markerLabel,
   pois,
+  premiumLocations,
 }: MapProps) {
   // Generate a unique key for GeoJSON to force re-render when data changes
   // This is necessary because react-leaflet's GeoJSON doesn't update on data prop changes
@@ -256,7 +275,7 @@ export function Map({
         />
       )}
 
-      {/* POI markers */}
+      {/* OSM POI markers (red) */}
       {pois && pois.map((poi) => (
         <CircleMarker
           key={poi.id}
@@ -271,6 +290,25 @@ export function Map({
         >
           <Popup>
             <POIPopup poi={poi} />
+          </Popup>
+        </CircleMarker>
+      ))}
+
+      {/* Premium location markers (purple/gold) */}
+      {premiumLocations && premiumLocations.map((location) => (
+        <CircleMarker
+          key={location.location_id}
+          center={[location.lat, location.lon]}
+          radius={10}
+          pathOptions={{
+            fillColor: '#9333ea',
+            fillOpacity: 0.9,
+            color: '#fbbf24',
+            weight: 3,
+          }}
+        >
+          <Popup>
+            <PremiumLocationPopup location={location} />
           </Popup>
         </CircleMarker>
       ))}

@@ -5,6 +5,8 @@ import type {
   LocationValidation,
   POIsResponse,
   POITypesResponse,
+  PremiumSearchRequest,
+  PremiumSearchResponse,
   TripAdvisorEnrichment,
   TripAdvisorUsage,
 } from '../types';
@@ -87,6 +89,14 @@ export const api = {
    */
   getTripAdvisorUsage: async (): Promise<TripAdvisorUsage> => {
     const response = await apiClient.get<TripAdvisorUsage>('/tripadvisor/usage');
+    return response.data;
+  },
+
+  /**
+   * Run premium search using TripAdvisor within analysis polygon
+   */
+  premiumSearch: async (request: PremiumSearchRequest): Promise<PremiumSearchResponse> => {
+    const response = await apiClient.post<PremiumSearchResponse>('/premium-search', request);
     return response.data;
   },
 };

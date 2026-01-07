@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import httpx
 
@@ -179,6 +179,76 @@ class TripAdvisorClient:
 
         # Return the first (best) match
         return result["data"][0]
+
+    def nearby_search(
+        self, lat: float, lon: float, category: str = "restaurants"
+    ) -> List[Dict[str, Any]]:
+        """
+        Search for nearby locations using TripAdvisor's nearby_search API.
+
+        Args:
+            lat: Latitude of search center
+            lon: Longitude of search center
+            category: Category to search (restaurants, hotels, attractions, geos)
+
+        Returns:
+            List of location dictionaries (up to 10)
+        """
+        if not self.enabled:
+            return []
+
+        if self.is_limit_reached():
+            return []
+
+        params = {
+            "latLong": f"{lat},{lon}",
+            "category": category,
+            "language": "en",
+        }
+
+        result = self._make_request("/location/nearby_search", params)
+        if not result or "data" not in result:
+            return []
+
+        return result["data"]
+
+    def nearby_search_batch(
+        self,
+        centroids: List[Tuple[float, float]],
+        category: str = "restaurants",
+        max_locations: int = 10,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """
+        Search multiple centroids with deduplication.
+
+        Args:
+            centroids: List of (lat, lon) tuples, sorted by priority
+            category: TripAdvisor category
+            max_locations: Maximum total locations to return
+
+        Returns:
+            Tuple of (list of unique locations, number of API calls made)
+        """
+        seen_ids: Set[str] = set()
+        results: List[Dict[str, Any]] = []
+        api_calls = 0
+
+        for lat, lon in centroids:
+            if len(results) >= max_locations:
+                break
+
+            nearby = self.nearby_search(lat, lon, category)
+            api_calls += 1
+
+            for loc in nearby:
+                loc_id = loc.get("location_id")
+                if loc_id and loc_id not in seen_ids:
+                    seen_ids.add(loc_id)
+                    results.append(loc)
+                    if len(results) >= max_locations:
+                        break
+
+        return results, api_calls
 
     def get_location_details(self, location_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed information for a TripAdvisor location."""

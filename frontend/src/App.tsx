@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { Map } from './components/Map/Map'
 import { SearchForm } from './components/SearchForm/SearchForm'
 import { ResultsSummary } from './components/ResultsSummary/ResultsSummary'
+import { PremiumSearchPanel } from './components/PremiumSearchPanel/PremiumSearchPanel'
 import { useAnalysis } from './hooks/useAnalysis'
 import { api } from './api/client'
-import type { AnalysisResponse, Criterion, POIFeature } from './types'
+import type { AnalysisResponse, Criterion, POIFeature, PremiumLocation } from './types'
 
 function App() {
   const [result, setResult] = useState<AnalysisResponse | null>(null)
@@ -16,6 +17,9 @@ function App() {
   const [selectedPOIType, setSelectedPOIType] = useState<string>('')
   const [pois, setPois] = useState<POIFeature[]>([])
   const [isLoadingPOIs, setIsLoadingPOIs] = useState(false)
+
+  // Premium search state
+  const [premiumLocations, setPremiumLocations] = useState<PremiumLocation[]>([])
 
   // Fetch POI types on mount
   useEffect(() => {
@@ -30,9 +34,10 @@ function App() {
 
   const handleSearch = async (center: string, radiusMiles: number, criteria: Criterion[]) => {
     setError(null)
-    // Clear POI state when starting a new search
+    // Clear POI and premium state when starting a new search
     setPois([])
     setSelectedPOIType('')
+    setPremiumLocations([])
 
     try {
       const response = await analysis.mutateAsync({
@@ -123,7 +128,7 @@ function App() {
           </div>
 
           {/* Map */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-lg shadow h-[600px] overflow-hidden">
               <Map
                 center={result ? [result.center_lat, result.center_lon] : undefined}
@@ -131,8 +136,16 @@ function App() {
                 markerPosition={result ? [result.center_lat, result.center_lon] : undefined}
                 markerLabel={result?.center}
                 pois={pois}
+                premiumLocations={premiumLocations}
               />
             </div>
+
+            {/* Premium Search Panel */}
+            <PremiumSearchPanel
+              geojson={result?.geojson || null}
+              onResultsLoaded={setPremiumLocations}
+              onClear={() => setPremiumLocations([])}
+            />
           </div>
         </div>
       </main>

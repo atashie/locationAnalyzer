@@ -187,3 +187,74 @@ class TripAdvisorEnrichment(BaseModel):
     photos: List[str] = Field(default=[], description="Photo URLs (up to 3)")
     cuisine: Optional[List[str]] = Field(None, description="Cuisine types")
     error: Optional[str] = Field(None, description="Error message if enrichment failed")
+
+
+# Premium Search Schemas
+
+class TripAdvisorCategory(str, Enum):
+    """TripAdvisor search categories."""
+
+    RESTAURANTS = "restaurants"
+    HOTELS = "hotels"
+    ATTRACTIONS = "attractions"
+    GEOS = "geos"
+
+
+class PremiumSearchRequest(BaseModel):
+    """Request for premium search within analysis result polygon."""
+
+    geojson: Dict[str, Any] = Field(..., description="GeoJSON result from analysis")
+    category: TripAdvisorCategory = Field(
+        default=TripAdvisorCategory.RESTAURANTS,
+        description="TripAdvisor category to search"
+    )
+    subcategory: Optional[str] = Field(None, description="Optional subcategory filter")
+    max_locations: int = Field(
+        default=10,
+        ge=1,
+        le=50,
+        description="Maximum locations to return"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "geojson": {"type": "FeatureCollection", "features": []},
+                "category": "restaurants",
+                "max_locations": 10
+            }
+        }
+
+
+class PremiumLocation(BaseModel):
+    """A premium search result location from TripAdvisor."""
+
+    location_id: str
+    name: str
+    lat: float
+    lon: float
+    category: str
+    address: Optional[str] = None
+    rating: Optional[float] = None
+    num_reviews: Optional[int] = None
+    price_level: Optional[str] = None
+    ranking_string: Optional[str] = None
+    web_url: Optional[str] = None
+    photos: List[str] = Field(default=[])
+    cuisine: Optional[List[str]] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    description: Optional[str] = None
+
+
+class PremiumSearchResponse(BaseModel):
+    """Response for premium search."""
+
+    success: bool
+    provider: str = "tripadvisor"
+    category: str
+    total_found: int
+    locations: List[PremiumLocation]
+    centroids_searched: int
+    api_calls_used: int
+    geojson: Dict[str, Any] = Field(..., description="GeoJSON FeatureCollection of results")

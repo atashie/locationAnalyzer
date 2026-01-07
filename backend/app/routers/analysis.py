@@ -36,6 +36,9 @@ from app.models.schemas import (
     POIsResponse,
     POIType,
     POITypesResponse,
+    PremiumLocation,
+    PremiumSearchRequest,
+    PremiumSearchResponse,
     TripAdvisorEnrichment,
 )
 from app.services.geocoding import validate_location
@@ -375,3 +378,188 @@ async def get_tripadvisor_usage() -> dict:
         "current_usage": client.get_monthly_usage(),
         "limit_reached": client.is_limit_reached(),
     }
+
+
+def _extract_polygon_centroids(
+    geojson: dict, max_centroids: int = 5
+) -> List[tuple]:
+    """
+    Extract centroids from GeoJSON, prioritizing by polygon area.
+
+    For single polygon: returns [centroid]
+    For multiple polygons: returns centroids of up to 5 largest, sorted by size
+
+    Args:
+        geojson: GeoJSON FeatureCollection or Feature
+        max_centroids: Maximum number of centroids to return
+
+    Returns:
+        List of (lat, lon) tuples
+    """
+    from shapely.geometry import shape, MultiPolygon, Polygon
+    from shapely.ops import unary_union
+
+    # Parse GeoJSON to shapely geometry
+    if geojson.get("type") == "FeatureCollection":
+        features = geojson.get("features", [])
+        if not features:
+            return []
+        geometries = [shape(f["geometry"]) for f in features]
+        combined = unary_union(geometries)
+    elif geojson.get("type") == "Feature":
+        combined = shape(geojson["geometry"])
+    else:
+        combined = shape(geojson)
+
+    # Handle different geometry types
+    polygons_with_area = []
+
+    if isinstance(combined, Polygon):
+        centroid = combined.centroid
+        return [(centroid.y, centroid.x)]  # (lat, lon)
+    elif isinstance(combined, MultiPolygon):
+        for poly in combined.geoms:
+            area = poly.area
+            centroid = poly.centroid
+            polygons_with_area.append((area, centroid.y, centroid.x))
+    else:
+        # Single geometry fallback
+        centroid = combined.centroid
+        return [(centroid.y, centroid.x)]
+
+    # Sort by area (largest first) and take top N
+    polygons_with_area.sort(key=lambda x: x[0], reverse=True)
+    return [(lat, lon) for _, lat, lon in polygons_with_area[:max_centroids]]
+
+
+@router.post(
+    "/premium-search",
+    response_model=PremiumSearchResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse:
+    """
+    Run premium search using TripAdvisor API within analysis polygon.
+
+    Algorithm:
+    1. Extract polygon(s) from GeoJSON
+    2. If 1 polygon: use its centroid
+    3. If multiple: get centroids of 5 largest, sorted by area
+    4. Query nearby_search for each centroid until max_locations reached
+    5. Deduplicate by location_id
+    6. Fetch details and photos for final results
+
+    **API Usage:** This endpoint makes TripAdvisor API calls.
+    - nearby_search: 1 call per centroid searched
+    - details: 1 call per location
+    - photos: 1 call per location
+    """
+    try:
+        client = get_tripadvisor_client()
+
+        if not client.enabled:
+            raise HTTPException(status_code=400, detail="TripAdvisor not configured")
+
+        if client.is_limit_reached():
+            raise HTTPException(status_code=429, detail="Monthly API limit reached")
+
+        # Extract centroids
+        centroids = _extract_polygon_centroids(request.geojson)
+        if not centroids:
+            raise HTTPException(status_code=400, detail="No valid polygons in GeoJSON")
+
+        # Batch search with deduplication
+        locations, discovery_calls = client.nearby_search_batch(
+            centroids=centroids,
+            category=request.category.value,
+            max_locations=request.max_locations,
+        )
+
+        api_calls_used = discovery_calls
+
+        # Enrich with details and photos
+        enriched_locations = []
+        for loc in locations:
+            location_id = loc.get("location_id")
+            if not location_id:
+                continue
+
+            # Extract basic info from nearby search result
+            enriched = PremiumLocation(
+                location_id=location_id,
+                name=loc.get("name", "Unknown"),
+                lat=float(loc.get("latitude", 0)),
+                lon=float(loc.get("longitude", 0)),
+                category=request.category.value,
+                address=loc.get("address_obj", {}).get("address_string"),
+            )
+
+            # Get details
+            details = client.get_location_details(location_id)
+            api_calls_used += 1
+            if details:
+                enriched.rating = float(details.get("rating")) if details.get("rating") else None
+                enriched.num_reviews = int(details.get("num_reviews")) if details.get("num_reviews") else None
+                enriched.price_level = details.get("price_level")
+                enriched.ranking_string = details.get("ranking_data", {}).get("ranking_string")
+                enriched.web_url = details.get("web_url")
+                enriched.phone = details.get("phone")
+                enriched.website = details.get("website")
+                enriched.description = details.get("description")
+                cuisine = details.get("cuisine", [])
+                if cuisine:
+                    enriched.cuisine = [c.get("localized_name") for c in cuisine if c.get("localized_name")]
+
+            # Get photos
+            photos = client.get_location_photos(location_id, limit=3)
+            api_calls_used += 1
+            enriched.photos = photos
+
+            enriched_locations.append(enriched)
+
+        # Build GeoJSON FeatureCollection
+        features = []
+        for loc in enriched_locations:
+            feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [loc.lon, loc.lat]
+                },
+                "properties": {
+                    "location_id": loc.location_id,
+                    "name": loc.name,
+                    "category": loc.category,
+                    "rating": loc.rating,
+                    "num_reviews": loc.num_reviews,
+                    "price_level": loc.price_level,
+                }
+            }
+            features.append(feature)
+
+        geojson_result = {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+        logger.info(
+            f"Premium search: {len(enriched_locations)} locations found, "
+            f"{len(centroids)} centroids searched, {api_calls_used} API calls"
+        )
+
+        return PremiumSearchResponse(
+            success=True,
+            provider="tripadvisor",
+            category=request.category.value,
+            total_found=len(enriched_locations),
+            locations=enriched_locations,
+            centroids_searched=len(centroids),
+            api_calls_used=api_calls_used,
+            geojson=geojson_result,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Premium search failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Premium search failed: {str(e)}")
