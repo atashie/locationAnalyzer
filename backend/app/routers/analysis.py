@@ -380,6 +380,27 @@ async def get_tripadvisor_usage() -> dict:
     }
 
 
+def _parse_polygon_from_geojson(geojson: dict):
+    """
+    Parse GeoJSON into a shapely geometry for containment checks.
+
+    Returns the combined polygon geometry.
+    """
+    from shapely.geometry import shape, MultiPolygon, Polygon
+    from shapely.ops import unary_union
+
+    if geojson.get("type") == "FeatureCollection":
+        features = geojson.get("features", [])
+        if not features:
+            return None
+        geometries = [shape(f["geometry"]) for f in features]
+        return unary_union(geometries)
+    elif geojson.get("type") == "Feature":
+        return shape(geojson["geometry"])
+    else:
+        return shape(geojson)
+
+
 def _extract_polygon_centroids(
     geojson: dict, max_centroids: int = 5
 ) -> List[tuple]:
@@ -396,20 +417,11 @@ def _extract_polygon_centroids(
     Returns:
         List of (lat, lon) tuples
     """
-    from shapely.geometry import shape, MultiPolygon, Polygon
-    from shapely.ops import unary_union
+    from shapely.geometry import MultiPolygon, Polygon
 
-    # Parse GeoJSON to shapely geometry
-    if geojson.get("type") == "FeatureCollection":
-        features = geojson.get("features", [])
-        if not features:
-            return []
-        geometries = [shape(f["geometry"]) for f in features]
-        combined = unary_union(geometries)
-    elif geojson.get("type") == "Feature":
-        combined = shape(geojson["geometry"])
-    else:
-        combined = shape(geojson)
+    combined = _parse_polygon_from_geojson(geojson)
+    if combined is None:
+        return []
 
     # Handle different geometry types
     polygons_with_area = []
@@ -442,18 +454,19 @@ async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse
     Run premium search using TripAdvisor API within analysis polygon.
 
     Algorithm:
-    1. Extract polygon(s) from GeoJSON
-    2. If 1 polygon: use its centroid
-    3. If multiple: get centroids of 5 largest, sorted by area
-    4. Query nearby_search for each centroid until max_locations reached
-    5. Deduplicate by location_id
-    6. Fetch details and photos for final results
+    1. Parse polygon from GeoJSON for containment checks
+    2. Extract centroids from up to 5 largest polygons
+    3. For each centroid, search TripAdvisor and fetch details
+    4. Filter to only locations INSIDE the polygon
+    5. Continue until max_locations valid results or all centroids exhausted
 
     **API Usage:** This endpoint makes TripAdvisor API calls.
-    - nearby_search: 1 call per centroid searched
-    - details: 1 call per location
-    - photos: 1 call per location
+    - search: 1 call per centroid searched
+    - details: 1 call per candidate location
+    - photos: 1 call per valid location
     """
+    from shapely.geometry import Point
+
     try:
         client = get_tripadvisor_client()
 
@@ -463,63 +476,104 @@ async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse
         if client.is_limit_reached():
             raise HTTPException(status_code=429, detail="Monthly API limit reached")
 
-        # Extract centroids
-        centroids = _extract_polygon_centroids(request.geojson)
-        if not centroids:
+        # Parse polygon for containment checks
+        polygon = _parse_polygon_from_geojson(request.geojson)
+        if polygon is None:
             raise HTTPException(status_code=400, detail="No valid polygons in GeoJSON")
 
-        # Batch search with deduplication
-        locations, discovery_calls = client.nearby_search_batch(
-            centroids=centroids,
-            category=request.category.value,
-            max_locations=request.max_locations,
-        )
+        # Extract centroids (up to 5 largest polygons)
+        centroids = _extract_polygon_centroids(request.geojson)
+        if not centroids:
+            raise HTTPException(status_code=400, detail="Could not extract centroids from GeoJSON")
 
-        api_calls_used = discovery_calls
+        # Track state
+        valid_locations: List[PremiumLocation] = []
+        seen_ids: set = set()
+        api_calls_used = 0
+        centroids_searched = 0
+        locations_checked = 0
+        locations_outside = 0
 
-        # Enrich with details and photos
-        enriched_locations = []
-        for loc in locations:
-            location_id = loc.get("location_id")
-            if not location_id:
-                continue
+        # Search centroids until we have enough valid locations
+        for centroid_lat, centroid_lon in centroids:
+            if len(valid_locations) >= request.max_locations:
+                break
 
-            # Extract basic info from nearby search result
-            enriched = PremiumLocation(
-                location_id=location_id,
-                name=loc.get("name", "Unknown"),
-                lat=float(loc.get("latitude", 0)),
-                lon=float(loc.get("longitude", 0)),
-                category=request.category.value,
-                address=loc.get("address_obj", {}).get("address_string"),
-            )
+            centroids_searched += 1
 
-            # Get details
-            details = client.get_location_details(location_id)
+            # Search this centroid
+            nearby = client.nearby_search(centroid_lat, centroid_lon, request.category.value)
             api_calls_used += 1
-            if details:
-                enriched.rating = float(details.get("rating")) if details.get("rating") else None
-                enriched.num_reviews = int(details.get("num_reviews")) if details.get("num_reviews") else None
-                enriched.price_level = details.get("price_level")
-                enriched.ranking_string = details.get("ranking_data", {}).get("ranking_string")
-                enriched.web_url = details.get("web_url")
-                enriched.phone = details.get("phone")
-                enriched.website = details.get("website")
-                enriched.description = details.get("description")
+
+            for loc in nearby:
+                if len(valid_locations) >= request.max_locations:
+                    break
+
+                location_id = loc.get("location_id")
+                if not location_id or location_id in seen_ids:
+                    continue
+                seen_ids.add(location_id)
+                locations_checked += 1
+
+                # Get details (this is where we get lat/lon!)
+                details = client.get_location_details(location_id)
+                api_calls_used += 1
+
+                if not details:
+                    continue
+
+                # Extract coordinates from details
+                loc_lat = details.get("latitude")
+                loc_lon = details.get("longitude")
+
+                if not loc_lat or not loc_lon:
+                    logger.warning(f"No coordinates for location {location_id}")
+                    continue
+
+                loc_lat = float(loc_lat)
+                loc_lon = float(loc_lon)
+
+                # Check if location is inside the polygon
+                point = Point(loc_lon, loc_lat)  # Point takes (x, y) = (lon, lat)
+                if not polygon.contains(point):
+                    locations_outside += 1
+                    logger.debug(f"Location {location_id} ({loc_lat}, {loc_lon}) outside polygon")
+                    continue
+
+                # Build enriched location with data from details
+                enriched = PremiumLocation(
+                    location_id=location_id,
+                    name=details.get("name", loc.get("name", "Unknown")),
+                    lat=loc_lat,
+                    lon=loc_lon,
+                    category=request.category.value,
+                    address=details.get("address_obj", {}).get("address_string"),
+                    rating=float(details.get("rating")) if details.get("rating") else None,
+                    num_reviews=int(details.get("num_reviews")) if details.get("num_reviews") else None,
+                    price_level=details.get("price_level"),
+                    ranking_string=details.get("ranking_data", {}).get("ranking_string"),
+                    web_url=details.get("web_url"),
+                    phone=details.get("phone"),
+                    website=details.get("website"),
+                    description=details.get("description"),
+                )
+
+                # Extract cuisine
                 cuisine = details.get("cuisine", [])
                 if cuisine:
                     enriched.cuisine = [c.get("localized_name") for c in cuisine if c.get("localized_name")]
 
-            # Get photos
-            photos = client.get_location_photos(location_id, limit=3)
-            api_calls_used += 1
-            enriched.photos = photos
+                # Get photos (only for valid locations to save API calls)
+                photos = client.get_location_photos(location_id, limit=3)
+                api_calls_used += 1
+                enriched.photos = photos
 
-            enriched_locations.append(enriched)
+                valid_locations.append(enriched)
+                logger.debug(f"Added valid location: {enriched.name} at ({loc_lat}, {loc_lon})")
 
         # Build GeoJSON FeatureCollection
         features = []
-        for loc in enriched_locations:
+        for loc in valid_locations:
             feature = {
                 "type": "Feature",
                 "geometry": {
@@ -543,17 +597,18 @@ async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse
         }
 
         logger.info(
-            f"Premium search: {len(enriched_locations)} locations found, "
-            f"{len(centroids)} centroids searched, {api_calls_used} API calls"
+            f"Premium search: {len(valid_locations)} valid locations found, "
+            f"{centroids_searched} centroids searched, {locations_checked} checked, "
+            f"{locations_outside} outside polygon, {api_calls_used} API calls"
         )
 
         return PremiumSearchResponse(
             success=True,
             provider="tripadvisor",
             category=request.category.value,
-            total_found=len(enriched_locations),
-            locations=enriched_locations,
-            centroids_searched=len(centroids),
+            total_found=len(valid_locations),
+            locations=valid_locations,
+            centroids_searched=centroids_searched,
             api_calls_used=api_calls_used,
             geojson=geojson_result,
         )
