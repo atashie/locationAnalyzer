@@ -7,9 +7,9 @@ In another example, my wife wants to eat dinner at an Italian restaurant in down
 
 Q2: What are the milestones of functionality?
 
-MVP - single user; core function --> user can click a few buttons to select options, then geospatial queries are run by the app, and then the user can view a map showing polygons that cover of the area or locations of interest
-V1 - new function --> in addition to a mapview, the areas within the polygons are queried for specific business or properties of interest (e.g., if we are searching for a restaurant, then the app will list the specific restaurants of interest with a summary or link to their webpage or yelp page)
-Later - incorporate AI agents so that instead of clicking buttons the user can explain in plain language what type of property they are interested in
+MVP - single user; core function --> user can click a few buttons to select options, then geospatial queries are run by the app, and then the user can view a map showing polygons that cover of the area or locations of interest [COMPLETE]
+V1 - new function --> in addition to a mapview, the areas within the polygons are queried for specific business or properties of interest (e.g., if we are searching for a restaurant, then the app will list the specific restaurants of interest with a summary or link to their webpage or TripAdvisor page) [COMPLETE - Using TripAdvisor Content API]
+V2 - incorporate AI agents so that instead of clicking buttons the user can explain in plain language what type of property they are interested in; pre-computed isochrone tiles for faster queries
 
 Q3: Core concerns
 
@@ -18,16 +18,19 @@ Additionally, georeferenced data sets are often proprietary (e.g., MLS for prope
 
 Q4: How will you generate accurate isochrones at scale?
 
-MVP - a simple convex-hull approach is sufficient
-V1 - self-hosted Valhalla
+MVP - a simple convex-hull approach is sufficient [COMPLETE]
+V1 - public Valhalla server (valhalla.openstreetmap.de) for road-network isochrones [COMPLETE]
+V2 - self-hosted Valhalla + pre-computed isochrone tiles for instant queries
 
 Q5: How will you handle performance and caching?
 
-MVP - limit the user to small spatial areas (areas to be determined through testing)
-V1 - pre-compute isochrone tiles for areas of interest (we will start with the Raleigh-Durham-Chapel Hill region in North Carolina, USA)
-Later - TBD
+MVP - limit the user to small spatial areas (areas to be determined through testing) [COMPLETE - 25 mile max radius]
+V1 - in-memory caching for repeat queries [COMPLETE]
+V2 - pre-compute isochrone tiles for areas of interest (Research Triangle region - ~32MB storage, ~21,600 isochrones)
 
 Q6: What's your deployment and architecture strategy?
 
-MVP and V1 - Reach + FastAPI via free-tier or low cost options
-Later - serverless functions 
+MVP and V1 - React + FastAPI via free-tier or low cost options [COMPLETE]
+  - Frontend: Vercel (https://location-analyzer-three.vercel.app)
+  - Backend: Railway (https://locationanalyzer-production.up.railway.app)
+V2 - Consider serverless functions for scaling

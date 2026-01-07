@@ -4,9 +4,9 @@
 
 Location finder web app helping non-tech-savvy users find areas based on proximity criteria (distance, walk/bike/drive time) to amenities and specific places.
 
-- **Frontend:** React + TypeScript + Vite + Leaflet
-- **Backend:** FastAPI + Python + GeoPandas + OSMnx
-- **Data Sources:** OpenStreetMap (MVP), Yelp Fusion API (V1)
+- **Frontend:** React + TypeScript + Vite + Leaflet + Tailwind CSS
+- **Backend:** FastAPI + Python + GeoPandas + OSMnx + Shapely
+- **Data Sources:** OpenStreetMap, TripAdvisor Content API, Valhalla (isochrones)
 
 ## Repository
 
@@ -25,16 +25,15 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 | File | Purpose |
 |------|---------|
 | `/backend/app/services/location_analyzer.py` | Core geospatial logic (ported from PoC) |
+| `/backend/app/services/valhalla.py` | Valhalla isochrone integration |
+| `/backend/app/services/tripadvisor.py` | TripAdvisor Content API client |
 | `/backend/app/routers/analysis.py` | API endpoints + smart query ordering |
 | `/backend/app/core/constants.py` | POI types, travel speeds, config |
-| `/backend/performance_test.py` | Performance benchmarking suite |
 | `/frontend/src/components/Map/Map.tsx` | Leaflet map with dynamic updates |
 | `/frontend/src/components/SearchForm/SearchForm.tsx` | Criteria form + loading indicator |
-| `/frontend/src/components/SearchForm/CriterionCard.tsx` | Individual criterion editor |
+| `/frontend/src/components/PremiumSearchPanel/` | TripAdvisor premium search UI |
 | `/Dockerfile` | Production container config for Railway |
 | `/railway.toml` | Railway deployment configuration |
-| `/DEPLOYMENT.md` | Step-by-step deployment guide |
-| `/distanceFinder/app.py` | Original Streamlit PoC (reference only) |
 
 ## Commands
 
@@ -61,8 +60,9 @@ cd frontend && npm test
 
 - **Progressive filtering:** Each criterion narrows the search area, making subsequent queries faster
 - **Smart query ordering:** Backend reorders criteria (single location → POI, distance → walk → bike → drive)
-- **Convex-hull isochrones:** MVP uses simple convex hull; V1 will use Valhalla for accurate road-network isochrones
-- **Data flow:** User input → FastAPI → OSMnx/GeoPandas → GeoJSON → Leaflet map
+- **Valhalla isochrones:** Travel time criteria use Valhalla for accurate road-network isochrones; falls back to buffered approximation if unavailable
+- **Premium Search:** TripAdvisor integration uses centroid-based search with polygon containment filtering
+- **Data flow:** User input → FastAPI → OSMnx/GeoPandas/Valhalla → GeoJSON → Leaflet map
 - **Map updates:** Uses `useMap()` hook + dynamic `key` on GeoJSON to handle react-leaflet immutability
 - **Performance:** OSM POI queries are the bottleneck (95%+ of time); use "Specific Place" when possible
 
@@ -71,13 +71,24 @@ cd frontend && npm test
 ```
 POST /api/v1/analyze
   Input: { center, radius_miles, criteria[] }
-  Output: { geojson, area_sq_miles, criteria_applied[] }
+  Output: { geojson, area_sq_miles, criteria_applied[], polygon }
+
+POST /api/v1/premium-search
+  Input: { geojson, category, subcategory?, max_locations }
+  Output: { locations[], total_found, centroids_searched, api_calls_used }
+
+POST /api/v1/pois
+  Input: { polygon, poi_type }
+  Output: { pois[] }
 
 GET /api/v1/validate-location?q={query}
   Output: { valid, lat, lon, display_name, error_message }
 
 GET /api/v1/poi-types
-  Output: { poi_types: [{name, tags}] }
+  Output: { category: { name, tags } }
+
+GET /api/v1/health
+  Output: { status: "healthy" }
 ```
 
 ## Code Style
@@ -109,19 +120,23 @@ POI_TYPES = {
 ## Environment Variables
 
 See `.env.example` for all configuration options. Key variables:
-- `YELP_API_KEY` - Required for V1 business details
+- `TRIPADVISOR_API_KEY` - Required for Premium Search (TripAdvisor integration)
+- `TRIPADVISOR_REFERER_DOMAIN` - Domain for API key restriction
+- `VALHALLA_URL` - Isochrone routing server (default: public OSM server)
 - `MAX_SEARCH_RADIUS_MILES` - Limits query size for performance
 - `CORS_ORIGINS` - Allowed frontend origins
 
-## MVP vs V1 Scope
+## Current Features (V1 Complete)
 
-| Feature | MVP | V1 |
-|---------|-----|-----|
-| Polygon visualization | Yes | Yes |
-| Distance-based criteria | Yes | Yes |
-| Travel-time criteria | Convex hull | Valhalla isochrones |
-| List businesses in results | No | Yes (Yelp) |
-| User accounts | No | Planned |
+| Feature | Status |
+|---------|--------|
+| Polygon visualization | Implemented |
+| Distance-based criteria | Implemented |
+| Travel-time criteria (Valhalla isochrones) | Implemented |
+| Premium Search (TripAdvisor) | Implemented |
+| POI Explorer (OSM) | Implemented |
+| User accounts | Planned (V2) |
+| Pre-computed isochrone tiles | Planned (V2) |
 
 ## Troubleshooting
 
