@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     tripadvisor_monthly_limit: int = 5000
     tripadvisor_cache_dir: str = "./cache/tripadvisor"
     tripadvisor_timeout: int = 10
+    tripadvisor_referer_domain: str = "https://locationanalyzer-production.up.railway.app"
 
     @property
     def cors_origins_list(self) -> List[str]:

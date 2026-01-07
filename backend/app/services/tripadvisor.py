@@ -41,6 +41,7 @@ class TripAdvisorClient:
         self.monthly_limit = settings.tripadvisor_monthly_limit
         self.cache_dir = Path(settings.tripadvisor_cache_dir)
         self.timeout = settings.tripadvisor_timeout
+        self.referer_domain = settings.tripadvisor_referer_domain
 
         # Ensure cache directory exists
         if self.enabled:
@@ -138,13 +139,20 @@ class TripAdvisorClient:
             logger.warning(f"Failed to save cache for {cache_key}: {e}")
 
     def _make_request(self, endpoint: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Make API request to TripAdvisor."""
+        """Make API request to TripAdvisor with required headers for API key restriction."""
         params["key"] = self.api_key
         url = f"{self.BASE_URL}{endpoint}"
 
+        # TripAdvisor requires Referer/Origin headers matching the API key restriction domain
+        headers = {
+            "Referer": f"{self.referer_domain}/",
+            "Origin": self.referer_domain,
+            "Accept": "application/json",
+        }
+
         try:
             with httpx.Client(timeout=self.timeout) as client:
-                response = client.get(url, params=params)
+                response = client.get(url, params=params, headers=headers)
                 response.raise_for_status()
                 self._increment_usage()
                 return response.json()
@@ -152,7 +160,7 @@ class TripAdvisorClient:
             logger.warning(f"TripAdvisor API timeout for {endpoint}")
             return None
         except httpx.HTTPStatusError as e:
-            logger.warning(f"TripAdvisor API error: {e.response.status_code}")
+            logger.warning(f"TripAdvisor API error: {e.response.status_code} - {e.response.text[:200]}")
             return None
         except Exception as e:
             logger.error(f"TripAdvisor API request failed: {e}")
