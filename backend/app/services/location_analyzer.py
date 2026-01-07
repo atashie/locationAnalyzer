@@ -259,8 +259,8 @@ class LocationAnalyzer:
         """
         Add travel time criterion with mode-specific calculations.
 
-        For MVP, uses adjusted buffer based on travel speed.
-        V1 will use Valhalla for accurate isochrones.
+        Uses Valhalla for accurate isochrones when a specific location is provided.
+        Falls back to buffer approximation if Valhalla fails or for POI type queries.
 
         Args:
             poi_type: OSM tags for POI search
@@ -272,6 +272,8 @@ class LocationAnalyzer:
         Returns:
             GeoDataFrame with result geometry, or None if no POIs found
         """
+        from app.services.valhalla import get_isochrone_sync
+
         speed_mph = TRAVEL_SPEEDS.get(travel_mode, TRAVEL_SPEEDS["walk"])
         max_distance_miles = (max_time_minutes / 60) * speed_mph
 
@@ -279,40 +281,83 @@ class LocationAnalyzer:
         adjustment = BUFFER_ADJUSTMENTS.get(travel_mode, 1.2)
         adjusted_distance = max_distance_miles / adjustment
 
-        # For travel-time criteria, expand query area by the max travel distance
-        # This ensures we capture POIs outside the current boundary that are still
-        # within travel time of points inside the boundary
-        if poi_type and not specific_location:
-            query_area = self._create_expanded_query_area(adjusted_distance)
-        else:
-            query_area = self.current_search_area
+        # For specific locations, try Valhalla for accurate isochrones
+        if specific_location:
+            # Geocode the location
+            try:
+                location_gdf = ox.geocode_to_gdf(specific_location)
+                location_point = location_gdf.geometry.iloc[0].centroid
+            except Exception:
+                try:
+                    lat, lon = ox.geocode(specific_location)
+                    location_point = Point(lon, lat)
+                except Exception as e:
+                    logger.error(f"Could not geocode: {specific_location} - {e}")
+                    return None
 
-        pois = self._get_pois(poi_type, specific_location, query_area)
-        if pois is None or len(pois) == 0:
-            logger.warning(f"No POIs found for criterion: {criterion_name}")
-            return None
-
-        pois_projected = pois.to_crs(self.utm_crs)
-        buffer_meters = adjusted_distance * 1609.34
-
-        # Create realistic irregular buffers for each POI
-        realistic_buffers = []
-        for geom in pois_projected.geometry:
-            centroid = geom.centroid
-            realistic_buffer = self._create_realistic_buffer(
-                centroid.x, centroid.y, buffer_meters, travel_mode
+            # Try Valhalla first for specific locations
+            isochrone, used_valhalla = get_isochrone_sync(
+                lat=location_point.y,
+                lon=location_point.x,
+                minutes=max_time_minutes,
+                travel_mode=travel_mode,
             )
-            realistic_buffers.append(realistic_buffer)
 
-        # Combine all buffers
-        combined_buffer = unary_union(realistic_buffers)
+            if isochrone is not None:
+                # Valhalla succeeded - use the accurate isochrone
+                result_geometry = isochrone.intersection(self.current_search_area)
+            else:
+                # Valhalla failed - fall back to buffer approximation
+                logger.info(f"Using buffer fallback for {specific_location}")
+                pois = gpd.GeoDataFrame(
+                    [{"name": specific_location, "geometry": location_point}],
+                    crs=self.crs,
+                )
+                pois_projected = pois.to_crs(self.utm_crs)
+                buffer_meters = adjusted_distance * 1609.34
 
-        result_gdf = gpd.GeoDataFrame(
-            [{"geometry": combined_buffer}], crs=self.utm_crs
-        ).to_crs(self.crs)
-        result_geometry = result_gdf.geometry.iloc[0].intersection(
-            self.current_search_area
-        )
+                centroid = pois_projected.geometry.iloc[0].centroid
+                realistic_buffer = self._create_realistic_buffer(
+                    centroid.x, centroid.y, buffer_meters, travel_mode
+                )
+
+                result_gdf = gpd.GeoDataFrame(
+                    [{"geometry": realistic_buffer}], crs=self.utm_crs
+                ).to_crs(self.crs)
+                result_geometry = result_gdf.geometry.iloc[0].intersection(
+                    self.current_search_area
+                )
+        else:
+            # For POI type queries (multiple POIs), use buffer approximation
+            # Valhalla would be too slow for many POIs
+            query_area = self._create_expanded_query_area(adjusted_distance)
+
+            pois = self._get_pois(poi_type, None, query_area)
+            if pois is None or len(pois) == 0:
+                logger.warning(f"No POIs found for criterion: {criterion_name}")
+                return None
+
+            pois_projected = pois.to_crs(self.utm_crs)
+            buffer_meters = adjusted_distance * 1609.34
+
+            # Create realistic irregular buffers for each POI
+            realistic_buffers = []
+            for geom in pois_projected.geometry:
+                centroid = geom.centroid
+                realistic_buffer = self._create_realistic_buffer(
+                    centroid.x, centroid.y, buffer_meters, travel_mode
+                )
+                realistic_buffers.append(realistic_buffer)
+
+            # Combine all buffers
+            combined_buffer = unary_union(realistic_buffers)
+
+            result_gdf = gpd.GeoDataFrame(
+                [{"geometry": combined_buffer}], crs=self.utm_crs
+            ).to_crs(self.crs)
+            result_geometry = result_gdf.geometry.iloc[0].intersection(
+                self.current_search_area
+            )
 
         self.current_search_area = result_geometry
         self.criteria_results.append(

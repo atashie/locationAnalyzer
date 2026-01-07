@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     max_search_radius_miles: float = 25.0
     max_criteria_count: int = 8
 
+    # Valhalla settings (API at valhalla1, not valhalla)
+    valhalla_url: str = "https://valhalla1.openstreetmap.de"
+    valhalla_timeout: int = 30
+    valhalla_enabled: bool = True
+
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins string into list."""
