@@ -1,6 +1,6 @@
 # V2 Synthesis and Recommendation
 
-**Date:** 2026-11-03 · **Status:** v0.3 — revised against Codex adversarial pass 1 (`07`, streams 00–05) and pass 2 (`09`, UX stream and this document). **Ready for owner review.** A pass 3 will review the implementation plan that follows owner decisions.
+**Date:** 2026-11-03 · **Status:** v0.4 — revised against Codex adversarial pass 1 (`07`, streams 00–05) and pass 2 (`09`, UX stream and this document); **owner decisions received** (see §11 and `../plans/2026-11-03-v2-rethink-decisions.md` round 2). The implementation plan follows in `../plans/`. A Codex pass 3 reviews that plan.
 **Inputs:** research streams `00`–`06`, Codex reviews `07` and `09`, kickoff decisions in `../plans/2026-11-03-v2-rethink-decisions.md`.
 **How to read this:** §3 separates what is **settled** (owner decision or converging evidence) from what is a **hypothesis** tied to a numbered gate in §6. Nothing marked hypothesis is built on until its gate passes. Section 11 records how each Codex finding was absorbed.
 
@@ -180,16 +180,14 @@ Numeric weights and soft fringes; heat-map default; transit category surfaces; b
 
 ---
 
-## 11. Decisions needed from the owner
+## 11. Owner decisions (received 2026-11-03)
 
-These are owner choices the research cannot make. Technical confirmations (DuckDB, drops, reuse) are covered by kickoff decisions and need no new approval.
-
-1. **Spending ceiling.** Tier 1 provisional at roughly $20–35/month for friends and family; confirm the ceiling, or ask for the hosted-API comparison first.
-2. **Acceptable commute uncertainty.** How wrong may a boundary be before it is misleading — for example, is a 3-minute error at a 25-minute limit acceptable, 5, 9? This sets G1/G2 pass criteria and the wording of labels.
-3. **Transit need.** Do any of the first intended households depend on transit for a commute? If yes, a scheduled-anchor prototype enters Phase 3 regardless of interviews.
-4. **Listings fallback acceptance.** If bounded portal links prove fragile at G4, is a city/ZIP link plus the exact region on our map acceptable as the v2.0 handoff?
-5. **Privacy and sharing defaults.** Confirm that shared URLs omit names and raw addresses by default and that sharing an anchor is an explicit act.
-6. **Routing-engine order.** The synthesis proposes Valhalla for both anchors and category layers first, porting the CHCCS gridded Dijkstra only if G1 shows benefit. This defers the in-house gridding work you value; say so if you would rather port it first.
+1. **Spending ceiling:** Tier 1, roughly $20–35/month. Confirmed.
+2. **Acceptable commute uncertainty:** about 10% of the user's limit. Gates G1/G2 therefore require median absolute error at the threshold ≤ 10% and p90 ≤ 20%, with false inclusion/exclusion reported. Labels say "estimated".
+3. **Transit:** include early; it is the complex case worth learning from. A **transit scheduled-anchor experiment joins Phase 0** (Valhalla multimodal with the seven Triangle GTFS feeds versus MOTIS self-host versus r5py batch), and a transit mode is in scope for the first slice if it passes.
+4. **Listings fallback:** a city/ZIP link plus the exact region on our map is acceptable if bounded links prove fragile. G4 informs but cannot block Phase 1.
+5. **Privacy:** not a priority now. Shared URLs carry the full query including anchors (useful for couples); redaction is revisited before any public release. The §3.1 privacy bullet is downgraded accordingly.
+6. **Routing-engine order:** decide by experiment. Trust order: **experimental results, then the research, then our priors.** Phase 0 builds both the Valhalla path and the transposed-graph csgraph path on a small slice and chooses on measured build cost, latency, and boundary error against decision 2.
 
 Deferred questions (not needed now): second metro candidate; brokerage/Doorify conversation.
 

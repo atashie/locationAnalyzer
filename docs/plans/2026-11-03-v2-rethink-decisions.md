@@ -28,3 +28,14 @@ planning that follow. Items marked *deferred* are to be settled by the research.
 - Budget tier and hosting (decision 4).
 - Whether transit travel time should be precomputed, on-demand, or deferred.
 - Which listings deep-link schemes actually accept a region/bounds.
+
+## Round 2 decisions (2026-11-03, after research and two Codex passes; see research/08-synthesis.md section 11)
+
+| # | Question | Decision | Consequence |
+|---|----------|----------|-------------|
+| 11 | Spending ceiling | **Tier 1**, roughly $20-35/month for friends and family. | One 8 GB VPS with self-hosted Valhalla plus Cloudflare static tier. |
+| 12 | Acceptable commute-boundary error | **About 10%** of the user's limit (e.g. 2.5 min at a 25-minute limit). | Accuracy gates: median absolute error at threshold <= 10%, p90 <= 20%; report false inclusion/exclusion. |
+| 13 | Transit | **Include early**; it is the complex case worth learning from. | Transit scheduled-anchor experiment joins Phase 0; a transit mode is in scope for the first slice if the experiment passes. |
+| 14 | Listings fallback | **City/ZIP link plus the exact region on our map is acceptable** if bounded links prove fragile. | Gate G4 cannot block Phase 1. |
+| 15 | Privacy of shared URLs | **Not a priority now.** | Shared URLs carry the full query including anchors; redaction is revisited before any public release. |
+| 16 | Routing-engine order (Valhalla-first vs port the gridded Dijkstra first) | **Decide by experiment.** Trust order: experimental results, then the research, then our priors. | Phase 0 builds both paths on a small slice and chooses on measured cost, latency, and boundary error. |
