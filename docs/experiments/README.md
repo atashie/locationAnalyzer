@@ -11,7 +11,7 @@ machine on the dates given; they are not research estimates.
 | Geocoding contract | geocoding.md | done (verdict recorded) |
 | G2 Valhalla self-host and anchors | g2-valhalla.md | slice build + anchor latency measured; NC build on the VPS still blocking |
 | Transit engine (owner decision 13) | transit.md | done — MOTIS adopted, Valhalla cannot arrive-by |
-| G1 engine and layer primitive | g1-routing.md | decided — Valhalla costing + its expansion tree + our snapping |
+| G1 engine and layer primitive | g1-routing.md | decided per mode — walk = our graph; bike/drive = Valhalla expansion + our snapping |
 | G4 listings handoff | g4-listings.md | links generated; 6 regions invalid, regenerate; owner device sessions pending |
 | G3 browser rendering | g3-rendering.md | page + real-data exporter built and self-tested; needs a device run |
 | G5a early interaction comparison | g5a-interaction.md | prototypes + protocol built on real G4 regions; needs household sessions |

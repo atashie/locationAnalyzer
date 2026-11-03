@@ -47,7 +47,7 @@ comparison used in revision 2 turned out to be dominated by the raster's own err
 |---|---|---|---|---|---|
 | **walk** (600 cells) | 0.3-0.8 min (2-3% of T) | 1.6-5.5 min (10-16%) | **+0.2 min** | 29-43% | **passes at every threshold** |
 | **drive** (304 cells) | 3.2-8.1 min (32-41%) | 5.5-12.4 min (55-62%) | **-5.4 min** | 98-100% | fails at every threshold |
-| bike | pending | pending | pending | pending | pending |
+| **bike** (600 cells) | 0.6-5.9 min (4-13%) | 2.9-18.9 min (11-42%) | **-1.1 min** | 85-99% | median passes, p90 fails at 4 of 6 |
 
 Walking is a near-constant speed on a network with no one-ways, turn restrictions, signals or
 congestion, so our model has little to get wrong and is **unbiased**: a +0.2 minute signed median
@@ -63,8 +63,10 @@ remaining +66 s conservative bias was a known artifact of charging a whole edge 
 end, so `traveltime/expansion.py` now reconstructs both endpoint times exactly with no speed
 assumption; that corrected version still needs a paired re-measurement.
 
-**The decision:** walk layers from our own graph, drive layers from Valhalla's expansion, bike
-pending its measurement. Both paths feed the same `snap.cell_seconds_from_arrival`, so there is one
+**The decision:** walk layers from our own graph; bike and drive layers from Valhalla's
+expansion. Bike is a near miss with a single-signed ~1 minute bias, so it is a calibration
+candidate worth one afternoon (lower base speed plus a per-intersection delay) before Phase 1 ships
+bike layers. Both paths feed the same `snap.cell_seconds_from_arrival`, so there is one
 grid contract, one nodata convention and one interpolation routine whichever engine supplies the
 times. Valhalla remains the only source for arbitrary anchors.
 
@@ -185,7 +187,7 @@ no implementation yet.
 |---|---|---|
 | G6 POI coverage and licence | **partly passed** | Licence partition clean but untested on a hard case; schools audited independently; parks, playgrounds, groceries need inventories |
 | Geocoding contract | **partly passed** | Provider split decided; name resolver and correction flow unbuilt |
-| G1 engine and primitive | **decided per mode, bike pending** | Walk = own graph (passes); drive = Valhalla expansion + snapping; bike unmeasured. The exact expansion reconstruction needs a paired re-measurement |
+| G1 engine and primitive | **decided per mode** | Walk = own graph (passes); bike and drive = Valhalla expansion + snapping. The exact expansion reconstruction needs a paired re-measurement |
 | Transit engine | **engine chosen; surface not built** | Street access composition, deadline/window policy, 90-minute cap behaviour, hand-checked journeys |
 | G2 Valhalla self-host | **not passed** | NC build on the intended host, **and** the concurrency-8 p95 failure (1.363 s vs 0.8; 2.303 s vs 2.0) |
 | G4 listings handoff | **links generated, fixtures contaminated** | Regenerate on a buffered extract; owner device sessions |
@@ -223,8 +225,10 @@ speed model is retained only as a documented fallback.
 
 Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already done:
 
-1. **Re-measure the corrected expansion reconstruction**, and run the bike exact-pair comparison to
-   settle the third mode. Both are local and need no new infrastructure.
+1. **Re-measure the corrected expansion reconstruction** on paired cells; all three modes are now
+   measured, so this is the last open question about the layer primitive. Local, no new
+   infrastructure. Optionally spend one afternoon calibrating the bike model, whose bias is
+   single-signed and small.
 2. **Build one complete inbound transit surface** for an in-slice anchor and hand-check it against
    published timetables, measuring the 90-minute cap and import/query peaks.
 3. **Rerun interactive performance cleanly** with valid anchors only, isolating the latency run from

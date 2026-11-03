@@ -379,3 +379,52 @@ nodata convention and one interpolation routine regardless of which engine produ
 - The walk run took 89 minutes of wall clock for 600 cells because four matrix jobs and the latency
   benchmark were contending for a two-vCPU container. Timings from that window describe contention,
   not capacity.
+
+### G1 matrix comparison (2026-11-03 15:25:46): grocery / bike (controlled)
+600 cells stratified by own-layer minutes; Valhalla `sources_to_targets` min over 285 POIs; matrix time 5832.8 s
+
+| T min | band (own min) | n | ref unreachable | median abs err min | p90 abs err min | median/T | p90/T | own faster % | PASS (acc) |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 | (8, 12) | 100 | 0 | 0.6 | 3.6 | 0.06 | 0.36 | 92% | FAIL |
+| 15 | (13, 17) | 100 | 0 | 0.9 | 2.9 | 0.06 | 0.19 | 87% | PASS |
+| 20 | (18, 22) | 100 | 0 | 1.4 | 4.9 | 0.07 | 0.24 | 87% | FAIL |
+| 25 | (23, 27) | 100 | 0 | 1.0 | 5.3 | 0.04 | 0.21 | 91% | FAIL |
+| 30 | (28, 32) | 100 | 0 | 1.2 | 3.4 | 0.04 | 0.11 | 85% | PASS |
+| 45 | (40, 50) | 100 | 0 | 5.9 | 18.9 | 0.13 | 0.42 | 99% | FAIL |
+
+Signed median (own - Valhalla): -1.1 min over all finite samples (negative = own model is faster/optimistic).
+Residual = speed model + snapping/access-leg differences (both engines snap the cell centre); no grid misregistration.
+
+---
+
+## G1 Verdict, revision 4 (2026-11-03): bike completes the per-mode picture
+
+The bike exact-pair comparison finished (600 cells, controlled 16.2 km/h, 5,833 s of wall clock
+under contention). It lands between walk and drive, which is what the physics predicted.
+
+| Mode | median error | p90 | signed median | own faster | thresholds passed |
+|---|---|---|---|---|---|
+| **walk** | 0.3-0.8 min (2-3% of T) | 1.6-5.5 min (10-16%) | +0.2 min | 29-43% | **all six** |
+| **bike** | 0.6-5.9 min (4-13% of T) | 2.9-18.9 min (11-42%) | -1.1 min | 85-99% | 15 and 30 only |
+| **drive** | 3.2-8.1 min (32-41%) | 5.5-12.4 min (55-62%) | -5.4 min | 98-100% | none |
+
+Bike passes the *median* tolerance at every threshold except 45 minutes, but fails p90 at four of
+six, and "own faster" at 85-99% shows this is a **systematic optimistic bias of about a minute**,
+not noise. Our flat 4.5 m/s ignores surface, grade, stops and turns, all of which Valhalla's bicycle
+costing models. The error compounds with distance: at a 45-minute threshold the median rises to 13%
+of T and p90 to 42%, with our model faster on 99% of pairs.
+
+So the ordering is exactly the amount of physics each mode hides from a constant-speed model:
+walking hides almost none and our model is unbiased; cycling hides some and we are a minute fast;
+driving hides a great deal and we are five minutes fast.
+
+### Final per-mode decision
+
+| Mode | Layer source | Status of our own model |
+|---|---|---|
+| **walk** | **our own graph** | Adopted. Unbiased, passes every threshold |
+| **bike** | **Valhalla** `/expansion` + our snapping | Near miss. A calibration candidate: the bias is single-signed and about one minute, so a lower base speed plus a small per-intersection delay could plausibly bring p90 inside tolerance. Worth one afternoon before Phase 1 ships bike layers, not more |
+| **drive** | **Valhalla** `/expansion` + our snapping | Not viable without porting the intersection penalties and modelling turn restrictions |
+
+All three feed the same `snap.cell_seconds_from_arrival`, so the grid contract, nodata convention
+and interpolation are shared regardless of which engine produced the times.
