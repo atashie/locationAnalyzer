@@ -474,3 +474,59 @@ Caveat carried forward: these are layer *production* numbers on the adopted engi
 re-measurement. The walk model's accuracy was established on the Phase 0 slice; the same exact-pair
 comparison should be repeated on the widened metro before the layers are published, since the new
 area includes denser Raleigh street grids that the original sample never saw.
+
+---
+
+## What the G1 comparisons actually measured: there is no ground truth here
+
+Added 2026-11-03 after the owner asked what we were measuring accuracy *against*. The answer
+changes how the earlier tables should be read, so it is recorded at the same level of prominence.
+
+**No ground truth was used anywhere in this file.** Every travel-time number was compared against
+**Valhalla**, which is another static model, not reality. The NC instance logs
+"Traffic tile extract could not be loaded" sixteen times: it has no traffic data, so neither engine
+knows anything about congestion, signals timing on the day, weather, or the state of the road.
+
+**Worse, two of the three comparisons were speed-matched by construction.** The reference was
+configured to share our own speed assumption:
+
+| Mode | Our speed | Reference configuration | What the comparison could detect |
+|---|---|---|---|
+| walk | 1.40 m/s | `pedestrian.walking_speed = 5.04 km/h` = **identical** | network traversal, access rules, snapping, interpolation — **not** whether 1.40 m/s is a real walking speed |
+| bike | 4.50 m/s | `cycling_speed = 16.2 km/h` = **identical** | same, plus surface/grade/stop handling, which is where the residual −1.1 min came from |
+| drive | friction speeds by highway tag | Valhalla **defaults** (not matched) | everything at once: speed model, intersection penalties, turn restrictions |
+
+So the walk result is narrower than "our walk model is accurate". What it establishes is that **our
+graph machinery agrees with a mature engine's when both are given the same speed** — the transposed
+Dijkstra, the access-tag filter, the nearest-edge snapping and the within-edge interpolation are
+sound. Whether 1.40 m/s describes how people actually walk in Durham is **not tested**.
+
+**Why the drive conclusion still holds without ground truth.** It rests on mechanism, not on the
+reference being true. We know what we omitted: the CHCCS intersection penalties were not ported and
+a node-state graph cannot express turn restrictions. Omitting delay-adding features predicts a
+model that is *too fast*, by an amount that grows with the number of intersections crossed. The
+measurement found exactly that: faster on 98–100% of pairs, a −5.4 minute median, and error growing
+with the threshold. A disagreement whose sign, size and gradient match a known defect is evidence
+about our model; it would be weak evidence if the direction had been random.
+
+**"PASS" and "FAIL" in the tables above are against agreement with Valhalla, not against owner
+decision 12.** Decision 12 ("about 10% of the limit") is a statement about real-world boundary
+error. Nothing here measures that. The tables should be read as a differential test that isolated
+defects, which is what they were good for, and the owner's tolerance remains **unverified** in the
+only sense that matters to a user.
+
+### What would actually constitute ground truth
+
+| Source | What it would settle | Cost | Independence |
+|---|---|---|---|
+| **An independent traffic-aware API** (Google Routes, Mapbox Matrix, TravelTime) sampled on ~100 OD pairs | whether both our engines are systematically off, and by how much once congestion exists | free tier to a few dollars for a one-off sample; live use only, nothing stored | genuinely independent model **and** real traffic |
+| **Hand-timed journeys** with a phone GPS log, ~10 trips per mode | the only actual truth; anchors everything else | hours of the owner's time, tiny sample | total |
+| **Published agency timetables**, hand-checked against our MOTIS journeys | whether we interpret GTFS correctly (waiting, transfers, deadline semantics). For *scheduled* transit the feed is close to authoritative | an hour | high for schedule, none for real-world adherence |
+| **Probe-data archives** (FHWA NPMRDS via RITIS, state DOT travel-time data, commercial INRIX/HERE) | observed drive times at scale, the real answer for driving | access terms need checking; commercial tiers are expensive | high |
+| **Transit on-time performance** from the agencies | the gap between schedule and reality | unknown availability | high |
+
+The cheapest meaningful step is the first: a one-off sample against a traffic-aware third model
+would tell us whether our 10%-of-threshold tolerance is anywhere near met in the real world, and it
+is the only item here that requires neither the owner's legs nor a data licence. Until something on
+this list is done, the product's honest claim is the one already in the design: travel times are
+**estimated, modelled from road speeds, with no traffic data**.

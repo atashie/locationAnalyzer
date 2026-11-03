@@ -29,6 +29,7 @@ Revision 1 overstated the case. What was wrong, and what the evidence actually s
 | 6 | Own-graph is 30× more expensive than Valhalla per layer | Compares a cold Python graph build against an already-resident tile server, and graph preparation amortises across categories. The honest comparison is in D1 |
 | 7 | G5a prototypes "built" | The interaction prototypes were still being written when revision 1 was filed |
 | 8 | "Every mode fails the owner's tolerance at p90" (revision 1 and 2) | Read off the raster comparison, which measures Valhalla's contour error. On exact pairs the **walk model passes at every threshold** and is unbiased; only drive fails (D1) |
+| 9 | "passes at every threshold" read as meeting owner decision 12 | **There is no ground truth in any of it.** The reference is Valhalla, another static model with no traffic data, and for walk and bike its speed was set *equal to ours*, so those runs could not detect a wrong speed at all. The comparisons were differential tests that isolated defects; decision 12's real-world tolerance is **unverified** (see `g1-routing.md`, "What the G1 comparisons actually measured") |
 
 The underlying experiments were sound; the reporting selected the favourable readings. The habit to
 keep is the one that caught the out-of-slice origins and the stale Duke feed: look for the error
@@ -41,14 +42,16 @@ before claiming the result.
 ### D1. The engine choice is per mode: our own graph for walking, Valhalla for driving, and Valhalla's *expansion tree* rather than its isochrone raster wherever Valhalla is the source
 
 **[measured]** `g1-routing.md`, verdict revision 3. Exact-pair comparison against Valhalla's
-`sources_to_targets`, which is the only valid way to judge a model: the layer-level raster
-comparison used in revision 2 turned out to be dominated by the raster's own error.
+`sources_to_targets`. Read the columns as **agreement with another static model**, not as accuracy:
+there is no ground truth here, neither engine has traffic data, and for walk and bike Valhalla's speed
+was set equal to ours, so those rows test traversal and snapping rather than speed. The drive row is
+trustworthy because its error's sign and gradient match a defect we know we introduced.
 
-| Mode | median error | p90 | signed median | own faster | against decision 12 |
+| Mode | median error | p90 | signed median | own faster | agreement with the reference |
 |---|---|---|---|---|---|
-| **walk** (600 cells) | 0.3-0.8 min (2-3% of T) | 1.6-5.5 min (10-16%) | **+0.2 min** | 29-43% | **passes at every threshold** |
-| **drive** (304 cells) | 3.2-8.1 min (32-41%) | 5.5-12.4 min (55-62%) | **-5.4 min** | 98-100% | fails at every threshold |
-| **bike** (600 cells) | 0.6-5.9 min (4-13%) | 2.9-18.9 min (11-42%) | **-1.1 min** | 85-99% | median passes, p90 fails at 4 of 6 |
+| **walk** (600 cells, speed-matched) | 0.3-0.8 min (2-3% of T) | 1.6-5.5 min (10-16%) | **+0.2 min** | 29-43% | **within tolerance at every threshold** |
+| **drive** (304 cells, **not** speed-matched) | 3.2-8.1 min (32-41%) | 5.5-12.4 min (55-62%) | **-5.4 min** | 98-100% | outside at every threshold |
+| **bike** (600 cells, speed-matched) | 0.6-5.9 min (4-13%) | 2.9-18.9 min (11-42%) | **-1.1 min** | 85-99% | median within, p90 outside at 4 of 6 |
 
 Walking is a near-constant speed on a network with no one-ways, turn restrictions, signals or
 congestion, so our model has little to get wrong and is **unbiased**: a +0.2 minute signed median
