@@ -1,18 +1,16 @@
-"""Overture places + OSM POIs for the Phase 0 slice, with fail-closed licensing.
+"""Overture places + OSM POIs for a metro, with fail-closed licensing.
 
-Run from v2/:  uv run python scripts/fetch_places.py [--release YYYY-MM-DD.0]
+Run from v2/:  uv run python scripts/fetch_places.py --release 2026-10-21.0 [--metro triangle]
 
-Writes under v2/data/slice/:
+Writes under v2/data/<metro>/:
   overture_places_raw.parquet      exact download (never used downstream)
   overture_places_accepted.parquet rows whose every source resolved to an allowed licence
-  overture_rejected_report.json    counts and examples of quarantined rows
-  overture_schema.txt              observed Arrow schema (verify category/taxonomy column names)
+  overture_rejected_report.json    counts, observed datasets, and quarantine reasons
+  overture_schema.txt              observed Arrow schema (the `categories` column was removed in
+                                   the 2026-09 release in favour of `taxonomy`/`basic_category`)
   osm_pois.parquet                 OSM POIs via QuackOSM with exploded tags
 
-Registry rows: docs/experiments/source-registry.md (Overture CDLA-Permissive-2.0 / Apache-2.0; OSM ODbL).
-Codex pass 3 (C1, H4, H5): pin the release, inspect the schema (the `categories` column was
-removed in the 2026-09 release in favour of `taxonomy`/`basic_category`), explode OSM tags,
-and persist an ACCEPTED artifact separate from the raw download.
+Registry rows must exist in docs/experiments/source-registry.md before fetching.
 """
 from __future__ import annotations
 
@@ -23,9 +21,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-BBOX = "-79.15,35.80,-78.55,36.15"  # west,south,east,north
-V2 = Path(__file__).resolve().parents[1]
-OUT = V2 / "data" / "slice"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "spikes"))
 
 OSM_TAGS = {
     "leisure": ["park", "playground", "nature_reserve"],
@@ -37,12 +33,12 @@ OSM_TAGS = {
 }
 
 
-def fetch_overture(release: str | None) -> Path:
-    raw = OUT / "overture_places_raw.parquet"
+def fetch_overture(out_dir: Path, bbox: str, release: str | None) -> Path:
+    raw = out_dir / "overture_places_raw.parquet"
     if raw.exists():
         print("overture raw already present:", raw)
         return raw
-    cmd = [sys.executable, "-m", "overturemaps.cli", "download", f"--bbox={BBOX}", "-f", "geoparquet",
+    cmd = [sys.executable, "-m", "overturemaps.cli", "download", f"--bbox={bbox}", "-f", "geoparquet",
            "--type=place", "-o", str(raw)]
     if release:
         cmd += ["--release", release]
@@ -51,11 +47,11 @@ def fetch_overture(release: str | None) -> Path:
     return raw
 
 
-def inspect_schema(raw: Path) -> list[str]:
+def inspect_schema(raw: Path, out_dir: Path) -> list[str]:
     import pyarrow.parquet as pq
 
     schema = pq.read_schema(raw)
-    (OUT / "overture_schema.txt").write_text(str(schema), encoding="utf-8")
+    (out_dir / "overture_schema.txt").write_text(str(schema), encoding="utf-8")
     cols = schema.names
     print("columns:", cols)
     for candidate in ("categories", "taxonomy", "basic_category"):
@@ -63,7 +59,7 @@ def inspect_schema(raw: Path) -> list[str]:
     return cols
 
 
-def partition_by_licence(raw: Path, release: str) -> None:
+def partition_by_licence(raw: Path, out_dir: Path, release: str) -> None:
     import geopandas as gpd
 
     from locfinder.places.licence import UnknownLicence, resolve_licence
@@ -84,7 +80,7 @@ def partition_by_licence(raw: Path, release: str) -> None:
     acc = gdf.iloc[accepted_idx].copy()
     acc["licence"] = licences
     acc["overture_release"] = release
-    acc.to_parquet(OUT / "overture_places_accepted.parquet")
+    acc.to_parquet(out_dir / "overture_places_accepted.parquet")
     report = {
         "release": release,
         "rows_raw": int(len(gdf)),
@@ -94,37 +90,47 @@ def partition_by_licence(raw: Path, release: str) -> None:
         "rejection_reasons": dict(reasons),
         "accepted_licences": dict(Counter(licences)),
     }
-    (OUT / "overture_rejected_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
+    (out_dir / "overture_rejected_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     print(json.dumps(report, indent=1))
 
 
-def fetch_osm_pois() -> Path:
+def fetch_osm_pois(out_dir: Path, pbf: Path) -> Path:
     import quackosm as qosm
 
-    out = OUT / "osm_pois.parquet"
-    pbf = OUT / "slice.osm.pbf"
+    out = out_dir / "osm_pois.parquet"
     if not pbf.exists():
-        raise SystemExit(f"missing {pbf}; run scripts/fetch_slice_data.sh in WSL first")
+        raise SystemExit(f"missing {pbf}; extract the routing area first (scripts/fetch_slice_data.sh)")
     gdf = qosm.convert_pbf_to_geodataframe(str(pbf), tags_filter=OSM_TAGS, keep_all_tags=True, explode_tags=True)
     gdf.to_parquet(out)
-    print("osm pois:", len(gdf), "columns:", [c for c in gdf.columns if c in OSM_TAGS or c in ("name", "geometry")], "->", out)
+    print("osm pois:", len(gdf), "->", out)
     return out
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--release", default=None, help="Overture release id, e.g. 2026-10-21.0 (pin it; see licence manifests)")
+    ap.add_argument("--release", default=None, help="Overture release id, e.g. 2026-10-21.0 (pin it)")
+    ap.add_argument("--metro", default=None, help="metro name; defaults to LOCFINDER_METRO or 'triangle'")
     ap.add_argument("--skip-osm", action="store_true")
     args = ap.parse_args()
-    OUT.mkdir(parents=True, exist_ok=True)
-    raw = fetch_overture(args.release)
-    inspect_schema(raw)
+
+    from locfinder.metros import get_metro
+
+    metro = get_metro(args.metro)
+    out_dir = Path(__file__).resolve().parents[1] / "data" / metro.name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # Places are selected on the EVALUATION bbox; routing data uses the buffered bbox.
+    bbox = metro.evaluation.as_osmium()
+    print(f"metro {metro.name}: places bbox {bbox}")
+
+    raw = fetch_overture(out_dir, bbox, args.release)
+    inspect_schema(raw, out_dir)
     if args.release:
-        partition_by_licence(raw, args.release)
+        partition_by_licence(raw, out_dir, args.release)
     else:
-        print("NOTE: no --release given; accepted artifact not written (licence manifest is keyed by release).")
+        print("NOTE: no --release given; accepted artifact not written (manifests are keyed by release).")
     if not args.skip_osm:
-        fetch_osm_pois()
+        pbf = out_dir / ("slice.osm.pbf" if metro.name == "slice" else "triangle-routing.osm.pbf")
+        fetch_osm_pois(out_dir, pbf)
 
 
 if __name__ == "__main__":
