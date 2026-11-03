@@ -45,7 +45,7 @@ recommendation document, which is itself Codex-reviewed before any planning begi
 | 05 | [Routing and precompute architecture](05-routing-and-precompute-architecture.md) | Hosted vs self-hosted routing, gridded travel-time precompute, cheap serving | complete |
 | 06 | [UX and interaction model](06-ux-and-interaction-model.md) | User needs, reception of existing tools, HCI principles, recommended model | complete |
 | 07 | [Codex adversarial review](07-codex-adversarial-review.md) | Cross-model critique of 00–06 | in progress (pass 1: 00–05) |
-| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | pending |
+| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | draft v0.1 (pre-Codex) |
 
 ## Prior in-house research this builds on
 
