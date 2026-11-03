@@ -126,5 +126,9 @@ def expansion_to_edge_index(
         end_idx=end_idx,
         fwd_time=tau,
         rev_time=tau,
+        # Valhalla has already applied its own costing to produce these durations, so there is no
+        # separate penalty to carry here: selection cost and reported time coincide.
+        fwd_cost=tau,
+        rev_cost=tau,
     )
     return idx, T

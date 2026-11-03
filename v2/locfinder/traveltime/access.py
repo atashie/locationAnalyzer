@@ -28,8 +28,12 @@ docs/experiments/spotcheck-engines.md).
 from __future__ import annotations
 
 FORBIDDEN_ACCESS = frozenset({"no", "military"})
-RESTRICTED_ACCESS = frozenset({"private", "customers", "delivery", "permit", "agricultural", "forestry"})
-PERMITTED_ACCESS = frozenset({"yes", "designated", "permissive", "official", "destination", "unknown"})
+RESTRICTED_ACCESS = frozenset({"private", "customers", "delivery", "permit", "agricultural", "forestry",
+                               # `destination` literally means "no through traffic", so it is the
+                               # clearest case for a through-routing penalty, not an open road
+                               # (Codex pass-6 H3; it was previously classified open with no penalty).
+                               "destination"})
+PERMITTED_ACCESS = frozenset({"yes", "designated", "permissive", "official", "unknown"})
 
 # Seconds added to an edge's COST (never to its reported time) for choosing a restricted road.
 # PRIORS, not measurements: Valhalla's documented default private-access penalty for driving is
@@ -47,14 +51,23 @@ def _values(data, key: str) -> list[str]:
     return [str(x) for x in v] if isinstance(v, list) else [str(v)]
 
 
+# Narrowest tag first: OSM's access hierarchy is `access` < `vehicle` < `motor_vehicle` < `motorcar`,
+# and the most specific tag present wins (Codex pass-6 H5: `motor_vehicle=no` + `motorcar=yes` was
+# read as forbidden because the broader tag was consulted first).
+_MODE_TAG_ORDER = {
+    "drive": ("motorcar", "motor_vehicle", "vehicle"),
+    "bike": ("bicycle", "vehicle"),
+    "walk": ("foot",),
+}
+
+
 def _mode_tag_values(data, mode: str) -> list[str]:
-    if mode == "drive":
-        return _values(data, "motor_vehicle") or _values(data, "motorcar")
-    if mode == "bike":
-        return _values(data, "bicycle")
-    if mode == "walk":
-        return _values(data, "foot")
-    raise ValueError(mode)
+    """Values of the narrowest mode tag present, or [] if none is."""
+    for key in _MODE_TAG_ORDER[mode]:
+        vals = _values(data, key)
+        if vals:
+            return vals
+    return []
 
 
 def classify_access(data, mode: str) -> str:
@@ -64,19 +77,21 @@ def classify_access(data, mode: str) -> str:
     which is how OSM intends them to be read: `access=private` + `foot=yes` is a private road that
     pedestrians may use.
     """
-    specific = _mode_tag_values(data, mode)
-    if specific:
-        if any(s in FORBIDDEN_ACCESS for s in specific):
+    for values in (_mode_tag_values(data, mode), _values(data, "access")):
+        if not values:
+            continue
+        # Conservative within a tag: the strictest value present wins, so a simplified way carrying
+        # ["yes", "private"] is restricted rather than open. Previously the specific and generic
+        # tags aggregated differently, so `foot=["yes","private"]` came out OPEN while
+        # `access=["yes","private"]` came out RESTRICTED (Codex pass-6 H5).
+        if any(v in FORBIDDEN_ACCESS for v in values):
             return FORBIDDEN
-        if any(s in PERMITTED_ACCESS for s in specific):
-            return OPEN
-        if any(s in RESTRICTED_ACCESS for s in specific):
+        if any(v in RESTRICTED_ACCESS for v in values):
             return RESTRICTED
-    generic = _values(data, "access")
-    if any(a in FORBIDDEN_ACCESS for a in generic):
-        return FORBIDDEN
-    if any(a in RESTRICTED_ACCESS for a in generic):
-        return RESTRICTED
+        if any(v in PERMITTED_ACCESS for v in values):
+            return OPEN
+        # an unrecognised value on the narrowest tag present is not evidence of permission;
+        # fall through to the next, broader tag
     return OPEN
 
 

@@ -312,16 +312,23 @@ Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already
 7. ~~Build North Carolina~~ **done**; what remains is provisioning the real host and deciding
    between a 2 vCPU box with an anchor cache and a 4 vCPU box.
 
-~~A standing limitation of our own engine~~ **Fixed 2026-11-03.** Our access rule was a single
-allow/deny, which deleted all **126,157** restricted edges and made every home on a private drive
-unreachable. It is now three-valued (`access.py`): `access=no` is removed, `access=private` and
-friends are kept with a **cost** penalty, and the graph carries two weights so path selection
-minimises cost while the product reports real time. Measured effect on the walk layer: cells with a
-travel time rose from **72.7% to 77.3%** (about 15,200 more of 330,502), the twelve-journey spot
-check returned identical times on all twelve open-road journeys, and no penalty reached a reported
-time. The same cost channel is where intersection penalties would go if our drive model is ever
-revived. Turn restrictions remain unexpressible in a node-state graph, which is still why Valhalla
-owns the drive path. Details in `spotcheck-engines.md`.
+~~A standing limitation of our own engine~~ **Fixed 2026-11-03, then corrected after review.**
+Our access rule was a single allow/deny that deleted all **126,157** restricted edges, making every
+home on a private drive unreachable. It is now three-valued (`access.py`): `access=no` and
+`military` are removed, `private`, `customers`, `delivery`, `permit`, `agricultural`, `forestry` and
+`destination` are kept with a **cost** penalty, and the graph carries two weights so selection
+minimises cost while the product reports real time — at the node stage and, after Codex pass 6
+found the cell stage disagreeing with it, at the cell stage too.
+
+Measured: cells with a travel time rose from **72.7% to 77.3%**. But the composition of that gain is
+not what the first write-up claimed: only **4,662** reachable cells have a restricted edge as their
+nearest edge, so most of the gain is cells reachable *through* restricted roads, not homes *on*
+them. Coverage is insensitive to the penalty magnitude (0.1 points across a 16× sweep), which is a
+route-choice knob, not a reachability one. A finite penalty **discourages** through traffic without
+prohibiting it, it is charged per simplified edge so splitting a link doubles it, and whether the
+recovered routes are lawfully drivable is unresolved. Turn restrictions remain unexpressible in a
+node-state graph, which is still why Valhalla owns the drive path. Details and the withdrawn claims
+are in `spotcheck-engines.md`.
 
 Remaining uncertainties that no amount of our own measurement will settle: neither engine has
 traffic data, so drive times are a model's opinion and the UI must keep saying "estimated, modelled

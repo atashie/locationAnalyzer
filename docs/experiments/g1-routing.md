@@ -537,3 +537,10 @@ this list is done, the product's honest claim is the one already in the design: 
 - timings (s): {"load_graph_s": 34.72, "prepare_graph_s": 43.88, "csr_s": 3.67, "snap_pois_s": 1.52, "edge_index_s": 0.0, "dijkstra_s": 3.89, "snap_s": 3.64}; total 91.3
 - profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
 
+
+### Own-graph layer: grocery / walk (2026-11-03 18:00:09)
+- graph: 539814 nodes, 1424670 edges (graphml cache; 3046 components; kept 539814 nodes (97.5%), dropped 13608); destinations 417 nodes from 452 places (0 dropped > 300 m)
+- reachable cells 76.8%; one-way-adjacent cells 3.6%
+- timings (s): {"load_graph_s": 33.38, "prepare_graph_s": 41.99, "csr_s": 3.42, "snap_pois_s": 1.41, "edge_index_s": 0.0, "dijkstra_s": 3.56, "snap_s": 3.24}; total 87.0
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+

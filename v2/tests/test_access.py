@@ -52,10 +52,14 @@ def test_list_valued_tags_take_the_strictest_reading():
     assert classify_access({"highway": "service", "access": ["yes", "private"]}, "drive") == RESTRICTED
 
 
-def test_destination_access_is_open():
-    """access=destination means 'no through traffic', which our cost model expresses as open
-    plus the through-routing penalty structure, not as a restriction on arriving."""
-    assert classify_access({"highway": "residential", "access": "destination"}, "drive") == OPEN
+def test_destination_is_restricted_not_open():
+    """Corrected after Codex pass 6 (H3). `access=destination` literally means "no through
+    traffic", so it is the clearest case for a through-routing penalty. It was previously
+    classified OPEN with zero penalty, which made an explicit no-through road behave like an
+    ordinary shortcut. The earlier test asserted that mistake."""
+    d = {"highway": "residential", "access": "destination"}
+    assert classify_access(d, "drive") == RESTRICTED
+    assert access_penalty_s(d, "drive") > 0
 
 
 def test_walk_and_bike_penalties_are_lower_than_drive():

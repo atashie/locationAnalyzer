@@ -48,10 +48,24 @@ def arrival_seconds_two_weight(
     The search runs unbounded on cost, because pruning on cost could discard a path whose real time
     is inside the cutoff; `cutoff_s` is applied to the reconstructed time instead.
 
+    Requires strictly positive costs, which is what makes increasing-cost order a valid
+    topological order over the shortest-path forest. Among equal-cost paths scipy's choice is
+    taken as given, so the reported time of a tie is insertion-order dependent; that is
+    acceptable here because any tied path is equally preferred, but it means a bit-identical
+    result across graph rebuilds is not guaranteed.
+
     Returns +inf for unreachable nodes. Never returns a penalty-inflated time.
     """
     if cost_csr.shape != time_csr.shape:
         raise ValueError(f"cost {cost_csr.shape} and time {time_csr.shape} matrices must match")
+    # Same shape is not enough: the two must describe the SAME edges, or a reported time would be
+    # read from an edge the search never used (Codex pass-6 M4).
+    if cost_csr.nnz != time_csr.nnz or not (
+        np.array_equal(cost_csr.indptr, time_csr.indptr) and np.array_equal(cost_csr.indices, time_csr.indices)
+    ):
+        raise ValueError("cost and time matrices must share sparsity; build them with graph_to_cost_time_csr")
+    if cost_csr.nnz and float(cost_csr.data.min()) <= 0.0:
+        raise ValueError("costs must be strictly positive: the increasing-cost sweep relies on it")
     dest = np.asarray(list(dest_idx), dtype=np.int64)
     n = cost_csr.shape[0]
     if dest.size == 0:

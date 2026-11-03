@@ -466,7 +466,11 @@ Pairwise differences (minutes; negative median means the first engine is faster)
 
 ---
 
-## Fixed: restricted access is now reachable but not a through-route (2026-11-03)
+## Fixed: restricted access is now reachable, and penalised rather than prohibited (2026-11-03)
+
+> Read this section together with the corrections at the end of the file: it originally
+> claimed more than the evidence supported, and the cell stage contained a correctness bug
+> that Codex pass 6 found and that is now fixed.
 
 The hole found above — a single allow/deny rule that deleted every `access=private` edge and so made
 every home on a private drive unreachable — is fixed. The fix is the one mainstream engines use, and
@@ -512,17 +516,18 @@ open to walkers and restricted to drivers.
 | Dijkstra | 0.07 s | 3.89 s (the tree reconstruction) |
 
 **Coverage rose 4.6 percentage points, about 15,200 of 330,502 cells** that previously had no answer
-at all. Those are overwhelmingly homes on driveways, which is the population a home-search product
-exists to serve, so this is the most directly product-relevant fix in Phase 0.
+at all. The composition of that gain is measured in the corrections below and is **not** what this
+section first claimed: only 4,662 reachable cells have a restricted edge as their nearest edge, so
+most of the gain is cells reachable *through* restricted roads rather than homes *on* them.
 
-**Nothing else moved.** All twelve spot-check journeys returned byte-identical times, which is the
-correct result: they run between well-connected named places on open roads, so restricted-access
-handling should not touch them. The penalty is doing its job on selection without disturbing
-reporting.
+**The twelve open-road journeys were unchanged**, byte-identical. That is a useful regression
+control — restricted-access handling should not touch routes between well-connected named places —
+but it is not a positive test of the fix, because no journey in that set exercises restricted
+access. A journey that does is still missing from the set.
 
-**No penalty leak.** Across the reachable cells there is no spike at the 120 s walk penalty value
-(202 cells within ±5 s of it, out of 255,000 reachable), and the distribution is smooth, which is
-what we would not see if the penalty had reached the reported time.
+**Penalty leak: the original test was inadequate** and has been replaced; see the corrections at
+the end of this file. A leak shows up as a per-cell offset, which the histogram it used could not
+have detected.
 
 ### What this cost and what it did not fix
 
@@ -532,11 +537,157 @@ practice and the two-weight machinery is now available for the *other* thing our
 intersection penalties fit the same cost channel without touching reported time.
 
 Still not fixed, and still the reason Valhalla owns the drive path: turn restrictions, which a
-node-state graph cannot express at all. And pruning to the largest component now drops 13,608 nodes
-(2.5%) rather than 4,516, because restricted edges bring in private networks whose only link to the
-public road is `access=no` — correctly unreachable, but worth watching if that share grows.
+node-state graph cannot express at all. Pruning now drops 13,608 nodes (2.5%); the component counts
+quoted in an earlier draft compared drive to walk and were withdrawn.
 
 Twenty-eight new tests cover the classification and the two-weight behaviour, including that a
 private shortcut is rejected when an open detour is cheaper, taken when it is the only way, that the
 reported time is the chosen path's real time in both cases, and that the one-way regression from
 Codex pass 1 still holds on the two-weight path.
+
+### Two-weight verification on the real network (2026-11-03 17:45:11): walk / grocery
+
+539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
+
+**Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
+
+| check | nodes | share of finite |
+|---|---|---|
+| reported **below** the time-only lower bound (must be 0) | **0** | 0.0000% |
+| reported **above** the cost-based upper bound (must be 0) | **0** | 0.0000% |
+| reported **equals** the time-only bound (no penalty in effect) | 474,679 | 87.93% |
+| reported **equals** the cost-based value (would indicate a leak) | 473,904 | 87.79% |
+| reported **above** time-only, i.e. the penalty diverted the path | 65,272 | 12.09% |
+
+**Verdict: FAIL.** The bracket is violated or the reported value tracks the cost-based one: the penalty is leaking into reported time.
+
+**Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
+
+| penalty s | cells with a time | median reported min | nodes diverted by the penalty |
+|---|---|---|---|
+| 0 | 77.35% | 34.4 | 0 |
+| 60 | 77.35% | 34.4 | 40,197 |
+| 120 | 77.32% | 34.4 | 46,613 |
+| 240 | 77.27% | 34.4 | 49,063 |
+| 960 | 77.25% | 34.6 | 52,868 |
+
+**Provenance of reachable cells whose nearest edge is restricted** (by that edge's `access` value; a length-keyed approximation, so read it as indicative):
+
+| access value | reachable cells snapped to it |
+|---|---|
+| private | 4,424 |
+| customers | 236 |
+| forestry | 1 |
+| None | 1 |
+
+Total reachable cells nearest a restricted edge: 4,662 of 272,961 reachable.
+
+---
+
+## Corrections after Codex pass 6
+
+`../research/13-codex-adversarial-review-pass6-access.md` reviewed the section above and found a
+**real correctness bug in the cell stage**, plus three claims that were not supported. The node-level
+two-weight reconstruction survived review, with 2,940 randomized predecessor-chain checks agreeing.
+
+### Fixed: the cell layer contradicted the node layer
+
+`cell_seconds_from_arrival` chose its branch by **time** while the node search chose by **cost**, so
+a cell could take a penalised shortcut the search had deliberately rejected. Codex's executed
+counterexample: with a fast private link and an open alternative, node reconstruction correctly gave
+**200 s** at a node while snapping returned **20 s at the very same point**.
+
+The fix carries node costs and per-direction edge costs into the cell stage, selects the branch on
+cost, and reports that branch's time. `EdgeIndex` now holds `fwd_cost`/`rev_cost` and reduces
+parallel edges by cost (carrying the chosen edge's own time), matching `graph_to_cost_time_csr` so
+the two stages cannot disagree about which edge a path uses.
+
+A second bug in the same area: the cutoff was applied only to node times, so a cell could exceed the
+advertised budget once its off-network access leg was added. It is now applied once, to the final
+time.
+
+Writing the test for this taught me something I had wrong too. I first asserted that a cell anywhere
+on a private edge should prefer the open route. That is false: a cell *on* the edge must use part of
+it regardless, so past a crossover it is genuinely correct to continue to the far end. With this
+fixture the crossover is at 29% along the edge, and the test now encodes that rather than my
+mistaken expectation. The bug was specifically at the **exact node**, where the open road is
+available without touching the private edge at all.
+
+### Fixed: `access=destination` was unpenalised
+
+It was classified open with zero penalty, which made an explicit "no through traffic" road behave
+like an ordinary shortcut — the clearest possible case for a penalty, and I had written a test
+asserting the mistake. It is now restricted. 550 edges in the extract carry it.
+
+### Fixed: mode-tag precedence and list aggregation
+
+`motor_vehicle` was consulted before `motorcar`, so `motor_vehicle=no` with `motorcar=yes` read as
+forbidden despite the narrower allowance. The order is now narrowest-first
+(`motorcar` → `motor_vehicle` → `vehicle` → `access`), and `vehicle` is handled at all. Separately,
+specific and generic tags aggregated differently: `foot=[yes, private]` came out open while
+`access=[yes, private]` came out restricted. Both are now restricted, with the strictest value in
+any one tag winning.
+
+### Withdrawn: "not a through-route"
+
+A finite penalty **discourages** through traffic; it does not prohibit it. With the drive penalty at
+450 s, a 60-second private cut-through beats a 600-second open detour and is selected. The honest
+description is "penalised, not prohibited", and the section heading above should be read that way.
+
+Two consequences worth stating plainly. The penalty is charged **per simplified edge**, so splitting
+one physical private link into two doubles its penalty without any physical change — an artifact of
+per-edge rather than per-entry charging. And permission depends on the traveller: reaching your own
+driveway is not the same right as cutting through someone else's estate, and a single scalar penalty
+cannot express that difference.
+
+### Withdrawn: "those are overwhelmingly homes on driveways"
+
+Asserted, not measured, and the measurement does not support it. Of 272,961 reachable cells, only
+**4,662** have a restricted edge as their nearest edge (4,424 `private`, 236 `customers`, 1
+`forestry` — so the "agricultural tracks" worry is empirically nil). That is far short of the
+~15,200-cell coverage gain, which means **most of the gain is cells nearest an open edge that became
+reachable because restricted edges reconnected the network** — reachable *through* private roads,
+not homes *on* them. That is a legitimate routing mechanism and it is not the story I told. Whether
+those routes are ones a person may lawfully drive is exactly the question the per-edge penalty cannot
+answer.
+
+Also withdrawn: the before/after component comparison, which compared **1,685 drive** components to
+**3,046 walk** components. Those are different modes and not a controlled comparison.
+
+### Replaced: the penalty-leak test
+
+The original check looked for a histogram spike at the penalty value. A leak would appear as a
+per-cell offset, which a histogram cannot see, so that test could not have failed. The replacement
+brackets the reported value between two independently computed bounds, time-only Dijkstra below and
+cost-based Dijkstra above, and then — this part matters — restricts the leak check to the nodes where
+cost and time actually differ. On the ~88% of nodes untouched by a restricted edge all three
+computations coincide by arithmetic, and my first verdict logic mistook that for a leak and reported
+a false FAIL.
+
+### Penalty sensitivity, measured
+
+| penalty (s) | cells with a time | median reported | nodes whose path the penalty diverted |
+|---|---|---|---|
+| 0 | 77.35% | 34.4 min | 0 |
+| 60 | 77.35% | 34.4 min | 40,197 |
+| **120 (adopted)** | 77.32% | 34.4 min | 46,613 |
+| 240 | 77.27% | 34.4 min | 49,063 |
+| 960 | 77.25% | 34.6 min | 52,868 |
+
+**Coverage is almost completely insensitive to the penalty** — 0.1 points across a 16× range —
+because a finite penalty never removes reachability, only changes which path is chosen. So the
+coverage gain comes from *admitting* restricted edges at all, not from the magnitude, and the
+magnitude is a route-choice knob affecting 8–10% of nodes. The 450/120 s values remain **priors**
+from Valhalla's documented default, not measurements.
+
+### Still open
+
+- Whether the recovered cells are residential and lawfully reachable. Codex is right that no
+  defensible spurious-rate estimate exists, and that assigning a percentage now would repeat the
+  error. It needs a paired audit with a preserved before-array, legal entrances and transition
+  counts in both directions.
+- Per-entry rather than per-edge penalty charging, which would remove the segmentation artifact.
+- Physical intersection delay, if we ever add it, belongs in **time as well as cost**: only a
+  preference belongs to cost alone. The current machinery would put it in the wrong place.
+- The reconstruction's O(R log R) sort plus R Python sparse lookups could be an O(V+E) dependency
+  walk with aligned CSR indices.
