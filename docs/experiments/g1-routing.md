@@ -428,3 +428,49 @@ driving hides a great deal and we are five minutes fast.
 
 All three feed the same `snap.cell_seconds_from_arrival`, so the grid contract, nodata convention
 and interpolation are shared regardless of which engine produced the times.
+
+### Own-graph layer: grocery / walk (2026-11-03 15:45:02)
+- graph: 504457 nodes, 1321416 edges (triangle-roads.osm (xml)); destinations 417 nodes from 452 places (0 dropped > 300 m)
+- reachable cells 72.7%; one-way-adjacent cells 2.9%
+- timings (s): {"load_graph_s": 145.18, "save_graphml_s": 63.96, "prepare_graph_s": 31.28, "csr_s": 2.72, "snap_pois_s": 1.75, "edge_index_s": 0.0, "dijkstra_s": 0.07, "snap_s": 3.75}; total 248.7
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+---
+
+## Widened-metro validation (2026-11-03): the adopted walk path, end to end
+
+The first layer built on the widened Triangle metro, with the engine the G1 verdict adopted for
+walking (our own transposed-graph Dijkstra):
+
+| | Phase 0 slice | Widened Triangle |
+|---|---|---|
+| Grid | 550 × 401 = 220,550 cells | **643 × 514 = 330,502 cells** |
+| Walk graph | 263,631 nodes / 682,946 edges | **504,457 nodes / 1,321,416 edges** |
+| Groceries (Overture, accepted) | 285 | **452** |
+| Reachable cells | 74.2% | 72.7% |
+| One-way-adjacent cells | 2.9% | 2.9% |
+
+Stage timings for the first run, which includes the one-time graph parse and cache write:
+
+| Stage | Seconds |
+|---|---|
+| Parse `triangle-roads.osm` (453 MB XML) | 145.2 |
+| Write the GraphML cache (one-time) | 64.0 |
+| Project, apply access rules, symmetrise | 31.3 |
+| Build CSR | 2.7 |
+| Snap 452 POIs to nodes | 1.8 |
+| **Multi-source Dijkstra on the transposed graph** | **0.07** |
+| Snap 330,502 cells and interpolate | 3.8 |
+| **Total** | **248.7** |
+
+**The marginal cost of a category is about 5.5 s**, not 249 s. Everything above the POI snap is
+per-mode graph preparation that amortises across every category of that mode, and the GraphML cache
+removes the 145 s parse from subsequent runs. This is the honest cost comparison Codex pass 4 asked
+for (M1): eight categories of walk layers cost roughly 210 s of one-time graph work plus 8 × 5.5 s,
+not 8 × 249 s. The Dijkstra itself is 70 ms over half a million nodes.
+
+Caveat carried forward: these are layer *production* numbers on the adopted engine, not an accuracy
+re-measurement. The walk model's accuracy was established on the Phase 0 slice; the same exact-pair
+comparison should be repeated on the widened metro before the layers are published, since the new
+area includes denser Raleigh street grids that the original sample never saw.

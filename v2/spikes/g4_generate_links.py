@@ -1,5 +1,8 @@
 """Gate G4: generate 20 two-anchor regions and the portal deep links to test by hand.
 
+Metro-aware: anchors are asserted inside the active metro's evaluation bbox before anything is
+generated, and outputs carry the metro name.
+
 For each region: two anchors (named Triangle workplaces or random slice points), each a
 25-minute AUTO arrival isochrone from self-hosted Valhalla; region = intersection; bbox =
 region envelope; leakage = bbox area / region area. Links are GENERATED ONLY, never fetched.
@@ -12,6 +15,7 @@ from __future__ import annotations
 
 import json
 import random
+import statistics
 import sys
 from pathlib import Path
 
@@ -21,7 +25,7 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import DATA, GRID, RESULTS, VALHALLA, stamp  # noqa: E402
+from _common import DATA, GRID, METRO, RESULTS, VALHALLA, stamp  # noqa: E402
 from locfinder.listings.links import BBox, leakage_ratio, realtor_url, redfin_url, trulia_url, zillow_url  # noqa: E402
 
 NAMED = {
@@ -34,6 +38,14 @@ NAMED = {
 MINUTES = 25
 
 
+def assert_in_metro() -> None:
+    """Anchors must lie inside the metro's evaluation bbox. Six of the original twenty regions were
+    invalid because two anchors sat south of the Phase 0 extract edge (Codex pass 4 H7)."""
+    bad = [n for n, (lat, lon) in NAMED.items() if not METRO.evaluation.contains(lat, lon)]
+    if bad:
+        raise SystemExit(f"anchors outside the {METRO.name} evaluation bbox: {bad}")
+
+
 def arrival_polygon(lat, lon, minutes=MINUTES, costing="auto"):
     body = {"locations": [{"lat": lat, "lon": lon}], "costing": costing, "contours": [{"time": minutes}],
             "polygons": True, "reverse": True, "denoise": 0.3, "generalize": 50}
@@ -44,6 +56,7 @@ def arrival_polygon(lat, lon, minutes=MINUTES, costing="auto"):
 
 
 def main() -> None:
+    assert_in_metro()
     random.seed(5)
     names = list(NAMED)
     pairs = []
@@ -70,10 +83,11 @@ def main() -> None:
         feats.append({"type": "Feature", "properties": {"id": rid, "a": a, "b": b, "minutes": MINUTES, "mode": "auto",
                                                         "area_km2": round(area_km2, 2), "leakage": round(bbox_km2 / area_km2, 2)},
                       "geometry": region.__geo_interface__})
-    (DATA / "g4_regions.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8")
+    (DATA / f"g4_regions_{METRO.name}.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8")
 
     lines = [f"# G4: listings handoff checklist (generated {stamp()})", "",
-             f"20 regions = intersection of two {MINUTES}-minute AUTO arrival isochrones (self-hosted Valhalla 3.9.1, slice build). "
+             f"20 regions = intersection of two {MINUTES}-minute AUTO arrival isochrones (self-hosted Valhalla 3.9.1, "
+             f"metro {METRO.name} via {VALHALLA}). Every anchor is asserted inside the evaluation bbox. "
              "Leakage = bounding-box area / region area (1.0 = no leakage). Links are generated from undocumented portal URL shapes "
              "(research 04; Codex C3) and were NOT fetched by any script; the owner opens them by hand on desktop, iOS, and Android and "
              "records: opens with the right bounds (Y/N), price filter kept (Y/N), app handoff returns cleanly (Y/N). A broken link is a "
@@ -89,14 +103,14 @@ def main() -> None:
     ok = [d for *_, d in rows if isinstance(d, dict)]
     if ok:
         leaks = sorted(d["leak"] for d in ok)
-        lines += ["", f"Leakage over {len(ok)} regions: median {leaks[len(leaks) // 2]:.2f}, max {leaks[-1]:.2f}. "
+        lines += ["", f"Leakage over {len(ok)} regions: median {statistics.median(leaks):.2f}, max {leaks[-1]:.2f}. "
                   "Regions with several disconnected parts have the largest leakage; the product must show the exact region on our map regardless.",
                   "", "## Pass criterion", "", "≥ 90% of links open with correct bounds on all three device classes for at least two portals, broken links counted; "
                   "filters and app return recorded; leakage reported. RentCast pins are optional and do not gate the free links.",
                   "", "## Verdict", "", "(owner fills after the device sessions)"]
-    (RESULTS / "g4-listings.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    (RESULTS / f"g4-listings-{METRO.name}.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     print("\n".join(lines[:12]))
-    print(f"... {len(ok)} regions with links written to docs/experiments/g4-listings.md; geojson -> v2/data/g4_regions.geojson")
+    print(f"... {len(ok)} regions written to docs/experiments/g4-listings-{METRO.name}.md and v2/data/g4_regions_{METRO.name}.geojson")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,11 @@
 # G4: listings handoff checklist (generated 2026-11-03 13:42:34)
 
+> **SUPERSEDED (2026-11-03).** This checklist was generated on the Phase 0 slice, whose extract
+> edge truncated six of its twenty regions (ids 2, 6, 8, 15, 16, 19). Use
+> [`g4-listings-triangle.md`](g4-listings-triangle.md), regenerated on the widened metro where all
+> twenty regions are valid. Kept for the record and for the leakage correction it documents.
+
+
 20 regions = intersection of two 25-minute AUTO arrival isochrones (self-hosted Valhalla 3.9.1, slice build). Leakage = bounding-box area / region area (1.0 = no leakage). Links are generated from undocumented portal URL shapes (research 04; Codex C3) and were NOT fetched by any script; the owner opens them by hand on desktop, iOS, and Android and records: opens with the right bounds (Y/N), price filter kept (Y/N), app handoff returns cleanly (Y/N). A broken link is a failure, not a skip. Owner decision 14: a city/ZIP link plus our exact region is an acceptable fallback if bounded links are fragile.
 
 > **⚠ Correction (2026-11-03, after Codex pass 4).** Two of the ten anchors — **Cary Downtown
