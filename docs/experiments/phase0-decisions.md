@@ -186,6 +186,15 @@ Only the school row rests on an independent inventory. Record counts are abundan
 the selectors do not screen operating status or public access, and a polygon centroid is not an
 accessible park entrance. Parks and playgrounds remain unresolved and parks are a headline amenity.
 
+**Licensing, after owner decision 17.** The owner will publish OSM-derived work under ODbL and
+contribute back, so the Produced-Work versus Derivative-Database question that earlier revisions
+flagged for counsel is **moot by choice**. OSM-derived and permissively licensed data (Overture
+CDLA-Permissive, Foursquare Apache-2.0 with its NOTICE) may therefore share tables, with the
+notices carried through. The separability rule survives but narrows to **contractually** restricted
+sources — Google `place_id`, RentCast, IDX, portal data — which must never enter an ODbL-published
+artifact, because share-alike and those contracts pull in opposite directions. Contributions back to
+OSM may not be sourced from Overture or Google.
+
 ### D4. Street addresses from the Census geocoder; place *names* from our own index, metro-bounded
 
 **[measured]** `geocoding.md`. Census matched **33/40** slice addresses (so **7 failed**, and 4 of
@@ -293,11 +302,24 @@ Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already
    published timetables, measuring the 90-minute cap and import/query peaks.
 3. **Rerun interactive performance cleanly** with valid anchors only, isolating the latency run from
    precompute contention, and separating semantic failures from HTTP 200s.
-4. **Regenerate the G4 region fixtures** on the widened metro (the extract itself is done) so the
-   device sessions and the interaction prototypes stop drawing six invalid regions.
-5. **Finish the independent POI inventories** for parks, playgrounds and groceries.
-6. ~~Build North Carolina~~ **done**; what remains is provisioning the real host and deciding
+4. ~~Regenerate the G4 region fixtures~~ **done**: regenerated on the widened metro, all twenty
+   regions valid, the prototypes repointed, the old checklist marked superseded.
+5. **Add a routability check to the anchor path.** A geocoded anchor must be verified to reach the
+   network and nudged to the nearest point that does, with the adjustment surfaced. "RDU Terminal 2"
+   snapped to a node reachable only through `access=no` ways, which is why three journeys returned
+   nothing until pruning masked it. Valhalla does this internally; our pipeline does not.
+6. **Finish the independent POI inventories** for parks, playgrounds and groceries.
+7. ~~Build North Carolina~~ **done**; what remains is provisioning the real host and deciding
    between a 2 vCPU box with an anchor cache and a 4 vCPU box.
+
+A standing limitation of our own engine, found while diagnosing the airport failure: our access
+rule is a single allow/deny, while real routers separate **through** traffic from **start/end**
+access. `access=private` covers **118,035 edges** in the Triangle extract and `access=customers`
+another **8,003**, all blocked outright, so every home on a private drive would be unreachable —
+a systematic coverage hole for a home-search product. Valhalla penalises private access instead of
+forbidding it. This does not affect the adopted drive path, which is Valhalla, and it is the first
+thing to fix if our own engine is ever revived for driving. The walk layers we do publish from our
+own graph carry the same rule and should be re-examined for it.
 
 Remaining uncertainties that no amount of our own measurement will settle: neither engine has
 traffic data, so drive times are a model's opinion and the UI must keep saying "estimated, modelled
