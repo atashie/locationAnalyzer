@@ -95,13 +95,29 @@ def main() -> None:
     equal_lower = int(np.isclose(report[fin], lower[fin], atol=1e-6).sum())
     equal_upper = int(np.isclose(report[fin], upper[fin], atol=1e-6).sum())
     diverted = int((report[fin] > lower[fin] + EPS).sum())
-    # The leak signature is only meaningful where cost and time actually differ. On the ~88% of
-    # nodes untouched by a restricted edge, cost == time and ALL THREE computations coincide, so
-    # "reported equals cost-based" there is arithmetic, not evidence (my earlier verdict logic got
-    # this wrong and reported a false FAIL).
+    # Nodes where the penalty actually changed something. Everywhere else cost == time and all
+    # three computations coincide by arithmetic (my first verdict logic mistook that for a leak).
     bites = fin & (upper > lower + EPS)
-    leak = int(np.isclose(report[bites], upper[bites], atol=1e-6).sum()) if bites.any() else 0
+    # `reported == cost-based` is NOT a leak signature, which my second verdict logic also got
+    # wrong. It means the cost-optimal path carries no penalised edge at all, so its time equals
+    # its cost necessarily -- that is the penalty having successfully diverted the route. Codex's
+    # own H1 fixture is exactly this case: at S the open road is chosen, reported == cost == 200,
+    # and `test_cost_aware_snapping.py` asserts 200 is correct.
+    on_clean_path = int(np.isclose(report[bites], upper[bites], atol=1e-6).sum()) if bites.any() else 0
     stripped = int((report[bites] < upper[bites] - EPS).sum()) if bites.any() else 0
+    # The decisive test is the exact identity. Accumulating the PENALTY over the same cost-optimal
+    # forest must reconcile the two bounds edge for edge:
+    #     cost-based  ==  reported time  +  penalty accumulated on that path
+    # A genuine leak (reporting cost as time) breaks it: report would equal upper while the
+    # accumulated penalty is non-zero.
+    penalty_csr = cost_csr.copy()
+    penalty_csr.data = cost_csr.data - time_csr.data
+    pen_accum = arrival_seconds_two_weight(cost_csr, penalty_csr, dest_idx=dest)
+    ident = fin & np.isfinite(pen_accum)
+    residual = np.abs(upper[ident] - (report[ident] + pen_accum[ident]))
+    ident_bad = int((residual > 1e-3).sum())
+    ident_max = float(residual.max()) if residual.size else 0.0
+    carrying = int((pen_accum[ident] > EPS).sum())
     lines = [f"### Two-weight verification on the real network ({stamp()}): {args.mode} / {args.category}",
              "", f"{G.number_of_nodes():,} nodes, {len(dest)} destinations, {int(fin.sum()):,} nodes finite in all three computations.",
              "", "**Bracket test.** The reported value must satisfy "
@@ -112,18 +128,74 @@ def main() -> None:
              f"| reported **equals** the time-only bound (no penalty in effect) | {equal_lower:,} | {equal_lower / fin.sum():.2%} |",
              f"| reported equals the cost-based value **overall** (expected where cost==time) | {equal_upper:,} | {equal_upper / fin.sum():.2%} |",
              f"| reported **above** time-only, i.e. the penalty diverted the path | {diverted:,} | {diverted / fin.sum():.2%} |",
-             "", "The decisive rows, restricted to the nodes where cost and time actually differ "
-             f"(**{int(bites.sum()):,}** nodes; everywhere else cost == time and all three agree by arithmetic):",
-             "", "| check | nodes | share of those |", "|---|---|---|",
-             f"| penalty **stripped** from the report (correct) | **{stripped:,}** | {stripped / max(int(bites.sum()), 1):.2%} |",
-             f"| report **still carries** the penalty (a leak) | **{leak:,}** | {leak / max(int(bites.sum()), 1):.2%} |"]
-    verdict = "PASS" if below == 0 and above == 0 and leak == 0 else "FAIL"
+             "", "Of the "
+             f"**{int(bites.sum()):,}** nodes the penalty actually affected, both outcomes below are "
+             "correct; the split is descriptive, not a verdict. `reported == cost-based` means the "
+             "chosen path carries no penalised edge, so its time equals its cost necessarily:",
+             "", "| outcome | nodes | share of those |", "|---|---|---|",
+             f"| diverted onto a penalty-free path (reported == cost-based) | {on_clean_path:,} | {on_clean_path / max(int(bites.sum()), 1):.2%} |",
+             f"| still uses a penalised edge, penalty stripped from the report | {stripped:,} | {stripped / max(int(bites.sum()), 1):.2%} |",
+             "", "**The decisive test is the exact identity.** Accumulating the penalty over the same "
+             "cost-optimal forest must reconcile the two bounds edge for edge: "
+             "`cost-based == reported time + penalty accumulated on that path`. A leak breaks it, "
+             "because the report would equal the upper bound while the accumulated penalty is non-zero.",
+             "", "| check | value |", "|---|---|",
+             f"| nodes tested | {int(ident.sum()):,} |",
+             f"| of those, carrying a non-zero accumulated penalty | {carrying:,} ({carrying / max(int(ident.sum()), 1):.2%}) |",
+             f"| identity violations above 1 ms (must be 0) | **{ident_bad}** |",
+             f"| largest residual | {ident_max:.2e} s |"]
+    verdict = "PASS" if below == 0 and above == 0 and ident_bad == 0 and carrying > 0 else "FAIL"
     lines += ["", f"**Verdict: {verdict}.** "
-              + ("The reported times sit inside the bracket, and on every node where cost and time differ "
-                 "the penalty has been stripped from the reported figure. The penalty is not leaking."
+              + ("The reported times sit inside the bracket and the penalty identity holds exactly on "
+                 "every node, so the reported figure is the real travel time along the cost-optimal "
+                 "path and the penalty is not leaking into it."
                  if verdict == "PASS" else
-                 "The bracket is violated or the reported value tracks the cost-based one: the penalty is "
-                 "leaking into reported time.")]
+                 "Either the bracket is violated, the penalty identity fails, or no path carries an "
+                 "accumulated penalty at all (which would mean the test exercised nothing).")]
+
+    # ---- 1b. independent path walk ---------------------------------------------------------
+    # The identity above shares the sweep's arithmetic, so it cannot catch a wrong PATH: time and
+    # penalty would both accumulate over the same wrong route and still reconcile. This walks the
+    # predecessor chain explicitly and re-sums the weights from the graph itself, which is
+    # independent of the reconstruction.
+    from scipy.sparse.csgraph import dijkstra as _dij
+    _, pred, _src = _dij(cost_csr.transpose().tocsr(), directed=True, indices=dest,
+                         min_only=True, return_predecessors=True)
+    inv = {i: n for n, i in index.items()}
+    rng = np.random.default_rng(20261103)
+    cand = np.flatnonzero(ident & (pen_accum > EPS))        # sample where a penalty is in play
+    sample = rng.choice(cand, size=min(500, cand.size), replace=False) if cand.size else []
+    walk_bad, walk_pen_bad, hops = 0, 0, 0
+    for node in sample:
+        t_sum = c_sum = 0.0
+        cur = int(node)
+        while True:
+            p = int(pred[cur])
+            if p == -9999:
+                break
+            # transposed predecessor p of cur means a real edge cur -> p in G; among parallels take
+            # the cost-minimal one, matching graph_to_cost_time_csr, and use ITS time
+            par = G[inv[cur]][inv[p]]
+            d = min(par.values(), key=lambda e: e["cost"])
+            t_sum += d["travel_time"]
+            c_sum += d["cost"]
+            cur, hops = p, hops + 1
+        if abs(t_sum - report[node]) > 1e-3:
+            walk_bad += 1
+        if abs((c_sum - t_sum) - pen_accum[node]) > 1e-3:
+            walk_pen_bad += 1
+    lines += ["", "**Independent path walk.** The identity shares the reconstruction's arithmetic, so it "
+              "cannot detect a wrong path. This re-sums `travel_time` and `cost` from the graph along the "
+              "explicit predecessor chain, for a random sample of nodes whose path carries a penalty.",
+              "", "| check | value |", "|---|---|",
+              f"| nodes walked (of {cand.size:,} eligible) | {len(sample):,} |",
+              f"| total hops re-summed | {hops:,} |",
+              f"| reported time != re-summed graph time (must be 0) | **{walk_bad}** |",
+              f"| accumulated penalty != re-summed graph penalty (must be 0) | **{walk_pen_bad}** |"]
+    if walk_bad or walk_pen_bad:
+        verdict = "FAIL"
+        lines += ["", "**The independent walk disagrees with the reconstruction**, which overrides the "
+                  "verdict above: the reported time is not the time of the path actually chosen."]
 
     # ---- 2. penalty sensitivity ------------------------------------------------------------
     xs, ys = GRID.cell_centers_xy()
@@ -139,7 +211,12 @@ def main() -> None:
         rp = arrival_seconds_two_weight(cp, tp, dest_idx=dp, cutoff_s=120 * 60)
         lo = arrival_seconds(tp, dest_idx=dp, cutoff_s=120 * 60)
         idxp = EdgeIndex.from_graph(Gp, ip)
-        secs = cell_seconds_from_arrival(idxp, rp, xs, ys, mode=args.mode, max_access_m=200.0)
+        # must match layer.build_layer_seconds exactly, or this measures a pipeline we do not ship
+        # (Codex pass-7 M2: omitting node_cost/cutoff_s is why this table read 77.32% against the
+        # production rebuild's 76.8%)
+        ncp = arrival_seconds(cp, dest_idx=dp)
+        secs = cell_seconds_from_arrival(idxp, rp, xs, ys, mode=args.mode, max_access_m=200.0,
+                                        node_cost=ncp, cutoff_s=120 * 60)
         f = np.isfinite(rp) & np.isfinite(lo)
         div = int((rp[f] > lo[f] + EPS).sum())
         lines.append(f"| {pen:.0f} | {np.isfinite(secs).mean():.2%} | "
@@ -156,7 +233,9 @@ def main() -> None:
     restricted_len = set(cls_by_geom)
     snapped_len = np.array([round(g.length, 4) for g in eidx.geoms])[nearest]
     on_restricted = np.isin(snapped_len, list(restricted_len))
-    secs_base = cell_seconds_from_arrival(eidx, report, xs, ys, mode=args.mode, max_access_m=200.0)
+    secs_base = cell_seconds_from_arrival(eidx, report, xs, ys, mode=args.mode, max_access_m=200.0,
+                                          node_cost=arrival_seconds(cost_csr, dest_idx=dest),
+                                          cutoff_s=120 * 60)
     reach = np.isfinite(secs_base).ravel()
     counts = collections.Counter(cls_by_geom.get(l, "?") for l in snapped_len[on_restricted & reach])
     lines += ["", "**Provenance of reachable cells whose nearest edge is restricted** (by that edge's "

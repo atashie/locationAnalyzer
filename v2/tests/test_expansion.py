@@ -62,11 +62,73 @@ def test_reversed_geometry_still_identifies_the_near_end():
     assert sorted(round(t) for t in T) == [0, 100, 200]
 
 
-def test_unresolvable_predecessor_is_treated_as_a_root():
-    feats = [feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 7, pred_edge_id=99999)]
+def test_dangling_predecessor_does_not_become_a_zero_time_root():
+    """Codex pass-7 C5, second half. An edge naming a predecessor that is NOT in the response has
+    an UNKNOWN near-end time -- the predecessor's cumulative duration was the only way to get it.
+    The old code treated it as a search root at 0 s, which plants a spurious "instantly reachable"
+    node in the middle of the network. The earlier test asserted that mistake."""
+    feats = [
+        feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 1),
+        feat([[-79.001, 35.900], [-79.002, 35.900]], 200.0, 180.0, 2, 1),
+        feat([[-79.010, 35.900], [-79.011, 35.900]], 400.0, 360.0, 7, pred_edge_id=99999),
+    ]
+    with pytest.raises(ValueError, match="not self-consistent"):
+        expansion_to_edge_index(feats, target_crs=CRS)
+
+    rep = {}
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, strict=False, report=rep)
+    assert rep["dangling_predecessors"] == 1 and rep["dropped"] == 1
+    assert len(idx.geoms) == 2, "the orphan edge is removed, not kept with an invented time"
+    assert sorted(round(t) for t in T if math.isfinite(t)) == [0, 100, 200]
+    assert np.isinf(T).sum() == 2, "the orphan's own nodes stay unknown"
+
+
+def test_root_orientation_is_derived_from_origins_when_geometry_points_inward():
+    """Codex pass-7 C5, first half, reproduced. The root's stored geometry runs TOWARD the
+    destination, so its near end is coords[-1]. The old code assumed coords[0] unconditionally and
+    put 0 s at the far node while giving the destination itself a full edge traversal."""
+    dest = (-79.000, 35.900)
+    feats = [feat([[-79.001, 35.900], [-79.000, 35.900]], 100.0, 90.0, 1)]   # points inward
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, origins=[dest])
+    near = idx.end_idx[0]      # coords[-1] is the destination
+    far = idx.start_idx[0]
+    assert T[near] == 0.0, "the destination is at time zero"
+    assert T[far] == 100.0
+
+
+def test_root_orientation_falls_back_to_successors_without_origins():
+    feats = [
+        feat([[-79.001, 35.900], [-79.000, 35.900]], 100.0, 90.0, 1),        # points inward
+        feat([[-79.001, 35.900], [-79.002, 35.900]], 200.0, 180.0, 2, 1),    # leaves via -79.001
+    ]
     idx, T = expansion_to_edge_index(feats, target_crs=CRS)
-    assert sorted(round(t) for t in T) == [0, 100]
-    assert math.isclose(idx.fwd_time[0], 100.0)
+    assert sorted(round(t) for t in T) == [0, 100, 200]
+
+
+def test_origins_outrank_successors_when_they_disagree():
+    """The origins are authoritative: they say where the search actually started."""
+    feats = [
+        feat([[-79.001, 35.900], [-79.000, 35.900]], 100.0, 90.0, 1),
+        feat([[-79.000, 35.900], [-79.002, 35.900]], 200.0, 180.0, 2, 1),
+    ]
+    # successors alone would read the shared vertex -79.000 as the FAR end, i.e. near = -79.001
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS)
+    assert T[idx.start_idx[0]] == 0.0
+    # but the origin is at -79.000, so that endpoint must be the zero
+    idx2, T2 = expansion_to_edge_index(feats, target_crs=CRS, origins=[(-79.000, 35.900)])
+    assert T2[idx2.end_idx[0]] == 0.0
+
+
+def test_an_unorientable_root_raises_rather_than_guessing():
+    """A lone root with no successor and no supplied origin is genuinely undetermined, and a guess
+    lands on the destination itself where an error is maximally visible."""
+    feats = [feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 1)]
+    with pytest.raises(ValueError, match="not self-consistent"):
+        expansion_to_edge_index(feats, target_crs=CRS)
+    rep = {}
+    with pytest.raises(ValueError, match="every expansion edge was unusable"):
+        expansion_to_edge_index(feats, target_crs=CRS, strict=False, report=rep)
+    assert rep["roots_unoriented"] == 1
 
 
 def test_missing_duration_and_degenerate_geometry_are_skipped():
@@ -75,14 +137,15 @@ def test_missing_duration_and_degenerate_geometry_are_skipped():
         feat([[-79.000, 35.900]], 50.0, 10.0, 2),
         feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 3),
     ]
-    idx, _ = expansion_to_edge_index(feats, target_crs=CRS)
+    idx, _ = expansion_to_edge_index(feats, target_crs=CRS, origins=[(-79.000, 35.900)])
     assert len(idx.geoms) == 1
 
 
 def test_coordinates_outside_the_projection_are_skipped():
     far = feat([[0.0, 0.0], [0.001, 0.0]], 100.0, 90.0, 1)
     good = feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 2)
-    idx, _ = expansion_to_edge_index([far, good], target_crs=CRS)
+    idx, _ = expansion_to_edge_index([far, good], target_crs=CRS,
+                                     origins=[(-79.000, 35.900)])
     assert len(idx.geoms) == 1
 
 

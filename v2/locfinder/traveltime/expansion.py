@@ -30,12 +30,45 @@ from .snap import EdgeIndex
 
 # metres: endpoints within this distance are treated as the same node
 _NODE_SNAP_M = 0.5
-# Valhalla's sentinel for "no predecessor" (kInvalidGraphId), seen as 70368744177663
 _MIN_EPSILON_S = 0.1
+# Valhalla's sentinel for "no predecessor" (kInvalidGraphId). A feature carrying this really is a
+# search root. A feature naming a predecessor we do NOT have is a different thing entirely -- its
+# near-end time is unknown -- and conflating the two invents a zero-time node (Codex pass-7 C5).
+_NO_PRED_SENTINELS = frozenset({None, 70368744177663, -1})
 
 
 def _node_key(x: float, y: float) -> tuple[int, int]:
     return (int(round(x / _NODE_SNAP_M)), int(round(y / _NODE_SNAP_M)))
+
+
+def _orient_root(edge: dict, successors, origin_pts) -> bool | None:
+    """Is a root edge's near end its first coordinate? Derived, never assumed.
+
+    Two independent signals, strongest first:
+    1. the supplied search origins — the near end of a root is the origin itself, so the endpoint
+       closer to the nearest origin is the near end;
+    2. the root's successors — the search left the root through its FAR end, so the vertex shared
+       with a successor is the far end.
+
+    Returns None when neither signal is available, because a guess here lands on the destination
+    itself, where the time must be 0 and an error is maximally visible.
+    """
+    if origin_pts is not None and len(origin_pts):
+        first = shapely.points(*edge["geom"].coords[0])
+        last = shapely.points(*edge["geom"].coords[-1])
+        d_first = float(shapely.distance(first, origin_pts).min())
+        d_last = float(shapely.distance(last, origin_pts).min())
+        if abs(d_first - d_last) > _NODE_SNAP_M:
+            return d_first < d_last
+    shared = set()
+    for s in successors:
+        shared |= {s["ll_first"], s["ll_last"]}
+    if shared:
+        first_shared = edge["ll_first"] in shared
+        last_shared = edge["ll_last"] in shared
+        if first_shared != last_shared:
+            return last_shared          # the SHARED end is the far end
+    return None
 
 
 def expansion_to_edge_index(
@@ -43,12 +76,25 @@ def expansion_to_edge_index(
     *,
     target_crs: str,
     source_crs: str = "EPSG:4326",
+    origins: list[tuple[float, float]] | None = None,
+    strict: bool = True,
+    report: dict | None = None,
 ) -> tuple[EdgeIndex, np.ndarray]:
     """Build (EdgeIndex, T) from `/expansion` features. `T` holds the arrival time in seconds
     at each node index the EdgeIndex refers to; unreachable nodes are +inf.
 
     Edges are marked traversable in both directions with their own traversal time, because the
     expansion tree already encodes legality: an edge appears only because the router used it.
+
+    `origins` are the (lon, lat) search origins — the destinations we are routing *to* under
+    arrival semantics. Supply them: they are the authoritative signal for which end of a root edge
+    is at time 0, and without them the orientation must be inferred from successors (Codex pass-7
+    C5, where an unoriented root put 0 s at a node 39 m from the destination and the destination's
+    own time at a full edge traversal).
+
+    `strict` (default) raises when the tree is not self-consistent — an edge naming an absent
+    predecessor, or a root that cannot be oriented — rather than silently inventing a time. Pass
+    `strict=False` with `report={}` to drop those edges and read how many there were.
     """
     to_proj = Transformer.from_crs(source_crs, target_crs, always_xy=True)
 
@@ -86,16 +132,40 @@ def expansion_to_edge_index(
                 keys[k] = len(keys)
             slot[i] = keys[k]
 
+    # successors, so a root edge's orientation can be DERIVED rather than assumed: the vertex a
+    # root shares with the edges it expanded into is its far end (Codex pass-7 C5).
+    succ_of: dict[object, list[dict]] = {}
+    for e in kept:
+        if e["pred"] not in _NO_PRED_SENTINELS:
+            succ_of.setdefault(e["pred"], []).append(e)
+
+    origin_pts = None
+    if origins:
+        ox, oy = to_proj.transform([p[0] for p in origins], [p[1] for p in origins])
+        origin_pts = shapely.points(np.asarray(ox), np.asarray(oy))
+
     # pass 3: endpoint times from (predecessor duration, own duration)
     T = np.full(len(keys), np.inf)
     tau = np.empty(len(kept), dtype=np.float64)
+    dangling: list[object] = []
+    roots_unoriented: list[object] = []
+    drop = np.zeros(len(kept), dtype=bool)
     for i, e in enumerate(kept):
         pred = by_edge.get(e["pred"])
-        near_t = float(pred["dur"]) if pred is not None else 0.0
+        is_root = e["pred"] in _NO_PRED_SENTINELS
+        if pred is None and not is_root:
+            # A named predecessor we do not have. Its cumulative duration is the only thing that
+            # could give this edge's near-end time, so that time is UNKNOWN. Treating it as a root
+            # at 0 s would plant a spurious "instantly reachable" node in the middle of the
+            # network, which is far worse than omitting the edge.
+            dangling.append(e["edge_id"])
+            drop[i] = True
+            tau[i] = _MIN_EPSILON_S
+            continue
+        near_t = 0.0 if is_root else float(pred["dur"])
         far_t = e["dur"]
         tau[i] = max(far_t - near_t, _MIN_EPSILON_S)
-        near_at_start = True
-        if pred is not None:
+        if not is_root:
             shared = {pred["ll_first"], pred["ll_last"]}
             if e["ll_first"] in shared:
                 near_at_start = True
@@ -107,16 +177,40 @@ def expansion_to_edge_index(
                 near_at_start = e["geom"].interpolate(0.0).distance(pred["geom"]) <= \
                     e["geom"].interpolate(1.0, normalized=True).distance(pred["geom"])
         else:
-            # root edge: the near end is the search origin, so take the endpoint that is not
-            # shared with any successor as "far"; with no information, start is as good as end
-            near_at_start = True
+            near_at_start = _orient_root(e, succ_of.get(e["edge_id"], ()), origin_pts)
+            if near_at_start is None:
+                # No successor and no origin to compare against: the orientation is genuinely
+                # undetermined. Guessing is a coin flip that lands on the destination itself, so
+                # record the edge's traversal time but assert nothing about which end is which.
+                roots_unoriented.append(e["edge_id"])
+                drop[i] = True
+                continue
         a, b = (start_idx[i], end_idx[i]) if near_at_start else (end_idx[i], start_idx[i])
         if near_t < T[a]:
             T[a] = near_t
         if far_t < T[b]:
             T[b] = far_t
 
-    geoms = [e["geom"] for e in kept]
+    if report is not None:
+        report.update(edges=len(kept), dangling_predecessors=len(dangling),
+                      roots_unoriented=len(roots_unoriented), dropped=int(drop.sum()),
+                      origins_supplied=0 if not origins else len(origins))
+    if strict and (dangling or roots_unoriented):
+        raise ValueError(
+            f"expansion tree is not self-consistent: {len(dangling)} edge(s) name a predecessor "
+            f"not present in the response and {len(roots_unoriented)} root(s) could not be "
+            "oriented. Endpoint times for these are unknown; pass origins=[(lon, lat), ...] to "
+            "orient roots, or strict=False to drop them and read the count from report=."
+        )
+
+    # Edges whose endpoint times are unknown are removed from the index entirely. Leaving them
+    # traversable would let a cell snap onto an edge and read a time from a node that was never
+    # resolved; nodes they alone touched stay +inf, which is the honest answer.
+    keep_mask = ~drop
+    if not keep_mask.any():
+        raise ValueError("every expansion edge was unusable; see report= for the breakdown")
+    geoms = [e["geom"] for e, k in zip(kept, keep_mask) if k]
+    start_idx, end_idx, tau = start_idx[keep_mask], end_idx[keep_mask], tau[keep_mask]
     geom_arr = np.empty(len(geoms), dtype=object)
     geom_arr[:] = geoms
     idx = EdgeIndex(

@@ -545,45 +545,6 @@ private shortcut is rejected when an open detour is cheaper, taken when it is th
 reported time is the chosen path's real time in both cases, and that the one-way regression from
 Codex pass 1 still holds on the two-weight path.
 
-### Two-weight verification on the real network (2026-11-03 17:45:11): walk / grocery
-
-539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
-
-**Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
-
-| check | nodes | share of finite |
-|---|---|---|
-| reported **below** the time-only lower bound (must be 0) | **0** | 0.0000% |
-| reported **above** the cost-based upper bound (must be 0) | **0** | 0.0000% |
-| reported **equals** the time-only bound (no penalty in effect) | 474,679 | 87.93% |
-| reported **equals** the cost-based value (would indicate a leak) | 473,904 | 87.79% |
-| reported **above** time-only, i.e. the penalty diverted the path | 65,272 | 12.09% |
-
-**Verdict: FAIL.** The bracket is violated or the reported value tracks the cost-based one: the penalty is leaking into reported time.
-
-**Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
-
-| penalty s | cells with a time | median reported min | nodes diverted by the penalty |
-|---|---|---|---|
-| 0 | 77.35% | 34.4 | 0 |
-| 60 | 77.35% | 34.4 | 40,197 |
-| 120 | 77.32% | 34.4 | 46,613 |
-| 240 | 77.27% | 34.4 | 49,063 |
-| 960 | 77.25% | 34.6 | 52,868 |
-
-**Provenance of reachable cells whose nearest edge is restricted** (by that edge's `access` value; a length-keyed approximation, so read it as indicative):
-
-| access value | reachable cells snapped to it |
-|---|---|
-| private | 4,424 |
-| customers | 236 |
-| forestry | 1 |
-| None | 1 |
-
-Total reachable cells nearest a restricted edge: 4,662 of 272,961 reachable.
-
----
-
 ## Corrections after Codex pass 6
 
 `../research/13-codex-adversarial-review-pass6-access.md` reviewed the section above and found a
@@ -691,3 +652,113 @@ from Valhalla's documented default, not measurements.
   preference belongs to cost alone. The current machinery would put it in the wrong place.
 - The reconstruction's O(R log R) sort plus R Python sparse lookups could be an O(V+E) dependency
   walk with aligned CSR indices.
+
+### Withdrawn: two FAIL verdicts on the penalty leak, both from the test, not the code
+
+Two runs of `spikes/verify_two_weight.py` appended a **"Verdict: FAIL — the penalty is leaking into
+reported time"** to this file, at 17:45 and 18:01 on 2026-11-03. **Both are withdrawn. Neither was
+evidence of a leak**, and the second was committed, so this is a correction to the record and not
+just to a draft.
+
+The first verdict counted every node where `reported == cost-based` as a leak. That is arithmetic on
+roughly 88% of the network: wherever no restricted edge is involved, cost and time are the same
+number and all three computations coincide by construction.
+
+The second verdict restricted the count to the 119,537 nodes where cost and time genuinely differ,
+which sounds like the fix and is not. **`reported == cost-based` is still not a leak signature.** It
+means the cost-optimal path carries no penalised edge, so that path's time equals its cost
+necessarily — which is the penalty having *successfully* diverted the route onto an open road. The
+43.08% that run reported as leaking is the share of penalty-affected nodes that ended up on a clean
+path, which is the outcome we want.
+
+The demonstration is Codex's own pass-6 H1 fixture, which `tests/test_cost_aware_snapping.py`
+independently certifies: at node S the open road is chosen, `time-only = 20`, `reported = 200` and
+`cost-based = 200`. The rule flags S as a leak while the suite asserts 200 is correct.
+
+**The valid test is the exact identity.** Accumulating the penalty over the same cost-optimal forest
+must reconcile the two bounds edge for edge:
+
+    cost-based  ==  reported time  +  penalty accumulated on that path
+
+A genuine leak breaks it, because the report would equal the upper bound while the accumulated
+penalty is non-zero. That identity shares the reconstruction's arithmetic, so it cannot detect a
+wrong *path*; an independent predecessor walk that re-sums `travel_time` and `cost` from the graph
+itself covers that. Both are now in the script, and
+`tests/test_two_weight.py::test_penalty_identity_is_the_valid_leak_test_not_equality_with_cost`
+guards the verdict rule so this cannot regress a third time.
+
+The bracket test itself was sound and passed in both runs: **zero** violations of
+`time-only <= reported <= cost-based` on 539,814 nodes. A bracket alone cannot detect a leak, which
+is what both verdicts got wrong; it bounds the error without localising it.
+
+
+### Two-weight verification on the real network (2026-11-03 18:14:42): walk / grocery
+
+539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
+
+**Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
+
+| check | nodes | share of finite |
+|---|---|---|
+| reported **below** the time-only lower bound (must be 0) | **0** | 0.0000% |
+| reported **above** the cost-based upper bound (must be 0) | **0** | 0.0000% |
+| reported **equals** the time-only bound (no penalty in effect) | 471,928 | 87.42% |
+| reported equals the cost-based value **overall** (expected where cost==time) | 471,776 | 87.40% |
+| reported **above** time-only, i.e. the penalty diverted the path | 68,023 | 12.60% |
+
+Of the **119,537** nodes the penalty actually affected, both outcomes below are correct; the split is descriptive, not a verdict. `reported == cost-based` means the chosen path carries no penalised edge, so its time equals its cost necessarily:
+
+| outcome | nodes | share of those |
+|---|---|---|
+| diverted onto a penalty-free path (reported == cost-based) | 51,499 | 43.08% |
+| still uses a penalised edge, penalty stripped from the report | 68,038 | 56.92% |
+
+**The decisive test is the exact identity.** Accumulating the penalty over the same cost-optimal forest must reconcile the two bounds edge for edge: `cost-based == reported time + penalty accumulated on that path`. A leak breaks it, because the report would equal the upper bound while the accumulated penalty is non-zero.
+
+| check | value |
+|---|---|
+| nodes tested | 539,814 |
+| of those, carrying a non-zero accumulated penalty | 68,038 (12.60%) |
+| identity violations above 1 ms (must be 0) | **0** |
+| largest residual | 3.64e-12 s |
+
+**Verdict: PASS.** The reported times sit inside the bracket and the penalty identity holds exactly on every node, so the reported figure is the real travel time along the cost-optimal path and the penalty is not leaking into it.
+
+**Independent path walk.** The identity shares the reconstruction's arithmetic, so it cannot detect a wrong path. This re-sums `travel_time` and `cost` from the graph along the explicit predecessor chain, for a random sample of nodes whose path carries a penalty.
+
+| check | value |
+|---|---|
+| nodes walked (of 68,038 eligible) | 500 |
+| total hops re-summed | 36,802 |
+| reported time != re-summed graph time (must be 0) | **0** |
+| accumulated penalty != re-summed graph penalty (must be 0) | **0** |
+
+**Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
+
+> **This table still needs a re-run and its coverage column should not be quoted.** Codex pass 7
+> (M2) found that the sweep called `cell_seconds_from_arrival` without `node_cost` or the final
+> `cutoff_s`, so it measured a pipeline we do not ship -- which is exactly why its coverage reads
+> 77.3% where the production rebuild of the same layer reads **76.8%**. The script has since been
+> changed to call the production path, but this run predates that change. The *shape* of the result
+> (coverage barely moves across a 16x range) is unaffected, because a finite penalty never removes
+> reachability; the absolute percentages are not the product's.
+
+| penalty s | cells with a time | median reported min | nodes diverted by the penalty |
+|---|---|---|---|
+| 0 | 77.35% | 34.4 | 0 |
+| 60 | 77.35% | 34.4 | 42,849 |
+| 120 | 77.32% | 34.4 | 49,363 |
+| 240 | 77.27% | 34.5 | 51,843 |
+| 960 | 77.25% | 34.7 | 55,694 |
+
+**Provenance of reachable cells whose nearest edge is restricted** (by that edge's `access` value; a length-keyed approximation, so read it as indicative):
+
+| access value | reachable cells snapped to it |
+|---|---|
+| private | 4,424 |
+| customers | 236 |
+| destination | 11 |
+| forestry | 1 |
+| None | 1 |
+
+Total reachable cells nearest a restricted edge: 4,673 of 272,961 reachable.

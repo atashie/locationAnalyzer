@@ -156,3 +156,75 @@ def test_speeds_sets_both_weights_and_penalises_only_restricted_edges():
     assert open_e["cost"] == pytest.approx(open_e["travel_time"])
     assert rest_e["cost"] == pytest.approx(rest_e["travel_time"] + RESTRICTED_PENALTY_S["drive"])
     assert rest_e["travel_time"] < rest_e["cost"]
+
+
+def test_penalty_identity_is_the_valid_leak_test_not_equality_with_cost():
+    """Guards the verification logic itself, which has now produced two wrong verdicts.
+
+    `reported == cost-based` is NOT a penalty leak. It means the cost-optimal path carries no
+    penalised edge, so its time equals its cost necessarily -- the penalty having successfully
+    diverted the route. Codex's H1 fixture is exactly that case, and `test_cost_aware_snapping`
+    asserts its value of 200 s is correct. A verdict rule of "reported == cost => leak" therefore
+    flags a node the suite independently certifies, which is how the second false FAIL happened.
+
+    The valid test is the exact identity, over the same cost-optimal forest:
+        cost-based == reported time + penalty accumulated on that path
+    """
+    PEN = 450.0
+    G = nx.MultiDiGraph()
+    for n, (x, y) in {"S": (0.0, 0.0), "E": (100.0, 0.0), "D": (100.0, 100.0)}.items():
+        G.add_node(n, x=x, y=y)
+    for u, v in (("S", "E"), ("E", "S")):            # fast, private
+        G.add_edge(u, v, travel_time=10.0, cost=10.0 + PEN)
+    for u, v in (("S", "D"), ("D", "S")):            # slow, open
+        G.add_edge(u, v, travel_time=200.0, cost=200.0)
+    for u, v in (("E", "D"), ("D", "E")):            # fast, open
+        G.add_edge(u, v, travel_time=10.0, cost=10.0)
+
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest = [index["D"]]
+    report = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=dest)
+    upper = arrival_seconds(cost_csr, dest_idx=dest)
+    lower = arrival_seconds(time_csr, dest_idx=dest)
+
+    s = index["S"]
+    # the penalty bit: the time-optimal route (20 s via the private edge) is rejected for the
+    # open road, so cost and time genuinely differ at S
+    assert lower[s] == pytest.approx(20.0)
+    assert report[s] == pytest.approx(200.0)
+    # and the report equals the cost-based value -- which the old rule called a leak
+    assert upper[s] == pytest.approx(report[s])
+
+    # the identity shows there is nothing to leak: zero penalty is accumulated on the chosen path
+    penalty_csr = cost_csr.copy()
+    penalty_csr.data = cost_csr.data - time_csr.data
+    pen_accum = arrival_seconds_two_weight(cost_csr, penalty_csr, dest_idx=dest)
+    assert pen_accum[s] == pytest.approx(0.0), "the open road carries no penalty"
+    assert upper[s] == pytest.approx(report[s] + pen_accum[s])
+
+
+def test_penalty_identity_holds_when_the_chosen_path_is_penalised():
+    """The other half: when the only way through IS penalised, the identity must account for it
+    exactly, and the reported time must exclude it."""
+    PEN = 450.0
+    G = nx.MultiDiGraph()
+    for n, (x, y) in {"A": (0.0, 0.0), "B": (100.0, 0.0), "C": (200.0, 0.0)}.items():
+        G.add_node(n, x=x, y=y)
+    for u, v in (("A", "B"), ("B", "A")):            # only route, private
+        G.add_edge(u, v, travel_time=60.0, cost=60.0 + PEN)
+    for u, v in (("B", "C"), ("C", "B")):            # open
+        G.add_edge(u, v, travel_time=30.0, cost=30.0)
+
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest = [index["C"]]
+    report = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=dest)
+    upper = arrival_seconds(cost_csr, dest_idx=dest)
+    penalty_csr = cost_csr.copy()
+    penalty_csr.data = cost_csr.data - time_csr.data
+    pen_accum = arrival_seconds_two_weight(cost_csr, penalty_csr, dest_idx=dest)
+
+    a = index["A"]
+    assert report[a] == pytest.approx(90.0), "real time, penalty excluded"
+    assert pen_accum[a] == pytest.approx(PEN), "one penalised edge on the path"
+    assert upper[a] == pytest.approx(540.0)
+    assert upper[a] == pytest.approx(report[a] + pen_accum[a])
