@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>G3 render spike</title>
+  <!-- Pinned CDN assets: see versions.json (exact versions + SRI hashes; change both together). -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.css"
+        integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>G3 render spike — browser raster algebra <span class="sub" id="versions">(MapLibre GL JS 5.24.0 · d3-contour 4.0.3 · d3-array 3.2.5)</span></h1>
+    <div class="sub">Six uint8 minute layers → Web Worker AND/threshold → MapLibre <code>canvas</code> source. Polygonize with d3-contour. All timings are measured on this device.</div>
+    <div id="banner-synthetic" class="banner warn" hidden>SYNTHETIC FIXTURES: these layers are random distance fields from make_fixtures.py, not routing output. Numbers measure rendering cost only.</div>
+    <div id="banner-error" class="banner err" hidden></div>
+  </header>
+
+  <main class="layout">
+    <div id="map" role="img" aria-label="Map with travel-time mask overlay"></div>
+
+    <aside class="panel">
+      <section>
+        <h2>Criteria (minutes, 1–60)</h2>
+        <div id="layers"><em>Loading manifest…</em></div>
+        <div class="legend"><span class="in">in region</span><span class="nodata">nodata in an enabled layer</span><span class="poly">polygonized</span></div>
+      </section>
+
+      <section class="actions">
+        <button id="btn-polygonize" class="primary" disabled>Polygonize</button>
+        <button id="btn-clear" disabled>Clear polygon</button>
+        <button id="btn-bench" disabled>Auto-bench (20 changes)</button>
+        <button id="btn-reset" disabled>Reset</button>
+      </section>
+
+      <section>
+        <h2>Timings (median over last 20 changes)</h2>
+        <table class="stats" id="stats">
+          <tr id="row-total"><td>Slider → repaint, total (last / median)</td><td class="num" id="st-total">–</td></tr>
+          <tr><td>Worker compute (last / median)</td><td class="num" id="st-compute">–</td></tr>
+          <tr><td>Transfer + paint (last / median)</td><td class="num" id="st-transfer">–</td></tr>
+          <tr><td>Samples in window</td><td class="num" id="st-samples">0</td></tr>
+          <tr id="row-firstpaint"><td>First mask paint since navigation start</td><td class="num" id="st-firstpaint">–</td></tr>
+          <tr><td>Fixtures fetched (ms / decoded / transferred)</td><td class="num" id="st-fixtures">–</td></tr>
+          <tr><td>CDN JS+CSS transferred</td><td class="num" id="st-cdn">–</td></tr>
+          <tr><td>Map style loaded at</td><td class="num" id="st-maploaded">–</td></tr>
+          <tr><td>Worker ready at</td><td class="num" id="st-workerready">–</td></tr>
+          <tr><td>In-region cells / km²</td><td class="num" id="st-cells">–</td></tr>
+          <tr><td>Nodata cells in any enabled layer</td><td class="num" id="st-nodata">–</td></tr>
+          <tr><td>JS heap (performance.memory, Chrome only)</td><td class="num" id="st-memory">–</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Polygonize (d3-contour, threshold 0.5)</h2>
+        <table class="stats" id="poly-stats">
+          <tr><td>Mask copy from worker</td><td class="num" id="pl-mask">–</td></tr>
+          <tr><td>d3.contours</td><td class="num" id="pl-contour">–</td></tr>
+          <tr><td>Grid → lon/lat + winding + validation</td><td class="num" id="pl-transform">–</td></tr>
+          <tr><td>setData → source loaded → render</td><td class="num" id="pl-render">–</td></tr>
+          <tr><td>Total button → polygon on map</td><td class="num" id="pl-total">–</td></tr>
+          <tr><td>Polygons / holes / vertices</td><td class="num" id="pl-topology">–</td></tr>
+          <tr><td>Polygon area / raster area (km²)</td><td class="num" id="pl-area">–</td></tr>
+          <tr id="row-valid"><td>Topology checks</td><td class="num" id="pl-valid">–</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Results row (paste into docs/experiments/g3-rendering.md)</h2>
+        <textarea id="results" readonly spellcheck="false"></textarea>
+      </section>
+
+      <details>
+        <summary>Can MapLibre GL JS 5.24.0 colour-map an arbitrary raster natively?</summary>
+        <p><strong>No for a plain <code>raster</code> layer.</strong> The style spec's raster paint properties on this version are
+          <code>raster-opacity</code>, <code>raster-hue-rotate</code>, <code>raster-brightness-min/max</code>,
+          <code>raster-saturation</code>, <code>raster-contrast</code>, <code>raster-resampling</code> / <code>resampling</code>,
+          <code>raster-fade-duration</code>. There is no <code>raster-color</code> (Mapbox GL JS v3 has one); MapLibre tracks the
+          request in <a href="https://github.com/maplibre/maplibre-gl-js/issues/4479" target="_blank" rel="noopener">issue #4479</a> (open).</p>
+        <p><strong>Partial yes via <code>color-relief</code>.</strong> MapLibre added a <code>color-relief</code> layer type in 5.6.0
+          (changelog PR #5742) that maps per-pixel <em>elevation</em> to colour with an <code>["elevation"]</code> expression, but it
+          requires a <code>raster-dem</code> source (encodings <code>terrarium</code>, <code>mapbox</code>, or <code>custom</code> with
+          red/green/blue factors and base shift). A minutes grid would have to be re-encoded into RGB PNG tiles and declared as a DEM;
+          it colours one layer, it cannot AND six. Sources: <a href="https://maplibre.org/maplibre-style-spec/layers/" target="_blank" rel="noopener">style spec, layers</a>
+          and <code>@maplibre/maplibre-gl-style-spec</code> 26.5.1 <code>v8.json</code> (<code>sdk-support</code> js 5.6.0).</p>
+        <p>Note: MapLibre GL JS 6.x (6.16.0 on 2026-11-03) is ESM-only (changelog 6.0.0: UMD bundles no longer published), so a
+          no-build page pins the newest UMD release, 5.24.0. The style-spec facts above were checked against the current spec package,
+          whose <code>raster</code> paint list is identical for 5.24.0 and 6.16.0 bundles (both contain <code>color-relief</code>, neither contains <code>raster-color</code>).</p>
+      </details>
+
+      <details>
+        <summary>Coordinate transform used for polygons and the canvas</summary>
+        <p>d3-contour grid space: cell (i, j) covers x ∈ [i, i+1], y ∈ [j, j+1], centre (i+0.5, j+0.5); on a 0/1 mask at threshold 0.5
+          the smoothed vertices fall on cell edges. Row 0 is the north edge, so
+          <code>lon = W + x·(E−W)/ncols</code>, <code>lat = N − y·(N−S)/nrows</code>. The canvas source uses the same four corners
+          <code>[[W,N],[E,N],[E,S],[W,S]]</code>, so raster and polygon align by construction. Validation: closed rings, ≥ 4 vertices,
+          finite, inside bounds, exterior CCW / holes CW (RFC 7946), and polygon area vs in-cell count × cell area.</p>
+      </details>
+
+      <details>
+        <summary>How to run and measure</summary>
+        <ol>
+          <li><code>cd v2 &amp;&amp; uv run python spikes/g3-render/make_fixtures.py</code> (synthetic fixtures) — or drop the real export into <code>fixtures/</code>.</li>
+          <li><code>npx serve v2/spikes/g3-render</code> from the repo root; open <code>http://localhost:3000</code>. On a phone over LAN: <code>http://&lt;this PC's LAN IP&gt;:3000</code> (same Wi-Fi; allow the port through the Windows firewall).</li>
+          <li>Desktop: Chrome DevTools → Network → disable cache + the 4G throttling preset → reload; read "first mask paint". Then drag sliders 20+ times (or press Auto-bench) and read the medians.</li>
+          <li>Phone: reload twice (second load is warm cache), drag sliders, press Polygonize, copy the results row.</li>
+        </ol>
+      </details>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </aside>
+  </main>
+
+  <!-- Order matters: d3-array must populate window.d3 before d3-contour's UMD reads it. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js"
+          integrity="sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-array@3.2.5/dist/d3-array.min.js"
+          integrity="sha384-BQcSBHiQX+gXE8wzG8NneokXdVCXRZO4OoJJ9613PsDlz2l/6IEE+M+CJchnXowh"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-contour@4.0.3/dist/d3-contour.min.js"
+          integrity="sha384-XCLBrYzglMwVI9fIpBSglZD2bumR0YWfvaOClufQMVjAZtTPI5CE+AEtn8uY0t1d"
+          crossorigin="anonymous"></script>
+  <script src="geom.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

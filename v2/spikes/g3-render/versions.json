@@ -1,0 +1,56 @@
+{
+  "_comment": "Lockfile for the CDN assets used by v2/spikes/g3-render/index.html (no build step). Exact versions, URLs and SRI hashes (sha384 of the bytes served on resolved_on). Change this file, the <script>/<link> tags in index.html, and docs/experiments/g3-rendering.md together.",
+  "resolved_on": "2026-11-03",
+  "assets": {
+    "maplibre-gl": {
+      "version": "5.24.0",
+      "js": {
+        "url": "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js",
+        "integrity": "sha384-5+cfbwT0iiub6VsQAdn6yz16nr6sDiQoHx6tm4O8OVYXHYOxcffFmCJBL0dgdvGp",
+        "bytes": 1056837,
+        "mirror_with_identical_hash": "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"
+      },
+      "css": {
+        "url": "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.css",
+        "integrity": "sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK",
+        "bytes": 70024
+      },
+      "why_not_latest": "Latest on resolved_on was 6.16.0, but MapLibre GL JS 6.0.0 switched to an ESM-only distribution (dist/maplibre-gl.mjs + dist/maplibre-gl-worker.mjs); the UMD bundle maplibre-gl.js is no longer published, so cdnjs 6.x carries only the CSS. 5.24.0 is the newest release with a classic <script> bundle. See CHANGELOG 6.0.0: https://github.com/maplibre/maplibre-gl-js/blob/main/CHANGELOG.md"
+    },
+    "d3-array": {
+      "version": "3.2.5",
+      "js": {
+        "url": "https://cdn.jsdelivr.net/npm/d3-array@3.2.5/dist/d3-array.min.js",
+        "integrity": "sha384-BQcSBHiQX+gXE8wzG8NneokXdVCXRZO4OoJJ9613PsDlz2l/6IEE+M+CJchnXowh",
+        "bytes": 17232
+      },
+      "why": "Runtime dependency of the d3-contour UMD build (it reads d3-array from the global `d3`); must load before d3-contour. cdnjs only had 3.2.4, so both d3 packages come from jsdelivr."
+    },
+    "d3-contour": {
+      "version": "4.0.3",
+      "js": {
+        "url": "https://cdn.jsdelivr.net/npm/d3-contour@4.0.3/dist/d3-contour.min.js",
+        "integrity": "sha384-XCLBrYzglMwVI9fIpBSglZD2bumR0YWfvaOClufQMVjAZtTPI5CE+AEtn8uY0t1d",
+        "bytes": 5715
+      },
+      "why": "Not on cdnjs (404), so pinned from jsdelivr."
+    }
+  },
+  "basemap": {
+    "tiles": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+    "usage_policy": "https://operations.osmfoundation.org/policies/tiles/ (dev/low volume only; swap for a commercial or self-hosted tile source before any public release)"
+  },
+  "style_spec_facts_checked_on_resolved_on": {
+    "maplibre_style_spec_package_version": "26.5.1",
+    "raster_layer_paint_properties": ["raster-opacity", "raster-hue-rotate", "raster-brightness-min", "raster-brightness-max", "raster-saturation", "raster-contrast", "resampling", "raster-resampling", "raster-fade-duration"],
+    "raster-color_present": false,
+    "color-relief_layer_type_since_js": "5.6.0",
+    "color-relief_source": "raster-dem (encodings: terrarium, mapbox, custom with redFactor/greenFactor/blueFactor/baseShift)",
+    "sources": [
+      "https://maplibre.org/maplibre-style-spec/layers/",
+      "https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-style-spec@26.5.1/src/reference/v8.json",
+      "https://github.com/maplibre/maplibre-gl-js/issues/4479"
+    ]
+  }
+}

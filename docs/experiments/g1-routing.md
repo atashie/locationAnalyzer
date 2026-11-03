@@ -137,3 +137,74 @@ cells: union reachable 8282; both 5257; own-only 2774; ref-only 251
 | 45 | 161 | 12 | 5.7 | 9.3 | 0.13 | 0.21 | 96.4% | 4.8% | FAIL |
 
 Accuracy PASS is necessary, not sufficient: one-sided unreachability near the boundary and false include/exclude rates must be judged against decision 12 in the verdict.
+
+### G1 matrix comparison (2026-11-03 13:48:32): grocery / drive
+304 cells stratified by own-layer minutes; Valhalla `sources_to_targets` min over 285 POIs; matrix time 209.1 s
+
+| T min | band (own min) | n | ref unreachable | median abs err min | p90 abs err min | median/T | p90/T | own faster % | PASS (acc) |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 | (8, 12) | 100 | 1 | 3.2 | 5.5 | 0.32 | 0.55 | 100% | FAIL |
+| 15 | (13, 17) | 100 | 0 | 5.2 | 9.1 | 0.35 | 0.61 | 100% | FAIL |
+| 20 | (18, 22) | 100 | 1 | 8.1 | 12.4 | 0.41 | 0.62 | 98% | FAIL |
+| 25 | (23, 27) | 4 | 0 | - | - | - | - | - | n/a |
+
+Signed median (own - Valhalla): -5.4 min over all finite samples (negative = own model is faster/optimistic).
+Residual = speed model + snapping/access-leg differences (both engines snap the cell centre); no grid misregistration.
+
+---
+
+## G1 Verdict (2026-11-03): Valhalla is the single routing engine
+
+**Question.** Is our own transposed-graph Dijkstra over an OSM extract cheaper or better than
+self-hosted Valhalla for building "minutes to nearest amenity" layers, at the owner's accuracy
+tolerance (decision 12: median absolute error ≤ 10% of the threshold T, p90 ≤ 20%)?
+
+**Answer: no, on both counts. Valhalla builds the layers, and also serves the anchors.**
+
+### Accuracy
+
+Two independent comparisons, both against self-hosted Valhalla 3.9.1 on the same slice:
+
+| Comparison | Walk | Bike | Drive |
+|---|---|---|---|
+| Layer vs layer (whole grid, float seconds) | median 5–16% of T, **p90 26–50%** | median 8–13%, **p90 29–40%** | median 27–34%, **p90 48–56%** |
+| Exact pairs (`sources_to_targets` min over all 285 groceries, cells stratified by band) | pending | pending | median **32–41%** of T, p90 **55–62%**, own faster in **98–100%** of samples, signed median **−5.4 min** |
+
+Every mode fails the owner's tolerance at p90, and drive fails it at the median as well. The drive
+error is not noise: our model is faster than Valhalla on essentially every sampled pair, by about
+five minutes. The cause is known and was accepted when the model was ported — the CHCCS speed model
+contributes free-flow "friction" speeds but we did **not** port its intersection penalties (22 s per
+signal, 11 s per stop sign), and a node-state CSR cannot express turn restrictions at all. At a
+25-minute commute limit a five-minute optimistic bias moves the boundary by roughly 20%, which is
+exactly the kind of confidently wrong region the product must not draw.
+
+### Cost
+
+| | Own graph | Valhalla |
+|---|---|---|
+| Build one category layer, one mode | **~32 s** (graph load 16 s, project/filter 13 s, CSR 1 s, POI snap 1 s, **Dijkstra 0.02–0.04 s**, cell snap 2 s) | **0.6–1.3 s** (one multi-location arrival isochrone, `format=geotiff`) |
+| 8 categories × 3 modes | ~13 min (graph work repeats per mode) | ~30 s |
+| Arbitrary anchor isochrone | not implemented (would need the same graph resident) | p95 0.30 s (auto 25 min), 0.37 s (auto 45 min) at concurrency 1 |
+
+The algorithm we ported is not the bottleneck and is not the problem: multi-source Dijkstra on the
+transposed graph runs in **40 milliseconds** over 237k nodes. The expensive parts are loading and
+preparing the graph, which Valhalla has already done once into its tiles.
+
+### What this settles, and what it does not
+
+- **Adopted:** Valhalla for category layers *and* anchors; one engine, one costing model, one set of
+  semantics. This removes the per-mode graph pipeline from the critical path.
+- **Kept, not adopted:** the ported engine (`locfinder/traveltime/`) stays in the repo with its
+  tests. It is the fallback if Valhalla ever becomes unavailable, and the correct place to put work
+  if we later want a tunable in-house model. That work is **calibration** (intersection penalties,
+  turn restrictions, access-leg speeds), not algorithms. The transposed-graph correctness fix and
+  the one-way regression test keep their value either way.
+- **New constraint discovered:** Valhalla's isochrone GeoTIFF is emitted on its own WGS84 grid at
+  **0.001° for pedestrian/bicycle (~90 m × 111 m) and 0.002° for auto (~180 m × 223 m)**, re-centred
+  per request, in uint16 seconds. Our 100 m product grid is therefore *finer than the engine's own
+  output for drive*. Phase 1 should either publish drive layers at 200 m or accept documented
+  resampling; publishing a 100 m drive layer from a 180 m source would be false precision.
+- **Unaffected:** the reachable-cell differences between the two engines (own 74% vs Valhalla auto
+  82%, walk 47.5%) are mostly cutoff and access-leg policy, not accuracy; they are the reason the
+  layer-level false-include rates look extreme at large T and the reason the exact-pair comparison
+  is the one to trust.

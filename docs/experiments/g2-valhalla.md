@@ -38,3 +38,35 @@ See the "Anchor latency benchmark (Task 6)" section appended below by `spikes/g2
 ## Verdict (provisional)
 
 The slice is cheap to build and tiny to serve. **G2 is not passed by this**: the NC extract (410 MB PBF) on the intended 8 GB VPS, with transit for the seven agencies, must be built and benchmarked before Phase 1 deployment (Codex pass 3 H8). What is settled: Valhalla 3.9.1 provides arrival isochrones, GeoTIFF grids, and transit departure isochrones; it does not provide transit arrival isochrones.
+
+## Anchor latency benchmark (Task 6)
+run at 2026-11-03 14:51:55; anchors=102 (10 named, 90 random, 2 off-network); cases=[('auto', 25), ('auto', 45), ('bicycle', 15), ('pedestrian', 15)]; reverse=true
+
+#### cold, concurrency 1, named anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 10 | 10 | 0 | 0.297 | 1.001 | 1.001 | 25 |
+| auto | 45 | 10 | 10 | 0 | 0.331 | 0.385 | 0.385 | 26 |
+| bicycle | 15 | 10 | 10 | 0 | 0.061 | 0.084 | 0.084 | 6 |
+| pedestrian | 15 | 10 | 10 | 0 | 0.049 | 0.054 | 0.054 | 1 |
+
+#### warm, concurrency 1, all anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 102 | 102 | 0 | 0.155 | 0.302 | 0.324 | 21 |
+| auto | 45 | 102 | 102 | 0 | 0.267 | 0.372 | 1.026 | 25 |
+| bicycle | 15 | 102 | 102 | 0 | 0.056 | 0.068 | 0.102 | 7 |
+| pedestrian | 15 | 102 | 102 | 0 | 0.048 | 0.052 | 0.058 | 1 |
+
+#### warm, concurrency 8, all anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 102 | 102 | 0 | 1.029 | 1.363 | 1.696 | 21 |
+| auto | 45 | 102 | 102 | 0 | 1.746 | 2.303 | 2.499 | 25 |
+| bicycle | 15 | 102 | 102 | 0 | 0.107 | 0.432 | 0.822 | 7 |
+| pedestrian | 15 | 102 | 102 | 0 | 0.050 | 0.081 | 0.098 | 1 |
+
+Pass criterion (synthesis G2): auto 25 min p95 < 0.8 s and auto 45 min p95 < 2 s at concurrency 8, with an explicit, acceptable failure rate; peak memory from data/valhalla_mem_samples.txt is reported separately. Slice results inform G2; the NC build on the intended host is still required to pass it.

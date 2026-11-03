@@ -1,0 +1,48 @@
+{
+  "nrows": 401,
+  "ncols": 550,
+  "bounds_wgs84": [
+    -79.15,
+    35.8,
+    -78.55,
+    36.15
+  ],
+  "nodata": 255,
+  "units": "minutes",
+  "layers": [
+    {
+      "id": "grocery_walk",
+      "label": "Grocery (walk)",
+      "file": "grocery_walk.bin"
+    },
+    {
+      "id": "park_walk",
+      "label": "Park (walk)",
+      "file": "park_walk.bin"
+    },
+    {
+      "id": "coffee_walk",
+      "label": "Coffee (walk)",
+      "file": "coffee_walk.bin"
+    },
+    {
+      "id": "pharmacy_bike",
+      "label": "Pharmacy (bike)",
+      "file": "pharmacy_bike.bin"
+    },
+    {
+      "id": "school_drive",
+      "label": "School (drive)",
+      "file": "school_drive.bin"
+    },
+    {
+      "id": "transit_walk",
+      "label": "Transit stop (walk)",
+      "file": "transit_walk.bin"
+    }
+  ],
+  "synthetic": true,
+  "generator": "v2/spikes/g3-render/make_fixtures.py",
+  "seed": 20261103,
+  "note": "SYNTHETIC distance fields, not routing output. Shape matches the real export contract."
+}
