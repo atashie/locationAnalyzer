@@ -23,3 +23,17 @@ Audit 25 POIs per category against an independent inventory (e.g. municipal park
 
 | category | sample n | overture precision | overture recall | osm precision | osm recall | preferred source | reason |
 |---|---|---|---|---|---|---|---|
+
+## Independent recall check: schools vs NCES (automated part of the manual audit)
+
+Run 2026-11-03 14:58:32. Truth set: 11 Chapel Hill-Carrboro public schools with NCES EDGE 2023-24 coordinates (cached by the CHCCS_geospatial project). A source 'finds' a school if any of its selected school-category features lies within 150 m of the NCES point. This is recall against an independent inventory, not agreement between our two sources.
+
+| source | schools found | of | recall |
+|---|---|---|---|
+| Overture | 11 | 11 | 100% |
+| OSM | 10 | 11 | 91% |
+
+Overture missed: none.
+OSM missed: Scroggs Elementary.
+
+Scope limit: this covers one district and one category. Parks, playgrounds and groceries still need their own independent inventories (municipal park lists, chain store locators) before a per-category source preference is defensible.
