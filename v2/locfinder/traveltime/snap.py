@@ -9,6 +9,12 @@ corrected for arrival (to-destination) semantics and one-way edges:
     or backward via S:      f * t(E->S) + T[S]         only if the edge E->S exists
 
 where T[n] is the arrival time (seconds) from node n to the nearest destination.
+A point exactly at a node uses that node's T directly (zero on-edge travel), even
+if the edge is one-way (Codex pass-3 H2: the unavailable direction must be masked,
+never multiplied as 0 * inf).
+
+Physical edges are paired by their geometry (forward or reversed coordinates), not
+by networkx keys, so parallel roads between the same nodes are never conflated.
 """
 from __future__ import annotations
 
@@ -20,6 +26,22 @@ import shapely
 from shapely.geometry import LineString
 
 from .speeds import access_speed_mps
+
+_NODE_EPS = 1e-6  # normalized fraction below which a point is "at" the node
+
+
+def _edge_geometry(G: nx.MultiDiGraph, u, v, data) -> LineString:
+    geom = data.get("geometry")
+    if geom is None:
+        geom = LineString([(G.nodes[u]["x"], G.nodes[u]["y"]), (G.nodes[v]["x"], G.nodes[v]["y"])])
+    return geom
+
+
+def _canonical_geometry_key(geom: LineString) -> bytes:
+    coords = np.asarray(geom.coords, dtype=np.float64)
+    fwd = coords.tobytes()
+    rev = np.ascontiguousarray(coords[::-1]).tobytes()
+    return fwd if fwd <= rev else rev
 
 
 @dataclass
@@ -40,25 +62,24 @@ class EdgeIndex:
         rev: list[float] = []
         seen: dict[tuple, int] = {}
         for u, v, k, data in G.edges(keys=True, data=True):
-            key = (min(u, v), max(u, v), k)
             t = float(data["travel_time"])
+            geom = _edge_geometry(G, u, v, data)
+            iu, iv = index[u], index[v]
+            key = (min(iu, iv), max(iu, iv), _canonical_geometry_key(geom))
             if key not in seen:
-                geom = data.get("geometry")
-                if geom is None:
-                    geom = LineString([(G.nodes[u]["x"], G.nodes[u]["y"]), (G.nodes[v]["x"], G.nodes[v]["y"])])
                 g0 = geom.coords[0]
                 if abs(g0[0] - G.nodes[u]["x"]) + abs(g0[1] - G.nodes[u]["y"]) < 1e-6:
-                    s, e = u, v
+                    s, e = iu, iv
                 else:
-                    s, e = v, u
+                    s, e = iv, iu
                 seen[key] = len(geoms)
                 geoms.append(geom)
-                starts.append(index[s])
-                ends.append(index[e])
+                starts.append(s)
+                ends.append(e)
                 fwd.append(np.inf)
                 rev.append(np.inf)
             i = seen[key]
-            if index[u] == starts[i]:
+            if iu == starts[i]:
                 fwd[i] = min(fwd[i], t)
             else:
                 rev[i] = min(rev[i], t)
@@ -85,7 +106,7 @@ def cell_seconds_from_arrival(
 ) -> np.ndarray:
     """Seconds from each (x, y) metre point to the nearest destination, given node
     arrival times T (inf = unreachable). Points farther than `max_access_m` from
-    any edge are inf. Output has the shape of `xs`."""
+    any edge are inf. Output has the shape of `xs`. Never produces NaN."""
     x = np.asarray(xs, dtype=np.float64).ravel()
     y = np.asarray(ys, dtype=np.float64).ravel()
     pts = shapely.points(x, y)
@@ -95,8 +116,23 @@ def cell_seconds_from_arrival(
     frac = shapely.line_locate_point(geoms, pts, normalized=True)
     s_idx = idx.start_idx[nearest]
     e_idx = idx.end_idx[nearest]
-    via_end = (1.0 - frac) * idx.fwd_time[nearest] + T[e_idx]
-    via_start = frac * idx.rev_time[nearest] + T[s_idx]
+    fwd = idx.fwd_time[nearest]
+    rev = idx.rev_time[nearest]
+    T_s = T[s_idx]
+    T_e = T[e_idx]
+
+    via_end = np.full(frac.shape, np.inf)
+    via_start = np.full(frac.shape, np.inf)
+    m = np.isfinite(fwd)
+    via_end[m] = (1.0 - frac[m]) * fwd[m] + T_e[m]
+    m = np.isfinite(rev)
+    via_start[m] = frac[m] * rev[m] + T_s[m]
+    # exactly at a node: no on-edge travel in that direction is needed
+    at_start = frac <= _NODE_EPS
+    at_end = frac >= 1.0 - _NODE_EPS
+    via_start = np.where(at_start, T_s, via_start)
+    via_end = np.where(at_end, T_e, via_end)
+
     network = np.minimum(via_end, via_start)
     total = network + access_m / access_speed_mps(mode)
     total = np.where(access_m > max_access_m, np.inf, total)

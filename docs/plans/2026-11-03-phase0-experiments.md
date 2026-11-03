@@ -1656,6 +1656,23 @@ git commit -m "docs(experiments): Phase 0 decision memo"
 - Task 12 needs Task 5 (regions); Task 13 needs Tasks 7/8 (layers); Task 14 needs Task 12 (region image).
 - Task 15 needs everything.
 
+## Revisions after Codex pass 3 (`docs/research/10-codex-adversarial-review-pass3-plan.md`)
+
+Applied to the code and files already written (the task text above is kept as the original record):
+
+- **H2 snapping (fixed, tested):** `snap.py` masks unavailable directions before arithmetic (no `0 * inf`), treats a point exactly at a node as having zero on-edge travel, and pairs the two directions of a physical edge by canonical geometry rather than networkx keys. New tests: at-node reachability, destination node = 0, reversed-geometry pairing, parallel roads not conflated.
+- **C1/H4/H5 acquisition (fixed):** `scripts/fetch_places.py` takes `--release`, writes the observed Arrow schema (the `categories` column was removed in the 2026-09 Overture release; selectors must use `taxonomy`/`basic_category` per the actual schema), partitions rows into an **accepted** artifact and a rejected report using the fail-closed resolver, and reads OSM POIs with `explode_tags=True` behind a `main()` guard. `licence.py` validates **every** source entry against an allowlist of reviewed licences plus a per-release manifest. Tasks 7, 8, 10 must read `overture_places_accepted.parquet`, never the raw file.
+- **C3 transit input (fixed):** GTFS zips are renamed by agency and **extracted** to `v2/data/gtfs_extracted/<agency>/`, mounted read-only at `/gtfs_feeds` in the compose file. `feeds_report.json` records agency, timezone, and calendar files.
+- **C2 results paths:** every spike resolves `REPO = Path(__file__).resolve().parents[2]` and writes to `REPO / "docs" / "experiments"` with `newline="\n"`.
+- **H1 transit semantics:** Valhalla `multimodal` cannot produce an arrival-time isochrone (`date_time.type` 2 unsupported); Task 9 tests MOTIS first with `arriveBy=true` and `time=2026-11-10T08:00:00-05:00`, defines commute as deadline minus latest feasible departure, pins the MOTIS image digest, sends a client name/version/contact to Transitous and treats it as a sibling MOTIS deployment, not ground truth. Valhalla multimodal is recorded as "unsupported capability" if it cannot do arrival.
+- **H6/H7/H9 comparison design:** Task 8 compares float seconds (saved alongside the uint8 rasters), builds a union-based confusion table that counts one-sided unreachable cells, reports absolute error and false inclusion/exclusion on a stated boundary sample with denominators, uses fixed workplace anchors at 25 minutes as well as category layers, sets Valhalla pedestrian `walking_speed` to 5.04 km/h for the controlled comparison and reports the intended-profile comparison separately, bounds POI-to-node snapping distance, and documents the speed model as a new profile (intersection penalties from CHCCS were not ported).
+- **H3 graph validity:** the own-graph path must preserve mode access tags (`access`, `foot`, `bicycle`, `motor_vehicle`, `oneway:bicycle`), keep disconnected components for the audit, and state that turn restrictions are not modelled; that limitation is an adoption criterion in the G1 verdict.
+- **H8 G2:** the slice build with an 8 GB cap informs but cannot pass G2; peak memory is sampled every 5 s for the whole build and benchmark (`data/valhalla_mem_samples.txt`); the NC build on the intended host is a required, separate measurement, and G2 stays pending until it exists.
+- **H10 reference path:** Task 7 requires working GeoTIFF output; the polygon fallback is replaced by contour bracketing (contours at 5-minute steps) with the quantization error stated, if GeoTIFF is unavailable.
+- **H11/ordering:** G5a prototypes use fixture imagery and scripted explanations and run right after scaffold, before any heavy build; G6 acceptance (accepted artifact) precedes any routing input.
+- **M1–M5:** MapLibre version is locked in a lockfile for G3 with explicit nodata masks and coordinate transforms; G6 duplicate counts use a radius query and an independent inventory for recall; Task 11 adds ambiguous/POI cases and provider caching terms, following the Nominatim usage policy (1 req/s, identifying User-Agent, no autocomplete); scripts are LF and idempotent.
+- **Task 15:** the review of the decision memo is Codex pass 4 (pass 3 is this plan review).
+
 ## Out of scope for Phase 0 (deferred by synthesis §8)
 
 NC-wide Valhalla build and VPS deployment (Phase 1), R2 upload tests (needs a Cloudflare account; Phase 1), NL parsing (Phase 2), neighborhood boundaries, parcels, any context layers.

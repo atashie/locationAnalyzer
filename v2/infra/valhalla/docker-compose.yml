@@ -1,0 +1,27 @@
+# Valhalla for the Phase 0 slice, memory-capped to emulate the Tier-1 VPS.
+# Run from WSL:
+#   cd /mnt/c/Users/arikt/documents/github/distanceFinder/v2/infra/valhalla && docker compose up -d && docker compose logs -f
+# Inputs (see README.md):
+#   ../../data/valhalla_custom_files/slice.osm.pbf          OSM extract(s) to build tiles from
+#   ../../data/gtfs_extracted/<agency>/*.txt                extracted GTFS feeds (Codex pass 3 C3: the scripted
+#                                                           image reads extracted feed directories mounted at /gtfs_feeds)
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    container_name: valhalla-slice
+    ports: ["8002:8002"]
+    volumes:
+      - ../../data/valhalla_custom_files:/custom_files
+      - ../../data/gtfs_extracted:/gtfs_feeds:ro
+    environment:
+      - use_tiles_ignore_pbf=False
+      - force_rebuild=False
+      - build_elevation=False
+      - build_admins=True
+      - build_time_zones=True
+      - build_transit=True
+      - serve_tiles=True
+      - server_threads=4
+      - update_existing_config=True
+    mem_limit: 8g
+    cpus: 2

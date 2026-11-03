@@ -2,6 +2,7 @@ import math
 
 import networkx as nx
 import numpy as np
+from shapely.geometry import LineString
 
 from locfinder.traveltime.arrival import arrival_seconds
 from locfinder.traveltime.csr import graph_to_csr
@@ -54,6 +55,28 @@ def test_snap_point_interpolates_toward_reachable_endpoint():
     assert secs[0] < expected_network + 60.0
 
 
+def test_point_exactly_at_start_of_one_way_edge_is_reachable_not_nan():
+    """Codex pass-3 H2: at fraction 0 of a one-way edge the backward term was 0 * inf = NaN."""
+    G = add_travel_times(line_graph_utm(), mode="drive")
+    csr, index = graph_to_csr(G)
+    T = arrival_seconds(csr, dest_idx=[index["C"]])
+    idx = EdgeIndex.from_graph(G, index)
+    secs = cell_seconds_from_arrival(idx, T, np.array([0.0]), np.array([0.0]), mode="drive", max_access_m=200.0)
+    t_ab = G.edges["A", "B", 0]["travel_time"]
+    t_bc = G.edges["B", "C", 0]["travel_time"]
+    assert not math.isnan(secs[0])
+    assert math.isclose(secs[0], t_ab + t_bc, rel_tol=1e-9)
+
+
+def test_point_exactly_at_destination_node_is_zero():
+    G = add_travel_times(line_graph_utm(), mode="drive")
+    csr, index = graph_to_csr(G)
+    T = arrival_seconds(csr, dest_idx=[index["B"]])
+    idx = EdgeIndex.from_graph(G, index)
+    secs = cell_seconds_from_arrival(idx, T, np.array([1000.0]), np.array([0.0]), mode="drive", max_access_m=200.0)
+    assert secs[0] == 0.0
+
+
 def test_snap_point_far_from_network_is_unreachable():
     G = add_travel_times(line_graph_utm(), mode="walk")
     csr, index = graph_to_csr(symmetrise(G))
@@ -68,7 +91,7 @@ def test_backward_interpolation_requires_reverse_edge():
     csr, index = graph_to_csr(G)
     T = arrival_seconds(csr, dest_idx=[index["A"]])  # destination at A: only A itself
     idx = EdgeIndex.from_graph(G, index)
-    # a cell on A->B near A: cannot drive backward along the one-way to reach A
+    # a cell on A->B near A (but not at A): cannot drive backward along the one-way to reach A
     secs = cell_seconds_from_arrival(idx, T, np.array([100.0]), np.array([0.0]), mode="drive", max_access_m=200.0)
     assert math.isinf(secs[0])
 
@@ -84,8 +107,38 @@ def test_backward_interpolation_works_on_two_way_edge():
     assert math.isclose(secs[0], 0.75 * t_bc, rel_tol=1e-6)
 
 
+def test_reverse_edges_with_reversed_geometry_are_paired_as_one_physical_edge():
+    G = nx.MultiDiGraph()
+    G.add_node("P", x=0.0, y=0.0)
+    G.add_node("Q", x=100.0, y=0.0)
+    curve = [(0.0, 0.0), (50.0, 20.0), (100.0, 0.0)]
+    G.add_edge("P", "Q", travel_time=10.0, geometry=LineString(curve))
+    G.add_edge("Q", "P", travel_time=12.0, geometry=LineString(curve[::-1]))
+    csr, index = graph_to_csr(G)
+    idx = EdgeIndex.from_graph(G, index)
+    assert len(idx.geoms) == 1
+    assert idx.fwd_time[0] == 10.0 and idx.rev_time[0] == 12.0
+
+
+def test_parallel_roads_between_same_nodes_are_not_conflated():
+    G = nx.MultiDiGraph()
+    G.add_node("P", x=0.0, y=0.0)
+    G.add_node("Q", x=100.0, y=0.0)
+    straight = LineString([(0.0, 0.0), (100.0, 0.0)])
+    loop = LineString([(0.0, 0.0), (50.0, 80.0), (100.0, 0.0)])
+    G.add_edge("P", "Q", travel_time=10.0, geometry=straight)  # fast straight road, one-way P->Q
+    G.add_edge("Q", "P", travel_time=40.0, geometry=LineString(list(loop.coords)[::-1]))  # slow loop road, one-way Q->P
+    csr, index = graph_to_csr(G)
+    idx = EdgeIndex.from_graph(G, index)
+    # two physical edges, not one; each is one-way in its own geometry direction, so each has a
+    # finite forward time and an infinite reverse time, and the times are not mixed up
+    assert len(idx.geoms) == 2
+    assert sorted(idx.fwd_time.tolist()) == [10.0, 40.0]
+    assert all(math.isinf(r) for r in idx.rev_time)
+
+
 def test_layer_shape_and_encoding():
-    from locfinder.grid import GridSpec, NODATA
+    from locfinder.grid import NODATA, GridSpec
     from locfinder.traveltime.layer import build_layer
 
     G = add_travel_times(line_graph_utm(), mode="walk")
