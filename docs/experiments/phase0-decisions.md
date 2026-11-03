@@ -84,6 +84,18 @@ expansion — our algorithm is faster, it is the *calibration* we lack. The arch
 choose Valhalla is that it already encodes access rules, one-ways, turn restrictions and a
 maintained costing model, not that it is faster per layer.
 
+**Update (2026-11-03, after the Google spot check).** The drive decision now has empirical support
+rather than only mechanical reasoning. Against Google Routes `TRAFFIC_AWARE` at 08:00 on twelve real
+journeys, **Valhalla's static times match to a median signed difference of 0.0 min and a median
+absolute difference of 1.0 min**, better than Google's own traffic-free model (3.0 min) and OSRM
+(2.5 min); ours is 6.0 min optimistic. Our error decomposes into **3.0 min of missing intersection
+penalties (fixable) and 3.0 min of congestion no static engine models (not fixable)**. Two further
+consequences: Valhalla-sourced drive times should be labelled "typical weekday morning" rather than
+"no traffic data", and this is the first measurement that bears on owner decision 12's tolerance
+(1.0 min median against a ~2.1 min budget at these journey lengths). Caveats in
+`spotcheck-engines.md`: n=12, one hour of the day, whole-minute rounding, and a predicted rather than
+observed reference. Walk and bike still have no independent reference.
+
 ### D2. Transit needs a second engine, MOTIS, and the surface is not built yet
 
 **[measured]** `transit.md`. Valhalla cannot answer a commuter's question: `multimodal` with
