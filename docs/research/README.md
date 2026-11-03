@@ -43,7 +43,7 @@ recommendation document, which is itself Codex-reviewed before any planning begi
 | 03 | [Open-source landscape](03-open-source-landscape.md) | Routing engines, accessibility projects, precompute/serving, LLM-to-GIS agents | complete |
 | 04 | [Data sources and legal](04-data-sources-and-legal.md) | Listings access, POIs, Census, traffic, GTFS, quality-of-place layers, ToS verdicts | complete |
 | 05 | [Routing and precompute architecture](05-routing-and-precompute-architecture.md) | Hosted vs self-hosted routing, gridded travel-time precompute, cheap serving | complete |
-| 06 | [UX and interaction model](06-ux-and-interaction-model.md) | User needs, reception of existing tools, HCI principles, recommended model | in progress |
+| 06 | [UX and interaction model](06-ux-and-interaction-model.md) | User needs, reception of existing tools, HCI principles, recommended model | complete |
 | 07 | [Codex adversarial review](07-codex-adversarial-review.md) | Cross-model critique of 00–06 | in progress (pass 1: 00–05) |
 | 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | pending |
 
