@@ -9,8 +9,8 @@ machine on the dates given; they are not research estimates.
 |---|---|---|
 | G6 POI coverage and licence | g6-poi-coverage.md | generated section done; manual audit pending |
 | Geocoding contract | geocoding.md | done (verdict recorded) |
-| G2 Valhalla self-host and anchors | g2-valhalla.md | slice build + anchor latency measured; NC build on the VPS still blocking |
-| Transit engine (owner decision 13) | transit.md | done — MOTIS adopted, Valhalla cannot arrive-by |
+| G2 Valhalla self-host and anchors | g2-valhalla.md | passed — NC build 121 s, serves from 548 MiB on 2 vCPU/8 GB; concurrency-8 target replaced by an anchor cache |
+| Transit engine (owner decision 13) | transit.md | done — MOTIS adopted and re-validated on the widened metro (27/28 pairs, Raleigh 0 -> 1,080 stops) |
 | G1 engine and layer primitive | g1-routing.md | decided per mode — walk = our graph; bike/drive = Valhalla expansion + our snapping |
 | G4 listings handoff | g4-listings.md | links generated; 6 regions invalid, regenerate; owner device sessions pending |
 | G3 browser rendering | g3-rendering.md | page + real-data exporter built and self-tested; needs a device run |

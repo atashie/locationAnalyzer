@@ -23,7 +23,8 @@ import rasterio
 import shapely
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import ACCEPTED_PLACES, GRID, LAYERS, SLICE, append_results, stamp  # noqa: E402
+from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, ROADS_XML, append_results,  # noqa: E402
+                     layer_path, stamp)
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.csr import graph_to_csr  # noqa: E402
@@ -32,7 +33,6 @@ from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmetrise  # noqa: E402
 
 POI_SNAP_MAX_M = 300.0  # drop POIs farther than this from any node (Codex pass 3: bound the access leg)
-GRAPH_CACHE = SLICE / "slice-roads.graphml"
 
 
 def load_graph(timings: dict):
@@ -43,9 +43,9 @@ def load_graph(timings: dict):
         timings["graph_source"] = "graphml cache"
         return G
     ox.settings.useful_tags_way = sorted(set(ox.settings.useful_tags_way) | set(EXTRA_WAY_TAGS))
-    G = ox.graph_from_xml(SLICE / "slice-roads.osm", simplify=True, retain_all=True)
+    G = ox.graph_from_xml(ROADS_XML, simplify=True, retain_all=True)
     timings["load_graph_s"] = time.perf_counter() - t
-    timings["graph_source"] = "slice-roads.osm (xml)"
+    timings["graph_source"] = f"{ROADS_XML.name} (xml)"
     t = time.perf_counter()
     ox.save_graphml(G, GRAPH_CACHE)
     timings["save_graphml_s"] = time.perf_counter() - t
@@ -92,9 +92,9 @@ def main() -> None:
     xs, ys = GRID.cell_centers_xy()
     nearest = eidx.tree.nearest(shapely.points(xs.ravel(), ys.ravel()))
     oneway = (np.isfinite(eidx.fwd_time[nearest]) ^ np.isfinite(eidx.rev_time[nearest])).reshape(xs.shape)
-    np.save(LAYERS / f"own_{args.mode}_oneway_mask.npy", oneway)
+    np.save(layer_path("own", "oneway-mask", args.mode, ".npy"), oneway)
 
-    base = LAYERS / f"own_{args.category}_{args.mode}"
+    base = layer_path("own", args.category, args.mode, "")
     np.save(base.with_suffix(".npy"), secs.astype(np.float32))
     arr = encode_minutes(secs)
     with rasterio.open(base.with_suffix(".tif"), "w", **GRID.rasterio_profile()) as dst:

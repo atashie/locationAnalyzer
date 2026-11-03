@@ -1,9 +1,10 @@
 # Phase 0 decision memo
 
-**Date:** 2026-11-03 · **Revision 3.** Revision 2 was rewritten after Codex adversarial pass 4
+**Date:** 2026-11-03 · **Revision 4.** Revision 2 was rewritten after Codex adversarial pass 4
 (`../research/11-codex-adversarial-review-pass4-phase0.md`) found four factual errors and one
 omission in revision 1; revision 3 then **reversed D1** when the walk exact-pair comparison
-finished and showed our own model passing at every threshold. · **Branch:** `v2-rethink` ·
+finished and showed our own model passing at every threshold; revision 4 adds the North Carolina
+build (closing G2) and the widened Triangle metro, both run at the owner's request. · **Branch:** `v2-rethink` ·
 **Status:** for owner review
 **Inputs:** the experiment files in this directory, the plan in `../plans/2026-11-03-phase0-experiments.md`, the design in `../research/08-synthesis.md`, the owner decisions in `../plans/2026-11-03-v2-rethink-decisions.md`, and Codex passes 3 and 4.
 
@@ -84,22 +85,62 @@ maintained costing model, not that it is faster per layer.
 
 **[measured]** `transit.md`. Valhalla cannot answer a commuter's question: `multimodal` with
 `date_time.type=2` (arrive by) returns **HTTP 501, "Arrive by for multimodal not implemented yet"**.
-MOTIS self-hosted does: import of the slice plus seven Triangle GTFS feeds took **4 s** and 130 MB,
-the server idles at **80 MiB**, `plan?arriveBy=true` answers in ~0.1 s and `one-to-all?arriveBy=true`
-in **0.03 s** returning 478–584 reachable stops with each stop's latest feasible departure. **All 10
-valid in-slice pairs matched** the public Transitous instance to the minute.
+MOTIS self-hosted does. On the **widened Triangle metro** (see D8): import of the buffered OSM
+extract plus seven GTFS feeds took **7 s** and 203 MB, the server holds **117 MiB** capped at
+2 vCPU / 2 GB, `plan?arriveBy=true` answers in ~0.1 s, and `one-to-all?arriveBy=true` returns
+**478–1,080 reachable stops in 0.02–0.04 s** with each stop's latest feasible departure.
+**27 of 28 origin/anchor pairs answered, every one using a transit leg, and 26 of 27 matched** the
+public Transitous instance to the minute.
 
 What that does **not** establish, and Codex is right to insist on it: Transitous runs the same engine
 on the same feeds, so exact agreement validates our ingestion and configuration, **not journey
 accuracy**; `one-to-all` returns *stops*, and a cell-level arrival surface still needs the legal
 street access leg from cell to stop, a direct-walk alternative, and a stated deadline/window policy;
-and the generated config carries `onetoall_max_travel_minutes: 90`, whose cap behaviour is untested.
+the generated config carries `onetoall_max_travel_minutes: 90`, whose cap behaviour is untested;
+and **direct walking alternatives are missing** — a 1.5 km pair (Cameron Village to NC State)
+returns no itinerary from both instances because the query asks only for transit, so a commute
+surface must take the minimum of transit and direct walking.
 MOTIS is adopted as the transit engine; the transit **surface** is Phase 1 work with its own
 acceptance test, including hand-checked journeys against published timetables.
 
 The research budgeted 4–8 GB for a transit router **[research]**; the measured idle footprint is two
 orders of magnitude smaller, so transit does not need its own budget tier. Import and query **peaks**
 were not sampled, so that is an idle figure, not a budget.
+
+### D8. The metro is the widened Triangle, and routing data is buffered beyond it
+
+**[measured]** `transit.md`, `locfinder/metros.py`. The Phase 0 slice (lat 35.80–36.15) excluded
+Cary, Apex, downtown Raleigh and NC State, which produced three invalid transit rows and six invalid
+G4 regions that *looked* like travel-time results. The metro is now an explicit pair of bounding
+boxes: an **evaluation** box the product grid covers (−79.20, 35.70 to −78.50, 36.15; 643 × 514 =
+330,502 cells at 100 m) and a **routing** box buffered about 15 km beyond it (−79.35, 35.55 to
+−78.35, 36.30) so journeys may legally leave the evaluation area. A metro whose routing box does not
+strictly contain its evaluation box is rejected at construction, and the test suite asserts the three
+previously-truncated places are now inside.
+
+The fix is verified, not assumed: downtown Raleigh went from **0 reachable transit stops to 1,080**,
+NC State to 896, and all seven previously-failing pairs now answer. The Phase 0 slice is retained as
+a named metro (`LOCFINDER_METRO=slice`) so the earlier results stay reproducible. Places for the
+widened metro: **90,349 Overture rows accepted, zero quarantined**, plus 7,425 OSM POIs.
+
+### D9. Build statewide tiles on a workstation and upload them; do not build on the server
+
+**[measured]** `g2-valhalla.md` part 3. North Carolina (410 MB PBF) builds in **121 s** on 8 vCPU,
+producing 760 MB of graph tiles plus 140 MB of transit tiles with turn restrictions. The same build
+*inside* the 2 vCPU / 8 GB cap also succeeds, in 235 s, but peaks at **7,603 MiB — 93% of the cap**.
+It fits with no margin, so a production refresh should not run there. Build on the workstation, ship
+the 796 MB tar.
+
+Serving statewide tiles on the capped box is cheap: ready in **3 s**, **548 MiB** resident after 408
+requests, statewide coverage verified at Asheville and Wilmington, and a 25-minute auto arrival
+isochrone at **p95 0.363 s** against 0.302 s for the 11× smaller slice. Statewide data costs about
+20% of the p95 and nothing on the median.
+
+The written concurrency-8 target (p95 < 0.8 s) is still **not met** at 1.649 s, but the same data
+shows the box sustaining roughly **3.6 heavy isochrones per second**, about 310,000 per day against a
+projected 100,000 anchors per month. The criterion was the wrong shape: replace it with an anchor
+cache keyed by rounded coordinate, mode and minutes, plus a throughput criterion these numbers
+already satisfy.
 
 ### D3. Overture is the place base; OSM supplies what Overture lacks
 
@@ -188,8 +229,8 @@ no implementation yet.
 | G6 POI coverage and licence | **partly passed** | Licence partition clean but untested on a hard case; schools audited independently; parks, playgrounds, groceries need inventories |
 | Geocoding contract | **partly passed** | Provider split decided; name resolver and correction flow unbuilt |
 | G1 engine and primitive | **decided per mode** | Walk = own graph (passes); bike and drive = Valhalla expansion + snapping. The exact expansion reconstruction needs a paired re-measurement |
-| Transit engine | **engine chosen; surface not built** | Street access composition, deadline/window policy, 90-minute cap behaviour, hand-checked journeys |
-| G2 Valhalla self-host | **not passed** | NC build on the intended host, **and** the concurrency-8 p95 failure (1.363 s vs 0.8; 2.303 s vs 2.0) |
+| Transit engine | **engine chosen and re-validated on the widened metro; surface not built** | Street access composition, direct-walk alternative, deadline/window policy, 90-minute cap, hand-checked journeys |
+| G2 Valhalla self-host | **passed for the intended workload** | NC build and serving measured (D9). The concurrency-8 p95 target is not met and is replaced by an anchor cache plus a throughput criterion |
 | G4 listings handoff | **links generated, fixtures contaminated** | Regenerate on a buffered extract; owner device sessions |
 | G3 browser rendering | **page and exporter built** | Needs a desktop, throttled-4G and phone run |
 | G5a interaction | **in progress** | Prototypes being written; then 3–5 household sessions |
@@ -233,10 +274,11 @@ Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already
    published timetables, measuring the 90-minute cap and import/query peaks.
 3. **Rerun interactive performance cleanly** with valid anchors only, isolating the latency run from
    precompute contention, and separating semantic failures from HTTP 200s.
-4. **Widen the extract south to ~35.70** with a routing buffer beyond the evaluation bounds, then
-   regenerate the G4 fixtures. This caused three invalid transit rows and six invalid regions.
+4. **Regenerate the G4 region fixtures** on the widened metro (the extract itself is done) so the
+   device sessions and the interaction prototypes stop drawing six invalid regions.
 5. **Finish the independent POI inventories** for parks, playgrounds and groceries.
-6. **Then** build North Carolina on the intended host and settle G2.
+6. ~~Build North Carolina~~ **done**; what remains is provisioning the real host and deciding
+   between a 2 vCPU box with an anchor cache and a 4 vCPU box.
 
 Remaining uncertainties that no amount of our own measurement will settle: neither engine has
 traffic data, so drive times are a model's opinion and the UI must keep saying "estimated, modelled
