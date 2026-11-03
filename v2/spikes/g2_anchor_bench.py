@@ -1,16 +1,19 @@
-"""Gate G2 part 2: isochrone latency for fixed, routable anchors in the slice.
+"""Gate G2 part 2: isochrone latency for fixed, routable anchors in the active metro.
 
 Measures p50/p95/max per (costing, minutes) at concurrency 1 and 8, records every
 failure with its case identity and error body (Codex pass 3 H9), separates a cold
 pass from a warm pass, and includes two deliberately off-network anchors to see how
 the engine fails. Appends a results section to docs/experiments/g2-valhalla.md.
 
-Run from v2/ with Valhalla serving on :8002:   uv run python spikes/g2_anchor_bench.py
+Run from v2/ with Valhalla serving. Target and label are environment-driven:
+  uv run python spikes/g2_anchor_bench.py                       # default metro, VALHALLA_URL
+  VALHALLA_URL=http://localhost:8003 G2_LABEL=north-carolina uv run python spikes/g2_anchor_bench.py
 """
 from __future__ import annotations
 
 import asyncio
 import json
+import os
 import random
 import statistics
 import time
@@ -18,12 +21,14 @@ from pathlib import Path
 
 import httpx
 
-URL = "http://localhost:8002/isochrone"
-REPO = Path(__file__).resolve().parents[2]
-RESULTS = REPO / "docs" / "experiments"
-RESULTS.mkdir(parents=True, exist_ok=True)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import DATA, METRO, RESULTS, VALHALLA  # noqa: E402
+
+URL = f"{VALHALLA}/isochrone"
+LABEL = os.environ.get("G2_LABEL", "slice")
 OUT_MD = RESULTS / "g2-valhalla.md"
-OUT_JSON = REPO / "v2" / "data" / "g2_anchor_bench.json"
+OUT_JSON = DATA / f"g2_anchor_bench_{LABEL}.json"
 
 # Fixed, reproducible anchors (lat, lon). Routable set: known places in the slice.
 ROUTABLE = {
@@ -39,7 +44,8 @@ ROUTABLE = {
     "NC State Bell Tower": (35.7860, -78.6630),
 }
 random.seed(42)
-BBOX = (-79.15, 35.80, -78.55, 36.15)
+_E = METRO.evaluation
+BBOX = (_E.west, _E.south, _E.east, _E.north)
 RANDOM = {f"random-{i:02d}": (random.uniform(BBOX[1], BBOX[3]), random.uniform(BBOX[0], BBOX[2])) for i in range(90)}
 OFF_NETWORK = {"Jordan Lake (water)": (35.7400, -79.0300), "Falls Lake (water)": (36.0150, -78.7000)}
 ANCHORS = {**ROUTABLE, **RANDOM, **OFF_NETWORK}
@@ -92,7 +98,10 @@ def summarize(rows: list[dict], label: str) -> list[str]:
 
 
 def main() -> None:
-    lines = ["", "## Anchor latency benchmark (Task 6)", f"run at {time.strftime('%Y-%m-%d %H:%M:%S')}; anchors={len(ANCHORS)} "
+    outside = [n for n, (lat, lon) in ROUTABLE.items() if not METRO.evaluation.contains(lat, lon)]
+    if outside:
+        raise SystemExit(f"named anchors outside the {METRO.name} evaluation bbox: {outside}")
+    lines = ["", f"## Anchor latency benchmark ({LABEL}, metro {METRO.name}, {URL})", f"run at {time.strftime('%Y-%m-%d %H:%M:%S')}; anchors={len(ANCHORS)} "
              f"({len(ROUTABLE)} named, {len(RANDOM)} random, {len(OFF_NETWORK)} off-network); cases={CASES}; reverse=true"]
     all_rows: dict[str, list[dict]] = {}
     # cold pass: routable named anchors only, concurrency 1
@@ -104,7 +113,7 @@ def main() -> None:
         lines += summarize(all_rows[key], f"warm, concurrency {c}, all anchors")
     lines += ["", "Pass criterion (synthesis G2): auto 25 min p95 < 0.8 s and auto 45 min p95 < 2 s at concurrency 8, "
               "with an explicit, acceptable failure rate; peak memory from data/valhalla_mem_samples.txt is reported separately. "
-              "Slice results inform G2; the NC build on the intended host is still required to pass it."]
+              "Named anchors are asserted inside the metro evaluation bbox before the run (Codex pass 4 H4)."]
     text = "\n".join(lines)
     print(text)
     OUT_JSON.write_text(json.dumps(all_rows, indent=1), encoding="utf-8")

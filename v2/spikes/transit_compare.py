@@ -33,7 +33,7 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import DATA, RESULTS, VALHALLA, append_results, stamp  # noqa: E402
+from _common import DATA, METRO, RESULTS, VALHALLA, append_results, stamp  # noqa: E402
 
 MOTIS = "http://localhost:8080"
 TRANSITOUS = "https://api.transitous.org"
@@ -48,6 +48,7 @@ ANCHORS = {
     "UNC Hospitals": (35.9049, -79.0469),
     "Duke University Hospital": (36.0075, -78.9381),
     "Downtown Raleigh (Moore Sq)": (35.7796, -78.6382),
+    "NC State Bell Tower": (35.7860, -78.6630),
 }
 # Origins chosen in transit-served neighbourhoods (a random rural point tests nothing).
 ORIGINS = {
@@ -59,6 +60,16 @@ ORIGINS = {
     "RTP (Davis Dr)": (35.8900, -78.8600),
     "Cary (Chatham St)": (35.7880, -78.7810),
 }
+
+
+def assert_in_metro() -> list[str]:
+    """Every test point must lie inside the metro's EVALUATION bbox. The Phase 0 run skipped this
+    check and three Raleigh/Cary rows were invalid as a result."""
+    bad = [f"{n} ({lat},{lon})" for n, (lat, lon) in {**ANCHORS, **ORIGINS}.items()
+           if not METRO.evaluation.contains(lat, lon)]
+    if bad:
+        raise SystemExit(f"points outside the {METRO.name} evaluation bbox: {bad}")
+    return sorted({**ANCHORS, **ORIGINS})
 
 
 def parse_iso(s: str) -> datetime:
@@ -114,9 +125,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-transitous", action="store_true")
     args = ap.parse_args()
-    raw: dict = {"arrive_local": ARRIVE_LOCAL, "arrive_utc": ARRIVE_UTC}
+    assert_in_metro()
+    raw: dict = {"arrive_local": ARRIVE_LOCAL, "arrive_utc": ARRIVE_UTC, "metro": METRO.name}
     lines = [f"# Transit engine experiment ({stamp()})", "",
              f"**Question.** Scheduled INBOUND transit: arrive by {ARRIVE_LOCAL} (Tuesday). Owner decision 13 put transit in Phase 0.",
+             f"Metro **{METRO.name}**, evaluation bbox {METRO.evaluation.as_osmium()}, routing data buffered to "
+             f"{METRO.routing.as_osmium()}. Every point below is asserted inside the evaluation bbox.",
              "", "## 1. Valhalla multimodal: arrival semantics", ""]
 
     with httpx.Client() as client:

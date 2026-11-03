@@ -70,3 +70,35 @@ run at 2026-11-03 14:51:55; anchors=102 (10 named, 90 random, 2 off-network); ca
 | pedestrian | 15 | 102 | 102 | 0 | 0.050 | 0.081 | 0.098 | 1 |
 
 Pass criterion (synthesis G2): auto 25 min p95 < 0.8 s and auto 45 min p95 < 2 s at concurrency 8, with an explicit, acceptable failure rate; peak memory from data/valhalla_mem_samples.txt is reported separately. Slice results inform G2; the NC build on the intended host is still required to pass it.
+
+## Anchor latency benchmark (north-carolina, metro triangle, http://localhost:8003/isochrone)
+run at 2026-11-03 15:37:02; anchors=102 (10 named, 90 random, 2 off-network); cases=[('auto', 25), ('auto', 45), ('bicycle', 15), ('pedestrian', 15)]; reverse=true
+
+#### cold, concurrency 1, named anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 10 | 10 | 0 | 0.297 | 0.423 | 0.423 | 32 |
+| auto | 45 | 10 | 10 | 0 | 0.547 | 0.573 | 0.573 | 51 |
+| bicycle | 15 | 10 | 10 | 0 | 0.061 | 0.077 | 0.077 | 7 |
+| pedestrian | 15 | 10 | 10 | 0 | 0.049 | 0.057 | 0.057 | 1 |
+
+#### warm, concurrency 1, all anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 102 | 102 | 0 | 0.126 | 0.363 | 0.473 | 27 |
+| auto | 45 | 102 | 102 | 0 | 0.448 | 0.575 | 0.636 | 44 |
+| bicycle | 15 | 102 | 102 | 0 | 0.053 | 0.068 | 0.079 | 7 |
+| pedestrian | 15 | 102 | 102 | 0 | 0.048 | 0.053 | 0.054 | 1 |
+
+#### warm, concurrency 8, all anchors
+
+| costing | minutes | n | ok | failed | p50 s | p95 s | max s | median KB |
+|---|---|---|---|---|---|---|---|---|
+| auto | 25 | 102 | 102 | 0 | 0.737 | 1.649 | 1.875 | 27 |
+| auto | 45 | 102 | 102 | 0 | 2.210 | 2.987 | 3.491 | 44 |
+| bicycle | 15 | 102 | 102 | 0 | 0.055 | 0.198 | 1.377 | 7 |
+| pedestrian | 15 | 102 | 102 | 0 | 0.047 | 0.051 | 0.054 | 1 |
+
+Pass criterion (synthesis G2): auto 25 min p95 < 0.8 s and auto 45 min p95 < 2 s at concurrency 8, with an explicit, acceptable failure rate; peak memory from data/valhalla_mem_samples.txt is reported separately. Named anchors are asserted inside the metro evaluation bbox before the run (Codex pass 4 H4).
