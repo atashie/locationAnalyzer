@@ -385,3 +385,52 @@ publish the finite-to-missing and missing-to-finite transition counts with snap 
 Finally, `test_the_airport_failure_mode_is_what_this_prevents` asserts only that a synthetic node
 disappears. It exercises a necessary mechanism, not the real failure-and-recovery chain: it never
 snaps an airport coordinate, routes, bounds displacement or checks access legality.
+
+---
+
+## Follow-up: the airport stub was not an OpenStreetMap gap, and what it did reveal
+
+Checked 2026-11-03, prompted by asking whether the RDU failure was a data defect we could fix
+upstream. It was not.
+
+In the **raw** extract, before any mode filter, the airport node sits in the single 551,375-node
+component — the whole graph. After our drive filter it sits in a 4-node stub. So the fragmentation
+is ours, not OSM's. But the filter is not wrong either: **every way leading out of that stub is
+tagged `access=no`**, which genuinely means closed to the public. The coordinate I picked for "RDU
+Terminal 2" lands on an interior service area reachable only through those ways.
+
+Three conclusions, in increasing order of importance.
+
+**The pruning fix was the right remedy** for the symptom, and `components.py` stays as it is.
+
+**The real defect is anchor routability, and it is a product requirement.** A user who types "RDU
+Airport" must be geocoded to a *routable* point, not to whichever node happens to be nearest.
+Valhalla answered all three airport journeys without trouble because it snaps to its own routable
+network with a tolerance. Our pipeline must do the same: after geocoding an anchor, verify it can
+reach the network and otherwise nudge it to the nearest point that can, surfacing the adjustment
+rather than silently returning "unreachable". This belongs in the Phase 1 anchor path.
+
+**And the diagnostic found a systematic coverage hole that matters for a home-search product.**
+Across the Triangle extract, `access=private` appears on **118,035 edges** and `access=customers` on
+**8,003**, and our filter blocks both outright for driving. That is correct for *through* traffic and
+wrong for *reaching a destination*: a house at the end of a private drive is still a house someone
+drives to. Mainstream routers draw that distinction — Valhalla penalises private access rather than
+forbidding it, so it will still use a private driveway to reach an endpoint. We implemented a single
+boolean and so would make every home on a private drive unreachable.
+
+This is one more reason the per-mode decision (D1) landed where it did, and it is the first thing to
+fix if our own engine is ever revived for driving: access must distinguish through-routing from
+start/end access, not be a single allow/deny.
+
+### Candidate contributions back to OpenStreetMap
+
+From comparisons already run, with the import constraint above firmly in mind:
+
+- **Scroggs Elementary** was the one school of eleven that OSM missed where Overture had it (the
+  NCES recall check in `g6-poi-coverage.md`). NCES EDGE is public-domain US federal data, so it is a
+  plausible source, but any addition must follow OSM's import guidelines and ideally be confirmed on
+  the ground rather than bulk-loaded.
+- OSM is clearly **stronger** than Overture on playgrounds (515 vs 22) and transit stops (2,462 vs
+  51), so there is nothing to give back there.
+- The park disagreement (OSM 545, Overture 363, only 63 agreeing within 50 m) is unresolved in both
+  directions and would need the manual audit before anyone could say which source is wrong.

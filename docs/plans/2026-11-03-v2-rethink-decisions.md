@@ -39,3 +39,29 @@ planning that follow. Items marked *deferred* are to be settled by the research.
 | 14 | Listings fallback | **City/ZIP link plus the exact region on our map is acceptable** if bounded links prove fragile. | Gate G4 cannot block Phase 1. |
 | 15 | Privacy of shared URLs | **Not a priority now.** | Shared URLs carry the full query including anchors; redaction is revisited before any public release. |
 | 16 | Routing-engine order (Valhalla-first vs port the gridded Dijkstra first) | **Decide by experiment.** Trust order: experimental results, then the research, then our priors. | Phase 0 builds both paths on a small slice and chooses on measured cost, latency, and boundary error. |
+
+## Round 3 decisions (2026-11-03)
+
+| # | Question | Decision | Consequence |
+|---|----------|----------|-------------|
+| 17 | ODbL share-alike on our OSM-derived outputs: are the precomputed travel-time layers a Produced Work (attribution only) or a Derivative Database (share-alike)? Flagged in the Phase 0 memo as needing counsel before monetising. | **Moot by choice. The owner is happy to publish derived work under ODbL and to contribute back to OpenStreetMap.** | The classification no longer has to be settled. Publish OSM-derived layers under ODbL with "© OpenStreetMap contributors", and the question stops being a launch risk. See the limits below — it does not extend to contractually restricted sources. |
+
+### What decision 17 does and does not change
+
+**Closes:** the open ODbL risk in `../experiments/phase0-decisions.md` §5. We no longer need a
+Produced-Work argument for publishing per-cell minute rasters, and we may keep OSM-derived and
+Overture-derived data in the same tables if that is simpler, provided the Foursquare NOTICE and the
+CDLA-Permissive attribution travel with it (permissive sources can flow into an ODbL release;
+preserving their notices is still required).
+
+**Does not change anything about contractually restricted sources.** ODbL willingness is irrelevant
+to Google Places (store `place_id` only), RentCast, MLS/IDX via a Doorify participant, or the
+listing portals. For those the restriction is a contract, not a licence we can satisfy by sharing.
+Worse, share-alike and those contracts pull in opposite directions: an ODbL release cannot contain
+data we are forbidden to relicense. **So the separability design rule survives, narrowed:** keep
+restricted sources in their own tables, and never let them into an ODbL-published artifact.
+
+**Contributing to OpenStreetMap: one hard constraint.** Fixes must come from our own survey or from
+sources OSM accepts. We may **not** use Overture, Google or any other incompatible source to
+correct OSM — Google's terms forbid it outright and the OSM community rejects such imports. Our
+coverage comparisons tell us *where* OSM looks thin; they are not a licence to copy the answer in.

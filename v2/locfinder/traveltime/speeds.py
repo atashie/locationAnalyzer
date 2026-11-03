@@ -34,6 +34,13 @@ DRIVE_HIGHWAYS = set(DRIVE_FRICTION_MPH)
 BIKE_EXCLUDE = {"motorway", "motorway_link", "steps", "construction", "proposed", "raceway"}
 WALK_EXCLUDE = {"motorway", "motorway_link", "trunk", "trunk_link", "construction", "proposed", "raceway"}
 
+# KNOWN LIMITATION (measured 2026-11-03): this is a single allow/deny, but real routers distinguish
+# THROUGH traffic from START/END access. `access=private` appears on 118,035 edges in the Triangle
+# extract and `access=customers` on 8,003; blocking them outright makes every home on a private
+# drive unreachable, which is a systematic coverage hole for a home-search product. Valhalla
+# penalises private access instead of forbidding it, which is why it reaches destinations we cannot.
+# Fixing this is the first requirement if our own engine is ever revived for driving.
+# See docs/experiments/spotcheck-engines.md, "the airport stub was not an OpenStreetMap gap".
 NO_ACCESS = {"no", "private", "customers", "delivery", "agricultural", "forestry", "military"}
 YES_ACCESS = {"yes", "designated", "permissive", "official", "destination"}
 
