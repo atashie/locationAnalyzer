@@ -67,11 +67,24 @@ WEDGE_CATEGORIES: dict[str, dict] = {
 }
 
 
+def _as_set(values) -> set:
+    """Overture list fields arrive as Python lists, NumPy arrays, or None depending on
+    the reader; normalise without ever testing an array's truth value."""
+    if values is None:
+        return set()
+    if hasattr(values, "tolist"):
+        values = values.tolist()
+    try:
+        return {v for v in values if v is not None}
+    except TypeError:
+        return set()
+
+
 def taxonomy_matches(taxonomy, spec: dict) -> bool:
-    if taxonomy is None:
+    if taxonomy is None or not hasattr(taxonomy, "get"):
         return False
-    primary = taxonomy.get("primary") if hasattr(taxonomy, "get") else None
-    hierarchy = set(taxonomy.get("hierarchy") or []) if hasattr(taxonomy, "get") else set()
+    primary = taxonomy.get("primary")
+    hierarchy = _as_set(taxonomy.get("hierarchy"))
     if primary in spec["exclude_primary"]:
         return False
     return primary in spec["overture_primary"] or bool(hierarchy & spec["overture_hierarchy"])
