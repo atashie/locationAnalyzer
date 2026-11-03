@@ -15,6 +15,7 @@ machine on the dates given; they are not research estimates.
 | G4 listings handoff | g4-listings.md | links generated; 6 regions invalid, regenerate; owner device sessions pending |
 | G3 browser rendering | g3-rendering.md | page + real-data exporter built and self-tested; needs a device run |
 | G5a early interaction comparison | g5a-interaction.md | prototypes + protocol built on real G4 regions; needs household sessions |
+| Independent engine spot check | spotcheck-engines.md | ours vs Valhalla vs OSRM on 12 real journeys; Google leg needs a key |
 | Phase 0 decisions | phase0-decisions.md | revision 2, corrected against Codex pass 4 |
 
 ## Notes for Phase 1

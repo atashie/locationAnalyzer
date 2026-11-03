@@ -27,6 +27,7 @@ from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, ROADS_XM
                      layer_path, stamp)
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
+from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_csr  # noqa: E402
 from locfinder.traveltime.layer import build_layer_seconds  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
@@ -67,6 +68,8 @@ def main() -> None:
     if args.mode == "walk":
         G = symmetrise(G)
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
+    G, comp = largest_component(G)   # geometric snapping can land on a marooned stub
+    timings["components"] = comp.summary
     timings["prepare_graph_s"] = time.perf_counter() - t
     t = time.perf_counter()
     csr, index = graph_to_csr(G)
@@ -104,7 +107,7 @@ def main() -> None:
                         built_at=stamp(), **{k: (f"{v:.2f}" if isinstance(v, float) else str(v)) for k, v in timings.items()})
     total = sum(v for v in timings.values() if isinstance(v, float))
     text = (f"### Own-graph layer: {args.category} / {args.mode} ({stamp()})\n"
-            f"- graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges ({timings['graph_source']}); "
+            f"- graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges ({timings['graph_source']}; {comp.summary}); "
             f"destinations {len(dest_idx)} nodes from {len(sel)} places ({int((~keep).sum())} dropped > {POI_SNAP_MAX_M:.0f} m)\n"
             f"- reachable cells {np.isfinite(secs).mean():.1%}; one-way-adjacent cells {oneway.mean():.1%}\n"
             f"- timings (s): " + json.dumps({k: round(v, 2) for k, v in timings.items() if isinstance(v, float)}) + f"; total {total:.1f}\n"
