@@ -44,8 +44,8 @@ recommendation document, which is itself Codex-reviewed before any planning begi
 | 04 | [Data sources and legal](04-data-sources-and-legal.md) | Listings access, POIs, Census, traffic, GTFS, quality-of-place layers, ToS verdicts | complete |
 | 05 | [Routing and precompute architecture](05-routing-and-precompute-architecture.md) | Hosted vs self-hosted routing, gridded travel-time precompute, cheap serving | complete |
 | 06 | [UX and interaction model](06-ux-and-interaction-model.md) | User needs, reception of existing tools, HCI principles, recommended model | complete |
-| 07 | [Codex adversarial review](07-codex-adversarial-review.md) | Cross-model critique of 00–06 | in progress (pass 1: 00–05) |
-| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | draft v0.1 (pre-Codex) |
+| 07 | [Codex adversarial review](07-codex-adversarial-review.md) | Cross-model critique of 00–06 | complete (pass 1: 00–05, gpt-5.6-sol) |
+| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | draft v0.2 (post pass 1; pass 2 pending) |
 
 ## Prior in-house research this builds on
 

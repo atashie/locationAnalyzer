@@ -1,169 +1,203 @@
 # V2 Synthesis and Recommendation
 
-**Date:** 2026-11-03 · **Status:** DRAFT v0.1, written after research streams 00–06, before Codex adversarial pass 1 landed. Will be revised against `07-codex-adversarial-review.md` and then re-reviewed by Codex (pass 2) before planning.
-**Inputs:** `00-existing-assets-audit.md`, `01-consumer-landscape-home-search.md`, `02-landscape-hotel-and-site-selection.md`, `03-open-source-landscape.md`, `04-data-sources-and-legal.md`, `05-routing-and-precompute-architecture.md`, `06-ux-and-interaction-model.md`, and the kickoff decisions in `../plans/2026-11-03-v2-rethink-decisions.md`.
+**Date:** 2026-11-03 · **Status:** DRAFT v0.2 — revised against Codex adversarial pass 1 (`07-codex-adversarial-review.md`). Awaiting Codex pass 2 on this document and `06-ux-and-interaction-model.md`, then owner review.
+**Inputs:** research streams `00`–`06`, Codex pass 1 (`07`), and the kickoff decisions in `../plans/2026-11-03-v2-rethink-decisions.md`.
+**How to read this:** §3 states what the research settles; where Codex showed a conclusion rests on an unmeasured estimate, it is labelled **hypothesis** and tied to a numbered gate in §6. Nothing marked hypothesis should be built on until its gate passes.
 
 ---
 
 ## 1. What we are building
 
-A map-first location finder in which a person (or a couple) says in plain language where they need to be and how they get there, and the system turns each clause into a visible, editable **criteria card** — "Sam drives to Fidelity RTP in ≤ 25 minutes", "10-minute walk to a park", "bikeable to a grocery store", "≤ 45 minutes to RDU" — and draws the **region** where all cards hold, names the neighborhoods inside it, and hands the user to real listings bounded to that region. The wedge is home search in the Research Triangle. The same engine (travel-time surfaces per mode + constraint algebra + region enrichment + deep-link adapters) later serves hotel stays near an event venue and small-business site selection with Census demographics.
+A map-first location finder in which a person (or a couple) states where they need to be and how they get there, and the system turns each requirement into a visible, editable **criteria card** — "Sam drives to Fidelity RTP in ≤ 25 minutes", "10-minute walk to a park", "bikeable to a grocery store", "≤ 45 minutes to RDU" — and draws the **region** where all cards hold, then hands the user to real listings bounded to that region. The wedge is home search in the Research Triangle. The same engine (travel-time surfaces per mode + constraint algebra + region enrichment + deep-link adapters) later serves hotel stays near an event venue and small-business site selection with Census demographics.
 
-What is new relative to V1: the constraint set is the product, not a form; categories are precomputed coverage layers rather than live Overpass queries; the LLM parses intent but never produces geography; results are explainable per cell; and listings are one click away.
-
----
-
-## 2. Headline conclusions from the research
-
-1. **The gap is real and 15 years old.** No live US product shows where *two* commutes plus amenity layers intersect; users have asked for it on Hacker News since 2011 and Homesnap's 2018 attempt failed. The UK's Jitty is the nearest analogue (01 §1, §4).
-2. **Natural language is table stakes, not the differentiator.** Four US portals shipped AI search between Oct 2025 and Aug 2026. The winners translate the sentence into *visible, editable* filters; chat-only products (Flyhomes, Sierra-style) have died or drawn "broken promise" reviews (01 §1, 06 §1).
-3. **The interaction model is settled by two independent streams:** a hybrid where language builds a structured `Query` shown as cards over the map, with chat, card controls, and map gestures as three equivalent edit paths (01 §5, 06 §5). Hard AND by default; per-card soft flag; no numeric weights in v1.
-4. **The compute problem is smaller than V1 made it look.** Per-cell "minutes to nearest POI of type T by mode M" rasters for the Triangle at 100 m are ~570k land cells; 75 layers as uint8 are tens of MB compressed and compute in well under an hour with scipy csgraph instead of networkx (05 §1, §3). V1's 30 s–8 min queries were Overpass-at-request-time, which goes away.
-5. **Arbitrary anchors (an office, a friend's house) are one on-demand isochrone each**, sub-second to ~2 s from self-hosted Valhalla on a $10/month VPS; the public FOSSGIS demo server V1 depends on is dev-only (05 §1, 03 §1).
-6. **The cheapest robust serving tier is static files**: uint8 layers as PMTiles or COGs plus an Overture places GeoParquet on Cloudflare R2 (free egress), SPA on Cloudflare Pages, raster algebra in a Web Worker so a slider never round-trips (05 §4–5, 03 §4ii).
-7. **Listings are reachable legally for free, but only as deep links.** Zillow accepts `searchQueryState` with `mapBounds`; Redfin accepts `viewport=N:S:E:W`; neither accepts a polygon. RentCast's free developer tier (50 req/month) gives real listing pins for prototyping with storage rights; MLS/IDX data needs a participating-brokerage partner (04 §1, §4).
-8. **The POI base is Overture Places (CDLA-Permissive) with OSM kept in a separable table**; TripAdvisor is dropped (deprecated API, no-database and no-commingling terms); Google Places only live, `place_id` only stored (04 §1, 00 §1).
-9. **Most of the reusable code is not in V1.** CHCCS_geospatial holds the gridded multi-source Dijkstra engine; localUpdates holds the tested store/geocode/Overture/provenance core, the NL → frozen-filter pattern, and the only eval harness. V1 contributes ~250 lines of ideas and a live bug (minutes treated as miles) that the new design makes impossible by construction (00 §1, §6).
-10. **Hotels and site selection are served by the same engine later**: the hotel market expresses proximity as straight-line distance and has no transit-isochrone product; site-selection incumbents cost $700–$34k/year while the data a small operator needs (ACS, LODES, AADT, Overture, parcels) is free (02 §1).
+What is new relative to V1: the constraint set is the product, not a form; amenity categories are precomputed coverage layers rather than live Overpass queries; the language model, when present, parses intent but never produces geography; every exclusion is explainable with real numbers; listings are one click away.
 
 ---
 
-## 3. Decisions the research settles
+## 2. Headline conclusions
 
-### 3.1 Interaction model (kickoff decision 3, deferred → now recommended)
+1. **The gap is real and old.** No live US product shows where *two* commutes plus amenity layers intersect; the request recurs on Hacker News from 2011 onward; Homesnap's 2018 multi-destination attempt failed; the UK's Jitty is the nearest analogue (01 §1, §4).
+2. **Natural language is table stakes, not the differentiator.** Four US portals shipped AI search between Oct 2025 and Aug 2026. Chat-only products have died or drawn "broken promise" reviews (01 §1, 06 §1). Codex (07 H7) is right that the engagement metrics cited for "NL plus visible filters" do not isolate the interaction model; see §3.1.
+3. **The compute problem is tractable, but its size is a hypothesis.** Per-cell "minutes to nearest POI of type T by mode M" rasters for the Triangle at 100 m are ~570k land cells; 75 uint8 layers are ~71 MB raw (05 §3). Compressed size, build time, and serving cost are estimates until Gate G1 measures them (07 H2, H10, M2).
+4. **Reusable routing code has a correctness flaw that must be fixed on port.** The CHCCS engine runs Dijkstra outward from destinations after forcing every road bidirectional. For drive (and bike) that answers the wrong question on one-way streets. The port must run from destinations on the **transposed** directed graph and be validated against Valhalla reverse isochrones (07 C1).
+5. **Arbitrary anchors are one on-demand isochrone each**, served by self-hosted Valhalla; the public FOSSGIS demo is dev-only (05 §1, 03 §1). Latency and box size are hypotheses until Gate G2 (07 H1, H2, M1).
+6. **Static files are the cheapest robust serving tier**: uint8 layers plus a places file on Cloudflare R2, SPA on Pages, raster algebra in a Web Worker (05 §4–5). Whether that beats a simpler server-rendered mask for v2.0 is decided by Gate G3 (07 attack a, H9).
+7. **Listings are reachable legally only as deep links today, and the deep links are unproven.** Zillow `searchQueryState.mapBounds` and Redfin `viewport` are undocumented, partly scraper-derived patterns (04 §1, 07 C3). RentCast's full permitted-use list has not been read. Listings handoff is Gate G4 and must pass before Phase 1 ends.
+8. **POI base: Overture Places first, OSM by category where Overture is weak, no cross-source entity merge in v1**, so ODbL questions stay simple (04 §1, 07 H3, attack e). The localUpdates collector's fail-open licence default must be made fail-closed on port (07 H4). TripAdvisor is dropped (deprecated API, incompatible terms). Google Places: store `place_id` only, nothing else (07 C2).
+9. **Most reusable code is not in V1.** CHCCS holds the grid engine (with the flaw above); localUpdates holds the tested store/geocode/Overture/provenance core, the NL → frozen-filter pattern, and the only eval harness; V1 contributes ~250 lines of ideas and a live bug (minutes treated as miles) the new design makes impossible by construction (00 §1, §6).
+10. **Scope must shrink before it grows.** Codex (07 M7) is right that the proposed context layers (crime, school grades, noise, canopy, broadband, slope) expand liability and QA before the wedge is proven. v2.0 is commutes, a short list of amenity categories, the region, and the listings handoff.
 
-Adopt the hybrid described in `06 §5`: one `Query` object (`people[]` with places/mode/minutes/time-of-day/hard|soft, `amenities[]`, `budget?`, `quality[]`, `region_hint`); the LLM's only job is NL → Query delta plus disambiguation; the geo engine produces every region and pin. First-run: map already visible, one input with a real example placeholder, four starter cards, cards stream in as parsed with per-card progress, first visible change ≤ 1 s and whole sentence ≤ 10 s. Results: region first (polygon with graded soft fringe), named neighborhoods with fit %, listings/places inside. Correction: per-card edit/mute/delete, tap-anywhere "why is this out?" with real numbers and one-tap relax, chat critiques echoed as card changes. Persistence: the full `Query` in a shareable URL so a couple can co-edit (01 §5 item 7). Two-person household: `Person` is a first-class object with a two-colour overlap view.
+---
 
-Why not chat-first: LLMs invent geography in public demos and users cannot see which clause was misread (06 §6). Why not form-first: it is V1, and multi-person × multi-mode × multi-amenity makes the form the clunkiness (06 §6).
+## 3. Decisions the research settles, and hypotheses it does not
 
-### 3.2 Architecture (hybrid, static-first)
+### 3.1 Interaction model (kickoff decision 3) — **settled in shape, hypothesis in emphasis**
 
-Adopt option C from `05 §8`:
+Settled: the UI is **map-first with visible, editable criteria cards** over a deterministic region; `Person` is a first-class object; hard AND by default with a per-card soft flag; tap-anywhere "why is this out?" with real numbers; the full `Query` lives in a shareable URL (06 §5, 01 §5). Chat-only is rejected (06 §6). This shape is required under every candidate model, so building it first is not a bet.
+
+Hypothesis (07 H7): that natural-language entry should be the *primary* input rather than a shortcut. The research shows users like NL and that products hide resolved filters, but no source isolates NL's contribution. Resolution: Phase 1 ships direct-manipulation cards (the two-address flow Codex proposes as the strongest alternative); Phase 2 adds NL → Query delta behind the localUpdates tool-use seam; **Gate G5** is a 3–5 household comparison of "describe it" versus direct entry on time-to-trusted-region and correction count, which decides how prominent the input box is. Either way the engine, cards, and explainability are the same.
+
+Rush hour (07 M6): there is no traffic data in OSM-based routers. The UI will say **"modeled commute profile"**, never "rush hour", and offer a documented slower profile as "worst case" only after Gate G1 reports its error against Valhalla.
+
+### 3.2 Architecture — **hybrid static-first is the working hypothesis; server-first is the fallback**
+
+Working hypothesis (05 §8 option C):
 
 ```
  PRECOMPUTE (Windows box, monthly)                 STATIC TIER (Cloudflare, $0)
- Geofabrik NC PBF - osmium clip -> graphs/mode     R2:  layers/{metro}/{mode}/{category}.pmtiles|cog (uint8 minutes)
- Overture places (monthly) -----> POIs/category         places/{metro}.parquet (Overture + separable OSM)
- csgraph multi-source Dijkstra -> uint8 rasters         neighborhoods/{metro}.fgb, metadata.json
- (CHCCS engine, ported) --------> COG/PMTiles ---> Pages: SPA (MapLibre GL JS, Worker raster algebra, DuckDB-Wasm)
+ Geofabrik NC PBF - osmium clip -> directed graphs R2:  layers/{metro}/{mode}/{category} (uint8 minutes)
+ Overture + OSM-by-category -----> POIs/category         places/{metro}.parquet (source-native records)
+ csgraph Dijkstra on TRANSPOSED graph -> rasters         neighborhoods/{metro}.fgb, manifest.json
+ (CHCCS engine, ported + fixed) -> COG/PMTiles --> Pages: SPA (MapLibre GL JS, Worker raster algebra)
 
- ON-DEMAND TIER (one VPS, ~$10/mo)                 BROWSER
- Valhalla (NC tiles) <- FastAPI -> /isochrone-grid  fetch viewport tiles -> AND/threshold/soft-score in Worker
- own graph in RAM     -> /custom-category           -> canvas layer -> d3-contour polygon -> POIs/listings inside
- DuckDB (listings, cache, logs) -> /nl/parse (LLM)  -> criteria cards <-> Query state <-> URL
+ ON-DEMAND TIER (one VPS, 8 GB until measured)     BROWSER
+ Valhalla (NC tiles) <- FastAPI -> /isochrone-grid  fetch viewport tiles -> AND/threshold/soft in Worker
+ CSR graph in RAM     -> /custom-category           -> canvas layer -> polygonize -> POIs/listings inside
+ DuckDB (cache, logs) -> /nl/parse (LLM, Phase 2)   -> criteria cards <-> Query state <-> URL
 ```
 
-Choices inside it: MapLibre GL JS replaces Leaflet (03 §1); COG vs raster PMTiles decided by Spike 5; MapLibre `color-relief` cannot threshold arbitrary rasters yet, so the Worker + canvas path is the baseline (05 §1). Precompute runs locally and publishes artifacts; the API stays small because the hot path is static. If the API is down, category constraints still work.
+What Codex changed: the VPS baseline is **8 GB** until peak RSS is measured with a CSR graph (07 H1); anchor grids must be **compressed and viewport-clipped**, not ~1 MB raw per anchor (07 H2); the MapLibre `color-relief` limitation is **version-specific** and the Terrarium-elevation trick is dropped unless a tiny spike proves it (07 H9); and a **server-rendered PNG mask + GeoJSON** path is kept as the fallback if browser algebra fails Gate G3 on a mid-range phone (07 attack a). Leaflet → MapLibre migration stands (03 §1).
 
-### 3.3 Routing engines
+### 3.3 Routing engines — **Valhalla is the single routing truth until own-graph layers pass accuracy gates**
 
-Self-hosted Valhalla on the NC extract (MIT, isochrones + matrix + GeoTIFF output + multimodal) for anchors and as the accuracy reference; in-house csgraph Dijkstra with the CHCCS speed model for category layers **pending Spike 2** (if drive error exceeds median 20% / p90 35% after recalibration, drive layers switch to Valhalla GeoTIFF grids). OSRM has no isochrones; GraphHopper is the fallback engine (03 §1). Public FOSSGIS Valhalla is dev-only at ≤ 1 req/s.
+Self-hosted Valhalla on the NC extract (MIT; isochrones, matrix, GeoTIFF output, multimodal) serves anchors and is the accuracy reference. Own-graph csgraph Dijkstra for category layers is a hypothesis with two gates: correctness on the transposed directed graph with one-way streets (07 C1) and accuracy thresholds (walk/bike median error < 15%, p90 < 30%; drive median < 20%, p90 < 35%; 05 Spike 2). If drive fails, drive layers come from Valhalla GeoTIFF grids. OSRM lacks isochrones; GraphHopper is the fallback engine (03 §1). Public FOSSGIS Valhalla stays dev-only at ≤ 1 req/s; a hosted API (Mapbox/ORS) is the development fallback for anchors until the NC build exists (07 attack d).
 
-### 3.4 Data stack and legal posture
+### 3.4 Data stack and legal posture — **settled rules, reduced v2.0 scope**
 
-Per `04 §4–5`: stored commercial-safe core = Overture Places (confidence ≥ 0.85), separable `osm_poi`, ACS 5-year block groups, LODES, NCDOT AADT, FEMA NFHL, NCES EDGE + NC report cards, PAD-US + municipal parks, EPA Walkability, BTS noise, NLCD canopy, county parcels (Wake CC BY 4.0 daily; Orange annual; Durham to verify), GTFS for seven Triangle agencies. Live-only: Google Places (`place_id` only), AirNow. Rules: never scrape; hold no MLS data without a licence; OSM separable; attribution registry row before any layer is ingested; facts not expression.
+Rules (04 §5, hardened by 07): never scrape; hold no MLS data without a licence; Google Places persists `place_id` only; OSM and Overture records stay source-native with lineage and **no cross-source entity merge in v1** (07 H3); ingestion fails closed on unknown licences (07 H4); every layer has a source-registry row before ingest; facts not expression.
 
-### 3.5 Listings linkage (kickoff decision 7)
+v2.0 stored layers (07 M7 applied): Overture Places and OSM-by-category for the wedge amenity set (parks, groceries, schools as places, coffee, pharmacies, transit stops, trailheads, playgrounds — final list by Gate G6 coverage audit); county parcel centroids for "homes exist here" counts (Wake CC BY 4.0; Orange; Durham licence to verify); neighborhood boundaries (source to pick: Census places/CDPs plus municipal neighborhood layers); GTFS stop locations only (no transit routing). Deferred to a later phase and only on user request: ACS demographics, LODES, AADT, FEMA NFHL (flood is the first candidate to add), schools' grades, crime, noise, canopy, broadband, walkability index, elevation.
 
-A `ListingLink` adapter emits per-region deep links: Zillow (`searchQueryState.mapBounds` = envelope + price filters), Redfin (`viewport`), Realtor.com/Trulia (patterns to verify), rentals via Zillow Rentals/Apartments.com. Our map keeps the true polygon and says plainly that the portal shows its box. Prototype listing pins from the RentCast developer tier (free, 50 req/month) clearly labelled. Public/monetized pins require a Doorify MLS participant brokerage controlling an IDX display component (Policy 7.58). County assessor data gives housing stock, recent sales and price levels inside any polygon for free, forever.
+### 3.5 Listings linkage (kickoff decision 7) — **approach settled, mechanism is Gate G4**
 
-### 3.6 Code reuse (kickoff decision 5)
+A `ListingLink` adapter emits per-region deep links; our map always shows the true polygon and says plainly that the portal shows its box. Gate G4 (07 C3): generate 20 representative Triangle regions, open Zillow/Redfin/Realtor.com/Trulia links on desktop, iOS and Android, confirm bounds and filters survive, and write a URL-contract test; read the full RentCast licence and provenance before any pin is shown; keep a **fallback of city/ZIP portal links plus county parcel context** if bbox links prove fragile. IDX via a Doorify participant brokerage is a **future option, not the plan** (07 H8): it needs written confirmation of local rules and a willing broker.
 
-Follow `00 §6` in order: copy localUpdates core (models, store seam, DuckDB store, geocoder chain, Overture collector, provenance) with tests into `v2/core/`; port the CHCCS engine as pure functions parameterized by boundary/destinations/mode/speed profile/CRS with a Dijkstra cutoff and COG output into `v2/traveltime/`; rebuild V1's progressive filter as raster algebra in `v2/compose/`; wrap V1's Valhalla client for the on-demand path; port the NL seam and eval harness with spatial golden queries. Do not copy TripAdvisor code, the untracked `backend/test_*.py` scripts (hard-coded API key), the Streamlit PoC, or the V1 frontend.
+### 3.6 Code reuse (kickoff decision 5) — **settled, with two corrections**
+
+Follow `00 §6` in order, with: (a) the CHCCS port replaces `_ensure_bidirectional` with per-mode directed graphs and runs Dijkstra on the transpose (07 C1); (b) the localUpdates Overture collector's `_license_for_row` fails closed and derives licence from the pinned release manifest (07 H4). Do not copy TripAdvisor code, the untracked `backend/test_*.py` scripts, the Streamlit PoC, or the V1 frontend.
 
 ---
 
-## 4. Where the streams disagreed, and how this synthesis resolves it
+## 4. Where the streams disagreed, and the resolution after Codex
 
-| Topic | Positions | Resolution | Decided by |
+| Topic | Positions | Resolution | Gate |
 |---|---|---|---|
-| **H3 hexes vs square rasters** | 01: leaders (TravelTime, Jitty) moved to H3 for legibility/performance. 03: H3-keyed GeoParquet + COG. 05: square rasters are what every tile/COG toolchain expects. | Compute and store as square rasters (toolchain, Worker math). Hex is a *presentation* option: resample to H3 r9/r10 at render time if usability testing shows squares read badly. Use H3 as an optional index key for POIs/neighborhood joins only. | Spike 4 + usability test task 1 |
-| **DuckDB vs PostGIS** | 04 labels the stored core "PostGIS". 03/05 and the audit favour DuckDB (embedded, GeoParquet-native, Wasm, already behind a `Store` seam). | DuckDB for v2.0. The `Store` seam exists precisely to swap in PostGIS when multi-user writes, licensed listings, or a second metro's concurrency demand a server DB. | Revisit at Phase 3 |
-| **Transit** | 02: wait-time-aware transit surfaces are a must-have because no competitor sells them. 05: time-dependent; precompute categories at 250 m with r5py, defer on-demand transit anchors. 03: Transitous for prototyping only (non-commercial, ~720 req/day). | v2.0 ships drive/bike/walk. Transit category layers (weekday 8–9 am window, median) are Phase 3 via Spike 7. On-demand transit anchors wait until a JVM router is worth hosting. The hotel wedge, where transit matters most, is after Phase 3 anyway. | Spike 7 |
-| **Hard vs soft constraints** | 01: hard default, soft ranking later. 05: store minutes so scoring is a pure client function. 06: hard AND default, per-card soft flag, no numeric weights in v1. | Exactly 06's answer, enabled by 05's representation. Weights only if usability testing surfaces "how much more important is X than Y". | Usability test |
-| **Drive layers: own Dijkstra vs Valhalla** | 00/05: CHCCS speed model is transparent and tunable but ignores one-ways, turn costs, signals as Valhalla models them. 03: Valhalla GeoTIFF is the engine-side equivalent. | Own Dijkstra for walk/bike (accuracy is less sensitive); drive decided by Spike 2 thresholds. | Spike 2 |
-| **Peak vs off-peak driving** | 01: rush-hour toggle is the one time-of-day control every portal ships. 05: no traffic data in OSM-based routers. 06: "worst case" toggle must not outrun the data. | Ship "typical" with an honest label; offer "worst case" as a documented slower speed profile (e.g. ×0.7 on arterials) until a traffic source exists. Do not promise departure-time precision. | Phase 2 |
-| **TripAdvisor** | 00: drop. 04: deprecated API and incompatible terms. V1 built a feature on it. | Drop, including the Premium Search UI. Live enrichment, if ever, is Google Places with `place_id`-only storage and branding compliance. | Settled |
+| **H3 hexes vs square rasters** | 01: leaders moved to H3. 03: H3-keyed GeoParquet + COG. 05: square rasters fit every tile/COG toolchain. 07 H5: H3 r10 cells average ~0.015 km², ~50% larger than a 100 m square; not a drop-in; leave open and prototype both. | Compute on square rasters (toolchain) as the working choice; build the two-commute view both ways in Gate G3 and choose on mobile payload, visual stability, join complexity, boundary error. | G3 |
+| **DuckDB vs PostGIS** | 04 labels the core "PostGIS"; 03/05/00 favour DuckDB behind the existing `Store` seam. 07 M8: define migration thresholds. | DuckDB for v2.0. Migrate to PostGIS when any holds: concurrent writers > 1 service, licensed listings requiring row-level access control, second metro with shared users, or p95 query > 500 ms on DuckDB. | Phase 3 review |
+| **Transit** | 02: must-have from the start. 05: time-dependent, precompute categories only, defer anchors. 07 H6: product decision; ask households. | v2.0 ships drive/bike/walk. Usability interviews (Gate G5) ask whether transit is a purchase constraint; if ≥ 2 of 5 households say yes, Phase 3 adds one scheduled AM transit surface (05 Spike 7); otherwise deferred. | G5 |
+| **Hard vs soft constraints** | 01: hard default, soft later. 05: store minutes so scoring is client-side. 06: hard AND + per-card soft flag, no numeric weights in v1. | Adopt 06. Weights only if Gate G5 surfaces "how much more important is X than Y". | G5 |
+| **Drive layers: own Dijkstra vs Valhalla** | 00/05: own model is transparent but ignores one-ways, turns, signals. 07 C1/H10: direction and end-to-end timing unproven. | Valhalla is the reference; own-graph drive layers only if Gate G1 passes correctness and accuracy. | G1 |
+| **Peak vs off-peak** | 01: every portal ships a rush toggle. 05: no traffic data. 06/07 M6: do not call a static profile rush hour. | "Modeled commute profile" label; "worst case" slower profile only after G1 reports its error. | G1 |
+| **Interaction emphasis** | 01/06: NL builds visible cards. 02: AI competitors hide filters. 07 H7: evidence does not isolate NL. | Cards first (Phase 1), NL second (Phase 2), prominence decided by G5. | G5 |
+| **TripAdvisor** | 00/04: drop. | Dropped, including Premium Search. | — |
 
 ---
 
-## 5. Budget tiers (kickoff decision 4, deferred → owner to choose)
+## 5. Budget tiers (kickoff decision 4) — **owner to choose; numbers are ranges, not quotes**
 
-All numbers from `05 §5.2` and `04`; LLM costs are my estimate: a parse is ~2–4k tokens in, <1k out; at friends-and-family volume (≤ 500 parses/month) that is well under $5/month on a mid-tier model, and cacheable.
+Codex (07 M3, H2) is right that the $10–25 figure was a best case. Revised with 3× burst headroom, backups, monitoring, and rebuild compute; LLM costs assume ≤ 500 parses/month at 2–4k tokens each.
 
-| Tier | Monthly cost | What you get | What you give up |
+| Tier | Monthly (friends & family) | Monthly (10k users, 3× burst) | What you get | What you give up |
+|---|---|---|---|---|
+| **0 — Static only** | $0 + domain | n/a (not a legitimate production chain) | Precomputed layers on R2/Pages; anchors via public FOSSGIS Valhalla (dev-only) or Mapbox free tier (60-min cap) | Custom categories; "45 min to RDU" on Mapbox; production legitimacy |
+| **1 — Hybrid (recommended)** | $15–25 (8 GB VPS $12–20, LLM ≤ $5, backups/monitoring) | $40–80 (second node or managed fallback, R2 overage headroom) | Self-hosted Valhalla NC + FastAPI anchors/custom categories, RentCast dev tier pins if licence permits | On-demand transit anchors |
+| **2 — Hybrid + transit** | $40–70 | $90–150 | Tier 1 + a 4–8 GB box for MOTIS/OTP or r5py batch; RentCast Foundation adds $74 | — |
+
+Recommendation: **Tier 1**, provisioned at 8 GB and downsized only from measured peak RSS (07 H1). Developer time, not hosting, is the dominant cost at every tier.
+
+---
+
+## 6. Gates (Phase 0) — what must be measured before planning the build
+
+Each gate is a spike with a success criterion; the spikes in `05 §9` are the method. Gates G1–G4 are blocking for Phase 1; G5–G6 are blocking for Phase 2.
+
+| Gate | Question | Method | Pass criterion |
 |---|---|---|---|
-| **0 — Static only** | $0 (+ domain) | Precomputed layers + places on R2/Pages; Worker algebra; anchors via public FOSSGIS Valhalla at ≤ 1 req/s (dev-only terms) or Mapbox free tier (60-min cap) | No custom categories on demand; "45 min to RDU" fails on Mapbox; not a legitimate production dependency chain |
-| **1 — Hybrid (recommended)** | ~$10 (Hetzner CX33-class or Fly 2–4 GB) + ≤ $5 LLM | Everything in Tier 0 plus self-hosted Valhalla NC, FastAPI anchors/custom categories/listings cache, RentCast dev tier pins | On-demand transit anchors |
-| **2 — Hybrid + transit + paid pins** | $25–50 | Tier 1 plus a 4–8 GB box for a MOTIS/OTP transit router or r5py batch, RentCast Foundation ($74 would push this to ~$100) | — |
+| **G1 Routing correctness and speed** | Does own-graph Dijkstra on the transposed directed graph match Valhalla, and how long does an end-to-end layer take? | Build NC walk/bike/drive directed graphs (pyrosm/osmium → CSR); port CHCCS snapping; one grocery/walk and one office/drive layer; compare 500 sampled pairs per mode with Valhalla `route` (reverse semantics); time CSR build, reversal, snapping, Dijkstra, encoding separately | Walk/bike median abs error < 15%, p90 < 30%; drive median < 20%, p90 < 35%; else drive via Valhalla GeoTIFF. Full 75-layer build < 60 min, peak RAM < 16 GB |
+| **G2 Valhalla NC self-host** | Does the NC build fit the intended box, and what is anchor latency? | Build under WSL2/Docker; serve on an 8 GB VPS; 100 representative isochrones compared with public Valhalla and one hosted API | Serving RSS measured; 25-min drive p95 < 800 ms, 45-min < 2 s at 5–10 concurrent; GeoTIFF grid aligned to our raster |
+| **G3 Browser rendering** | Can a mid-range phone threshold six layers and polygonize under budget, in raster and in H3? | Worker algebra over a metro viewport; compressed viewport-clipped anchor grids; MapLibre canvas vs native raster styling on the pinned version; d3-contour; same view in H3 r9/r10 | Slider-to-repaint < 100 ms; first paint < 1.5 s on throttled 4G; polygons valid; otherwise fall back to server-rendered mask |
+| **G4 Listings handoff** | Do portal deep links carry bounds and filters on desktop, iOS, Android, and is RentCast usable? | 20 generated regions × Zillow/Redfin/Realtor/Trulia on three devices; URL-contract test; owner reads full RentCast licence and provenance | ≥ 90% of links open with correct bounds on all devices for at least two portals; written RentCast answers on display, caching, monetization |
+| **G5 Interaction** | Direct cards vs "describe it": which gets households to a trusted region faster with fewer corrections? Is transit a purchase constraint? | 06 §7 script with 3–5 households on the Phase 1 build plus a clickable NL mock; add two interview questions on transit and weights | Decides NL prominence, transit in Phase 3, and whether weights enter v2 |
+| **G6 POI coverage and licence** | Which source per category, and is lineage clean? | Manual audit of 200 Triangle POIs across the wedge categories; precision/recall/duplicates/licence per source; collector fail-closed test | Per-category source preference table; zero rows with unknown licence |
 
-Recommendation: **Tier 1.** It is the smallest configuration whose every dependency is acceptable for a later public product, and it scales to ~10k monthly users at $10–25.
-
----
-
-## 6. Phased roadmap (shape only; the detailed plan follows owner feedback)
-
-- **Phase 0 — Spikes (1–2 weeks).** Run `05 §9` spikes 1–6, 9, 10 on the Windows box: Triangle precompute benchmark, accuracy vs Valhalla, self-host Valhalla NC under WSL2/Docker, browser raster algebra, R2 delivery, custom category on demand, `color-relief` trick, Overture coverage. Each has a stated success criterion. Also verify the load-bearing claims in §9.
-- **Phase 1 — Region engine + static map (Triangle, drive/bike/walk).** `v2/core` from localUpdates; `v2/traveltime` from CHCCS; ~12 categories × 3 modes published to R2; MapLibre SPA with criteria cards (no NL yet), Worker algebra, polygon output, POIs inside, Zillow/Redfin deep links, URL-persisted Query. Fixes V1's bug by construction.
-- **Phase 2 — Language, anchors, explainability.** NL → Query delta tool with the localUpdates seam and spatial golden queries; self-hosted Valhalla anchors; "why is this out?"; soft fringe; worst-case profile; friends-and-family usability test (`06 §7`, 6 participants, 7 tasks).
-- **Phase 3 — Depth.** Transit category layers (Spike 7); named neighborhoods with fit %; RentCast pins; context layers (schools, flood, noise, canopy); second metro to prove the metro-agnostic pipeline; PostGIS decision.
-- **Later wedges.** Hotels: transient-event anchors + Expedia/Kayak/Booking deep links. Site selection: region → block-group apportionment → ACS/LODES/AADT summary ("lite Business Analyst").
+Also before planning: verify the load-bearing claims in §9.
 
 ---
 
-## 7. Risk register (top items)
+## 7. Phased roadmap (shape only)
 
-| Risk | Severity | Mitigation |
+- **Phase 0 — Gates G1–G4, G6 (2–3 weeks on the Windows box plus one VPS).**
+- **Phase 1 — Region engine + direct-manipulation cards (Triangle, drive/bike/walk).** `v2/core` from localUpdates; `v2/traveltime` from CHCCS with the direction fix; ~10 categories × 3 modes to R2; MapLibre SPA with criteria cards, Worker algebra (or server mask per G3), polygon output, POIs inside, URL-persisted Query, listings handoff per G4. Fixes V1's bug by construction. This is already usable by friends and family.
+- **Phase 2 — Language, anchors, explainability.** NL → Query delta behind the localUpdates seam with spatial golden queries; self-hosted Valhalla anchors; "why is this out?"; soft fringe; modeled-commute label; Gate G5 usability test.
+- **Phase 3 — Depth, on evidence.** Transit surface if G5 says so; named neighborhoods with fit %; RentCast pins if G4 licence passes; flood layer if requested; second metro to prove the metro-agnostic pipeline; PostGIS review against the thresholds in §4.
+- **Later wedges.** Hotels: transient-event anchors + affiliate deep links. Site selection: region → block-group apportionment → ACS/LODES/AADT summary.
+
+---
+
+## 8. Risk register
+
+| Risk | Severity | Mitigation / gate |
 |---|---|---|
-| In-house drive-time layers disagree materially with Valhalla | High | Spike 2 thresholds; fall back to Valhalla GeoTIFF for drive |
-| Browser raster algebra too slow on mobile/4G | Medium | Spike 4; deck.gl shader fallback; 250 m drive layers |
-| Zillow/Redfin change or block deep-link schemes | Medium | Adapter pattern; always show our polygon; county assessor data as the stored fallback |
-| LLM misparse goes unnoticed | Medium | Echo line + card highlight; seeded misparse in usability test |
-| ODbL contagion from OSM-derived rasters | Medium | Separable buckets; treat layers as produced works pending counsel |
-| Fair-housing exposure from free-text suggestions | Medium | No neighborhood-quality prose from the model; templated explanations from engine numbers only |
-| Public Valhalla used past dev | Low | Tier 1 removes the dependency |
-| Scope creep into hotels/site selection before the wedge works | Medium | Phase gates; engine abstractions only where free |
+| Directed-graph error in ported engine produces false drive regions | Critical | Transposed-graph contract; G1 validation against Valhalla reverse isochrones |
+| Listings deep links break or lose filters; RentCast licence insufficient | High | G4; city/ZIP + parcel fallback; adapter pattern |
+| Google Places content cached beyond `place_id` | High | Persist `place_id` only; source-registry row with exact clause |
+| Own-graph drive layers inaccurate | High | G1 thresholds; Valhalla GeoTIFF fallback |
+| Single 4 GB box OOMs with Valhalla + graph + DuckDB | High | 8 GB baseline; CSR graph; measure RSS in G2 |
+| Browser algebra too slow on phones | Medium | G3; server-rendered mask fallback |
+| ODbL ambiguity from cross-source merging | Medium | No entity merge in v1; source-native records; counsel before monetization |
+| Overture licence fail-open | Medium | Fail-closed collector; G6 |
+| NL misparse unnoticed | Medium | Echo line + card highlight; seeded misparse in G5 |
+| Fair-housing exposure in suggestions/explanations | Medium | No neighborhood-quality prose from the model; templated explanations from engine numbers |
+| Scope creep into context layers and later wedges | Medium | §3.4 deferral list; phase gates |
 
 ---
 
-## 8. Scope discipline (YAGNI)
+## 9. Verification backlog (load-bearing, from 07 and the streams)
 
-Not in v2.0: numeric weights, heat-map default, transit anchors, booking flows, foot-traffic data, void analysis, Google/Yelp live enrichment in the UI, auth/accounts, a second metro, voice input, native mobile. Each is listed so it is a conscious deferral.
-
----
-
-## 9. Verification backlog before planning (load-bearing "(unverified)" items)
-
-From the streams' open questions; Codex pass 1 will add to this list.
-
-1. Zillow `searchQueryState.mapBounds` link opens correctly on desktop and mobile; drawn regions are opaque `customRegionId` (04 Q2).
-2. Redfin `viewport=N:S:E:W` pattern; Realtor.com and Trulia patterns and linking clauses (04 Q3).
-3. Doorify MLS vendor/participant terms and whether an analytics licence exists (04 Q1).
-4. FOSSGIS Valhalla usage terms text (05 Spike 8).
-5. Oracle Always Free capacity reality; Hetzner CX33 price (05 §1).
-6. Valhalla NC build time/RAM on WSL2 (03 Q1, 05 Spike 3).
-7. MapLibre `color-relief` raster-dem-only limitation still current (05 §1, Spike 9).
-8. Amadeus Self-Service shutdown official notice (02 Q3, 04 Q6).
-9. Transitous terms and request cap (03 Q3).
-10. Zillow commute filter: multiple destinations and rush-hour support (06 Q2).
-11. RentCast licence §1 permitted uses and upstream provenance (04 Q5).
-12. Durham parcel licence (04 Q7).
+- [ ] Transposed-graph Dijkstra and Valhalla reverse-isochrone semantics on one-way streets (07 C1).
+- [ ] Zillow and Redfin bbox links across desktop/iOS/Android; current linking terms (07 C3; 04 Q2–Q3).
+- [ ] Full RentCast permitted uses and upstream rights (07 C3; 04 Q5).
+- [ ] Google Places Service Specific Terms, field by field (07 C2).
+- [ ] NC Valhalla build peak, tile size, serving RSS, GeoTIFF semantics, p95 latency (07 H1, M1; 05 Spike 3).
+- [ ] End-to-end Triangle precompute time, memory, accuracy, serialization (07 H10; 05 Spike 1).
+- [ ] Browser thresholding and R2 range requests on a mid-range phone, 4G (07 H2; 05 Spikes 4–5).
+- [ ] OSM/Overture schema remains a Collective Database under the proposed ETL; counsel before monetization (07 H3).
+- [ ] Doorify current local IDX/vendor terms; a willing broker (07 H8; 04 Q1).
+- [ ] MapLibre raster styling on the pinned version (07 H9; 05 Spike 9).
+- [ ] Amadeus Self-Service status; Oracle free tier dropped from the base case (07 M4, M5).
+- [ ] FOSSGIS Valhalla usage terms text (05 Spike 8); Transitous terms (03 Q3).
+- [ ] Durham parcel licence (04 Q7); neighborhood boundary source and licence.
 
 ---
 
 ## 10. Decisions needed from the owner
 
-1. **Budget tier** (recommend Tier 1, ~$10–15/month).
-2. **Confirm the interaction model** (hybrid cards-over-map; hard AND default with soft flag; no numeric weights in v1).
-3. **Confirm drops**: TripAdvisor/Premium Search, V1 frontend, Streamlit PoC, public Valhalla as production.
-4. **DuckDB now, PostGIS later** — acceptable?
-5. **RentCast developer tier** for prototype pins — acceptable to sign up?
-6. **Second metro** candidate for Phase 3 (needed only to keep the pipeline metro-agnostic).
-7. **Appetite for a Doorify MLS / brokerage conversation** now (information gathering) or later.
+1. **Budget tier** — recommend Tier 1 at 8 GB (~$15–25/month friends-and-family).
+2. **Confirm the interaction shape** — map-first editable cards, hard AND with soft flag, no numeric weights in v1; NL added in Phase 2 with prominence decided by Gate G5.
+3. **Confirm the scope cut** — v2.0 is commutes + a short amenity list + region + listings handoff; context layers deferred.
+4. **Confirm drops** — TripAdvisor/Premium Search, V1 frontend, Streamlit PoC, public Valhalla as production, Oracle free tier.
+5. **DuckDB now, PostGIS on the §4 thresholds** — acceptable?
+6. **RentCast** — willing to read and accept its licence for prototype pins (Gate G4)?
+7. **Second metro** candidate for Phase 3.
+8. **Doorify/brokerage conversation** — now (information only) or later.
 
 ---
 
-## 11. Review status
+## 11. Codex pass-1 absorption
 
-- Codex adversarial pass 1 (streams 00–06): **in progress**, output to `07-codex-adversarial-review.md`.
-- Codex adversarial pass 2 (this synthesis): **pending**, after revision against pass 1.
+| Finding | Severity | How this synthesis responds |
+|---|---|---|
+| C1 directed-graph reversal | Critical | §2.4, §3.3, §3.6, G1 — algorithm contract changed; validation required |
+| C2 Google Places caching | Critical | §2.8, §3.4 — `place_id` only; registry row with clause |
+| C3 listings handoff unproven | Critical | §3.5, G4 — gate with device matrix, URL-contract test, fallback |
+| H1 VPS memory | High | §3.2, §5 — 8 GB baseline, CSR, measure in G2 |
+| H2 estimate chain | High | §2.3, §5, G1–G3 — hypotheses with gates; compressed clipped payloads; p95 at concurrency |
+| H3 ODbL separability | High | §3.4 — no cross-source merge in v1; counsel before monetization |
+| H4 Overture fail-open | High | §3.6, G6 — fail-closed collector |
+| H5 H3 vs raster | High | §4 — both prototyped in G3 |
+| H6 transit scope | High | §4 — product decision via G5 interviews |
+| H7 interaction evidence | High | §3.1 — cards first, NL second, prominence by G5 |
+| H8 IDX feasibility | High | §3.5 — future option, written path required |
+| H9 MapLibre limitation | High | §3.2, G3 — version-specific test; Terrarium dropped |
+| H10 Dijkstra timing | High | G1 — component timings end to end |
+| M1–M8 | Medium | §5 ranges; §3.4 scope cut; §4 PostGIS thresholds; "modeled commute profile"; Amadeus/Oracle to verify/drop |
