@@ -1,6 +1,6 @@
 # V2 Rethink — Research Program
 
-**Started:** 2026-11-03 · **Branch:** `v2-rethink` · **Status:** research in progress
+**Started:** 2026-11-03 · **Branch:** `v2-rethink` · **Status:** research complete; synthesis v0.3 awaiting owner decisions (see 08 §11)
 
 ## Why this exists
 
@@ -45,7 +45,8 @@ recommendation document, which is itself Codex-reviewed before any planning begi
 | 05 | [Routing and precompute architecture](05-routing-and-precompute-architecture.md) | Hosted vs self-hosted routing, gridded travel-time precompute, cheap serving | complete |
 | 06 | [UX and interaction model](06-ux-and-interaction-model.md) | User needs, reception of existing tools, HCI principles, recommended model | complete |
 | 07 | [Codex adversarial review](07-codex-adversarial-review.md) | Cross-model critique of 00–06 | complete (pass 1: 00–05, gpt-5.6-sol) |
-| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | draft v0.2 (post pass 1; pass 2 pending) |
+| 08 | [Synthesis and recommendation](08-synthesis.md) | What we are building and why | v0.3, ready for owner review |
+| 09 | [Codex adversarial review, pass 2](09-codex-adversarial-review-pass2.md) | Cross-model critique of 06 and 08 (gpt-6.1-sol) | complete |
 
 ## Prior in-house research this builds on
 
