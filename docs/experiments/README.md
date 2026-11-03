@@ -13,6 +13,11 @@ machine on the dates given; they are not research estimates.
 | Transit engine (owner decision 13) | transit.md | done — MOTIS adopted, Valhalla cannot arrive-by |
 | G1 engine and layer primitive | g1-routing.md | decided — Valhalla costing + its expansion tree + our snapping |
 | G4 listings handoff | g4-listings.md | links generated; 6 regions invalid, regenerate; owner device sessions pending |
-| G3 browser rendering | g3-rendering.md | pending |
-| G5a early interaction comparison | g5a-interaction.md | pending |
+| G3 browser rendering | g3-rendering.md | page + real-data exporter built and self-tested; needs a device run |
+| G5a early interaction comparison | g5a-interaction.md | prototypes + protocol built on real G4 regions; needs household sessions |
 | Phase 0 decisions | phase0-decisions.md | revision 2, corrected against Codex pass 4 |
+
+## Notes for Phase 1
+
+- **MapLibre pinning is inconsistent between the two spikes:** the G3 rendering page pins **5.24.0** (established as the last line shipping a UMD bundle, and verified to have no native colour-mapping for a plain raster layer) while the G5a prototypes pin **3.6.2**. Phase 1 must pick one; prefer the version G3 measured against.
+- **Six of the 20 G4 regions are invalid** (anchors south of the slice edge) and the G5a prototypes draw from the same file, so regenerate the regions on a buffered extract before any session uses them.

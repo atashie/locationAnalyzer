@@ -1,8 +1,10 @@
 # Phase 0 decision memo
 
-**Date:** 2026-11-03 · **Revision 2**, rewritten after Codex adversarial pass 4
+**Date:** 2026-11-03 · **Revision 3.** Revision 2 was rewritten after Codex adversarial pass 4
 (`../research/11-codex-adversarial-review-pass4-phase0.md`) found four factual errors and one
-omission in revision 1. · **Branch:** `v2-rethink` · **Status:** for owner review
+omission in revision 1; revision 3 then **reversed D1** when the walk exact-pair comparison
+finished and showed our own model passing at every threshold. · **Branch:** `v2-rethink` ·
+**Status:** for owner review
 **Inputs:** the experiment files in this directory, the plan in `../plans/2026-11-03-phase0-experiments.md`, the design in `../research/08-synthesis.md`, the owner decisions in `../plans/2026-11-03-v2-rethink-decisions.md`, and Codex passes 3 and 4.
 
 Per the owner's trust order — **experimental results, then the research, then our priors** — claims
@@ -12,11 +14,11 @@ assumptions are named as such.
 
 ---
 
-## 0. Corrections to revision 1
+## 0. Corrections to earlier revisions
 
 Revision 1 overstated the case. What was wrong, and what the evidence actually says:
 
-| # | Revision 1 claimed | Correct |
+| # | Earlier revision claimed | Correct |
 |---|---|---|
 | 1 | The adopted layer method builds a category layer in about a second (presented as settled) | Its own equivalence check had **failed** (1,635 s max difference) and revision 1 omitted that. A follow-up against exact engine times shows **neither raster method meets the owner's tolerance**; the primitive had to change (D1) |
 | 2 | "All **11** valid in-slice pairs matched Transitous" | **10** pairs (5 valid origins × 2 valid anchors). All 10 matched |
@@ -25,6 +27,7 @@ Revision 1 overstated the case. What was wrong, and what the evidence actually s
 | 5 | "Everything a machine can decide alone is decided" | False. Several machine-addressable checks remained open; three are now done (§0 item 1, the G4 correction, the school recall check) and others are listed in §5 |
 | 6 | Own-graph is 30× more expensive than Valhalla per layer | Compares a cold Python graph build against an already-resident tile server, and graph preparation amortises across categories. The honest comparison is in D1 |
 | 7 | G5a prototypes "built" | The interaction prototypes were still being written when revision 1 was filed |
+| 8 | "Every mode fails the owner's tolerance at p90" (revision 1 and 2) | Read off the raster comparison, which measures Valhalla's contour error. On exact pairs the **walk model passes at every threshold** and is unbiased; only drive fails (D1) |
 
 The underlying experiments were sound; the reporting selected the favourable readings. The habit to
 keep is the one that caught the out-of-slice origins and the stale Duke feed: look for the error
@@ -34,38 +37,38 @@ before claiming the result.
 
 ## 1. Decisions
 
-### D1. Valhalla is the single routing engine for drive, bike and walk — and its *expansion tree*, not its isochrone raster, is the layer primitive
+### D1. The engine choice is per mode: our own graph for walking, Valhalla for driving, and Valhalla's *expansion tree* rather than its isochrone raster wherever Valhalla is the source
 
-**[measured]** `g1-routing.md`. Two findings, in order.
+**[measured]** `g1-routing.md`, verdict revision 3. Exact-pair comparison against Valhalla's
+`sources_to_targets`, which is the only valid way to judge a model: the layer-level raster
+comparison used in revision 2 turned out to be dominated by the raster's own error.
 
-*Our speed model is not usable.* Exact-pair comparison (304 stratified cells against all 285
-groceries via `sources_to_targets`) gives a signed median bias of **−5.4 minutes**, with our model
-faster on 98–100% of samples and median absolute error 32–41% of the threshold against a 10%
-tolerance. The cause is known and was accepted at port time: we took the CHCCS friction speeds but
-not its intersection penalties, and a node-state graph cannot express turn restrictions.
-
-*But Valhalla's isochrone GeoTIFF is not usable either.* Paired against exact engine times on 240
-sampled cells:
-
-| Primitive | median error | p90 | max | false-in | false-out |
+| Mode | median error | p90 | signed median | own faster | against decision 12 |
 |---|---|---|---|---|---|
-| Multi-location GeoTIFF (adopted in revision 1) | 88 s | 355 s | 983 s | 1–3% | 9–20% |
-| Per-POI GeoTIFF minimum | 88 s | 430 s | 2,080 s | 1–2% | 10–31% |
-| **`/expansion` edges + our nearest-edge snapping** | **69 s** | **271 s** | **647 s** | **0.0%** | 5–23% |
+| **walk** (600 cells) | 0.3-0.8 min (2-3% of T) | 1.6-5.5 min (10-16%) | **+0.2 min** | 29-43% | **passes at every threshold** |
+| **drive** (304 cells) | 3.2-8.1 min (32-41%) | 5.5-12.4 min (55-62%) | **-5.4 min** | 98-100% | fails at every threshold |
+| bike | pending | pending | pending | pending | pending |
 
-`/expansion` with `action=isochrone, reverse=true` returns the settled search tree — 8,909 edges in
-0.74 s for three POIs, median edge length 46 m — each carrying its arrival duration in seconds.
-Snapping cells to those edges with the code we already ported and tested
-(`locfinder/traveltime/snap.py`) is the best of the three on every measure and never falsely
-includes a cell. Against the owner's tolerance it **passes at 25, 30 and 45 minutes** and **fails at
-10, 15 and 20 minutes on p90**. The residual is a known, correctable **+66 s conservative bias**:
-the expansion reports one duration per edge, which is the arrival time at its far end, so using it
-directly overcharges by up to one edge traversal plus the access leg. Interpolating within the
-matched edge from its own `distance` and `duration` is the first thing Phase 1 should implement and
-re-measure.
+Walking is a near-constant speed on a network with no one-ways, turn restrictions, signals or
+congestion, so our model has little to get wrong and is **unbiased**: a +0.2 minute signed median
+with "own faster" near 35% is symmetric noise. Driving is where the modelling lives, and it is
+exactly what we dropped by porting the CHCCS friction speeds without its intersection penalties.
 
-So the G1 comparison killed our **speed model**, not our **snapping and interpolation machinery**,
-which is now the consumer of a better-calibrated input and stays in the critical path.
+*Separately, Valhalla's isochrone GeoTIFF is not a per-cell time.* Paired against exact values on
+240 cells: the multi-location raster errs by a median 88 s and p90 355 s, the per-POI minimum by
+88 s and 430 s, and both exclude 9-31% of boundary cells. Its `/expansion` search tree does far
+better, at a median 69 s, p90 271 s and **zero false inclusions at every threshold**, and the
+remaining +66 s conservative bias was a known artifact of charging a whole edge traversal.
+`duration` and `distance` are cumulative at the settled end and `pred_edge_id` identifies the near
+end, so `traveltime/expansion.py` now reconstructs both endpoint times exactly with no speed
+assumption; that corrected version still needs a paired re-measurement.
+
+**The decision:** walk layers from our own graph, drive layers from Valhalla's expansion, bike
+pending its measurement. Both paths feed the same `snap.cell_seconds_from_arrival`, so there is one
+grid contract, one nodata convention and one interpolation routine whichever engine supplies the
+times. Valhalla remains the only source for arbitrary anchors.
+
+
 
 *Cost, stated honestly.* Valhalla answers an arbitrary anchor at p95 0.30 s (auto 25 min) at
 concurrency 1 and builds an expansion for three POIs in 0.74 s. Our own-graph path spent ~32 s per
@@ -166,7 +169,7 @@ no implementation yet.
 
 | Synthesis position | After the experiments |
 |---|---|
-| Own-graph precompute "if Gate G1 pays off"; Valhalla as reference | Valhalla's **costing** wins; our **snapping** survives and consumes its expansion tree (D1) |
+| Own-graph precompute "if Gate G1 pays off"; Valhalla as reference | **Per mode:** our graph wins for walking (unbiased, passes), Valhalla for driving; our snapping serves both (D1) |
 | Layer = isochrone raster | Layer = expansion edges + snapping; the raster does not meet tolerance (D1) |
 | Transit deferred to Phase 3 | Transit engine chosen now (MOTIS); the surface is Phase 1 work (D2) |
 | Transit router needs 4–8 GB, own budget tier | 80 MiB idle; no separate tier (D2) |
@@ -182,7 +185,7 @@ no implementation yet.
 |---|---|---|
 | G6 POI coverage and licence | **partly passed** | Licence partition clean but untested on a hard case; schools audited independently; parks, playgrounds, groceries need inventories |
 | Geocoding contract | **partly passed** | Provider split decided; name resolver and correction flow unbuilt |
-| G1 engine and primitive | **decided, with a known gap** | Valhalla + expansion + snapping; the within-edge interpolation fix must land and be re-measured for walk/bike/drive at full POI counts |
+| G1 engine and primitive | **decided per mode, bike pending** | Walk = own graph (passes); drive = Valhalla expansion + snapping; bike unmeasured. The exact expansion reconstruction needs a paired re-measurement |
 | Transit engine | **engine chosen; surface not built** | Street access composition, deadline/window policy, 90-minute cap behaviour, hand-checked journeys |
 | G2 Valhalla self-host | **not passed** | NC build on the intended host, **and** the concurrency-8 p95 failure (1.363 s vs 0.8; 2.303 s vs 2.0) |
 | G4 listings handoff | **links generated, fixtures contaminated** | Regenerate on a buffered extract; owner device sessions |
@@ -220,9 +223,8 @@ speed model is retained only as a documented fallback.
 
 Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already done:
 
-1. **Land the within-edge interpolation and re-measure the primitive** for all three modes at full
-   POI counts, including one-sided reachability. This is the only thing between us and a layer that
-   meets the owner's tolerance at short thresholds, and it needs no new infrastructure.
+1. **Re-measure the corrected expansion reconstruction**, and run the bike exact-pair comparison to
+   settle the third mode. Both are local and need no new infrastructure.
 2. **Build one complete inbound transit surface** for an in-slice anchor and hand-check it against
    published timetables, measuring the 90-minute cap and import/query peaks.
 3. **Rerun interactive performance cleanly** with valid anchors only, isolating the latency run from

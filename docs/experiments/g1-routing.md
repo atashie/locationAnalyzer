@@ -309,3 +309,73 @@ Unresolved and not to be glossed: this test covers one category, one mode, three
 Drive and bike, a full POI set, and the interpolation fix all need the same paired treatment, and
 the exact matrix remains the reference rather than ground truth, since Valhalla has no traffic data
 either.
+
+### G1 matrix comparison (2026-11-03 15:12:03): grocery / walk (controlled)
+600 cells stratified by own-layer minutes; Valhalla `sources_to_targets` min over 285 POIs; matrix time 5319.8 s
+
+| T min | band (own min) | n | ref unreachable | median abs err min | p90 abs err min | median/T | p90/T | own faster % | PASS (acc) |
+|---|---|---|---|---|---|---|---|---|---|
+| 10 | (8, 12) | 100 | 0 | 0.3 | 1.6 | 0.03 | 0.16 | 33% | PASS |
+| 15 | (13, 17) | 100 | 0 | 0.4 | 2.3 | 0.03 | 0.15 | 36% | PASS |
+| 20 | (18, 22) | 100 | 1 | 0.5 | 2.3 | 0.03 | 0.11 | 43% | PASS |
+| 25 | (23, 27) | 100 | 0 | 0.7 | 3.2 | 0.03 | 0.13 | 41% | PASS |
+| 30 | (28, 32) | 100 | 0 | 0.6 | 2.9 | 0.02 | 0.10 | 40% | PASS |
+| 45 | (40, 50) | 100 | 0 | 0.8 | 5.5 | 0.02 | 0.12 | 29% | PASS |
+
+Signed median (own - Valhalla): +0.2 min over all finite samples (negative = own model is faster/optimistic).
+Residual = speed model + snapping/access-leg differences (both engines snap the cell centre); no grid misregistration.
+
+---
+
+## G1 Verdict, revision 3 (2026-11-03): the decision is per mode, and our walk model passes
+
+The walk exact-pair comparison finished after revision 2 was written, and it reverses a conclusion.
+Codex pass 4 was right to object to revision 1's line that the pending walk and bike runs "can only
+strengthen" the verdict. They did not.
+
+| Mode | median error | p90 | signed median | own faster | verdict against decision 12 |
+|---|---|---|---|---|---|
+| **walk** (600 cells, controlled 5.04 km/h) | **0.3-0.8 min (2-3% of T)** | **1.6-5.5 min (10-16% of T)** | **+0.2 min** | 29-43% | **PASSES at 10, 15, 20, 25, 30 and 45 min** |
+| **drive** (304 cells, engine defaults) | 3.2-8.1 min (32-41% of T) | 5.5-12.4 min (55-62%) | -5.4 min | 98-100% | fails at every threshold |
+| bike | pending | pending | pending | pending | pending |
+
+**Our walk model is not merely acceptable, it is unbiased.** A signed median of +0.2 minutes and
+"own faster" hovering around 35% describe symmetric noise, not a systematic error, and the median
+absolute error is 2-3% of the threshold against a 10% tolerance. That is the physically sensible
+outcome: walking is a near-constant speed on a network with no one-ways, no turn restrictions, no
+signals to wait at and no congestion, so there is very little for a costing model to get wrong.
+
+**Our drive model is systematically wrong, in one direction, by a large margin.** Faster than
+Valhalla on 98-100% of pairs and optimistic by five minutes at the median. Driving is where all the
+modelling complexity lives, and it is precisely what we dropped when we ported the speed constants
+without the intersection penalties.
+
+**What revision 2 got wrong, and why.** Revision 2 said "every mode fails at p90". That was read off
+the *layer-level raster* comparison, which we now know is dominated by the isochrone raster's own
+88 s median error, not by our model. When the raster is removed and exact engine times are used, the
+walk model passes comfortably. The layer-level comparison was measuring Valhalla's contour product,
+not our arithmetic. Only the exact-pair comparison is valid for judging a model.
+
+### The decision
+
+| Mode | Layer source | Why |
+|---|---|---|
+| **walk** | **our own graph** (`locfinder/traveltime/`) | Passes the tolerance, unbiased, and the Dijkstra is 40 ms once the graph is loaded |
+| **drive** | **Valhalla** via `/expansion` + our snapping | Our costing is 5.4 min optimistic; Valhalla's encodes one-ways, turn restrictions and access rules |
+| **bike** | pending the measurement | Physically between the two: constant-ish speed, but one-ways, contraflow and surface matter |
+
+Both paths now share the same consumer, `snap.cell_seconds_from_arrival`, fed either by our own CSR
+graph or by Valhalla's expansion tree (`traveltime/expansion.py`). That keeps one grid contract, one
+nodata convention and one interpolation routine regardless of which engine produced the times.
+
+### Still open
+
+- Bike, measured the same way, decides the third row.
+- The expansion reconstruction is now exact rather than estimated: `duration` and `distance` are
+  cumulative at the settled end and `pred_edge_id` gives the near end, so an edge's endpoint times
+  are the predecessor's duration and its own, with no speed assumption. The +66 s conservative bias
+  measured in revision 2 came from charging a whole edge traversal; the paired re-measurement of the
+  corrected version has not been run yet and is the next thing to do.
+- The walk run took 89 minutes of wall clock for 600 cells because four matrix jobs and the latency
+  benchmark were contending for a two-vCPU container. Timings from that window describe contention,
+  not capacity.
