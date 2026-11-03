@@ -312,14 +312,16 @@ Ranked by Codex's cheapest-risk-reduction ordering, adjusted for what is already
 7. ~~Build North Carolina~~ **done**; what remains is provisioning the real host and deciding
    between a 2 vCPU box with an anchor cache and a 4 vCPU box.
 
-A standing limitation of our own engine, found while diagnosing the airport failure: our access
-rule is a single allow/deny, while real routers separate **through** traffic from **start/end**
-access. `access=private` covers **118,035 edges** in the Triangle extract and `access=customers`
-another **8,003**, all blocked outright, so every home on a private drive would be unreachable —
-a systematic coverage hole for a home-search product. Valhalla penalises private access instead of
-forbidding it. This does not affect the adopted drive path, which is Valhalla, and it is the first
-thing to fix if our own engine is ever revived for driving. The walk layers we do publish from our
-own graph carry the same rule and should be re-examined for it.
+~~A standing limitation of our own engine~~ **Fixed 2026-11-03.** Our access rule was a single
+allow/deny, which deleted all **126,157** restricted edges and made every home on a private drive
+unreachable. It is now three-valued (`access.py`): `access=no` is removed, `access=private` and
+friends are kept with a **cost** penalty, and the graph carries two weights so path selection
+minimises cost while the product reports real time. Measured effect on the walk layer: cells with a
+travel time rose from **72.7% to 77.3%** (about 15,200 more of 330,502), the twelve-journey spot
+check returned identical times on all twelve open-road journeys, and no penalty reached a reported
+time. The same cost channel is where intersection penalties would go if our drive model is ever
+revived. Turn restrictions remain unexpressible in a node-state graph, which is still why Valhalla
+owns the drive path. Details in `spotcheck-engines.md`.
 
 Remaining uncertainties that no amount of our own measurement will settle: neither engine has
 traffic data, so drive times are a model's opinion and the UI must keep saying "estimated, modelled

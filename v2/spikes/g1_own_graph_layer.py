@@ -28,7 +28,7 @@ from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, ROADS_XM
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
-from locfinder.traveltime.csr import graph_to_csr  # noqa: E402
+from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.layer import build_layer_seconds  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmetrise  # noqa: E402
@@ -72,8 +72,10 @@ def main() -> None:
     timings["components"] = comp.summary
     timings["prepare_graph_s"] = time.perf_counter() - t
     t = time.perf_counter()
-    csr, index = graph_to_csr(G)
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
     timings["csr_s"] = time.perf_counter() - t
+    n_restricted = sum(1 for _, _, d in G.edges(data=True) if d.get("access_restricted"))
+    timings["restricted_edges"] = n_restricted
     print(f"graph: {n0} nodes/{e0} edges raw -> {G.number_of_nodes()} nodes/{G.number_of_edges()} edges for {args.mode}")
 
     t = time.perf_counter()
@@ -89,7 +91,7 @@ def main() -> None:
     t = time.perf_counter()
     eidx = EdgeIndex.from_graph(G, index)
     timings["edge_index_s"] = time.perf_counter() - t
-    secs = build_layer_seconds(G, csr, index, GRID, dest_idx=dest_idx, mode=args.mode, timings=timings, edge_index=eidx)
+    secs = build_layer_seconds(G, (cost_csr, time_csr), index, GRID, dest_idx=dest_idx, mode=args.mode, timings=timings, edge_index=eidx)
 
     # one-way audit mask: cells whose nearest physical edge is one-way for this mode
     xs, ys = GRID.cell_centers_xy()

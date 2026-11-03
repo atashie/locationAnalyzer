@@ -9,13 +9,13 @@ import numpy as np
 import rasterio
 
 from ..grid import GridSpec, encode_minutes
-from .arrival import arrival_seconds
+from .arrival import arrival_seconds, arrival_seconds_two_weight
 from .snap import EdgeIndex, cell_seconds_from_arrival
 
 
 def build_layer_seconds(
     G,
-    csr,
+    csr,   # a single CSR, or a (cost_csr, time_csr) pair for the penalised two-weight path
     index,
     grid: GridSpec,
     *,
@@ -29,7 +29,12 @@ def build_layer_seconds(
     """Float seconds per cell (inf = unreachable). Evaluation should use this, not the
     uint8 encoding, so rounding cannot move a threshold (Codex pass-3 H6)."""
     t0 = time.perf_counter()
-    T = arrival_seconds(csr, dest_idx=dest_idx, cutoff_s=cutoff_min * 60.0)
+    if isinstance(csr, tuple):
+        # (cost, time): choose paths on cost, report real seconds (see access.py)
+        cost_csr, time_csr = csr
+        T = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=dest_idx, cutoff_s=cutoff_min * 60.0)
+    else:
+        T = arrival_seconds(csr, dest_idx=dest_idx, cutoff_s=cutoff_min * 60.0)
     t1 = time.perf_counter()
     idx = edge_index if edge_index is not None else EdgeIndex.from_graph(G, index)
     t2 = time.perf_counter()

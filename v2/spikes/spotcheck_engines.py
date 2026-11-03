@@ -40,9 +40,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import DATA, GRAPH_CACHE, GRID, METRO, VALHALLA, append_results, stamp  # noqa: E402
-from locfinder.traveltime.arrival import arrival_seconds  # noqa: E402
+from locfinder.traveltime.arrival import arrival_seconds_two_weight  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
-from locfinder.traveltime.csr import graph_to_csr  # noqa: E402
+from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmetrise  # noqa: E402
 
 OSRM = "https://router.project-osrm.org"
@@ -98,7 +98,7 @@ def ours_point_to_point(mode: str, pairs) -> dict:
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
     G, comp = largest_component(G)
     print(f"  components: {comp.summary}")
-    csr, index = graph_to_csr(G)
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
     print(f"  our {mode} graph: {G.number_of_nodes()} nodes in {time.perf_counter() - t0:.0f} s")
 
     from pyproj import Transformer
@@ -109,7 +109,7 @@ def ours_point_to_point(mode: str, pairs) -> dict:
         if b not in cache:
             bx, by = to_proj.transform(PLACES[b][1], PLACES[b][0])
             dest = ox.nearest_nodes(G, bx, by)
-            cache[b] = arrival_seconds(csr, dest_idx=[index[dest]])
+            cache[b] = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=[index[dest]])
         ax, ay = to_proj.transform(PLACES[a][1], PLACES[a][0])
         origin = ox.nearest_nodes(G, ax, ay)
         secs = float(cache[b][index[origin]])

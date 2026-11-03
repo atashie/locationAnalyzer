@@ -2,6 +2,7 @@ import math
 
 import networkx as nx
 
+from locfinder.traveltime.access import access_penalty_s
 from locfinder.traveltime.speeds import DRIVE_FRICTION_MPH, MPH_TO_MPS, add_travel_times, edge_allowed
 
 
@@ -13,10 +14,23 @@ def two_node(**tags) -> nx.MultiDiGraph:
     return G
 
 
-def test_private_access_blocks_every_mode_unless_mode_tag_allows():
+def test_private_access_is_penalised_not_blocked():
+    """Changed deliberately 2026-11-03: blocking `access=private` outright removed 126,157 edges
+    and made every home on a private drive unreachable. It is now allowed with a cost penalty, so
+    destinations behind it are reachable while it does not become a through-route. See access.py."""
     data = {"highway": "service", "access": "private"}
-    assert not edge_allowed(data, "drive") and not edge_allowed(data, "bike") and not edge_allowed(data, "walk")
+    for mode in ("drive", "bike", "walk"):
+        assert edge_allowed(data, mode), f"{mode}: private must be reachable, not removed"
+        assert access_penalty_s(data, mode) > 0, f"{mode}: private must carry a cost penalty"
     assert edge_allowed({"highway": "service", "access": "private", "foot": "yes"}, "walk")
+    assert access_penalty_s({"highway": "service", "access": "private", "foot": "yes"}, "walk") == 0
+
+
+def test_access_no_is_still_removed_entirely():
+    """The RDU stub case: every way out was access=no, and removing those was correct."""
+    data = {"highway": "service", "access": "no"}
+    for mode in ("drive", "bike", "walk"):
+        assert not edge_allowed(data, mode)
 
 
 def test_mode_specific_no_tags_block_their_mode_only():

@@ -434,3 +434,109 @@ From comparisons already run, with the import constraint above firmly in mind:
   51), so there is nothing to give back there.
 - The park disagreement (OSM 545, Overture 363, only 63 agreeing within 50 m) is unresolved in both
   directions and would need the manual audit before anyone could say which source is wrong.
+
+### Independent spot check, drive, 12 real journeys (2026-11-03 17:36:07)
+
+Metro triangle. Engines present: ours, valhalla, osrm.
+Minutes, point to point. OSRM is the public demo server (car profile, independent static model).
+**Google not run: set GOOGLE_MAPS_API_KEY.** Without it there is still no congestion-aware reference.
+
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+| Carrboro Town Hall | Downtown Durham | 21 | 31 | 28 |
+| UNC Hospitals | Duke University Hospital | 17 | 24 | 21 |
+| Chapel Hill (Franklin St) | RTP (Kit Creek Rd) | 20 | 27 | 24 |
+| Downtown Durham | RDU Terminal 2 | 18 | 23 | 22 |
+| NC State Bell Tower | Downtown Raleigh (Moore Sq) | 3 | 7 | 5 |
+| Cary Downtown | RTP (Kit Creek Rd) | 15 | 22 | 16 |
+| Southpoint Mall | UNC Hospitals | 14 | 19 | 16 |
+| Hillsborough | Downtown Durham | 16 | 21 | 21 |
+| RDU Terminal 2 | Downtown Raleigh (Moore Sq) | 20 | 29 | 25 |
+| Duke University Hospital | Southpoint Mall | 18 | 23 | 20 |
+| Downtown Raleigh (Moore Sq) | Cary Downtown | 16 | 23 | 18 |
+| Carrboro Town Hall | RDU Terminal 2 | 26 | 34 | 32 |
+
+Pairwise differences (minutes; negative median means the first engine is faster):
+
+| comparison | n | median signed | median abs | p90 abs | first faster |
+|---|---|---|---|---|---|
+| ours vs valhalla | 12 | -7.0 | 7.0 | 9.0 | 100% |
+| ours vs osrm | 12 | -4.1 | 4.1 | 5.7 | 100% |
+| valhalla vs osrm | 12 | +2.9 | 2.9 | 5.6 | 0% |
+
+---
+
+## Fixed: restricted access is now reachable but not a through-route (2026-11-03)
+
+The hole found above — a single allow/deny rule that deleted every `access=private` edge and so made
+every home on a private drive unreachable — is fixed. The fix is the one mainstream engines use, and
+it required a change to the weighting model rather than to the access list alone.
+
+### Why a penalty alone was not enough
+
+The obvious fix, "penalise restricted edges instead of deleting them", breaks the product if the
+penalty goes into the weight the Dijkstra reports: a cell on a private driveway would then be shown
+as 7.5 minutes further from the shops than it is. Routers avoid this by carrying **two weights** —
+a cost for choosing paths and a time for reporting them — and that is now what we do:
+
+| Weight | Used for | Restricted edges |
+|---|---|---|
+| `cost` | path selection | real time **+ penalty** (drive 450 s, walk/bike 120 s; priors, from Valhalla's documented default) |
+| `travel_time` | what a user is shown | real time, **never penalised** |
+
+`csr.graph_to_cost_time_csr` builds both matrices over identical sparsity, taking the cost-minimal
+edge and carrying *its* time, so the reported figure always belongs to the path actually chosen.
+`arrival.arrival_seconds_two_weight` runs the search on cost with scipy's predecessor tree, then
+reconstructs real time by sweeping the tree in increasing-cost order. The cutoff is applied to the
+reconstructed time, not to cost, so a penalised path inside the time budget is not discarded.
+
+Access classification moved to `locfinder/traveltime/access.py` and is three-valued:
+
+| Class | Values | Treatment | Edges in the Triangle extract |
+|---|---|---|---|
+| open | everything else | normal | 1,291,042 |
+| restricted | `private`, `customers`, `delivery`, `permit`, `agricultural`, `forestry` | kept, cost penalty | **126,157** |
+| forbidden | `no`, `military` | removed | 1,278 |
+
+Mode-specific tags override the generic one, as OSM intends: `access=private` with `foot=yes` is
+open to walkers and restricted to drivers.
+
+### Measured effect
+
+| | Before (restricted deleted) | After (restricted penalised) |
+|---|---|---|
+| Walk graph | 504,457 nodes / 1,321,416 edges | **539,814 / 1,424,670** |
+| Cells with a travel time | 72.7% | **77.3%** |
+| Twelve-journey spot check vs Valhalla and OSRM | — | **identical on all twelve** |
+| Reported times inflated by the penalty | — | none detectable |
+| Dijkstra | 0.07 s | 3.89 s (the tree reconstruction) |
+
+**Coverage rose 4.6 percentage points, about 15,200 of 330,502 cells** that previously had no answer
+at all. Those are overwhelmingly homes on driveways, which is the population a home-search product
+exists to serve, so this is the most directly product-relevant fix in Phase 0.
+
+**Nothing else moved.** All twelve spot-check journeys returned byte-identical times, which is the
+correct result: they run between well-connected named places on open roads, so restricted-access
+handling should not touch them. The penalty is doing its job on selection without disturbing
+reporting.
+
+**No penalty leak.** Across the reachable cells there is no spike at the 120 s walk penalty value
+(202 cells within ±5 s of it, out of 255,000 reachable), and the distribution is smooth, which is
+what we would not see if the penalty had reached the reported time.
+
+### What this cost and what it did not fix
+
+The tree reconstruction adds about 3.8 s per layer, a Python sweep over half a million nodes. Total
+layer build is 91 s including a 35 s graph load, so the marginal cost per category is unchanged in
+practice and the two-weight machinery is now available for the *other* thing our drive model lacks:
+intersection penalties fit the same cost channel without touching reported time.
+
+Still not fixed, and still the reason Valhalla owns the drive path: turn restrictions, which a
+node-state graph cannot express at all. And pruning to the largest component now drops 13,608 nodes
+(2.5%) rather than 4,516, because restricted edges bring in private networks whose only link to the
+public road is `access=no` — correctly unreachable, but worth watching if that share grows.
+
+Twenty-eight new tests cover the classification and the two-weight behaviour, including that a
+private shortcut is rejected when an open detour is cheaper, taken when it is the only way, that the
+reported time is the chosen path's real time in both cases, and that the one-way regression from
+Codex pass 1 still holds on the two-weight path.
