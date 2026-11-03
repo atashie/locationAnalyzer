@@ -49,6 +49,7 @@ recommendation document, which is itself Codex-reviewed before any planning begi
 | 09 | [Codex adversarial review, pass 2](09-codex-adversarial-review-pass2.md) | Cross-model critique of 06 and 08 (gpt-6.1-sol) | complete |
 | 10 | [Codex adversarial review, pass 3](10-codex-adversarial-review-pass3-plan.md) | Critique of the Phase 0 implementation plan (gpt-6.1-sol) | complete |
 | 11 | [Codex adversarial review, pass 4](11-codex-adversarial-review-pass4-phase0.md) | Critique of the Phase 0 decision memo and the measurements behind it (gpt-6.1-sol) | complete |
+| 12 | [Codex adversarial review, pass 5](12-codex-adversarial-review-pass5-spotcheck.md) | Critique of the engine spot check and the analysis drawn from it (gpt-6.1-sol) | complete |
 
 ## Prior in-house research this builds on
 

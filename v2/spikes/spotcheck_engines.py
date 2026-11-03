@@ -48,6 +48,7 @@ from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmet
 OSRM = "https://router.project-osrm.org"
 GOOGLE = "https://routes.googleapis.com/directions/v2:computeRoutes"
 # A weekday morning in the future, for the traffic-aware leg.
+ILLUSTRATIVE_ROWS = 2   # how many example journeys may quote restricted engines
 DEPART = "2026-11-10T13:00:00Z"  # 08:00 America/New_York
 
 PLACES = {
@@ -210,6 +211,11 @@ def main() -> None:
 
     engines = [e for e in ("ours", "valhalla", "osrm", "google_static", "google_traffic")
                if any(r.get(e) is not None for r in rows)]
+    # Per-pair values for restricted engines never reach a results file or the JSON; only derived
+    # statistics and ILLUSTRATIVE_ROWS examples do. Codex pass 5 (H5) found an earlier version
+    # writing the full Google table into the repository while claiming otherwise.
+    RESTRICTED = {"google_static", "google_traffic"}
+    table_engines = [e for e in engines if e not in RESTRICTED]
     lines = [f"### Independent spot check, {args.mode}, {len(PAIRS)} real journeys ({stamp()})",
              "", f"Metro {METRO.name}. Engines present: {', '.join(engines)}.",
              "Minutes, point to point. OSRM is the public demo server (car profile, independent static model).",
@@ -217,11 +223,19 @@ def main() -> None:
               "congestion-aware number here. Queried live for validation; not stored as a dataset and not used to "
               "calibrate our model." if key else
               "**Google not run: set GOOGLE_MAPS_API_KEY.** Without it there is still no congestion-aware reference."),
-             "", "| from | to | " + " | ".join(engines) + " |",
-             "|---|---|" + "---|" * len(engines)]
+             "", "| from | to | " + " | ".join(table_engines) + " |",
+             "|---|---|" + "---|" * len(table_engines)]
     for r in rows:
-        cells = " | ".join(f"{r[e]:.0f}" if r.get(e) is not None else "-" for e in engines)
+        cells = " | ".join(f"{r[e]:.0f}" if r.get(e) is not None else "-" for e in table_engines)
         lines.append(f"| {r['from']} | {r['to']} | {cells} |")
+    restricted_present = [e for e in engines if e in RESTRICTED]
+    if restricted_present:
+        ill = rows[:ILLUSTRATIVE_ROWS]
+        lines += ["", f"Per-pair values for {', '.join(restricted_present)} are deliberately not written here. "
+                  f"{len(ill)} illustrative journeys, minutes:"]
+        for r in ill:
+            bits = ", ".join(f"{e.replace('google_', 'google ')} {r[e]:.0f}" for e in engines if r.get(e) is not None)
+            lines.append(f"- {r['from']} to {r['to']}: {bits}")
 
     lines += ["", "Pairwise differences (minutes; negative median means the first engine is faster):", "",
               "| comparison | n | median signed | median abs | p90 abs | first faster |", "|---|---|---|---|---|---|"]

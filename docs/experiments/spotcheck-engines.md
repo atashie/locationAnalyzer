@@ -130,20 +130,13 @@ Metro triangle. Engines present: ours, valhalla, osrm, google_static, google_tra
 Minutes, point to point. OSRM is the public demo server (car profile, independent static model).
 Google legs: `TRAFFIC_UNAWARE` is model-vs-model; `TRAFFIC_AWARE` at 08:00 local is the only congestion-aware number here. Queried live for validation; not stored as a dataset and not used to calibrate our model.
 
-| from | to | ours | valhalla | osrm | google_static | google_traffic |
-|---|---|---|---|---|---|---|
-| Carrboro Town Hall | Downtown Durham | 21 | 31 | 28 | 32 | 34 |
-| UNC Hospitals | Duke University Hospital | 17 | 24 | 21 | 24 | 26 |
-| Chapel Hill (Franklin St) | RTP (Kit Creek Rd) | 20 | 27 | 24 | 22 | 25 |
-| Downtown Durham | RDU Terminal 2 | 18 | 23 | 22 | 19 | 24 |
-| NC State Bell Tower | Downtown Raleigh (Moore Sq) | 3 | 7 | 5 | 7 | 7 |
-| Cary Downtown | RTP (Kit Creek Rd) | 15 | 22 | 16 | 18 | 19 |
-| Southpoint Mall | UNC Hospitals | 14 | 19 | 16 | 17 | 20 |
-| Hillsborough | Downtown Durham | 16 | 21 | 21 | 20 | 21 |
-| RDU Terminal 2 | Downtown Raleigh (Moore Sq) | 20 | 29 | 25 | 23 | 28 |
-| Duke University Hospital | Southpoint Mall | 18 | 23 | 20 | 18 | 22 |
-| Downtown Raleigh (Moore Sq) | Cary Downtown | 16 | 23 | 18 | 18 | 23 |
-| Carrboro Town Hall | RDU Terminal 2 | 26 | 34 | 32 | 28 | 33 |
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+
+> The two Google columns that the generator wrote here have been removed: keeping a complete
+> per-pair table of Google values in the repository contradicts this file's own stated
+> discipline. Codex pass 5 (H5) caught it. Aggregates and two illustrative rows are kept
+> below; the generator no longer writes Google columns to a results file.
 
 Pairwise differences (minutes; negative median means the first engine is faster):
 
@@ -152,10 +145,34 @@ Pairwise differences (minutes; negative median means the first engine is faster)
 | ours vs valhalla | 12 | -7.0 | 7.0 | 9.0 | 100% |
 | ours vs osrm | 12 | -4.1 | 4.1 | 5.7 | 100% |
 | valhalla vs osrm | 12 | +2.9 | 2.9 | 5.6 | 0% |
-| ours vs google_static | 12 | -2.9 | 2.9 | 7.9 | 100% |
-| valhalla vs google_static | 12 | +3.9 | 3.9 | 5.7 | 25% |
-| google_static vs google_traffic | 12 | -2.7 | 2.7 | 5.0 | 100% |
-| ours vs google_traffic | 12 | -5.5 | 5.5 | 9.1 | 100% |
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+
+> The two Google columns that the generator wrote here have been removed: keeping a complete
+> per-pair table of Google values in the repository contradicts this file's own stated
+> discipline. Codex pass 5 (H5) caught it. Aggregates and two illustrative rows are kept
+> below; the generator no longer writes Google columns to a results file.
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+
+> The two Google columns that the generator wrote here have been removed: keeping a complete
+> per-pair table of Google values in the repository contradicts this file's own stated
+> discipline. Codex pass 5 (H5) caught it. Aggregates and two illustrative rows are kept
+> below; the generator no longer writes Google columns to a results file.
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+
+> The two Google columns that the generator wrote here have been removed: keeping a complete
+> per-pair table of Google values in the repository contradicts this file's own stated
+> discipline. Codex pass 5 (H5) caught it. Aggregates and two illustrative rows are kept
+> below; the generator no longer writes Google columns to a results file.
+| from | to | ours | valhalla | osrm |
+|---|---|---|---|---|
+
+> The two Google columns that the generator wrote here have been removed: keeping a complete
+> per-pair table of Google values in the repository contradicts this file's own stated
+> discipline. Codex pass 5 (H5) caught it. Aggregates and two illustrative rows are kept
+> below; the generator no longer writes Google columns to a results file.
 
 ---
 
@@ -284,3 +301,87 @@ independent pedestrian model, and then a handful of hand-timed walks, which is t
 whether either model describes a person. Until one of those happens, no claim about walk-time
 accuracy in this project rests on anything but two engines agreeing because they share an
 assumption.
+
+---
+
+## Corrections after Codex pass 5
+
+`../research/12-codex-adversarial-review-pass5-spotcheck.md` audited the arithmetic above and the
+conclusions drawn from it. The arithmetic reproduces. Several conclusions do not, and are withdrawn
+here rather than left standing above.
+
+### Withdrawn: "our six-minute error splits cleanly in half"
+
+Not supported. The per-journey identity holds exactly, but **medians do not preserve it**: the
+unrounded summaries give 2.9 + 2.7 = 5.6 against a total of 5.5, so the clean split is an artefact
+of whole-minute rounding. Per journey the share attributed to the static gap ranges from 0% to
+100%, and only one of the twelve splits evenly. Nor does a comparison against Google-static
+*identify* intersection penalties: the two models differ in speeds, topology, turn restrictions,
+snapping and route choice simultaneously, and the two Google legs may follow different paths, so
+their difference is not a fixed-route congestion measurement either.
+
+The claim that nothing static can close the traffic gap is also too absolute, and the Valhalla
+result in this very file is the counterexample: a static profile *can* encode typical delay. What
+remains is a hypothesis worth testing by **ablation on our own graph** — add the CHCCS intersection
+penalties, change nothing else, and re-measure — not by attributing minutes to causes we did not
+control.
+
+### Withdrawn: "the first evidence that owner decision 12 is achievable"
+
+Not supported, because the denominator was wrong. Decision 12 is about **the threshold a user
+sets**, with median ≤ 10% of T and p90 ≤ 20% of T evaluated on cells *near that boundary*. No
+threshold was assigned to these twelve journeys. The "21-minute median journey" is OSRM's median,
+not the reference's (23.5). At T=10 the budgets are 1.0 and 2.0 minutes and the pooled p90 of 3.0
+already exceeds the second — which does not prove a ten-minute boundary fails, since nothing was
+sampled there, but does prevent claiming it passes.
+
+Engine agreement is also only one term in the final error. Expansion reconstruction, cell access
+legs, destination entrances, grid resolution and minute encoding all contribute, and their medians
+cannot simply be added. Decision 12 remains untested.
+
+### Withdrawn: the label "typical weekday morning"
+
+Not supported by one predicted Tuesday at one hour. The defensible label now is Codex's:
+
+> **"Estimated drive time from a static road model; traffic and departure time are not included."**
+
+The observation that Valhalla's static output sat closest to an 08:00 forecast belongs in research
+notes, not in a promise to users. Adopting the morning label would fix one error and create another:
+an off-peak errand would look further away than it is, and this sample cannot quantify by how much.
+
+### Qualified: what the spot check measured
+
+Two methodological gaps, both of which flatter our engine:
+
+- **Our point-to-point path is not the product's path.** `ours_point_to_point` snaps both endpoints
+  to nearest **nodes** with no distance bound and no access-leg charge, while the layer pipeline
+  snaps to nearest **edges**, adds a modal access leg and caps it at 200 m. The comparison therefore
+  gave our engine a free endpoint advantage it does not have in production.
+- **Named anchors are not residential cells.** Hospitals, town centres and an airport sit on
+  well-connected major roads. The product computes from residential cell centres, including
+  cul-de-sacs, gated access, coordinates off-network and locations behind barriers. Twelve pairs, one
+  direction each, one timestamp, no journey under three or over thirty-five minutes.
+
+Also uncontrolled: the OSRM demo server's profile, customisation and data vintage were never
+captured, so calling its speeds "free-flow" exceeds the record, and all three of our engines share
+OSM ancestry, so implementation diversity is not independence of input data.
+
+### Qualified: the component fix
+
+Pruning to the largest **weakly** connected component addresses the demonstrated airport mechanism
+but is a policy choice, not a general reachability repair. Weak connectivity ignores edge direction,
+so a retained one-way branch can still fail origin-to-anchor reachability; keeping only the largest
+*strongly* connected component is not a universal fix either, since it would discard legitimate
+one-way approaches. Separate valid networks — islands, campuses, local path networks — can support
+real journeys, and a small share of nodes may contain a household's entire neighbourhood, so the
+10% guard is a **useful alarm, not a correctness bound**.
+
+The claim that layer coverage was "pessimistic and should improve" is withdrawn pending measurement:
+after pruning, a formerly stub-snapped cell may find a reachable road, or may now exceed the 200 m
+access cap, or may reach it only by crossing a barrier in a straight line. Coverage need not move
+monotonically, and an increase would not by itself establish correctness. The honest next step is to
+publish the finite-to-missing and missing-to-finite transition counts with snap displacement.
+
+Finally, `test_the_airport_failure_mode_is_what_this_prevents` asserts only that a synthetic node
+disappears. It exercises a necessary mechanism, not the real failure-and-recovery chain: it never
+snaps an airport coordinate, routes, bounds displacement or checks access legality.

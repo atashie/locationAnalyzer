@@ -13,6 +13,21 @@ to the airport came back unreachable while Valhalla and OSRM both routed them fi
 `largest_component` prunes to the connected core and **reports what it dropped** rather than hiding
 it, because a large drop means the mode filter or the extract boundary is wrong, not that the city
 is disconnected.
+
+Limitations, per Codex pass 5 (H6), because this is a policy choice and not a general reachability
+repair:
+
+* It uses **weak** connectivity, which ignores edge direction, so a retained one-way branch can
+  still fail origin-to-destination reachability. Keeping only the largest *strongly* connected
+  component is not a universal fix either: it would discard legitimate one-way approaches and exits.
+  Directed reachability to the actual destination set is the real test.
+* Separate valid networks — islands, campuses, local path networks — can carry real journeys, and a
+  small share of nodes may hold a household's entire neighbourhood. `max_dropped_share` is therefore
+  a **useful alarm, not a correctness bound**.
+* Pruning does not establish access. A formerly stub-snapped cell may now find a reachable road, or
+  may exceed the access-leg cap, or may only reach one by crossing a barrier in a straight line.
+  Coverage need not move monotonically, so publish finite-to-missing and missing-to-finite
+  transitions with snap displacement rather than assuming an improvement.
 """
 from __future__ import annotations
 

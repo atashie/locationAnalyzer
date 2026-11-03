@@ -339,7 +339,7 @@ strengthen" the verdict. They did not.
 | **drive** (304 cells, engine defaults) | 3.2-8.1 min (32-41% of T) | 5.5-12.4 min (55-62%) | -5.4 min | 98-100% | fails at every threshold |
 | bike | pending | pending | pending | pending | pending |
 
-**Our walk model is not merely acceptable, it is unbiased.** A signed median of +0.2 minutes and
+**Our walk model is not merely acceptable, it is unbiased** — *relative to Valhalla, whose default pedestrian speed is 1.411 m/s against our 1.400, so this says nothing about real walking times; see the corrections at the end of this file and `spotcheck-engines.md`.* A signed median of +0.2 minutes and
 "own faster" hovering around 35% describe symmetric noise, not a systematic error, and the median
 absolute error is 2-3% of the threshold against a 10% tolerance. That is the physically sensible
 outcome: walking is a near-constant speed on a network with no one-ways, no turn restrictions, no

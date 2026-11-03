@@ -27,8 +27,8 @@ import httpx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (ACCEPTED_PLACES, CONTROLLED_COSTING_OPTIONS, GRID, LAYERS, VALHALLA, VALHALLA_COSTING,  # noqa: E402
-                     append_results, stamp)
+from _common import (ACCEPTED_PLACES, CONTROLLED_COSTING_OPTIONS, GRID, LAYERS, METRO, VALHALLA,  # noqa: E402
+                     VALHALLA_COSTING, append_results, layer_path, stamp)
 from locfinder.places.categories import select_overture  # noqa: E402
 
 BANDS = {10: (8, 12), 15: (13, 17), 20: (18, 22), 25: (23, 27), 30: (28, 32), 45: (40, 50)}
@@ -65,7 +65,14 @@ def main() -> None:
     costing = VALHALLA_COSTING[args.mode]
     rng = np.random.default_rng(args.seed)
 
-    own = np.load(LAYERS / f"own_{args.category}_{args.mode}.npy").astype(np.float64)
+    own_path = layer_path("own", args.category, args.mode, ".npy")
+    if not own_path.exists():
+        raise SystemExit(f"missing {own_path.name} for metro {METRO.name}; build the layer first "
+                         f"(a leftover array from another metro must not be paired with these coordinates)")
+    own = np.load(own_path).astype(np.float64)
+    if own.shape != (GRID.nrows, GRID.ncols):
+        raise SystemExit(f"{own_path.name} is {own.shape} but metro {METRO.name} grid is "
+                         f"{(GRID.nrows, GRID.ncols)}: wrong metro's layer (Codex pass 5 M1)")
     own_min = own / 60.0
     lons, lats = GRID.cell_centers_lonlat()
     places = gpd.read_parquet(ACCEPTED_PLACES)
@@ -90,7 +97,7 @@ def main() -> None:
     ref_min = ref / 60.0
     own_s = own_min.ravel()[all_idx]
 
-    lines = [f"### G1 matrix comparison ({stamp()}): {args.category} / {args.mode}{' (controlled)' if args.controlled else ''}",
+    lines = [f"### G1 matrix comparison ({stamp()}): {args.category} / {args.mode}, metro {METRO.name}{' (controlled)' if args.controlled else ''}",
              f"{len(sources)} cells stratified by own-layer minutes; Valhalla `sources_to_targets` min over {len(targets)} POIs; matrix time {dt:.1f} s",
              "", "| T min | band (own min) | n | ref unreachable | median abs err min | p90 abs err min | median/T | p90/T | own faster % | PASS (acc) |",
              "|---|---|---|---|---|---|---|---|---|---|"]
@@ -117,7 +124,7 @@ def main() -> None:
     text = "\n".join(lines)
     print(text)
     append_results("g1-routing.md", text)
-    (LAYERS / f"matrix_{args.category}_{args.mode}{'_controlled' if args.controlled else ''}.json").write_text(
+    layer_path("matrix", args.category, args.mode + ("_controlled" if args.controlled else ""), ".json").write_text(
         json.dumps({"idx": all_idx.tolist(), "own_min": own_s.tolist(), "ref_min": ref_min.tolist(), "bands": {str(k): len(v) for k, v in picks.items()}}),
         encoding="utf-8")
 
