@@ -23,6 +23,14 @@ WANT = {
     ("service_limits", "pedestrian", "max_distance"): 250000,
     ("service_limits", "bicycle", "max_distance"): 250000,
     ("service_limits", "auto", "max_distance"): 500000,
+    # matrix (sources_to_targets) for the G1 accuracy comparison: sampled cells x all POIs
+    ("service_limits", "pedestrian", "max_matrix_locations"): 2000,
+    ("service_limits", "pedestrian", "max_matrix_distance"): 250000,
+    ("service_limits", "bicycle", "max_matrix_locations"): 2000,
+    ("service_limits", "bicycle", "max_matrix_distance"): 250000,
+    ("service_limits", "auto", "max_matrix_locations"): 2000,
+    ("service_limits", "auto", "max_matrix_distance"): 500000,
+    ("service_limits", "max_timedep_distance_matrix"): 500000,
 }
 
 
