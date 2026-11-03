@@ -492,7 +492,7 @@ configured to share our own speed assumption:
 
 | Mode | Our speed | Reference configuration | What the comparison could detect |
 |---|---|---|---|
-| walk | 1.40 m/s | `pedestrian.walking_speed = 5.04 km/h` = **identical** | network traversal, access rules, snapping, interpolation — **not** whether 1.40 m/s is a real walking speed |
+| walk | 1.40 m/s | `pedestrian.walking_speed = 5.04 km/h` = **identical**, and Valhalla's *default* is 5.08 km/h anyway (measured: `spotcheck-engines.md`), so the test was near-circular with or without our option | network traversal, access rules, snapping, interpolation — **not** whether 1.40 m/s is a real walking speed |
 | bike | 4.50 m/s | `cycling_speed = 16.2 km/h` = **identical** | same, plus surface/grade/stop handling, which is where the residual −1.1 min came from |
 | drive | friction speeds by highway tag | Valhalla **defaults** (not matched) | everything at once: speed model, intersection penalties, turn restrictions |
 

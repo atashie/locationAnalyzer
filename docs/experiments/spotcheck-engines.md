@@ -238,3 +238,49 @@ Stated plainly, because earlier revisions of these documents overclaimed:
 
 A larger sample, a second time of day and the walk mode would turn this from a strong hypothesis
 into a usable calibration statement. None of it should be used to tune our speed model.
+
+---
+
+## Walking was never independently checked, even by accident
+
+Measured 2026-11-03, prompted by the question of what our references actually are. Five journeys of
+1.9 to 17.8 km were timed with Valhalla's **default** pedestrian costing, with no `costing_options`
+of ours applied, and the implied speed was recovered from the returned length and duration:
+
+| Journey length | Implied speed |
+|---|---|
+| 1.86 km | 1.407 m/s |
+| 2.49 km | 1.400 m/s |
+| 12.55 km | 1.411 m/s |
+| 12.99 km | 1.414 m/s |
+| 17.79 km | 1.414 m/s |
+| **median** | **1.411 m/s = 5.08 km/h** |
+
+Our own assumption is **1.400 m/s = 5.04 km/h**. The two differ by **0.8%**.
+
+Two things follow, and both weaken the walk result reported in `g1-routing.md`.
+
+**The explicit speed-matching was beside the point.** Earlier documents noted that we had set
+Valhalla's `walking_speed` to 5.04 km/h, making the walk comparison circular. It turns out the
+comparison would have been nearly circular anyway: Valhalla's default is 5.08 km/h. There was never
+a version of this test that could have detected a wrong walking speed, because both engines
+independently chose essentially the same number for an adult on level ground.
+
+**For walking, the two engines are barely two models.** The implied speed is almost constant across
+a tenfold range of journey length (1.400 to 1.414 m/s), which means Valhalla's pedestrian costing
+adds essentially no delay for crossings, signals or turns — it is distance over a constant speed,
+which is also what ours is. So the walk comparison tested the **network layer** (graph construction,
+access filtering, snapping, within-edge interpolation) and that layer agreed to within 2–3% at the
+median, which is a genuine and useful result. It tested the **timing model** not at all.
+
+The risk this leaves is shared, not relative: if 5.05 km/h overstates how fast people actually get
+from door to door on foot — and real walking includes waiting at crossings, gradients, and not
+walking at a brisk clip — then our layers and Valhalla's are wrong *together* by the same amount and
+no comparison between them will ever reveal it. Driving had an independent, congestion-aware
+reference available for twenty dollars of free tier; walking has had none at all.
+
+**The cheap fix is the same script with `--mode walk` and a Google key**, which adds a genuinely
+independent pedestrian model, and then a handful of hand-timed walks, which is the only way to learn
+whether either model describes a person. Until one of those happens, no claim about walk-time
+accuracy in this project rests on anything but two engines agreeing because they share an
+assumption.
