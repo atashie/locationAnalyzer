@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gate G5a prototypes</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="index">
+  <h1>Gate G5a — entry-mode comparison prototypes</h1>
+  <p>Two clickable, non-functional prototypes for an early usability comparison of how a household starts a
+    home-location search: <strong>address-first</strong> (a short form) versus <strong>describe-it</strong>
+    (a single text box recognising a few scripted sentences). Both render the identical criteria-card rail,
+    map, and "why is this out?" behaviour — they differ only in how criteria get created. See
+    <code>/docs/experiments/g5a-interaction.md</code> for the full test protocol.</p>
+
+  <p><strong>The map regions shown are real, not live.</strong> Every shaded region is one of 20 real
+    examples from Gate G4: an intersection of two 25-minute drive-time arrival isochrones, computed
+    2026-11-03 from a self-hosted Valhalla 3.9.1 instance around named Research Triangle anchors (file:
+    <code>regions.geojson</code> / <code>regions.js</code>, copied unmodified from
+    <code>v2/data/g4_regions.geojson</code>). The prototype picks the best-matching real example for whatever
+    anchors you enter; it does <strong>not</strong> compute a new isochrone for your exact inputs. Everything
+    else — place name lookup, amenity locations, "why is this out" distance estimates — is scripted for the
+    prototype and clearly labelled "estimated, typical conditions"; none of it is routed.</p>
+
+  <div class="grid">
+    <div class="tile">
+      <h2>Variant A — address-first</h2>
+      <p>Fields for Person 1 and Person 2's workplace (each with mode and max minutes), plus an "Add an
+        amenity" control, and a Compute button.</p>
+      <p><a href="address-first.html">Open address-first.html →</a></p>
+    </div>
+    <div class="tile">
+      <h2>Variant B — describe-it</h2>
+      <p>One text box. Exactly three scripted sentence patterns are recognised (a plain string match, not an
+        LLM); anything else shows "I did not understand that yet — here is what I can read."</p>
+      <p><a href="describe-it.html">Open describe-it.html →</a></p>
+    </div>
+  </div>
+
+  <h2 style="margin-top:28px">The three recognised sentence patterns (Variant B)</h2>
+  <p>Variant B's text box matches exactly these three patterns (plus close wording variants of each — see
+    <code>shared.js</code>). Anything outside them is reported as not understood, never guessed.</p>
+  <ol>
+    <li><strong>Commute:</strong> "&lt;who&gt; drives / bikes / walks to &lt;place&gt; in under &lt;N&gt;
+      minutes" — e.g. <em>"I drive to Downtown Durham in under 20 minutes and my partner bikes to Carrboro
+      in under 15 minutes."</em></li>
+    <li><strong>Amenity or place, time first:</strong> "a &lt;N&gt;-minute walk / bike / drive to &lt;amenity
+      or place&gt;" — e.g. <em>"A 10-minute walk to a library."</em></li>
+    <li><strong>Place, mode assumed:</strong> "&lt;N&gt; minutes to &lt;place&gt;" (mode assumed: drive) —
+      e.g. <em>"30 minutes to Downtown Raleigh."</em></li>
+  </ol>
+
+  <h2 style="margin-top:28px">Shared mechanics</h2>
+  <table>
+    <tr><th>Map</th><td>MapLibre GL JS v3.6.2 (pinned, <code>cdn.jsdelivr.net/npm/maplibre-gl@3.6.2</code>),
+      OpenStreetMap raster tiles with required attribution, centred about 35.95, -78.95, zoom 9.5.</td></tr>
+    <tr><th>Cards</th><td>Each criterion is a card showing anchor/category, mode, minutes, a hard/soft
+      (applied/not-applied) label, and controls to edit minutes, mute (eye — removes it from the region, not
+      just hides it), and delete.</td></tr>
+    <tr><th>Mute vs. delete</th><td>Both remove the criterion from the computed region immediately (the map
+      switches to a larger real example); muting keeps the greyed-out card in the rail so it can be restored,
+      deleting removes the card entirely. Neither is visibility-only — the card and the map say so.</td></tr>
+    <tr><th>Why is this out?</th><td>Tap the map outside the shaded region (or use the "Why is a place out?"
+      control) to see every failing card with a scripted estimate and a "relax to N" button that previews the
+      change in words before applying it.</td></tr>
+    <tr><th>Honest labels</th><td>Travel times always read "estimated, typical conditions, modelled from road
+      speeds." No rush hour, no worst case, no home counts, no neighborhood-fit percentages.</td></tr>
+    <tr><th><code>?seed=1</code></th><td>Variant B only: misparses "20 minutes to the airport" as "20 miles
+      to the airport," so the moderator can see whether a participant notices the unit change on the card.</td></tr>
+    <tr><th><code>?log=1</code></th><td>Shows a moderator log panel (timers, correction/relax/why-out
+      counters, event list, copy-to-clipboard) on either variant.</td></tr>
+    <tr><th>Keyboard / mobile</th><td>Tab order follows the visual order; Enter submits the entry form or
+      activates the focused control; the layout stacks to a single column at phone width (390×844 and below);
+      no build step, no framework beyond MapLibre.</td></tr>
+  </table>
+
+  <h2 style="margin-top:28px">Files</h2>
+  <pre>v2/spikes/g5a-protos/
+  index.html          this page
+  address-first.html  Variant A
+  describe-it.html    Variant B
+  shared.js           cards, map, parser, "why is this out", moderator log (plain JS, no build step)
+  shared.css          shared styles
+  fixtures.js         scripted gazetteer, amenity points, check spots, assumed speeds (NOT routing)
+  regions.geojson     exact copy of v2/data/g4_regions.geojson — 20 real Gate G4 regions
+  regions.js          the same 20 regions as a plain script assignment (loads with no fetch/CORS/build step)</pre>
+
+  <p class="inline-note">Serve this directory with any static file server (for example
+    <code>npx serve v2/spikes/g5a-protos</code> or <code>python -m http.server</code> from inside it) and open
+    <code>index.html</code>. Opening the files directly from disk also works.</p>
+</div>
+</body>
+</html>

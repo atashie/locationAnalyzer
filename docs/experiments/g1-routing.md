@@ -208,3 +208,104 @@ preparing the graph, which Valhalla has already done once into its tiles.
   82%, walk 47.5%) are mostly cutoff and access-leg policy, not accuracy; they are the reason the
   layer-level false-include rates look extreme at large T and the reason the exact-pair comparison
   is the one to trust.
+
+### Raster primitive vs exact engine times (2026-11-03 15:04:08): grocery / walk, 3 POIs
+method A grid [119, 200] at 0.0010° x 0.0010°; method B grids [[106, 138], [91, 93], [95, 92]]; 240 cells sampled from the reachable union of both rasters; exact = `sources_to_targets` minimum over the same POIs (no raster).
+
+| difference (seconds) | n | median | p90 | max | share > 60 s |
+|---|---|---|---|---|---|
+| A (multi-location) vs exact | 208 | 88 | 355 | 983 | 60.6% |
+| B (per-POI min) vs exact | 219 | 88 | 430 | 2080 | 66.7% |
+| A vs B (the original check) | 187 | 20 | 142 | 1743 | 21.9% |
+
+One-sided reachability among sampled cells: exact unreachable 0, A unreachable 32, B unreachable 21.
+
+Threshold classification against exact (the product's actual question):
+
+| T min | A agrees | B agrees | A false-in | A false-out | B false-in | B false-out |
+|---|---|---|---|---|---|---|
+| 10 | 98.3% | 97.1% | 0.9% | 15.4% | 1.3% | 30.8% |
+| 15 | 97.5% | 97.5% | 1.8% | 9.5% | 1.8% | 9.5% |
+| 20 | 96.2% | 96.2% | 2.4% | 12.5% | 1.9% | 15.6% |
+| 25 | 97.5% | 96.2% | 1.0% | 9.1% | 1.5% | 13.6% |
+| 30 | 96.2% | 95.4% | 1.1% | 11.7% | 1.1% | 15.0% |
+| 45 | 88.8% | 90.4% | 2.6% | 19.5% | 0.9% | 17.9% |
+
+### Expansion primitive vs raster primitives (2026-11-03 15:05:48): grocery / walk, 3 POIs
+`/expansion action=isochrone reverse=true` returned **8909 settled edges** in 0.74 s (edge length median 46 m, p90 154 m). Cells snapped with `locfinder.traveltime.snap`'s nearest-edge logic plus the modal access leg. Same 240 cells and same exact `sources_to_targets` values as the raster test, so the three rows are paired.
+
+| difference from exact (seconds) | n | median | p90 | max | share > 60 s |
+|---|---|---|---|---|---|
+| **expansion + our snapping** | 195 | 69 | 271 | 647 | 54.9% |
+| A multi-location GeoTIFF | 208 | 88 | 355 | 983 | 60.6% |
+| B per-POI GeoTIFF min | 219 | 88 | 430 | 2080 | 66.7% |
+
+Expansion signed median +66 s (positive = our value is later/more conservative than exact).
+
+Threshold classification against exact:
+
+| T min | expansion agrees | A agrees | B agrees | expansion false-in | expansion false-out |
+|---|---|---|---|---|---|
+| 10 | 98.8% | 98.3% | 97.1% | 0.0% | 23.1% |
+| 15 | 99.6% | 97.5% | 97.5% | 0.0% | 4.8% |
+| 20 | 97.1% | 96.2% | 96.2% | 0.0% | 21.9% |
+| 25 | 97.5% | 97.5% | 96.2% | 0.0% | 13.6% |
+| 30 | 96.7% | 96.2% | 95.4% | 0.0% | 13.3% |
+| 45 | 95.4% | 88.8% | 90.4% | 0.0% | 8.9% |
+
+---
+
+## G1 Verdict, revision 2 (2026-11-03): the engine is Valhalla; the layer primitive is its expansion tree, not its raster
+
+Codex pass 4 (`../research/11-codex-adversarial-review-pass4-phase0.md`, H1/H5) was right that the
+first verdict adopted a layer-building method whose own equivalence check had failed, and that the
+check could not say which side was wrong because it compared two resampled rasters to each other.
+Adding the missing third leg — Valhalla's `sources_to_targets` matrix, which gives exact engine
+times with no raster involved — settles it. Paired on the same 240 sampled cells and the same exact
+values:
+
+| Primitive | median error | p90 | max | > 60 s | false-in at T | false-out at T |
+|---|---|---|---|---|---|---|
+| Multi-location isochrone GeoTIFF (method A, previously adopted) | 88 s | 355 s | 983 s | 61% | 1–3% | 9–20% |
+| Per-POI GeoTIFF minimum (method B) | 88 s | 430 s | 2,080 s | 67% | 1–2% | 10–31% |
+| **`/expansion` edges + our nearest-edge snapping** | **69 s** | **271 s** | **647 s** | 55% | **0.0% at every threshold** | 5–23% |
+
+Three conclusions.
+
+**The isochrone GeoTIFF is a contour product, not a per-cell time.** Neither raster method meets the
+owner's tolerance: a median error of 88 s and a p90 of about 6 minutes, with 9–31% of boundary cells
+wrongly excluded. The 1,635 s maximum difference in the original check was mostly both rasters being
+imprecise, not method A being broken, but adopting either as the layer primitive would have shipped
+a systematically wrong boundary.
+
+**`/expansion` is the right primitive and it puts our ported snapping code back in the critical
+path.** `action=isochrone, reverse=true` returns the settled search tree — 8,909 edges in 0.74 s for
+three POIs, median edge length 46 m — each with its arrival `duration` in seconds. Feeding those
+edges into `locfinder.traveltime.snap` gives a per-cell time from Valhalla's own costing at edge
+resolution. What the G1 comparison killed was our **speed model**, not our **snapping and
+interpolation machinery**, which is now the consumer of a better-calibrated input.
+
+**Against the owner's tolerance (decision 12: median ≤ 10% of T, p90 ≤ 20%):**
+
+| T | tolerance (median / p90) | expansion primitive | verdict |
+|---|---|---|---|
+| 10 min | 60 s / 120 s | 69 s / 271 s | fails both |
+| 15 min | 90 s / 180 s | 69 s / 271 s | median passes, p90 fails |
+| 20 min | 120 s / 240 s | 69 s / 271 s | median passes, p90 fails |
+| **25 min** | 150 s / 300 s | 69 s / 271 s | **passes** |
+| **30 min** | 180 s / 360 s | 69 s / 271 s | **passes** |
+| **45 min** | 270 s / 540 s | 69 s / 271 s | **passes** |
+
+So commute-scale thresholds are already within tolerance, and short walk thresholds are not. The
+cause is identified and the fix is known: the expansion reports one duration per edge, which is the
+arrival time at the far end, so using it directly overestimates by up to one edge traversal (median
+46 m ≈ 33 s on foot) and the access leg adds more. The signed median is **+66 s, conservative in
+every case**, which is why false inclusions are zero. Interpolating within the matched edge using
+its `distance` and `duration` — the same arithmetic `cell_seconds_from_arrival` already performs for
+our own graph — should remove most of that bias. That is the first thing Phase 1 should implement
+and re-measure, before any North Carolina build.
+
+Unresolved and not to be glossed: this test covers one category, one mode, three POIs and 240 cells.
+Drive and bike, a full POI set, and the interpolation fix all need the same paired treatment, and
+the exact matrix remains the reference rather than ground truth, since Valhalla has no traffic data
+either.

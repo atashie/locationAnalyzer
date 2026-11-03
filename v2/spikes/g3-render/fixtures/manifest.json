@@ -9,40 +9,58 @@
   ],
   "nodata": 255,
   "units": "minutes",
+  "source": "real, exported 2026-11-03",
+  "synthetic": false,
+  "generator": "v2/spikes/g3-render/export_layers.py",
+  "note": "Real Valhalla arrival-isochrone and own-graph csgraph minutes-to-nearest-grocery layers, reprojected from UTM 17N (EPSG:32617) 100 m cells to a WGS84 lon/lat grid with rasterio.warp.reproject (nearest, src_nodata=255, dst_nodata=255).",
   "layers": [
     {
-      "id": "grocery_walk",
-      "label": "Grocery (walk)",
-      "file": "grocery_walk.bin"
+      "id": "own_grocery_bike",
+      "label": "Grocery, bike (own-graph)",
+      "file": "own_grocery_bike.bin",
+      "engine": "own",
+      "mode": "bike",
+      "category": "grocery"
     },
     {
-      "id": "park_walk",
-      "label": "Park (walk)",
-      "file": "park_walk.bin"
+      "id": "own_grocery_drive",
+      "label": "Grocery, drive (own-graph)",
+      "file": "own_grocery_drive.bin",
+      "engine": "own",
+      "mode": "drive",
+      "category": "grocery"
     },
     {
-      "id": "coffee_walk",
-      "label": "Coffee (walk)",
-      "file": "coffee_walk.bin"
+      "id": "own_grocery_walk",
+      "label": "Grocery, walk (own-graph)",
+      "file": "own_grocery_walk.bin",
+      "engine": "own",
+      "mode": "walk",
+      "category": "grocery"
     },
     {
-      "id": "pharmacy_bike",
-      "label": "Pharmacy (bike)",
-      "file": "pharmacy_bike.bin"
+      "id": "valhalla_grocery_bike",
+      "label": "Grocery, bike (Valhalla) [controlled]",
+      "file": "valhalla_grocery_bike.bin",
+      "engine": "valhalla",
+      "mode": "bike",
+      "category": "grocery"
     },
     {
-      "id": "school_drive",
-      "label": "School (drive)",
-      "file": "school_drive.bin"
+      "id": "valhalla_grocery_drive",
+      "label": "Grocery, drive (Valhalla)",
+      "file": "valhalla_grocery_drive.bin",
+      "engine": "valhalla",
+      "mode": "drive",
+      "category": "grocery"
     },
     {
-      "id": "transit_walk",
-      "label": "Transit stop (walk)",
-      "file": "transit_walk.bin"
+      "id": "valhalla_grocery_walk",
+      "label": "Grocery, walk (Valhalla)",
+      "file": "valhalla_grocery_walk.bin",
+      "engine": "valhalla",
+      "mode": "walk",
+      "category": "grocery"
     }
-  ],
-  "synthetic": true,
-  "generator": "v2/spikes/g3-render/make_fixtures.py",
-  "seed": 20261103,
-  "note": "SYNTHETIC distance fields, not routing output. Shape matches the real export contract."
+  ]
 }

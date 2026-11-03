@@ -20,10 +20,11 @@
   'use strict';
   var isNode = (typeof module === 'object' && module && module.exports);
   var F = isNode ? require('./fixtures.js') : root.G5A_FIXTURES;
-  var api = factory(F, root, isNode);
+  var REG = isNode ? require('./regions.js') : root.G5A_REGIONS;
+  var api = factory(F, REG, root, isNode);
   if (isNode) { module.exports = api; }
   root.G5A = api;
-})(typeof window !== 'undefined' ? window : globalThis, function (F, root, isNode) {
+})(typeof window !== 'undefined' ? window : globalThis, function (F, REG, root, isNode) {
   'use strict';
 
   // ---------------------------------------------------------------------------
@@ -47,24 +48,44 @@
     return inside;
   }
 
-  function polygonAreaSqMi(ring) {
-    var latMean = ring.reduce(function (s, p) { return s + p[1]; }, 0) / ring.length;
-    var kx = 69.17 * Math.cos(latMean * Math.PI / 180), ky = 69.17;
-    var area = 0;
-    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      var xi = ring[i][0] * kx, yi = ring[i][1] * ky, xj = ring[j][0] * kx, yj = ring[j][1] * ky;
-      area += (xj * yi - xi * yj);
-    }
-    return Math.abs(area) / 2;
+  // A real region feature's geometry is Polygon or MultiPolygon, each polygon's first
+  // ring an outer boundary and any further rings holes (standard GeoJSON winding is not
+  // assumed; holes are handled by even-odd subtraction per polygon part).
+  function polygonsOf(geometry) {
+    if (!geometry) { return []; }
+    if (geometry.type === 'Polygon') { return [geometry.coordinates]; }
+    if (geometry.type === 'MultiPolygon') { return geometry.coordinates; }
+    return [];
   }
 
-  function ringBounds(ring) {
+  function pointInFeature(pt, feature) {
+    var polys = polygonsOf(feature && feature.geometry);
+    for (var i = 0; i < polys.length; i++) {
+      var rings = polys[i];
+      if (!pointInRing(pt, rings[0])) { continue; }
+      var inHole = false;
+      for (var h = 1; h < rings.length; h++) { if (pointInRing(pt, rings[h])) { inHole = true; break; } }
+      if (!inHole) { return true; }
+    }
+    return false;
+  }
+
+  function featureBounds(feature) {
     var b = [Infinity, Infinity, -Infinity, -Infinity];
-    ring.forEach(function (p) {
-      b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]);
-      b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]);
+    polygonsOf(feature && feature.geometry).forEach(function (rings) {
+      rings[0].forEach(function (p) {
+        b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]);
+        b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]);
+      });
     });
     return b;
+  }
+
+  // properties.area_km2 is the real area computed by Gate G4 (see g4_generate_links.py);
+  // reuse it rather than re-deriving area from simplified/generalised display geometry.
+  function featureAreaSqMi(feature) {
+    var km2 = feature && feature.properties && feature.properties.area_km2;
+    return typeof km2 === 'number' ? km2 * 0.386102 : null;
   }
 
   function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -72,6 +93,76 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Real region index (built from regions.js / regions.geojson — Gate G4 output).
+  // Picks a REAL precomputed feature for whatever anchors the user currently has
+  // applied; never invents a shape. See fixtures.js header for provenance.
+  // ---------------------------------------------------------------------------
+  var REGION_PAIRS = {};   // "nameA|nameB" (sorted) -> feature
+  var REGION_BY_ANCHOR = {}; // name -> [features]
+  var REGION_LARGEST = null;
+  (REG && REG.features || []).forEach(function (f) {
+    var a = f.properties.a, b = f.properties.b;
+    REGION_PAIRS[[a, b].sort().join('|')] = f;
+    (REGION_BY_ANCHOR[a] = REGION_BY_ANCHOR[a] || []).push(f);
+    (REGION_BY_ANCHOR[b] = REGION_BY_ANCHOR[b] || []).push(f);
+    if (!REGION_LARGEST || f.properties.area_km2 > REGION_LARGEST.properties.area_km2) { REGION_LARGEST = f; }
+  });
+
+  function nearestG4Anchor(pt) {
+    if (!pt) { return null; }
+    var best = null;
+    Object.keys(F.g4Anchors).forEach(function (name) {
+      var d = haversineMiles(pt, F.g4Anchors[name]);
+      if (!best || d < best.d) { best = { name: name, d: d }; }
+    });
+    return best ? best.name : null;
+  }
+
+  function featureForPair(nameA, nameB) {
+    if (!nameA || !nameB || nameA === nameB) { return null; }
+    return REGION_PAIRS[[nameA, nameB].sort().join('|')] || null;
+  }
+
+  function largestFeatureContaining(name) {
+    var list = REGION_BY_ANCHOR[name];
+    if (!list || !list.length) { return null; }
+    return list.reduce(function (m, f) { return f.properties.area_km2 > m.properties.area_km2 ? f : m; }, list[0]);
+  }
+
+  function globalLargestFeature() { return REGION_LARGEST; }
+
+  // anchors: applied cards that are people/places (not amenities). wantLarger: true when
+  // the user has muted, deleted, or relaxed a criterion — always resolves to a bigger
+  // real example than the tight pair would be, per Gate G5a spec.
+  function pickFeature(anchors, wantLarger) {
+    var names = [];
+    anchors.forEach(function (c) {
+      var n = nearestG4Anchor(cardAnchor(c));
+      if (n && names.indexOf(n) === -1) { names.push(n); }
+    });
+    if (!names.length) { return globalLargestFeature(); }
+    if (names.length === 1) { return largestFeatureContaining(names[0]) || globalLargestFeature(); }
+    if (!wantLarger) {
+      var exact = featureForPair(names[0], names[1]);
+      if (exact) { return exact; }
+    }
+    var candidates = [];
+    names.forEach(function (n) { (REGION_BY_ANCHOR[n] || []).forEach(function (f) { candidates.push(f); }); });
+    if (!candidates.length) { return globalLargestFeature(); }
+    var best = candidates.reduce(function (m, f) { return f.properties.area_km2 > m.properties.area_km2 ? f : m; }, candidates[0]);
+    if (wantLarger) {
+      var tight = featureForPair(names[0], names[1]);
+      if (tight && best.properties.id === tight.properties.id) { return globalLargestFeature(); }
+    }
+    return best;
+  }
+
+  function regionAnchorLabel(feature) {
+    if (!feature) { return ''; }
+    return feature.properties.a + ' ↔ ' + feature.properties.b;
   }
 
   // ---------------------------------------------------------------------------
@@ -227,7 +318,7 @@
     return parts.join(' · ');
   }
   function statusReason(c) {
-    return { off: 'turned off', ambiguous: 'needs a choice', unknown: 'place not recognised', outside: 'outside coverage', ok: '' }[cardStatus(c)];
+    return { off: 'muted — removed from the region', ambiguous: 'needs a choice', unknown: 'place not recognised', outside: 'outside coverage', ok: '' }[cardStatus(c)];
   }
 
   // ---------------------------------------------------------------------------
@@ -274,18 +365,14 @@
     var relaxed = cards.some(function (c) { return c.off; }) ||
                   applied.some(function (c) { return c.relaxed; }) ||
                   cards.length < baselineCount;
-    return { key: relaxed ? 'relaxed' : 'tight', applied: applied };
+    var feature = pickFeature(anchors, relaxed);
+    return { key: relaxed ? 'relaxed' : 'tight', applied: applied, anchors: anchors, feature: feature };
   }
 
-  function regionRing(key) {
-    return (key === 'tight' || key === 'relaxed') ? F.regions[key].geometry.coordinates[0] : null;
-  }
-
-  function whyOut(pt, cards, regionKey) {
+  function whyOut(pt, cards, feature) {
     var applied = cards.filter(isApplied);
     if (!applied.length) { return { kind: 'nocriteria', pt: pt }; }
-    var ring = regionRing(regionKey);
-    var inside = ring ? pointInRing(pt, ring) : false;
+    var inside = feature ? pointInFeature(pt, feature) : false;
     var items = applied.map(function (c) { return { card: c, est: estimateCard(c, pt) }; });
     if (inside) {
       items.forEach(function (it) {
@@ -429,7 +516,7 @@
     region: { key: 'none', applied: [] },
     editing: {},
     lastSpot: null, lastSpotName: null, whyOpen: false,
-    map: null, mapReady: false, markers: [], spotMarker: null, fitted: false,
+    map: null, mapReady: false, markers: [], spotMarker: null, fittedFeatureId: null,
     t0: Date.now(), tTask: null, tFirstRegion: null, tTrusted: null,
     events: [], counters: { corrections: 0, whyout: 0, relax: 0, choices: 0, seedFixed: false },
     onClear: null
@@ -526,7 +613,7 @@
     if (S.logOn) { renderLog(); }
   }
 
-  function regionLabel(key) { return key === 'tight' ? 'A (tight)' : 'B (relaxed)'; }
+  function regionLabel(key) { return key === 'tight' ? 'both criteria' : 'relaxed (larger)'; }
 
   function renderSummary() {
     var el = $('summary'); if (!el) { return; }
@@ -546,9 +633,10 @@
     }
     if (S.region.key === 'none') { html += ' No region: nothing applied.'; }
     else if (S.region.key === 'impossible') { html += ' <strong>No area meets all criteria.</strong>'; }
-    else {
-      var area = Math.round(polygonAreaSqMi(regionRing(S.region.key)));
-      html += ' Region shown: fixture polygon ' + regionLabel(S.region.key) + ', about ' + area + ' sq mi (fixture, not computed).';
+    else if (S.region.feature) {
+      var area = Math.round(featureAreaSqMi(S.region.feature));
+      html += ' Region shown (' + regionLabel(S.region.key) + '): real example computed 2026-11-03 from self-hosted Valhalla, fixed example — ' +
+        escapeHtml(regionAnchorLabel(S.region.feature)) + ', about ' + area + ' sq mi.';
     }
     el.innerHTML = html;
   }
@@ -578,8 +666,9 @@
         html += '<div class="notice warn"><p><strong>Place not recognised:</strong> “' + escapeHtml(c.placeQuery || '(empty)') + '”. Edit the card and choose an employer, landmark, store or town from the list. Not applied until then.</p></div>';
       }
     });
-    if (r.key === 'relaxed') {
-      html += '<div class="notice"><p>Showing the larger fixture region because a criterion is off, deleted, or relaxed.</p></div>';
+    if (r.key === 'relaxed' && r.feature) {
+      html += '<div class="notice"><p>Showing a larger real example region (' + escapeHtml(regionAnchorLabel(r.feature)) +
+        ') because a criterion is off, deleted, or relaxed. This removes that criterion from the map, not just its visibility.</p></div>';
     }
     el.innerHTML = html;
   }
@@ -587,7 +676,7 @@
   function badgeFor(c) {
     var st = cardStatus(c);
     if (st === 'ok') { return c.relaxed ? ['relaxed', 'Relaxed to ' + c.limit + (c.unit === 'mi' ? ' mi' : ' min')] : ['ok', 'Applied']; }
-    if (st === 'off') { return ['off', 'Off — not applied']; }
+    if (st === 'off') { return ['off', 'Muted — removed from the region (not just hidden)']; }
     if (st === 'ambiguous') { return ['warn', 'Needs a choice — not applied']; }
     if (st === 'outside') { return ['bad', 'Outside coverage — not applied']; }
     return ['warn', 'Place not recognised — not applied'];
@@ -651,7 +740,8 @@
         '<div class="card-body">' + body + '</div>' + chooser +
         '<div class="card-actions">' +
         '<button class="small" data-action="edit" data-id="' + c.id + '" aria-expanded="' + (editing ? 'true' : 'false') + '">Edit</button>' +
-        '<button class="small" data-action="toggle" data-id="' + c.id + '" aria-pressed="' + (c.off ? 'true' : 'false') + '">' + (c.off ? 'Turn on' : 'Turn off') + '</button>' +
+        '<button class="small" data-action="toggle" data-id="' + c.id + '" aria-pressed="' + (c.off ? 'true' : 'false') + '">' +
+          (c.off ? '👁️ Unmute (adds back)' : '👁️ Mute (removes from region)') + '</button>' +
         '<button class="small" data-action="delete" data-id="' + c.id + '">Delete</button>' +
         '</div>' + editor + '</li>';
     }).join('');
@@ -708,15 +798,29 @@
     S.map = map;
   }
 
+  function renderMapLabel() {
+    var el = $('map-region-label'); if (!el) { return; }
+    var r = S.region;
+    if (r.key === 'tight' || r.key === 'relaxed') {
+      el.hidden = false;
+      el.textContent = (r.key === 'tight' ? 'Real example (both criteria): ' : 'Real example (relaxed — larger): ') +
+        regionAnchorLabel(r.feature) + ' — computed 2026-11-03 from self-hosted Valhalla, fixed example';
+    } else {
+      el.hidden = true;
+    }
+  }
+
   function renderMap() {
+    renderMapLabel();
     if (!S.map || !S.mapReady) { return; }
     var src = S.map.getSource('region');
-    var ring = regionRing(S.region.key);
-    src.setData({ type: 'FeatureCollection', features: ring ? [F.regions[S.region.key]] : [] });
-    if (ring && !S.fitted) {
-      var b = ringBounds(ring);
+    var feature = (S.region.key === 'tight' || S.region.key === 'relaxed') ? S.region.feature : null;
+    src.setData({ type: 'FeatureCollection', features: feature ? [feature] : [] });
+    var featureId = feature ? feature.properties.id + ':' + S.region.key : null;
+    if (feature && featureId !== S.fittedFeatureId) {
+      var b = featureBounds(feature);
       S.map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 40, duration: 600 });
-      S.fitted = true;
+      S.fittedFeatureId = featureId;
     }
     S.markers.forEach(function (m) { m.remove(); });
     S.markers = [];
@@ -743,7 +847,7 @@
   // --- why is this out? ---------------------------------------------------------
   function runWhy(pt, spotName, rerun) {
     S.lastSpot = pt; S.lastSpotName = spotName || null;
-    var res = whyOut(pt, S.cards, S.region.key);
+    var res = whyOut(pt, S.cards, S.region.feature);
     if (!rerun) { S.counters.whyout += 1; log('whyout', (spotName || (pt[1].toFixed(3) + ', ' + pt[0].toFixed(3))) + ' -> ' + res.kind); }
     renderWhy(res);
     if (S.map && S.mapReady && typeof root.maplibregl !== 'undefined') {
@@ -785,7 +889,7 @@
         html += '<p class="note">More than one criterion fails here; relaxing one of them will not include this spot by itself.</p>';
       }
     }
-    html += '<p class="note">Estimates are for typical conditions from a straight-line fixture approximation, not routed. The shaded region is fixture geometry.</p>';
+    html += '<p class="note">Estimates are for typical conditions from a straight-line scripted approximation, not routed. The shaded region itself is a real precomputed example (Gate G4, computed 2026-11-03 from self-hosted Valhalla), not a live recomputation of this exact spot.</p>';
     el.innerHTML = html;
     el.hidden = false;
     S.whyOpen = true;
@@ -797,6 +901,26 @@
     var el = $('whyout'); if (el) { el.hidden = true; }
     S.whyOpen = false;
     if (S.spotMarker) { S.spotMarker.remove(); S.spotMarker = null; }
+  }
+
+  // --- variant B feedback (echo + "I did not understand" help) -------------------
+  function renderDescribeFeedback(result) {
+    var el = $('describe-feedback'); if (!el) { return; }
+    var html = '';
+    if (result.echo && result.echo.length) {
+      html += '<ul class="echo">' + result.echo.map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('') + '</ul>';
+    }
+    if (result.unrecognised && result.unrecognised.length) {
+      html += '<div class="help" role="alert"><p><strong>I did not understand that yet — here is what I can read:</strong></p>' +
+        '<ul>' + EXAMPLES.map(function (ex) { return '<li>' + escapeHtml(ex) + '</li>'; }).join('') + '</ul>' +
+        '<p>Not understood: ' + result.unrecognised.map(function (u) { return '“' + escapeHtml(u) + '”'; }).join(', ') +
+        '. Try rephrasing using one of the patterns above, or add/edit a card below instead.</p></div>';
+      log('unrecognised', result.unrecognised.join(' | '));
+    }
+    if (!result.echo.length && !result.unrecognised.length) {
+      html = '<p class="inline-note">Nothing to understand yet — type a sentence above.</p>';
+    }
+    el.innerHTML = html;
   }
 
   function checkSpotById(id) {
@@ -992,6 +1116,7 @@
 
   return {
     fixtures: F,
+    regions: REG,
     EXAMPLES: EXAMPLES,
     MODE_LABEL: MODE_LABEL,
     DEMO_S1: DEMO_S1,
@@ -1001,10 +1126,14 @@
     makeCard: makeCard, cardFromPlaceQuery: cardFromPlaceQuery, applySeed: applySeed,
     cardStatus: cardStatus, isApplied: isApplied, cardTitle: cardTitle, cardDescription: cardDescription,
     estimateCard: estimateCard, decideRegion: decideRegion, whyOut: whyOut, nearestSpot: nearestSpot,
-    util: { haversineMiles: haversineMiles, pointInRing: pointInRing, polygonAreaSqMi: polygonAreaSqMi, ringBounds: ringBounds, escapeHtml: escapeHtml },
+    nearestG4Anchor: nearestG4Anchor, featureForPair: featureForPair, pickFeature: pickFeature,
+    regionAnchorLabel: regionAnchorLabel, featureAreaSqMi: featureAreaSqMi,
+    util: { haversineMiles: haversineMiles, pointInRing: pointInRing, pointInFeature: pointInFeature,
+            featureBounds: featureBounds, featureAreaSqMi: featureAreaSqMi, escapeHtml: escapeHtml },
     // ui
     init: init, replaceCards: replaceCards, appendCards: appendCards, clearAll: clearAll, addCard: addCard,
     relaxCard: relaxCard, checkSpotById: checkSpotById, closeWhy: closeWhy, log: log,
+    renderDescribeFeedback: renderDescribeFeedback,
     state: function () { return S; }, isSeed: function () { return S.seed; }
   };
 });

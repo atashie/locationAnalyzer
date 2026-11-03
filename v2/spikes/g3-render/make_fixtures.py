@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -31,14 +32,14 @@ BOUNDS = [-79.15, 35.80, -78.55, 36.15]  # west, south, east, north (WGS84)
 NODATA = 255
 SEED = 20261103
 
-# (id, label, number of random amenity points, speed in metres per minute)
+# (id, label, mode, category, number of random amenity points, speed in metres per minute)
 LAYERS = [
-    ("grocery_walk", "Grocery (walk)", 60, 80.0),
-    ("park_walk", "Park (walk)", 90, 80.0),
-    ("coffee_walk", "Coffee (walk)", 70, 80.0),
-    ("pharmacy_bike", "Pharmacy (bike)", 40, 250.0),
-    ("school_drive", "School (drive)", 25, 700.0),
-    ("transit_walk", "Transit stop (walk)", 120, 80.0),
+    ("grocery_walk", "Grocery (walk)", "walk", "grocery", 60, 80.0),
+    ("park_walk", "Park (walk)", "walk", "park", 90, 80.0),
+    ("coffee_walk", "Coffee (walk)", "walk", "coffee", 70, 80.0),
+    ("pharmacy_bike", "Pharmacy (bike)", "bike", "pharmacy", 40, 250.0),
+    ("school_drive", "School (drive)", "drive", "school", 25, 700.0),
+    ("transit_walk", "Transit stop (walk)", "walk", "transit", 120, 80.0),
 ]
 
 OUT_DIR = Path(__file__).resolve().parent / "fixtures"
@@ -92,6 +93,8 @@ def nodata_patches(rng: np.random.Generator, lon: np.ndarray, lat: np.ndarray) -
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    for stale in OUT_DIR.glob("*.bin"):
+        stale.unlink()
     rng = np.random.default_rng(SEED)
     lon, lat = cell_centres()
 
@@ -101,6 +104,7 @@ def main() -> None:
         "bounds_wgs84": BOUNDS,
         "nodata": NODATA,
         "units": "minutes",
+        "source": f"synthetic, generated {date.today().isoformat()}",
         "layers": [],
         # Extra keys beyond the contract, so the page can label the data honestly.
         "synthetic": True,
@@ -110,7 +114,7 @@ def main() -> None:
     }
 
     print(f"writing fixtures to {OUT_DIR}")
-    for layer_id, label, n_points, speed in LAYERS:
+    for layer_id, label, mode, category, n_points, speed in LAYERS:
         minutes = minutes_field(rng, lon, lat, n_points, speed)
         values = np.clip(np.rint(minutes), 0, 254).astype(np.uint8)
         values[nodata_patches(rng, lon, lat)] = NODATA
@@ -119,7 +123,16 @@ def main() -> None:
         assert len(data) == NROWS * NCOLS
         fname = f"{layer_id}.bin"
         (OUT_DIR / fname).write_bytes(data)
-        manifest["layers"].append({"id": layer_id, "label": label, "file": fname})
+        manifest["layers"].append(
+            {
+                "id": layer_id,
+                "label": label,
+                "file": fname,
+                "engine": "synthetic",
+                "mode": mode,
+                "category": category,
+            }
+        )
         n_nodata = int((values == NODATA).sum())
         reachable = values[values != NODATA]
         print(

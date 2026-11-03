@@ -1,10 +1,17 @@
 /* fixtures.js — G5a clickable prototypes.
  *
- * FIXTURE DATA, NOT COMPUTED.
- * Every polygon and point in this file was hand-authored for the Gate G5a usability
- * comparison. Nothing here comes from routing, isochrones, or real travel-time data.
- * The region polygons do not change shape when the criteria change; the prototypes
- * only switch between the "tight" and "relaxed" fixtures (or show none).
+ * REGION GEOMETRY IS REAL. Map regions shown by these prototypes come from
+ * regions.js / regions.geojson — an exact copy of v2/data/g4_regions.geojson: 20
+ * real intersections of two 25-minute drive-time ARRIVAL isochrones, computed
+ * 2026-11-03 from a self-hosted Valhalla 3.9.1 instance around named Research
+ * Triangle anchors (see /docs/experiments/g4-listings.md). Nothing in this file
+ * invents a region shape.
+ *
+ * EVERYTHING ELSE in this file (the gazetteer, amenity category points, named
+ * check spots, assumed speeds/circuity) is SCRIPTED FOR THE PROTOTYPE, not routed,
+ * and is only used to (a) resolve a typed/typed-and-parsed place name to coordinates
+ * and (b) produce the scripted "why is this out" distance estimate shown with every
+ * number labelled "estimated, typical conditions". It is not a routing engine.
  *
  * Coordinates are [longitude, latitude] (GeoJSON order), WGS84.
  * Centre: Durham / Chapel Hill, NC.
@@ -13,50 +20,41 @@
   'use strict';
 
   var FIXTURES = {
-    note: 'FIXTURE DATA, NOT COMPUTED. Hand-authored geometry for the G5a usability test.',
+    note: 'Map regions are REAL (Gate G4, computed 2026-11-03 from self-hosted Valhalla, fixed examples — see regions.js). ' +
+      'Everything else here (place lookup, amenity points, distance estimates) is scripted for the prototype, not routed.',
 
     center: [-78.95, 35.95],
-    zoom: 10,
+    zoom: 9.5,
 
-    // Approximate Research Triangle coverage box. Places outside it are "outside coverage".
+    // Approximate Research Triangle coverage box used only to flag places this prototype
+    // does not cover. Not a travel-time claim.
     coverageBbox: [-79.35, 35.55, -78.30, 36.25],
     coverage: {
       type: 'Feature',
-      properties: { name: 'coverage (fixture)' },
+      properties: { name: 'prototype coverage area (approximate box, not a travel-time boundary)' },
       geometry: {
         type: 'Polygon',
         coordinates: [[[-79.35, 35.55], [-78.30, 35.55], [-78.30, 36.25], [-79.35, 36.25], [-79.35, 35.55]]]
       }
     },
 
-    // Two hand-drawn region fixtures. "tight" is shown when every card is on and at its
-    // entered limit; "relaxed" when any card is turned off, deleted, or relaxed.
-    regions: {
-      tight: {
-        type: 'Feature',
-        properties: { name: 'fixture A (tight)', fixture: true },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[
-            [-79.095, 35.955], [-79.090, 35.930], [-79.060, 35.885], [-79.000, 35.875],
-            [-78.930, 35.880], [-78.870, 35.910], [-78.860, 35.960], [-78.890, 36.000],
-            [-78.950, 36.020], [-79.010, 36.010], [-79.060, 35.980], [-79.095, 35.955]
-          ]]
-        }
-      },
-      relaxed: {
-        type: 'Feature',
-        properties: { name: 'fixture B (relaxed)', fixture: true },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[
-            [-79.170, 35.950], [-79.140, 35.870], [-79.070, 35.820], [-78.970, 35.795],
-            [-78.860, 35.790], [-78.770, 35.830], [-78.760, 35.920], [-78.790, 36.000],
-            [-78.860, 36.060], [-78.950, 36.095], [-79.050, 36.105], [-79.130, 36.080],
-            [-79.170, 35.950]
-          ]]
-        }
-      }
+    // The 10 named anchors used by Gate G4 (exact names and coordinates copied from
+    // v2/spikes/g4_generate_links.py's NAMED dict). Used to find, for any applied
+    // commute/place card, the nearest real anchor so a real precomputed region (from
+    // regions.js) can be shown. This table does not change which anchor a region
+    // belongs to — regions.js's own "a"/"b" properties are the source of truth; this
+    // is only the coordinate side of the same 10 names.
+    g4Anchors: {
+      'UNC Hospitals': [-79.0469, 35.9049],
+      'Duke University Hospital': [-78.9381, 36.0075],
+      'RTP (Kit Creek Rd)': [-78.8450, 35.8720],
+      'Downtown Durham': [-78.9010, 35.9960],
+      'Carrboro Town Hall': [-79.0750, 35.9100],
+      'Cary Downtown': [-78.7810, 35.7880],
+      'RDU Terminal 2': [-78.7875, 35.8776],
+      'Southpoint Mall': [-78.9450, 35.9050],
+      'NC State Bell Tower': [-78.6630, 35.7860],
+      'Hillsborough': [-79.0990, 36.0750]
     },
 
     // Scripted gazetteer. "aliases" are matched after lower-casing; "outside" marks places

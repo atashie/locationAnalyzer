@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LocationFinder prototype — address-first (Variant A)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <span class="brand">LocationFinder</span>
+    <span class="proto-tag">Prototype — Variant A: address-first</span>
+  </div>
+  <nav aria-label="Prototype navigation">
+    <a href="index.html">All prototypes</a> ·
+    <a href="describe-it.html">Try Variant B (describe-it) →</a>
+  </nav>
+</header>
+
+<p class="summary" id="summary" aria-live="polite">No criteria applied yet. Fill in where you need to be, then press Compute.</p>
+
+<div class="layout">
+  <div class="rail">
+
+    <section class="entry" id="entry-panel">
+      <h2 id="cards-heading" tabindex="-1">Where do you need to be?</h2>
+      <p class="hint">Enter each person's workplace, mode and time limit, and any amenities you care about, then press
+        Compute. This is a non-functional comparison prototype: the region it draws is a real, precomputed example
+        (Gate G4, computed 2026-11-03 from self-hosted Valhalla) chosen to match your anchors, not a live search over
+        your exact numbers.</p>
+      <form id="entry-form">
+        <fieldset class="fieldset">
+          <legend>Person 1</legend>
+          <div class="row">
+            <label for="p1-place">Works at (or lives near)</label>
+            <input id="p1-place" name="p1-place" type="text" list="g5a-places" required
+                   placeholder="Employer, landmark, store or town" autocomplete="off">
+          </div>
+          <div class="row cols-2">
+            <div>
+              <label for="p1-mode">Mode</label>
+              <select id="p1-mode"><option value="drive" selected>Drive</option><option value="bike">Bike</option><option value="walk">Walk</option></select>
+            </div>
+            <div>
+              <label for="p1-limit">Max minutes</label>
+              <input id="p1-limit" type="number" min="1" max="180" step="1" value="25">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>Person 2 <span class="inline-note">(leave blank if searching for one person)</span></legend>
+          <div class="row">
+            <label for="p2-place">Works at (or lives near)</label>
+            <input id="p2-place" name="p2-place" type="text" list="g5a-places"
+                   placeholder="Employer, landmark, store or town" autocomplete="off">
+          </div>
+          <div class="row cols-2">
+            <div>
+              <label for="p2-mode">Mode</label>
+              <select id="p2-mode"><option value="drive" selected>Drive</option><option value="bike">Bike</option><option value="walk">Walk</option></select>
+            </div>
+            <div>
+              <label for="p2-limit">Max minutes</label>
+              <input id="p2-limit" type="number" min="1" max="180" step="1" value="25">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>Amenities</legend>
+          <div id="amenity-rows"></div>
+          <button type="button" class="small" id="add-amenity-row">+ Add an amenity</button>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="primary" id="compute-btn">Compute</button>
+          <button type="button" class="small" id="clear-all">Clear all</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Criteria <span class="count" id="card-count"></span></h2>
+      <ul class="cards" id="cards"><li class="inline-note">No criteria yet.</li></ul>
+      <div class="add-row">
+        <button class="small" id="add-person" type="button">+ Add person</button>
+        <button class="small" id="add-amenity" type="button">+ Add amenity</button>
+      </div>
+    </section>
+
+    <div id="status" class="status"></div>
+
+    <div class="check-row">
+      <h2>Why is a place out?</h2>
+      <p class="inline-note">Tap outside the shaded region on the map, or choose a place here.</p>
+      <div class="row">
+        <label for="check-spot">Choose a place</label>
+        <select id="check-spot"></select>
+      </div>
+      <button class="small" id="check-btn" type="button">Check this place</button>
+    </div>
+
+    <div id="modlog" hidden></div>
+  </div>
+
+  <div class="mapwrap">
+    <div id="map" tabindex="0" aria-label="Map of the Research Triangle. Shows the region meeting your applied criteria once you press Compute."></div>
+    <div class="map-fixture-label" id="map-region-label" hidden></div>
+    <div class="whyout" id="whyout" hidden role="dialog" aria-labelledby="whyout-title"></div>
+  </div>
+</div>
+
+<p class="legend">
+  <span class="swatch region"></span> region meeting all applied criteria (real example, see footer) &nbsp;
+  <span class="swatch coverage"></span> prototype coverage area (dashed; places outside it are not supported here)
+</p>
+
+<datalist id="g5a-places"></datalist>
+
+<footer>
+  Gate G5a usability-comparison prototype — not the product. Map: MapLibre GL JS v3.6.2 (pinned,
+  cdn.jsdelivr.net/npm/maplibre-gl@3.6.2) · Tiles &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
+  contributors · Region geometry: real Gate G4 examples computed 2026-11-03 from self-hosted Valhalla, fixed
+  examples (not live). Everything else (place lookup, distance estimates) is scripted for this prototype, not
+  routed. See <a href="index.html">index</a> and <code>/docs/experiments/g5a-interaction.md</code>.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script src="fixtures.js"></script>
+<script src="regions.js"></script>
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var AMENITY_CATS = Object.keys(G5A.fixtures.categories);
+  var amenityRowSeq = 0;
+
+  function amenityRowHtml(id) {
+    var opts = AMENITY_CATS.map(function (k) {
+      return '<option value="' + k + '">' + G5A.fixtures.categories[k].label + '</option>';
+    }).join('');
+    return '<div class="amenity-row" data-row="' + id + '">' +
+      '<div><label for="am-cat-' + id + '">Amenity</label><select id="am-cat-' + id + '">' + opts + '</select></div>' +
+      '<div><label for="am-mode-' + id + '">Mode</label><select id="am-mode-' + id + '">' +
+        '<option value="walk" selected>Walk</option><option value="bike">Bike</option><option value="drive">Drive</option></select></div>' +
+      '<div><label for="am-limit-' + id + '">Max min</label><input id="am-limit-' + id + '" type="number" min="1" max="180" value="10"></div>' +
+      '<button type="button" class="small" data-remove-amenity="' + id + '" aria-label="Remove this amenity">✕</button>' +
+      '</div>';
+  }
+
+  document.getElementById('add-amenity-row').addEventListener('click', function () {
+    amenityRowSeq += 1;
+    var wrap = document.getElementById('amenity-rows');
+    var div = document.createElement('div');
+    div.innerHTML = amenityRowHtml(amenityRowSeq);
+    wrap.appendChild(div.firstChild);
+    document.getElementById('am-cat-' + amenityRowSeq).focus();
+  });
+
+  document.getElementById('amenity-rows').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-remove-amenity]');
+    if (!btn) { return; }
+    var row = btn.closest('[data-row]');
+    if (row) { row.remove(); }
+  });
+
+  function personCard(prefix, who) {
+    var place = document.getElementById(prefix + '-place').value.trim();
+    if (!place) { return null; }
+    var mode = document.getElementById(prefix + '-mode').value;
+    var limit = parseInt(document.getElementById(prefix + '-limit').value, 10) || 25;
+    var c = G5A.makeCard({ kind: 'person', who: who, mode: mode, limit: limit, unit: 'min', source: 'form' });
+    G5A.cardFromPlaceQuery(c, place);
+    return c;
+  }
+
+  function amenityCards() {
+    var out = [];
+    document.querySelectorAll('#amenity-rows [data-row]').forEach(function (row) {
+      var id = row.getAttribute('data-row');
+      var cat = document.getElementById('am-cat-' + id).value;
+      var mode = document.getElementById('am-mode-' + id).value;
+      var limit = parseInt(document.getElementById('am-limit-' + id).value, 10) || 10;
+      out.push(G5A.makeCard({ kind: 'amenity', category: cat, mode: mode, limit: limit, unit: 'min', source: 'form' }));
+    });
+    return out;
+  }
+
+  document.getElementById('entry-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var cards = [];
+    var p1 = personCard('p1', 'Person 1'); if (p1) { cards.push(p1); }
+    var p2 = personCard('p2', 'Person 2'); if (p2) { cards.push(p2); }
+    cards = cards.concat(amenityCards());
+    if (!cards.length) { return; }
+    G5A.replaceCards(cards);
+  });
+
+  document.getElementById('clear-all').addEventListener('click', function () {
+    G5A.clearAll('clear-all-button');
+    document.getElementById('entry-form').reset();
+    document.getElementById('amenity-rows').innerHTML = '';
+  });
+
+  var opts = G5A.init({ variant: 'A' });
+
+  if (opts.demo) {
+    document.getElementById('p1-place').value = G5A.DEMO_S1.people[0].place;
+    document.getElementById('p1-limit').value = G5A.DEMO_S1.people[0].limit;
+    document.getElementById('p2-place').value = G5A.DEMO_S1.people[1].place;
+    document.getElementById('p2-limit').value = G5A.DEMO_S1.people[1].limit;
+    document.getElementById('add-amenity-row').click();
+    document.getElementById('am-cat-1').value = G5A.DEMO_S1.amenities[0].category;
+    document.getElementById('am-mode-1').value = G5A.DEMO_S1.amenities[0].mode;
+    document.getElementById('am-limit-1').value = G5A.DEMO_S1.amenities[0].limit;
+    document.getElementById('entry-form').requestSubmit();
+    if (opts.spot) { setTimeout(function () { G5A.checkSpotById(opts.spot); }, 300); }
+  }
+})();
+</script>
+</body>
+</html>

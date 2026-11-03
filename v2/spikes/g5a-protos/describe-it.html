@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LocationFinder prototype — describe-it (Variant B)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <span class="brand">LocationFinder</span>
+    <span class="proto-tag">Prototype — Variant B: describe-it</span>
+    <span class="seed-tag" id="seed-tag" hidden>?seed=1 — seeded misparse ON</span>
+  </div>
+  <nav aria-label="Prototype navigation">
+    <a href="index.html">All prototypes</a> ·
+    <a href="address-first.html">Try Variant A (address-first) →</a>
+  </nav>
+</header>
+
+<p class="summary" id="summary" aria-live="polite">No criteria applied yet. Describe where you need to be, then press Understand.</p>
+
+<div class="layout">
+  <div class="rail">
+
+    <section class="entry" id="entry-panel">
+      <h2 id="cards-heading" tabindex="-1">Describe where you need to be</h2>
+      <p class="hint">Type one sentence at a time and press Understand. This box recognises exactly three scripted
+        sentence patterns — it is a string match, not an AI model. Anything else shows what it can read. This is a
+        non-functional comparison prototype: the region it draws is a real, precomputed example (Gate G4, computed
+        2026-11-03 from self-hosted Valhalla) chosen to match your anchors, not a live search over your exact
+        numbers.</p>
+      <form id="entry-form">
+        <div class="row">
+          <label for="describe-text">Describe where you need to be</label>
+          <textarea id="describe-text" placeholder="e.g. I drive to Downtown Durham in under 20 minutes."></textarea>
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" id="understand-btn">Understand</button>
+          <button type="button" class="small" id="clear-all">Clear all</button>
+        </div>
+      </form>
+      <p class="inline-note">Or try one of the three recognised patterns:</p>
+      <ul class="examples" id="examples"></ul>
+      <div id="describe-feedback" aria-live="polite"></div>
+    </section>
+
+    <section>
+      <h2>Criteria <span class="count" id="card-count"></span></h2>
+      <ul class="cards" id="cards"><li class="inline-note">No criteria yet.</li></ul>
+      <div class="add-row">
+        <button class="small" id="add-person" type="button">+ Add person</button>
+        <button class="small" id="add-amenity" type="button">+ Add amenity</button>
+      </div>
+    </section>
+
+    <div id="status" class="status"></div>
+
+    <div class="check-row">
+      <h2>Why is a place out?</h2>
+      <p class="inline-note">Tap outside the shaded region on the map, or choose a place here.</p>
+      <div class="row">
+        <label for="check-spot">Choose a place</label>
+        <select id="check-spot"></select>
+      </div>
+      <button class="small" id="check-btn" type="button">Check this place</button>
+    </div>
+
+    <div id="modlog" hidden></div>
+  </div>
+
+  <div class="mapwrap">
+    <div id="map" tabindex="0" aria-label="Map of the Research Triangle. Shows the region meeting your applied criteria once something is understood."></div>
+    <div class="map-fixture-label" id="map-region-label" hidden></div>
+    <div class="whyout" id="whyout" hidden role="dialog" aria-labelledby="whyout-title"></div>
+  </div>
+</div>
+
+<p class="legend">
+  <span class="swatch region"></span> region meeting all applied criteria (real example, see footer) &nbsp;
+  <span class="swatch coverage"></span> prototype coverage area (dashed; places outside it are not supported here)
+</p>
+
+<datalist id="g5a-places"></datalist>
+
+<footer>
+  Gate G5a usability-comparison prototype — not the product. Map: MapLibre GL JS v3.6.2 (pinned,
+  cdn.jsdelivr.net/npm/maplibre-gl@3.6.2) · Tiles &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
+  contributors · Region geometry: real Gate G4 examples computed 2026-11-03 from self-hosted Valhalla, fixed
+  examples (not live). The text box recognises exactly three scripted sentence patterns by string match — not an
+  AI model. Everything else (place lookup, distance estimates) is scripted for this prototype, not routed. See
+  <a href="index.html">index</a> and <code>/docs/experiments/g5a-interaction.md</code>.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script src="fixtures.js"></script>
+<script src="regions.js"></script>
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function understand() {
+    var text = document.getElementById('describe-text').value;
+    if (!text.trim()) { return; }
+    var result = G5A.parseDescription(text, { seed: G5A.isSeed() });
+    if (result.cards.length) { G5A.appendCards(result.cards); }
+    G5A.renderDescribeFeedback(result);
+  }
+
+  document.getElementById('entry-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    understand();
+  });
+
+  document.getElementById('clear-all').addEventListener('click', function () {
+    G5A.clearAll('clear-all-button');
+    document.getElementById('describe-text').value = '';
+    document.getElementById('describe-feedback').innerHTML = '';
+  });
+
+  var examplesEl = document.getElementById('examples');
+  G5A.EXAMPLES.forEach(function (ex, i) {
+    var li = document.createElement('li');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = ex;
+    btn.addEventListener('click', function () {
+      var ta = document.getElementById('describe-text');
+      ta.value = ex;
+      ta.focus();
+    });
+    li.appendChild(btn);
+    examplesEl.appendChild(li);
+  });
+
+  var opts = G5A.init({ variant: 'B' });
+  if (G5A.isSeed()) { document.getElementById('seed-tag').hidden = false; }
+
+  if (opts.demo) {
+    document.getElementById('describe-text').value = G5A.DEMO_S1.text;
+    understand();
+    if (opts.spot) { setTimeout(function () { G5A.checkSpotById(opts.spot); }, 300); }
+  }
+})();
+</script>
+</body>
+</html>
