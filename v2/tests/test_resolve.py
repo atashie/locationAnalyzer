@@ -233,3 +233,142 @@ def test_a_candidate_carries_an_address_so_a_chooser_can_distinguish_duplicates(
     r = idx.resolve("Harris Teeter")
     assert r.outcome == "ambiguous"
     assert {c.place.address for c in r.candidates} == {"1234 Main St", "90 Capital Blvd"}
+
+
+# ---------------------------------------------------------------- Codex pass-10 regressions
+
+def test_a_transport_stop_named_after_a_place_loses_a_tie_to_the_place():
+    """Pass-10 H1. `Duke Hospital` resolved confidently to `node/6509747409` — a bus platform
+    (`highway=bus_stop`, `public_transport=platform`, `network=Duke`) sitting at the hospital. It
+    is a reference to the hospital, not the hospital. Demoted on a tie, never excluded, because a
+    transit anchor is a legitimate query."""
+    idx = PlaceIndex([
+        P("Duke Hospital", -78.9375, 36.0076, sid="node/stop", category="bus_stop"),
+        P("Duke Hospital", -78.9380, 36.0070, sid="node/hosp", category="hospital"),
+    ])
+    r = idx.resolve("Duke Hospital")
+    assert r.candidates[0].place.category == "hospital"
+    # a stop on its own still resolves
+    only = PlaceIndex([P("Duke Hospital", -78.9375, 36.0076, sid="s", category="bus_stop")])
+    assert only.resolve("Duke Hospital").anchor is not None
+
+
+def test_a_leading_locality_does_not_hand_the_query_to_a_station():
+    """Pass-10 H2, reproduced. "Durham Whole Foods" resolved to **"Durham", the Amtrak station**,
+    because the subset branch gave a one-word name a flat 0.85 however much of the query it
+    ignored."""
+    idx = PlaceIndex([
+        P("Durham", -78.9065, 35.9975, sid="node/station", category="station", locality="Durham"),
+        P("Whole Foods Market", -78.9180, 36.0090, sid="node/wf", category="supermarket",
+          locality="Durham"),
+    ])
+    for q in ("Durham Whole Foods", "Whole Foods Durham", "the Whole Foods in Durham"):
+        r = idx.resolve(q)
+        assert r.candidates, f"{q!r} found nothing"
+        assert r.candidates[0].place.category == "supermarket", f"{q!r} -> {r.candidates[0].place.name}"
+
+
+def test_a_subset_match_is_scored_by_how_much_of_the_query_it_covers():
+    idx = PlaceIndex([P("Durham", -78.9, 36.0, sid="a"), P("Durham Bulls Ballpark", -78.9, 36.0,
+                                                           sid="b")])
+    one_word = idx.resolve("Durham Bulls Ballpark Something")
+    scores = {c.place.source_id: c.score for c in one_word.candidates}
+    assert scores.get("b", 0) > scores.get("a", 0), "the fuller name must outrank the single word"
+
+
+def test_the_presentation_limit_cannot_turn_ambiguous_into_resolved():
+    """Pass-10 H3. `[:limit]` was applied before the decision, so `limit=1` produced a confident
+    answer from an ambiguous pair."""
+    idx = PlaceIndex([P("Shop", -79.0, 35.9, sid="a"), P("Shop", -78.9, 35.9, sid="b")])
+    for lim in (1, 2, 8):
+        r = idx.resolve("Shop", limit=lim)
+        assert r.outcome == "ambiguous", f"limit={lim} changed the outcome"
+        assert len(r.candidates) == min(lim, 2)
+        assert r.n_matched == 2, "the caller can see how many matched before truncation"
+    with pytest.raises(ValueError, match="at least 1"):
+        idx.resolve("Shop", limit=0)
+
+
+def test_a_bank_and_its_own_atm_are_not_merged():
+    """Pass-10 H4. Name plus 60 m merged two *different* OSM records — a bank and its ATM 9 m
+    apart — and the ambiguity vanished. Merging now needs cross-source agreement and compatible
+    categories; two records from one source are two records."""
+    idx = PlaceIndex([
+        P("Acme", -79.0, 35.9, source="osm", sid="bank", category="bank"),
+        P("Acme", -79.0001, 35.9, source="osm", sid="atm", category="atm"),
+    ])
+    r = idx.resolve("Acme")
+    assert len(r.candidates) == 2 and r.outcome == "ambiguous"
+
+    # a genuine cross-source duplicate still merges
+    dup = PlaceIndex([
+        P("Acme", -79.0, 35.9, source="overture", sid="ovt", category="bank"),
+        P("Acme", -79.00001, 35.9, source="osm", sid="osm/1", category="bank"),
+    ])
+    m = dup.resolve("Acme")
+    assert len(m.candidates) == 1 and m.candidates[0].corroborated_by == ("overture",)
+
+    # the cross-source form of the same defect: a subsidiary never merges with its parent
+    cross = PlaceIndex([
+        P("Acme", -79.0, 35.9, source="overture", sid="ovt", category="bank"),
+        P("Acme", -79.00001, 35.9, source="osm", sid="osm/1", category="atm"),
+    ])
+    assert len(cross.resolve("Acme").candidates) == 2
+
+
+def test_categories_are_not_compared_across_taxonomies():
+    """My first H4 fix demanded *equal* categories and broke real de-duplication at once: the one
+    Harris Teeter in Carrboro arrives as OSM `supermarket` and Overture `grocery_store`, stopped
+    merging, and "Harris Teeter Carrboro" became ambiguous between a single shop counted twice.
+    The two sources use different vocabularies, so only the subsidiary/parent distinction blocks a
+    merge."""
+    same_shop = PlaceIndex([
+        P("Harris Teeter", -79.0710, 35.9124, source="osm", sid="osm/1",
+          category="supermarket", locality="Carrboro"),
+        P("Harris Teeter", -79.07098, 35.91235, source="overture", sid="ovt",
+          category="grocery_store", locality="Carrboro"),
+        P("Harris Teeter", -78.64, 35.78, source="osm", sid="osm/2",
+          category="supermarket", locality="Raleigh"),
+    ])
+    r = same_shop.resolve("Harris Teeter Carrboro")
+    assert r.outcome == "resolved", "one Carrboro shop, counted once"
+    assert r.anchor.place.locality == "Carrboro"
+    assert r.anchor.corroborated_by == ("overture",)
+
+
+def test_a_locality_match_must_be_unique_in_the_leading_tier_not_just_beat_the_runner_up():
+    """Pass-10 M1. `_decide` compared the leader only against the *second* candidate, and score
+    sorts before locality — so a third candidate in the same tier could also match the locality
+    and nothing had actually been disambiguated."""
+    idx = PlaceIndex([
+        P("Acme", -79.0, 35.9, sid="a", locality="Durham"),
+        P("Acme", -78.9, 35.9, sid="b", locality="Raleigh"),
+        P("Acme", -78.8, 35.9, sid="c", locality="Durham"),
+    ])
+    assert idx.resolve("Acme Durham").outcome == "ambiguous", "two Durham candidates tie"
+    one = PlaceIndex([
+        P("Acme", -79.0, 35.9, sid="a", locality="Durham"),
+        P("Acme", -78.9, 35.9, sid="b", locality="Raleigh"),
+    ])
+    assert one.resolve("Acme Durham").outcome == "resolved"
+
+
+def test_arrow_style_common_names_become_aliases():
+    """Pass-10 M4. `names.common` is a `map<string,string>`, which Arrow gives pandas as a list of
+    key/value tuples — so a dict-only reader dropped every alias silently."""
+    from locfinder.places.resolve import _common_names
+    assert _common_names({"primary": "X", "common": {"en": "Alias"}}) == ["Alias"]
+    assert _common_names({"primary": "X", "common": [("en", "Alias")]}) == ["Alias"]
+    assert _common_names({"primary": "X", "common": [{"key": "en", "value": "Alias"}]}) == ["Alias"]
+    assert _common_names({"primary": "X", "common": None}) == []
+
+
+def test_missing_values_do_not_abort_the_index_build():
+    """Pass-10 M5. `len(addrs)` raised on a scalar NaN, and `pandas.NA` was stringified into the
+    literal place name `<NA>`."""
+    from locfinder.places.resolve import _as_sequence, _first, _missing
+    assert _as_sequence(float("nan")) == [] and _as_sequence(None) == []
+    assert _as_sequence([{"locality": "Durham"}]) == [{"locality": "Durham"}]
+    assert _first(float("nan"), "Real") == "Real"
+    assert _first("<NA>", "Real") == "Real"
+    assert _missing(float("nan")) and _missing(None) and not _missing("x")

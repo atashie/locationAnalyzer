@@ -122,3 +122,63 @@ Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_
 
 **3 of 5 graded queries land on the right place.** Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
 
+
+### S2.1 correctness, not confidence (2026-11-04 13:17:36)
+
+`s2_resolver_fixtures.py` reports 10/10 candidates and 7 single answers. That measures **confidence**. This checks the answers against the independent spot-check reference points, with a deliberately coarse 800 m threshold — the references are not POI centroids, so this separates *same place* from *somewhere else entirely*.
+
+| query | outcome | top candidate | category | distance from reference | verdict |
+|---|---|---|---|---|---|
+| `Whole Foods, Chapel Hill NC` | ambiguous | Whole Foods Market | supermarket | — | **ungraded** |
+| `Whole Foods Durham` | ambiguous | Whole Foods Market | supermarket | — | **ungraded** |
+| `Harris Teeter Carrboro` | ambiguous | Harris Teeter | supermarket | — | **ungraded** |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | 973 m | **right place NOT offered** |
+| `Duke Hospital` | resolved | Duke Hospital | platform | 56 m | **correct** |
+| `RTP` | ambiguous | Aventura RTP | historic_site | 14056 m | **right place NOT offered** |
+| `Fidelity Investments Durham NC` | resolved | Fidelity Investments | broker | — | **ungraded** |
+| `Southpoint` | resolved | Southpoint | dessert_shop | 732 m | **correct** |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | 227 m | **correct** |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
+
+**3 of 5 graded queries land on the right place.** Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
+
+
+### S2.1 correctness, not confidence (2026-11-04 13:19:09)
+
+`s2_resolver_fixtures.py` reports 10/10 candidates and 7 single answers. That measures **confidence**. This checks the answers against the independent spot-check reference points, with a deliberately coarse 800 m threshold — the references are not POI centroids, so this separates *same place* from *somewhere else entirely*.
+
+| query | outcome | top candidate | category | distance from reference | verdict |
+|---|---|---|---|---|---|
+| `Whole Foods, Chapel Hill NC` | ambiguous | Whole Foods Market | supermarket | — | **ungraded** |
+| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | — | **ungraded** |
+| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | — | **ungraded** |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | 973 m | **right place NOT offered** |
+| `Duke Hospital` | resolved | Duke Hospital | platform | 56 m | **correct** |
+| `RTP` | ambiguous | Aventura RTP | historic_site | 14056 m | **right place NOT offered** |
+| `Fidelity Investments Durham NC` | resolved | Fidelity Investments | broker | — | **ungraded** |
+| `Southpoint` | resolved | Southpoint | dessert_shop | 732 m | **correct** |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | 227 m | **correct** |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
+
+**3 of 5 graded queries land on the right place.** Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
+
+
+### S2.1 correctness, not confidence (2026-11-04 13:19:43)
+
+`s2_resolver_fixtures.py` reports 10/10 candidates and 7 single answers. That measures **confidence**. This checks the answers against the independent spot-check reference points, with a deliberately coarse 800 m threshold — the references are not POI centroids, so this separates *same place* from *somewhere else entirely*.
+
+| query | outcome | top candidate | category | distance from reference | verdict |
+|---|---|---|---|---|---|
+| `Whole Foods, Chapel Hill NC` | ambiguous | Whole Foods Market | supermarket | — | **ungraded** |
+| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | — | **ungraded** |
+| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | — | **ungraded** |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | 973 m | **right place NOT offered** |
+| `Duke Hospital` | resolved | Duke Hospital | platform | 56 m | **WRONG ENTITY (a stop or subsidiary feature, not the place)** |
+| `RTP` | ambiguous | Aventura RTP | historic_site | 14056 m | **right place NOT offered** |
+| `Fidelity Investments Durham NC` | resolved | Fidelity Investments | broker | — | **ungraded** |
+| `Southpoint` | resolved | Southpoint | dessert_shop | 732 m | **correct** |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | 227 m | **correct** |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
+
+**2 of 5 graded queries land on the right place**, and 1 resolve confidently onto a feature that merely *refers* to a place (a stop, a platform, an ATM) rather than the place itself — a distance test calls those correct, which is why identity is checked separately. Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
+

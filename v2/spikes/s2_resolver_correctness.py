@@ -26,7 +26,7 @@ import geopandas as gpd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import ACCEPTED_PLACES, METRO, METRO_DIR, append_results, stamp  # noqa: E402
-from locfinder.places.resolve import build_metro_index  # noqa: E402
+from locfinder.places.resolve import build_metro_index, is_subsidiary_feature  # noqa: E402
 from s2_resolver_fixtures import FIXTURES  # noqa: E402
 from spotcheck_engines import PLACES  # noqa: E402
 
@@ -67,8 +67,14 @@ def main() -> None:
             if r.outcome == "ambiguous":
                 # Ambiguity is a legitimate answer; grade whether the RIGHT place is offered at all.
                 near = [c for c in r.candidates
-                        if metres(c.place.lon, c.place.lat, rlon, rlat) <= SAME_PLACE_M]
+                        if metres(c.place.lon, c.place.lat, rlon, rlat) <= SAME_PLACE_M
+                        and not is_subsidiary_feature(c.place)]
                 verdict = "right place offered" if near else "right place NOT offered"
+            elif is_subsidiary_feature(top.place):
+                # Distance alone is the wrong criterion, which Codex pass-10 H1 pointed out about my
+                # own grading: "Duke Hospital" resolves to a bus platform 56 m from the hospital, so
+                # a distance test calls it correct while the entity is wrong.
+                verdict = "WRONG ENTITY (a stop or subsidiary feature, not the place)"
             else:
                 verdict = "correct" if dist <= SAME_PLACE_M else "WRONG PLACE"
         rows.append({
@@ -86,6 +92,9 @@ def main() -> None:
 
     graded = [r for r in rows if r["verdict"] != "ungraded"]
     correct = [r for r in graded if r["verdict"] in ("correct", "right place offered")]
+    # Also report, for every resolved answer, whether the chosen feature type is one that merely
+    # *refers* to a place. A confident answer on a platform or an ATM is not an anchor.
+    refs = [r for r in rows if r["verdict"].startswith("WRONG ENTITY")]
     print(f"\ngraded {len(graded)} of {len(rows)} (only queries with a written-down intended "
           f"answer can be graded); {len(correct)} correct", flush=True)
     for r in graded:
@@ -109,7 +118,10 @@ def main() -> None:
         lines.append(f"| `{r['query']}` | {r['outcome']} | {r['top'] or '—'} | "
                      f"{r['category'] or '—'} | {dm} | **{r['verdict']}** |")
     lines += [
-        "", f"**{len(correct)} of {len(graded)} graded queries land on the right place.** Only "
+        "", f"**{len(correct)} of {len(graded)} graded queries land on the right place**, and "
+        f"{len(refs)} resolve confidently onto a feature that merely *refers* to a place (a stop, "
+        "a platform, an ATM) rather than the place itself — a distance test calls those correct, "
+        "which is why identity is checked separately. Only "
         "queries whose intended answer was written down beforehand can be graded; the rest are "
         "printed for reading rather than scored, because a resolver cannot be marked against an "
         "answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right "

@@ -70,7 +70,15 @@ def _state_path(raw: Path) -> Path:
 
 
 def fetch_raw(raw: Path, bbox: str, release: str) -> Path:
-    """Download, or reuse a raw file **only** if it was fetched for this same release and bbox."""
+    """Download, or reuse a raw file **only** if it was fetched for this same release and bbox.
+
+    Downloads to a **temporary file and commits atomically**, which is the fix for Codex pass-10
+    H5. The first version wrote straight over `raw` while the old state file stayed valid, so an
+    interrupted download left the new bytes on disk still labelled with the *previous* release —
+    and the next run for that previous release happily reused them. Writing elsewhere and moving
+    into place means `raw` and its state are only ever replaced together, and a failure leaves the
+    previous pair untouched.
+    """
     state = _state_path(raw)
     want = {"release": release, "bbox": bbox, "type": "building"}
     if raw.exists() and state.exists():
@@ -82,10 +90,20 @@ def fetch_raw(raw: Path, bbox: str, release: str) -> Path:
               f"{have.get('bbox')}, not {release} / {bbox}")
     elif raw.exists():
         print(f"re-downloading: {raw.name} has no state file, so its release is unknown")
+    tmp = raw.with_name(raw.name + ".partial")
+    tmp.unlink(missing_ok=True)
     cmd = [sys.executable, "-m", "overturemaps.cli", "download", f"--bbox={bbox}",
-           "-f", "geoparquet", "--type=building", "-o", str(raw), "--release", release]
+           "-f", "geoparquet", "--type=building", "-o", str(tmp), "--release", release]
     print("running:", " ".join(cmd), flush=True)
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    except BaseException:
+        # Includes KeyboardInterrupt: a partial file must never be promoted.
+        tmp.unlink(missing_ok=True)
+        raise
+    # Commit: state is removed first, so no window exists in which new bytes carry an old label.
+    state.unlink(missing_ok=True)
+    tmp.replace(raw)
     state.write_text(json.dumps(want, indent=1), encoding="utf-8")
     return raw
 

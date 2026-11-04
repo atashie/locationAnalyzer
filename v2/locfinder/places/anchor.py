@@ -106,11 +106,21 @@ class CoreReachability:
 
 
 def node_coordinates(edge_index: EdgeIndex) -> dict[int, tuple[float, float]]:
-    """Node index -> (x, y), read back from the geometries the index was built from."""
+    """Node index -> (x, y), read back from the geometries the index was built from.
+
+    Takes the **smallest** coordinate rather than the first one seen (Codex pass-10 L1). Two edges
+    can disagree about a node's position by up to `sqrt(2) * _NODE_SNAP_M` when `expansion.py`
+    merges nearby endpoints into one bucket, and `setdefault` made the answer depend on edge order
+    — enough to flip a cap or barrier decision. Zero disagreements were found on the real Triangle
+    and slice indexes, so this removes a latent order dependence rather than a measured error.
+    """
     out: dict[int, tuple[float, float]] = {}
     for i, g in enumerate(edge_index.geoms):
-        out.setdefault(int(edge_index.start_idx[i]), tuple(g.coords[0]))
-        out.setdefault(int(edge_index.end_idx[i]), tuple(g.coords[-1]))
+        for node, xy in ((int(edge_index.start_idx[i]), tuple(g.coords[0])),
+                         (int(edge_index.end_idx[i]), tuple(g.coords[-1]))):
+            prev = out.get(node)
+            if prev is None or xy < prev:
+                out[node] = xy
     return out
 
 
@@ -142,7 +152,13 @@ class AnchorFix:
     node: int | None
     reason: str
     barriers_checked: bool
+    #: Every unreachable candidate in the radius, including ones *further* than the node chosen.
+    #: This is a diagnostic, **not** a count of adjustments -- `s2_anchor_routability.py` used it as
+    #: a proxy for one and published a false "changed once" conclusion (Codex pass-10 M2).
     rejected_unreachable: int = 0
+    #: Unreachable candidates strictly **nearer** than the node chosen. This is the causal count:
+    #: it is non-zero exactly when directed reachability changed the answer.
+    nearer_unreachable: int = 0
     rejected_by_barrier: int = 0
     #: True when every core-reachable candidate was behind a barrier and we took the nearest
     #: anyway. The anchor is usable; its straight-line approach is not the real one.
@@ -180,7 +196,16 @@ def fix_anchor(
     node_xy = node_coordinates(edge_index) if node_xy is None else node_xy
     here = shapely.points(x, y)
     # Every edge whose geometry comes within the cap, then that edge's endpoint nodes as candidates.
-    near = edge_index.tree.query(shapely.buffer(here, max_nudge_m))
+    # `STRtree.query` compares **envelopes**, so a diagonal edge whose bounding box overlaps the
+    # buffer can be far outside it -- Codex pass-10 M3 found one 197.99 m away reported as inside a
+    # 150 m cap. Filter by true point-to-line distance.
+    envelope_hits = np.asarray(edge_index.tree.query(shapely.buffer(here, max_nudge_m)),
+                               dtype=np.int64)
+    if envelope_hits.size:
+        d_edge = shapely.distance(here, edge_index.geoms[envelope_hits])
+        near = envelope_hits[np.asarray(d_edge) <= max_nudge_m]
+    else:
+        near = envelope_hits
     cands: dict[int, float] = {}
     nearest_node_m = float("inf")
     for i in np.asarray(near, dtype=np.int64):
@@ -196,7 +221,7 @@ def fix_anchor(
         # A road may be inside the cap while both its junctions are outside it — a long rural edge
         # with the anchor near its middle. Saying "off network" there blames the data for a limit
         # that is ours: a destination has to be a graph node for the arrival search.
-        if len(np.asarray(near)) > 0:
+        if near.size > 0:
             return AnchorFix(
                 status="node_too_far", x=None, y=None, requested_x=x, requested_y=y,
                 moved_m=nearest_node_m, node=None, barriers_checked=barriers is not None,
@@ -255,5 +280,5 @@ def fix_anchor(
     return AnchorFix(status="nudged" if nudged else "ok", x=node_xy[node][0], y=node_xy[node][1],
                      requested_x=x, requested_y=y, moved_m=dist, node=node, reason=reason,
                      barriers_checked=barriers is not None,
-                     rejected_unreachable=n_unreachable, rejected_by_barrier=n_barrier,
-                     crossed_barrier=crossed)
+                     rejected_unreachable=n_unreachable, nearer_unreachable=nearer_unreachable,
+                     rejected_by_barrier=n_barrier, crossed_barrier=crossed)

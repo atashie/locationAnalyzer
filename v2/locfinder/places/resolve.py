@@ -78,10 +78,30 @@ SCORE_FLOOR = 0.45
 #: look like they are working.
 TIEBREAK_SOURCE_ORDER = ("osm", "overture")
 
+#: Feature types that are a *reference to* a place rather than the place itself. A bus platform
+#: named "Duke Hospital" is how you get to the hospital, not the hospital — and that is exactly
+#: what the resolver confidently returned for `Duke Hospital` before this existed (Codex pass-10
+#: H1: `node/6509747409`, `highway=bus_stop`, `public_transport=platform`, `network=Duke`). They
+#: are **demoted on a tie, never excluded**, because a transit anchor is a legitimate query.
+REFERENCE_FEATURE_TYPES = frozenset({
+    "bus_stop", "platform", "station", "stop_position", "tram_stop", "halt", "bus_station",
+})
+
+#: Features that sit inside or beside a named parent and borrow its name. These must never be
+#: merged with a non-subsidiary record, which is the cross-source form of the bank-and-its-ATM
+#: collapse (pass-10 H4). Categories are otherwise **not** compared, because the two sources use
+#: different vocabularies and demanding equality broke real de-duplication.
+SUBSIDIARY_FEATURE_TYPES = REFERENCE_FEATURE_TYPES | frozenset({
+    "atm", "vending_machine", "parking", "parking_entrance", "parking_space", "bicycle_parking",
+    "charging_station", "fuel", "post_box", "toilets", "pharmacy_counter", "entrance",
+})
+
 #: Trailing region words a user types that carry no place information inside one metro.
 _REGION_NOISE = frozenset({
     "nc", "n c", "north", "carolina", "north carolina", "usa", "us", "united states",
 })
+#: Words that join a name to a locality and belong to neither.
+_CONNECTIVES = frozenset({"the", "in", "at", "on", "near", "of", "a"})
 _PUNCT = re.compile(r"[^\w\s]+", re.UNICODE)
 _WS = re.compile(r"\s+")
 
@@ -151,6 +171,9 @@ class Resolution:
     query: str
     outcome: str                        # resolved | ambiguous | not_found
     candidates: tuple[Candidate, ...] = ()
+    #: How many candidates matched before the presentation limit, so a caller can say "and N more"
+    #: instead of silently hiding them.
+    n_matched: int = 0
 
     @property
     def anchor(self) -> Candidate | None:
@@ -171,8 +194,12 @@ def _score(query_tokens: list[str], text: str, *, kind: str) -> tuple[float, str
         # every typed word appears in the name: "southpoint" in "the streets at southpoint"
         return base * (0.55 + 0.35 * len(q) / len(c)), f"{kind}:contains"
     if c <= q:
-        # the name is a subset of what was typed: the extra words are usually a locality
-        return base * 0.85, f"{kind}:subset"
+        # The name is a subset of what was typed. A flat score here was a serious defect
+        # (Codex pass-10 H2): "Durham Whole Foods" resolved confidently to **"Durham", the Amtrak
+        # station**, because a one-word name scored 0.85 however much of the query it ignored.
+        # Scale by the share of the query the name actually accounts for, so a name covering one
+        # word of three cannot outrank one covering all three.
+        return base * 0.85 * (len(c) / len(q)), f"{kind}:subset"
     if normalise(text).startswith(" ".join(query_tokens)):
         return base * 0.75, f"{kind}:prefix"
     inter = len(q & c)
@@ -203,16 +230,32 @@ class PlaceIndex:
         return frozenset(self._localities)
 
     def _split_locality(self, tokens: list[str]) -> tuple[list[str], list[str]]:
-        """Separate trailing words that name a locality in this index from the place name itself.
+        """Separate words that name a locality in this index from the place name itself.
 
-        Only a *trailing* run is taken, and only if something is left over: "Durham" alone must
-        stay a place query, not become an empty name with a locality hint.
+        A **leading** locality counts too: "Durham Whole Foods" is as natural as "Whole Foods
+        Durham", and handling only the trailing form is what let the Amtrak station win (pass-10
+        H2). Connective words between the two are dropped, so "the Whole Foods in Durham" parses
+        rather than returning nothing.
+
+        Only ever a prefix or a suffix, and only if something is left over: "Durham" alone must stay
+        a place query, not become an empty name with a locality hint that matches everything there.
         """
         for cut in range(1, len(tokens)):
-            tail = " ".join(tokens[cut:])
-            if tail in self._localities:
-                return tokens[:cut], tokens[cut:]
+            if " ".join(tokens[cut:]) in self._localities:
+                return self._strip_connectives(tokens[:cut]), tokens[cut:]
+        for cut in range(len(tokens) - 1, 0, -1):
+            if " ".join(tokens[:cut]) in self._localities:
+                return self._strip_connectives(tokens[cut:]), tokens[:cut]
         return tokens, []
+
+    @staticmethod
+    def _strip_connectives(tokens: list[str]) -> list[str]:
+        out = list(tokens)
+        while out and out[0] in _CONNECTIVES:
+            out.pop(0)
+        while out and out[-1] in _CONNECTIVES:
+            out.pop()
+        return out or list(tokens)
 
     def resolve(self, query: str, *, limit: int = 8) -> Resolution:
         raw = strip_region_noise(_tokens(query))
@@ -251,35 +294,63 @@ class PlaceIndex:
 
         if not scored:
             return Resolution(query=query, outcome="not_found")
+        if limit < 1:
+            raise ValueError("limit must be at least 1")
         scored.sort(key=_rank_key)
-        merged = _merge_corroborating(scored)[:limit]
-        return Resolution(query=query, outcome=_decide(merged, bool(locality)),
-                          candidates=tuple(merged))
+        merged = _merge_corroborating(scored)
+        # Decide on the COMPLETE ranking, then truncate for presentation. Deciding after the cut
+        # let `limit=1` turn an ambiguous pair into a confident answer (Codex pass-10 H3).
+        outcome = _decide(merged, bool(locality))
+        return Resolution(query=query, outcome=outcome, candidates=tuple(merged[:limit]),
+                          n_matched=len(merged))
+
+
+def is_reference_feature(place: "Place") -> bool:
+    """A stop or platform named after somewhere else, rather than that place."""
+    return (place.category or "") in REFERENCE_FEATURE_TYPES
+
+
+def is_subsidiary_feature(place: "Place") -> bool:
+    """A feature that sits inside or beside a named parent and borrows its name — an ATM at a bank,
+    a platform at a hospital, a car park at a mall. Never merged with a non-subsidiary record,
+    however close and however similarly named."""
+    return (place.category or "") in SUBSIDIARY_FEATURE_TYPES
 
 
 def _rank_key(c: Candidate):
-    """Name score first, then a locality match, then source preference, then a stable name."""
+    """Name score, then locality, then *not* being a transport stop, then source, then the name.
+
+    The transport demotion is deliberately narrow. It is not an inference about what the user
+    meant — that would need a query-intent model this does not have — but the observation that a
+    platform named "Duke Hospital" is a reference to the hospital. On a tie the hospital wins; if
+    the stop is the only candidate it still resolves, because a transit anchor is a real query.
+    """
     try:
         src = TIEBREAK_SOURCE_ORDER.index(c.place.source)
     except ValueError:
         src = len(TIEBREAK_SOURCE_ORDER)
-    return (-c.score, not c.locality_match, src, c.place.name, c.place.source_id)
+    return (-c.score, not c.locality_match, is_reference_feature(c.place), src,
+            c.place.name, c.place.source_id)
 
 
 def _decide(candidates: list[Candidate], had_locality: bool) -> str:
     """`resolved` only when one candidate is clearly best.
 
-    A typed locality is decisive when exactly one candidate in the leading score tier matches it:
-    "Harris Teeter Carrboro" names one shop even though four others match the name exactly. Without
-    that rule the margin test alone called it ambiguous and buried the right answer.
+    A typed locality is decisive when **exactly one candidate in the leading score tier** matches
+    it: "Harris Teeter Carrboro" names one shop even though four others match the name exactly.
+    Comparing only the leader against the *second* candidate was not enough (Codex pass-10 M1) —
+    score sorts before locality, so a third candidate in the same tier can match the locality too,
+    and then nothing has been disambiguated.
     """
     if not candidates:
         return "not_found"
     if len(candidates) == 1:
         return "resolved"
     lead, second = candidates[0], candidates[1]
-    if had_locality and lead.locality_match and not second.locality_match:
-        return "resolved"
+    if had_locality and lead.locality_match:
+        tier = [c for c in candidates if lead.score - c.score < AMBIGUITY_MARGIN]
+        if sum(1 for c in tier if c.locality_match) == 1:
+            return "resolved"
     if lead.score - second.score >= AMBIGUITY_MARGIN:
         return "resolved"
     return "ambiguous"
@@ -294,18 +365,46 @@ def _metres_between(a: Place, b: Place) -> float:
     return math.hypot(dx, dy)
 
 
+def _mergeable(a: Place, b: Place) -> bool:
+    """Is this the same physical place seen twice, rather than two places sharing a name?
+
+    Two conditions, and the second took two attempts to get right.
+
+    **Different sources.** Cross-source agreement is the evidence that justifies collapsing two
+    records into one; two records from the same source are two records. This alone kills the case
+    Codex pass-10 H4 demonstrated: a bank and its own ATM 9 m apart, both OSM, both called Acme,
+    which merged into the ATM and made the ambiguity vanish.
+
+    **Not a subsidiary paired with its parent.** The first fix also demanded *equal* categories,
+    which was wrong and broke real de-duplication immediately: the two sources use different
+    vocabularies, so the single Harris Teeter in Carrboro arrives as OSM `supermarket` and Overture
+    `grocery_store` and stopped merging — which then made "Harris Teeter Carrboro" ambiguous
+    between one shop counted twice. Categories are not comparable across taxonomies. What *is*
+    comparable is whether a feature is the kind that sits inside or beside a named parent and
+    borrows its name, so only that distinction blocks a merge.
+    """
+    if a.source == b.source:
+        return False
+    if is_subsidiary_feature(a) != is_subsidiary_feature(b):
+        return False
+    return _metres_between(a, b) <= CORROBORATION_M
+
+
 def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
     """Collapse the same place found in two sources, preferring the OSM record.
 
     OSM wins because its geometry is the ODbL truth and it is the contributable one (decision 17);
     the other source is recorded as corroboration rather than discarded, since appearing in both is
-    a trust signal.
+    a trust signal. Candidates are grouped by normalised name first, so the scan no longer compares
+    every candidate against every other one regardless of name.
     """
     out: list[Candidate] = []
+    by_name: dict[str, list[int]] = {}
     for cand in scored:
-        for j, kept in enumerate(out):
-            same_name = normalise(kept.place.name) == normalise(cand.place.name)
-            if same_name and _metres_between(kept.place, cand.place) <= CORROBORATION_M:
+        key = normalise(cand.place.name)
+        for j in by_name.get(key, ()):
+            kept = out[j]
+            if _mergeable(kept.place, cand.place):
                 sources = set(kept.corroborated_by) | {cand.place.source}
                 winner = kept
                 if kept.place.source != "osm" and cand.place.source == "osm":
@@ -319,6 +418,7 @@ def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
                                    locality_match=kept.locality_match or cand.locality_match)
                 break
         else:
+            by_name.setdefault(key, []).append(len(out))
             out.append(cand)
     out.sort(key=_rank_key)
     return out
@@ -342,24 +442,63 @@ def pin(lon: float, lat: float, *, label: str = "dropped pin") -> Candidate:
 # Both loaders bound by the metro's **routing** bbox, for the reason in the module docstring.
 # ---------------------------------------------------------------------------------------------
 
+def _missing(v) -> bool:
+    """Is this a *scalar* missing value?
+
+    Deliberately not `pandas.isna`, which returns an array for a list-like field and then raises
+    when that array is used as a condition. `pandas.NA` is recognised by name so this module does
+    not import pandas.
+    """
+    if v is None:
+        return True
+    if isinstance(v, float) and v != v:                      # NaN
+        return True
+    return type(v).__name__ == "NAType"
+
+
 def _first(*values):
+    """First usable string. Recognises `pandas.NA` and NaN as missing (Codex pass-10 M5: `pd.NA`
+    was being stringified into the literal name `<NA>`)."""
     for v in values:
-        if v is None:
+        if _missing(v):
             continue
         s = str(v).strip()
-        if s and s.lower() not in ("nan", "none"):
+        if s and s.lower() not in ("nan", "none", "<na>"):
             return s
     return None
 
 
+def _as_sequence(v) -> list:
+    """A list-like nested field as a list, or empty. Guards the `len()`/indexing that a scalar
+    NaN turns into a TypeError (pass-10 M5)."""
+    if _missing(v):
+        return []
+    if isinstance(v, (str, bytes, dict)):
+        return []
+    try:
+        return list(v)
+    except TypeError:
+        return []
+
+
 def _common_names(names) -> list[str]:
-    """Overture's `names.common` is a language map; keep the values as aliases."""
+    """Overture's `names.common` is a `map<string,string>`, which Arrow hands to pandas as a
+    **list of key/value tuples**, not a dict — so a dict-only reader silently dropped every alias
+    (Codex pass-10 M4). Both forms are accepted."""
     if not isinstance(names, dict):
         return []
     common = names.get("common")
     if isinstance(common, dict):
-        return [str(v) for v in common.values() if v]
-    return []
+        return [str(v) for v in common.values() if not _missing(v)]
+    out = []
+    for item in _as_sequence(common):
+        if isinstance(item, dict):
+            val = item.get("value", item.get("1"))
+            if not _missing(val):
+                out.append(str(val))
+        elif isinstance(item, (tuple, list)) and len(item) == 2 and not _missing(item[1]):
+            out.append(str(item[1]))
+    return out
 
 
 def from_overture(gdf, *, bbox=None) -> list[Place]:
@@ -381,8 +520,8 @@ def from_overture(gdf, *, bbox=None) -> list[Place]:
         if not primary and not brand:
             continue
         locality = address = None
-        addrs = row.get("addresses")
-        if addrs is not None and len(addrs):
+        addrs = _as_sequence(row.get("addresses"))
+        if addrs:
             a0 = addrs[0]
             if isinstance(a0, dict):
                 locality = _first(a0.get("locality"))
@@ -417,8 +556,12 @@ def from_osm(gdf, *, bbox=None, licence: str = "ODbL-1.0") -> list[Place]:
         if not name and not brand:
             continue
         aliases = tuple(a for a in (_first(row.get(c)) for c in alias_cols) if a)
+        # `highway`, `public_transport` and `railway` were missing, so a bus platform arrived with
+        # no category at all and could not be told from a hospital (Codex pass-10 H1).
         category = _first(row.get("amenity"), row.get("shop"), row.get("leisure"),
-                          row.get("healthcare"), row.get("tourism"))
+                          row.get("healthcare"), row.get("tourism"), row.get("public_transport"),
+                          row.get("highway"), row.get("railway"), row.get("office"),
+                          row.get("building"))
         house, street = _first(row.get("addr:housenumber")), _first(row.get("addr:street"))
         address = " ".join(x for x in (house, street) if x) or _first(row.get("addr:full"))
         out.append(Place(
