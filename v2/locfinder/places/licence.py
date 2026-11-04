@@ -30,12 +30,28 @@ RELEASE_MANIFESTS: dict[str, dict[str, str]] = {
 }
 
 
-def resolve_licence(row: dict, *, release: str, manifests: dict | None = None) -> str:
+def resolve_licence(row: dict, *, release: str, manifests: dict | None = None,
+                    allowed: frozenset[str] | None = None) -> str:
     """Return the licence of the row's primary (first) source after validating that
-    EVERY source entry resolves. Raises UnknownLicence otherwise."""
+    EVERY source entry resolves. Raises UnknownLicence otherwise.
+
+    `allowed` lets one *use* widen the allowlist without widening it for everything else. The
+    Buildings theme forced the question: every one of 500,592 Triangle buildings quarantined,
+    because its sources are ODbL-1.0 (OpenStreetMap, Microsoft ML Buildings) and a CC BY 4.0
+    variant (Esri), none of which is in `ALLOWED_LICENCES`. Those are fine for a **diagnostic**
+    that rasterises footprints to counts and republishes nothing, and not necessarily fine for a
+    published dataset — so the caller states the allowlist that applies to what it is doing, and
+    the strict default stays strict. Mutating `ALLOWED_LICENCES` globally would have let ODbL rows
+    into every other consumer silently.
+    """
+    allowed = ALLOWED_LICENCES if allowed is None else allowed
     manifests = RELEASE_MANIFESTS if manifests is None else manifests
-    sources = row.get("sources") or []
-    if not sources:
+    # `or []` raises on a multi-element numpy array ("truth value is ambiguous"), which is exactly
+    # what GeoParquet gives for this column. It survived only because the one caller normalised to
+    # a list first; the Buildings fetcher did not, and the first real payload broke it.
+    sources = row.get("sources")
+    sources = [] if sources is None else list(sources)
+    if len(sources) == 0:
         raise UnknownLicence("row has no sources")
     manifest = manifests.get(release)
     resolved: list[str] = []
@@ -44,7 +60,7 @@ def resolve_licence(row: dict, *, release: str, manifests: dict | None = None) -
         explicit = src.get("license")
         dataset = (src.get("dataset") or "").strip().lower()
         if explicit:
-            if explicit not in ALLOWED_LICENCES:
+            if explicit not in allowed:
                 raise UnknownLicence(f"licence {explicit!r} (dataset={dataset!r}) is not on the reviewed allowlist")
             resolved.append(explicit)
             continue
@@ -52,5 +68,10 @@ def resolve_licence(row: dict, *, release: str, manifests: dict | None = None) -
             raise UnknownLicence(f"release {release!r} has no pinned manifest")
         if dataset not in manifest:
             raise UnknownLicence(f"release {release!r}: dataset {dataset!r} has no licence and is not in the manifest")
-        resolved.append(manifest[dataset])
+        from_manifest = manifest[dataset]
+        if from_manifest not in allowed:
+            raise UnknownLicence(
+                f"release {release!r}: dataset {dataset!r} resolves to {from_manifest!r}, which is "
+                "not on the allowlist for this use")
+        resolved.append(from_manifest)
     return resolved[0]
