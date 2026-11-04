@@ -1,10 +1,11 @@
 """Turn a Valhalla `/expansion` search tree into the (EdgeIndex, node-times) form that
 `snap.cell_seconds_from_arrival` already consumes.
 
-`/expansion` with `action=isochrone` returns one LineString per settled edge. With
+`/expansion` with `action=isochrone` returns one LineString per settled **directed** edge. With
 `expansion_properties=["duration", "distance", "edge_id", "pred_edge_id"]` each feature carries:
 
-* `duration` — **cumulative** seconds at the far end of this edge (the end the search settled),
+* `duration` — **cumulative** whole seconds at the far end of this edge (the end the search
+  settled),
 * `distance` — cumulative metres at that same point,
 * `edge_id` / `pred_edge_id` — the search tree, so the predecessor's cumulative duration is the
   time at this edge's **near** end.
@@ -16,8 +17,44 @@ inherits Valhalla's costing exactly, and `cell_seconds_from_arrival` can then in
 the matched edge instead of charging a whole edge traversal (the +66 s conservative bias measured
 in docs/experiments/g1-routing.md).
 
-Root edges, whose `pred_edge_id` does not resolve to another feature, are the search origin: their
-near end is the destination itself, at time 0. They are a handful of edges out of thousands.
+Root edges, whose `pred_edge_id` is Valhalla's sentinel, are the search origin: their near end is
+the destination itself, at time 0. They are a handful of edges out of a quarter of a million.
+
+## Direction, and why the request matters (Phase 1 S1.3)
+
+A feature is a *directed* edge, and under arrival semantics the traveller crosses it **from its far
+end to its near end**. The earlier version of this module marked every edge traversable both ways
+with the same traversal time, arguing that the tree "already encodes legality". It encodes legality
+in one direction only, so that let a cell drive the wrong way down a one-way street.
+
+It also appended every feature as its own geometry, never merging the two directed features that
+describe one physical road. With both directions requested, the same geometry then entered the
+STRtree twice and `nearest()` returned one of them arbitrarily, carrying only that direction's time.
+
+Measured on a real drive payload (3 grocery POIs, 60-minute contour, 476,072 features over 253,635
+physical edges), against the cells of the Triangle grid:
+
+| defect | cells changed | median | direction of change |
+|---|---|---|---|
+| not merging duplicate geometries | 13,396 (8.73%) | −2.5 s | 99.4% got **earlier** |
+| marking one-way edges bidirectional | 13,970 (9.10%) | +2.5 s | **100%** got **later** |
+
+The two move opposite ways, which is why a single before/after comparison showed only 3.04% and a
+misleading sign. The direction column's 100% is the consistency check: removing edges from a graph
+can never shorten a shortest path.
+
+**`skip_opposites` must be `false`.** With it on, Valhalla omits the opposite direction of an edge
+it has already settled, which has two consequences. An edge whose predecessor *was* one of those
+omitted opposites names an `edge_id` that was never serialised — 636 of 254,323 edges (0.25%) on
+the payload above, which is why `strict=True` failed on every real request — and a two-way street
+appears once, making it impossible to tell from the payload alone whether the unseen direction is
+illegal or merely unrequested. With `skip_opposites=false` the dangling count was **0**.
+
+That is why `opposites_included` has no default: it is a property of the request, and the adapter
+cannot infer it safely. One tempting inference is provably wrong — `skip_opposites=true` does *not*
+suppress every opposite, and 664 of 253,635 physical edges (0.26%) still arrived in both directions
+on the payload above — so the adapter records what it found in `report` rather than second-guessing
+the caller, and leaves `strict` to refuse a payload whose dangling count betrays the wrong flag.
 """
 from __future__ import annotations
 
@@ -31,6 +68,10 @@ from .snap import EdgeIndex
 # metres: endpoints within this distance are treated as the same node
 _NODE_SNAP_M = 0.5
 _MIN_EPSILON_S = 0.1
+# decimal places for the lon/lat key that identifies one physical edge regardless of stored
+# direction. Seven places is ~1 cm, far finer than any geometry difference between the two
+# directed features Valhalla emits for the same road.
+_KEY_DP = 7
 # Valhalla's sentinel for "no predecessor" (kInvalidGraphId). A feature carrying this really is a
 # search root. A feature naming a predecessor we do NOT have is a different thing entirely -- its
 # near-end time is unknown -- and conflating the two invents a zero-time node (Codex pass-7 C5).
@@ -41,7 +82,14 @@ def _node_key(x: float, y: float) -> tuple[int, int]:
     return (int(round(x / _NODE_SNAP_M)), int(round(y / _NODE_SNAP_M)))
 
 
-def _orient_root(edge: dict, successors, origin_pts) -> bool | None:
+def _physical_key(coords) -> tuple:
+    """One key per physical edge: the coordinate list, canonicalised over stored direction."""
+    fwd = tuple((round(float(c[0]), _KEY_DP), round(float(c[1]), _KEY_DP)) for c in coords)
+    rev = tuple(reversed(fwd))
+    return fwd if fwd <= rev else rev
+
+
+def _orient_root(edge, successors, origin_pts) -> bool | None:
     """Is a root edge's near end its first coordinate? Derived, never assumed.
 
     Two independent signals, strongest first:
@@ -75,6 +123,7 @@ def expansion_to_edge_index(
     features: list[dict],
     *,
     target_crs: str,
+    opposites_included: bool,
     source_crs: str = "EPSG:4326",
     origins: list[tuple[float, float]] | None = None,
     strict: bool = True,
@@ -83,8 +132,18 @@ def expansion_to_edge_index(
     """Build (EdgeIndex, T) from `/expansion` features. `T` holds the arrival time in seconds
     at each node index the EdgeIndex refers to; unreachable nodes are +inf.
 
-    Edges are marked traversable in both directions with their own traversal time, because the
-    expansion tree already encodes legality: an edge appears only because the router used it.
+    The two directed features describing one physical road are **merged** into one index entry
+    carrying each settled direction's own traversal time.
+
+    `opposites_included` says whether the request used `skip_opposites=false`, so that both
+    directions of a two-way road are present. It has no default because the adapter cannot infer
+    it safely and the consequences are opposite:
+
+    * `True` — an edge is traversable only in the direction(s) actually settled. This is correct and
+      is what a published layer should use.
+    * `False` — a two-way road appears once, so direction cannot be recovered; every edge is marked
+      traversable both ways, which is **over-permissive on one-ways** and is recorded in `report`.
+      Use it only for a diagnostic.
 
     `origins` are the (lon, lat) search origins — the destinations we are routing *to* under
     arrival semantics. Supply them: they are the authoritative signal for which end of a root edge
@@ -115,22 +174,12 @@ def expansion_to_edge_index(
             "pred": props.get("pred_edge_id"),
             "ll_first": tuple(coords[0]),
             "ll_last": tuple(coords[-1]),
+            "key": _physical_key(coords),
         })
     if not kept:
         raise ValueError("expansion returned no usable edges")
 
     by_edge = {e["edge_id"]: e for e in kept if e["edge_id"] is not None}
-
-    # pass 2: node indices
-    keys: dict[tuple[int, int], int] = {}
-    start_idx = np.empty(len(kept), dtype=np.int64)
-    end_idx = np.empty(len(kept), dtype=np.int64)
-    for i, e in enumerate(kept):
-        for slot, (x, y) in ((start_idx, e["geom"].coords[0]), (end_idx, e["geom"].coords[-1])):
-            k = _node_key(x, y)
-            if k not in keys:
-                keys[k] = len(keys)
-            slot[i] = keys[k]
 
     # successors, so a root edge's orientation can be DERIVED rather than assumed: the vertex a
     # root shares with the edges it expanded into is its far end (Codex pass-7 C5).
@@ -144,28 +193,40 @@ def expansion_to_edge_index(
         ox, oy = to_proj.transform([p[0] for p in origins], [p[1] for p in origins])
         origin_pts = shapely.points(np.asarray(ox), np.asarray(oy))
 
-    # pass 3: endpoint times from (predecessor duration, own duration)
-    T = np.full(len(keys), np.inf)
-    tau = np.empty(len(kept), dtype=np.float64)
+    # pass 2: one record per physical edge, accumulating each direction's traversal time
+    nodes: dict[tuple[int, int], int] = {}
+    phys: dict[tuple, dict] = {}
     dangling: list[object] = []
     roots_unoriented: list[object] = []
-    drop = np.zeros(len(kept), dtype=bool)
-    for i, e in enumerate(kept):
-        pred = by_edge.get(e["pred"])
+
+    def node_id(x: float, y: float) -> int:
+        k = _node_key(x, y)
+        if k not in nodes:
+            nodes[k] = len(nodes)
+        return nodes[k]
+
+    for e in kept:
         is_root = e["pred"] in _NO_PRED_SENTINELS
+        pred = by_edge.get(e["pred"])
         if pred is None and not is_root:
             # A named predecessor we do not have. Its cumulative duration is the only thing that
             # could give this edge's near-end time, so that time is UNKNOWN. Treating it as a root
             # at 0 s would plant a spurious "instantly reachable" node in the middle of the
-            # network, which is far worse than omitting the edge.
+            # network, which is far worse than omitting the edge. With skip_opposites=false this
+            # does not happen at all.
             dangling.append(e["edge_id"])
-            drop[i] = True
-            tau[i] = _MIN_EPSILON_S
             continue
         near_t = 0.0 if is_root else float(pred["dur"])
         far_t = e["dur"]
-        tau[i] = max(far_t - near_t, _MIN_EPSILON_S)
-        if not is_root:
+        tau = max(far_t - near_t, _MIN_EPSILON_S)
+        if is_root:
+            near_at_start = _orient_root(e, succ_of.get(e["edge_id"], ()), origin_pts)
+            if near_at_start is None:
+                # No successor and no origin to compare against: the orientation is genuinely
+                # undetermined. Guessing is a coin flip that lands on the destination itself.
+                roots_unoriented.append(e["edge_id"])
+                continue
+        else:
             shared = {pred["ll_first"], pred["ll_last"]}
             if e["ll_first"] in shared:
                 near_at_start = True
@@ -176,53 +237,95 @@ def expansion_to_edge_index(
                 # endpoint lies closer to the predecessor's geometry
                 near_at_start = e["geom"].interpolate(0.0).distance(pred["geom"]) <= \
                     e["geom"].interpolate(1.0, normalized=True).distance(pred["geom"])
-        else:
-            near_at_start = _orient_root(e, succ_of.get(e["edge_id"], ()), origin_pts)
-            if near_at_start is None:
-                # No successor and no origin to compare against: the orientation is genuinely
-                # undetermined. Guessing is a coin flip that lands on the destination itself, so
-                # record the edge's traversal time but assert nothing about which end is which.
-                roots_unoriented.append(e["edge_id"])
-                drop[i] = True
-                continue
-        a, b = (start_idx[i], end_idx[i]) if near_at_start else (end_idx[i], start_idx[i])
-        if near_t < T[a]:
-            T[a] = near_t
-        if far_t < T[b]:
-            T[b] = far_t
 
+        rec = phys.get(e["key"])
+        if rec is None:
+            rec = {
+                "geom": e["geom"],
+                "s": node_id(*e["geom"].coords[0]),
+                "e": node_id(*e["geom"].coords[-1]),
+                "fwd": np.inf, "rev": np.inf, "t_s": np.inf, "t_e": np.inf, "n": 0,
+            }
+            phys[e["key"]] = rec
+        rec["n"] += 1
+        # A later feature for the same physical edge may store its coordinates in the opposite
+        # order, so the orientation must be expressed relative to the record's own geometry.
+        same_order = _node_key(*e["geom"].coords[0]) == _node_key(*rec["geom"].coords[0])
+        near_at_rec_start = near_at_start if same_order else not near_at_start
+        if near_at_rec_start:
+            # travel runs far -> near, i.e. record-end -> record-start
+            rec["rev"] = min(rec["rev"], tau)
+            rec["t_s"] = min(rec["t_s"], near_t)
+            rec["t_e"] = min(rec["t_e"], far_t)
+        else:
+            rec["fwd"] = min(rec["fwd"], tau)
+            rec["t_e"] = min(rec["t_e"], near_t)
+            rec["t_s"] = min(rec["t_s"], far_t)
+
+    merged_pairs = sum(1 for r in phys.values() if r["n"] > 1)
     if report is not None:
-        report.update(edges=len(kept), dangling_predecessors=len(dangling),
-                      roots_unoriented=len(roots_unoriented), dropped=int(drop.sum()),
-                      origins_supplied=0 if not origins else len(origins))
+        report.update(
+            edges=len(kept), physical_edges=len(phys), merged_pairs=merged_pairs,
+            dangling_predecessors=len(dangling), roots_unoriented=len(roots_unoriented),
+            dropped=len(dangling) + len(roots_unoriented),
+            origins_supplied=0 if not origins else len(origins),
+            opposites_included=opposites_included,
+            bidirectional_fallback=not opposites_included,
+        )
     if strict and (dangling or roots_unoriented):
         raise ValueError(
             f"expansion tree is not self-consistent: {len(dangling)} edge(s) name a predecessor "
             f"not present in the response and {len(roots_unoriented)} root(s) could not be "
-            "oriented. Endpoint times for these are unknown; pass origins=[(lon, lat), ...] to "
-            "orient roots, or strict=False to drop them and read the count from report=."
+            "oriented. Endpoint times for these are unknown; request skip_opposites=false (which "
+            "removes the dangling case entirely), pass origins=[(lon, lat), ...] to orient roots, "
+            "or strict=False to drop them and read the count from report=."
         )
+    # No cross-check raise. The obvious one -- "opposites_included=False yet some edges appear in
+    # both directions" -- is wrong, because `skip_opposites=true` does **not** suppress every
+    # opposite: on a real drive payload 664 of 253,635 physical edges (0.26%) still arrived in both
+    # directions, presumably settled in separate branches before the skip could apply. The report
+    # carries `merged_pairs`, `dangling_predecessors` and `bidirectional_fallback` instead, and
+    # `strict` is the gate: a non-zero dangling count is the real signature of `skip_opposites=true`.
 
-    # Edges whose endpoint times are unknown are removed from the index entirely. Leaving them
-    # traversable would let a cell snap onto an edge and read a time from a node that was never
-    # resolved; nodes they alone touched stay +inf, which is the honest answer.
-    keep_mask = ~drop
-    if not keep_mask.any():
+    if not phys:
         raise ValueError("every expansion edge was unusable; see report= for the breakdown")
-    geoms = [e["geom"] for e, k in zip(kept, keep_mask) if k]
-    start_idx, end_idx, tau = start_idx[keep_mask], end_idx[keep_mask], tau[keep_mask]
+
+    geoms = [r["geom"] for r in phys.values()]
+    T = np.full(len(nodes), np.inf)
+    starts: list[int] = []
+    ends: list[int] = []
+    fwd: list[float] = []
+    rev: list[float] = []
+    for r in phys.values():
+        starts.append(r["s"])
+        ends.append(r["e"])
+        fwd.append(r["fwd"])
+        rev.append(r["rev"])
+        T[r["s"]] = min(T[r["s"]], r["t_s"])
+        T[r["e"]] = min(T[r["e"]], r["t_e"])
+
+    fwd_arr = np.asarray(fwd, dtype=np.float64)
+    rev_arr = np.asarray(rev, dtype=np.float64)
+    if not opposites_included:
+        # Direction is unrecoverable from this payload, so fall back to the old over-permissive
+        # marking rather than inventing a restriction. `report["bidirectional_fallback"]` says so.
+        best = np.fmin(fwd_arr, rev_arr)
+        fwd_arr = rev_arr = best
+
     geom_arr = np.empty(len(geoms), dtype=object)
     geom_arr[:] = geoms
     idx = EdgeIndex(
         tree=shapely.STRtree(geoms),
         geoms=geom_arr,
-        start_idx=start_idx,
-        end_idx=end_idx,
-        fwd_time=tau,
-        rev_time=tau,
+        start_idx=np.asarray(starts, dtype=np.int64),
+        end_idx=np.asarray(ends, dtype=np.int64),
+        fwd_time=fwd_arr,
+        rev_time=rev_arr,
         # Valhalla has already applied its own costing to produce these durations, so there is no
-        # separate penalty to carry here: selection cost and reported time coincide.
-        fwd_cost=tau,
-        rev_cost=tau,
+        # separate penalty to carry here: selection cost and reported time coincide. Valhalla does
+        # report a distinct `cost` per edge, and carrying it as a selection weight the way the
+        # own-graph path does is a named follow-up, not done here.
+        fwd_cost=fwd_arr,
+        rev_cost=rev_arr,
     )
     return idx, T
