@@ -625,21 +625,28 @@ cost and time actually differ. On the ~88% of nodes untouched by a restricted ed
 computations coincide by arithmetic, and my first verdict logic mistook that for a leak and reported
 a false FAIL.
 
-### Penalty sensitivity, measured
+### Penalty sensitivity, measured — **superseded 2026-11-04, see the re-run at the end of this file**
+
+> The coverage and median columns below are **not the product's**: this run called
+> `cell_seconds_from_arrival` without `node_cost` or the final `cutoff_s` (Codex pass-7 M2), so it
+> measured a pipeline we do not ship. Phase 1 S2.5 re-ran it through the production path. The
+> replacement numbers are at the end of this file; the diverted-node counts also changed because
+> this earliest run predates a graph rebuild. **Quote the re-run, not this.**
 
 | penalty (s) | cells with a time | median reported | nodes whose path the penalty diverted |
 |---|---|---|---|
-| 0 | 77.35% | 34.4 min | 0 |
-| 60 | 77.35% | 34.4 min | 40,197 |
-| **120 (adopted)** | 77.32% | 34.4 min | 46,613 |
-| 240 | 77.27% | 34.4 min | 49,063 |
-| 960 | 77.25% | 34.6 min | 52,868 |
+| 0 | ~~77.35%~~ | ~~34.4 min~~ | 0 |
+| 60 | ~~77.35%~~ | ~~34.4 min~~ | 40,197 |
+| **120 (adopted)** | ~~77.32%~~ | ~~34.4 min~~ | 46,613 |
+| 240 | ~~77.27%~~ | ~~34.4 min~~ | 49,063 |
+| 960 | ~~77.25%~~ | ~~34.6 min~~ | 52,868 |
 
 **Coverage is almost completely insensitive to the penalty** — 0.1 points across a 16× range —
 because a finite penalty never removes reachability, only changes which path is chosen. So the
 coverage gain comes from *admitting* restricted edges at all, not from the magnitude, and the
-magnitude is a route-choice knob affecting 8–10% of nodes. The 450/120 s values remain **priors**
-from Valhalla's documented default, not measurements.
+magnitude is a route-choice knob affecting 8–10% of nodes. **That conclusion survives the re-run**
+(0.10 points across the same range), which is why it is left standing here. The 450/120 s values
+remain **priors** from Valhalla's documented default, not measurements.
 
 ### Still open
 
@@ -735,13 +742,15 @@ Of the **119,537** nodes the penalty actually affected, both outcomes below are 
 
 **Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
 
-> **This table still needs a re-run and its coverage column should not be quoted.** Codex pass 7
-> (M2) found that the sweep called `cell_seconds_from_arrival` without `node_cost` or the final
-> `cutoff_s`, so it measured a pipeline we do not ship -- which is exactly why its coverage reads
-> 77.3% where the production rebuild of the same layer reads **76.8%**. The script has since been
-> changed to call the production path, but this run predates that change. The *shape* of the result
-> (coverage barely moves across a 16x range) is unaffected, because a finite penalty never removes
-> reachability; the absolute percentages are not the product's.
+> **Superseded 2026-11-04 by the re-run at the end of this file. Do not quote this coverage
+> column.** Codex pass 7 (M2) found that the sweep called `cell_seconds_from_arrival` without
+> `node_cost` or the final `cutoff_s`, so it measured a pipeline we do not ship -- which is exactly
+> why its coverage reads 77.3% where the production rebuild of the same layer reads **76.8%**. The
+> script was then changed to call the production path; this run predates that change. Phase 1 S2.5
+> re-ran it, and the comparison is instructive: the **diverted-node counts are identical** between
+> this run and the re-run (0 / 42,849 / 49,363 / 51,843 / 55,694), because those come from the
+> node-level search, which the omission did not touch -- while every coverage and median figure
+> moved, because those come from the cell stage, which it did.
 
 | penalty s | cells with a time | median reported min | nodes diverted by the penalty |
 |---|---|---|---|
@@ -762,3 +771,90 @@ Of the **119,537** nodes the penalty actually affected, both outcomes below are 
 | None | 1 |
 
 Total reachable cells nearest a restricted edge: 4,673 of 272,961 reachable.
+
+### Two-weight verification on the real network (2026-11-04 11:38:26): walk / grocery
+
+539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
+
+**Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
+
+| check | nodes | share of finite |
+|---|---|---|
+| reported **below** the time-only lower bound (must be 0) | **0** | 0.0000% |
+| reported **above** the cost-based upper bound (must be 0) | **0** | 0.0000% |
+| reported **equals** the time-only bound (no penalty in effect) | 471,928 | 87.42% |
+| reported equals the cost-based value **overall** (expected where cost==time) | 471,776 | 87.40% |
+| reported **above** time-only, i.e. the penalty diverted the path | 68,023 | 12.60% |
+
+Of the **119,537** nodes the penalty actually affected, both outcomes below are correct; the split is descriptive, not a verdict. `reported == cost-based` means the chosen path carries no penalised edge, so its time equals its cost necessarily:
+
+| outcome | nodes | share of those |
+|---|---|---|
+| diverted onto a penalty-free path (reported == cost-based) | 51,499 | 43.08% |
+| still uses a penalised edge, penalty stripped from the report | 68,038 | 56.92% |
+
+**The decisive test is the exact identity.** Accumulating the penalty over the same cost-optimal forest must reconcile the two bounds edge for edge: `cost-based == reported time + penalty accumulated on that path`. A leak breaks it, because the report would equal the upper bound while the accumulated penalty is non-zero.
+
+| check | value |
+|---|---|
+| nodes tested | 539,814 |
+| of those, carrying a non-zero accumulated penalty | 68,038 (12.60%) |
+| identity violations above 1 ms (must be 0) | **0** |
+| largest residual | 3.64e-12 s |
+
+**Verdict: PASS.** The reported times sit inside the bracket and the penalty identity holds exactly on every node, so the reported figure is the real travel time along the cost-optimal path and the penalty is not leaking into it.
+
+**Independent path walk.** The identity shares the reconstruction's arithmetic, so it cannot detect a wrong path. This re-sums `travel_time` and `cost` from the graph along the explicit predecessor chain, for a random sample of nodes whose path carries a penalty.
+
+| check | value |
+|---|---|
+| nodes walked (of 68,038 eligible) | 500 |
+| total hops re-summed | 36,802 |
+| reported time != re-summed graph time (must be 0) | **0** |
+| accumulated penalty != re-summed graph penalty (must be 0) | **0** |
+
+**Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
+
+| penalty s | cells with a time | median reported min | nodes diverted by the penalty |
+|---|---|---|---|
+| 0 | 76.77% | 34.1 | 0 |
+| 60 | 76.77% | 34.1 | 42,849 |
+| 120 | 76.76% | 34.2 | 49,363 |
+| 240 | 76.71% | 34.2 | 51,843 |
+| 960 | 76.67% | 34.4 | 55,694 |
+
+**Provenance of reachable cells whose nearest edge is restricted** (by that edge's `access` value; a length-keyed approximation, so read it as indicative):
+
+| access value | reachable cells snapped to it |
+|---|---|
+| private | 4,125 |
+| customers | 230 |
+| destination | 10 |
+| forestry | 1 |
+| None | 1 |
+
+Total reachable cells nearest a restricted edge: 4,367 of 253,679 reachable.
+
+#### S2.5: what the re-run settles
+
+This is the production-path run that supersedes both tables above (Phase 1 S2.5). Three things come
+out of it.
+
+**The supersession is confirmed.** Coverage at the adopted 120 s penalty is **76.76%**, against the
+superseded 77.32%, and it matches the independently rebuilt production layer's **76.7557%**. The
+medians also fell by about 0.3 min. The diverted-node counts are unchanged from the previous run,
+which localises the defect exactly: it was in the cell stage, not the node search.
+
+**The unvalidated prior turns out not to matter much for what we publish.** Across a 16× range of
+penalty — 0 s to 960 s — coverage moves 76.77% → 76.67% (0.10 points) and the median reported time
+moves 34.1 → 34.4 minutes, while the number of nodes whose chosen path changes goes from 0 to
+**55,694**. So the penalty is almost entirely a *route-choice* knob: it changes which way the search
+goes for about 10% of nodes while barely moving the number a household is shown. `access.py` flags
+450/120 s as priors rather than measurements, and this bounds how much that matters — for the
+own-graph **walk** layer. It says nothing about drive, which uses Valhalla's own penalties, and
+nothing about whether either value is *right*.
+
+**The access fix is worth about 1.7% of reachable cells.** 4,367 of 253,679 reachable cells have a
+restricted edge as their nearest, 4,125 of them `access=private` — driveways, which is where people
+live. That is the population a blanket block would have removed, and it is a bounded number rather
+than the "every home on a private drive" framing used earlier.
