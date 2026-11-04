@@ -1133,3 +1133,44 @@ On the 253,678 cells `OK` in both, the reported time rose by more than a second 
 | 45min | 159,894 | 161,664 | +1,770 | -0 |
 
 - profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: grocery / walk (2026-11-04 14:25:46)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 256,752 | 330,502 | **77.6855%** |
+| buildings | 499,009 | 512,633 | **97.3423%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 256,752 | 77.6855% | 499,009 | 97.3423% |
+| `OFF_NETWORK` | 57,541 | 17.4102% | 3,657 | 0.7134% |
+| `BEYOND_HORIZON` | 16,209 | 4.9044% | 9,967 | 1.9443% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 7.3358% | **15.6157%** |
+| 15min | 14.3706% | **31.9624%** |
+| 25min | 28.3091% | **58.2688%** |
+| 45min | 48.9147% | **82.8831%** |
+
+**The missing region as places.** 1,278 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 23,184 | 9,002 | `OFF_NETWORK` | 53.2% | 1,446 | 7,556 | -79.10089, 35.78962 |
+| 3,985 | 1,790 | `OFF_NETWORK` | 52.7% | 294 | 1,496 | -78.61517, 35.99541 |
+| 2,899 | 34 | `OFF_NETWORK` | 79.0% | 3 | 31 | -78.65787, 36.05571 |
+| 2,881 | 57 | `OFF_NETWORK` | 78.5% | 3 | 54 | -78.72726, 36.0238 |
+| 2,773 | 2 | `OFF_NETWORK` | 91.6% | 2 | 0 | -78.79224, 36.09319 |
+| 2,197 | 6 | `OFF_NETWORK` | 99.6% | 6 | 0 | -78.99017, 35.82598 |
+| 2,078 | 470 | `BEYOND_HORIZON` | 50.2% | 26 | 444 | -78.86982, 36.13449 |
+| 1,779 | 531 | `OFF_NETWORK` | 76.0% | 290 | 241 | -79.12336, 36.14864 |
+| 865 | 157 | `OFF_NETWORK` | 100.0% | 157 | 0 | -79.02912, 36.05676 |
+| 584 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -78.60635, 36.12014 |
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`

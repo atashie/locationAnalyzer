@@ -25,6 +25,16 @@ A, and both calls return success. Reproduced deterministically rather than by ti
 acquisition now uses a **process-unique** temporary file, and the whole check-download-commit
 sequence is serialised by an exclusive lock file beside the raw file.
 
+**And the downloader writes files we did not ask for.** The `overturemaps` CLI drops a sidecar
+beside its output named `<output>.state` — exactly the convention this module uses for its own state
+file. With the download going straight to `raw` that sidecar lands *on* our state file, and it
+parses as valid JSON with different keys, so `describes()` returns False and the pair re-downloads
+on every run forever: a silent permanent cache miss, found on disk in `data/slice/`. With a
+process-unique temp file it merely orphans one sidecar per download. Patching the one filename would
+leave the collision class open, so the download now goes into a **temporary directory** that is
+removed wholesale: whatever the downloader writes beside its output is contained and cannot collide
+with anything this module owns.
+
 The lock is advisory and local: it serialises acquisitions on one machine, which is what the build
 does. It does **not** make the *consumer* safe — a caller that acquires and then reads is still
 racing anything that replaces the file in between — and the durable answer to that is S4.1's
@@ -34,6 +44,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -148,19 +159,24 @@ def acquire(raw: Path, want: Acquisition, *, downloader=default_downloader,
             else:
                 log(f"re-downloading {raw.name}: no state file, so what it holds is unknown")
 
-        # Process-unique, so one acquisition's cleanup cannot delete another's download.
-        tmp = raw.with_name(f"{raw.name}.{os.getpid()}.partial")
-        tmp.unlink(missing_ok=True)
+        # A directory, process-unique: one acquisition's cleanup cannot delete another's download,
+        # and any sidecar the downloader writes beside its output is contained rather than left in
+        # a namespace this module also uses.
+        tmp_dir = raw.with_name(f".{raw.name}.{os.getpid()}.partial")
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        tmp_dir.mkdir(parents=True)
+        tmp = tmp_dir / raw.name
         try:
             downloader(tmp, want)
-        except BaseException:
-            # BaseException so a KeyboardInterrupt cannot promote a partial file either.
-            tmp.unlink(missing_ok=True)
-            raise
-        if not tmp.exists():
-            raise RuntimeError(f"downloader produced no file at {tmp}")
-        # Commit. State goes first, so there is no instant at which new bytes carry an old label.
-        state_path(raw).unlink(missing_ok=True)
-        tmp.replace(raw)
-        state_path(raw).write_text(json.dumps(want.as_dict(), indent=1), encoding="utf-8")
+            if not tmp.exists():
+                raise RuntimeError(f"downloader produced no file at {tmp}")
+            # Commit. State goes first, so there is no instant at which new bytes carry an old
+            # label. `os.replace` is atomic within a volume, and the temp directory is a sibling of
+            # the target, so the two are always on one volume.
+            state_path(raw).unlink(missing_ok=True)
+            tmp.replace(raw)
+            state_path(raw).write_text(json.dumps(want.as_dict(), indent=1), encoding="utf-8")
+        finally:
+            # `finally`, so a KeyboardInterrupt cannot leave a partial directory behind either.
+            shutil.rmtree(tmp_dir, ignore_errors=True)
         return raw, True

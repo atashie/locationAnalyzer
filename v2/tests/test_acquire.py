@@ -80,7 +80,7 @@ def test_an_interrupted_download_leaves_the_previous_pair_intact(tmp_path):
     # the previous file and its label are untouched, and no partial file survives
     assert raw.read_text(encoding="utf-8") == "A-bytes"
     assert read_state(raw) == A.as_dict()
-    assert not (tmp_path / "raw.parquet.partial").exists()
+    assert sorted(q.name for q in tmp_path.iterdir()) == ["raw.parquet", "raw.parquet.state"]
 
     # and asking for A again legitimately reuses A, not B's bytes
     _, downloaded = acquire(raw, A, downloader=writer("SHOULD-NOT-RUN"), log=lambda *a: None)
@@ -147,14 +147,53 @@ def test_two_acquisitions_cannot_interleave_into_a_wrong_label(tmp_path):
     assert read_state(raw) == A.as_dict()
 
 
-def test_the_temporary_file_is_process_unique(tmp_path):
+def test_the_temporary_location_is_process_unique(tmp_path):
     """A shared `raw.partial` let one acquisition's cleanup delete another's download."""
     import os
     raw = tmp_path / "raw.parquet"
     seen = []
     acquire(raw, A, downloader=lambda tmp, want: (seen.append(tmp), tmp.write_text("x")),
             log=lambda *a: None)
-    assert str(os.getpid()) in seen[0].name
+    assert str(os.getpid()) in seen[0].parent.name
+
+
+def test_a_sidecar_the_downloader_writes_cannot_collide_with_our_state_file(tmp_path):
+    """The real defect, found on disk. The `overturemaps` CLI writes `<output>.state` beside its
+    output — the same name this module gives its own state file. Downloading straight to `raw` put
+    the CLI's JSON *on* our state file, where it parses but does not describe the request, so
+    `describes()` returned False and the pair re-downloaded on every run forever. Found as
+    `data/slice/overture_places_raw.parquet.state` holding the CLI's schema.
+
+    The download now happens inside a temporary directory that is removed wholesale, so nothing the
+    downloader writes beside its output can reach a path this module owns."""
+    raw = tmp_path / "raw.parquet"
+
+    def writes_a_sidecar(tmp, want):
+        tmp.write_text("real-bytes", encoding="utf-8")
+        # exactly what the CLI does, and exactly our own naming convention
+        tmp.with_suffix(tmp.suffix + ".state").write_text('{"theme": "places"}', encoding="utf-8")
+
+    acquire(raw, A, downloader=writes_a_sidecar, log=lambda *a: None)
+
+    # our state survived and still describes the request, so the next call reuses the file
+    assert read_state(raw) == A.as_dict()
+    _, downloaded = acquire(raw, A, downloader=writer("SHOULD-NOT-RUN"), log=lambda *a: None)
+    assert not downloaded and raw.read_text(encoding="utf-8") == "real-bytes"
+    # and the sidecar left no litter behind at all
+    assert sorted(q.name for q in tmp_path.iterdir()) == ["raw.parquet", "raw.parquet.state"]
+
+
+def test_a_failed_download_leaves_no_temporary_directory(tmp_path):
+    raw = tmp_path / "raw.parquet"
+
+    def fails(tmp, want):
+        tmp.write_text("partial", encoding="utf-8")
+        tmp.with_suffix(tmp.suffix + ".state").write_text("{}", encoding="utf-8")
+        raise RuntimeError("dropped")
+
+    with pytest.raises(RuntimeError, match="dropped"):
+        acquire(raw, A, downloader=fails, log=lambda *a: None)
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_an_abandoned_lock_does_not_block_forever(tmp_path):

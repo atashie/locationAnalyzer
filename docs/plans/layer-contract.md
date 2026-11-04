@@ -47,8 +47,8 @@ The last two get no status, because allocating a code for a distinction the pipe
 would publish a fiction (Codex pass-7 C4).
 
 - **Component pruning** is knowable at build time — `largest_component` reports what it dropped —
-  but not afterwards, because the dropped nodes are gone. It becomes a build-time diagnostic in
-  S2.4, alongside building-weighted coverage. Measured through the production preparation path, the
+  but not afterwards, because the dropped nodes are gone. It is a build-time diagnostic, reported
+  alongside building-weighted coverage (S2.4, measured 2026-11-04). Measured through the production preparation path, the
   widened Triangle walk graph has **3,046 components** and drops **13,608 nodes (2.5%)**, so this
   is not a hypothetical. §9 explains why this, and not `NO_PATH`, is how a disconnected
   neighbourhood actually goes missing.
@@ -131,6 +131,13 @@ The weaker `max_speed_mps` bound is kept as a **judgement, not a correctness req
 off-network access leg is a straight line over unmapped ground, and a tighter bound would use that
 fiction to *exclude* households rather than call them unknown. S2.4's building-weighted coverage is
 what should decide whether to tighten it, because that is what will say who lives in those cells.
+
+**S2.4 has now measured it, and the judgement stands.** The 57,541 `OFF_NETWORK` cells — 17.41% of
+the grid — contain **3,657 buildings, 0.71%** of the 512,633 inside the grid. So tightening the
+bound could convert at most seven buildings in a thousand from *unknown* into *excluded*, and it
+would do so using a straight-line fiction over ground we have no network for. The cost of being
+wrong there is larger than the benefit of being decisive, and the number is small enough that
+nothing about the product hinges on it.
 
 These are bounds on **our model's** answer, not on reality. They say whether this pipeline could
 possibly have returned a passing value, which is the right question for a published region.
@@ -445,6 +452,62 @@ on where the destinations are. A decomposition that moved both would have meant 
 real.
 
 Both sets sum to 330,502.
+
+### Coverage has two denominators, and they disagree by twenty points
+
+Every coverage figure above is a share of **cells**. That is the wrong denominator for the question
+a household asks, and it is the wrong number to publish on its own. A grid over the Triangle spends
+a large part of its area on Jordan Lake, farmland and forest, so a share of cells mostly reports
+the emptiness of the countryside. S2.4 measures the same surface weighted by **building count**
+(`spikes/s2_building_weighted_coverage.py`, 512,633 Overture buildings whose centroid falls inside
+the grid):
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 256,752 | 330,502 | **77.6855%** |
+| buildings | 499,009 | 512,633 | **97.3423%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 256,752 | 77.6855% | 499,009 | **97.3423%** |
+| `OFF_NETWORK` | 57,541 | 17.4102% | 3,657 | **0.7134%** |
+| `BEYOND_HORIZON` | 16,209 | 4.9044% | 9,967 | **1.9443%** |
+
+**So "22% of the Triangle has no walk time to a grocery" and "2.7% of its buildings do" are both
+true, and only the second is about people.** The missing region is overwhelmingly unbuilt land: the
+17.41% of cells with no road within 200 m hold seven buildings in a thousand.
+
+At a threshold the relationship inverts, and sharply — the built-up area is exactly the area that
+is close to things:
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10 min | 7.3358% | **15.6157%** |
+| 15 min | 14.3706% | **31.9624%** |
+| 25 min | 28.3091% | **58.2688%** |
+| 45 min | 48.9147% | **82.8831%** |
+
+A 15-minute walk to a grocery covers a seventh of the map and **a third of its buildings**. Any
+published summary that quotes only the cell share understates the product by a factor of two at the
+thresholds people actually set.
+
+**A region's dominant reason by area is not its dominant reason by building.** The missing region
+breaks into 1,278 contiguous components (4-connectivity); the largest covers 23,184 cells and holds
+9,002 buildings, two thirds of every building that is missing. By cells it is 53.2% `OFF_NETWORK`,
+which reads like a road-data defect. By buildings it is **1,446 off-network against 7,556
+beyond-horizon** — those 7,556 have a road within 200 m and are genuinely more than two hours' walk
+from a grocery. So the largest hole is a real rural grocery desert, and only the 1,446 are worth
+checking for missing roads. Reporting a region by its dominant *cell* reason alone would have
+directed the next piece of work at the wrong thing, which is why both splits are reported.
+
+**Two constraints on using this.** It is **building-weighted, not home-weighted**: Overture carries
+no reliable residential flag in this metro, so a shed, a barn, a warehouse and each of a hospital
+campus's several hundred structures all count as one. A building is not a household and the two are
+not proportional — so this bounds and contextualises the cell figure, and does not replace it with a
+population claim. And the weights come from **ODbL and CC BY** rows, admitted to this one use by
+`fetch_buildings.py`'s `DIAGNOSTIC_LICENCES` under owner decision 17: counts per cell are a Produced
+Work, the footprints are not republished, and that must be revisited before any published artifact
+depends on them.
 
 The provenance path still reproduces the shipped layer exactly: after rebuilding
 `own_triangle_grocery_walk.npy` on the widened destinations, finiteness is **identical** and the
