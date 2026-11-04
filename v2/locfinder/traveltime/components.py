@@ -2,8 +2,10 @@
 
 A mode-filtered OSM extract is full of small disconnected stubs: driveways, parking aisles and
 service loops whose connecting ways were removed by the access filter or clipped by the extract
-boundary. The widened Triangle walk graph has **4,208** components and the drive graph **1,685**,
-with the largest holding 97-99% of nodes.
+boundary. Measured through the production preparation path, the widened Triangle walk graph has
+**3,046** components and drops 13,608 nodes (2.5%). An earlier figure of 4,208 in this docstring
+was counted *before* the `degree() == 0` removal that strips isolated nodes; the drive figure of
+**1,685** has not been re-measured since.
 
 That matters because nearest-node snapping is geometric, not topological. Snapping RDU Terminal 2
 found a node 4 m away on a four-node `highway=service` stub, so three of twelve spot-check journeys
@@ -20,7 +22,11 @@ repair:
 * It uses **weak** connectivity, which ignores edge direction, so a retained one-way branch can
   still fail origin-to-destination reachability. Keeping only the largest *strongly* connected
   component is not a universal fix either: it would discard legitimate one-way approaches and exits.
-  Directed reachability to the actual destination set is the real test.
+  Directed reachability to the actual destination set is the real test — **implemented in
+  `places/anchor.py` as `CoreReachability` (Phase 1 S2.2)**, which asks whether a directed path runs
+  from the largest strongly connected component *to* a candidate node, and is what an anchor or an
+  entrance must pass. This function stays as it is: it bounds the graph, and the directed test
+  decides usability.
 * Separate valid networks — islands, campuses, local path networks — can carry real journeys, and a
   small share of nodes may hold a household's entire neighbourhood. `max_dropped_share` is therefore
   a **useful alarm, not a correctness bound**.

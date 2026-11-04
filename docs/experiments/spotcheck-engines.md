@@ -858,3 +858,46 @@ nothing about whether either value is *right*.
 restricted edge as their nearest, 4,125 of them `access=private` — driveways, which is where people
 live. That is the population a blanket block would have removed, and it is a bounded number rather
 than the "every home on a private drive" framing used earlier.
+
+### S2.2 anchor routability on the real graph (2026-11-04 12:16:04): drive, triangle, nudge cap 150 m
+
+In Phase 0, snapping RDU Terminal 2 found a node 4 m away on a four-node service stub and three of twelve journeys came back unreachable. `largest_component` was the response, and its docstring records that weak connectivity is not the right test. This is the directed one.
+
+**What the directed test adds over the weak one.**
+
+| | |
+|---|---|
+| nodes before pruning | 438,250 |
+| weak components | 198 (largest holds 99.9%) |
+| nodes the core can reach, **before** pruning | 99.8225% |
+| nodes after pruning | 437,615 |
+| nodes the core can reach, **after** pruning | 99.9673% |
+| **kept by the weak test, unreachable by the directed one** | **143 (0.0327%)** |
+
+So pruning to the largest weak component still leaves 143 nodes that nothing in the core can drive to. Those are the ones an anchor must not be snapped to, and distance alone cannot tell them apart from good ones.
+
+**Barriers.** 4,665 impassable ways extracted from the routing extract with QuackOSM (`fence, wall, retaining_wall, hedge, city_wall`, …). Gates, bollards and cycle barriers are deliberately **excluded**: they are passable, often mode-dependently, and treating them as walls would reject legitimate nudges.
+
+**The twelve spot-check anchors.**
+
+| anchor | status | moved | nearer node unreachable | candidates behind a barrier | approach crosses a barrier |
+|---|---|---|---|---|---|
+| UNC Hospitals | **nudged** | 37.2 m | 1 | 0 | — |
+| Duke University Hospital | **ok** | 77.6 m | 0 | 0 | — |
+| Carrboro Town Hall | **ok** | 3.6 m | 0 | 0 | — |
+| Downtown Durham | **ok** | 30.6 m | 0 | 2 | — |
+| Chapel Hill (Franklin St) | **ok** | 6.2 m | 0 | 3 | — |
+| RTP (Kit Creek Rd) | **ok** | 73.6 m | 0 | 0 | — |
+| RDU Terminal 2 | **ok** | 74.4 m | 0 | 6 | **yes** |
+| NC State Bell Tower | **ok** | 20.6 m | 0 | 31 | — |
+| Downtown Raleigh (Moore Sq) | **ok** | 5.9 m | 0 | 0 | — |
+| Cary Downtown | **ok** | 9.2 m | 0 | 0 | — |
+| Southpoint Mall | **ok** | 48.1 m | 0 | 0 | — |
+| Hillsborough | **ok** | 42.0 m | 0 | 0 | — |
+
+12 of 12 anchors are usable, 1 after a nudge; 1 had an unreachable node nearer than the one chosen; 1 sit behind a perimeter so every reachable candidate is barrier-crossing and the straight-line approach is not the real one.
+
+**What the directed test actually bought here.** The RDU stub failure does **not** reproduce: all six nodes within 150 m of the terminal are reachable from the core, so `largest_component` had already fixed it and the directed test confirms rather than rescues. Metro-wide the directed test rejects 143 nodes the weak test keeps, and on these twelve anchors it changed the chosen node exactly 1 time. Small, real, and worth having because the failure it prevents is silent — but not the dramatic correction the RDU story might suggest.
+
+This is a routability result, not an accuracy one: it says an anchor can be reached, not that the time to reach it is right.
+
