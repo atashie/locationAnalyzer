@@ -843,7 +843,12 @@ Total reachable cells nearest a restricted edge: 4,367 of 253,679 reachable.
 
 #### Superseded again 2026-11-04 by the routing-extent re-acquisition
 
-Everything below was measured against **452 groceries** from the evaluation-extent Overture
+**Scope of this notice: the subsection immediately below, "S2.5: what the re-run settles", and the
+two penalty tables above it.** It does *not* supersede the newer runs appended further down this
+file, which are the replacement results it points to — an earlier version said "everything below",
+which included the replacements (Codex pass-11 M5).
+
+Those historical results were measured against **452 groceries** from the evaluation-extent Overture
 download. Phase 1 closed Codex pass-10 M6 by re-acquiring Overture at the **routing** extent, which
 raised the grocery destination set to **550** (+22%), and the sweep was re-run. The newest table is
 at the end of this file. The replacement figures:
@@ -855,8 +860,22 @@ at the end of this file. The replacement figures:
 | nodes diverted at 120 s | 49,363 | **62,241** |
 | coverage across 0-960 s | 0.10 points | **0.09 points** |
 
-Coverage rose, which is the expected direction: more destinations can only help reachability, and a
-cell at the grid edge can now use a grocery just outside it instead of being truncated.
+Coverage rose **in this measurement**. I had written that more destinations "can only help
+reachability", and that is **false for what this product reports** (Codex pass-11 M3). The
+monotonicity theorem holds for the existence of a path, for minimum cost, and for minimum time —
+but the layer selects the *least-cost* destination and reports **that path's time**, then applies a
+time horizon. Adding a cheaper-but-slower destination can therefore move a cell from `OK` to
+`BEYOND_HORIZON`. Codex demonstrated it with two destinations: time 60 / cost 260, and time 180 /
+cost 180; at a 120-second horizon the origin is `OK` with the first alone and past the horizon once
+the second is added.
+
+So the net gain of 3,073 cells is a **net**, not a count of newly reachable cells. Measured as a
+paired transition matrix on one graph and grid (`s2_destination_monotonicity.py`, appended at the
+end of this file), it is **3,074 gained and 1 lost** — and that single lost cell is a real
+`OK -> BEYOND_HORIZON`, so the defect is observed and not merely constructible. On the 253,678
+cells `OK` in both, **14 report a longer time** with the larger destination set, up to **+213.9 s**.
+Nothing crosses a 10/15/25/45-minute threshold in the losing direction, so the user-visible harm at
+the thresholds we test is currently zero, but the direction is not guaranteed.
 
 **A coincidence worth naming.** The new 77.69% is close to the long-superseded **77.32%**, which
 might suggest the original buggy figure was right all along. It was not. That figure was wrong
@@ -1083,3 +1102,34 @@ Of the **117,598** nodes the penalty actually affected, both outcomes below are 
 | None | 1 |
 
 Total reachable cells nearest a restricted edge: 4,420 of 256,752 reachable.
+
+### Destination monotonicity, paired: grocery / walk (2026-11-04 14:15:35)
+
+Codex pass-11 M3. I had claimed more destinations "can only help reachability"; the layer reports the time to the **cost**-nearest destination, so that is not a theorem. Both surfaces are built by `build_layer_surface` on one graph and grid, with the evaluation-extent set reconstructed as the routing-extent rows inside the evaluation bbox.
+
+- narrow: 452 places / 417 nodes (the original evaluation-extent count)
+- wide: 550 places / 510 nodes; narrow nodes are a subset of wide: **True**
+- geometries: {'Point': 550} — the reconstruction replaces Overture's bbox query with a point-in-bbox test, which is the same operation only for points
+
+| narrow status | wide status | cells |
+|---|---|---|
+| `OK` | `OK` | 253,678 |
+| `OK` | `BEYOND_HORIZON` **(loss)** | 1 |
+| `OFF_NETWORK` | `OFF_NETWORK` | 57,541 |
+| `BEYOND_HORIZON` | `BEYOND_HORIZON` | 16,208 |
+| `BEYOND_HORIZON` | `OK` **(gain)** | 3,074 |
+
+Coverage 253,679 -> 256,752: a net of **+3,073** made of **3,074 gained** and **1 lost**.
+
+- lost cell (5, 6): 7127.6 s with the narrow set, `BEYOND_HORIZON` with the wider one (inf s)
+
+On the 253,678 cells `OK` in both, the reported time rose by more than a second in **14** cells (max **+213.9 s**) and fell in 5,802 (max -4091.8 s).
+
+| threshold | narrow passing | wide passing | gained | lost |
+|---|---|---|---|---|
+| 10min | 24,041 | 24,245 | +204 | -0 |
+| 15min | 47,015 | 47,495 | +480 | -0 |
+| 25min | 92,646 | 93,562 | +916 | -0 |
+| 45min | 159,894 | 161,664 | +1,770 | -0 |
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`

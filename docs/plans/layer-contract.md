@@ -461,11 +461,13 @@ condition is layer-wide, so one unsnappable place is simply a smaller destinatio
 distinction matters: a category where *every* place failed to snap would be a build error, while one
 is attrition.
 
-57,541 + 19,282 = 76,823 = **23.2443%**, which is exactly the nodata share measured on the
-committed artifact. So three cells in four of the missing region have no road within 200 m, and one
-in four has a road but is more than 120 minutes' walk from a grocery. Previously this was one
-undifferentiated blob, and S2.4's "ten largest contiguous no-data regions with a named cause" now
-has a cause per cell to start from.
+57,541 + 19,282 = 76,823 = **23.2443%**, which was exactly the nodata share of the artifact *as
+built at the time*. On the current routing-extent build the missing region is 73,750 cells
+(**22.3145%**) and off-network is **78.0%** of it — the ratio shifted because only the
+beyond-horizon part moved. The point of this section is the *shape*: the missing region decomposes
+into cells with no nearby road and cells too far from a destination, and those are different
+problems with different remedies. Previously this was one undifferentiated blob, and S2.4's "ten
+largest contiguous no-data regions with a named cause" now has a cause per cell to start from.
 
 `Surface.validate()` passes on all 330,502 cells. Against the committed
 `own_triangle_grocery_walk.npy`: finiteness **identical**, maximum absolute difference **0.000244
@@ -508,29 +510,43 @@ drive figure (1,685) was not re-measured.
 
 §3 establishes that the shipped surface is an **upper bound** on `min_d t(cell → d)`, not that
 minimum. The size of the gap decides whether that matters, and both ends of the bracket are one
-Dijkstra, so it is directly measurable on the real build. Over the 253,679 cells where both sides
+Dijkstra, so it is directly measurable on the real build. Over the 256,752 cells where both sides
 have a time:
 
 | | |
 |---|---|
-| cells differing by more than 1 s | **23,468 — 9.25%** |
-| median gap where they differ | **37.7 s** |
+| cells differing by more than 1 s | **24,745 — 9.64%** |
+| median gap where they differ | **40.0 s** |
 | p90 gap where they differ | 129.7 s |
 | maximum gap | 668.6 s (11.1 min) |
+
+*(Routing-extent figures over 256,752 comparable cells. The evaluation-extent run read 23,468 /
+9.25% / 37.7 s over 253,679 — the finding is unchanged by the widening, which is the useful part.)*
 
 A 9% disagreement rate sounds alarming, but seconds are not the product. What matters is how many
 cells the gap moves across a threshold a household would actually set:
 
 | threshold | cells the shipped surface excludes that the lower bound includes | share of passing cells |
 |---|---|---|
-| 10 min | 202 | **0.83%** |
-| 15 min | 325 | **0.69%** |
-| 25 min | 340 | 0.37% |
-| 45 min | 256 | 0.16% |
+| 10 min | 205 | **0.84%** |
+| 15 min | 329 | **0.69%** |
+| 25 min | 363 | 0.38% |
+| 45 min | 265 | 0.16% |
 
 So the defect is real, one-directional, and **bounded below 1% of the included region** at every
 threshold tested — and the effect shrinks as the threshold grows, because a longer budget makes
 the penalised shortcut less often decisive.
+
+**One-directional at a fixed destination set, but not monotone in the set itself.** Because the
+reported value is the time along the *cost*-nearest path, adding a destination that is cheaper and
+slower raises it. Measured on the 452 -> 550 grocery widening as a paired transition matrix: 3,074
+cells gained `OK` and **1 cell lost it** to `BEYOND_HORIZON`, and 14 of the 253,678 cells `OK` in
+both report a longer time afterwards (up to +213.9 s). The lost cell sat at **7,127.6 s — 118.8
+minutes against a 120-minute horizon**, so the mechanism is visible in the number: a cell that close
+to the cutoff needs only a slightly slower winner to fall past it. So "more destinations" is an
+improvement in
+practice and not a guarantee in principle, and a coverage delta between two destination sets must
+be reported as gained-and-lost rather than as a net.
 
 That is the number the design decision needs. Changing the algorithm means revisiting the access
 policy the owner already approved, so it is not a fix to make quietly; and these figures use the

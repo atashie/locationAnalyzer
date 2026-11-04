@@ -7,6 +7,14 @@
 | census | 40 | 33 | 81 | 210 | 4 | 0.10 |
 | nominatim | 40 | 36 | 0 | 38 | 2 | 0.33 |
 
+
+> **The S2.1 resolver sections appended below carry their own dates, and the earlier ones are
+> superseded.** Any run quoting an index of **96,585 places / 90,349 Overture rows / 177
+> localities** used the partly evaluation-only Overture download *and* a resolver predating the
+> Codex pass-10 and pass-11 fixes; its candidate lists, outcomes and timings are all affected. The
+> current index is **113,720 places / 107,484 Overture rows / 229 localities**. Read the latest
+> dated section (Codex pass-11 M5).
+
 ## Ambiguous and POI-style queries
 
 | query | census | nominatim |
@@ -33,6 +41,8 @@ Raw results: v2/data/geocode_bench.json
 
 ### S2.1 place-name resolver on the real metro index (2026-11-04 11:41:22)
 
+> *Superseded input: evaluation-extent Overture download, and a resolver predating the Codex pass-10 and pass-11 fixes. Current index 113,720 / 107,484 / 229.*
+
 Index: **96,585 places** from 90,349 Overture accepted rows + 7,425 OSM POIs, bounded by the **triangle routing bbox** — not the evaluation bbox, because a workplace can legitimately sit outside the area we grid. 177 distinct localities. Built in 3.2 s; median query **13.5 ms**.
 
 The ten queries are verbatim from `geocoding.md`, where **Census resolved none of them** and unbounded Nominatim answered two of them with places in other states.
@@ -57,6 +67,8 @@ Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_
 
 ### S2.1 place-name resolver on the real metro index (2026-11-04 11:43:32)
 
+> *Superseded input: evaluation-extent Overture download, and a resolver predating the Codex pass-10 and pass-11 fixes. Current index 113,720 / 107,484 / 229.*
+
 Index: **96,585 places** from 90,349 Overture accepted rows + 7,425 OSM POIs, bounded by the **triangle routing bbox** — not the evaluation bbox, because a workplace can legitimately sit outside the area we grid. 177 distinct localities. Built in 3.1 s; median query **13.4 ms**.
 
 The ten queries are verbatim from `geocoding.md`, where **Census resolved none of them** and unbounded Nominatim answered two of them with places in other states.
@@ -80,6 +92,8 @@ Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_
 
 
 ### S2.1 place-name resolver on the real metro index (2026-11-04 11:43:44)
+
+> *Superseded input: evaluation-extent Overture download, and a resolver predating the Codex pass-10 and pass-11 fixes. Current index 113,720 / 107,484 / 229.*
 
 Index: **96,585 places** from 90,349 Overture accepted rows + 7,425 OSM POIs, bounded by the **triangle routing bbox** — not the evaluation bbox, because a workplace can legitimately sit outside the area we grid. 177 distinct localities. Built in 3.2 s; median query **14.0 ms**.
 
@@ -201,4 +215,24 @@ Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_
 | `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
 
 **2 of 5 graded queries land on the right place**, and 1 resolve confidently onto a feature that merely *refers* to a place (a stop, a platform, an ATM) rather than the place itself — a distance test calls those correct, which is why identity is checked separately. Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
+
+
+### S2.1 correctness, not confidence (2026-11-04 13:57:58)
+
+`s2_resolver_fixtures.py` reports 10/10 candidates and 7 single answers. That measures **confidence**. This checks the answers against the independent spot-check reference points, with a deliberately coarse 800 m threshold — the references are not POI centroids, so this separates *same place* from *somewhere else entirely*.
+
+| query | outcome | top candidate | category | distance from reference | verdict |
+|---|---|---|---|---|---|
+| `Whole Foods, Chapel Hill NC` | ambiguous | Whole Foods Market | supermarket | — | **ungraded** |
+| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | — | **ungraded** |
+| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | — | **ungraded** |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | 973 m | **right place NOT offered** |
+| `Duke Hospital` | ambiguous | Duke Hospital | platform | 56 m | **right place offered** |
+| `RTP` | ambiguous | Aventura RTP | historic_site | 14056 m | **right place NOT offered** |
+| `Fidelity Investments Durham NC` | resolved | Fidelity Investments | broker | — | **ungraded** |
+| `Southpoint` | resolved | Southpoint | dessert_shop | 732 m | **correct** |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | 227 m | **correct** |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
+
+**3 of 5 graded queries land on the right place**, and 0 resolve confidently onto a feature that merely *refers* to a place (a stop, a platform, an ATM) rather than the place itself — a distance test calls those correct, which is why identity is checked separately. Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
 

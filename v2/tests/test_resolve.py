@@ -105,12 +105,27 @@ def test_the_chapel_hill_form_resolves_too():
     assert r.anchor.place.locality == "Chapel Hill"
 
 
-def test_two_similar_market_names_in_one_town_stay_ambiguous():
-    """Weaver Street Market and Carrboro Farmers Market are different places; a query that does not
-    distinguish them must not pick one."""
+def test_a_query_whose_words_all_appear_in_one_name_resolves_to_it():
+    """This test used to assert that "market carrboro" stays ambiguous, and it did — but only
+    because the parser stripped "carrboro" as a locality and then scored the remainder, which made
+    Carrboro Farmers Market and Weaver Street Market tie. Scoring the intact query as well (pass-11
+    H2) separates them properly: both typed words appear in one of the names and only one appears
+    in the other."""
     r = IDX.resolve("market carrboro")
-    assert r.outcome == "ambiguous"
-    assert len(r.candidates) >= 2
+    assert r.outcome == "resolved"
+    assert r.anchor.place.name == "Carrboro Farmers Market"
+    assert r.candidates[1].place.name == "Weaver Street Market", "the other is still offered"
+    assert r.anchor.score > r.candidates[1].score
+
+
+def test_a_query_that_genuinely_cannot_distinguish_two_places_stays_ambiguous():
+    r = IDX.resolve("Weaver Street Market")
+    assert r.outcome == "resolved", "a full exact name is not ambiguous"
+    two = PlaceIndex([
+        P("Village Market", -79.07, 35.91, sid="a", locality="Carrboro"),
+        P("Village Market", -79.08, 35.92, sid="b", locality="Carrboro"),
+    ])
+    assert two.resolve("Village Market Carrboro").outcome == "ambiguous"
 
 
 def test_an_unknown_name_is_not_found_rather_than_nearest_guess():
@@ -372,3 +387,100 @@ def test_missing_values_do_not_abort_the_index_build():
     assert _first(float("nan"), "Real") == "Real"
     assert _first("<NA>", "Real") == "Real"
     assert _missing(float("nan")) and _missing(None) and not _missing("x")
+
+
+# ---------------------------------------------------------------- Codex pass-11 regressions
+
+def test_a_locality_word_inside_a_name_is_not_stripped_away():
+    """Pass-11 H2, and a regression I introduced with my own pass-10 H2 fix. The parser committed
+    to one reading before scoring, so "Durham Coffee" stripped "Durham" as a locality and resolved
+    confidently to a place called **"Coffee"** at 1.000, beating the actual "Durham Coffee" at
+    0.725. Every plausible reading is scored now and the best explanation wins."""
+    idx = PlaceIndex([
+        P("Coffee", -78.90, 36.00, sid="plain", locality="Durham", category="cafe"),
+        P("Durham Coffee", -78.91, 36.01, sid="named", locality="Durham", category="cafe"),
+    ])
+    r = idx.resolve("Durham Coffee")
+    assert r.candidates[0].place.source_id == "named",         "the exact full name must outrank a destructive parse of the same query"
+    assert r.candidates[0].reading == 0, "it matched the intact query"
+    # Both are plausible — there really is a shop called "Coffee" in Durham — so offering a chooser
+    # is the honest outcome. What matters is that the destructive reading no longer *wins*.
+    assert r.outcome == "ambiguous" and {c.place.source_id for c in r.candidates} == {"named", "plain"}
+
+
+def test_a_name_that_begins_with_a_connective_survives_a_trailing_locality():
+    """The other half of H2: `_strip_connectives` removed words belonging to the name. On the real
+    index "The Streets At Southpoint Durham" ranked a computer wholesaler level with the mall."""
+    idx = PlaceIndex([
+        P("The Streets At Southpoint", -78.9480, 35.9100, sid="mall", locality="Durham",
+          category="shopping_mall"),
+        P("Streets At Southpoint", -78.9490, 35.9110, sid="other", locality="Durham",
+          category="office"),
+    ])
+    r = idx.resolve("The Streets At Southpoint Durham")
+    assert r.candidates[0].place.source_id == "mall",         f"got {r.candidates[0].place.name!r} at {r.candidates[0].score}"
+
+
+def test_a_stop_cannot_be_the_confident_answer_when_a_real_place_also_matches():
+    """Pass-11 H4. Demotion is only a tie-break, and the Duke Hospital platform scores 1.000
+    against hospitals at 0.7833 — so it won outright and was presented as the single answer to a
+    hospital query. The resolver knows it picked a reference feature, so it can withhold
+    confidence instead."""
+    idx = PlaceIndex([
+        P("Duke Hospital", -78.9375, 36.0076, sid="stop", category="platform"),
+        P("Duke Hospital South", -78.9380, 36.0070, sid="hosp", category="hospital"),
+    ])
+    r = idx.resolve("Duke Hospital")
+    assert r.outcome == "ambiguous" and r.anchor is None
+    assert {c.place.source_id for c in r.candidates} == {"stop", "hosp"}
+
+    # a transit query with nothing else to offer still resolves
+    only = PlaceIndex([P("Duke Hospital", -78.9375, 36.0076, sid="stop", category="bus_stop")])
+    assert only.resolve("Duke Hospital").anchor is not None
+
+
+def test_one_record_cannot_absorb_several_from_the_same_other_source():
+    """Pass-11 H3. Only the surviving representative's source was checked, so after one merge the
+    representative was still OSM and the next Overture record passed the same test — two
+    independent places vanishing into one confident answer."""
+    idx = PlaceIndex([
+        P("Acme", -79.0, 35.9, source="osm", sid="osm/1", category="bank"),
+        P("Acme", -79.00005, 35.9, source="overture", sid="ovt/1", category="bank"),
+        P("Acme", -79.0001, 35.9, source="overture", sid="ovt/2", category="bank"),
+    ])
+    r = idx.resolve("Acme")
+    assert len(r.candidates) == 2, "one cross-source pair merges; the third stays separate"
+    assert r.outcome == "ambiguous"
+
+
+def test_categories_are_compared_as_roles_not_raw_strings():
+    """Pass-11 M1, the third time raw categories have gone wrong across vocabularies. OSM says
+    `station` and `fuel` where Overture says `train_station` and `gas_station`, so a raw-set
+    membership test blocked exactly the merges it was meant to allow."""
+    from locfinder.places.resolve import role_of
+    assert role_of("station") == role_of("train_station") == "station"
+    assert role_of("fuel") == role_of("gas_station") == "fuel"
+    assert role_of("supermarket") == role_of("grocery_store") == "facility"
+    assert role_of("platform") == role_of("bus_stop") == "stop"
+    assert role_of(None) == "facility"
+
+    # a whole station is a destination, so the two sources' records merge
+    station = PlaceIndex([
+        P("Durham", -78.9062, 35.9976, source="overture", sid="ovt", category="train_station"),
+        P("Durham", -78.90646, 35.99753, source="osm", sid="osm/1", category="station"),
+    ])
+    assert len(station.resolve("Durham").candidates) == 1
+
+    # and so does a filling station
+    fuel = PlaceIndex([
+        P("Sky Mart", -79.00615, 35.64282, source="overture", sid="ovt", category="gas_station"),
+        P("Sky Mart", -79.00617, 35.64296, source="osm", sid="osm/1", category="fuel"),
+    ])
+    assert len(fuel.resolve("Sky Mart").candidates) == 1
+
+    # a platform still never merges with its parent
+    parent = PlaceIndex([
+        P("Duke Hospital", -78.9375, 36.0076, source="overture", sid="ovt", category="hospital"),
+        P("Duke Hospital", -78.93751, 36.00761, source="osm", sid="osm/1", category="platform"),
+    ])
+    assert len(parent.resolve("Duke Hospital").candidates) == 2

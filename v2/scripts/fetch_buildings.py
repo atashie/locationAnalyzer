@@ -15,6 +15,11 @@ Microsoft ML footprints under **ODbL 1.0** and on Esri and Google Open Buildings
 and that is the fail-closed machinery working rather than a bug: a derived *database* containing
 ODbL rows is share-alike, and that is a decision for the owner, not a default for a script.
 
+Acquired for the **grid's own footprint**, which is wider than the geographic evaluation bbox
+because the grid is an axis-aligned UTM rectangle enclosing it. 4.54% of the Triangle's cells lie
+outside that geographic box and still count towards the published denominator, so the input has to
+cover the cells it weights.
+
 S2.4 needs buildings only as a **coverage diagnostic** — rasterised to counts, to weight the
 no-data audit by how many buildings sit in a gap rather than by cell area. Nothing is republished,
 so the use is a Produced Work. The report records the observed licences so the registry row can be
@@ -73,15 +78,19 @@ def main() -> None:
     metro = get_metro(args.metro)
     out_dir = METRO_DIR if args.metro is None else METRO_DIR.parent / metro.name
     out_dir.mkdir(parents=True, exist_ok=True)
-    e = metro.evaluation
-    # The EVALUATION bbox, not the routing one: coverage is audited over the published grid, and
-    # buildings outside it are not part of that denominator.
-    bbox = f"{e.west},{e.south},{e.east},{e.north}"
+    # The published grid's **actual footprint**, not the geographic evaluation bbox.
+    # `GridSpec.from_bbox_wgs84` encloses the projected geographic box in an axis-aligned, rounded
+    # UTM rectangle and masks nothing, so 15,015 of the Triangle's 330,502 cells (4.54%) fall
+    # outside the geographic bbox while still counting towards the published coverage denominator
+    # (Codex pass-11 M4). Acquiring buildings for the geographic bbox would weight that denominator
+    # with an input covering less ground than the cells it describes.
+    w, s_, e_, n = metro.grid().envelope_wgs84()
+    bbox = f"{w:.6f},{s_:.6f},{e_:.6f},{n:.6f}"
 
     raw, _ = acquire(out_dir / "overture_buildings_raw.parquet",
                      Acquisition(overture_type="building", release=args.release, bbox=bbox))
     gdf = gpd.read_parquet(raw)
-    print(f"{len(gdf):,} buildings in the {metro.name} evaluation bbox", flush=True)
+    print(f"{len(gdf):,} buildings over the {metro.name} grid footprint", flush=True)
 
     datasets: Counter = Counter()
     licences: Counter = Counter()

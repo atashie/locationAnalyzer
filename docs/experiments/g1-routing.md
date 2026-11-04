@@ -1,9 +1,17 @@
 
-> **Destination counts below are evaluation-extent (2026-11-03/04).** Overture was re-acquired at
+> **Scope: every section dated 2026-11-03 or earlier on 2026-11-04, up to and including the
+> expansion and access-leg runs. The runs appended at the end of this file — the two S0 status
+> decompositions and the own-graph rebuild between them — are the 550-place replacements and are
+> NOT superseded by this notice.** An earlier version said "below" without that bound, which swept in the
+> replacements it was pointing to (Codex pass-11 M5).
+>
+> **Destination counts in those historical sections are evaluation-extent.** Overture was re-acquired at
 > the **routing** extent on 2026-11-04 (Codex pass-10 M6), taking grocery from **452 places / 417
 > destination nodes** to **550 places**. Every layer figure that depends on the destination set —
 > coverage shares, reachable-cell counts, medians — is therefore superseded in the direction of
-> *more* reachability; `spotcheck-engines.md` carries the re-measured sweep. Results about
+> *more* reachability **in the measurements taken** — not as a theorem, because the layer reports
+> the time along the *least-cost* destination's path and a cheaper-but-slower destination can push
+> a cell past the horizon (pass-11 M3); `spotcheck-engines.md` carries the re-measured sweep. Results about
 > *structure* rather than *coverage* (the expansion reconstruction, the direction and merging
 > defects, the access-leg decomposition, the destination-selection mechanism) are unaffected, but
 > note that the spikes used to take "the first three POIs" in **file order**, which the

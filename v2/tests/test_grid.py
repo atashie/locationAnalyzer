@@ -46,3 +46,22 @@ def test_rasterio_profile_matches_grid():
     assert p["dtype"] == "uint8" and p["nodata"] == NODATA
     assert p["crs"].to_string() == "EPSG:32617"
     assert p["transform"].a == 100 and p["transform"].e == -100
+
+
+def test_the_grid_covers_more_ground_than_the_bbox_it_was_built_from():
+    """Codex pass-11 M4. `from_bbox_wgs84` encloses the projected geographic box in an axis-aligned
+    rounded UTM rectangle, and nothing masks the cells outside the original geographic bbox — 4.54%
+    of the Triangle's cells. An input acquired for the geographic bbox therefore covers less ground
+    than the cells it is meant to describe, so the envelope has to be derivable."""
+    from locfinder.metros import TRIANGLE
+
+    g = TRIANGLE.grid()
+    w, s, e, n = g.envelope_wgs84()
+    ev = TRIANGLE.evaluation
+    assert w <= ev.west and s <= ev.south and e >= ev.east and n >= ev.north
+
+    lons, lats = g.cell_centers_lonlat()
+    inside = ((lons >= ev.west) & (lons <= ev.east) & (lats >= ev.south) & (lats <= ev.north))
+    assert (~inside).any(), "some cell centres fall outside the geographic evaluation bbox"
+    # and every cell centre is inside the derived envelope, which is the point of it
+    assert ((lons >= w) & (lons <= e) & (lats >= s) & (lats <= n)).all()

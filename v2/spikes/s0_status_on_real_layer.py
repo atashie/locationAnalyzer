@@ -60,6 +60,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("category")
     ap.add_argument("mode", choices=["walk", "bike", "drive"])
+    ap.add_argument("--allow-artifact-mismatch", action="store_true",
+                    help="do not fail when the committed artifact disagrees; for the window "
+                         "between changing inputs and rebuilding it")
     args = ap.parse_args()
     out: dict = {"metro": METRO.name, "category": args.category, "mode": args.mode}
 
@@ -133,6 +136,25 @@ def main() -> None:
         a = out["against_committed_artifact"]
         print(f"vs {a['path']}: finiteness identical={a['finiteness_identical']}, "
               f"max abs diff {a['max_abs_diff_s']:.6f} s", flush=True)
+        # Assert, do not merely print (Codex pass-11 L1). This check reported
+        # `finiteness identical=False` with a 4,091 s maximum difference during the re-acquisition
+        # and the script carried on to write a full report and exit 0 — a verification that cannot
+        # fail is not a verification. `--allow-artifact-mismatch` is for the window between
+        # changing the inputs and rebuilding the artifact, when the two genuinely describe
+        # different destination sets.
+        tolerance_s = 0.01            # float32 quantisation on values up to the horizon
+        if not args.allow_artifact_mismatch:
+            if not a["finiteness_identical"] or a["max_abs_diff_s"] > tolerance_s:
+                raise SystemExit(
+                    f"artifact mismatch: {prev_path.name} does not match this run "
+                    f"(finiteness identical={a['finiteness_identical']}, max abs diff "
+                    f"{a['max_abs_diff_s']:.3f} s > {tolerance_s} s). The artifact was almost "
+                    "certainly built from a different destination set; rebuild it with "
+                    "g1_own_graph_layer.py, or pass --allow-artifact-mismatch if the difference "
+                    "is expected.")
+    else:
+        print(f"NOTE: {prev_path.name} is absent, so provenance was NOT verified against a "
+              "committed artifact.", flush=True)
 
     # ---- claim 3: the H2 bracket -------------------------------------------------------------
     # The lower side: min over destinations of real time, access cost ignored entirely.

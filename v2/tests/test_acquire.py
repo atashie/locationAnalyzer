@@ -121,3 +121,52 @@ def test_the_state_file_is_readable_json_next_to_the_raw_file(tmp_path):
     acquire(raw, A, downloader=writer("x"), log=lambda *a: None)
     assert state_path(raw) == tmp_path / "raw.parquet.state"
     assert json.loads(state_path(raw).read_text(encoding="utf-8"))["type"] == "place"
+
+
+def test_two_acquisitions_cannot_interleave_into_a_wrong_label(tmp_path):
+    """Codex pass-11 H1, reproduced deterministically rather than by timing luck. With a shared
+    temporary filename and no lock, the schedule "A replaces raw -> B commits B -> A writes state A"
+    left B's bytes labelled A and both calls returned success. The lock makes the whole
+    check-download-commit sequence exclusive, so the inner call blocks instead."""
+    raw = tmp_path / "raw.parquet"
+
+    def downloader_that_reenters(tmp, want):
+        tmp.write_text("A-bytes", encoding="utf-8")
+        # A second acquisition attempted from inside the first must not be able to commit.
+        with pytest.raises(TimeoutError, match="another acquisition"):
+            acquire(raw, B, downloader=writer("B-bytes"), log=lambda *a: None)
+
+    import locfinder.places.acquire as acq
+    original = acq.LOCK_TIMEOUT_S
+    acq.LOCK_TIMEOUT_S = 0.3
+    try:
+        acquire(raw, A, downloader=downloader_that_reenters, log=lambda *a: None)
+    finally:
+        acq.LOCK_TIMEOUT_S = original
+    assert raw.read_text(encoding="utf-8") == "A-bytes"
+    assert read_state(raw) == A.as_dict()
+
+
+def test_the_temporary_file_is_process_unique(tmp_path):
+    """A shared `raw.partial` let one acquisition's cleanup delete another's download."""
+    import os
+    raw = tmp_path / "raw.parquet"
+    seen = []
+    acquire(raw, A, downloader=lambda tmp, want: (seen.append(tmp), tmp.write_text("x")),
+            log=lambda *a: None)
+    assert str(os.getpid()) in seen[0].name
+
+
+def test_an_abandoned_lock_does_not_block_forever(tmp_path):
+    """A crashed download must not wedge the build."""
+    import locfinder.places.acquire as acq
+    raw = tmp_path / "raw.parquet"
+    lock = raw.with_suffix(raw.suffix + acq.LOCK_SUFFIX)
+    lock.write_text("99999 0", encoding="utf-8")
+    stale = acq.LOCK_STALE_S
+    acq.LOCK_STALE_S = -1.0           # treat any existing lock as abandoned
+    try:
+        _, downloaded = acquire(raw, A, downloader=writer("fresh"), log=lambda *a: None)
+    finally:
+        acq.LOCK_STALE_S = stale
+    assert downloaded and not lock.exists()

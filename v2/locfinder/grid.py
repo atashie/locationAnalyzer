@@ -70,6 +70,22 @@ class GridSpec:
         lons, lats = to_wgs.transform(xs, ys)
         return np.asarray(lons), np.asarray(lats)
 
+    def envelope_wgs84(self) -> tuple[float, float, float, float]:
+        """`(west, south, east, north)` actually covered by this grid's cells.
+
+        `from_bbox_wgs84` encloses the projected geographic box in an axis-aligned, rounded UTM
+        rectangle, and nothing masks the cells that fall outside the original geographic bbox —
+        **15,015 of the Triangle's 330,502 cells, 4.54%** (Codex pass-11 M4). The published surface
+        uses the whole rectangle as its denominator, so an input acquired for the geographic bbox
+        covers less ground than the cells it is meant to describe. Any audit that weights coverage
+        by an acquired input must acquire it for *this* envelope.
+        """
+        to_wgs = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+        xs = [self.x_min, self.x_max, self.x_min, self.x_max]
+        ys = [self.y_min, self.y_min, self.y_max, self.y_max]
+        lons, lats = to_wgs.transform(xs, ys)
+        return (min(lons), min(lats), max(lons), max(lats))
+
     def rasterio_profile(self) -> dict:
         return {
             "driver": "GTiff",
