@@ -70,7 +70,11 @@ class GridSpec:
         lons, lats = to_wgs.transform(xs, ys)
         return np.asarray(lons), np.asarray(lats)
 
-    def envelope_wgs84(self) -> tuple[float, float, float, float]:
+    #: Points per side when reprojecting the rectangle's boundary. A projected rectangle's edges
+    #: are curves in geographic coordinates, so its geographic extremes need not be at its corners.
+    ENVELOPE_SAMPLES = 256
+
+    def envelope_wgs84(self, *, pad_deg: float = 1e-6) -> tuple[float, float, float, float]:
         """`(west, south, east, north)` actually covered by this grid's cells.
 
         `from_bbox_wgs84` encloses the projected geographic box in an axis-aligned, rounded UTM
@@ -79,12 +83,29 @@ class GridSpec:
         uses the whole rectangle as its denominator, so an input acquired for the geographic bbox
         covers less ground than the cells it is meant to describe. Any audit that weights coverage
         by an acquired input must acquire it for *this* envelope.
+
+        **The four corners do not bound it** (Codex pass-12 M6). A UTM rectangle's top edge is a
+        curve in latitude whose maximum sits in the *interior* of the edge, near the central
+        meridian, not at either corner. Codex's counterexample —
+        `GridSpec("EPSG:32617", 450000, 4000000, 100, 1000, 10)` — put **806 cell centres north of
+        a corner-derived bound**. The Triangle's own envelope happened to agree with a dense check,
+        so the acquired building footprint was never actually short; the method was still wrong, and
+        would have been quietly wrong for a differently placed metro.
+
+        So the whole boundary is sampled, and the result is padded outward by `pad_deg` because an
+        acquisition bound must never be tighter than the thing it is meant to cover. Sampling the
+        boundary is sufficient: the forward projection is continuous and monotone in each coordinate
+        over a single UTM zone, so no interior point exceeds every boundary point.
         """
         to_wgs = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
-        xs = [self.x_min, self.x_max, self.x_min, self.x_max]
-        ys = [self.y_min, self.y_min, self.y_max, self.y_max]
+        n = self.ENVELOPE_SAMPLES
+        ex = np.linspace(self.x_min, self.x_max, n)
+        ey = np.linspace(self.y_min, self.y_max, n)
+        xs = np.concatenate([ex, ex, np.full(n, self.x_min), np.full(n, self.x_max)])
+        ys = np.concatenate([np.full(n, self.y_min), np.full(n, self.y_max), ey, ey])
         lons, lats = to_wgs.transform(xs, ys)
-        return (min(lons), min(lats), max(lons), max(lats))
+        return (float(np.min(lons)) - pad_deg, float(np.min(lats)) - pad_deg,
+                float(np.max(lons)) + pad_deg, float(np.max(lats)) + pad_deg)
 
     def rasterio_profile(self) -> dict:
         return {

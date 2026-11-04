@@ -874,8 +874,20 @@ paired transition matrix on one graph and grid (`s2_destination_monotonicity.py`
 end of this file), it is **3,074 gained and 1 lost** — and that single lost cell is a real
 `OK -> BEYOND_HORIZON`, so the defect is observed and not merely constructible. On the 253,678
 cells `OK` in both, **14 report a longer time** with the larger destination set, up to **+213.9 s**.
-Nothing crosses a 10/15/25/45-minute threshold in the losing direction, so the user-visible harm at
-the thresholds we test is currently zero, but the direction is not guaranteed.
+Nothing crosses a 10/15/25/45-minute threshold in the losing direction. **That does not
+generalise, and I should not have implied it did** (Codex pass-12). Searching thresholds I had not
+tested, Codex found cell **(126, 612)** going from 2,752.6122 s to 2,847.0805 s, which fails at
+**47 minutes**. Four thresholds being clean is four data points, not a property — the loss exists
+at some thresholds and the only honest statement is that it is rare and bounded by the single
+lost cell plus the fourteen slower ones.
+
+Codex also confirmed the mechanism directly rather than taking my word for it: the lost cell's snap
+distance is unchanged at 125.7155 m, its selected network **cost falls** from 7,147.8639 to
+7,127.0519 while its network **time rises** from 7,027.8639 to 7,127.0519 s. A cheaper, slower
+destination displaced the previous winner — not a snapping or tie-order artefact. And it verified
+the reconstruction more strictly than I had: the stored raw **bbox predicates** select exactly the
+same 452 ids as the centroid filter, which matters because all 550 geometries are points yet their
+stored bboxes have non-zero width, so "they are points" was not on its own sufficient proof.
 
 **A coincidence worth naming.** The new 77.69% is close to the long-superseded **77.32%**, which
 might suggest the original buggy figure was right all along. It was not. That figure was wrong
@@ -1172,5 +1184,40 @@ Cell coverage weights Jordan Lake the same as downtown Durham. This reports cove
 | 1,779 | 531 | `OFF_NETWORK` | 76.0% | 290 | 241 | -79.12336, 36.14864 |
 | 865 | 157 | `OFF_NETWORK` | 100.0% | 157 | 0 | -79.02912, 36.05676 |
 | 584 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -78.60635, 36.12014 |
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.3 access lawfulness audit: grocery / walk (2026-11-04 14:39:14)
+
+`access.py` lets a restricted edge be *chosen* at a penalty rather than forbidden, which is what makes a home on a private drive reachable. The open question was whether that also lets a published route run **through** private land, which `access=destination` forbids outright. Restricted edges are identified as `cost - time > 0` on the retained matrices, so these are the edges the search used.
+
+- restricted edges: **117,253 of 1,395,589** (8.40%); distinct penalties seen [120.0] s
+
+**Descriptive — how many shipped paths are unlawful.** A restricted edge is lawful as the origin's own first hop and as the final hop into a destination; anywhere else it is through traffic.
+
+| | nodes | share of reachable |
+|---|---|---|
+| reachable | 539,814 | — |
+| first hop restricted (the driveway case, lawful) | 48,865 | 9.0522% |
+| **shipped path routes through restricted land** | **26,395** | **4.8896%** |
+
+**Decisive — how much coverage has no lawful path at all.** The strict surface allows a restricted edge only as the first hop out of the origin. A restricted final hop into a destination's own parking is equally lawful and is *not* modelled, so lawful coverage is understated and these losses are an **upper bound**.
+
+- reachable nodes with **no lawful path**: **12,042** (2.2308%)
+- nodes that keep a path but get slower: 25,186, median +703.2 s, max +13289.3 s
+
+As published cells, both policies through the production snap:
+
+| | shipped | strict | lost |
+|---|---|---|---|
+| cells `OK` | 256,752 | 251,222 | 5,533 |
+| buildings `OK` | 499,009 | 494,128 | **4,881** (0.9521%) |
+
+| threshold | cells shipped | cells strict | cells lost | buildings lost |
+|---|---|---|---|---|
+| 10min | 24,245 | 23,203 | 1,046 | 2,723 |
+| 15min | 47,495 | 45,513 | 1,989 | 4,462 |
+| 25min | 93,562 | 90,355 | 3,208 | 6,497 |
+| 45min | 161,664 | 156,884 | 4,784 | 5,415 |
 
 - profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`

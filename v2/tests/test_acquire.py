@@ -5,13 +5,27 @@ happy-path test, which is exactly why they survived: the first needs a *changed 
 second needs an *interrupted download*. The downloader is injected so both can be provoked.
 """
 import json
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
 
 import pytest
 
 from locfinder.places.acquire import Acquisition, acquire, read_state, state_path
 
+#: The competing-writer tests need a *separate process*, because an OS lock is held per process.
+V2 = Path(__file__).resolve().parents[1]
+
 A = Acquisition(overture_type="place", release="2026-10-21.0", bbox="-79.2,35.7,-78.5,36.15")
+A2 = Acquisition(overture_type="place", release="2026-11-21.0", bbox="-79.2,35.7,-78.5,36.15")
 B = Acquisition(overture_type="place", release="2026-10-21.0", bbox="-79.35,35.55,-78.35,36.30")
+
+
+def leftovers(d):
+    """Everything in the directory except the lock file, which is created once and deliberately
+    never removed: unlinking it is what let one process release another's lock (pass-12 H1)."""
+    return sorted(q.name for q in d.iterdir() if not q.name.endswith(".lock"))
 
 
 def writer(payload: str):
@@ -80,7 +94,7 @@ def test_an_interrupted_download_leaves_the_previous_pair_intact(tmp_path):
     # the previous file and its label are untouched, and no partial file survives
     assert raw.read_text(encoding="utf-8") == "A-bytes"
     assert read_state(raw) == A.as_dict()
-    assert sorted(q.name for q in tmp_path.iterdir()) == ["raw.parquet", "raw.parquet.state"]
+    assert leftovers(tmp_path) == ["raw.parquet", "raw.parquet.state"]
 
     # and asking for A again legitimately reuses A, not B's bytes
     _, downloaded = acquire(raw, A, downloader=writer("SHOULD-NOT-RUN"), log=lambda *a: None)
@@ -127,24 +141,73 @@ def test_two_acquisitions_cannot_interleave_into_a_wrong_label(tmp_path):
     """Codex pass-11 H1, reproduced deterministically rather than by timing luck. With a shared
     temporary filename and no lock, the schedule "A replaces raw -> B commits B -> A writes state A"
     left B's bytes labelled A and both calls returned success. The lock makes the whole
-    check-download-commit sequence exclusive, so the inner call blocks instead."""
+    check-download-commit sequence exclusive, so a competing acquisition waits instead.
+
+    The competitor has to be a *separate process*: the lock is now an OS lock on a file handle, and
+    those are owned per process, so a re-entrant call from inside the same process would be granted
+    the lock it already holds. That is correct behaviour for the thing we are defending against —
+    two builds racing — and it is why this test spawns a child.
+    """
     raw = tmp_path / "raw.parquet"
+    acquire(raw, A, downloader=writer("A-bytes"), log=lambda *a: None)
 
-    def downloader_that_reenters(tmp, want):
-        tmp.write_text("A-bytes", encoding="utf-8")
-        # A second acquisition attempted from inside the first must not be able to commit.
-        with pytest.raises(TimeoutError, match="another acquisition"):
-            acquire(raw, B, downloader=writer("B-bytes"), log=lambda *a: None)
+    program = textwrap.dedent(f"""
+        import pathlib, sys
+        sys.path.insert(0, {str(V2)!r})
+        import locfinder.places.acquire as acq
+        acq.LOCK_TIMEOUT_S = 0.4
+        want = acq.Acquisition(overture_type="place", release="2026-10-21.0",
+                               bbox="-79.35,35.55,-78.35,36.30")
+        try:
+            acq.acquire(pathlib.Path({str(raw)!r}), want,
+                        downloader=lambda tmp, w: tmp.write_text("B-bytes"),
+                        log=lambda *a: None)
+        except TimeoutError:
+            print("TIMEOUT", flush=True)
+            sys.exit(7)
+        print("COMMITTED", flush=True)
+    """)
 
+    def downloader_that_races(tmp, want):
+        tmp.write_text("A-bytes-v2", encoding="utf-8")
+        done = subprocess.run([sys.executable, "-c", program], capture_output=True, text=True)
+        assert done.returncode == 7, f"child should have timed out, got {done.returncode}: {done.stdout}{done.stderr}"
+        assert "TIMEOUT" in done.stdout
+
+    acquire(raw, A2, downloader=downloader_that_races, log=lambda *a: None)
+    # the competitor never committed, so the file and its label are the ones this call wrote
+    assert raw.read_text(encoding="utf-8") == "A-bytes-v2"
+    assert read_state(raw) == A2.as_dict()
+
+
+def test_the_lock_is_released_when_the_holder_dies(tmp_path):
+    """Codex pass-12 H1. The old lock was a file whose *content* claimed ownership, so a crashed
+    download left it behind and a staleness threshold had to guess when to break it — which let a
+    waiter break a lock a live download still held, and let the original holder then unlink the
+    replacement. An OS lock is released by the kernel on process death, so there is nothing to
+    guess and nothing to reclaim."""
+    raw = tmp_path / "raw.parquet"
+    killer = textwrap.dedent(f"""
+        import os, sys, pathlib
+        sys.path.insert(0, {str(V2)!r})
+        import locfinder.places.acquire as acq
+        with acq._exclusive(pathlib.Path({str(raw)!r})):
+            os._exit(1)      # die holding the lock, with no cleanup of any kind
+    """)
+    died = subprocess.run([sys.executable, "-c", killer], capture_output=True, text=True)
+    assert died.returncode == 1
+    lock = raw.with_suffix(raw.suffix + ".lock")
+    assert lock.exists(), "the lock file is deliberately never unlinked"
+
+    # ...and it does not block the next acquisition for a moment, let alone an hour.
     import locfinder.places.acquire as acq
     original = acq.LOCK_TIMEOUT_S
-    acq.LOCK_TIMEOUT_S = 0.3
+    acq.LOCK_TIMEOUT_S = 1.0
     try:
-        acquire(raw, A, downloader=downloader_that_reenters, log=lambda *a: None)
+        _, downloaded = acquire(raw, A, downloader=writer("fresh"), log=lambda *a: None)
     finally:
         acq.LOCK_TIMEOUT_S = original
-    assert raw.read_text(encoding="utf-8") == "A-bytes"
-    assert read_state(raw) == A.as_dict()
+    assert downloaded and raw.read_text(encoding="utf-8") == "fresh"
 
 
 def test_the_temporary_location_is_process_unique(tmp_path):
@@ -180,7 +243,7 @@ def test_a_sidecar_the_downloader_writes_cannot_collide_with_our_state_file(tmp_
     _, downloaded = acquire(raw, A, downloader=writer("SHOULD-NOT-RUN"), log=lambda *a: None)
     assert not downloaded and raw.read_text(encoding="utf-8") == "real-bytes"
     # and the sidecar left no litter behind at all
-    assert sorted(q.name for q in tmp_path.iterdir()) == ["raw.parquet", "raw.parquet.state"]
+    assert leftovers(tmp_path) == ["raw.parquet", "raw.parquet.state"]
 
 
 def test_a_failed_download_leaves_no_temporary_directory(tmp_path):
@@ -193,19 +256,20 @@ def test_a_failed_download_leaves_no_temporary_directory(tmp_path):
 
     with pytest.raises(RuntimeError, match="dropped"):
         acquire(raw, A, downloader=fails, log=lambda *a: None)
-    assert list(tmp_path.iterdir()) == []
+    assert leftovers(tmp_path) == []
 
 
-def test_an_abandoned_lock_does_not_block_forever(tmp_path):
-    """A crashed download must not wedge the build."""
+def test_a_leftover_lock_file_does_not_block_anything(tmp_path):
+    """A lock file that nobody holds is just a file. Under the old content-ownership scheme its
+    mere existence blocked acquisition until a staleness threshold expired."""
     import locfinder.places.acquire as acq
     raw = tmp_path / "raw.parquet"
     lock = raw.with_suffix(raw.suffix + acq.LOCK_SUFFIX)
     lock.write_text("99999 0", encoding="utf-8")
-    stale = acq.LOCK_STALE_S
-    acq.LOCK_STALE_S = -1.0           # treat any existing lock as abandoned
+    original = acq.LOCK_TIMEOUT_S
+    acq.LOCK_TIMEOUT_S = 1.0
     try:
         _, downloaded = acquire(raw, A, downloader=writer("fresh"), log=lambda *a: None)
     finally:
-        acq.LOCK_STALE_S = stale
-    assert downloaded and not lock.exists()
+        acq.LOCK_TIMEOUT_S = original
+    assert downloaded and raw.read_text(encoding="utf-8") == "fresh"

@@ -484,3 +484,117 @@ def test_categories_are_compared_as_roles_not_raw_strings():
         P("Duke Hospital", -78.93751, 36.00761, source="osm", sid="osm/1", category="platform"),
     ])
     assert len(parent.resolve("Duke Hospital").candidates) == 2
+
+
+# --------------------------------------------------------------------------------------------
+# Codex pass 12. Each of these is a case one of my pass-11 fixes broke, written as the input
+# Codex used rather than as a paraphrase of the rule.
+# --------------------------------------------------------------------------------------------
+
+
+def test_a_connective_that_begins_a_name_survives_locality_stripping():
+    """pass-12 H3. "Durham The Coffee" lost its "The" inside `_split_locality`, so the ladder never
+    scored "The Coffee" intact and the query resolved confidently to a different shop called
+    "Coffee". The trimmed reading is still offered, but only as a further rung."""
+    idx = PlaceIndex([
+        P("The Coffee", -78.9000, 35.9900, sid="osm:a", locality="Durham"),
+        P("Coffee", -78.9100, 36.0000, sid="osm:b", locality="Durham"),
+    ])
+    r = idx.resolve("Durham The Coffee")
+    assert r.candidates, r.outcome
+    assert r.candidates[0].place.name == "The Coffee", [
+        (c.place.name, c.score, c.reading) for c in r.candidates]
+
+
+def test_the_locality_stripped_reading_is_still_available():
+    """The rung added above must not displace the one beside it: with no connective in play,
+    stripping the locality still has to find the shop."""
+    r = IDX.resolve("Harris Teeter Carrboro")
+    assert r.outcome == "resolved" and r.candidates[0].place.name == "Harris Teeter"
+
+
+def test_a_car_park_does_not_corroborate_the_airport_it_serves():
+    """pass-12 H4, and the third attempt at this rule. Equal *categories* broke real
+    de-duplication; a subsidiary-vs-parent boolean let these two through, because `parking` is
+    deliberately not subsidiary — a car park is a destination in its own right. Equal *roles*
+    separates them."""
+    idx = PlaceIndex([
+        P("RDU", -78.7880, 35.8790, sid="osm:p", category="parking"),
+        P("RDU", -78.7881, 35.8791, source="overture", sid="ov:a", category="airport"),
+    ])
+    r = idx.resolve("RDU")
+    assert r.n_matched == 2, [(c.place.category, c.corroborated_by) for c in r.candidates]
+    assert all(not c.corroborated_by for c in r.candidates)
+
+
+def test_a_pharmacy_counter_does_not_corroborate_its_pharmacy():
+    """pass-12 H4. `pharmacy_counter` was separated by the old raw-category set and fell through to
+    `facility` when roles replaced it, so the counter began corroborating the shop it sits in."""
+    idx = PlaceIndex([
+        P("Acme", -78.9000, 35.9900, sid="osm:c", category="pharmacy_counter"),
+        P("Acme", -78.9001, 35.9901, source="overture", sid="ov:c", category="pharmacy"),
+    ])
+    r = idx.resolve("Acme")
+    assert r.n_matched == 2
+    assert all(not c.corroborated_by for c in r.candidates)
+
+
+def test_two_vocabularies_for_one_shop_still_merge():
+    """The regression guard for the rule above: role equality has to stay coarse enough to span two
+    taxonomies, or it repeats the pass-10 over-correction."""
+    idx = PlaceIndex([
+        P("Harris Teeter", -79.0800, 35.9100, sid="osm:h", category="supermarket"),
+        P("Harris Teeter", -79.0801, 35.9101, source="overture", sid="ov:h",
+          category="grocery_store"),
+    ])
+    r = idx.resolve("Harris Teeter")
+    assert r.n_matched == 1 and r.outcome == "resolved"
+    assert r.candidates[0].corroborated_by == ("overture",)
+
+
+def test_asking_for_a_bus_stop_is_not_ambiguous():
+    """pass-12 M5. The mixed-reference abstention is right for "Duke Hospital" and wrong here: the
+    user named the stop, so offering it as one of two options invents an ambiguity."""
+    idx = PlaceIndex([
+        P("Franklin Street bus stop", -79.0550, 35.9120, sid="osm:s", category="bus_stop"),
+        P("Franklin Street bus stop cafe", -79.0560, 35.9130, sid="osm:t", category="cafe"),
+    ])
+    r = idx.resolve("Franklin Street bus stop")
+    assert r.outcome == "resolved", [(c.place.name, c.score) for c in r.candidates]
+    assert r.candidates[0].place.category == "bus_stop"
+
+
+def test_a_place_named_after_a_stop_is_still_abstained_on():
+    """The guard the exemption must not remove: no transport word in the query, so a platform
+    leading the field still abstains in favour of the place it is named after (pass-10 H1)."""
+    idx = PlaceIndex([
+        P("Duke Hospital", -78.9370, 36.0070, sid="osm:d", category="platform"),
+        P("Duke University Hospital", -78.9380, 36.0080, source="overture", sid="ov:d",
+          category="hospital", aliases=("Duke Hospital",)),
+    ])
+    r = idx.resolve("Duke Hospital")
+    assert r.outcome == "ambiguous", [(c.place.name, c.place.category) for c in r.candidates]
+
+
+def test_corroboration_cannot_manufacture_an_intact_query_match():
+    """pass-12 H2. The merged `Candidate` was rebuilt without `reading`, so it defaulted to 0 — the
+    intact-query value. Merging two records that had only matched a *stripped* reading therefore
+    promoted them to the rank of a genuine intact match: "Durham Coffee" was correctly ambiguous
+    between a Durham Coffee in Raleigh and a Coffee in Durham, until an Overture copy of the latter
+    arrived within 60 m and it resolved confidently to "Coffee"."""
+    base = [
+        P("Durham Coffee", -78.6382, 35.7796, sid="osm:1", locality="Raleigh", category="cafe"),
+        P("Coffee", -78.9000, 35.9940, sid="osm:2", locality="Durham", category="cafe"),
+    ]
+    before = PlaceIndex(base).resolve("Durham Coffee")
+    assert before.outcome == "ambiguous"
+
+    corroborated = PlaceIndex(base + [
+        P("Coffee", -78.90045, 35.99400, source="overture", sid="ov:2", locality="Durham",
+          category="cafe")]).resolve("Durham Coffee")
+    # the copy is recognised as the same shop...
+    assert any(c.corroborated_by == ("overture",) for c in corroborated.candidates)
+    # ...and that changes nothing about which reading matched, so the outcome is unchanged
+    assert corroborated.outcome == "ambiguous", [
+        (c.place.name, c.score, c.reading) for c in corroborated.candidates]
+    assert corroborated.candidates[0].place.name == "Durham Coffee"

@@ -1336,3 +1336,33 @@ Still open: the walk gap is not zero either (+6 to +12 s at the median with a p9
 
 - profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
 
+
+### S0 status provenance and the H2 bracket: grocery / walk (2026-11-04 14:43:33)
+
+- graph after preparation: 3046 components; kept 539814 nodes (97.5%), dropped 13608; **1 strongly connected component(s)**
+- destinations: 510 nodes from 550 places (1 beyond the 300 m snap bound)
+- nodes unreached by the unbounded cost search: **0** of 539,814
+- `build_layer_surface(...).validate()` passes on 330,502 cells
+
+| status | cells | share |
+|---|---|---|
+| `OK` | 256,752 | 77.6855% |
+| `OFF_NETWORK` | 57,541 | 17.4102% |
+| `BEYOND_HORIZON` | 16,209 | 4.9044% |
+
+- against the committed `own_triangle_grocery_walk.npy`: finiteness identical=**True**, max abs diff 0.000000 s (the artifact is float32, so a sub-millisecond difference is quantisation)
+
+**The H2 bracket.** `cost_selected` (shipped) minus `time_min` (minimum over destinations, access cost ignored). The shipped surface is an upper bound, so the gap is where a category criterion could exclude a cell that a qualifying destination would have satisfied.
+
+- comparable cells 256,752; differing by more than 1 s **24,745 (9.6377%)**
+- where they differ: median **40.0 s**, p90 129.7 s, max 668.6 s
+
+| threshold | cells excluded by the shipped surface that the lower bound includes | share of passing cells |
+|---|---|---|
+| 10min | 205 | 0.8384% |
+| 15min | 329 | 0.6879% |
+| 25min | 363 | 0.3865% |
+| 45min | 265 | 0.1637% |
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
+

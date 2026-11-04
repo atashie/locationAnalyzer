@@ -22,8 +22,22 @@ single writer's interruption safe but says nothing about concurrency, and the fi
 more than it delivered (Codex pass-11 H1): with a shared `raw.partial` filename and no lock, the
 schedule "A replaces raw → B downloads and commits B → A writes state A" leaves B's bytes labelled
 A, and both calls return success. Reproduced deterministically rather than by timing luck. So each
-acquisition now uses a **process-unique** temporary file, and the whole check-download-commit
-sequence is serialised by an exclusive lock file beside the raw file.
+acquisition uses a **process-unique** temporary location, and the whole check-download-commit
+sequence is serialised.
+
+**The first lock still did not deliver that** (Codex pass-12 H1). A lock whose only owner is the
+*content* of a file cannot be released safely. Staleness was 3600 s while the wait was 1800 s, so a
+waiter would break a lock still held by a live 45-minute download; the original holder's `finally`
+then unlinked the *replacement* lock and let a third process in. Codex reproduced all three
+ownership failures by ageing a held lock. Writing a PID into the file does not fix it — PIDs are
+reused, and mean nothing across machines on a shared filesystem.
+
+So the lock is now owned by the **operating system** for the lifetime of the holding process:
+`msvcrt.locking` on Windows, `fcntl.flock` elsewhere, on a handle held open for the duration. The
+kernel releases it when the process dies, however it dies, so there is no abandoned lock to time
+out of and no automatic reclaiming to get wrong. Waiting is a retry loop on the non-blocking call,
+and the only remaining failure is a genuine timeout — which now really does mean someone else is
+still working.
 
 **And the downloader writes files we did not ask for.** The `overturemaps` CLI drops a sidecar
 beside its output named `<output>.state` — exactly the convention this module uses for its own state
@@ -57,47 +71,74 @@ LOCK_SUFFIX = ".lock"
 #: Seconds to wait for another acquisition to finish before giving up. Generous, because the thing
 #: being waited for is a multi-minute download.
 LOCK_TIMEOUT_S = 1800.0
-#: Seconds after which a lock whose owner has vanished is considered abandoned.
-LOCK_STALE_S = 3600.0
+#: Seconds between attempts while waiting.
+LOCK_POLL_S = 0.2
+
+
+def _try_lock(fd: int) -> bool:
+    """Take an OS-owned exclusive lock on `fd` without blocking. True if it was taken.
+
+    The kernel owns it, so it is released when this process exits by any route. There is no
+    staleness threshold to tune and nothing for another process to reclaim, which is the whole
+    point: a lock whose *content* claims ownership cannot be released safely by anyone but its
+    creator, and the previous version released other processes' locks (Codex pass-12 H1).
+    """
+    if os.name == "nt":
+        import msvcrt
+        try:
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return True
+        except OSError:
+            return False
+    import fcntl
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError:
+        return False
+
+
+def _unlock(fd: int) -> None:
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_UN)
+    except OSError:
+        pass          # the handle is about to close, which releases it regardless
 
 
 @contextmanager
 def _exclusive(raw: Path, *, timeout_s: float | None = None):
     """Serialise the whole check-download-commit sequence for one raw file.
 
-    `O_CREAT | O_EXCL` is the portable atomic test-and-set. A lock older than `LOCK_STALE_S` is
-    broken, because a crashed download must not block the build forever.
+    The lock file is created once and **never deleted**: unlinking it is exactly what let one
+    process release another's lock. An empty sidecar costs nothing, and its existence means
+    nothing — only the OS lock held on it does.
 
-    The timeouts are read from the module globals at call time, not bound as default arguments:
-    binding them made the values un-overridable and a test that lowered `LOCK_TIMEOUT_S` waited the
+    The timeout is read from the module global at call time, not bound as a default argument:
+    binding it made the value un-overridable and a test that lowered `LOCK_TIMEOUT_S` waited the
     full 1800 s instead.
     """
     lock = raw.with_suffix(raw.suffix + LOCK_SUFFIX)
     lock.parent.mkdir(parents=True, exist_ok=True)
     deadline = time.monotonic() + (LOCK_TIMEOUT_S if timeout_s is None else timeout_s)
-    while True:
-        try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.write(fd, f"{os.getpid()} {time.time():.0f}".encode())
-            os.close(fd)
-            break
-        except FileExistsError:
-            try:
-                age = time.time() - lock.stat().st_mtime
-            except OSError:
-                continue
-            if age > LOCK_STALE_S:
-                lock.unlink(missing_ok=True)
-                continue
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR)
+    try:
+        while not _try_lock(fd):
             if time.monotonic() > deadline:
                 raise TimeoutError(
-                    f"another acquisition has held {lock.name} for {age:.0f} s; "
-                    "remove it if that process is gone")
-            time.sleep(0.2)
-    try:
-        yield
+                    f"another acquisition still holds {lock.name}; it is an OS lock, so if that "
+                    "process were gone the lock would already be released \u2014 this is a real wait")
+            time.sleep(LOCK_POLL_S)
+        try:
+            yield
+        finally:
+            _unlock(fd)
     finally:
-        lock.unlink(missing_ok=True)
+        os.close(fd)
 
 
 def state_path(raw: Path) -> Path:

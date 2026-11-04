@@ -170,10 +170,15 @@ def _snap_network(
         cost_start[m] = frac[m] * rev_c[m] + D_s[m]
         cost_start = np.where(at_start, D_s, cost_start)
         cost_end = np.where(at_end, D_e, cost_end)
-        # choose on cost, report that branch's time; ties go to the lower time
-        take_end = (cost_end < cost_start) | (
-            np.isclose(cost_end, cost_start) & (time_end <= time_start)
-        )
+        # Minimum cost, ties broken by the lower time. The comparison must be *symmetric*, or
+        # reversing an edge's stored geometry changes the answer: the previous rule let
+        # `cost_end < cost_start` win outright while applying the time preference only inside an
+        # `np.isclose` band, so a 0.004 s cost difference reported 90 s one way round and 10 s the
+        # other (Codex pass-12 M7). A relative tolerance was also wrong on its own terms — at a
+        # 7,000 s cost it treats a 70 ms cost difference as a tie, and the contract says choose on
+        # cost. Exact equality makes "cheaper wins, equal costs prefer the quicker" order-invariant.
+        tie = cost_end == cost_start
+        take_end = np.where(tie, time_end <= time_start, cost_end < cost_start)
         network = np.where(take_end, time_end, time_start)
         network = np.where(np.isfinite(cost_end) | np.isfinite(cost_start), network, np.inf)
 

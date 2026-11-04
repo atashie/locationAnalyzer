@@ -100,6 +100,11 @@ _ROLE_BY_CATEGORY = {
     "parking_space": "parking",
     "fuel": "fuel", "gas_station": "fuel", "charging_station": "fuel",
     "ev_charging_station": "fuel",
+    # Counters and desks *inside* a parent. `pharmacy_counter` was separated by the old raw-category
+    # set and fell through to `facility` when roles replaced it, so a pharmacy counter started
+    # corroborating the pharmacy it sits in (Codex pass-12 H4).
+    "pharmacy_counter": "fixture", "service_desk": "fixture", "information": "fixture",
+    "ticket_office": "fixture", "kiosk": "fixture",
 }
 
 #: Roles whose features merely *refer* to a place. A bus platform named "Duke Hospital" is how you
@@ -107,6 +112,18 @@ _ROLE_BY_CATEGORY = {
 #: before this existed (pass-10 H1: `node/6509747409`, `highway=bus_stop`,
 #: `public_transport=platform`, `network=Duke`).
 REFERENCE_ROLES = frozenset({"stop"})
+
+#: Words that make a stop the *subject* of the query rather than the way to reach something else.
+#: "Duke Hospital" wants the hospital; "Franklin Street bus stop" wants the stop, and abstaining
+#: there is a false ambiguity (Codex pass-12 M5). This is a narrow literal test on words the user
+#: typed, not a query-intent model: only an explicit transport noun counts.
+STOP_INTENT_WORDS = frozenset({"stop", "stops", "platform", "platforms", "bus", "busstop",
+                               "bustop", "halt", "stand", "shelter", "bay"})
+
+
+def names_a_stop(tokens) -> bool:
+    """Did the query itself ask for a stop? Used only to suppress the mixed-reference abstention."""
+    return any(t in STOP_INTENT_WORDS for t in tokens)
 
 #: Roles that sit inside or beside a named parent and borrow its name, so must never be merged with
 #: a non-subsidiary record — the cross-source form of the bank-and-its-ATM collapse (pass-10 H4).
@@ -270,6 +287,15 @@ class PlaceIndex:
         locality = " ".join(loc) if loc else None
         if loc and name != tokens:
             out.append((name, locality))
+            # The connective between a name and a locality is noise, but the same word can *begin*
+            # the name. Stripping it inside `_split_locality` meant the ladder never offered the
+            # name with the word still attached: "Durham The Coffee" produced only "Coffee", which
+            # matched a different shop exactly while "The Coffee" was never scored intact at all
+            # (Codex pass-12 H3). So it is a further, more destructive rung instead.
+            at_end = tokens[:len(loc)] != loc          # locality was a suffix
+            trimmed = self._strip_boundary_connective(name, at_end=at_end)
+            if trimmed != name:
+                out.append((trimmed, locality))
         # A leading "the" is genuinely ambiguous: part of a name in "The Streets At Southpoint",
         # filler in "the Whole Foods in Durham". Removing it unconditionally broke the first case
         # and keeping it broke the second, so it becomes one more reading — more destructive, so it
@@ -298,6 +324,12 @@ class PlaceIndex:
         return out or list(tokens)
 
     def _split_locality(self, tokens: list[str]) -> tuple[list[str], list[str]]:
+        """`(name tokens, locality tokens)` with the name left **raw**.
+
+        It used to strip a boundary connective here, which silently removed a rung from
+        `_readings`' ladder (pass-12 H3). Splitting and trimming are separate readings of the same
+        query, so they are separate steps.
+        """
         """Separate words that name a locality in this index from the place name itself.
 
         A **leading** locality counts too: "Durham Whole Foods" is as natural as "Whole Foods
@@ -311,11 +343,11 @@ class PlaceIndex:
         # locality as a SUFFIX: the boundary is at the end of the name
         for cut in range(1, len(tokens)):
             if " ".join(tokens[cut:]) in self._localities:
-                return self._strip_boundary_connective(tokens[:cut], at_end=True), tokens[cut:]
+                return tokens[:cut], tokens[cut:]
         # locality as a PREFIX: the boundary is at the start of the name
         for cut in range(len(tokens) - 1, 0, -1):
             if " ".join(tokens[:cut]) in self._localities:
-                return self._strip_boundary_connective(tokens[cut:], at_end=False), tokens[:cut]
+                return tokens[cut:], tokens[:cut]
         return tokens, []
 
     def resolve(self, query: str, *, limit: int = 8) -> Resolution:
@@ -372,7 +404,7 @@ class PlaceIndex:
         merged = _merge_corroborating(scored)
         # Decide on the COMPLETE ranking, then truncate for presentation. Deciding after the cut
         # let `limit=1` turn an ambiguous pair into a confident answer (Codex pass-10 H3).
-        outcome = _decide(merged, bool(locality))
+        outcome = _decide(merged, bool(locality), stop_intent=names_a_stop(raw))
         return Resolution(query=query, outcome=outcome, candidates=tuple(merged[:limit]),
                           n_matched=len(merged))
 
@@ -406,7 +438,7 @@ def _rank_key(c: Candidate):
             c.place.name, c.place.source_id)
 
 
-def _decide(candidates: list[Candidate], had_locality: bool) -> str:
+def _decide(candidates: list[Candidate], had_locality: bool, *, stop_intent: bool = False) -> str:
     """`resolved` only when one candidate is clearly best.
 
     A typed locality is decisive when **exactly one candidate in the leading score tier** matches
@@ -425,7 +457,10 @@ def _decide(candidates: list[Candidate], had_locality: bool) -> str:
     # and the honest answer is a chooser. Demotion alone could not help here (Codex pass-11 H4):
     # it is only a tie-break, and the Duke Hospital platform scores 1.000 against hospitals at
     # 0.7833, so it won outright and was presented as the single answer to a hospital query.
-    if is_reference_feature(lead.place) and any(
+    # A stop leading a field that also contains the place it is named after is the pass-10 H1
+    # failure, and abstaining is right — unless the user asked for the stop, in which case the
+    # abstention invents an ambiguity that is not there (pass-12 M5).
+    if not stop_intent and is_reference_feature(lead.place) and any(
             not is_reference_feature(c.place) for c in candidates):
         return "ambiguous"
     if had_locality and lead.locality_match:
@@ -456,17 +491,22 @@ def _mergeable(a: Place, b: Place) -> bool:
     Codex pass-10 H4 demonstrated: a bank and its own ATM 9 m apart, both OSM, both called Acme,
     which merged into the ATM and made the ambiguity vanish.
 
-    **Not a subsidiary paired with its parent.** The first fix also demanded *equal* categories,
-    which was wrong and broke real de-duplication immediately: the two sources use different
-    vocabularies, so the single Harris Teeter in Carrboro arrives as OSM `supermarket` and Overture
-    `grocery_store` and stopped merging — which then made "Harris Teeter Carrboro" ambiguous
-    between one shop counted twice. Categories are not comparable across taxonomies. What *is*
-    comparable is whether a feature is the kind that sits inside or beside a named parent and
-    borrows its name, so only that distinction blocks a merge.
+    **The same role.** This took three attempts. Demanding *equal categories* was wrong and broke
+    real de-duplication immediately: the two sources use different vocabularies, so the single
+    Harris Teeter in Carrboro arrives as OSM `supermarket` and Overture `grocery_store` and stopped
+    merging, which made "Harris Teeter Carrboro" ambiguous between one shop counted twice.
+    Replacing that with a *subsidiary-vs-parent* boolean was too coarse in the other direction
+    (Codex pass-12 H4): `parking` and `fuel` are deliberately not subsidiary, because a car park is
+    a destination in its own right, so OSM's **RDU** car park and Overture's **RDU** airport both
+    answered "not subsidiary" and merged into one confidently resolved car park.
+
+    Roles are the right granularity: coarse enough to span two taxonomies, fine enough that a car
+    park is not an airport. Equality is also the honest test — there is no pair of *different* roles
+    that should collapse, and a compatibility matrix would only be a place to hide one.
     """
     if a.source == b.source:
         return False
-    if is_subsidiary_feature(a) != is_subsidiary_feature(b):
+    if role_of(a.category) != role_of(b.category):
         return False
     return _metres_between(a, b) <= CORROBORATION_M
 
@@ -499,11 +539,20 @@ def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
                     sources = set(kept.corroborated_by) | {kept.place.source}
                     winner = Candidate(place=cand.place, score=max(kept.score, cand.score),
                                        matched_on=cand.matched_on)
+                # The reading has to come from the member that supplied the evidence, not from the
+                # member that supplied the geometry, and it must not be allowed to default. It did
+                # default to 0 — the intact-query value — so merging two records that only matched
+                # a *stripped* reading manufactured an intact match and let it outrank a genuine
+                # one (Codex pass-12 H2): "Durham Coffee" was correctly ambiguous between a Durham
+                # Coffee in Raleigh and a Coffee in Durham until an Overture copy of the latter
+                # arrived within 60 m, at which point it resolved confidently to "Coffee".
+                evidence = max((kept, cand), key=lambda c: (c.score, -c.reading))
                 out[j] = Candidate(place=winner.place,
                                    score=max(kept.score, cand.score),
                                    matched_on=winner.matched_on,
                                    corroborated_by=tuple(sorted(sources - {winner.place.source})),
-                                   locality_match=kept.locality_match or cand.locality_match)
+                                   locality_match=kept.locality_match or cand.locality_match,
+                                   reading=evidence.reading)
                 members.setdefault(j, {kept.place.source}).add(cand.place.source)
                 break
         else:

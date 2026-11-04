@@ -202,3 +202,49 @@ def test_penalty_is_charged_per_edge_which_is_a_known_limitation():
     # two halves of the same physical link each carry the full penalty
     assert sum(RESTRICTED_PENALTY_S["drive"] for _ in range(2)) == 2 * RESTRICTED_PENALTY_S["drive"]
     assert classify_access(one, "drive") == "restricted"
+
+
+def _midpoint_seconds(fwd, rev, *, reverse_storage: bool):
+    """One two-way segment, both endpoints destinations, evaluated at its midpoint.
+
+    `reverse_storage` swaps which endpoint the geometry is stored from, which must not change the
+    answer. `(time, cost)` pairs are given start->end and end->start.
+    """
+    G = nx.MultiDiGraph()
+    a, b = ("A", "B") if not reverse_storage else ("B", "A")
+    coords = {"A": (0.0, 0.0), "B": (10.0, 0.0)}
+    for n in (a, b):
+        G.add_node(n, x=coords[n][0], y=coords[n][1])
+    f, r = (fwd, rev) if not reverse_storage else (rev, fwd)
+    G.add_edge(a, b, travel_time=f[0], cost=f[1])
+    G.add_edge(b, a, travel_time=r[0], cost=r[1])
+
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest = sorted(index.values())                      # both endpoints are destinations
+    node_time = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=dest)
+    node_cost = arrival_seconds(cost_csr, dest_idx=dest)
+    idx = EdgeIndex.from_graph(G, index)
+    out = cell_seconds_from_arrival(idx, node_time, np.array([5.0]), np.array([0.0]),
+                                    mode="walk", max_access_m=50.0, cutoff_s=10_000.0,
+                                    node_cost=node_cost)
+    return float(out[0])
+
+
+def test_the_snap_tie_rule_does_not_depend_on_stored_edge_direction():
+    """Codex pass-12 M7. `cost_end < cost_start` won outright while the time preference applied only
+    inside an `np.isclose` band, so the rule was asymmetric: a 0.004 s cost difference reported
+    90 s with the geometry stored one way and 10 s stored the other. Exact cost equality with ties
+    broken by time is order-invariant."""
+    # forward 180 s at cost 1000; reverse 20 s at cost 1000.004 — a real but tiny cost difference
+    forward = _midpoint_seconds((180.0, 1000.0), (20.0, 1000.004), reverse_storage=False)
+    reversed_ = _midpoint_seconds((180.0, 1000.0), (20.0, 1000.004), reverse_storage=True)
+    assert forward == pytest.approx(reversed_), f"{forward} vs {reversed_}"
+
+
+def test_an_exact_cost_tie_prefers_the_quicker_side_either_way_round():
+    """The other half of the rule: equal costs must take the lower time, symmetrically."""
+    a = _midpoint_seconds((180.0, 1000.0), (20.0, 1000.0), reverse_storage=False)
+    b = _midpoint_seconds((180.0, 1000.0), (20.0, 1000.0), reverse_storage=True)
+    assert a == pytest.approx(b)
+    # the quicker direction is 20 s over the whole edge, so half of it from the midpoint
+    assert a == pytest.approx(10.0)

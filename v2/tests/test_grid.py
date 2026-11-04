@@ -65,3 +65,34 @@ def test_the_grid_covers_more_ground_than_the_bbox_it_was_built_from():
     assert (~inside).any(), "some cell centres fall outside the geographic evaluation bbox"
     # and every cell centre is inside the derived envelope, which is the point of it
     assert ((lons >= w) & (lons <= e) & (lats >= s) & (lats <= n)).all()
+
+
+def test_the_envelope_bounds_every_cell_even_when_the_corners_do_not():
+    """Codex pass-12 M6. A UTM rectangle's top edge is a curve in latitude whose maximum sits in
+    the *interior* of the edge, near the central meridian, so the four corners are not a bound.
+    This is Codex's counterexample: 806 cell centres fell north of the corner-derived bound."""
+    import numpy as np
+    from locfinder.grid import GridSpec
+    g = GridSpec("EPSG:32617", 450000, 4000000, 100, 1000, 10)
+    west, south, east, north = g.envelope_wgs84()
+    lon, lat = g.cell_centers_lonlat()
+    outside = int(((lat > north) | (lat < south) | (lon > east) | (lon < west)).sum())
+    assert outside == 0, f"{outside} cell centres fall outside the envelope"
+
+    # and the corner-only method really does fail here, so the test is not vacuous
+    from pyproj import Transformer
+    to_wgs = Transformer.from_crs(g.crs, "EPSG:4326", always_xy=True)
+    _, corner_lats = to_wgs.transform([g.x_min, g.x_max, g.x_min, g.x_max],
+                                      [g.y_min, g.y_min, g.y_max, g.y_max])
+    assert float(lat.max()) > max(corner_lats), \
+        "the counterexample no longer exercises the defect"
+
+
+def test_the_envelope_is_padded_outward_not_inward():
+    """An acquisition bound must never be tighter than the ground it is meant to cover."""
+    from locfinder.grid import GridSpec
+    g = GridSpec("EPSG:32617", 450000, 4000000, 100, 1000, 10)
+    tight = g.envelope_wgs84(pad_deg=0.0)
+    padded = g.envelope_wgs84()
+    assert padded[0] < tight[0] and padded[1] < tight[1]
+    assert padded[2] > tight[2] and padded[3] > tight[3]

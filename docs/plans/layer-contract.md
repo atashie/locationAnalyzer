@@ -533,8 +533,13 @@ problems with different remedies. Previously this was one undifferentiated blob,
 largest contiguous no-data regions with a named cause" now has a cause per cell to start from.
 
 `Surface.validate()` passes on all 330,502 cells. Against the committed
-`own_triangle_grocery_walk.npy`: finiteness **identical**, maximum absolute difference **0.000244
-s** — the artifact is float32, so that is quantisation, not disagreement. The builder's own timings
+`own_triangle_grocery_walk.npy` the rebuild is **bit-identical in float32**: 0 cells differ,
+maximum absolute difference **0.000000 s**. The earlier statement of this check quoted 0.000244 s
+against a 0.01 s tolerance and called the remainder quantisation, which was true but weaker than
+necessary and weaker than it sounded — a 0.01 s tolerance accepts a stored 600.005 against a
+rebuilt 599.999, two values on opposite sides of a 600-second threshold (Codex pass-12 L1).
+float32 rounding is a *known function*, not an unknown error to absorb, so the check now casts this
+run's seconds to float32 and demands exact equality. It passes. The builder's own timings
 on this run: 3.58 s for the two Dijkstras, 3.30 s for the provenance snap over 330,502 cells.
 
 ### `NO_PATH` is unreachable in every shipped configuration today
@@ -568,6 +573,36 @@ A documentation correction while here: `components.py`'s docstring says the wide
 graph has **4,208** components. Measured through the production preparation path it is **3,046**,
 because the docstring's count predates the `degree() == 0` removal that strips isolated nodes. The
 drive figure (1,685) was not re-measured.
+
+### A published time may describe an unlawful journey
+
+The access model lets a restricted edge be *chosen* at a penalty rather than forbidden, because
+blocking all of them made every home on a private drive unreachable. The penalty discourages
+through-routing over private land without preventing it, so the contract has to say what a published
+time actually asserts. S2.3 measured it (`spikes/s2_access_lawfulness_audit.py`, restricted edges
+identified as `cost - time > 0`, so these are the edges the search used):
+
+| | nodes | share of reachable |
+|---|---|---|
+| first hop restricted — the driveway case, lawful | 48,865 | 9.05% |
+| **shipped path routes through restricted land** | **26,395** | **4.89%** |
+
+Under a strict policy — a restricted edge usable only as the first hop out of the origin — coverage
+falls from 256,752 to 251,222 cells and from 499,009 to 494,128 buildings, a loss of **0.95% of
+buildings**. 25,186 nodes keep a path but get slower, by a median of 703 s. A restricted *final* hop
+into a destination's own parking is equally lawful and is not modelled, so that loss is an upper
+bound.
+
+**The two numbers are different claims and must not be used interchangeably.** Coverage scarcely
+depends on through-routing: under one building in a hundred. But about one published path in twenty
+*is* a through-route over restricted land. So:
+
+- a published **time** is defensible as "the time of the quickest route this model would choose,
+  which may cross private land it has been penalised for crossing";
+- a published **route** is not defensible without a per-path check, because 4.89% of them would need
+  one.
+
+That distinction is a precondition on S6 drawing routes, not a caveat to add afterwards.
 
 ### How far the category surface is from a minimum over destinations
 

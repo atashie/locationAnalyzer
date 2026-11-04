@@ -125,33 +125,49 @@ def main() -> None:
     # ---- the seconds must be unchanged from the committed artifact ---------------------------
     prev_path = layer_path("own", args.category, args.mode, ".npy")
     if prev_path.exists():
-        prev = np.load(prev_path).astype(np.float64)
-        both = np.isfinite(prev) & np.isfinite(surf.seconds)
+        prev = np.load(prev_path)
+        # The artifact is float32. Quantisation is therefore not an unknown error to be absorbed by
+        # a tolerance: it is a *known function*, so the honest test is whether this run's seconds
+        # round to the stored bytes exactly. A 0.01 s tolerance accepted stored 600.005 against
+        # rebuilt 599.999 — a difference that straddles a 600-second threshold and so changes the
+        # published answer (Codex pass-12 L1). Exact equality after the same cast cannot do that.
+        rebuilt32 = surf.seconds.astype(np.float32)
+        both = np.isfinite(prev) & np.isfinite(rebuilt32)
         out["against_committed_artifact"] = {
             "path": prev_path.name,
             "finiteness_identical": bool(np.array_equal(np.isfinite(prev),
-                                                        np.isfinite(surf.seconds))),
-            "max_abs_diff_s": float(np.abs(prev[both] - surf.seconds[both]).max()) if both.any() else 0.0,
+                                                        np.isfinite(rebuilt32))),
+            "float32_identical": bool(np.array_equal(prev, rebuilt32, equal_nan=True)),
+            "cells_differing": int((prev[both] != rebuilt32[both]).sum()) if both.any() else 0,
+            "max_abs_diff_s": float(np.abs(prev[both].astype(np.float64)
+                                           - rebuilt32[both].astype(np.float64)).max())
+            if both.any() else 0.0,
+            "verification_bypassed": bool(args.allow_artifact_mismatch),
         }
         a = out["against_committed_artifact"]
-        print(f"vs {a['path']}: finiteness identical={a['finiteness_identical']}, "
-              f"max abs diff {a['max_abs_diff_s']:.6f} s", flush=True)
+        print(f"vs {a['path']}: float32 identical={a['float32_identical']}, "
+              f"finiteness identical={a['finiteness_identical']}, "
+              f"{a['cells_differing']:,} cells differ, max abs diff "
+              f"{a['max_abs_diff_s']:.6f} s", flush=True)
         # Assert, do not merely print (Codex pass-11 L1). This check reported
         # `finiteness identical=False` with a 4,091 s maximum difference during the re-acquisition
         # and the script carried on to write a full report and exit 0 — a verification that cannot
         # fail is not a verification. `--allow-artifact-mismatch` is for the window between
         # changing the inputs and rebuilding the artifact, when the two genuinely describe
-        # different destination sets.
-        tolerance_s = 0.01            # float32 quantisation on values up to the horizon
-        if not args.allow_artifact_mismatch:
-            if not a["finiteness_identical"] or a["max_abs_diff_s"] > tolerance_s:
-                raise SystemExit(
-                    f"artifact mismatch: {prev_path.name} does not match this run "
-                    f"(finiteness identical={a['finiteness_identical']}, max abs diff "
-                    f"{a['max_abs_diff_s']:.3f} s > {tolerance_s} s). The artifact was almost "
-                    "certainly built from a different destination set; rebuild it with "
-                    "g1_own_graph_layer.py, or pass --allow-artifact-mismatch if the difference "
-                    "is expected.")
+        # different destination sets; the report records that it was used, so a result produced
+        # under the bypass cannot be read as verified.
+        if args.allow_artifact_mismatch:
+            print("NOTE: --allow-artifact-mismatch given, so provenance was NOT verified against "
+                  "the committed artifact; `verification_bypassed` is recorded in the report.",
+                  flush=True)
+        elif not a["float32_identical"]:
+            raise SystemExit(
+                f"artifact mismatch: {prev_path.name} does not match this run "
+                f"(finiteness identical={a['finiteness_identical']}, {a['cells_differing']:,} "
+                f"cells differ, max abs diff {a['max_abs_diff_s']:.3f} s). The artifact was almost "
+                "certainly built from a different destination set; rebuild it with "
+                "g1_own_graph_layer.py, or pass --allow-artifact-mismatch if the difference "
+                "is expected.")
     else:
         print(f"NOTE: {prev_path.name} is absent, so provenance was NOT verified against a "
               "committed artifact.", flush=True)
