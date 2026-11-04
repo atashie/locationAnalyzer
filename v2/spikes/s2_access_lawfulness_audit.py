@@ -1,4 +1,20 @@
-"""S2.3: are the routes the access fix recovered *lawful*?
+"""WITHDRAWN 2026-11-04. Replaced by `s2_access_lawfulness_v2.py`.
+
+Codex pass 13 found four High defects here: the cell snap re-admitted restricted travel below the
+node level, the "unpenalised" branch still charged access penalties, the restricted filter ran after
+parallel-edge collapse and so deleted lawful public alternatives, and — the one that invalidates the
+framing rather than the arithmetic — **edge position does not establish lawfulness**, because
+splitting a driveway into two ways changes a journey's verdict without changing the journey.
+
+The measurements below reproduce exactly and the conclusions drawn from them are withdrawn. It is
+kept, rather than deleted, because it is the clearest record of how an audit can measure three
+things and conclude four. The replacement states the policy as a language (`R* O* R*`) and solves it
+on a graph x automaton product; see `locfinder/traveltime/policy.py` and the S2.3 section of
+`docs/plans/2026-11-03-phase1-plan.md`.
+
+---
+
+S2.3: are the routes the access fix recovered *lawful*?
 
 `access.py` resolved a real coverage hole. Blocking all 126,157 restricted edges made every home on
 a private drive unreachable, so a restricted edge now costs extra to **choose** and takes its real

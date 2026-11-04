@@ -56,6 +56,7 @@ immutable release bundles with an atomic manifest switch, not a longer-held lock
 """
 from __future__ import annotations
 
+import errno
 import json
 import os
 import shutil
@@ -75,6 +76,17 @@ LOCK_TIMEOUT_S = 1800.0
 LOCK_POLL_S = 0.2
 
 
+#: `errno` values that mean "someone else holds it", as opposed to "locking does not work here".
+#: Treating every `OSError` as contention made an unsupported filesystem look like a 30-minute
+#: queue and then reported a holder that never existed (Codex pass-13 L1). A failed lock *operation*
+#: is not evidence of a lock *holder*.
+_CONTENTION_ERRNOS = frozenset({
+    errno.EACCES,       # Windows: the range is locked by another process
+    errno.EAGAIN,       # POSIX: EWOULDBLOCK, the usual flock contention code
+    errno.EDEADLK,      # Windows msvcrt after its internal retries
+})
+
+
 def _try_lock(fd: int) -> bool:
     """Take an OS-owned exclusive lock on `fd` without blocking. True if it was taken.
 
@@ -82,20 +94,26 @@ def _try_lock(fd: int) -> bool:
     staleness threshold to tune and nothing for another process to reclaim, which is the whole
     point: a lock whose *content* claims ownership cannot be released safely by anyone but its
     creator, and the previous version released other processes' locks (Codex pass-12 H1).
+
+    Raises on anything that is not contention, so a filesystem that cannot lock fails immediately
+    and visibly instead of being retried for half an hour and then blamed on a phantom holder.
     """
-    if os.name == "nt":
-        import msvcrt
-        try:
-            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-            return True
-        except OSError:
-            return False
-    import fcntl
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return True
-    except OSError:
-        return False
+    except OSError as exc:
+        if exc.errno in _CONTENTION_ERRNOS:
+            return False
+        raise RuntimeError(
+            f"cannot take an exclusive lock here ({exc.__class__.__name__}: {exc}). This is not "
+            "contention — the lock operation itself failed, which usually means the filesystem "
+            "does not support locking (some network shares). Acquisition cannot be serialised on "
+            "this filesystem.") from exc
 
 
 def _unlock(fd: int) -> None:

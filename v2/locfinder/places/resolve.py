@@ -87,8 +87,11 @@ TIEBREAK_SOURCE_ORDER = ("osm", "overture")
 _ROLE_BY_CATEGORY = {
     # Somewhere you board, named after the place it serves. Never the destination itself.
     "bus_stop": "stop", "platform": "stop", "stop_position": "stop", "tram_stop": "stop",
-    "halt": "stop", "bus_stop_position": "stop",
-    # A whole station, which *is* a destination.
+    "bus_stop_position": "stop",
+    # A whole station, which *is* a destination. `halt` belongs here, not with the platforms: a
+    # railway halt is a small station, and classing it as a `stop` stopped one real station
+    # recorded as OSM `halt` and Overture `train_station` from corroborating itself (pass-13 M7).
+    "halt": "station",
     "station": "station", "train_station": "station", "bus_station": "station",
     "subway_station": "station", "transit_station": "station", "light_rail_station": "station",
     # Fixtures attached to a parent, borrowing its name.
@@ -103,8 +106,14 @@ _ROLE_BY_CATEGORY = {
     # Counters and desks *inside* a parent. `pharmacy_counter` was separated by the old raw-category
     # set and fell through to `facility` when roles replaced it, so a pharmacy counter started
     # corroborating the pharmacy it sits in (Codex pass-12 H4).
-    "pharmacy_counter": "fixture", "service_desk": "fixture", "information": "fixture",
-    "ticket_office": "fixture", "kiosk": "fixture",
+    #
+    # `kiosk` and `information` were in this list and have been removed (pass-13 M7): both are
+    # routinely **standalone destinations** — `shop=kiosk` is an ordinary small shop, and an
+    # information or visitor centre is somewhere you go — so calling them fixtures stopped a news
+    # kiosk recorded as `kiosk`/`newsstand`, and a visitor centre recorded as
+    # `information`/`visitor_center`, from corroborating themselves across sources. Adding a batch
+    # of plausible-sounding categories at once was the over-correction; these two are destinations.
+    "pharmacy_counter": "fixture", "service_desk": "fixture", "ticket_office": "fixture",
 }
 
 #: Roles whose features merely *refer* to a place. A bus platform named "Duke Hospital" is how you
@@ -113,17 +122,44 @@ _ROLE_BY_CATEGORY = {
 #: `public_transport=platform`, `network=Duke`).
 REFERENCE_ROLES = frozenset({"stop"})
 
-#: Words that make a stop the *subject* of the query rather than the way to reach something else.
+#: Phrases that make a stop the *subject* of the query rather than the way to reach something else.
 #: "Duke Hospital" wants the hospital; "Franklin Street bus stop" wants the stop, and abstaining
-#: there is a false ambiguity (Codex pass-12 M5). This is a narrow literal test on words the user
-#: typed, not a query-intent model: only an explicit transport noun counts.
-STOP_INTENT_WORDS = frozenset({"stop", "stops", "platform", "platforms", "bus", "busstop",
-                               "bustop", "halt", "stand", "shelter", "bay"})
+#: there is a false ambiguity (Codex pass-12 M5).
+#:
+#: **Phrases, not words.** The first version listed single nouns including `bus`, `stand`, `shelter`
+#: and `bay`, every one of which is an ordinary part of a business name: a bus stop called "Bay Leaf
+#: Indian Cuisine" then beat the restaurant of that name 1.0 to 0.83 *and* suppressed the
+#: abstention, so the resolver confidently returned the stop. Codex reproduced the same failure for
+#: "Bus Boys and Poets" and "Shelter Club" (pass-13 M6). A single ambiguous noun is not evidence of
+#: intent; an explicit transport phrase is.
+STOP_INTENT_PHRASES = frozenset({
+    "bus stop", "bus stops", "bus station", "bus stand", "bus shelter", "bus bay", "bus terminal",
+    "tram stop", "train station", "rail station", "railway station", "subway station",
+    "metro station", "light rail station", "light rail stop", "transit center", "transit centre",
+    "transit station", "park and ride", "taxi stand", "taxi rank", "bus platform",
+    "train platform", "station platform",
+})
+#: The longest phrase above, in tokens — how far the scan has to look.
+_STOP_PHRASE_MAX_N = max(len(q.split()) for q in STOP_INTENT_PHRASES)
 
 
 def names_a_stop(tokens) -> bool:
-    """Did the query itself ask for a stop? Used only to suppress the mixed-reference abstention."""
-    return any(t in STOP_INTENT_WORDS for t in tokens)
+    """Did the query itself ask for a stop? Used only to suppress the mixed-reference abstention.
+
+    The phrase must be the **tail** of the query. Phrases rather than words was not enough on its
+    own: a business genuinely called "The Bus Stop Cafe Company" contains "bus stop" and would have
+    suppressed the abstention exactly as `bay` did. In English the transport noun is the head of the
+    phrase and the head comes last, so "Franklin Street bus stop" names a stop while "The Bus Stop
+    Cafe Company" does not.
+
+    This also puts the residual error in the safe direction. Missing a genuine intent costs an
+    abstention, which shows the user a chooser; inventing one costs a confident wrong answer.
+    """
+    toks = list(tokens)
+    for n in range(2, _STOP_PHRASE_MAX_N + 1):
+        if len(toks) >= n and " ".join(toks[-n:]) in STOP_INTENT_PHRASES:
+            return True
+    return False
 
 #: Roles that sit inside or beside a named parent and borrow its name, so must never be merged with
 #: a non-subsidiary record — the cross-source form of the bank-and-its-ATM collapse (pass-10 H4).
@@ -144,14 +180,27 @@ _REGION_NOISE = frozenset({
 _CONNECTIVES = frozenset({"the", "in", "at", "on", "near", "of", "a"})
 _PUNCT = re.compile(r"[^\w\s]+", re.UNICODE)
 _WS = re.compile(r"\s+")
+#: Deleted rather than replaced by a space. An apostrophe sits *inside* a word in the possessive
+#: form that business names are full of, so spacing it splits the word: "Trader Joe's" became
+#: `['trader', 'joe', 's']` while "Trader Joes" became `['trader', 'joes']`, and the two spellings
+#: of one query returned different leading candidates. The existing test only covered a *trailing*
+#: apostrophe ("Carrboro Farmers' Market"), where adding a space is harmless, which is why this
+#: survived — found by the expanded benchmark.
+_INTRAWORD = re.compile(r"[\u0027\u2019\u02bc\u0060\u00b4]+")
 
 
 def normalise(text: str) -> str:
-    """Casefold, strip accents and punctuation, collapse whitespace."""
+    """Casefold, strip accents and punctuation, collapse whitespace.
+
+    Apostrophes are **deleted**; every other punctuation mark becomes a space. The distinction
+    matters because an apostrophe is intra-word in the possessive, so spacing it splits the word and
+    "Trader Joe's" stops matching "Trader Joes".
+    """
     if not text:
         return ""
     s = unicodedata.normalize("NFKD", str(text))
     s = "".join(c for c in s if not unicodedata.combining(c))
+    s = _INTRAWORD.sub("", s)
     s = _PUNCT.sub(" ", s).casefold()
     return _WS.sub(" ", s).strip()
 
@@ -283,7 +332,7 @@ class PlaceIndex:
         scoring only the remainder produced confident wrong answers (pass-11 H2).
         """
         out: list[tuple[list[str], str | None]] = [(list(tokens), None)]
-        name, loc = self._split_locality(tokens)
+        name, loc, locality_is_prefix = self._split_locality(tokens)
         locality = " ".join(loc) if loc else None
         if loc and name != tokens:
             out.append((name, locality))
@@ -292,7 +341,14 @@ class PlaceIndex:
             # name with the word still attached: "Durham The Coffee" produced only "Coffee", which
             # matched a different shop exactly while "The Coffee" was never scored intact at all
             # (Codex pass-12 H3). So it is a further, more destructive rung instead.
-            at_end = tokens[:len(loc)] != loc          # locality was a suffix
+            # The split side comes from the split itself. Reconstructing it by comparing tokens —
+            # `tokens[:len(loc)] != loc` — misread a query whose remaining name *begins* with the
+            # same words as the locality it removed from the end: "Durham Coffee in Durham" dropped
+            # the trailing "Durham", then decided the locality had been a prefix, never produced the
+            # trimmed "Durham Coffee" reading, and resolved to a different place called "Durham
+            # Coffee In" (pass-13 M5). Preserving the raw remainder was right; inferring where it
+            # came from was a new defect.
+            at_end = not locality_is_prefix
             trimmed = self._strip_boundary_connective(name, at_end=at_end)
             if trimmed != name:
                 out.append((trimmed, locality))
@@ -323,12 +379,16 @@ class PlaceIndex:
                 out.pop(0)
         return out or list(tokens)
 
-    def _split_locality(self, tokens: list[str]) -> tuple[list[str], list[str]]:
-        """`(name tokens, locality tokens)` with the name left **raw**.
+    def _split_locality(self, tokens: list[str]) -> tuple[list[str], list[str], bool]:
+        """`(name tokens, locality tokens, locality_is_prefix)` with the name left **raw**.
 
         It used to strip a boundary connective here, which silently removed a rung from
         `_readings`' ladder (pass-12 H3). Splitting and trimming are separate readings of the same
         query, so they are separate steps.
+
+        The third element is returned rather than inferred: the caller needs to know which end the
+        locality came off, and deriving that from token equality fails whenever the remaining name
+        starts with the same words as the locality removed from the other end (pass-13 M5).
         """
         """Separate words that name a locality in this index from the place name itself.
 
@@ -343,12 +403,12 @@ class PlaceIndex:
         # locality as a SUFFIX: the boundary is at the end of the name
         for cut in range(1, len(tokens)):
             if " ".join(tokens[cut:]) in self._localities:
-                return tokens[:cut], tokens[cut:]
+                return tokens[:cut], tokens[cut:], False
         # locality as a PREFIX: the boundary is at the start of the name
         for cut in range(len(tokens) - 1, 0, -1):
             if " ".join(tokens[:cut]) in self._localities:
-                return tokens[cut:], tokens[:cut]
-        return tokens, []
+                return tokens[cut:], tokens[:cut], True
+        return tokens, [], False
 
     def resolve(self, query: str, *, limit: int = 8) -> Resolution:
         raw = strip_region_noise(_tokens(query))
@@ -405,6 +465,19 @@ class PlaceIndex:
         # Decide on the COMPLETE ranking, then truncate for presentation. Deciding after the cut
         # let `limit=1` turn an ambiguous pair into a confident answer (Codex pass-10 H3).
         outcome = _decide(merged, bool(locality), stop_intent=names_a_stop(raw))
+        # A query that IS a locality name cannot be answered confidently by an index of POIs.
+        # This generalises the area gap recorded in the module docstring for "RTP". The mechanism
+        # the expanded benchmark exposed: Overture's listing noise contains records whose *name* is
+        # exactly a place name — a gym called "Chapel Hill" 6.2 km from Chapel Hill — and a sole
+        # exact match scores 1.000 and wins outright, so the resolver confidently returned the gym.
+        # "Durham" was passing its benchmark assertion only because the record of that name happens
+        # to sit 520 m from the reference, which is luck rather than correctness.
+        #
+        # Downgrading to `ambiguous` keeps the candidates, which are worth showing, and withholds a
+        # confidence the index cannot support. Areas need an area index; until then this is the
+        # honest outcome.
+        if outcome == "resolved" and " ".join(raw) in self._localities:
+            outcome = "ambiguous"
         return Resolution(query=query, outcome=outcome, candidates=tuple(merged[:limit]),
                           n_matched=len(merged))
 
@@ -547,9 +620,14 @@ def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
                 # Coffee in Raleigh and a Coffee in Durham until an Overture copy of the latter
                 # arrived within 60 m, at which point it resolved confidently to "Coffee".
                 evidence = max((kept, cand), key=lambda c: (c.score, -c.reading))
+                # `matched_on` explains the score, so it has to come from the member that earned
+                # it, not from the member that supplied the geometry. Both sources naming a place
+                # "Northside Coffee Roasters" with only Overture carrying the alias "Northside"
+                # produced a candidate scored 0.95 from that exact alias while reporting
+                # `name:contains` from the OSM representative (pass-13 L2).
                 out[j] = Candidate(place=winner.place,
                                    score=max(kept.score, cand.score),
-                                   matched_on=winner.matched_on,
+                                   matched_on=evidence.matched_on,
                                    corroborated_by=tuple(sorted(sources - {winner.place.source})),
                                    locality_match=kept.locality_match or cand.locality_match,
                                    reading=evidence.reading)
@@ -560,7 +638,46 @@ def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
             members[len(out)] = {cand.place.source}
             out.append(cand)
     out.sort(key=_rank_key)
-    return out
+    return _promote_real_places_within_the_leading_tier(out)
+
+
+def _promote_real_places_within_the_leading_tier(ranked: list[Candidate]) -> list[Candidate]:
+    """Within the leading score tier, a real place outranks a feature that merely refers to one.
+
+    `_rank_key` already carries `is_reference_feature`, but it sits *after* the score, so it only
+    decides an **exact** tie, and exact ties are rare. Widening that to the ambiguity tier means a
+    near-tie the resolver has already declared it cannot separate on score is broken on identity
+    instead.
+
+    **It does not rescue "Duke Hospital", and I first wrote that it did.** On the real index the bus
+    platform is the only *exact* match at 1.000 and the nearest real hospital record scores 0.7833 —
+    a 0.22 gap, far outside any sane tier. No reordering can promote a 0.78 over a 1.00 without
+    abandoning exact matching, so that query is the naming gap pass 10 identified, not a ranking
+    defect. This rule is for the genuine near-tie, and the test below constructs one.
+
+    The tier is `AMBIGUITY_MARGIN`, the same width that decides ambiguity: inside it the resolver
+    has already declared it cannot separate the candidates on score, so breaking that near-tie on
+    identity is using the evidence it has rather than inventing any. Outside the tier nothing moves,
+    which is why an explicit "Franklin Street bus stop" query — where the stop leads by 0.17 — is
+    unaffected, and a stop that is the only candidate still resolves.
+
+    Found by the expanded benchmark (`benchmarks/resolver_queries.json`), not by a review.
+    """
+    if len(ranked) < 2:
+        return ranked
+    lead_score = ranked[0].score
+    tier_end = 0
+    while tier_end < len(ranked) and lead_score - ranked[tier_end].score < AMBIGUITY_MARGIN:
+        tier_end += 1
+    tier = ranked[:tier_end]
+    if not any(is_reference_feature(c.place) for c in tier):
+        return ranked
+    if all(is_reference_feature(c.place) for c in tier):
+        return ranked
+    # stable: the existing order is preserved within each group
+    tier = [c for c in tier if not is_reference_feature(c.place)] + \
+           [c for c in tier if is_reference_feature(c.place)]
+    return tier + ranked[tier_end:]
 
 
 def pin(lon: float, lat: float, *, label: str = "dropped pin") -> Candidate:

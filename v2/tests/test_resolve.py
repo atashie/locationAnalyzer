@@ -7,8 +7,8 @@ global best — so the tests check those behaviours directly rather than checkin
 """
 import pytest
 
-from locfinder.places.resolve import (AMBIGUITY_MARGIN, Place, PlaceIndex, normalise, pin,
-                                      strip_region_noise)
+from locfinder.places.resolve import (AMBIGUITY_MARGIN, Place, PlaceIndex, names_a_stop,
+                                      normalise, pin, role_of, strip_region_noise)
 
 
 def P(name, lon, lat, *, source="osm", sid=None, aliases=(), brand=None, locality=None,
@@ -598,3 +598,175 @@ def test_corroboration_cannot_manufacture_an_intact_query_match():
     assert corroborated.outcome == "ambiguous", [
         (c.place.name, c.score, c.reading) for c in corroborated.candidates]
     assert corroborated.candidates[0].place.name == "Durham Coffee"
+
+
+# --------------------------------------------------------------------------------------------
+# Codex pass 13. The fourth consecutive pass to find over-corrections in this file, which is why
+# the graded benchmark is being expanded rather than another round of point fixes being trusted.
+# --------------------------------------------------------------------------------------------
+
+
+def test_a_locality_repeated_inside_the_name_does_not_lose_a_reading():
+    """pass-13 M5. `at_end` was inferred by comparing tokens, which misreads a query whose
+    remaining name *begins* with the same word as the locality removed from its *end*: "Durham
+    Coffee in Durham" dropped the trailing "Durham", concluded the locality had been a prefix, and
+    so never produced the trimmed "Durham Coffee" reading. It resolved confidently to a different
+    shop called "Durham Coffee In" (score 1.0 against a 0.5667 runner-up).
+
+    The split side is now returned by the split. Both readings are produced, both match a place
+    exactly, and the outcome is `ambiguous` with the two offered — which is the honest answer and
+    is what this resolver exists to do, rather than picking one of two exact matches."""
+    idx = PlaceIndex([
+        P("Durham Coffee", -78.9000, 35.9940, sid="osm:1", locality="Durham", category="cafe"),
+        P("Durham Coffee In", -78.9100, 36.0000, sid="osm:2", locality="Durham", category="cafe"),
+    ])
+    tokens = ["durham", "coffee", "in", "durham"]
+    readings = [r for r, _ in idx._readings(tokens)]
+    assert ["durham", "coffee"] in readings, readings
+
+    r = idx.resolve("Durham Coffee in Durham")
+    assert r.outcome == "ambiguous", [(c.place.name, c.score, c.reading) for c in r.candidates]
+    assert {c.place.name for c in r.candidates} == {"Durham Coffee", "Durham Coffee In"}
+
+
+def test_an_ordinary_name_containing_a_transport_word_is_not_transport_intent():
+    """pass-13 M6. `STOP_INTENT_WORDS` listed single nouns including `bus`, `bay`, `stand` and
+    `shelter`, so a bus stop named "Bay Leaf Indian Cuisine" beat the restaurant of that name
+    1.0 to 0.83 *and* suppressed the abstention, returning the stop confidently."""
+    for query in ("Bay Leaf Indian Cuisine", "Bus Boys and Poets", "Shelter Club", "Grandstand",
+                  "The Bus Stop Cafe Company"):
+        assert not names_a_stop(normalise(query).split()), query
+    for query in ("Franklin Street bus stop", "Durham train station", "RDU park and ride"):
+        assert names_a_stop(normalise(query).split()), query
+
+
+def test_a_stop_named_after_a_restaurant_does_not_win_confidently():
+    idx = PlaceIndex([
+        P("Bay Leaf Indian Cuisine", -78.80, 35.90, sid="osm:s", category="bus_stop"),
+        P("Bay Leaf Indian Cuisine Restaurant", -78.81, 35.91, sid="osm:t", category="restaurant"),
+    ])
+    assert idx.resolve("Bay Leaf Indian Cuisine").outcome == "ambiguous"
+
+
+@pytest.mark.parametrize("osm_cat, other_cat", [
+    ("halt", "train_station"),        # a railway halt IS a small station
+    ("kiosk", "newsstand"),           # shop=kiosk is an ordinary standalone shop
+    ("information", "visitor_center"),  # an information centre is somewhere you go
+])
+def test_cross_source_copies_whose_roles_were_mis_assigned_merge_again(osm_cat, other_cat):
+    """pass-13 M7. Role *equality* is only as good as the role assignment, and I had added a batch
+    of plausible-sounding categories to the fixture list at once. `halt` sat with the platforms and
+    `kiosk`/`information` were called fixtures, so three real cross-source copies stopped
+    corroborating each other."""
+    idx = PlaceIndex([
+        P("X", -78.9000, 35.9900, sid="osm:a", category=osm_cat),
+        P("X", -78.9001, 35.9901, source="overture", sid="ov:a", category=other_cat),
+    ])
+    r = idx.resolve("X")
+    assert r.n_matched == 1, [(c.place.category, role_of(c.place.category)) for c in r.candidates]
+    assert r.candidates[0].corroborated_by == ("overture",)
+
+
+def test_the_merged_explanation_names_the_evidence_that_earned_the_score():
+    """pass-13 L2. `matched_on` came from the geometry winner, so a candidate scored 0.95 from an
+    alias only the Overture record carried reported `name:contains` from the OSM representative."""
+    idx = PlaceIndex([
+        P("Northside Coffee Roasters", -78.9000, 35.9900, sid="osm:n"),
+        P("Northside Coffee Roasters", -78.9001, 35.9901, source="overture", sid="ov:n",
+          aliases=("Northside",)),
+    ])
+    r = idx.resolve("Northside")
+    assert r.n_matched == 1, [(c.place.source, c.matched_on) for c in r.candidates]
+    lead = r.candidates[0]
+    assert lead.corroborated_by == ("overture",)
+    assert "alias" in lead.matched_on, lead.matched_on
+
+
+# --------------------------------------------------------------------------------------------
+# Found by the EXPANDED BENCHMARK (benchmarks/resolver_queries.json), not by a review. This is
+# the point of having built it: 41 graded assertions caught six live defects on their first run,
+# where the five-query benchmark had been green through four rounds of over-correction.
+# --------------------------------------------------------------------------------------------
+
+
+def test_an_apostrophe_does_not_split_a_word():
+    """A *medial* apostrophe was replaced by a space, so "Trader Joe's" tokenised as
+    `['trader', 'joe', 's']` while "Trader Joes" gave `['trader', 'joes']`, and the two spellings
+    of one query returned different leading candidates. The pre-existing test used a *trailing*
+    apostrophe ("Carrboro Farmers' Market"), where a space is harmless — which is why this
+    survived."""
+    assert normalise("Trader Joe's") == "trader joes"
+    assert normalise("McDonald's") == "mcdonalds"
+    assert normalise("Lowe's Home Improvement") == "lowes home improvement"
+    # and the trailing case the old test covered still works
+    assert normalise("Carrboro Farmers' Market") == "carrboro farmers market"
+
+
+def test_two_spellings_of_one_query_find_the_same_place():
+    idx = PlaceIndex([P("Trader Joe's", -79.0200, 35.9130, sid="osm:tj", locality="Chapel Hill")])
+    a = idx.resolve("Trader Joes")
+    b = idx.resolve("Trader Joe's")
+    assert a.candidates and b.candidates
+    assert a.candidates[0].place.source_id == b.candidates[0].place.source_id
+    assert a.candidates[0].score == b.candidates[0].score == 1.0
+
+
+def test_a_near_tie_prefers_a_real_place_over_a_feature_that_refers_to_one():
+    """The leading-tier demotion. `_rank_key` carried this already but only broke an *exact* tie,
+    which essentially never happens between a name match and an alias match."""
+    idx = PlaceIndex([
+        P("Elm Street Clinic", -78.9000, 35.9900, sid="osm:stop", category="platform"),
+        P("Elm Clinic", -78.9010, 35.9910, sid="osm:clinic", category="clinic",
+          aliases=("Elm Street Clinic",)),
+    ])
+    r = idx.resolve("Elm Street Clinic")
+    lead, second = r.candidates[0], r.candidates[1]
+    # An exact *alias* match scores 0.95 against an exact *name* match's 1.00: a 0.05 gap, inside
+    # the 0.08 ambiguity margin and well outside the exact equality the old rule required. So the
+    # clinic leads despite scoring lower, which is the whole point of widening the rule.
+    assert (second.score, lead.score) == (1.0, 0.95), (lead.score, second.score)
+    assert second.score - lead.score < AMBIGUITY_MARGIN
+    assert lead.place.category == "clinic", [(c.place.name, c.place.category, c.score)
+                                             for c in r.candidates]
+
+
+def test_a_stop_still_leads_when_it_wins_outside_the_tier():
+    """The demotion must not fire on a decisive margin, or an explicit transport query breaks."""
+    idx = PlaceIndex([
+        P("Franklin Street bus stop", -79.0550, 35.9120, sid="osm:s", category="bus_stop"),
+        P("Franklin Street bus stop cafe", -79.0560, 35.9130, sid="osm:t", category="cafe"),
+    ])
+    r = idx.resolve("Franklin Street bus stop")
+    assert r.candidates[0].place.category == "bus_stop"
+    assert r.outcome == "resolved"
+
+
+def test_a_stop_that_is_the_only_candidate_still_resolves():
+    idx = PlaceIndex([P("Elm Street", -78.90, 35.99, sid="osm:only", category="platform")])
+    r = idx.resolve("Elm Street")
+    assert r.outcome == "resolved" and r.candidates[0].place.category == "platform"
+
+
+def test_a_bare_locality_query_is_never_answered_confidently():
+    """An index of POIs cannot represent an area, so a confident answer to an area query is a false
+    claim — the "RTP" gap generalised. The benchmark exposed the mechanism: Overture listing noise
+    contains records whose *name* is exactly a place name, and a sole exact match scores 1.000 and
+    wins outright, so "Chapel Hill" resolved confidently to a **gym** 6.2 km away."""
+    idx = PlaceIndex([
+        P("Chapel Hill", -78.9873, 35.9097, source="overture", sid="ov:gym", category="gym"),
+        P("Alexan Chapel Hill", -79.0278, 35.9331, source="overture", sid="ov:lodge",
+          category="lodging", locality="Chapel Hill"),
+    ])
+    r = idx.resolve("Chapel Hill")
+    assert r.outcome == "ambiguous", [(c.place.name, c.score) for c in r.candidates]
+    # the candidates are still offered, because they are worth showing
+    assert r.candidates and r.candidates[0].place.name == "Chapel Hill"
+
+
+def test_a_locality_word_inside_a_longer_query_is_unaffected():
+    """The rule applies only when the query *is* a locality, or it would break every
+    name-plus-locality query — which is most of them."""
+    idx = PlaceIndex([P("Harris Teeter", -79.0760, 35.9140, locality="Carrboro",
+                        category="supermarket")])
+    assert idx.resolve("Harris Teeter Carrboro").outcome == "resolved"
+    assert idx.resolve("Carrboro Farmers Market").outcome in {"resolved", "ambiguous", "not_found"}

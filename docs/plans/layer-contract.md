@@ -473,9 +473,14 @@ the grid):
 | `OFF_NETWORK` | 57,541 | 17.4102% | 3,657 | **0.7134%** |
 | `BEYOND_HORIZON` | 16,209 | 4.9044% | 9,967 | **1.9443%** |
 
-**So "22% of the Triangle has no walk time to a grocery" and "2.7% of its buildings do" are both
-true, and only the second is about people.** The missing region is overwhelmingly unbuilt land: the
+**So "22% of the Triangle has no walk time to a grocery" and "2.7% of its *structures* do" are both
+true, and they are different questions.** The missing region is overwhelmingly unbuilt land: the
 17.41% of cells with no road within 200 m hold seven buildings in a thousand.
+
+I first wrote that "only the second is about people", which is an inference this measurement does
+not license and which the caveat below contradicts (pass-13 M9). A structure count is not a
+population count. What the two denominators support is a **comparison between denominators** — at 15
+minutes the building share is **2.224×** the cell share — not a claim about household access.
 
 At a threshold the relationship inverts, and sharply — the built-up area is exactly the area that
 is close to things:
@@ -487,9 +492,12 @@ is close to things:
 | 25 min | 28.3091% | **58.2688%** |
 | 45 min | 48.9147% | **82.8831%** |
 
-A 15-minute walk to a grocery covers a seventh of the map and **a third of its buildings**. Any
-published summary that quotes only the cell share understates the product by a factor of two at the
-thresholds people actually set.
+A 15-minute walk to a grocery covers a seventh of the map and **a third of its structures**: the
+building share is **2.224×** the cell share there. A summary quoting only the cell share is
+answering a question about *land*, and a reader who wants a question about *buildings* answered will
+read it as more than twice as pessimistic as the building figure. That is a statement about the two
+denominators and nothing more — it is not a measurement of what the product is worth to a household,
+which would need a residential weight this data does not carry.
 
 **A region's dominant reason by area is not its dominant reason by building.** The missing region
 breaks into 1,278 contiguous components (4-connectivity); the largest covers 23,184 cells and holds
@@ -574,35 +582,64 @@ graph has **4,208** components. Measured through the production preparation path
 because the docstring's count predates the `degree() == 0` removal that strips isolated nodes. The
 drive figure (1,685) was not re-measured.
 
-### A published time may describe an unlawful journey
+### Restricted-road use: a diagnostic, and a claim I withdrew
 
 The access model lets a restricted edge be *chosen* at a penalty rather than forbidden, because
 blocking all of them made every home on a private drive unreachable. The penalty discourages
 through-routing over private land without preventing it, so the contract has to say what a published
-time actually asserts. S2.3 measured it (`spikes/s2_access_lawfulness_audit.py`, restricted edges
-identified as `cost - time > 0`, so these are the edges the search used):
+time asserts about the legality of the journey behind it.
 
-| | nodes | share of reachable |
-|---|---|---|
-| first hop restricted — the driveway case, lawful | 48,865 | 9.05% |
-| **shipped path routes through restricted land** | **26,395** | **4.89%** |
+**It currently asserts nothing, and the first attempt to measure it overstated what it had
+measured.** S2.3 reported that 4.89% of shipped paths "route through restricted land" and that a
+strict policy would cost at most 0.95% of buildings. Codex pass 13 found four defects that break
+both claims, and they are worth stating here rather than only in the research record, because the
+withdrawn version was written into this contract.
 
-Under a strict policy — a restricted edge usable only as the first hop out of the origin — coverage
-falls from 256,752 to 251,222 cells and from 499,009 to 494,128 buildings, a loss of **0.95% of
-buildings**. 25,186 nodes keep a path but get slower, by a median of 703 s. A restricted *final* hop
-into a destination's own parking is equally lawful and is not modelled, so that loss is an upper
-bound.
+**Edge position does not establish lawfulness** (pass-13 H3). The audit classified a restricted edge
+as lawful when it was the journey's first or last edge. Split one driveway into two edges and the
+same journey changes verdict; conversely, being the first edge does not establish that a private
+road serves *that* property or that the traveller has permission. OSM's `access=private` describes
+restricted public access, not endpoint entitlement. So **26,395 paths (4.89%) use a restricted edge
+somewhere other than at either end** — that is measured and reproducible, and it is an
+**edge-position diagnostic**, not a count of unlawful routes.
 
-**The two numbers are different claims and must not be used interchangeably.** Coverage scarcely
-depends on through-routing: under one building in a hundred. But about one published path in twenty
-*is* a through-route over restricted land. So:
+**And the strict counterfactual was not the policy it claimed** (pass-13 H1, H2, H4). The cell layer
+re-admitted restricted travel during snapping, because an open partial edge inherits its node's
+restricted-first-hop route and the policy is lost below the node level. The "unpenalised" branch
+still charged selection penalties, since both branches shared one `EdgeIndex`. And the restricted
+filter ran *after* parallel-edge collapse, deleting lawful public alternatives — 27 directed node
+pairs in the real graph, with 2,673 more where a restricted winner hides an open alternative. Those
+errors run in **both** directions, so the 0.95% is reproducible but is **not a bound**:
 
-- a published **time** is defensible as "the time of the quickest route this model would choose,
-  which may cross private land it has been penalised for crossing";
-- a published **route** is not defensible without a per-path check, because 4.89% of them would need
-  one.
+> "Omitting destination-end access alone cannot make this implementation a conservative bound."
 
-That distinction is a precondition on S6 drawing routes, not a caveat to add afterwards.
+**What the contract may say, now that the rebuild has run.** The policy is stated as a language —
+`R* O* R*`, a restricted chain from the origin, an open middle, a restricted chain into the
+destination — recognised by a three-state automaton and solved on the graph x automaton product
+(`locfinder/traveltime/policy.py`). A *chain* is invariant to how a driveway is divided into ways,
+which the single-edge rule was not, and the audit demonstrates that directly: subdividing every
+restricted edge changes the result by **0.000000 s**.
+
+| | value |
+|---|---|
+| nodes with no journey in `R* O* R*` | **2,833 of 539,814 — 0.5248%** |
+| nodes lawful but slower | 38,939; median **+12.3 s**, p90 +312.6 s |
+| **buildings the policy would cost** | **2,092 of 507,037 — 0.4126%** |
+
+So a published **time** may be read as "the time along the route this model chooses, which may cross
+roads tagged as restricted"; forbidding through-traffic over such roads would withhold **under half
+a percent of buildings**. That is small enough that it does not constrain what the layer publishes,
+and the earlier claim that this was "a precondition on S6 drawing routes" was right in spirit and
+wrong in substance — the precondition was the measurement, and this is it.
+
+**Two limits stay on the record.** `access=private` describes restricted *public* access and not who
+is entitled, so membership of the language means a journey is **not through-traffic over private
+land**; it does not establish that a particular traveller may make it, which would need the access
+area a property belongs to and OSM does not reliably carry that. And this is measured at **nodes,
+weighted by buildings**, not at cells: carrying the automaton states through the cell snap is a real
+change to the production snap, and the first attempt lost the policy below the node level. No
+cell-level figure is claimed.
+
 
 ### How far the category surface is from a minimum over destinations
 

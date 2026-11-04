@@ -1,0 +1,491 @@
+{
+  "schema": 1,
+  "about": "Graded benchmark for the S2.1 place-name resolver. Intended answers are written down HERE, before the resolver is run, because four consecutive Codex passes found over-corrections that the five-query benchmark could not see. See docs/plans/2026-11-03-phase1-plan.md S2.1.",
+  "grading": {
+    "same_place_m": 800.0,
+    "far_away_m": 5000.0,
+    "note": "Location grading uses ONLY the twelve hand-chosen spot-check reference points, which are justified independently of this resolver and are not POI centroids. The threshold is deliberately coarse: it separates 'the same place' from 'somewhere else entirely'. Queries with no justified reference carry property assertions instead. Adding more reference coordinates needs an independent source, not my recollection; that is a stated gap, not a thing to fill in by guessing."
+  },
+  "references": {
+    "UNC Hospitals": [
+      35.9049,
+      -79.0469
+    ],
+    "Duke University Hospital": [
+      36.0075,
+      -78.9381
+    ],
+    "Carrboro Town Hall": [
+      35.91,
+      -79.075
+    ],
+    "Downtown Durham": [
+      35.996,
+      -78.901
+    ],
+    "Chapel Hill (Franklin St)": [
+      35.9132,
+      -79.0558
+    ],
+    "RTP (Kit Creek Rd)": [
+      35.872,
+      -78.845
+    ],
+    "RDU Terminal 2": [
+      35.8776,
+      -78.7875
+    ],
+    "NC State Bell Tower": [
+      35.786,
+      -78.663
+    ],
+    "Downtown Raleigh (Moore Sq)": [
+      35.7796,
+      -78.6382
+    ],
+    "Cary Downtown": [
+      35.788,
+      -78.781
+    ],
+    "Southpoint Mall": [
+      35.905,
+      -78.945
+    ],
+    "Hillsborough": [
+      36.075,
+      -79.099
+    ]
+  },
+  "queries": [
+    {
+      "query": "UNC Hospitals",
+      "intent": "the hospital campus in Chapel Hill",
+      "expect": {
+        "offered_near": "UNC Hospitals",
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "justified reference point; the original decision-D4 benchmark query that Nominatim resolved to Morganton, 180 km away"
+    },
+    {
+      "query": "UNC Hospitals Chapel Hill",
+      "intent": "same, with the locality typed as a suffix",
+      "expect": {
+        "offered_near": "UNC Hospitals",
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "a correct locality must not make a correct answer worse"
+    },
+    {
+      "query": "UNC Hospitals, Chapel Hill NC",
+      "intent": "same, with region noise",
+      "expect": {
+        "offered_near": "UNC Hospitals",
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "strip_region_noise must remove 'NC' without touching the name"
+    },
+    {
+      "query": "Duke Hospital",
+      "intent": "the hospital, not the bus platform named after it",
+      "expect": {
+        "outcome": [
+          "ambiguous"
+        ],
+        "non_reference_offered": true
+      },
+      "basis": "pass-10 H1: this resolved CONFIDENTLY to a bus platform, and pass-12 H4 made it abstain. The requirement is the abstention plus a real place among the options. It is NOT that the hospital leads: on the real index the platform is the only exact match at 1.000 and the nearest hospital record scores 0.7833, so no reordering promotes it without abandoning exact matching. That is the naming gap pass 10 identified. My first version of this assertion demanded a non-stop leader AND used `offered_near`, which the platform satisfies by sitting 56 m from the hospital — an assertion the wrong answer could pass."
+    },
+    {
+      "query": "Duke University Hospital",
+      "intent": "the hospital by its full name",
+      "expect": {
+        "offered_near": "Duke University Hospital",
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "justified reference point"
+    },
+    {
+      "query": "Duke Hospital bus stop",
+      "intent": "the stop itself — the user said so",
+      "expect": {
+        "outcome": [
+          "resolved",
+          "ambiguous"
+        ],
+        "lead_role_in": [
+          "stop",
+          "station"
+        ],
+        "offered_near": "Duke University Hospital"
+      },
+      "basis": "pass-12 M5 / pass-13 M6: explicit transport intent must not be abstained away, and the phrase must be the tail of the query. The role assertion admits `station` as well as `stop` — both are transport features and the query asked for one; the location assertion is what keeps it meaningful, since a stop of this name in Raleigh is the wrong answer"
+    },
+    {
+      "query": "Southpoint",
+      "intent": "the mall in south Durham",
+      "expect": {
+        "not_far_from": "Southpoint Mall"
+      },
+      "basis": "justified reference point; Nominatim resolved this to Kenosha, Wisconsin"
+    },
+    {
+      "query": "The Streets at Southpoint",
+      "intent": "the mall by its full name, which begins with a connective",
+      "expect": {
+        "not_far_from": "Southpoint Mall"
+      },
+      "basis": "pass-11 H2: stripping 'The' from both ends matched a different record exactly"
+    },
+    {
+      "query": "RTP",
+      "intent": "Research Triangle Park, a district",
+      "expect": {
+        "not_confidently_far_from": "RTP (Kit Creek Rd)"
+      },
+      "basis": "a MEASURED COVERAGE GAP, not a scoring problem: no place carries the alias RTP and the index holds POIs, not districts. The requirement is therefore negative — it must not confidently return a business whose name merely contains RTP, kilometres away"
+    },
+    {
+      "query": "Research Triangle Park",
+      "intent": "the district by its full name",
+      "expect": {
+        "not_confidently_far_from": "RTP (Kit Creek Rd)"
+      },
+      "basis": "same gap; the 35 matching places are businesses situated in it"
+    },
+    {
+      "query": "RDU",
+      "intent": "the airport",
+      "expect": {
+        "not_confidently_far_from": "RDU Terminal 2",
+        "lead_role_not": [
+          "parking",
+          "fixture"
+        ]
+      },
+      "basis": "pass-12 H4: the car park merged with the airport and resolved confidently as a car park"
+    },
+    {
+      "query": "RDU Airport",
+      "intent": "the airport by name",
+      "expect": {
+        "not_confidently_far_from": "RDU Terminal 2",
+        "lead_role_not": [
+          "parking",
+          "fixture"
+        ]
+      },
+      "basis": "a car park is a destination in its own right but is not the airport"
+    },
+    {
+      "query": "Carrboro Farmers Market",
+      "intent": "the market in Carrboro; the locality is part of the name",
+      "expect": {
+        "offered_near": "Carrboro Town Hall"
+      },
+      "basis": "pass-11 H2: a locality word that belongs to the name must survive. The reference is the town hall, which the market is beside"
+    },
+    {
+      "query": "Weaver Street Market",
+      "intent": "the co-operative grocery in Carrboro",
+      "expect": {
+        "not_far_from": "Carrboro Town Hall"
+      },
+      "basis": "justified reference point nearby; several branches exist, so ambiguity is acceptable"
+    },
+    {
+      "query": "Harris Teeter Carrboro",
+      "intent": "the Carrboro branch of a chain with many branches",
+      "expect": {
+        "outcome": [
+          "resolved"
+        ],
+        "locality_match": true
+      },
+      "basis": "pass-9: locality was a score bonus that min(1.0, ...) erased, so this tied four exact matches and the Carrboro shop was not in the top four"
+    },
+    {
+      "query": "Harris Teeter",
+      "intent": "a chain with many branches and no locality given",
+      "expect": {
+        "outcome": [
+          "ambiguous"
+        ]
+      },
+      "basis": "the Morganton failure mode is auto-picking one of several. Ambiguity is the correct answer"
+    },
+    {
+      "query": "Whole Foods",
+      "intent": "a chain with branches in Chapel Hill and Durham",
+      "expect": {
+        "outcome": [
+          "ambiguous"
+        ]
+      },
+      "basis": "decision: ambiguity is surfaced, never resolved silently"
+    },
+    {
+      "query": "Whole Foods Durham",
+      "intent": "the Durham branch",
+      "expect": {
+        "locality_match": true,
+        "lead_role_not": [
+          "station",
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "pass-10 H2: a LEADING locality sent this to the Amtrak station at 0.85"
+    },
+    {
+      "query": "Durham Whole Foods",
+      "intent": "the Durham branch, locality first",
+      "expect": {
+        "locality_match": true,
+        "lead_role_not": [
+          "station",
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "pass-10 H2, the exact form that failed"
+    },
+    {
+      "query": "the Whole Foods in Durham",
+      "intent": "the Durham branch, with filler words",
+      "expect": {
+        "locality_match": true,
+        "lead_role_not": [
+          "station",
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "pass-11 H2: a leading 'the' is filler here and part of the name in 'The Streets At Southpoint', so it has to be a reading rather than a rule"
+    },
+    {
+      "query": "Chapel Hill",
+      "intent": "a locality typed with no place name",
+      "expect": {
+        "not_confidently_far_from": "Chapel Hill (Franklin St)"
+      },
+      "basis": "a bare locality should not confidently return a random business in it"
+    },
+    {
+      "query": "Franklin Street",
+      "intent": "a street, which this index does not hold",
+      "expect": {
+        "not_confidently_far_from": "Chapel Hill (Franklin St)"
+      },
+      "basis": "streets are addresses, which decision D4 routes to the Census geocoder. The requirement is negative: do not confidently return something far away"
+    },
+    {
+      "query": "NC State",
+      "intent": "the university campus in Raleigh",
+      "expect": {
+        "not_confidently_far_from": "NC State Bell Tower"
+      },
+      "basis": "justified reference point; a campus, so the same district gap as RTP applies"
+    },
+    {
+      "query": "Hillsborough",
+      "intent": "the town north-west of Durham",
+      "expect": {
+        "not_confidently_far_from": "Hillsborough"
+      },
+      "basis": "justified reference point. Note Hillsborough NC and Hillsborough Street in Raleigh both exist, so confident selection of the latter would be wrong"
+    },
+    {
+      "query": "Hillsborough Street",
+      "intent": "the street in Raleigh, not the town",
+      "expect": {
+        "not_confidently_far_from": "NC State Bell Tower"
+      },
+      "basis": "the discriminating pair for the entry above: the street runs past NC State"
+    },
+    {
+      "query": "Cary",
+      "intent": "the town",
+      "expect": {
+        "not_confidently_far_from": "Cary Downtown"
+      },
+      "basis": "justified reference point"
+    },
+    {
+      "query": "Morganton",
+      "intent": "a town 180 km outside the metro",
+      "expect": {
+        "outcome": [
+          "not_found",
+          "ambiguous"
+        ],
+        "no_candidate_near_any_reference": false
+      },
+      "basis": "THE failure that decided the metro bound. Anything outside the routing bbox is not in the index, so this must not resolve confidently to a local business whose name contains it"
+    },
+    {
+      "query": "Asheville",
+      "intent": "a city 300 km outside the metro",
+      "expect": {
+        "outcome": [
+          "not_found",
+          "ambiguous"
+        ]
+      },
+      "basis": "the metro bound, from the other side of the state"
+    },
+    {
+      "query": "Wegmans Chapel Hill",
+      "intent": "a chain with a branch in this metro",
+      "expect": {
+        "lead_role_not": [
+          "stop",
+          "fixture",
+          "parking"
+        ]
+      },
+      "basis": "a grocery query of the kind the product is actually for; the assertion is identity, not location"
+    },
+    {
+      "query": "Trader Joes",
+      "intent": "a chain, apostrophe omitted",
+      "expect": {
+        "lead_role_not": [
+          "stop",
+          "fixture",
+          "parking"
+        ]
+      },
+      "basis": "normalise() folds punctuation, so the apostrophe must not matter"
+    },
+    {
+      "query": "Trader Joe's",
+      "intent": "the same chain, apostrophe present",
+      "expect": {
+        "lead_role_not": [
+          "stop",
+          "fixture",
+          "parking"
+        ],
+        "same_lead_as": "Trader Joes"
+      },
+      "basis": "the pair is the test: punctuation must not change the answer"
+    },
+    {
+      "query": "Duke Street Durham",
+      "intent": "a street whose name is also an institution's",
+      "expect": {
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "'Duke' as a street name must not pull the hospital or a campus stop"
+    },
+    {
+      "query": "Durham Station",
+      "intent": "the transit station in Durham — a station IS a destination",
+      "expect": {
+        "lead_role_not": [
+          "stop",
+          "fixture"
+        ]
+      },
+      "basis": "pass-11 M1 and pass-13 M7: station/train_station/halt are one role and a station is not a platform"
+    },
+    {
+      "query": "Durham train station",
+      "intent": "the station, explicit transport phrase",
+      "expect": {
+        "outcome": [
+          "resolved",
+          "ambiguous"
+        ],
+        "lead_role_in": [
+          "station",
+          "stop"
+        ]
+      },
+      "basis": "pass-13 M6: an explicit transport phrase at the tail of the query is intent"
+    },
+    {
+      "query": "Bay Leaf",
+      "intent": "whatever is named this — the point is that 'bay' is not transport intent",
+      "expect": {
+        "lead_role_not": [
+          "stop"
+        ]
+      },
+      "basis": "pass-13 M6: a bus stop named 'Bay Leaf Indian Cuisine' suppressed the abstention and won confidently because 'bay' was in the intent word list"
+    },
+    {
+      "query": "ATM",
+      "intent": "a generic fixture word; nothing should be confidently returned",
+      "expect": {
+        "outcome": [
+          "ambiguous",
+          "not_found"
+        ]
+      },
+      "basis": "pass-10 H4: a bank merged with its own ATM 9 m away. A generic fixture noun is not a place"
+    },
+    {
+      "query": "parking",
+      "intent": "a generic word",
+      "expect": {
+        "outcome": [
+          "ambiguous",
+          "not_found"
+        ]
+      },
+      "basis": "KNOWN OPEN FAILURE, cause named: a single Overture listing named exactly 'Parking' is the sole exact match at 1.000 and wins outright. Unlike a bare locality, this index CAN hold car parks, so the honest fix is to route a bare category noun to the category criterion rather than to the anchor resolver — a product-routing decision, not a scoring tweak, so it is recorded rather than guessed at. Left red deliberately."
+    },
+    {
+      "query": "Downtown Durham",
+      "intent": "a district",
+      "expect": {
+        "not_confidently_far_from": "Downtown Durham"
+      },
+      "basis": "justified reference point; the district gap again"
+    },
+    {
+      "query": "Durham",
+      "intent": "a bare locality that is also part of many names",
+      "expect": {
+        "not_confidently_far_from": "Downtown Durham"
+      },
+      "basis": "pass-11 H2 and pass-13 M5 both involved 'Durham' appearing as both locality and name token"
+    },
+    {
+      "query": "",
+      "intent": "nothing typed",
+      "expect": {
+        "outcome": [
+          "not_found"
+        ]
+      },
+      "basis": "an empty query must not be an error and must not return a candidate"
+    },
+    {
+      "query": "zzzzqqq not a place",
+      "intent": "nonsense",
+      "expect": {
+        "outcome": [
+          "not_found"
+        ]
+      },
+      "basis": "below SCORE_FLOOR nothing is worth showing"
+    }
+  ]
+}

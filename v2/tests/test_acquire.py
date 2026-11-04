@@ -4,6 +4,7 @@ Both are in the plan's S4.1 and one was demonstrated by Codex pass-10 H5. Neithe
 happy-path test, which is exactly why they survived: the first needs a *changed request* and the
 second needs an *interrupted download*. The downloader is injected so both can be provoked.
 """
+import errno
 import json
 import subprocess
 import sys
@@ -187,14 +188,19 @@ def test_the_lock_is_released_when_the_holder_dies(tmp_path):
     replacement. An OS lock is released by the kernel on process death, so there is nothing to
     guess and nothing to reclaim."""
     raw = tmp_path / "raw.parquet"
+    marker = tmp_path / "child-acquired"
     killer = textwrap.dedent(f"""
         import os, sys, pathlib
         sys.path.insert(0, {str(V2)!r})
         import locfinder.places.acquire as acq
         with acq._exclusive(pathlib.Path({str(raw)!r})):
+            pathlib.Path({str(marker)!r}).write_text("held")
             os._exit(1)      # die holding the lock, with no cleanup of any kind
     """)
     died = subprocess.run([sys.executable, "-c", killer], capture_output=True, text=True)
+    # Prove the child reached the inside of the lock. Without this the test passes just as well
+    # when the child dies on import, which would make it evidence of nothing (Codex pass-13).
+    assert marker.exists(), f"child never held the lock: {died.stdout}{died.stderr}"
     assert died.returncode == 1
     lock = raw.with_suffix(raw.suffix + ".lock")
     assert lock.exists(), "the lock file is deliberately never unlinked"
@@ -273,3 +279,50 @@ def test_a_leftover_lock_file_does_not_block_anything(tmp_path):
     finally:
         acq.LOCK_TIMEOUT_S = original
     assert downloaded and raw.read_text(encoding="utf-8") == "fresh"
+
+
+def _patch_os_lock(monkeypatch, raising):
+    """Replace the platform lock primitive, not `_try_lock` itself.
+
+    Patching `_try_lock` would replace the code under test — it is where the errno is classified —
+    so the fake has to sit one level down, at the call the real function makes.
+    """
+    import os as _os
+    if _os.name == "nt":
+        import msvcrt
+        monkeypatch.setattr(msvcrt, "locking", lambda fd, mode, nbytes: raising())
+    else:
+        import fcntl
+        monkeypatch.setattr(fcntl, "flock", lambda fd, op: raising())
+
+
+def test_a_filesystem_that_cannot_lock_fails_immediately_rather_than_waiting(tmp_path, monkeypatch):
+    """Codex pass-13 L1. `_try_lock` returned False for *any* `OSError`, so an unsupported lock
+    operation was retried for up to 1,800 seconds and then reported as another process holding the
+    lock. A failed lock operation is not evidence of a lock holder."""
+    import locfinder.places.acquire as acq
+    raw = tmp_path / "raw.parquet"
+
+    def unsupported():
+        raise OSError(errno.ENOLCK, "no locks available")
+
+    _patch_os_lock(monkeypatch, unsupported)
+    monkeypatch.setattr(acq, "LOCK_TIMEOUT_S", 0.2)   # so a regression hangs briefly, not for 30 min
+    with pytest.raises(RuntimeError, match="does not support locking"):
+        acquire(raw, A, downloader=writer("x"), log=lambda *a: None)
+
+
+def test_a_genuine_contention_errno_is_waited_on_not_raised(tmp_path, monkeypatch):
+    """The other side of the same rule, through the real `_try_lock`: a contention errno must be
+    retried and then time out, not reported as a broken filesystem."""
+    import locfinder.places.acquire as acq
+    raw = tmp_path / "raw.parquet"
+
+    def busy():
+        raise OSError(errno.EACCES, "locked by another process")
+
+    _patch_os_lock(monkeypatch, busy)
+    monkeypatch.setattr(acq, "LOCK_TIMEOUT_S", 0.2)
+    with pytest.raises(TimeoutError, match="still holds"):
+        acquire(raw, A, downloader=writer("x"), log=lambda *a: None)
+
