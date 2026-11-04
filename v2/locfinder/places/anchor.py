@@ -126,6 +126,10 @@ class AnchorFix:
       metre, which made the status carry no information;
     * `nudged` — a *nearer* candidate was rejected, and `moved_m` is how far we had to go instead;
     * `unreachable` — network was found but nothing within the cap can be reached from the core;
+    * `node_too_far` — a road is within the cap but its junctions are not. The anchor really is on
+      the network; the limitation is ours, because a destination has to be a graph *node* for the
+      arrival search, and on a long rural edge both endpoints can be hundreds of metres away. A
+      caller can raise the cap knowingly; silently calling this `off_network` would blame the data;
     * `off_network` — no network at all within the cap.
     """
 
@@ -178,15 +182,26 @@ def fix_anchor(
     # Every edge whose geometry comes within the cap, then that edge's endpoint nodes as candidates.
     near = edge_index.tree.query(shapely.buffer(here, max_nudge_m))
     cands: dict[int, float] = {}
+    nearest_node_m = float("inf")
     for i in np.asarray(near, dtype=np.int64):
         for node in (int(edge_index.start_idx[i]), int(edge_index.end_idx[i])):
             nx, ny = node_xy.get(node, (None, None))
             if nx is None:
                 continue
             d = float(np.hypot(nx - x, ny - y))
+            nearest_node_m = min(nearest_node_m, d)
             if d <= max_nudge_m and (node not in cands or d < cands[node]):
                 cands[node] = d
     if not cands:
+        # A road may be inside the cap while both its junctions are outside it — a long rural edge
+        # with the anchor near its middle. Saying "off network" there blames the data for a limit
+        # that is ours: a destination has to be a graph node for the arrival search.
+        if len(np.asarray(near)) > 0:
+            return AnchorFix(
+                status="node_too_far", x=None, y=None, requested_x=x, requested_y=y,
+                moved_m=nearest_node_m, node=None, barriers_checked=barriers is not None,
+                reason=(f"a road is within {max_nudge_m:.0f} m but its nearest junction is "
+                        f"{nearest_node_m:.0f} m away; raise the cap to use this anchor"))
         return AnchorFix(status="off_network", x=None, y=None, requested_x=x, requested_y=y,
                          moved_m=float("inf"), node=None, barriers_checked=barriers is not None,
                          reason=f"no network within {max_nudge_m:.0f} m")
@@ -215,22 +230,26 @@ def fix_anchor(
     if clear:
         node, dist, _ = clear[0]
         crossed = False
-        skipped = n_unreachable + sum(1 for u in usable
-                                      if u[2] and u[1] < dist)
     else:
         # Every reachable candidate is behind a barrier. The approach is not a straight line, so
         # take the nearest rather than declaring a real place unusable (see the module docstring).
         node, dist, _ = usable[0]
         crossed = True
-        skipped = n_unreachable
 
+    # `nudged` must mean a NEARER candidate was rejected. Counting every rejection in the whole
+    # radius marked an anchor nudged because some *further* node happened to be unreachable, which
+    # is not an adjustment to anything.
+    nearer_unreachable = sum(1 for n, d in ordered
+                             if d < dist and not bool(reach.reachable_from_core[n]))
+    nearer_barrier = sum(1 for u in usable if u[2] and u[1] < dist)
+    skipped = nearer_unreachable + nearer_barrier
     nudged = skipped > 0
     if crossed:
         reason = (f"all {n_barrier} reachable candidate(s) within {max_nudge_m:.0f} m are behind a "
                   "barrier; took the nearest, so the straight-line approach is not the real one")
     elif nudged:
-        reason = (f"rejected {n_unreachable} unreachable and "
-                  f"{skipped - n_unreachable} barrier-crossing candidate(s) nearer than this one")
+        reason = (f"rejected {nearer_unreachable} unreachable and {nearer_barrier} "
+                  "barrier-crossing candidate(s) nearer than this one")
     else:
         reason = "nearest network node is reachable from the core with no barrier between"
     return AnchorFix(status="nudged" if nudged else "ok", x=node_xy[node][0], y=node_xy[node][1],

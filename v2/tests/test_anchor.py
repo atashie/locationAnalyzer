@@ -208,3 +208,39 @@ def test_ordinary_snapping_is_not_reported_as_a_nudge():
     assert fix.status == "ok", "40 m from a POI to the nearest road node is snapping"
     assert fix.moved_m == pytest.approx(40.0), "the displacement is still reported for display"
     assert fix.rejected_unreachable == 0 and fix.crossed_barrier is False
+
+
+# ---------------------------------------------------------------- found by re-reading the code
+
+def test_a_road_inside_the_cap_whose_junctions_are_not_is_its_own_status():
+    """Found by inspection before review. Candidates are an edge's endpoint *nodes*, so on a long
+    rural edge the anchor can be metres from tarmac while both junctions are hundreds of metres
+    away — and the first version called that `off_network`, blaming the data for a limit that is
+    ours (a destination has to be a graph node for the arrival search)."""
+    nodes = {"W": (-400, 0), "E": (400, 0)}
+    idx, reach, _ = prepared(G_with([("W", "E", 60), ("E", "W", 60)], nodes))
+    fix = fix_anchor(0.0, 5.0, edge_index=idx, reach=reach, barriers=None, max_nudge_m=150.0)
+    assert fix.status == "node_too_far" and not fix.usable
+    assert fix.moved_m == pytest.approx(400.0, abs=1.0), "reports how far the junction actually is"
+    assert "raise the cap" in fix.reason
+
+    # with a cap that reaches a junction it resolves normally
+    ok = fix_anchor(0.0, 5.0, edge_index=idx, reach=reach, barriers=None, max_nudge_m=500.0)
+    assert ok.usable and ok.moved_m == pytest.approx(400.0, abs=1.0)
+
+    # and genuinely empty space is still a different answer
+    none = fix_anchor(9000.0, 9000.0, edge_index=idx, reach=reach, barriers=None)
+    assert none.status == "off_network"
+
+
+def test_an_unreachable_node_further_away_does_not_count_as_a_nudge():
+    """Also found by inspection. `nudged` counted every rejection in the whole radius, so an anchor
+    whose nearest node was perfectly good got marked nudged because some *further* node happened to
+    be unreachable — an adjustment to nothing."""
+    nodes = {**MAIN, "S1": (160, 0), "S2": (160, 40)}
+    idx, reach, index = prepared(G_with(MAIN_EDGES + [("S1", "S2", 5), ("S2", "S1", 5)], nodes))
+    # sit on B: nearest node is B itself, and the unreachable stub is 60 m further away
+    fix = fix_anchor(100.0, 0.0, edge_index=idx, reach=reach, barriers=None, max_nudge_m=150.0)
+    assert fix.node == index["B"]
+    assert fix.status == "ok", "nothing nearer was rejected, so nothing was adjusted"
+    assert fix.rejected_unreachable >= 1, "the further unreachable node is still counted and reported"
