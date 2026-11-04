@@ -446,6 +446,21 @@ real.
 
 Both sets sum to 330,502.
 
+The provenance path still reproduces the shipped layer exactly: after rebuilding
+`own_triangle_grocery_walk.npy` on the widened destinations, finiteness is **identical** and the
+largest difference is **0.000244 s** — float32 quantisation in the artifact, not disagreement. That
+check had to be re-run rather than trusted, because between the re-acquisition and the rebuild it
+was comparing two different destination sets and reported a 4,091 s maximum difference; a check that
+compares the wrong two things is worse than no check.
+
+**One counter went non-zero for the first time.** Of the 550 grocery places, **1 is further than
+`POI_SNAP_MAX_M` (300 m) from any node** and is dropped, giving 510 destination nodes from 549
+snapped places. Previously 0 were dropped. It is a single place and changes nothing measurable, but
+it is the first live instance of the condition `status.NO_ROUTABLE_DESTINATIONS` exists for — that
+condition is layer-wide, so one unsnappable place is simply a smaller destination set, and the
+distinction matters: a category where *every* place failed to snap would be a build error, while one
+is attrition.
+
 57,541 + 19,282 = 76,823 = **23.2443%**, which is exactly the nodata share measured on the
 committed artifact. So three cells in four of the missing region have no road within 200 m, and one
 in four has a road but is more than 120 minutes' walk from a grocery. Previously this was one
