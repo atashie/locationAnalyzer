@@ -6,3 +6,4 @@ __pycache__/
 spikes/**/out/
 .uv-cache/
 .review*/
+files/
