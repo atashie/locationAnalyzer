@@ -102,3 +102,23 @@ The ten queries are verbatim from `geocoding.md`, where **Census resolved none o
 
 Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_resolver_fixtures_triangle.json`.
 
+
+### S2.1 correctness, not confidence (2026-11-04 13:06:24)
+
+`s2_resolver_fixtures.py` reports 10/10 candidates and 7 single answers. That measures **confidence**. This checks the answers against the independent spot-check reference points, with a deliberately coarse 800 m threshold — the references are not POI centroids, so this separates *same place* from *somewhere else entirely*.
+
+| query | outcome | top candidate | category | distance from reference | verdict |
+|---|---|---|---|---|---|
+| `Whole Foods, Chapel Hill NC` | resolved | Whole Foods Market | supermarket | — | **ungraded** |
+| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | — | **ungraded** |
+| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | — | **ungraded** |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | 973 m | **right place NOT offered** |
+| `Duke Hospital` | resolved | Duke Hospital | — | 56 m | **correct** |
+| `RTP` | ambiguous | Aventura RTP | historic_site | 14056 m | **right place NOT offered** |
+| `Fidelity Investments Durham NC` | resolved | Fidelity Investments | broker | — | **ungraded** |
+| `Southpoint` | resolved | Southpoint | dessert_shop | 732 m | **correct** |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | 227 m | **correct** |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | — | **ungraded** |
+
+**3 of 5 graded queries land on the right place.** Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
+

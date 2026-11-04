@@ -146,9 +146,13 @@ def main() -> None:
     usable = sum(1 for r in rows if r["status"] in ("ok", "nudged"))
     nudged = sum(1 for r in rows if r["status"] == "nudged")
     changed = sum(1 for r in rows if r["barrier_changed_the_answer"])
-    rejected_any = sum(1 for r in rows if r["rejected_unreachable"] > 0)
-    print(f"\n{usable}/{len(rows)} anchors usable; {nudged} nudged; "
-          f"{rejected_any} had an unreachable node nearer; barriers changed {changed}", flush=True)
+    # NOT "had an unreachable node nearer": this counts anchors with any unreachable candidate in
+    # range, including ones further away than the node chosen. `nudged` is the count that means a
+    # nearer candidate was actually rejected.
+    with_unreachable = sum(1 for r in rows if r["rejected_unreachable"] > 0)
+    print(f"\n{usable}/{len(rows)} anchors usable; {nudged} nudged (a nearer candidate was "
+          f"rejected); {with_unreachable} had an unreachable candidate somewhere in range; "
+          f"barriers changed {changed}", flush=True)
 
     (METRO_DIR.parent / f"s2_anchor_routability_{METRO.name}_{args.mode}.json").write_text(
         json.dumps(out, indent=1), encoding="utf-8")
@@ -190,18 +194,20 @@ def main() -> None:
             f"{'**yes**' if r['crossed_barrier'] else '—'} |")
     crossed = sum(1 for r in rows if r["crossed_barrier"])
     lines += [
-        "", f"{usable} of {len(rows)} anchors are usable, {nudged} after a nudge; "
-        f"{rejected_any} had an unreachable node nearer than the one chosen; {crossed} sit behind "
-        "a perimeter so every reachable candidate is barrier-crossing and the straight-line "
-        "approach is not the real one.", "",
+        "", f"{usable} of {len(rows)} anchors are usable and **{nudged} needed a nudge** — that is, "
+        f"a *nearer* candidate was rejected. {with_unreachable} had an unreachable candidate "
+        f"somewhere in range, which is not the same thing and is not an adjustment. {crossed} sit "
+        "behind a perimeter, so every reachable candidate is barrier-crossing and the "
+        "straight-line approach is not the real one.", "",
         "**What the directed test actually bought here.** The RDU stub failure does **not** "
         "reproduce: all six nodes within 150 m of the terminal are reachable from the core, so "
         "`largest_component` had already fixed it and the directed test confirms rather than "
         "rescues. Metro-wide the directed test rejects "
         f"{g['kept_by_weak_but_unreachable_directed']:,} nodes the weak test keeps, and on these "
-        f"twelve anchors it changed the chosen node exactly {rejected_any} time. Small, real, and "
-        "worth having because the failure it prevents is silent — but not the dramatic correction "
-        "the RDU story might suggest.", "",
+        f"twelve anchors it changed the chosen node **{nudged} times**. That is the honest result: "
+        "the test is correct and essentially free, and on this anchor set it made no difference. "
+        "It is worth keeping because the failure it prevents is silent, not because it has been "
+        "shown to fire.", "",
         "This is a routability result, not an accuracy one: it says an anchor can be reached, not "
         "that the time to reach it is right.", "",
     ]
