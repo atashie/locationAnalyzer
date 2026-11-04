@@ -62,16 +62,23 @@ import numpy as np
 import shapely
 from pyproj import Transformer
 from shapely.geometry import LineString
+from shapely.ops import substring
 
 from .snap import EdgeIndex
 
 # metres: endpoints within this distance are treated as the same node
 _NODE_SNAP_M = 0.5
 _MIN_EPSILON_S = 0.1
+# seconds: cumulative durations must not decrease along the tree beyond whole-second quantisation.
+# Clamping a decrease to the epsilon floor used to accept a non-monotone tree silently, so that a
+# far endpoint could carry a SMALLER time than its own near end (Codex pass-9 M4).
+_MONOTONE_TOL_S = 1.0
 # decimal places for the lon/lat key that identifies one physical edge regardless of stored
 # direction. Seven places is ~1 cm, far finer than any geometry difference between the two
 # directed features Valhalla emits for the same road.
 _KEY_DP = 7
+# metres: a root whose origin projects this close to an endpoint is not worth splitting
+_MIN_SPLIT_M = 0.5
 # Valhalla's sentinel for "no predecessor" (kInvalidGraphId). A feature carrying this really is a
 # search root. A feature naming a predecessor we do NOT have is a different thing entirely -- its
 # near-end time is unknown -- and conflating the two invents a zero-time node (Codex pass-7 C5).
@@ -82,41 +89,69 @@ def _node_key(x: float, y: float) -> tuple[int, int]:
     return (int(round(x / _NODE_SNAP_M)), int(round(y / _NODE_SNAP_M)))
 
 
+def _coord_tuple(coords) -> tuple:
+    return tuple((round(float(c[0]), _KEY_DP), round(float(c[1]), _KEY_DP)) for c in coords)
+
+
 def _physical_key(coords) -> tuple:
     """One key per physical edge: the coordinate list, canonicalised over stored direction."""
-    fwd = tuple((round(float(c[0]), _KEY_DP), round(float(c[1]), _KEY_DP)) for c in coords)
+    fwd = _coord_tuple(coords)
     rev = tuple(reversed(fwd))
     return fwd if fwd <= rev else rev
 
 
-def _orient_root(edge, successors, origin_pts) -> bool | None:
-    """Is a root edge's near end its first coordinate? Derived, never assumed.
+def _root_far_from_successors(edge, successors) -> bool | None:
+    """Is a root's FAR end its last coordinate? Topological, from the edges it expanded into.
 
-    Two independent signals, strongest first:
-    1. the supplied search origins — the near end of a root is the origin itself, so the endpoint
-       closer to the nearest origin is the near end;
-    2. the root's successors — the search left the root through its FAR end, so the vertex shared
-       with a successor is the far end.
-
-    Returns None when neither signal is available, because a guess here lands on the destination
-    itself, where the time must be 0 and an error is maximally visible.
+    The reverse search leaves a root through its far end, so the vertex shared with a successor is
+    the far end. This is the **strongest** signal and now takes priority over origin proximity: a
+    search origin is a POI that is not on the road at all (measured 11-26 m away), so the endpoint
+    nearer the POI is not reliably the near end, and Codex pass-9 H1 found two of six real drive
+    roots where proximity contradicted this unambiguous signal.
     """
-    if origin_pts is not None and len(origin_pts):
-        first = shapely.points(*edge["geom"].coords[0])
-        last = shapely.points(*edge["geom"].coords[-1])
-        d_first = float(shapely.distance(first, origin_pts).min())
-        d_last = float(shapely.distance(last, origin_pts).min())
-        if abs(d_first - d_last) > _NODE_SNAP_M:
-            return d_first < d_last
     shared = set()
     for s in successors:
         shared |= {s["ll_first"], s["ll_last"]}
-    if shared:
-        first_shared = edge["ll_first"] in shared
-        last_shared = edge["ll_last"] in shared
-        if first_shared != last_shared:
-            return last_shared          # the SHARED end is the far end
-    return None
+    if not shared:
+        return None
+    first_shared = edge["ll_first"] in shared
+    last_shared = edge["ll_last"] in shared
+    if first_shared == last_shared:
+        return None
+    return last_shared
+
+
+def _split_root(edge, far_at_end: bool, origin_pts):
+    """Cut a root edge at the search origin's position along it, and return the half the search
+    actually traversed: `(geometry from the origin to the far end, traversal seconds)`.
+
+    A root is a **partial** edge (Codex pass-9 H1). The origin sits inside the road — Valhalla does
+    not split the edge in its output — so neither endpoint is the near end, and the previous version
+    put time zero at a vertex that a matrix query showed to be 2-5 s of real travel from the
+    destination. Worse, both opposing roots of the same road then chose the *same* nearer endpoint,
+    were re-expressed into the same travel direction, and merged into one, deleting a legal
+    direction.
+
+    Splitting fixes all three: the virtual node at the origin's projection carries time 0, the
+    root's `duration` is the traversal time of exactly the half that was traversed, and the two
+    opposing roots become two distinct sub-edges meeting at that node, so neither is lost.
+
+    Returns `None` when the origin projects onto an endpoint (nothing to split).
+    """
+    geom = edge["geom"]
+    nearest_origin = shapely.points(
+        *geom.interpolate(geom.project(
+            origin_pts[int(np.argmin(shapely.distance(geom, origin_pts)))])).coords[0])
+    d = float(geom.project(nearest_origin))
+    if d <= _MIN_SPLIT_M or d >= geom.length - _MIN_SPLIT_M:
+        return None
+    half = substring(geom, d, geom.length) if far_at_end else substring(geom, 0.0, d)
+    if half.is_empty or half.length <= _MIN_SPLIT_M:
+        return None
+    coords = list(half.coords)
+    if far_at_end:
+        return LineString(coords)           # starts at the origin projection, ends at the far end
+    return LineString(list(reversed(coords)))
 
 
 def expansion_to_edge_index(
@@ -198,6 +233,9 @@ def expansion_to_edge_index(
     phys: dict[tuple, dict] = {}
     dangling: list[object] = []
     roots_unoriented: list[object] = []
+    roots_from_proximity: list[object] = []
+    roots_split: list[object] = []
+    decreasing: list[object] = []
 
     def node_id(x: float, y: float) -> int:
         k = _node_key(x, y)
@@ -218,14 +256,40 @@ def expansion_to_edge_index(
             continue
         near_t = 0.0 if is_root else float(pred["dur"])
         far_t = e["dur"]
+        if far_t < near_t - _MONOTONE_TOL_S:
+            decreasing.append(e["edge_id"])
+            continue
         tau = max(far_t - near_t, _MIN_EPSILON_S)
         if is_root:
-            near_at_start = _orient_root(e, succ_of.get(e["edge_id"], ()), origin_pts)
-            if near_at_start is None:
-                # No successor and no origin to compare against: the orientation is genuinely
-                # undetermined. Guessing is a coin flip that lands on the destination itself.
-                roots_unoriented.append(e["edge_id"])
-                continue
+            far_at_end = _root_far_from_successors(e, succ_of.get(e["edge_id"], ()))
+            if far_at_end is None:
+                # No successor to read the far end from. Fall back to origin proximity, which is
+                # weak (the origin is off the road) but better than a coin flip; record it.
+                if origin_pts is None or not len(origin_pts):
+                    roots_unoriented.append(e["edge_id"])
+                    continue
+                first = shapely.points(*e["geom"].coords[0])
+                last = shapely.points(*e["geom"].coords[-1])
+                d_first = float(shapely.distance(first, origin_pts).min())
+                d_last = float(shapely.distance(last, origin_pts).min())
+                if abs(d_first - d_last) <= _NODE_SNAP_M:
+                    roots_unoriented.append(e["edge_id"])
+                    continue
+                far_at_end = d_first < d_last
+                roots_from_proximity.append(e["edge_id"])
+            half = (_split_root(e, far_at_end, origin_pts)
+                    if origin_pts is not None and len(origin_pts) else None)
+            if half is not None:
+                # The split half starts at the origin's projection (time 0) and ends at the far
+                # end, so the near end IS the geometry start and travel runs end -> start.
+                e = {**e, "geom": half, "key": None,
+                     "ll_first": None, "ll_last": None}
+                e["key"] = _physical_key(half.coords)
+                roots_split.append(None)
+                near_at_start = True
+            else:
+                # far at the geometry end means near at the geometry start, and vice versa
+                near_at_start = far_at_end
         else:
             shared = {pred["ll_first"], pred["ll_last"]}
             if e["ll_first"] in shared:
@@ -250,7 +314,10 @@ def expansion_to_edge_index(
         rec["n"] += 1
         # A later feature for the same physical edge may store its coordinates in the opposite
         # order, so the orientation must be expressed relative to the record's own geometry.
-        same_order = _node_key(*e["geom"].coords[0]) == _node_key(*rec["geom"].coords[0])
+        # Compare the WHOLE sequence, not just the first vertex: for a closed loop both stored
+        # directions start at the same point, so an endpoint-only test always said "same order"
+        # and merged a loop with its reverse into one direction (Codex pass-9 H3).
+        same_order = _coord_tuple(e["geom"].coords) == _coord_tuple(rec["geom"].coords)
         near_at_rec_start = near_at_start if same_order else not near_at_start
         if near_at_rec_start:
             # travel runs far -> near, i.e. record-end -> record-start
@@ -263,22 +330,33 @@ def expansion_to_edge_index(
             rec["t_s"] = min(rec["t_s"], far_t)
 
     merged_pairs = sum(1 for r in phys.values() if r["n"] > 1)
+    # A key groups a SHAPE, not a topological edge. On a real drive payload 519 groups held more
+    # than two features and the largest held five, so "one shape = one opposing pair" is an
+    # assumption this adapter cannot verify without opposing-edge identities (Codex pass-9 H2).
+    # Report it; do not claim identity.
+    over_paired = sum(1 for r in phys.values() if r["n"] > 2)
     if report is not None:
         report.update(
             edges=len(kept), physical_edges=len(phys), merged_pairs=merged_pairs,
+            groups_over_two_features=over_paired,
             dangling_predecessors=len(dangling), roots_unoriented=len(roots_unoriented),
-            dropped=len(dangling) + len(roots_unoriented),
+            roots_oriented_by_proximity=len(roots_from_proximity),
+            roots_split_at_origin=len(roots_split),
+            decreasing_durations=len(decreasing),
+            dropped=len(dangling) + len(roots_unoriented) + len(decreasing),
             origins_supplied=0 if not origins else len(origins),
             opposites_included=opposites_included,
             bidirectional_fallback=not opposites_included,
         )
-    if strict and (dangling or roots_unoriented):
+    if strict and (dangling or roots_unoriented or decreasing):
         raise ValueError(
             f"expansion tree is not self-consistent: {len(dangling)} edge(s) name a predecessor "
-            f"not present in the response and {len(roots_unoriented)} root(s) could not be "
-            "oriented. Endpoint times for these are unknown; request skip_opposites=false (which "
-            "removes the dangling case entirely), pass origins=[(lon, lat), ...] to orient roots, "
-            "or strict=False to drop them and read the count from report=."
+            f"not present in the response, {len(roots_unoriented)} root(s) could not be oriented "
+            f"and {len(decreasing)} edge(s) have a cumulative duration below their predecessor's. "
+            "Endpoint times for these are unknown; request skip_opposites=false (which removes the "
+            "dangling case entirely), pass origins=[(lon, lat), ...] to orient and split roots, or "
+            "strict=False to drop them and read the counts from report=. `strict` checks tree "
+            "self-consistency only -- it is not a validity gate for the whole reconstruction."
         )
     # No cross-check raise. The obvious one -- "opposites_included=False yet some edges appear in
     # both directions" -- is wrong, because `skip_opposites=true` does **not** suppress every

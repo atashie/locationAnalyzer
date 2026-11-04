@@ -209,17 +209,21 @@ def main() -> None:
     rep: dict = {}
     eidx, T = expansion_to_edge_index(f_new, target_crs=GRID.crs, opposites_included=True,
                                       origins=lonlat, strict=False, report=rep)
-    E_new_full = cell_seconds_from_arrival(eidx, T, xs, ys, mode=args.mode, max_access_m=200.0,
-                                           cutoff_s=MAX_MIN * 60.0)
+    # No `cutoff_s` here. The old path applies none, so censoring only the new one gave the two
+    # rows different finite cohorts -- 195 against 181 points -- while the narrative called them
+    # paired (Codex pass-9 M2). Censoring is reported separately below instead.
+    E_new_full = cell_seconds_from_arrival(eidx, T, xs, ys, mode=args.mode, max_access_m=200.0)
     E_new = E_new_full.ravel()[idx_cells]
     print(f"new: {rep} in {dt_new:.2f} s", flush=True)
 
     fin = np.isfinite(exact)
     rows = {"old (published, whole-edge)": E_old, "new (adopted, interpolated)": E_new}
     rows.update(others)
+    # One cohort for every time-error row: cells where the reference and BOTH methods are finite.
+    common = fin & np.isfinite(E_old) & np.isfinite(E_new)
     stats: dict = {}
     for label, X in rows.items():
-        m = fin & np.isfinite(X)
+        m = common if label.startswith(("old", "new")) else (fin & np.isfinite(X))
         stats[label] = {
             "n": int(m.sum()),
             "median_abs": float(np.median(np.abs(X[m] - exact[m]))) if m.any() else None,
@@ -227,13 +231,28 @@ def main() -> None:
             "max_abs": float(np.abs(X[m] - exact[m]).max()) if m.any() else None,
             "share_over_60s": float((np.abs(X[m] - exact[m]) > 60).mean()) if m.any() else None,
             "signed_median": float(np.median(X[m] - exact[m])) if m.any() else None,
+            "p90_signed_abs": float(np.percentile(np.abs(X[m] - exact[m]), 90)) if m.any() else None,
+            "max_signed_abs": float(np.abs(X[m] - exact[m]).max()) if m.any() else None,
             "unreachable": int((~np.isfinite(X)).sum()),
+            "cohort": "common" if label.startswith(("old", "new")) else "own",
         }
+    coverage = {
+        "reference_finite": int(fin.sum()),
+        "old_finite": int((fin & np.isfinite(E_old)).sum()),
+        "new_finite": int((fin & np.isfinite(E_new)).sum()),
+        "common_finite": int(common.sum()),
+        "new_over_horizon": int((common & (E_new > MAX_MIN * 60.0)).sum()),
+    }
 
     out = {"category": args.category, "mode": args.mode, "paired": paired_name,
            "pois": len(latlon), "cells": int(idx_cells.size),
            "old": {"edges": n_old, "seconds": dt_old},
-           "new": {"report": rep, "seconds": dt_new}, "stats": stats, "thresholds": {}}
+           "new": {"report": rep, "seconds": dt_new}, "stats": stats, "coverage": coverage,
+           "thresholds": {},
+           # M3: save the cohort so the conditional sample can be audited and reused.
+           "cohort": {"idx": idx_cells.tolist(), "exact_s": exact.tolist(),
+                      "new_s": [None if not np.isfinite(v) else float(v) for v in E_new],
+                      "old_s": [None if not np.isfinite(v) else float(v) for v in E_old]}}
 
     lines = [
         f"### S1.4 expansion primitive, re-measured ({stamp()}): {args.category} / {args.mode}, "
@@ -245,6 +264,12 @@ def main() -> None:
         f"direction, then within-edge interpolation ({rep['physical_edges']:,} physical edges from "
         f"{rep['edges']:,} features, {dt_new:.2f} s).", "",
         f"Adapter report: `{rep}`", "",
+        f"All time-error rows use **one cohort**: the {coverage['common_finite']} cells where the "
+        f"reference and both methods are finite (reference finite {coverage['reference_finite']}, "
+        f"old finite {coverage['old_finite']}, new finite {coverage['new_finite']}). Neither method "
+        f"applies a final cutoff, so censoring cannot shift the cohort; "
+        f"{coverage['new_over_horizon']} of the new values exceed the {MAX_MIN}-minute horizon and "
+        "would be censored by a published layer.", "",
         "| difference from exact (seconds) | n | median | p90 | max | share > 60 s | signed median |",
         "|---|---|---|---|---|---|---|",
     ]
@@ -315,20 +340,43 @@ def main() -> None:
         f"| {band} m | {v['n']} | **{v['median_bias_s']:+.1f} s** | {v['median_access_s']:.1f} s |"
         for band, v in bands.items()
     ] + [
-        "", f"The bias tracks the charge: median access charge / median bias = "
-        f"**{al['ratio_access_to_bias']:.2f}**. Subtracting our access leg, so both sides describe "
-        f"travel from the network: signed median **{al['signed_median_on_network']:+.1f} s**, median "
-        f"absolute **{al['median_abs_on_network']:.1f} s**.", "",
-        f"**S1.4 pass criterion — signed median within ±15 s.** As written, against the total: "
-        f"**{total_verdict}** ({sm:+.1f} s, down from the published +66 s). On the quantity the "
-        f"criterion was meant to test — whether the corrected reconstruction removes the whole-edge "
-        f"bias — **{net_verdict}** ({al['signed_median_on_network']:+.1f} s).", "",
-        "The criterion as written compares two different quantities, which is why it reports a "
-        "failure while the reconstruction is in fact exact. The honest split: **the expansion "
-        "reconstruction is verified** against the engine it reconstructs, and the remaining "
-        f"{sm:+.0f} s is our own access-leg model, an unmeasured prior "
-        "(`ACCESS_SPEED_FACTOR`) that the reference does not contain. Which of those two numbers a "
-        "published layer should carry is a modelling decision, not a test result.", "",
+        "", f"Median access charge / median bias = **{al['ratio_access_to_bias']:.2f}** "
+        f"({'the access leg accounts for essentially all of it' if al['ratio_access_to_bias'] and 0.8 <= al['ratio_access_to_bias'] <= 1.25 else 'so the access leg is only part of it'}). "
+        f"Subtracting our access leg, so both sides describe travel from the network: signed median "
+        f"**{al['signed_median_on_network']:+.1f} s**, median absolute "
+        f"**{al['median_abs_on_network']:.1f} s**.", "",
+        f"**S1.4 pass criterion — signed median within ±15 s.** Against the total: "
+        f"**{total_verdict}** ({sm:+.1f} s; the published row was +66 s). Against the on-network "
+        f"component, which is what the criterion was meant to test: **{net_verdict}** "
+        f"({al['signed_median_on_network']:+.1f} s).", "",
+    ]
+    if net_verdict == "PASS":
+        lines += [
+            "So for this mode the reconstruction agrees with the engine it reconstructs **at the "
+            f"median**, and the remaining {sm:+.0f} s is our own access-leg model, an unmeasured "
+            "prior (`ACCESS_SPEED_FACTOR`) the reference does not contain.", ""]
+    else:
+        lines += [
+            f"So for this mode the residual is **not** explained by the access leg: "
+            f"{al['signed_median_on_network']:+.1f} s survives its removal, and the node-level "
+            "experiment (`s1_expansion_node_fidelity.py`) reproduces that figure with no grid, no "
+            "access leg and no interpolation. The cause is therefore in the tree or the costing, "
+            "not in the snapping.", ""]
+    lines += [
+        "**Read the median with its tails.** A near-zero signed median bounds no individual cell "
+        f"(Codex pass-9 H4). On this cohort the new method's absolute difference has p90 "
+        f"{stats['new (adopted, interpolated)']['p90_signed_abs']:.1f} s and maximum "
+        f"{stats['new (adopted, interpolated)']['max_signed_abs']:.0f} s, and the on-network "
+        "residual has its own tail. 'Exact' is the wrong word for a median.", "",
+        "**What the threshold table is and is not.** The false-exclusion column is "
+        "`reference-positive cells the method misses / reference-positive cells **in this "
+        "sample**`, and for the fresh baselines that sample is drawn only from the model's own "
+        "reachable set under the horizon — so a truly-close cell the model cannot reach has **zero "
+        "probability of being sampled**. The counts are small: "
+        + ", ".join(f"T={T} has {out['thresholds'][str(T)]['exact_in']} reference positives"
+                    for T in THRESHOLDS)
+        + ". These are conditional figures on a fixed-seed sample, not estimated rates for the "
+        "grid.", "",
         "This measures **construction fidelity against the same engine**: both sides are "
         "Valhalla. It is a prerequisite for accuracy and is not evidence of it (S3.4), and "
         "zero observed false inclusions on a finite sample is not proof of a zero rate.", ""]

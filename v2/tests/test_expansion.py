@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+import shapely
 import pytest
 
 from locfinder.traveltime.expansion import expansion_to_edge_index
@@ -115,18 +116,27 @@ def test_root_orientation_falls_back_to_successors_without_origins():
     assert sorted(round(t) for t in T) == [0, 100, 200]
 
 
-def test_origins_outrank_successors_when_they_disagree():
-    """The origins are authoritative: they say where the search actually started."""
+def test_successors_outrank_origin_proximity_when_they_disagree():
+    """Codex pass-9 H1 inverted this priority, and the reasoning is that the two signals are not
+    the same kind of evidence. The successor vertex is **topological** — it is read off the
+    response's own tree, and the search demonstrably left the root through that end. Origin
+    proximity is geometric, and the origin is a POI that is **not on the road at all**: measured
+    11-26 m away on real payloads. Two of six real drive roots had proximity contradict an
+    unambiguous successor signal.
+
+    The fixture is deliberately contradictory — a successor sharing the vertex the origin sits
+    nearest — which is exactly the case where the weaker signal must not win."""
     feats = [
         feat([[-79.001, 35.900], [-79.000, 35.900]], 100.0, 90.0, 1),
         feat([[-79.000, 35.900], [-79.002, 35.900]], 200.0, 180.0, 2, 1),
     ]
-    # successors alone would read the shared vertex -79.000 as the FAR end, i.e. near = -79.001
-    idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True)
-    assert T[idx.start_idx[0]] == 0.0
-    # but the origin is at -79.000, so that endpoint must be the zero
-    idx2, T2 = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True, origins=[(-79.000, 35.900)])
-    assert T2[idx2.end_idx[0]] == 0.0
+    want_zero_at = {}
+    for origins in (None, [(-79.000, 35.900)]):
+        idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True,
+                                         origins=origins)
+        want_zero_at[bool(origins)] = float(T[idx.start_idx[0]])
+    assert want_zero_at[False] == 0.0, "successors put the zero at the unshared end"
+    assert want_zero_at[True] == 0.0, "and supplying a contradictory origin does not move it"
 
 
 def test_an_unorientable_root_raises_rather_than_guessing():
@@ -280,3 +290,115 @@ def test_a_merged_edge_takes_the_lower_time_for_each_direction():
     assert rep["physical_edges"] == 2 and rep["merged_pairs"] == 1
     settled = np.fmin(idx.fwd_time, idx.rev_time)
     assert round(float(settled[1])) == 60
+
+
+# ---------------------------------------------------------------- Codex pass-9 regressions
+
+def test_a_root_is_split_at_the_origin_so_time_zero_is_where_the_search_started():
+    """Pass-9 H1. A root is a **partial** edge: the origin sits inside the road and Valhalla does
+    not split it in the output. Putting time zero at an endpoint placed it 20-27 m from the POI —
+    a matrix query from those nodes returned 2-5 s, not 0 — and interpolated a partial duration
+    over a full road."""
+    # a 1 km-ish east-west road; the origin sits near its middle, the search settled the east end
+    road = [[-79.010, 35.900], [-79.000, 35.900]]
+    origin = (-79.005, 35.900)
+    feats = [feat(road, 100.0, 500.0, 1),
+             feat([[-79.000, 35.900], [-79.000, 35.910]], 160.0, 600.0, 2, 1)]
+    rep = {}
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True,
+                                     origins=[origin], report=rep)
+    assert rep["roots_split_at_origin"] == 1
+
+    # the zero node must be at the origin's projection, not at either end of the full road
+    zero = np.flatnonzero(T == 0.0)
+    assert zero.size == 1
+    node_xy = {}
+    for i, g in enumerate(idx.geoms):
+        node_xy[int(idx.start_idx[i])] = g.coords[0]
+        node_xy[int(idx.end_idx[i])] = g.coords[-1]
+    zx, zy = node_xy[int(zero[0])]
+    from pyproj import Transformer
+    to_proj = Transformer.from_crs("EPSG:4326", CRS, always_xy=True)
+    ox, oy = to_proj.transform(*origin)
+    assert math.hypot(zx - ox, zy - oy) < 1.0, "time zero sits on the origin's projection"
+    # and the root's own geometry is now the half that was traversed, not the whole road
+    root_geom = idx.geoms[0]
+    assert root_geom.length < 0.6 * shapely.length(shapely.LineString(
+        [to_proj.transform(*c) for c in road]))
+
+
+def test_both_opposing_roots_survive_the_split():
+    """The half of H1 that deleted data. Both opposing roots of one road chose the same nearer
+    endpoint, were re-expressed into the same travel direction, and merged into one record — so a
+    legal direction vanished. Split at the origin they become two distinct sub-edges meeting at the
+    virtual node, and both survive."""
+    road_fwd = [[-79.010, 35.900], [-79.000, 35.900]]
+    road_rev = [[-79.000, 35.900], [-79.010, 35.900]]
+    origin = (-79.005, 35.900)
+    feats = [
+        feat(road_fwd, 100.0, 500.0, 1),                                  # settled the east end
+        feat(road_rev, 120.0, 500.0, 2),                                  # settled the west end
+        feat([[-79.000, 35.900], [-79.000, 35.910]], 160.0, 600.0, 3, 1),
+        feat([[-79.010, 35.900], [-79.010, 35.910]], 190.0, 600.0, 4, 2),
+    ]
+    rep = {}
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True,
+                                     origins=[origin], report=rep)
+    assert rep["roots_split_at_origin"] == 2
+    assert rep["merged_pairs"] == 0, "the two halves are different geometries, so nothing merges"
+    # one zero node, and both far ends carry their own duration
+    assert float(T.min()) == 0.0 and sorted(round(t) for t in T)[:3] == [0, 100, 120]
+
+
+def test_a_reversed_loop_keeps_both_directions():
+    """Pass-9 H3. Both stored directions of a closed loop start at the same vertex, so comparing
+    only the first endpoint always said "same order" and merged the loop with its reverse into one
+    direction. The whole coordinate sequence distinguishes them."""
+    loop = [[-79.000, 35.900], [-79.001, 35.901], [-79.002, 35.900], [-79.000, 35.900]]
+    rev = list(reversed(loop))
+    root = feat([[-79.000, 35.900], [-79.000, 35.890]], 50.0, 100.0, 9)
+    feats = [root, feat(loop, 200.0, 300.0, 1, pred_edge_id=9),
+             feat(rev, 230.0, 300.0, 2, pred_edge_id=9)]
+    rep = {}
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True, report=rep)
+    # the loop and its reverse ARE one physical road, so merging them is right; the defect was
+    # that both landed in the SAME direction slot, deleting one.
+    assert rep["merged_pairs"] == 1
+    loops = [i for i, g in enumerate(idx.geoms) if len(g.coords) == 4]
+    assert len(loops) == 1
+    i = loops[0]
+    assert np.isfinite(idx.fwd_time[i]) and np.isfinite(idx.rev_time[i]),         "both directions of the loop survive"
+    assert sorted([round(idx.fwd_time[i]), round(idx.rev_time[i])]) == [150, 180]
+
+
+def test_a_decreasing_cumulative_duration_is_refused_not_clamped():
+    """Pass-9 M4. A far endpoint whose cumulative duration is BELOW its predecessor's used to be
+    clamped to the 0.1 s epsilon floor and accepted, so a midpoint could reconstruct later than the
+    far end it leads to. `strict` now refuses it and the report counts it."""
+    feats = [
+        feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 1),
+        feat([[-79.001, 35.900], [-79.002, 35.900]], 50.0, 180.0, 2, 1),   # 50 < 100
+    ]
+    with pytest.raises(ValueError, match="cumulative duration below"):
+        expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True)
+    rep = {}
+    idx, T = expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True,
+                                     strict=False, report=rep)
+    assert rep["decreasing_durations"] == 1 and rep["dropped"] == 1
+    assert len(idx.geoms) == 1, "the non-monotone edge is dropped, not clamped"
+    # whole-second quantisation must still be tolerated
+    ok = [feats[0], feat([[-79.001, 35.900], [-79.002, 35.900]], 99.5, 180.0, 3, 1)]
+    expansion_to_edge_index(ok, target_crs=CRS, opposites_included=True)
+
+
+def test_groups_holding_more_than_two_features_are_reported_not_assumed_to_be_pairs():
+    """Pass-9 H2. A key groups a SHAPE, not a topological edge. On a real drive payload 519 groups
+    held more than two features and the largest held five, so the adapter reports the count instead
+    of claiming that one shape is one opposing pair."""
+    root = feat([[-79.000, 35.900], [-79.001, 35.900]], 100.0, 90.0, 1)
+    coords = [[-79.001, 35.900], [-79.002, 35.900]]
+    feats = [root] + [feat(coords, 200.0 + i, 100.0, 10 + i, pred_edge_id=1) for i in range(3)]
+    rep = {}
+    expansion_to_edge_index(feats, target_crs=CRS, opposites_included=True, report=rep)
+    assert rep["groups_over_two_features"] == 1
+    assert rep["merged_pairs"] == 1, "merged_pairs counts groups, and says nothing about topology"

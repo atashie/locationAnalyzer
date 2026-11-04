@@ -124,14 +124,9 @@ def main() -> None:
     print(f"strict mode passes: {strict_ok}", flush=True)
 
     # ---- 2. root orientation, cross-checked -------------------------------------------------
-    idx_no, T_no = expansion_to_edge_index(feats, target_crs=GRID.crs, opposites_included=True,
-                                           strict=False, report={})
-    agree = None
-    if len(T) == len(T_no):
-        both = np.isfinite(T) & np.isfinite(T_no)
-        agree = float(np.isclose(T[both], T_no[both]).mean())
-    out["orientation_origins_vs_successors_agreement"] = agree
-    print(f"orientation agreement (origins vs successors only): {agree}", flush=True)
+    # No origins-versus-successors agreement metric any more: with origins the roots are split, so
+    # the two runs have different node sets and the comparison is not defined. The priority is now
+    # fixed (successors win) and `roots_oriented_by_proximity` records the fallback instead.
 
     to_utm = Transformer.from_crs("EPSG:4326", GRID.crs, always_xy=True)
     ox_, oy_ = to_utm.transform([p[0] for p in lonlat], [p[1] for p in lonlat])
@@ -216,11 +211,13 @@ def main() -> None:
         f"- `strict=True` passes without dropping anything: **{out['strict_passes_on_real_payload']}** "
         "(it did not before `skip_opposites=false`)",
         "",
-        f"**2. Root orientation.** The two independent signals — supplied origins, and the vertex "
-        f"shared with successors — agree on **{agree:.4%}** of finite node times. "
+        f"**2. Roots.** {out['adapter_report']['roots_split_at_origin']} root(s) split at the "
+        f"origin's projection, {out['adapter_report']['roots_oriented_by_proximity']} oriented by "
+        f"proximity as a fallback, {out['adapter_report']['roots_unoriented']} unorientable. "
         f"{z['count']} node(s) at time zero, median "
-        f"{z['distance_to_nearest_origin_m']['median']:.1f} m from the nearest origin (max "
-        f"{z['distance_to_nearest_origin_m']['max']:.1f} m).", "",
+        f"{z['distance_to_nearest_origin_m']['median']:.1f} m from the nearest **POI** (max "
+        f"{z['distance_to_nearest_origin_m']['max']:.1f} m) — that offset is the POI's own distance "
+        "from the road, which Valhalla's snapping also has and which splitting cannot remove.", "",
         f"**3. Direction.** {d['physical_edges']:,} physical edges: {d['both_ways']:,} traversable "
         f"both ways, **{d['one_way_only']:,} ({d['share_one_way']:.1%}) one way only** — the edges "
         "the old bidirectional marking let a cell cross the wrong way.", "",

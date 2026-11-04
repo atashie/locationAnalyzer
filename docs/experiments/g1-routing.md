@@ -970,3 +970,212 @@ Sampled the expansion's **own node coordinates** and asked `sources_to_targets` 
 - **signed median +0.0 s**, median absolute 0.0 s, p90 6.1 s, max 203 s
 - reconstruction later on 16.7% of nodes, earlier on 12.1%
 
+
+### S1.4 part three: reconstructed node times against the router (2026-11-04 10:17:13): grocery / walk, 3 POIs, 240 nodes
+
+Sampled the expansion's **own node coordinates** and asked `sources_to_targets` for the time from exactly those points. No grid, no access leg, no within-edge interpolation, so this is the reconstruction against the router and nothing else.
+
+- reconstructed median 2770 s, router median 2741 s
+- **signed median +0.0 s**, median absolute 0.0 s, p90 30.3 s, max 632 s
+- reconstruction later on 17.1% of nodes, earlier on 14.6%
+
+
+### S1.4 part three: reconstructed node times against the router (2026-11-04 10:17:40): grocery / drive, 3 POIs, 239 nodes
+
+Sampled the expansion's **own node coordinates** and asked `sources_to_targets` for the time from exactly those points. No grid, no access leg, no within-edge interpolation, so this is the reconstruction against the router and nothing else.
+
+- reconstructed median 2581 s, router median 2502 s
+- **signed median +50.0 s**, median absolute 50.0 s, p90 243.0 s, max 277 s
+- reconstruction later on 92.5% of nodes, earlier on 0.8%
+
+
+### S1.4 expansion primitive, re-measured (2026-11-04 10:18:42): grocery / walk, 3 POIs, paired on `raster_primitive_grocery_walk.json` (240 cells)
+
+Two methods on the same cells against the same exact `sources_to_targets` values. **old** is the published method reproduced verbatim — `skip_opposites=true`, nearest edge, charge its whole settled duration (8,909 edges, 0.24 s). **new** is the adopted primitive — `skip_opposites=false`, `expansion_to_edge_index` with merging and direction, then within-edge interpolation (8,871 physical edges from 16,894 features, 0.22 s).
+
+Adapter report: `{'edges': 16894, 'physical_edges': 8871, 'merged_pairs': 7943, 'groups_over_two_features': 40, 'dangling_predecessors': 0, 'roots_unoriented': 0, 'roots_oriented_by_proximity': 2, 'roots_split_at_origin': 5, 'decreasing_durations': 0, 'dropped': 0, 'origins_supplied': 3, 'opposites_included': True, 'bidirectional_fallback': False}`
+
+All time-error rows use **one cohort**: the 195 cells where the reference and both methods are finite (reference finite 240, old finite 195, new finite 195). Neither method applies a final cutoff, so censoring cannot shift the cohort; 14 of the new values exceed the 60-minute horizon and would be censored by a published layer.
+
+| difference from exact (seconds) | n | median | p90 | max | share > 60 s | signed median |
+|---|---|---|---|---|---|---|
+| old (published, whole-edge) | 195 | 69 | 271 | 647 | 54.9% | **+66 s** |
+| **new (adopted, interpolated)** | 195 | 30 | 89 | 564 | 23.6% | **+28 s** |
+| A | 208 | 88 | 355 | 983 | 60.6% | **-40 s** |
+| B | 219 | 88 | 430 | 2080 | 66.7% | **-35 s** |
+
+Positive signed median = our value is later than exact, i.e. conservative.
+
+Threshold classification against exact:
+
+| T min | old agrees | new agrees | new false-in | new false-out |
+|---|---|---|---|---|
+| 10 | 98.8% | 99.6% | 0.0% | 7.7% |
+| 15 | 99.6% | 100.0% | 0.0% | 0.0% |
+| 25 | 97.5% | 99.2% | 0.0% | 4.5% |
+| 45 | 95.4% | 99.2% | 0.0% | 1.6% |
+
+**Where the residual is.** The reference charges nothing for reaching the network — `sources_to_targets` snaps the cell centre — while we add a straight-line leg at `access_speed_mps`. So the access leg is in our number and absent from theirs.
+
+| access distance | n | median bias | median access charge |
+|---|---|---|---|
+| 0-5 m | 17 | **+2.6 s** | 1.4 s |
+| 5-20 m | 44 | **+8.8 s** | 8.6 s |
+| 20-50 m | 65 | **+27.7 s** | 27.6 s |
+| 50-100 m | 50 | **+57.8 s** | 57.2 s |
+| 100-200 m | 19 | **+91.6 s** | 108.9 s |
+
+Median access charge / median bias = **1.02** (the access leg accounts for essentially all of it). Subtracting our access leg, so both sides describe travel from the network: signed median **+0.0 s**, median absolute **1.9 s**.
+
+**S1.4 pass criterion — signed median within ±15 s.** Against the total: **FAIL** (+27.7 s; the published row was +66 s). Against the on-network component, which is what the criterion was meant to test: **PASS** (+0.0 s).
+
+So for this mode the reconstruction agrees with the engine it reconstructs **at the median**, and the remaining +28 s is our own access-leg model, an unmeasured prior (`ACCESS_SPEED_FACTOR`) the reference does not contain.
+
+**Read the median with its tails.** A near-zero signed median bounds no individual cell (Codex pass-9 H4). On this cohort the new method's absolute difference has p90 88.6 s and maximum 564 s, and the on-network residual has its own tail. 'Exact' is the wrong word for a median.
+
+**What the threshold table is and is not.** The false-exclusion column is `reference-positive cells the method misses / reference-positive cells **in this sample**`, and for the fresh baselines that sample is drawn only from the model's own reachable set under the horizon — so a truly-close cell the model cannot reach has **zero probability of being sampled**. The counts are small: T=10 has 13 reference positives, T=15 has 21 reference positives, T=25 has 44 reference positives, T=45 has 123 reference positives. These are conditional figures on a fixed-seed sample, not estimated rates for the grid.
+
+This measures **construction fidelity against the same engine**: both sides are Valhalla. It is a prerequisite for accuracy and is not evidence of it (S3.4), and zero observed false inclusions on a finite sample is not proof of a zero rate.
+
+
+### S1.4 expansion primitive, re-measured (2026-11-04 10:19:39): grocery / drive, 3 POIs, paired on `fresh sample, 3 POIs, seed 20261104` (240 cells)
+
+Two methods on the same cells against the same exact `sources_to_targets` values. **old** is the published method reproduced verbatim — `skip_opposites=true`, nearest edge, charge its whole settled duration (254,323 edges, 1.26 s). **new** is the adopted primitive — `skip_opposites=false`, `expansion_to_edge_index` with merging and direction, then within-edge interpolation (253,637 physical edges from 476,072 features, 2.21 s).
+
+Adapter report: `{'edges': 476072, 'physical_edges': 253637, 'merged_pairs': 221412, 'groups_over_two_features': 519, 'dangling_predecessors': 0, 'roots_unoriented': 1, 'roots_oriented_by_proximity': 0, 'roots_split_at_origin': 5, 'decreasing_durations': 0, 'dropped': 1, 'origins_supplied': 3, 'opposites_included': True, 'bidirectional_fallback': False}`
+
+All time-error rows use **one cohort**: the 240 cells where the reference and both methods are finite (reference finite 240, old finite 240, new finite 240). Neither method applies a final cutoff, so censoring cannot shift the cohort; 0 of the new values exceed the 60-minute horizon and would be censored by a published layer.
+
+| difference from exact (seconds) | n | median | p90 | max | share > 60 s | signed median |
+|---|---|---|---|---|---|---|
+| old (published, whole-edge) | 240 | 112 | 306 | 681 | 86.7% | **+112 s** |
+| **new (adopted, interpolated)** | 240 | 83 | 274 | 394 | 69.6% | **+82 s** |
+
+Positive signed median = our value is later than exact, i.e. conservative.
+
+Threshold classification against exact:
+
+| T min | old agrees | new agrees | new false-in | new false-out |
+|---|---|---|---|---|
+| 10 | 97.5% | 97.5% | 0.4% | 41.7% |
+| 15 | 97.9% | 98.3% | 0.0% | 17.4% |
+| 25 | 95.8% | 96.7% | 0.0% | 17.8% |
+| 45 | 88.8% | 90.4% | 0.0% | 14.1% |
+
+**Where the residual is.** The reference charges nothing for reaching the network — `sources_to_targets` snaps the cell centre — while we add a straight-line leg at `access_speed_mps`. So the access leg is in our number and absent from theirs.
+
+| access distance | n | median bias | median access charge |
+|---|---|---|---|
+| 0-5 m | 22 | **+50.9 s** | 1.7 s |
+| 5-20 m | 56 | **+56.1 s** | 6.6 s |
+| 20-50 m | 67 | **+72.8 s** | 18.6 s |
+| 50-100 m | 56 | **+93.5 s** | 35.0 s |
+| 100-200 m | 39 | **+246.0 s** | 71.1 s |
+
+Median access charge / median bias = **0.26** (so the access leg is only part of it). Subtracting our access leg, so both sides describe travel from the network: signed median **+50.0 s**, median absolute **50.0 s**.
+
+**S1.4 pass criterion — signed median within ±15 s.** Against the total: **FAIL** (+81.6 s; the published row was +66 s). Against the on-network component, which is what the criterion was meant to test: **FAIL** (+50.0 s).
+
+So for this mode the residual is **not** explained by the access leg: +50.0 s survives its removal, and the node-level experiment (`s1_expansion_node_fidelity.py`) reproduces that figure with no grid, no access leg and no interpolation. The cause is therefore in the tree or the costing, not in the snapping.
+
+**Read the median with its tails.** A near-zero signed median bounds no individual cell (Codex pass-9 H4). On this cohort the new method's absolute difference has p90 274.2 s and maximum 394 s, and the on-network residual has its own tail. 'Exact' is the wrong word for a median.
+
+**What the threshold table is and is not.** The false-exclusion column is `reference-positive cells the method misses / reference-positive cells **in this sample**`, and for the fresh baselines that sample is drawn only from the model's own reachable set under the horizon — so a truly-close cell the model cannot reach has **zero probability of being sampled**. The counts are small: T=10 has 12 reference positives, T=15 has 23 reference positives, T=25 has 45 reference positives, T=45 has 163 reference positives. These are conditional figures on a fixed-seed sample, not estimated rates for the grid.
+
+This measures **construction fidelity against the same engine**: both sides are Valhalla. It is a prerequisite for accuracy and is not evidence of it (S3.4), and zero observed false inclusions on a finite sample is not proof of a zero rate.
+
+
+### S1.3 part two: dangling predecessors and the direction assumption (2026-11-04 10:21:45): grocery / drive, 3 POIs
+
+**A. `skip_opposites` is why strict mode fails.**
+
+| request | features | seconds | edges naming an absent predecessor |
+|---|---|---|---|
+| `skip_opposites=true` | 254,323 | 1.44 | **636** (0.2501%) |
+| `skip_opposites=false` | 476,072 | 2.37 | **0** (0.0000%) |
+
+Valhalla omits the opposite direction of an edge it has already settled, so an edge whose predecessor *was* one of those omitted opposites points at an `edge_id` that was never serialised. Its near-end time is then genuinely unknown and the adapter drops it — correctly, but the cause is a flag we chose, not a property of the network.
+
+**B. The direction assumption, decomposed.** The adapter sets `fwd_time == rev_time == tau`, arguing the tree already encodes legality. Under arrival semantics the tree encodes legality in **one** direction: a traveller crosses an edge from its far end to its near end. The adapter also never merges the two directed features for one physical edge, so with `skip_opposites=false` the same geometry enters the STRtree twice and `nearest()` picks one arbitrarily.
+
+These two defects move cell times in **opposite** directions — merging lets a cell take the better of two duplicate geometries, restricting direction removes illegal moves — so they are measured separately. Three indices over the same cells:
+
+| | index |
+|---|---|
+| **1** | one entry per **feature**, bidirectional — the representation before merging (476,072 entries) |
+| **2** | merged by geometry, still traversable both ways |
+| **3** | merged by geometry, only the directions actually settled |
+
+All three are built from the **same** `skip_opposites=false` features, the **same** node identities and the **same** node times, so each comparison isolates exactly one change (Codex pass-9 M1: an earlier version used a `skip_opposites=true` request as its "before", which changed the feature set, the dangling count, the node times and the connectivity at once).
+
+Merging gives **253,635 physical edges** from 476,072 features: 221,360 traversable both ways, 32,275 one way only, 1 unorientable.
+
+| | 1 -> 2 (merging) | 2 -> 3 (direction) | 1 -> 3 (both) |
+|---|---|---|---|
+| reachable cells after | 151,560 | 151,488 | 151,488 |
+| cells lost | 0 | 72 | 72 |
+| cells gained | 22 | 0 | 22 |
+| changed by more than 1 s | 23,720 | 13,897 | 25,507 |
+| share changed | 15.65% | 9.17% | 16.84% |
+| median signed change | -4.7 s | +2.5 s | -3.1 s |
+| p90 absolute change | 18.0 s | 25.3 s | 20.3 s |
+| largest increase | +247.0 s | +655.6 s | +655.6 s |
+| largest decrease | -356.0 s | +0.0 s | -50.0 s |
+| share getting later | 0.3% | 100.0% | 31.0% |
+
+The direction column is the one that matters for correctness, and its sign is the expected one: restricting travel to the settled direction makes cells later, never earlier. The merging column is a separate defect of the same adapter and moves the other way.
+
+The direction column also needs its qualifications (pass-9 M1): changes of at most one second are excluded, non-finite pairs are excluded, and cells that lose reachability altogether are counted separately rather than as a change. And the monotone sign is a *local interpolation* result for fixed node times — it does not show that the inferred direction labels are **legal**, only that removing a branch cannot lower the local minimum. Wrong labels would satisfy it too.
+
+**Two superseded measurements.** (1) The first pass reported 2.80% of cells changing with a median increase of 13.1 s, built from `skip_opposites=true` features — that construction forbids the unused direction of a two-way street settled only once, mixing 'illegal move allowed' with 'legal move wrongly blocked'. (2) The second pass reported the merging column as 8.78% from a `skip_opposites=true` "before", which changed four things at once. The table above replaces both.
+
+
+### S1.3 expansion structure, post-fix (2026-11-04 10:23:45): grocery / drive, 3 POIs, 60-minute contour
+
+Request: `action=isochrone`, `reverse=true`, **`skip_opposites=false`**, `expansion_properties=['duration', 'distance', 'edge_id', 'pred_edge_id', 'cost']` — all five accepted by Valhalla 3.9.1; `duration` is integer seconds (True). 476,072 features in 2.32 s.
+
+**1. Adapter health.**
+
+- `report=` : `{'edges': 476072, 'physical_edges': 253637, 'merged_pairs': 221412, 'groups_over_two_features': 519, 'dangling_predecessors': 0, 'roots_unoriented': 1, 'roots_oriented_by_proximity': 0, 'roots_split_at_origin': 5, 'decreasing_durations': 0, 'dropped': 1, 'origins_supplied': 3, 'opposites_included': True, 'bidirectional_fallback': False}`
+- `strict=True` passes without dropping anything: **False** (it did not before `skip_opposites=false`)
+
+**2. Roots.** 5 root(s) split at the origin's projection, 0 oriented by proximity as a fallback, 1 unorientable. 3 node(s) at time zero, median 18.4 m from the nearest **POI** (max 25.7 m) — that offset is the POI's own distance from the road, which Valhalla's snapping also has and which splitting cannot remove.
+
+**3. Direction.** 253,637 physical edges: 221,362 traversable both ways, **32,275 (12.7%) one way only** — the edges the old bidirectional marking let a cell cross the wrong way.
+
+**6. Interior anchors.** Origins land at fractions [0.0, 0.6155, 0.0] along their nearest expansion edge, [25.66, 11.58, 14.79] m away. Valhalla does **not** split an edge at the origin, so the destination's own position within its road is not modelled: time zero sits at a vertex up to 26 m from the POI.
+
+**5. Quantisation.** `tau` median 10.0 s, p90 35.0 s; **2,282 edges (0.90%) sit at the 0.1 s floor**, i.e. their whole-second duration difference rounded to zero.
+
+**4. Implied speed** (edge length / tau), reference max 27.72 m/s: median **3.17 m/s**, p10 2.18, p90 8.47; 0.60% exceed the reference. A median implied speed well below the road speeds confirms that `tau` is **not a pure traversal time** — turn, stop and intersection costs charged on entering the edge are inside it, and within-edge interpolation scales them along with the travel.
+
+**7. Valhalla's `cost` against its `duration`.** They differ on **100.0%** of features (median gap 264.0 s, p90 931.0 s, max 6274 s). So Valhalla runs its own two-weight model, and the adapter reports `duration` — the right choice. Carrying `cost` as the *selection* weight, the way the own-graph path does since Codex pass-6 H1, is a named follow-up and is not done here.
+
+
+### S1.4 follow-up: the own-graph exact-pair residual, decomposed by access distance (2026-11-04 10:24:30): grocery / walk
+
+Paired on `matrix_grocery_walk_controlled.json` (599 finite cells, converted from the file's minutes to seconds). `own_min` charges a straight-line access walk at `access_speed_mps`; Valhalla's `sources_to_targets` snaps the cell centre and charges essentially nothing for it, so the access leg does **not** cancel between the two sides.
+
+This reproduces the published row exactly — signed median **+12.0 s** is the memo's +0.2 min, and median absolute 30.8 s is its 0.5 min — and then splits it.
+
+- access distance median 30.8 m (p90 109.0 m, max 198.5 m), charged 24.4 s at the median
+
+| access distance | n | median bias | median access charge |
+|---|---|---|---|
+| 0-5 m | 76 | **-9.9 s** | 1.8 s |
+| 5-20 m | 144 | **-2.6 s** | 9.2 s |
+| 20-50 m | 200 | **+16.3 s** | 26.1 s |
+| 50-100 m | 111 | **+36.5 s** | 52.5 s |
+| 100-200 m | 68 | **+96.8 s** | 105.8 s |
+
+With our access leg subtracted, so both sides describe travel from the network: signed median **-11.3 s**, median absolute 22.8 s, p90 145.1 s — consistent with the nearly on-network band's -9.9 s.
+
+**Two opposing terms, not one.** Unlike the expansion case, where the access leg accounted for the whole bias (ratio 0.96, residual +0.0 s), the own-graph residual splits into:
+
+1. an **on-network optimism of about 10 s** at the median — our walk model is slightly faster than Valhalla's once the cell is on the network;
+2. a **conservative access charge** that grows with distance, reaching +97 s in the 100-200 m band.
+
+They cancel near the sample's median access distance of about 31 m, which is why the overall signed median looks like zero. That cancellation is a property of this sample's access-distance distribution, not of the model: a metro with more off-network cells would read conservative, one with fewer would read optimistic.
+
+**What this changes.** The Phase 0 verdict read this comparison as evidence that our walk *speed model* is unbiased against Valhalla. It is better described as two biases that happen to offset. The on-network comparison is the one that speaks to the speed model, and it says we are around 10 s optimistic at a median journey of about 22 minutes — under 1%, so the verdict's direction survives, but 'unbiased' overstates it, and the memo's own caveat still applies: Valhalla's default pedestrian speed was 1.411 m/s against our 1.400, so neither number speaks to real walking times. `ACCESS_SPEED_FACTOR` remains an unmeasured prior, and it is now the larger term of the two.
+

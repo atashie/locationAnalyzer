@@ -173,10 +173,65 @@ def merged_index(feats, *, target_crs: str, origins, directional: bool):
                     end_idx=np.asarray(ends, dtype=np.int64),
                     fwd_time=fwd, rev_time=rev, fwd_cost=fwd, rev_cost=rev)
     diag["physical_edges"] = len(geoms)
+    diag["_nodes"] = nodes
     diag["both_directions"] = int((np.isfinite(fwd) & np.isfinite(rev)).sum())
     diag["one_direction"] = int((np.isfinite(fwd) ^ np.isfinite(rev)).sum())
     diag["no_direction"] = int((~np.isfinite(fwd) & ~np.isfinite(rev)).sum())
     return idx, T, diag
+
+
+def unmerged_index(feats, *, target_crs: str, origins, nodes_of, T):
+    """One STRtree entry per **feature**, bidirectional at its own traversal time — the behaviour
+    before merging — but over the *same* features, the *same* node identities and the *same* node
+    times as the merged index.
+
+    Codex pass-9 M1: the first attempt at this comparison used the new merging adapter on a
+    `skip_opposites=true` request as its "before", which changed the feature set (476,072 against
+    254,323), the dangling count (0 against 636), the node times and the connectivity all at once.
+    Holding everything but the representation fixed is the only way to attribute the difference to
+    merging.
+    """
+    to_proj = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True)
+    ox, oy = to_proj.transform([q[0] for q in origins], [q[1] for q in origins])
+    origin_pts = shapely.points(np.asarray(ox), np.asarray(oy))
+
+    kept = []
+    for f in feats:
+        coords = (f.get("geometry") or {}).get("coordinates") or []
+        props = f.get("properties") or {}
+        if len(coords) < 2 or props.get("duration") is None:
+            continue
+        gx, gy = to_proj.transform([c[0] for c in coords], [c[1] for c in coords])
+        if not (np.all(np.isfinite(gx)) and np.all(np.isfinite(gy))):
+            continue
+        kept.append({"geom": LineString(list(zip(gx, gy))), "dur": float(props["duration"]),
+                     "edge_id": props.get("edge_id"), "pred": props.get("pred_edge_id"),
+                     "ll_first": tuple(coords[0]), "ll_last": tuple(coords[-1])})
+    by_edge = {e["edge_id"]: e for e in kept if e["edge_id"] is not None}
+
+    geoms, starts, ends, taus = [], [], [], []
+    for e in kept:
+        is_root = e["pred"] in _NO_PRED_SENTINELS
+        pred = by_edge.get(e["pred"])
+        if pred is None and not is_root:
+            continue
+        near_t = 0.0 if is_root else float(pred["dur"])
+        tau = max(e["dur"] - near_t, _MIN_EPS)
+        sk = node_key(*e["geom"].coords[0])
+        ek = node_key(*e["geom"].coords[-1])
+        if sk not in nodes_of or ek not in nodes_of:
+            continue
+        geoms.append(e["geom"])
+        starts.append(nodes_of[sk])
+        ends.append(nodes_of[ek])
+        taus.append(tau)
+    arr = np.empty(len(geoms), dtype=object)
+    arr[:] = geoms
+    t = np.asarray(taus, dtype=np.float64)
+    return EdgeIndex(tree=shapely.STRtree(geoms), geoms=arr,
+                     start_idx=np.asarray(starts, dtype=np.int64),
+                     end_idx=np.asarray(ends, dtype=np.int64),
+                     fwd_time=t, rev_time=t, fwd_cost=t, rev_cost=t)
 
 
 def main() -> None:
@@ -229,18 +284,20 @@ def main() -> None:
         return cell_seconds_from_arrival(idx, T, xs, ys, mode=args.mode, max_access_m=200.0,
                                          cutoff_s=cut)
 
-    # 0: today's production path -- adapter as written, on skip_opposites=true features
-    # index 0 reproduces the pre-fix behaviour: skip_opposites=true, so the adapter takes its
-    # documented bidirectional fallback -- which is exactly what the old code did unconditionally.
-    i0, t0_ = expansion_to_edge_index(feats_skip, target_crs=GRID.crs, opposites_included=False,
-                                      origins=lonlat, strict=False, report={})
-    s0 = cells(i0, t0_)
-    # 2: merged by geometry, still bidirectional
+    # 2: merged by geometry, still bidirectional -- the pivot, because it shares its node map and
+    # node times with both 1 and 3, so each comparison isolates exactly one change.
     i2, t2_, d2 = merged_index(feats_both, target_crs=GRID.crs, origins=lonlat, directional=False)
     s2 = cells(i2, t2_)
+    # 1: the same features, the same nodes and the same T, but one entry per FEATURE and
+    # bidirectional -- the representation before merging.
+    i1 = unmerged_index(feats_both, target_crs=GRID.crs, origins=lonlat,
+                        nodes_of=d2["_nodes"], T=t2_)
+    s1 = cells(i1, t2_)
     # 3: merged by geometry, only the settled directions
     i3, t3_, d3 = merged_index(feats_both, target_crs=GRID.crs, origins=lonlat, directional=True)
     s3 = cells(i3, t3_)
+    d2.pop("_nodes", None)
+    d3.pop("_nodes", None)
     out["merged_index"] = d3
     print(f"merged index: {d3}", flush=True)
 
@@ -263,9 +320,10 @@ def main() -> None:
         print(f"{label}: {json.dumps(r)}", flush=True)
         return r
 
-    out["merging_effect"] = compare(s0, s2, "0 -> 2  merging only")
-    out["direction_effect"] = compare(s2, s3, "2 -> 3  direction only")
-    out["total_effect"] = compare(s0, s3, "0 -> 3  both")
+    out["merging_effect"] = compare(s1, s2, "1 -> 2  merging only (T and nodes fixed)")
+    out["direction_effect"] = compare(s2, s3, "2 -> 3  direction only (T and nodes fixed)")
+    out["total_effect"] = compare(s1, s3, "1 -> 3  both")
+    out["unmerged_entries"] = int(len(i1.geoms))
 
     dest = DATA / f"s1_expansion_directions_{args.category}_{args.mode}.json"
     dest.write_text(json.dumps(out, indent=1), encoding="utf-8")
@@ -295,13 +353,19 @@ def main() -> None:
         "the better of two duplicate geometries, restricting direction removes illegal moves — so "
         "they are measured separately. Three indices over the same cells:", "",
         "| | index |", "|---|---|",
-        "| **0** | the adapter as written, on `skip_opposites=true` features — today's path |",
+        f"| **1** | one entry per **feature**, bidirectional — the representation before merging "
+        f"({out['unmerged_entries']:,} entries) |",
         "| **2** | merged by geometry, still traversable both ways |",
         "| **3** | merged by geometry, only the directions actually settled |", "",
+        "All three are built from the **same** `skip_opposites=false` features, the **same** node "
+        "identities and the **same** node times, so each comparison isolates exactly one change "
+        "(Codex pass-9 M1: an earlier version used a `skip_opposites=true` request as its "
+        "\"before\", which changed the feature set, the dangling count, the node times and the "
+        "connectivity at once).", "",
         f"Merging gives **{d3['physical_edges']:,} physical edges** from {d3['features']:,} "
         f"features: {d3['both_directions']:,} traversable both ways, {d3['one_direction']:,} one "
         f"way only, {d3['unoriented']} unorientable.", "",
-        "| | 0 -> 2 (merging) | 2 -> 3 (direction) | 0 -> 3 (both) |", "|---|---|---|---|",
+        "| | 1 -> 2 (merging) | 2 -> 3 (direction) | 1 -> 3 (both) |", "|---|---|---|---|",
     ] + [
         f"| {label} | {fmt(out['merging_effect'][k])} | {fmt(out['direction_effect'][k])} | "
         f"{fmt(out['total_effect'][k])} |"
@@ -322,11 +386,18 @@ def main() -> None:
         "The direction column is the one that matters for correctness, and its sign is the expected "
         "one: restricting travel to the settled direction makes cells later, never earlier. The "
         "merging column is a separate defect of the same adapter and moves the other way.", "",
-        "**Superseded:** the first pass of this measurement reported 2.80% of cells changing with a "
-        "median increase of 13.1 s, built from `skip_opposites=true` features. That construction "
-        "forbids the unused direction of a two-way street that was only ever settled once, so it "
-        "mixed 'illegal move allowed' with 'legal move wrongly blocked'. The table above replaces "
-        "it.", "",
+        "The direction column also needs its qualifications (pass-9 M1): changes of at most one "
+        "second are excluded, non-finite pairs are excluded, and cells that lose reachability "
+        "altogether are counted separately rather than as a change. And the monotone sign is a "
+        "*local interpolation* result for fixed node times — it does not show that the inferred "
+        "direction labels are **legal**, only that removing a branch cannot lower the local "
+        "minimum. Wrong labels would satisfy it too.", "",
+        "**Two superseded measurements.** (1) The first pass reported 2.80% of cells changing with "
+        "a median increase of 13.1 s, built from `skip_opposites=true` features — that construction "
+        "forbids the unused direction of a two-way street settled only once, mixing 'illegal move "
+        "allowed' with 'legal move wrongly blocked'. (2) The second pass reported the merging "
+        "column as 8.78% from a `skip_opposites=true` \"before\", which changed four things at "
+        "once. The table above replaces both.", "",
     ]
     text = "\n".join(lines)
     print("\n" + text, flush=True)
