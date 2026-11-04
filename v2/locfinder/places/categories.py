@@ -91,15 +91,26 @@ def taxonomy_matches(taxonomy, spec: dict) -> bool:
 
 
 def select_overture(gdf, category: str):
+    """Rows matching the category, in a **deterministic order**.
+
+    Sorted by Overture `id`, because several spikes take "the first N POIs" and file order is not
+    stable across downloads. Re-acquiring the Triangle at the routing extent changed both the row
+    count and the ordering, which would silently have changed *which three* groceries an experiment
+    used — so a re-measurement would not have been comparable with the one it replaced, for a
+    reason nothing recorded.
+    """
     spec = WEDGE_CATEGORIES[category]
     mask = gdf["taxonomy"].apply(lambda t: taxonomy_matches(t, spec)).to_numpy(dtype=bool)
-    return gdf[mask]
+    out = gdf[mask]
+    return out.sort_values("id") if "id" in out.columns else out
 
 
 def select_osm(gdf, category: str):
+    """Rows matching the category, in a deterministic order (by `feature_id`, the frame's index).
+    Same reason as `select_overture`."""
     spec = WEDGE_CATEGORIES[category]
     mask = np.zeros(len(gdf), dtype=bool)
     for key, value in spec["osm"]:
         if key in gdf.columns:
             mask |= (gdf[key].astype("string") == value).fillna(False).to_numpy(dtype=bool)
-    return gdf[mask]
+    return gdf[mask].sort_index()

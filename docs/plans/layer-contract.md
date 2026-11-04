@@ -427,6 +427,25 @@ the provenance-returning builder itself, not just the snapping function undernea
 | `BEYOND_HORIZON` | 19,282 | **5.8342%** |
 | `NO_PATH` | 0 | 0% |
 
+**Re-measured after the routing-extent re-acquisition (2026-11-04).** The shares above were
+against 452 evaluation-extent groceries. With 550 groceries and 510 destination nodes:
+
+| status | cells | share of grid | change |
+|---|---|---|---|
+| `OK` | 256,752 | **77.6855%** | +0.93 points |
+| `OFF_NETWORK` | 57,541 | **17.4102%** | **unchanged** |
+| `BEYOND_HORIZON` | 16,209 | **4.9044%** | −0.93 points |
+| `NO_PATH` | 0 | 0% | unchanged |
+
+**The whole coverage gain came out of `BEYOND_HORIZON`, and `OFF_NETWORK` did not move by a single
+cell.** That is what the taxonomy predicts and is worth stating as evidence that the two statuses
+are measuring different things rather than dividing one blob arbitrarily: being off-network depends
+on the road graph and the access cap, neither of which changed, while being past the horizon depends
+on where the destinations are. A decomposition that moved both would have meant the split was not
+real.
+
+Both sets sum to 330,502.
+
 57,541 + 19,282 = 76,823 = **23.2443%**, which is exactly the nodata share measured on the
 committed artifact. So three cells in four of the missing region have no road within 200 m, and one
 in four has a road but is more than 120 minutes' walk from a grocery. Previously this was one
@@ -444,8 +463,10 @@ Measured, not argued: after preparation the retained walk graph has **1 strongly
 component**, and **0 of 539,814 nodes** are unreached by the unbounded cost search.
 
 The reason is an ordering in `g1_own_graph_layer.py`: `symmetrise` runs *before*
-`largest_component`, so the retained component is strongly connected, and the 417 destination nodes
-are snapped on the pruned graph and therefore inside it. Every retained node reaches a destination.
+`largest_component`, so the retained component is strongly connected, and the destination nodes
+are snapped on the pruned graph and therefore inside it (417 of them at the time of that run, 550
+grocery places after the routing-extent re-acquisition — the argument does not depend on the count,
+only on every destination being inside the retained component). Every retained node reaches a destination.
 `NO_PATH` cannot occur.
 
 For bike and drive the status is unavailable for the other reason — Valhalla `/expansion` cannot

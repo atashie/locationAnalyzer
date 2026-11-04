@@ -20,12 +20,10 @@ no-data audit by how many buildings sit in a gap rather than by cell area. Nothi
 so the use is a Produced Work. The report records the observed licences so the registry row can be
 verified against reality instead of against the documentation.
 
-Two hazards named in S4.1 are deliberately **not** reproduced here:
-
-* `fetch_places.py` reuses an existing raw file regardless of the requested release, after which the
-  partition can label it with the *requested* release. This script records the release in the report
-  and refuses to reuse a raw file that was fetched for a different one.
-* the observed dataset and licence sets are written out, so the registry row is checkable.
+Acquisition goes through `places.acquire`, which holds the two S4.1 hazards in one tested place: a
+raw file is never reused for a different release or bounding box, and an interrupted download can
+never be promoted or inherit the previous label. The observed dataset and licence sets are written
+out too, so the registry row is checkable against reality rather than against the documentation.
 """
 from __future__ import annotations
 
@@ -40,9 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "spikes"))
 
 from _common import METRO_DIR, OVERTURE_RELEASE  # noqa: E402
 from locfinder.metros import get_metro  # noqa: E402
+from locfinder.places.acquire import Acquisition, acquire  # noqa: E402
 from locfinder.places.licence import ALLOWED_LICENCES, UnknownLicence, resolve_licence  # noqa: E402
-
-STATE_SUFFIX = ".state"
 
 #: The allowlist for **this diagnostic use only**, never a widening of `ALLOWED_LICENCES`.
 #:
@@ -55,57 +52,14 @@ STATE_SUFFIX = ".state"
 #:
 #: Owner decision 17 is that publishing OSM-derived work under ODbL is welcome, and S2.4 rasterises
 #: footprints to **counts** for a coverage audit and republishes nothing, so the use is a Produced
-#: Work rather than a database redistribution. Widening here and nowhere else keeps that reasoning
-#: attached to the one place it applies. Note the CC BY string is a **non-SPDX free-text variant**,
-#: so it is matched literally -- brittle, and a release that rewords it will quarantine again,
-#: which is the safe direction to fail.
+#: Work rather than a database redistribution. **Confirmed by the owner 2026-11-04.** Widening here
+#: and nowhere else keeps that reasoning attached to the one place it applies. Note the CC BY string
+#: is a **non-SPDX free-text variant**, so it is matched literally -- brittle, and a release that
+#: rewords it will quarantine again, which is the safe direction to fail.
 DIAGNOSTIC_LICENCES = ALLOWED_LICENCES | frozenset({
     "ODbL-1.0",
     "Creative Commons by Attribution (CC BY 4.0) with OpenStreetMap waivers",
 })
-
-
-def _state_path(raw: Path) -> Path:
-    return raw.with_suffix(raw.suffix + STATE_SUFFIX)
-
-
-def fetch_raw(raw: Path, bbox: str, release: str) -> Path:
-    """Download, or reuse a raw file **only** if it was fetched for this same release and bbox.
-
-    Downloads to a **temporary file and commits atomically**, which is the fix for Codex pass-10
-    H5. The first version wrote straight over `raw` while the old state file stayed valid, so an
-    interrupted download left the new bytes on disk still labelled with the *previous* release —
-    and the next run for that previous release happily reused them. Writing elsewhere and moving
-    into place means `raw` and its state are only ever replaced together, and a failure leaves the
-    previous pair untouched.
-    """
-    state = _state_path(raw)
-    want = {"release": release, "bbox": bbox, "type": "building"}
-    if raw.exists() and state.exists():
-        have = json.loads(state.read_text(encoding="utf-8"))
-        if {k: have.get(k) for k in want} == want:
-            print(f"reusing {raw.name}: same release and bbox")
-            return raw
-        print(f"re-downloading: {raw.name} was fetched for {have.get('release')} / "
-              f"{have.get('bbox')}, not {release} / {bbox}")
-    elif raw.exists():
-        print(f"re-downloading: {raw.name} has no state file, so its release is unknown")
-    tmp = raw.with_name(raw.name + ".partial")
-    tmp.unlink(missing_ok=True)
-    cmd = [sys.executable, "-m", "overturemaps.cli", "download", f"--bbox={bbox}",
-           "-f", "geoparquet", "--type=building", "-o", str(tmp), "--release", release]
-    print("running:", " ".join(cmd), flush=True)
-    try:
-        subprocess.run(cmd, check=True)
-    except BaseException:
-        # Includes KeyboardInterrupt: a partial file must never be promoted.
-        tmp.unlink(missing_ok=True)
-        raise
-    # Commit: state is removed first, so no window exists in which new bytes carry an old label.
-    state.unlink(missing_ok=True)
-    tmp.replace(raw)
-    state.write_text(json.dumps(want, indent=1), encoding="utf-8")
-    return raw
 
 
 def main() -> None:
@@ -124,7 +78,8 @@ def main() -> None:
     # buildings outside it are not part of that denominator.
     bbox = f"{e.west},{e.south},{e.east},{e.north}"
 
-    raw = fetch_raw(out_dir / "overture_buildings_raw.parquet", bbox, args.release)
+    raw, _ = acquire(out_dir / "overture_buildings_raw.parquet",
+                     Acquisition(overture_type="building", release=args.release, bbox=bbox))
     gdf = gpd.read_parquet(raw)
     print(f"{len(gdf):,} buildings in the {metro.name} evaluation bbox", flush=True)
 

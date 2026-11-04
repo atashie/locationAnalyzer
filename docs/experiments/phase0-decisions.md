@@ -140,7 +140,7 @@ previously-truncated places are now inside.
 The fix is verified, not assumed: downtown Raleigh went from **0 reachable transit stops to 1,080**,
 NC State to 896, and all seven previously-failing pairs now answer. The Phase 0 slice is retained as
 a named metro (`LOCFINDER_METRO=slice`) so the earlier results stay reproducible. Places for the
-widened metro: **90,349 Overture rows accepted, zero quarantined**, plus 7,425 OSM POIs.
+widened metro: **90,349 Overture rows accepted, zero quarantined**, plus 7,425 OSM POIs. *(Superseded 2026-11-04: Overture was re-acquired at the **routing** extent for Phase 1 S2.1, giving **107,484 accepted rows, still zero quarantined**. The Phase 0 figure describes the evaluation extent and is kept because the decision it supports — fail-closed per-row licensing — is unaffected by the extent.)*
 
 ### D9. Build statewide tiles on a workstation and upload them; do not build on the server
 

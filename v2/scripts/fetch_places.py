@@ -4,6 +4,7 @@ Run from v2/:  uv run python scripts/fetch_places.py --release 2026-10-21.0 [--m
 
 Writes under v2/data/<metro>/:
   overture_places_raw.parquet      exact download (never used downstream)
+  overture_places_raw.parquet.state what that download actually is: type, release and bbox
   overture_places_accepted.parquet rows whose every source resolved to an allowed licence
   overture_rejected_report.json    counts, observed datasets, and quarantine reasons
   overture_schema.txt              observed Arrow schema (the `categories` column was removed in
@@ -34,17 +35,22 @@ OSM_TAGS = {
 
 
 def fetch_overture(out_dir: Path, bbox: str, release: str | None) -> Path:
+    """Acquire the places raw file through `places.acquire`, which refuses to reuse a file fetched
+    for a different release **or bounding box** and cannot promote an interrupted download.
+
+    The previous version returned any existing `overture_places_raw.parquet` unconditionally. That
+    is how an **evaluation**-extent download came to back a resolver documented as bounding by the
+    **routing** extent (Codex pass-10 M6): changing the bbox here would have changed nothing on
+    disk.
+    """
+    from locfinder.places.acquire import Acquisition, acquire
+
     raw = out_dir / "overture_places_raw.parquet"
-    if raw.exists():
-        print("overture raw already present:", raw)
-        return raw
-    cmd = [sys.executable, "-m", "overturemaps.cli", "download", f"--bbox={bbox}", "-f", "geoparquet",
-           "--type=place", "-o", str(raw)]
-    if release:
-        cmd += ["--release", release]
-    print("running:", " ".join(cmd))
-    subprocess.run(cmd, check=True)
-    return raw
+    if not release:
+        raise SystemExit("--release is required: a raw file with no pinned release cannot be "
+                         "labelled, and the licence manifests are keyed by release")
+    path, _ = acquire(raw, Acquisition(overture_type="place", release=release, bbox=bbox))
+    return path
 
 
 def inspect_schema(raw: Path, out_dir: Path) -> list[str]:
@@ -118,16 +124,26 @@ def main() -> None:
     metro = get_metro(args.metro)
     out_dir = Path(__file__).resolve().parents[1] / "data" / metro.name
     out_dir.mkdir(parents=True, exist_ok=True)
-    # Places are selected on the EVALUATION bbox; routing data uses the buffered bbox.
-    bbox = metro.evaluation.as_osmium()
-    print(f"metro {metro.name}: places bbox {bbox}")
+    # Places use the **ROUTING** bbox, which is wider than the published grid. Two reasons, and
+    # the second was the one originally missed:
+    #
+    #  * an **anchor** can legitimately sit outside the evaluation area — you commute *into* a
+    #    metro, or to an office just past its edge — and `places/resolve.py` is documented as
+    #    bounding its search that way. Acquiring only the evaluation extent made that claim
+    #    partly hollow: 593 indexed places lay outside evaluation and every one came from OSM,
+    #    because only OSM was read from the routing extract (Codex pass-10 M6).
+    #  * a **category destination** just outside the grid is still the nearest grocery for a cell
+    #    at the edge. Restricting destinations to the evaluation extent manufactures exactly the
+    #    edge-truncation artefact the routing buffer exists to prevent (see `metros.py`).
+    #
+    # The evaluation bbox remains the right bound for the *output grid* and for coverage
+    # denominators; it is not the right bound for inputs.
+    bbox = metro.routing.as_osmium()
+    print(f"metro {metro.name}: places bbox {bbox} (routing extent)")
 
     raw = fetch_overture(out_dir, bbox, args.release)
     inspect_schema(raw, out_dir)
-    if args.release:
-        partition_by_licence(raw, out_dir, args.release)
-    else:
-        print("NOTE: no --release given; accepted artifact not written (manifests are keyed by release).")
+    partition_by_licence(raw, out_dir, args.release)
     if not args.skip_osm:
         pbf = out_dir / ("slice.osm.pbf" if metro.name == "slice" else "triangle-routing.osm.pbf")
         fetch_osm_pois(out_dir, pbf)

@@ -701,7 +701,10 @@ is what both verdicts got wrong; it bounds the error without localising it.
 
 ### Two-weight verification on the real network (2026-11-03 18:14:42): walk / grocery
 
-539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
+539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations. *(417
+destinations is the evaluation-extent count; the routing-extent re-acquisition gives 550 grocery
+places. The two-weight verdict is a per-node identity and does not depend on how many destinations
+there are.)*
 
 **Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
 
@@ -774,7 +777,10 @@ Total reachable cells nearest a restricted edge: 4,673 of 272,961 reachable.
 
 ### Two-weight verification on the real network (2026-11-04 11:38:26): walk / grocery
 
-539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations.
+539,814 nodes, 417 destinations, 539,814 nodes finite in all three computations. *(417
+destinations is the evaluation-extent count; the routing-extent re-acquisition gives 550 grocery
+places. The two-weight verdict is a per-node identity and does not depend on how many destinations
+there are.)*
 
 **Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
 
@@ -835,7 +841,34 @@ Of the **119,537** nodes the penalty actually affected, both outcomes below are 
 
 Total reachable cells nearest a restricted edge: 4,367 of 253,679 reachable.
 
+#### Superseded again 2026-11-04 by the routing-extent re-acquisition
+
+Everything below was measured against **452 groceries** from the evaluation-extent Overture
+download. Phase 1 closed Codex pass-10 M6 by re-acquiring Overture at the **routing** extent, which
+raised the grocery destination set to **550** (+22%), and the sweep was re-run. The newest table is
+at the end of this file. The replacement figures:
+
+| | evaluation extent (452 groceries) | routing extent (550 groceries) |
+|---|---|---|
+| coverage at the adopted 120 s | 76.76% | **77.69%** |
+| reachable cells | 253,679 | **256,752** |
+| nodes diverted at 120 s | 49,363 | **62,241** |
+| coverage across 0-960 s | 0.10 points | **0.09 points** |
+
+Coverage rose, which is the expected direction: more destinations can only help reachability, and a
+cell at the grid edge can now use a grocery just outside it instead of being truncated.
+
+**A coincidence worth naming.** The new 77.69% is close to the long-superseded **77.32%**, which
+might suggest the original buggy figure was right all along. It was not. That figure was wrong
+because the sweep omitted `node_cost` and the final `cutoff_s` *on the narrower destination set*;
+the two errors happened to push in opposite directions. The chain is 77.32% (wrong pipeline, narrow
+inputs) → 76.76% (right pipeline, narrow inputs) → 77.69% (right pipeline, correct inputs).
+
 #### S2.5: what the re-run settles
+
+> The percentages in this subsection are the **76.76%** generation, i.e. the right pipeline on the
+> narrower evaluation-extent destination set. The conclusions survive the widening — see the table
+> above — but quote the newest run for any figure.
 
 This is the production-path run that supersedes both tables above (Phase 1 S2.5). Three things come
 out of it.
@@ -901,3 +934,152 @@ So pruning to the largest weak component still leaves 143 nodes that nothing in 
 
 This is a routability result, not an accuracy one: it says an anchor can be reached, not that the time to reach it is right.
 
+
+### S2.2 anchor routability on the real graph (2026-11-04 13:04:56): drive, triangle, nudge cap 150 m
+
+In Phase 0, snapping RDU Terminal 2 found a node 4 m away on a four-node service stub and three of twelve journeys came back unreachable. `largest_component` was the response, and its docstring records that weak connectivity is not the right test. This is the directed one.
+
+**What the directed test adds over the weak one.**
+
+| | |
+|---|---|
+| nodes before pruning | 438,250 |
+| weak components | 198 (largest holds 99.9%) |
+| nodes the core can reach, **before** pruning | 99.8225% |
+| nodes after pruning | 437,615 |
+| nodes the core can reach, **after** pruning | 99.9673% |
+| **kept by the weak test, unreachable by the directed one** | **143 (0.0327%)** |
+
+So pruning to the largest weak component still leaves 143 nodes that nothing in the core can drive to. Those are the ones an anchor must not be snapped to, and distance alone cannot tell them apart from good ones.
+
+**Barriers.** 4,665 impassable ways extracted from the routing extract with QuackOSM (`fence, wall, retaining_wall, hedge, city_wall`, …). Gates, bollards and cycle barriers are deliberately **excluded**: they are passable, often mode-dependently, and treating them as walls would reject legitimate nudges.
+
+**The twelve spot-check anchors.**
+
+| anchor | status | moved | nearer node unreachable | candidates behind a barrier | approach crosses a barrier |
+|---|---|---|---|---|---|
+| UNC Hospitals | **ok** | 37.2 m | 1 | 0 | — |
+| Duke University Hospital | **ok** | 77.6 m | 0 | 0 | — |
+| Carrboro Town Hall | **ok** | 3.6 m | 0 | 0 | — |
+| Downtown Durham | **ok** | 30.6 m | 0 | 2 | — |
+| Chapel Hill (Franklin St) | **ok** | 6.2 m | 0 | 3 | — |
+| RTP (Kit Creek Rd) | **ok** | 73.6 m | 0 | 0 | — |
+| RDU Terminal 2 | **ok** | 74.4 m | 0 | 6 | **yes** |
+| NC State Bell Tower | **ok** | 20.6 m | 0 | 31 | — |
+| Downtown Raleigh (Moore Sq) | **ok** | 5.9 m | 0 | 0 | — |
+| Cary Downtown | **ok** | 9.2 m | 0 | 0 | — |
+| Southpoint Mall | **ok** | 48.1 m | 0 | 0 | — |
+| Hillsborough | **ok** | 42.0 m | 0 | 0 | — |
+
+12 of 12 anchors are usable, 0 after a nudge; 1 had an unreachable node nearer than the one chosen; 1 sit behind a perimeter so every reachable candidate is barrier-crossing and the straight-line approach is not the real one.
+
+**What the directed test actually bought here.** The RDU stub failure does **not** reproduce: all six nodes within 150 m of the terminal are reachable from the core, so `largest_component` had already fixed it and the directed test confirms rather than rescues. Metro-wide the directed test rejects 143 nodes the weak test keeps, and on these twelve anchors it changed the chosen node exactly 1 time. Small, real, and worth having because the failure it prevents is silent — but not the dramatic correction the RDU story might suggest.
+
+This is a routability result, not an accuracy one: it says an anchor can be reached, not that the time to reach it is right.
+
+
+### S2.2 anchor routability on the real graph (2026-11-04 13:06:12): drive, triangle, nudge cap 150 m
+
+In Phase 0, snapping RDU Terminal 2 found a node 4 m away on a four-node service stub and three of twelve journeys came back unreachable. `largest_component` was the response, and its docstring records that weak connectivity is not the right test. This is the directed one.
+
+**What the directed test adds over the weak one.**
+
+| | |
+|---|---|
+| nodes before pruning | 438,250 |
+| weak components | 198 (largest holds 99.9%) |
+| nodes the core can reach, **before** pruning | 99.8225% |
+| nodes after pruning | 437,615 |
+| nodes the core can reach, **after** pruning | 99.9673% |
+| **kept by the weak test, unreachable by the directed one** | **143 (0.0327%)** |
+
+So pruning to the largest weak component still leaves 143 nodes that nothing in the core can drive to. Those are the ones an anchor must not be snapped to, and distance alone cannot tell them apart from good ones.
+
+**Barriers.** 4,665 impassable ways extracted from the routing extract with QuackOSM (`fence, wall, retaining_wall, hedge, city_wall`, …). Gates, bollards and cycle barriers are deliberately **excluded**: they are passable, often mode-dependently, and treating them as walls would reject legitimate nudges.
+
+**The twelve spot-check anchors.**
+
+| anchor | status | moved | nearer node unreachable | candidates behind a barrier | approach crosses a barrier |
+|---|---|---|---|---|---|
+| UNC Hospitals | **ok** | 37.2 m | 1 | 0 | — |
+| Duke University Hospital | **ok** | 77.6 m | 0 | 0 | — |
+| Carrboro Town Hall | **ok** | 3.6 m | 0 | 0 | — |
+| Downtown Durham | **ok** | 30.6 m | 0 | 2 | — |
+| Chapel Hill (Franklin St) | **ok** | 6.2 m | 0 | 3 | — |
+| RTP (Kit Creek Rd) | **ok** | 73.6 m | 0 | 0 | — |
+| RDU Terminal 2 | **ok** | 74.4 m | 0 | 6 | **yes** |
+| NC State Bell Tower | **ok** | 20.6 m | 0 | 31 | — |
+| Downtown Raleigh (Moore Sq) | **ok** | 5.9 m | 0 | 0 | — |
+| Cary Downtown | **ok** | 9.2 m | 0 | 0 | — |
+| Southpoint Mall | **ok** | 48.1 m | 0 | 0 | — |
+| Hillsborough | **ok** | 42.0 m | 0 | 0 | — |
+
+12 of 12 anchors are usable, 0 after a nudge; 1 had an unreachable node nearer than the one chosen; 1 sit behind a perimeter so every reachable candidate is barrier-crossing and the straight-line approach is not the real one.
+
+**What the directed test actually bought here.** The RDU stub failure does **not** reproduce: all six nodes within 150 m of the terminal are reachable from the core, so `largest_component` had already fixed it and the directed test confirms rather than rescues. Metro-wide the directed test rejects 143 nodes the weak test keeps, and on these twelve anchors it changed the chosen node exactly 1 time. Small, real, and worth having because the failure it prevents is silent — but not the dramatic correction the RDU story might suggest.
+
+This is a routability result, not an accuracy one: it says an anchor can be reached, not that the time to reach it is right.
+
+
+### Two-weight verification on the real network (2026-11-04 13:29:11): walk / grocery
+
+539,814 nodes, 510 destinations, 539,814 nodes finite in all three computations.
+
+**Bracket test.** The reported value must satisfy `time-only <= reported <= cost-based`; a penalty leak makes the upper bound tight everywhere.
+
+| check | nodes | share of finite |
+|---|---|---|
+| reported **below** the time-only lower bound (must be 0) | **0** | 0.0000% |
+| reported **above** the cost-based upper bound (must be 0) | **0** | 0.0000% |
+| reported **equals** the time-only bound (no penalty in effect) | 475,090 | 88.01% |
+| reported equals the cost-based value **overall** (expected where cost==time) | 464,912 | 86.12% |
+| reported **above** time-only, i.e. the penalty diverted the path | 64,816 | 12.01% |
+
+Of the **117,598** nodes the penalty actually affected, both outcomes below are correct; the split is descriptive, not a verdict. `reported == cost-based` means the chosen path carries no penalised edge, so its time equals its cost necessarily:
+
+| outcome | nodes | share of those |
+|---|---|---|
+| diverted onto a penalty-free path (reported == cost-based) | 42,696 | 36.31% |
+| still uses a penalised edge, penalty stripped from the report | 74,902 | 63.69% |
+
+**The decisive test is the exact identity.** Accumulating the penalty over the same cost-optimal forest must reconcile the two bounds edge for edge: `cost-based == reported time + penalty accumulated on that path`. A leak breaks it, because the report would equal the upper bound while the accumulated penalty is non-zero.
+
+| check | value |
+|---|---|
+| nodes tested | 539,814 |
+| of those, carrying a non-zero accumulated penalty | 74,902 (13.88%) |
+| identity violations above 1 ms (must be 0) | **0** |
+| largest residual | 3.64e-12 s |
+
+**Verdict: PASS.** The reported times sit inside the bracket and the penalty identity holds exactly on every node, so the reported figure is the real travel time along the cost-optimal path and the penalty is not leaking into it.
+
+**Independent path walk.** The identity shares the reconstruction's arithmetic, so it cannot detect a wrong path. This re-sums `travel_time` and `cost` from the graph along the explicit predecessor chain, for a random sample of nodes whose path carries a penalty.
+
+| check | value |
+|---|---|
+| nodes walked (of 74,902 eligible) | 500 |
+| total hops re-summed | 22,489 |
+| reported time != re-summed graph time (must be 0) | **0** |
+| accumulated penalty != re-summed graph penalty (must be 0) | **0** |
+
+**Penalty sensitivity.** Same graph and destinations, penalty varied. The adopted value is 120 s.
+
+| penalty s | cells with a time | median reported min | nodes diverted by the penalty |
+|---|---|---|---|
+| 0 | 77.70% | 34.2 | 0 |
+| 60 | 77.70% | 34.2 | 55,823 |
+| 120 | 77.69% | 34.3 | 62,241 |
+| 240 | 77.65% | 34.3 | 66,172 |
+| 960 | 77.61% | 34.5 | 73,444 |
+
+**Provenance of reachable cells whose nearest edge is restricted** (by that edge's `access` value; a length-keyed approximation, so read it as indicative):
+
+| access value | reachable cells snapped to it |
+|---|---|
+| private | 4,178 |
+| customers | 230 |
+| destination | 10 |
+| forestry | 1 |
+| None | 1 |
+
+Total reachable cells nearest a restricted edge: 4,420 of 256,752 reachable.

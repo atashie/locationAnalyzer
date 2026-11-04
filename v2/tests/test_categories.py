@@ -22,3 +22,24 @@ def test_exclusions_beat_hierarchy_membership():
 def test_primary_match_without_hierarchy():
     assert taxonomy_matches({"primary": "coffee_shop", "hierarchy": []}, WEDGE_CATEGORIES["coffee"])
     assert not taxonomy_matches({"primary": "internet_cafe", "hierarchy": []}, WEDGE_CATEGORIES["coffee"])
+
+
+def test_selection_order_is_deterministic_not_file_order():
+    """Several spikes take "the first N POIs". File order is not stable across downloads:
+    re-acquiring the Triangle at the routing extent changed both the row count and the ordering,
+    which would have silently changed *which* three groceries an experiment used — making a
+    re-measurement non-comparable for a reason nothing recorded."""
+    import geopandas as gpd
+    from shapely.geometry import Point
+
+    from locfinder.places.categories import select_overture
+
+    rows = [
+        {"id": "c", "taxonomy": {"primary": "grocery_store", "hierarchy": ["grocery_store"]}},
+        {"id": "a", "taxonomy": {"primary": "grocery_store", "hierarchy": ["grocery_store"]}},
+        {"id": "b", "taxonomy": {"primary": "grocery_store", "hierarchy": ["grocery_store"]}},
+    ]
+    g = gpd.GeoDataFrame(rows, geometry=[Point(0, i) for i in range(3)], crs="EPSG:4326")
+    assert list(select_overture(g, "grocery")["id"]) == ["a", "b", "c"]
+    # the reverse input gives the same answer, which is the whole point
+    assert list(select_overture(g.iloc[::-1], "grocery")["id"]) == ["a", "b", "c"]
