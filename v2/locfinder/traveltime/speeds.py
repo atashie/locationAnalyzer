@@ -132,3 +132,16 @@ def symmetrise(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
 def access_speed_mps(mode: str) -> float:
     base = DEFAULT_DRIVE_FRICTION_MPH * MPH_TO_MPS if mode == "drive" else MODE_SPEED_MPS[mode]
     return ACCESS_SPEED_FACTOR[mode] * base
+
+
+def max_speed_mps(mode: str) -> float:
+    """The fastest speed this model can assign for `mode`, over every edge and the access leg.
+
+    Used to turn an off-network distance into a sound lower bound on travel time (`status.py`).
+    `access_speed_mps` is deliberately *not* that bound: the access factors are all below 1, so an
+    access-speed estimate exceeds the time a journey covering the same distance on a road would
+    take, and an over-estimate used as a lower bound would exclude cells that should be unknown.
+    """
+    if mode == "drive":
+        return max(DRIVE_FRICTION_MPH.values()) * MPH_TO_MPS
+    return max(MODE_SPEED_MPS[mode], access_speed_mps(mode))

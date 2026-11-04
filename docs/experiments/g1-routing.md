@@ -544,3 +544,51 @@ this list is done, the product's honest claim is the one already in the design: 
 - timings (s): {"load_graph_s": 33.38, "prepare_graph_s": 41.99, "csr_s": 3.42, "snap_pois_s": 1.41, "edge_index_s": 0.0, "dijkstra_s": 3.56, "snap_s": 3.24}; total 87.0
 - profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
 
+
+### S0 status provenance on the shipped layer: grocery / walk (2026-11-04 08:48:02)
+
+- graph after preparation: 3046 components; kept 539814 nodes (97.5%), dropped 13608; **1 strongly connected component(s)**
+- destinations: 417 nodes from 452 places (0 beyond the 300 m snap bound)
+- nodes unreached by the unbounded cost search: 0 of 539,814 (0.0000%)
+- `Surface.validate()` passes on 330,502 cells
+
+| status | cells | share |
+|---|---|---|
+| `OK` | 253,679 | 76.7557% |
+| `OFF_NETWORK` | 57,541 | 17.4102% |
+| `BEYOND_HORIZON` | 19,282 | 5.8342% |
+
+- against the committed `own_triangle_grocery_walk.npy`: finiteness identical=**True**, max abs diff 0.000244 s (the artifact is float32, so a sub-millisecond difference is quantisation)
+
+- profile `speeds-v0+dd5ef0bc1beb42e4`, grid `grid-v0+7ab61db26b3cc98e`
+
+
+### S0 status provenance and the H2 bracket: grocery / walk (2026-11-04 09:00:58)
+
+- graph after preparation: 3046 components; kept 539814 nodes (97.5%), dropped 13608; **1 strongly connected component(s)**
+- destinations: 417 nodes from 452 places (0 beyond the 300 m snap bound)
+- nodes unreached by the unbounded cost search: **0** of 539,814
+- `build_layer_surface(...).validate()` passes on 330,502 cells
+
+| status | cells | share |
+|---|---|---|
+| `OK` | 253,679 | 76.7557% |
+| `OFF_NETWORK` | 57,541 | 17.4102% |
+| `BEYOND_HORIZON` | 19,282 | 5.8342% |
+
+- against the committed `own_triangle_grocery_walk.npy`: finiteness identical=**True**, max abs diff 0.000244 s (the artifact is float32, so a sub-millisecond difference is quantisation)
+
+**The H2 bracket.** `cost_selected` (shipped) minus `time_min` (minimum over destinations, access cost ignored). The shipped surface is an upper bound, so the gap is where a category criterion could exclude a cell that a qualifying destination would have satisfied.
+
+- comparable cells 253,679; differing by more than 1 s **23,468 (9.2511%)**
+- where they differ: median **37.7 s**, p90 129.7 s, max 668.6 s
+
+| threshold | cells excluded by the shipped surface that the lower bound includes | share of passing cells |
+|---|---|---|
+| 10min | 202 | 0.8332% |
+| 15min | 325 | 0.6865% |
+| 25min | 340 | 0.3656% |
+| 45min | 256 | 0.1599% |
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
+

@@ -32,7 +32,7 @@ import numpy as np
 import shapely
 from shapely.geometry import LineString
 
-from .speeds import access_speed_mps
+from .speeds import access_speed_mps, max_speed_mps
 
 _NODE_EPS = 1e-6  # normalized fraction below which a point is "at" the node
 
@@ -114,30 +114,27 @@ class EdgeIndex:
         )
 
 
-def cell_seconds_from_arrival(
+@dataclass
+class _Snapped:
+    """The geometric match and the on-network part of the journey, shared by both public entry
+    points so the branch arithmetic exists in exactly one place."""
+
+    access_m: np.ndarray
+    network: np.ndarray      # seconds on the network from the matched point, inf if unavailable
+    s_idx: np.ndarray
+    e_idx: np.ndarray
+    relevant_s: np.ndarray   # whether the start node's arrival time could have been used
+    relevant_e: np.ndarray   # whether the end node's arrival time could have been used
+
+
+def _snap_network(
     idx: EdgeIndex,
     T: np.ndarray,
-    xs: np.ndarray,
-    ys: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
     *,
-    mode: str,
-    max_access_m: float,
-    node_cost: np.ndarray | None = None,
-    cutoff_s: float | None = None,
-) -> np.ndarray:
-    """Seconds from each (x, y) metre point to the nearest destination, given node arrival times T
-    (inf = unreachable). Points farther than `max_access_m` from any edge are inf. Never NaN.
-
-    `node_cost`: the node-level selection costs that produced T. When given, the forward/backward
-    branch is chosen on cost and the chosen branch's **time** is returned, so the cell agrees with
-    the node search. When omitted, selection falls back to time, which is correct only if nothing is
-    penalised.
-
-    `cutoff_s`: applied to the FINAL time, after the off-network access leg, so the advertised
-    budget is the one actually enforced (Codex pass-6 H1).
-    """
-    x = np.asarray(xs, dtype=np.float64).ravel()
-    y = np.asarray(ys, dtype=np.float64).ravel()
+    node_cost: np.ndarray | None,
+) -> _Snapped:
     pts = shapely.points(x, y)
     nearest = idx.tree.nearest(pts)
     geoms = idx.geoms[nearest]
@@ -180,8 +177,115 @@ def cell_seconds_from_arrival(
         network = np.where(take_end, time_end, time_start)
         network = np.where(np.isfinite(cost_end) | np.isfinite(cost_start), network, np.inf)
 
-    total = network + access_m / access_speed_mps(mode)
-    total = np.where(access_m > max_access_m, np.inf, total)
+    # Which endpoint could have supplied the answer. A one-way edge offers only one, so the other
+    # node's reason explains nothing about this cell; at a node, that node always counts.
+    return _Snapped(
+        access_m=access_m,
+        network=network,
+        s_idx=s_idx,
+        e_idx=e_idx,
+        relevant_s=np.isfinite(rev_t) | at_start,
+        relevant_e=np.isfinite(fwd_t) | at_end,
+    )
+
+
+def cell_seconds_from_arrival(
+    idx: EdgeIndex,
+    T: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    *,
+    mode: str,
+    max_access_m: float,
+    node_cost: np.ndarray | None = None,
+    cutoff_s: float | None = None,
+) -> np.ndarray:
+    """Seconds from each (x, y) metre point to the nearest destination, given node arrival times T
+    (inf = unreachable). Points farther than `max_access_m` from any edge are inf. Never NaN.
+
+    `node_cost`: the node-level selection costs that produced T. When given, the forward/backward
+    branch is chosen on cost and the chosen branch's **time** is returned, so the cell agrees with
+    the node search. When omitted, selection falls back to time, which is correct only if nothing is
+    penalised.
+
+    `cutoff_s`: applied to the FINAL time, after the off-network access leg, so the advertised
+    budget is the one actually enforced (Codex pass-6 H1).
+
+    Returns seconds only. `cell_arrival_with_provenance` returns the same numbers plus *why* a cell
+    has none, which is what a published layer needs (see `locfinder/status.py`).
+    """
+    x = np.asarray(xs, dtype=np.float64).ravel()
+    y = np.asarray(ys, dtype=np.float64).ravel()
+    snapped = _snap_network(idx, T, x, y, node_cost=node_cost)
+    total = snapped.network + snapped.access_m / access_speed_mps(mode)
+    total = np.where(snapped.access_m > max_access_m, np.inf, total)
     if cutoff_s is not None:
         total = np.where(total > float(cutoff_s), np.inf, total)
     return total.reshape(np.shape(xs))
+
+
+def cell_arrival_with_provenance(
+    idx: EdgeIndex,
+    T: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    *,
+    mode: str,
+    max_access_m: float,
+    horizon_s: float,
+    node_reason: np.ndarray,
+    node_cost: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """`(seconds, reason, min_possible_s)` — the same times as `cell_seconds_from_arrival` plus the
+    cause of every missing one, as `locfinder.status.Reason` codes.
+
+    `horizon_s` is the layer's single built horizon: it is both the per-cell cutoff and, for a
+    bounded engine, the contour the node search was run to. One number, so "past the horizon" means
+    one thing.
+
+    `node_reason` comes from `status.node_reasons(T, engine, search_bounded=...)`. It is what
+    makes `NO_PATH` and
+    `BEYOND_HORIZON` distinguishable here: only the caller knows whether its search was exhaustive.
+
+    `min_possible_s` is a sound lower bound on the time this model would have reported, which turns
+    some missing values into *known* criterion failures rather than unknowns (see `status.py`).
+    """
+    from ..status import Reason  # local: status imports nothing from traveltime, keep it that way
+
+    x = np.asarray(xs, dtype=np.float64).ravel()
+    y = np.asarray(ys, dtype=np.float64).ravel()
+    snapped = _snap_network(idx, T, x, y, node_cost=node_cost)
+    access_s = snapped.access_m / access_speed_mps(mode)
+    total = snapped.network + access_s
+    off = snapped.access_m > max_access_m
+    # "a route was found but it is too long" requires a route: an infinite network part also
+    # satisfies `total > horizon_s`, and letting it through here would relabel every unreachable
+    # cell as merely past the horizon.
+    over = ~off & np.isfinite(snapped.network) & (total > float(horizon_s))
+
+    nr = np.asarray(node_reason)
+    beyond_node = (snapped.relevant_e & (nr[snapped.e_idx] == Reason.BEYOND_HORIZON)) | (
+        snapped.relevant_s & (nr[snapped.s_idx] == Reason.BEYOND_HORIZON)
+    )
+    unreached = ~off & ~np.isfinite(snapped.network)
+
+    reason = np.full(total.shape, np.int8(Reason.OK), dtype=np.int8)
+    # Order matters only in that each branch is disjoint from the ones after it. An off-network
+    # cell is off-network whatever its (unusable) nearest edge says.
+    reason = np.where(unreached & ~beyond_node, np.int8(Reason.NO_PATH), reason)
+    reason = np.where(unreached & beyond_node, np.int8(Reason.BEYOND_HORIZON), reason)
+    reason = np.where(over, np.int8(Reason.BEYOND_HORIZON), reason)
+    reason = np.where(off, np.int8(Reason.OFF_NETWORK), reason)
+
+    seconds = np.where(reason == Reason.OK, total, np.inf)
+    # Every cell's journey covers at least its straight-line distance to the network, at no more
+    # than the model's fastest speed. A tighter bound is available and sound for this model -- the
+    # access leg is charged at `access_speed_mps`, which is slower -- but it is deliberately not
+    # used: that leg is a straight line over unmapped ground, and the tighter bound would use the
+    # fiction to exclude households rather than call them unknown (Codex pass-8 L2).
+    min_possible = snapped.access_m / max_speed_mps(mode)
+    min_possible = np.where(reason == Reason.BEYOND_HORIZON, float(horizon_s), min_possible)
+    min_possible = np.where(reason == Reason.NO_PATH, np.inf, min_possible)
+
+    shape = np.shape(xs)
+    return seconds.reshape(shape), reason.reshape(shape), min_possible.reshape(shape)
