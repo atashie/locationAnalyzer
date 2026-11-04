@@ -1179,3 +1179,74 @@ They cancel near the sample's median access distance of about 31 m, which is why
 
 **What this changes.** The Phase 0 verdict read this comparison as evidence that our walk *speed model* is unbiased against Valhalla. It is better described as two biases that happen to offset. The on-network comparison is the one that speaks to the speed model, and it says we are around 10 s optimistic at a median journey of about 22 minutes — under 1%, so the verdict's direction survives, but 'unbiased' overstates it, and the memo's own caveat still applies: Valhalla's default pedestrian speed was 1.411 m/s against our 1.400, so neither number speaks to real walking times. `ACCESS_SPEED_FACTOR` remains an unmeasured prior, and it is now the larger term of the two.
 
+
+### S1 follow-up: what causes the drive gap (2026-11-04 11:27:38): grocery / drive, 3 POIs
+
+The gap was established at the expansion's own nodes (+50 s, 92.5% of nodes) with no grid, no access leg and no interpolation, and walk shows +0.0 s — so it is not the adapter. The proposed mechanism was auto costing's turn and stop penalties. This discriminates it with a quantity the tree already carries: cumulative **distance**.
+
+`/expansion` gives the tree's own path length from a node to the destination; `/route` from the same node gives the router's. Same length with different time means the two agree on the path and disagree on the time charged — cost accounting. Different length means they choose different paths — search or pruning, not accounting.
+
+| arm | n | time gap (median) | distance gap (median) | same path | time gap where same path | where different |
+|---|---|---|---|---|---|---|
+| engine defaults | 34 | **+162.8 s** | +0.0 m | 32.4% | +205.8 s | +65.6 s |
+| manoeuvre/stop penalties zeroed | 36 | **+87.7 s** | -3376.5 m | 11.1% | +118.7 s | +87.7 s |
+
+Positive = the tree's value is larger than the router's.
+
+
+### S1 follow-up: what causes the drive gap (2026-11-04 11:31:32): grocery / drive, 3 POIs
+
+The gap was established at the expansion's own nodes (+50 s against `sources_to_targets`, 92.5% of nodes) with no grid, no access leg and no interpolation, and walk shows +0.0 s — so it is not the adapter. The proposed mechanism was auto costing's turn and stop penalties. Three controls here, on edge far-ends sampled from the tree itself:
+
+1. **Does the reference agree with itself?** `/route` and `sources_to_targets` are both "the router", and the node test used the matrix. If they disagree, the size of the gap depends on which one is picked.
+2. **Same path or different?** `/expansion` carries cumulative **distance**, so the tree's own path length is comparable with `/route`'s. Same length, different time ⇒ cost accounting. Different length ⇒ different path choice.
+3. **Do the penalties explain it?** Re-run both sides with the manoeuvre, gate, toll, border and service penalties zeroed — and nothing else, since a preference such as `use_living_streets` moves the chosen path instead (an earlier arm did that and shifted the median length by 3.4 km, which made it uninterpretable).
+
+| | engine defaults | penalties zeroed |
+|---|---|---|
+| n | 54 | 49 |
+| tree − matrix | +131.0 s | +64.0 s |
+| tree − route | +130.2 s | +63.5 s |
+| **route − matrix** | +0.6 s | +0.5 s |
+| route − matrix, p90 absolute | 0.9 s | 1.0 s |
+| distance gap (tree − route) | -3028.5 m | -3470.0 m |
+| distance gap under 1 m | 3.7% | 2.0% |
+| same path within 25 m / 1% | 13.0% | 8.2% |
+| tree − route where same path | +205.6 s | +233.3 s |
+| tree − matrix where same path | +206.0 s | +235.5 s |
+
+Positive = the first term is larger. These are medians over a small sample of tree-internal edge far-ends with cumulative duration above 120 s, so they describe this cohort, not the grid.
+
+
+### S1 follow-up: the drive gap is destination selection, not penalties (2026-11-04 11:35:19): grocery
+
+S1.4 measured a +50 s conservative gap for drive at the expansion's own nodes — no grid, no access leg, no interpolation — while walk showed +0.0 s, and I proposed auto costing's turn and stop penalties as the mechanism. **That hypothesis was wrong.**
+
+`/expansion` is a **multi-source** reverse search: for a node it reports the time along the **cost**-optimal path to whichever POI is cost-nearest, while the matrix minimum reports the **smallest time** over the per-pair cost-optimal paths. Those differ exactly when the cost-nearest POI is not the time-nearest. The prediction is that with one destination the gap must vanish:
+
+| mode | POIs | n | tree − matrix (median) | p90 absolute |
+|---|---|---|---|---|
+| drive | 1 | 53 | **+0.0 s** | 89.8 s |
+| drive | 3 | 54 | **+131.0 s** | 278.8 s |
+| walk | 1 | 56 | +11.5 s | 293.5 s |
+| walk | 3 | 51 | +6.0 s | 472.0 s |
+
+Drive collapses from a large gap at three destinations to **zero at one**. Walk barely moves, which is the second prediction: for pedestrians cost and duration nearly coincide, so the cost-nearest destination is also the time-nearest one. Valhalla's `cost` exceeds its `duration` on **100%** of drive features (median cumulative 264 s), which is what makes the two selections diverge there.
+
+**Controls that rule out the alternatives.**
+
+| | engine defaults | penalties zeroed |
+|---|---|---|
+| n | 54 | 49 |
+| tree − matrix | +131.0 s | +64.0 s |
+| **route − matrix** | +0.6 s | +0.5 s |
+| route − matrix, p90 absolute | 0.9 s | 1.0 s |
+| same path within 25 m / 1% | 13.0% | 8.2% |
+| tree − matrix where same path | +206.0 s | +235.5 s |
+
+`route − matrix` is under a second, so **the reference agrees with itself** and the choice between `/route` and `sources_to_targets` was not the confound. The gap persists where the tree and the router agree on path length, so it is not path choice within a pair either. Zeroing the penalties halves it — consistent, because narrowing the cost-to-duration divergence makes the two destination selections agree more often — but it cannot isolate accounting from selection, since penalties drive both.
+
+**What this means.** The expansion reconstruction is faithful: with a single destination it matches the router at the median. The gap is the **same phenomenon as Codex pass-8 H2**, one level up — a surface built from a multi-destination search holds the time to the *cost*-nearest destination, so it is an **upper bound** on `min_d t(cell → d)` rather than that minimum. Category criteria on it can produce false exclusions and never false inclusions. The two findings should be reported as one, and the 'drive primitive is +50 s biased' framing in the earlier S1 write-up is **withdrawn**: the primitive is not biased, the comparison was between two different quantities.
+
+Still open: the walk gap is not zero either (+6 to +12 s at the median with a p90 in the hundreds of seconds on this cohort), and those tails remain unexplained — see pass-9 H4.
+
