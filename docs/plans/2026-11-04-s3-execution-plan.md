@@ -1,393 +1,332 @@
-# S3 execution plan — building the instrument the measurement design predeclares
+# S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 2, 2026-11-04**, rewritten after Codex pass 15 found the previous revision "not fit to
-execute as written" — eight High and ten Medium defects, three of them introduced by the plan itself
-while trying to make revision 2 of the design executable.
-**Branch:** `v2-rethink` · **Head:** `ab01ffa`
+**Revision 3, 2026-11-05.** Revision 2 was found "not fit to execute as written" (Codex pass 16,
+18 defects), and the three proposals written to repair it were reviewed at pass 17: one rejected,
+two adopted with changes. This revision implements **design revision 4**, which is the operative
+document — where this plan and that design differ, the design wins and this plan is wrong.
 
-**What this executes:** [`2026-11-04-s3-measurement-design.md`](./2026-11-04-s3-measurement-design.md)
-**revision 3**, which is the operative document. Where this plan and that design differ, the design
-wins and this plan is wrong.
+**Branch:** `v2-rethink`
 
-**What changed from revision 1 of this plan.** Revision 1 proposed three "gates" where the design
-could not be executed as written; all three were confirmed real, and the owner has now settled them
-along with the question revision 1 deferred. The design absorbed those answers, so this plan no
-longer proposes design changes — it implements them. The substantive differences:
+**What changed in kind.** Revision 2 specified a computation in prose and pass 16 found six High
+defects of the form "the prose says X and the code would do Y". But the diagnosis I drew from that —
+that fixture-first implementation would have caught them all — did not survive review: *"a program
+can faithfully implement each defective instruction"*, and my own bootstrap-widening and E3 fixtures
+are examples of fixtures that would have **enforced** a defect. So this plan does not merely move
+prose into code. It builds the **five frozen artifacts** of design §12, in which the normative
+decision rules stay in the design, the procedure lives in a versioned reference implementation, and
+the expected answers come from a conformance suite whose cases are derived **independently** of that
+implementation.
 
-- **T2 is deleted.** The 2 km block grid, the ≥5-points pooling rule and the block bootstrap are gone
-  with the design effect. Revision 1's pooling-termination fix would have produced a degenerate
-  bootstrap — the identical dataset in all 2,000 replicates, reported as a zero-width interval.
-- **T5 is substantially larger**, because coordinate-based destination attachment, a pre-collapse
-  time projection and bound metadata are all now required rather than assumed.
-- **The sample is 2,600 origins, not 1,500**, because diagnostics A and B are per threshold.
-- **The dry run is replaced** by fixtures, then a separate development sample, then a freeze.
-- **Three tasks are added** for work revision 1 left unassigned: E3 ingestion, the grid comparison,
-  and the encoding freeze's measurements.
+**The prohibition that replaces revision 2's slogan.** Revision 2 said "any number this plan appears
+to add is a defect", which is untenable — fixture values and implementation references are legitimate
+additions. The rule is: **this plan may not change an estimand, an allocation, an acceptance
+threshold, an uncertainty convention, or the adaptation and selection policy.** Those require a
+design amendment with a §13 row.
 
 ---
 
 ## 1. Scope
 
-**In:** walk, grocery, Triangle, the 100 m grid, *T* ∈ {10, 15, 25, 45} minutes, frames B and C, E1
-and E2, the four diagnostics, and the encoding freeze now that the maximum duration is decided.
+**In:** walk / grocery / Triangle, the 100 m grid, *T* ∈ {10, 15, 25, 45}, frames B and C, E0, E1,
+E2, the four diagnostics, the conformance suite, the wire-format migration, and the encoding freeze.
 
 **Out:**
 
-- **drive, bike, transit** — no Triangle-scale layer exists. Verified: the walk surface, its reason
-  raster, buildings-per-cell and one-way mask are all (514, 643); every drive, bike and Valhalla
-  layer in `v2/data/layers/` is (401, 550) — the earlier, smaller slice. So §8's "every published
-  mode and threshold must pass" **cannot** be satisfied now, for the plain reason that three of the
-  four modes have nothing to verify. The §8 verdict is reported **for walk / grocery / Triangle only
-  and named as such**, and the gate is re-run per mode as layers land in S6. Describing the layer set
-  as verified on one mode is the averaging-away §8's last sentence forbids.
-- **walking the E3 journeys** — the owner's. T8 builds the ingestion and scoring so the result is not
-  a hand calculation.
-- **any claim about households** — frame B is a frame of **structures**.
+- **drive, bike, transit.** No Triangle-scale layer exists: the walk surface, its reason raster,
+  buildings-per-cell and one-way mask are all (514, 643), while every drive, bike and Valhalla layer
+  in `v2/data/layers/` is (401, 550) — the earlier slice. The §8 verdict is reported **for walk /
+  grocery / Triangle only and named as such**, and the gate re-runs per mode as layers land in S6.
+- **walking the E3 journeys** — the owner's. T9 builds ingestion and scoring so the verdict is
+  mechanical rather than a hand calculation.
+- **setting the coverage requirement** — the owner's. T4 computes and reports E0; design §8 blocks
+  only the coverage claim, so nothing here waits on it.
+- **any claim about households.** Frame B is a frame of structures.
 
 ---
 
 ## 2. Tasks
-
-Ordering rationale: T1 is fully specified and its correctness is checkable against closed forms, so
-it is first and it is the cheapest place to discover a misreading. T5 is the expensive and
-ambiguous one, so it is deliberately not first, and by the time it starts the verdict arithmetic it
-feeds already has tests. T6 cannot begin until the instrument freezes (design §10).
 
 ### T1 — `v2/locfinder/measure/stats.py`
 
 **Depends on:** nothing.
 
 ```python
-def clopper_pearson_upper(failures: int, n: int, *, confidence: float = 0.95) -> float: ...
-def tolerated_failures(n: int, threshold: float, *, confidence: float = 0.95) -> int: ...
-def bootstrap_ci(values, *, replicates: int = 2000, seed: int,
-                 statistic=np.median) -> tuple[float, float]: ...
+def clopper_pearson_upper(failures: int, n: int, *, confidence: float = 0.95) -> float
+def clopper_pearson_lower(failures: int, n: int, *, confidence: float = 0.95) -> float
+def tolerated_failures(n: int, threshold: float, *, confidence: float = 0.95) -> int
+def srs_variance(p: float, n: int, N: int) -> float                      # p(1-p)/n * (N-n)/(N-1)
+def two_stage_variance(q: np.ndarray, n: int, N: int) -> float           # design §6
+def percentile_bootstrap(values, *, replicates: int = 2000, seed: int,
+                         statistic=np.median, confidence: float = 0.95
+                         ) -> tuple[float, float] | None                # None => not estimable
 ```
 
-No DEFF, no `effective_n`, no block machinery (design §5). `bootstrap_ci` resamples **points**.
+Both directions of the exact bound are required — design §4's screening needs the lower one and
+revision 2 specified only the upper. No DEFF, no `effective_n`, no block machinery.
 
-**Tests.** Revision 1's fixtures were the design's zero-failure table alone, and pass 15 produced a
-wrong implementation that satisfies every one of them:
+**Tests.** Revision 2's fixtures were the design's zero-event table alone, and pass 15 produced
+`k/n + (1 - k/n) * (1 - 0.05 ** (1/n))`, which satisfies every one of them plus the endpoints and
+monotonicity while giving **0.9943% at *k* = 1, *n* = 400 against the correct 1.1804%** — enough to
+flip an E1b verdict. So:
 
-```python
-k / n + (1 - k / n) * (1 - 0.05 ** (1 / n))     # matches all zero-event values,
-                                                 # the endpoints and monotonicity
-```
-
-At *k* = 1, *n* = 400 it gives **0.9943%** against the correct **1.1804%** — enough to flip an E1b
-verdict. So the tests are:
-
-- **Non-zero fixtures**, independently computed: *k* = 1, 2, 3, 4 at *n* = 400 and 500, against
-  values from the Beta quantile relation `p_u = BetaInv(1 − α, k + 1, n − k)`, which is a different
-  route to the number than a search over the binomial tail.
-- **Two closed forms at zero failures**, both independent of the table: exact is
-  `1 − α**(1/n)`, and Wilson at zero events is `z²/(n + z²)`.
-- **Confidence-level variation** — 90% and 99% must move the bound in the right direction and amount.
-- `failures == n` is exactly 1.0; monotone in `failures`; anti-monotone in `n`.
-- **A stated rounding tolerance.** The design's printed table is rounded, so literal equality to its
-  decimals is not a correct numerical test; comparisons use `pytest.approx` at a declared tolerance.
-- `tolerated_failures(500, 0.01) == 1` and `tolerated_failures(500, 0.02) == 4`, which pins design
-  §8's stated consequence in code rather than in prose.
-- The bootstrap is reproducible from its seed, and its interval **widens** as the sample shrinks —
-  the property revision 1's single-block fallback destroyed.
-
-**Verification:** `pytest v2/tests/test_stats.py -v`.
+- **Non-zero fixtures from an independent route**: `BetaInv(1 − α, k + 1, n − k)` at *k* = 1…4 for
+  *n* = 400 and 500, compared with a **declared tolerance** because the design's printed table is
+  rounded and literal decimal equality is not a correct test.
+- **Two closed forms at zero failures**, independent of the table: exact `1 − α^(1/n)`; and Wilson at
+  zero events `z²/(n + z²)` — which is a check on *that* formula, **not** an expected value for the
+  Clopper–Pearson function.
+- `tolerated_failures(500, 0.01) == 1` and `(500, 0.02) == 4`, pinning design §8's stated
+  consequence in code.
+- Confidence-level variation at 90% and 99% moves both bounds in the right direction; the lower bound
+  is 0.0 at *k* = 0 and the upper is exactly 1.0 at *k* = *n*.
+- **The bootstrap is tested against an independently computed reference distribution**, plus seed
+  reproducibility and preserved pairing. **No width-monotonicity assertion** — it is false
+  (`[-1,0,1]` → `[-1,1]`; the smaller `[0,0]` → `[0,0]`), and revision 2 required it. Ties are
+  admissible and may give a degenerate interval; an empty or single-point domain returns
+  **not estimable**.
+- `srs_variance` and `two_stage_variance` against hand-computed values, including the case the wrong
+  formula gets wrong: with every cell half erroneous the two-stage variance is `0.25/n` at `n = N`,
+  **not zero**.
 
 ### T2 — `v2/locfinder/measure/frames.py`, plus frozen artifacts
 
 **Depends on:** T1.
 
-Design §1. Two frames, two seeded samples at ***n* = 500**, with digests.
+Design §1. Two SRSs at ***n* = 500***, digests, never overwritten.
 
-- **Frame B** from `v2/data/triangle/overture_buildings_accepted.parquet`. **Verified, not assumed:
-  522,160 rows (522,109 Polygon + 51 MultiPolygon) and 512,633 projected centroids inside the 100 m
-  grid.** Centroids computed **projected** to EPSG:32617, never in the geographic CRS.
-- **Frame C** over all 330,502 cells: SRS without replacement of cells, then **one uniformly random
-  point inside each sampled cell**.
+- **Frame B** from `overture_buildings_accepted.parquet`: 522,160 rows, **512,633** projected
+  centroids inside the grid — verified, and independently reproduced at pass 17 against the saved
+  buildings-per-cell raster.
+- **Frame C**: SRS of cells, then one uniform point inside each, **the two offsets drawn
+  independently**.
 
-```python
-@dataclass(frozen=True)
-class Frame:
-    kind: str                  # "buildings" | "cells"
-    points: np.ndarray         # (n, 2) float64, EPSG:32617
-    source_ids: np.ndarray     # building id, or flat cell index
-    seed: int
-    population_n: int          # 512,633 (measured) or 330,502
-    source_digest: str
-    digest: str
-```
+**Tests.** Revision 2's tests admitted centre-only placement; the replacement I wrote then admitted
+worse — marginal means and spreads accept `(u, u)` for both offsets, which over 100,000 draws gives
+correct marginals (means 49.9574 m, sd 28.8447 m) with **correlation 1**, every point on a diagonal.
+So the test is **not** a distributional check on marginals:
 
-Written to `v2/data/frames/frame_{b,c}_<digest8>.parquet` with a sibling `.json` manifest holding the
-seed, population count, source digest, sampling method and code version. **Never overwritten**: a
-new sample is a new digest.
+- **A deterministic RNG mapping oracle on an enumerated toy grid**: for a fixed seed the exact
+  expected (cell, offset) sequence is computed independently and compared element-wise. This pins
+  joint behaviour rather than sampling it.
+- **Enumerated-frame inclusion**: on a toy frame small enough to enumerate, every unit is reachable
+  and selection is uniform without replacement.
+- Fixed seeds and **declared tolerances** throughout; no "many seeded draws" with an unstated
+  parameter.
+- Frame C points fall inside the cell their flat index names, tested at the **first and last row**,
+  since the grid origin is `(x_min, y_max)` = (661900, 4003500) with `y_min` = 3952100 and rows
+  running **downward**.
+- Same seed reproduces bit-for-bit; the digest changes when any point changes.
 
-**Tests.** Revision 1's tests permitted frame C points always at cell **centres** — they are
-reproducible, inside distinct sampled cells, and satisfied every assertion. So:
-
-- **Reject centre-only placement**: over many seeded draws the within-cell offsets must cover the
-  cell, tested as a distributional property (offsets not constant, mean near the centre, spread
-  consistent with uniform) rather than by a single point's position.
-- **Reject a fixed building subset**: two seeds must select substantially different building ids, and
-  the selected ids' distribution must be consistent with uniform selection over the frame.
-- **Without replacement**: no repeated `source_ids`.
-- Frame C's points fall **inside** the cell their flat index names — the test that catches an
-  off-by-one in the index↔(row, col) conversion and sampling in the wrong CRS. Note the grid's
-  origin is `(x_min, y_max)` = (661900, 4003500) with **`y_min` = 3952100** and rows running
-  **downward** from `y_max`; the conversion is tested at the first and last row explicitly.
-- Same seed reproduces identical points bit-for-bit; the digest changes when any point changes.
-
-**Verification:** `pytest v2/tests/test_frames.py -v`, then build both artifacts and record digests.
-
-### T3 — `v2/locfinder/measure/comparator.py`
+### T3 — `v2/locfinder/measure/comparator.py` — the reference implementation
 
 **Depends on:** T2. **The task with the real risk in it.**
 
-Design §2 exactly, plus §7's bound bookkeeping.
+Implements design §2's decision rules. Built **fixture-first**, and the fixtures are T4's, derived
+from the design and from the three reviews' counterexamples rather than from this code.
 
-```python
-@dataclass(frozen=True)
-class PointResult:
-    point_xy: tuple[float, float]
-    objective1_min_time_s: float | None        # min over destinations of TIME
-    objective2_cost_path_time_s: float | None  # time along the COST-nearest path
-    float_surface_s: float | None
-    encoded_surface_s: float | None
-    independent_engine_s: float | None         # Valhalla, objective-2 analogue
-    product_outcome: Outcome                   # PASS | FAIL | UNKNOWN
-    product_reason: Reason
-    comparator_status: Reason
-    comparator_bound_kind: str                 # "unbounded" | "horizon" | "none"
-    comparator_bound_s: float | None
-    comparator_termination: str                # "exhausted" | "cutoff" | "error"
-    independent_status: Reason
-    independent_horizon_s: float | None
-    origin_access_m: float | None
-    diagnostic_memberships: tuple[str, ...]
-```
+Required shape, from design §2.3: **objective-specific views, correctly paired, never hybrid** —
+sharing immutable geometry and the spatial tree with per-objective weight views, or processing
+objectives sequentially. The real index holds **713,452 geometries** whose numeric arrays alone are
+**34.2 MB**, so two complete indices are not built; peak memory and build time are measured here.
 
-Three things revision 1 left wrong:
+What this task must get right, each with its conformance case in T4:
 
-**Destination attachment is by coordinate, with the connector modelled.** Revision 1 promised
-coordinates and admitted snapping. Measured: **549 of 550** groceries lie within the 300 m cap, with
-nearest-node distance **median 28.07 m, p90 45.71 m, maximum 478.66 m** — at 1.26 m/s that is 37 s at
-p90 and 380 s at the maximum, enough to change which destination wins. So each destination attaches
-at its nearest **position on the graph**, which may be a point along an edge; the partial edge is
-traversed at its own speed; the residual straight line is charged at the access speed and capped at
-`poi_snap_max_m` = 300 m; and the one over-cap destination is **excluded by identity in the run
-manifest**.
+| design rule | the defect it closes |
+|---|---|
+| objective 1 from time-selected views; objective 2 from cost-selected views | a hybrid gives 10.5 or 6 where the answers are 1.5 and 15 |
+| the normative **tie rule** (§2.4) | equal-cost coincident alternatives currently return 10 or 1 **on insertion order** |
+| partial-edge time, cost and **penalty apportionment**; direction legality | a one-way `u→v` origin at 0.8 cannot reach 0.2 directly |
+| same-edge traversal as a **candidate** competing with network routes | a direct 800 s traversal must lose to 100 + 1 + 100 = 201 s |
+| destination **eligibility** at 300 m, the eligible set recorded by identity | 549 of 550 eligible under edge attachment |
+| bound **metric, strictness, soundness** (§2.5) | a cost limit of 60 on an edge of time 1 / cost 121 must not fail *T* = 60 |
+| `NO_PATH` only from an unbounded search | `status.py` requires keyword-only `search_bounded` |
+| E2 pairs **cost-`argmin` then its time** on both engines | the wrong functional reports −9 s with identical engines |
+| the independent engine's **connectors made explicit** | a ~19 m residual is currently uncharged |
 
-**Objective 1 is computed from a pre-collapse time projection.** `graph_to_cost_time_csr()` keeps
-the cost-minimum parallel edge and its time, so its `time_csr` answers the wrong question —
-executed: parallel edges (time 1, cost 100) and (time 10, cost 10) give a true minimum of 1 and a
-`time_csr` answer of **10**. Objective 1 is projected from the multigraph **before** any collapse,
-and objective 2 reconstructs the cost-selected path and sums its time.
+### T4 — the conformance suite
 
-**Bound metadata is retained, so `NO_PATH` is earned and bounded failures are not discarded.** A
-bounded search may not report `NO_PATH` (`status.py` requires keyword-only `search_bounded`). But a
-search exhausted through *H* that reached nothing **does** establish failure for *T* ≤ *H*, so the
-verdict uses the sound lower bound rather than routing everything to unknown.
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.**
 
-**Tests.** Each is a constructed graph, because every §7 branch can be produced on demand there and
-cannot be guaranteed on real data:
+Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
+answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property
+checks — which **supplement** exact answers and never replace them, since even monotonicity is
+objective-specific: adding a *cheaper* destination correctly raises objective 2's reported time from
+10 to 100 s.
 
-- **The parallel-edge counterexample above**, which revision 1's "two objectives pick different
-  destinations" test would have passed while the implementation was wrong.
-- A destination **midway along an edge**; two destinations with **different connector lengths**; the
-  **over-cap rejected** destination; and origin and destination on the **same edge**, where the route
-  is the partial traversal and not a detour via either node.
-- The **one-way** case where origin→destination is routable and the reverse is not, pinning direction.
-- The access cap boundary at `max_access_m` either side.
-- **Every cell of §7's three-column table**, including all three product outcomes and the unknown row.
-- **`NO_PATH` refused** when the search was bounded; and a bounded-but-exhausted search **scored as a
-  known failure** for *T* ≤ *H* rather than as unknown.
+The suite is a frozen artifact with a digest (design §12).
 
-**Verification:** `pytest v2/tests/test_comparator.py -v`.
-
-### T4 — `v2/locfinder/measure/diagnostics.py`
+### T5 — `v2/locfinder/measure/diagnostics.py`
 
 **Depends on:** T2, T3.
 
-Design §4. Four **conditional simple random samples from frame B's population**, each restricted to
-its predicate, each reporting its own conditional rate with its own one-sided bound, never pooled.
+Design §4. Four **conditional SRSs from frame B's 512,633-structure population**, A and B drawn **per
+threshold** (150 each × 4), D1 and D2 at 200.
 
-| diagnostic | predicate | *n* |
-|---|---|---|
-| A boundary-adjacent | the cell is 4-adjacent to a cell with the opposite **product verdict** at *T* | 150 **per *T*** |
-| B within one encoding increment | reported value within 60 s of *T* | 150 **per *T*** |
-| D1 off-network | product reason `OFF_NETWORK` | 200 |
-| D2 beyond-horizon | product reason `BEYOND_HORIZON` | 200 |
-
-**Tests.** Revision 1 asserted `NODATA` is never "the opposite verdict", which **contradicts the
-layer contract**: `BEYOND_HORIZON` is a known FAIL wherever *T* ≤ *H*, and **14 `BEYOND_HORIZON`
-cells are 4-adjacent to a passing cell at *T* = 10**. So:
-
-- A is computed from **product verdicts**, and the 14-cell figure at *T* = 10 is reproduced as a
+- **A excludes `UNKNOWN` verdicts, not `OFF_NETWORK` reasons.** `OFF_NETWORK` is a genuine FAIL
+  where its bound exceeds *T* — **2,439 cells at *T* = 10, 298 at *T* = 15** — so those are eligible.
+  Revision 2's test asserted the opposite and contradicted the layer contract.
+- The **14 `BEYOND_HORIZON` cells 4-adjacent to a passing cell at *T* = 10** are reproduced as a
   cross-check.
-- `OFF_NETWORK` and product `UNKNOWN` are **not** boundary members.
-- 4-adjacency, not 8, on a hand-built raster with a known boundary.
-- D1 and D2 are disjoint; membership counts are reported per *T*; the design's building-reason
-  figures (**499,009 OK / 3,657 `OFF_NETWORK` / 9,967 `BEYOND_HORIZON`**) are reproduced.
-- A point satisfying several predicates **keeps every membership** through routing deduplication.
-- The conditional draw is uniform over the predicate's members and without replacement.
+- **D1 and D2 audit abstention**: the comparator at an abstaining point either confirms the
+  abstention or returns a definitive verdict the product declined to give. The latter is
+  **unwarranted abstention**, reported with its own conditional rate and interval.
+- The comparison against the population is **descriptive screening**, labelled as such, with
+  **zero-reference behaviour defined** and the word "distinguishable" unused.
+- Every membership survives routing deduplication.
 
-**Verification:** `pytest v2/tests/test_diagnostics.py -v`, plus a membership table per *T*.
+### T6 — the run manifest and persistence
 
-### T5 — the run manifest and persistence
+**Depends on:** T2, T3, T5.
 
-**Depends on:** T2, T3, T4.
+Design §12's final bullet. Revision 2's `PointResult` could not do this: one unkeyed
+`product_outcome` cannot represent four thresholds, and `OFF_NETWORK` at 250 m and 1,000 m share a
+reason while differing at *T* = 10.
 
-Design §11. Frame digests identify *points*, not the instrument, so the manifest additionally
-records digests of the **float raster, encoded raster, status raster, prepared graph and destination
-list**; the excluded destination's identity; every seed; code, profile and grid versions; and per
-point all of `PointResult`.
+Persisted **per point and per threshold**: product outcome, reason and bounds; per objective, the own
+comparator's status, bound metric, strictness and value; the independent engine's status, bound and
+horizon; the selected destination and its cost; path references; the origin's access distance **and**
+the product cell's own bound, which are different quantities; and every diagnostic membership.
 
-**Tests.** The report is **recomputable from saved outputs alone** — a test regenerates every number
-in T7's report from the persisted rows and asserts equality. A manifest missing any required digest
-is an error, not a warning.
+Manifest digests: float, encoded and status rasters; the prepared graph; eligible and selected
+destination lists; **the independent engine's tileset, version and costing configuration**; frame
+artifacts; seeds; code, profile and grid versions; and the conformance suite.
 
-### T6 — fixtures, development sample, freeze, certification
+**Test:** the report is regenerated from the saved bundle **with routing and the original source
+artifacts unavailable**. Revision 2's test would have passed by re-querying a live engine.
 
-**Depends on:** T1–T5.
+### T7 — development: everything that can change a measured quantity
 
-Design §10, in four steps that may not be reordered:
+**Depends on:** T1–T6. **All of it completes before the freeze** — revision 2 scheduled the encoding
+change after certification, violating the design's own freeze.
 
-1. **Fixtures.** Every §7 branch exercised on constructed graphs (T3). Branch coverage is **never** a
-   criterion on real data: genuine `NO_PATH` need not occur at all on the prepared walk graph.
-2. **Development sample**, own seed, **excluded from certification**. Used for shakedown, timing and
-   every outcome-driven fix. Success is **complete records** — each value a valid number or an
-   explicit reason-coded absence — not branch coverage, because `OFF_NETWORK` legitimately has no
-   comparator time.
-3. **Freeze** the product, comparator, frames, allocations, thresholds and analysis.
-4. **Certification**: frames B and C at *n* = 500 each, diagnostics 150 per threshold for A and B and
-   200 each for D1 and D2 — **2,600 origins** before deduplication. Run **once**. After the freeze no
-   certification outcome may change anything; if something must change, the result is void, the
-   change is logged in the design, and a fresh sample is drawn.
+1. **Conformance suite green** (T4) on constructed fixtures. Branch coverage is never a criterion on
+   real data: genuine `NO_PATH` need not occur on the prepared walk graph.
+2. **Development sample**, own seed, for shakedown and timing. Its observations are never substituted
+   for certification estimates. Success is **complete records** — every value a number or an explicit
+   reason-coded absence.
+3. **End-to-end benchmark.** Revision 2 estimated 1–3 s per Dijkstra and was 40× pessimistic
+   (measured 0.057 s), then used that false premise to authorise an E2 subsample. **E2 is collected
+   in full**, and no design change may cite computation before this benchmark exists. The costs to
+   measure are graph preparation, both objective views, attachment, cost-path reconstruction, and
+   ≈2,600 × 549 ≈ **1.43 M** independent pairs.
+4. **Candidate grid comparison (S3.1)** — the same frame-C points against the 200 m grid, holding
+   coordinates and destination attachment fixed so only the grid varies. Here, because its outcome
+   can influence selection.
+5. **The encoding and its wire format (S3.5).** 120 minutes, whole minutes, 121–254 a versioned
+   status plane — but **one code per reason is insufficient**, so the format carries the reason plus
+   the bound or horizon metadata its verdict needs, and the decoder implements the **verdict and
+   combination algebra**. Changed together: writer, exporter, `worker.js`, derived-layer transforms
+   and the manifest. Fix the two repository defects in the same change — the exporter discovers only
+   `<engine>_<category>_<mode>` and so **omits `own_triangle_grocery_walk.tif`**, and it targets the
+   401 × 550 slice while its padding helper scales every non-255 byte as a minute value. Legacy
+   dispatch is explicit, because `encode_minutes([121*60, 254*60])` still returns `[121, 254]`.
+   Status codes are never interpolated during reprojection.
+6. **Browser conformance tested in a browser** (design §8): PASS/FAIL/UNKNOWN decoding,
+   known-failure-beats-unknown, threshold and horizon boundaries, recomputation eligibility, every
+   failing criterion, and unavailable rendered distinctly from excluded. A Python round-trip cannot
+   protect the browser.
+7. **Phone decode latency and compressed transfer size** per candidate. Reference: the current
+   Triangle walk layer is 174 KB deflated.
+8. **Final diagnostic predicates fixed**, since A depends on product verdicts and B on the encoding
+   increment, so both move when the encoding does.
 
-**Compute.** Revision 1 estimated 1–3 s per unbounded Dijkstra and was **40× pessimistic** — measured
-**0.057–0.059 s** — so it then used that false premise to authorise an E2 subsample. **E2 is
-collected in full.** The remaining unknown is the end-to-end cost including graph preparation,
-attachment, the second objective, cost-path reconstruction, and 2,600 × 549 ≈ **1.43 M** Valhalla
-pairs. Step 2 **benchmarks the complete comparator** and reports it; no design change may be
-justified by computation before that measurement exists.
+### T8 — freeze, then certify
 
-### T7 — the report
+**Depends on:** T7.
 
-**Depends on:** T6.
+**Freeze** the five artifacts of design §12 with frames, allocations, thresholds and analysis. Then:
 
-`docs/experiments/s3-walk-grocery-measurement.md`:
+- **E0 as a census** (design §3) over every cell and threshold, by frame and reason, on the **frozen
+  published representation**. This also **recomputes the reference table in design §3**, which was
+  carried from pass 17 and cannot be reproduced from the saved rasters because
+  `cell_arrival_with_provenance` computes `min_possible_s` without saving it.
+- **Certification**: an **independent full-frame SRS** at *n* = 500 per frame plus the diagnostics —
+  **development points are not excluded from eligibility**, because excluding them would target the
+  complement of the development set while claiming all 512,633. Accidental overlap is permitted;
+  reusing a development *observation* is not.
+- **Every attempt's identity and outcome is retained**, and **one final attempt is prespecified**. At
+  *p* = 0.01 a single attempt meets E1b's count rule with probability 0.0398, so twenty attempts give
+  ≈55.6% of at least one pass at the boundary.
 
-- E1a and E1b per frame per *T*, point estimate and one-sided 95% exact upper bound, with the
-  **tolerated failure count** stated alongside so a near-miss is legible.
-- The §8 verdict per combination — PASS / FAIL / INCONCLUSIVE — with all 16 decisions shown and
-  **none averaged**, and an explicit note that these are **not** simultaneous 95% bounds.
-- The unknown bucket **bounded both ways**, with product reasons retained, and INCONCLUSIVE declared
-  where the bounds straddle a threshold.
-- The **paired selection gap** (objective 2 − objective 1) as its own signed distribution, since it
-  is inside E1 by construction and must be visible rather than exempted.
-- E2 as signed median and IQR with a point-bootstrap interval, plus the share exceeding one encoding
-  increment, paired **objective 2 against objective 2**.
-- Each diagnostic's conditional rate and bound, against the frame-B rate, with design §4's
-  factor-of-two **effect-size criterion** applied.
-- The full run manifest.
-- Zero-failure results as **"0 observed, 95% upper bound x%"**, never "0%".
-
-**Acceptance-boundary tests**, which revision 1 had none of: the verdict function is tested at
-exactly the threshold, immediately either side, and under direction-specific unknown bounds.
-
-**What the report may not say:** that the *layer set* is construction-verified (one mode); that
-building *service* is established (frame B now charges the origin connector and T3 charges the
-destination connector, which is a real advance over the pass-14 H2 nearest-node proxy, but the frame
-is still structures); that real-world accuracy is supported (E3); or anything containing the word
-"household".
-
-### T8 — E3 ingestion and scoring
+### T9 — E3 ingestion and scoring
 
 **Depends on:** T1.
 
-Revision 1 assigned the journeys to the owner and stopped, which left the design's falsification
-rule unimplemented. This task builds the small piece that makes the result mechanical:
+`score_e3(journeys)` implementing design §3 as a **disjunction**: `failed` if any journey exceeds its
+reported time by more than a factor of 1.5 **and** by more than 5 minutes, **or** if the median
+signed difference exceeds 25% of the median reported time; otherwise UNVERIFIED, never "supported".
 
-- A journey record: origin, destination, mode, departure, observed duration, the product's reported
-  time, and notes.
-- `score_e3(journeys)` implementing design §3 exactly: `failed` if **any** journey exceeds its
-  reported time by more than a factor of 1.5 **and** by more than 5 minutes, or if the median signed
-  difference exceeds 25% of the median reported time; otherwise **UNVERIFIED**, never "supported".
+**Tests.** Revision 2's fixture was impossible: it asserted that a journey 1.6× over but only 3
+minutes over does not fail, when for a single journey of reported 5 and observed 8 the **median limb
+fires** (3 > 25% of 5). So both limbs are tested independently **and** the complete OR is tested on
+that singleton; an unwalked record leaves UNVERIFIED and **can never erase a failure** established by
+completed journeys.
 
-**Tests.** Both limbs of the conjunction independently — a journey 1.6× over but only 3 minutes over
-does **not** fail, and one 6 minutes over at 1.2× does **not** fail; the median limb at either side
-of 25%; an empty set returns UNVERIFIED; and an **unwalked** planned journey leaves UNVERIFIED and is
-never scored as agreement.
-
-### T9 — the grid comparison (S3.1)
-
-**Depends on:** T3, T6.
-
-Re-evaluate the **same frame C points** against the 200 m grid. Cheap once T3 exists, and the reason
-frame C samples ground rather than cell centres. The stage context also requires **matched
-destination entrances**, so the comparison holds the destination attachment of T3 fixed and varies
-only the grid — otherwise resolution, alignment and attachment move together, which is the confound
-S3.1 exists to avoid.
-
-### T10 — the encoding freeze (S3.5)
-
-**Depends on:** T6, T7.
-
-The maximum duration is decided (design §9): **120 minutes, whole minutes, codes 121–254 a versioned
-status plane**. No surface rebuild is required, since the walk surface's finite maximum is
-119.99998 minutes.
-
-- The **writer, exporter and browser decoder change together**. `v2/spikes/g3-render/worker.js:144`
-  recognises exactly one sentinel today, which is why the browser cannot separate **57,541
-  off-network cells from 16,209 beyond-horizon ones**; it must recognise the status plane.
-- **Test actual browser decoding.** A Python round-trip test cannot protect the browser.
-- **Version the format.** Legacy codes 251–254 are valid minute values in artifacts on disk; they are
-  rebuilt or namespaced, never reinterpreted.
-- Categorical status codes must **never be interpolated** during reprojection.
-- Measure **compressed transfer size and phone decode latency** per candidate, not size alone — a
-  requirement revision 1 dropped. Reference: the current Triangle walk layer is 174 KB deflated at
-  uint8 whole minutes.
-- **Recompute diagnostic membership**, because A is defined on product verdicts and B on one encoding
-  increment, so both move when the encoding does. Then re-run T7's E1 arithmetic. A quantization
-  change can be re-derived from retained float values; a horizon change could not, which is why the
-  decision was taken before measuring.
-
-### T11 — the extraction-truncation diagnostic
+### T10 — the extraction-truncation diagnostic
 
 **Depends on:** T3.
 
-The layer contract assigns this to S3 and revision 1 had no task for it. A route whose true path
-leaves the routing bbox is truncated, and the contract declines to give it a per-cell status because
-the pipeline discards the path's node sequence — so it is a **build-time diagnostic**: the share of
-comparator routes whose path touches the routing-buffer boundary, reported as a bound on how much of
-the measurement could be affected. The comparator retains paths, so this is nearly free here and
-impossible later.
+A **warning diagnostic**, not a bound. Revision 2 claimed boundary-touch share bounds extraction
+damage; it cannot — a slow interior path survives while a fast path through outside is gone, giving
+**0% boundary touch and 100% affected**. This reports a declared boundary band and a missing-path
+denominator. A real bound needs a larger-extract comparison, which is named as the way to get one and
+is not attempted here.
+
+### T11 — the report
+
+**Depends on:** T8.
+
+`docs/experiments/s3-walk-grocery-measurement.md`:
+
+- **E0 by frame, threshold and reason**, as a census with no interval, and the coverage claim marked
+  **BLOCKED** pending the owner's requirement.
+- **E1a and E1b per frame per *T*** as full-frame joint rates, with point estimate, one-sided 95%
+  exact upper bound, and the **tolerated failure count** alongside so a near-miss is legible — and an
+  explicit statement that tolerance is **not** power (at true rates 0.001/0.005/0.01 the pass
+  probability at *n* = 500 is 90.99%/28.65%/3.98%).
+- The §8 verdict per combination with all 16 shown, **none averaged**, and a note that these are
+  **not** simultaneous 95% bounds.
+- The **comparator-unresolved** bucket bounded **in one direction only** per design §7, with
+  INCONCLUSIVE declared where the bounds straddle a threshold.
+- **Unwarranted abstention** from D1 and D2.
+- The **selection gap** (objective 2 − objective 1) as its own signed distribution, since it is
+  inside E1 by construction.
+- **E2** on its declared jointly-finite domain, per frame, with denominators and a status
+  cross-tabulation — never silently dropping pairs — and its bootstrap interval.
+- Each diagnostic's conditional rate and bound as **descriptive screening**.
+- The full manifest, and **run failures** recorded rather than deleted.
+- Zero-failure results as **"0 observed, 95% upper bound x%"**, never "0%".
+
+**Acceptance-boundary tests**: the verdict function at exactly the threshold, immediately either
+side, and under direction-specific unresolved bounds.
+
+**What the report may not say:** that the layer *set* is construction-verified (one mode); that
+**coverage** is certified (blocked); that building *service* is established (both connectors are now
+modelled, which is a real advance over the pass-14 nearest-node proxy, but the frame is structures);
+that real-world accuracy is supported (E3 returns UNVERIFIED absent a counterexample); or anything
+containing the word "household".
 
 ---
 
 ## 3. What would invalidate this plan
 
-- **The development sample shows failure rates near 0.5 rather than near 0.** The allocations are
-  sized for small rates; at *p* near 0.5 the bound is far wider than the thresholds. The design's
-  instruction is that the result **says so**. Re-sizing is a design change with a change-log row, and
-  it voids the certification sample.
-- **The end-to-end benchmark shows E2 is infeasible in full.** Then the subsample is a design
-  amendment with its size, frames, diagnostic coverage and interval procedure fixed **before** it is
-  drawn — not a run-time decision.
-- **The measured frame-B population differs from 512,633.** Verified equal today; if a re-acquisition
-  changes it, the discrepancy is the finding.
-- **The comparator and the float surface disagree pervasively rather than at the margins.** That is
-  E1 doing its job: a defect in the pipeline, not the measurement — and S3 stops while S2 reopens.
-- **Coordinate attachment proves intractable on the real graph** (for instance partial-edge traversal
-  interacting badly with the one-way mask). Then the design's decision 2 is revisited explicitly,
-  rather than quietly falling back to snapped nodes.
+- **The development sample shows rates near 0.5.** The allocations are sized for small rates, which
+  is a planning assumption, not evidence. The result says so; re-sizing is a design amendment and
+  voids the certification sample.
+- **The end-to-end benchmark shows E2 infeasible in full.** Then a subsample is a design amendment
+  with its size, frames, diagnostic coverage and interval fixed **before** it is drawn.
+- **Coordinate attachment proves intractable** on the real graph — for instance partial-edge
+  traversal interacting with the one-way mask. Then owner decision 2 is revisited explicitly rather
+  than quietly falling back to snapped nodes.
+- **The E0 census differs materially from design §3's carried table.** Then the carried figures were
+  wrong and the discrepancy is the finding.
+- **The comparator and the surface disagree pervasively rather than at the margins.** E1 doing its
+  job: a defect in the pipeline, and S3 stops while S2 reopens.
 
 ## 4. What this plan does not do
 
-- It does not touch the shipped pipeline, except T10's encoding freeze, which is scheduled after the
-  measurement and changes writer, exporter and decoder together.
-- It does not change a number in the design. Revision 1 claimed this and broke it twice — exempting
-  the selection gap that §2 puts inside E1, and authorising an E2 subsample. Both are now the
-  design's, not the plan's. **Any number this plan appears to add is a defect in this plan.**
-- It does not schedule the G4 device matrix, the G3 phone render or the G5a household sessions. Those
-  are the owner's and are tracked in the phase-1 plan.
+- It does not change an estimand, an allocation, an acceptance threshold, an uncertainty convention,
+  or the adaptation and selection policy. Those are design amendments.
+- It does not set the coverage requirement, and does not wait on it.
+- It does not schedule the G4 device matrix, the G3 phone render or the G5a household sessions.
