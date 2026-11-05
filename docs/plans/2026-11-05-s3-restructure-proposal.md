@@ -3,7 +3,7 @@
 **Status:** proposal, for adversarial review and owner decision. **Not yet adopted.** Nothing here
 changes the operative design, which remains
 [`2026-11-04-s3-measurement-design.md`](./2026-11-04-s3-measurement-design.md) revision 3.
-**Date:** 2026-11-05 · **Head:** `6a9c1f4` on `v2-rethink`
+**Date:** 2026-11-05 · **Head:** `39c1989` on `v2-rethink` (this file committed at that head; pass 16 recorded at `89b3fdb`)
 
 **Why this exists.** Codex passes 15 and 16 each returned **eighteen defects, eight High**, with the
 verdict "not fit to execute as written" both times. Pass 16's disposition table shows seven of pass
