@@ -5,7 +5,14 @@ changes the operative design, which remains
 [`2026-11-04-s3-measurement-design.md`](./2026-11-04-s3-measurement-design.md) revision 3.
 **Date:** 2026-11-05 · **Head:** `39c1989` on `v2-rethink` (this file committed at that head; pass 16 recorded at `89b3fdb`)
 
-**Why this exists.** Codex passes 15 and 16 each returned **eighteen defects, eight High**, with the
+> **Reviewed by Codex pass 17 (2026-11-05) and superseded in part.** Verdicts: **A adopt with
+> changes, B rejected as written, C adopt with changes.** Eight defects were found in this document's
+> own reasoning, including a wrong severity count (pass 16 was **6 High / 10 Medium**, not 8/8) and a
+> retrospective repair tally I constructed and attributed to the review. Ten of pass 16's eighteen
+> findings are untouched by all three proposals, so these are **not** a complete revision-4 plan. See
+> `../research/24-codex-adversarial-review-pass17-proposals.md`; revision 4 follows that, not this.
+
+**Why this exists.** Codex passes 15 and 16 each returned **eighteen defects** (pass 15: 8 High; pass 16: 6 High), with the
 verdict "not fit to execute as written" both times. Pass 16's disposition table shows seven of pass
 15's eighteen repairs carried a **new** defect, and three of my repairs went wrong in the *opposite*
 direction from the finding they addressed. Writing revision 4 the same way is unlikely to converge,

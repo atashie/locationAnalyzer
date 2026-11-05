@@ -2,17 +2,26 @@
 
 **Date:** 2026-11-04. **Model:** gpt-6.1-sol. **Head at review:** advanced from `ab01ffa` to
 `87bb239` mid-review (same document revisions). **Prompt:** `codex-pass16-prompt.md` (scratchpad).
-**Eighteen defects: 8 High, 8 Medium, 2 Low.**
+**Eighteen defects: 6 High, 10 Medium, 2 Low.**
+
+> **Correction, 2026-11-05 (pass 17).** This file first recorded 8 High / 8 Medium. The
+> original report has **6 High** — F1, F2, F3, F5, F6, F7 — with F4 and F16 **Medium**. The
+> error mattered: it inflated the High count that my methodological diagnosis then leaned on.
 
 > "The allocation arithmetic and removal of spatial DEFF survive. The repairs nevertheless introduce
 > a mismatched E2 objective, an unsafe bounded-search implication, and changes to the instrument
 > after certification. **UNKNOWN accounting makes the area-frame acceptance gate effectively
 > unreachable again.**"
 
-**All four owner decisions survive on the evidence.** What does not survive is my execution of them.
-Second consecutive pass at eighteen findings, and the disposition table is the thing to read: of
-pass 15's eighteen, **eight are fully resolved, seven are partly resolved with a new defect in the
-repair, and three repairs introduced a defect of the opposite sign.**
+**All four owner decisions survive on the evidence.** What does not survive is my execution of them
+— the second consecutive pass at eighteen findings.
+
+> **Correction, 2026-11-05 (pass 17).** A sentence stood here claiming "eight are fully resolved,
+> seven are partly resolved with a new defect, and three repairs introduced a defect of the opposite
+> sign". **That tally was not supplied by the original report — I constructed the partition and
+> attributed it to the review.** Its disposition table has overlapping rows and only three say
+> "resolved"; such a classification is possible but needs a row-by-row mapping first. Two
+> opposite-sign repairs *are* confirmed below (F1 and F2).
 
 ## The headline: I made the gate unreachable again, by the opposite mechanism (F5)
 
@@ -189,3 +198,20 @@ target at `(35.999, −78.905)` and its correlated road position `(35.999022, �
 returned **448 s, 0.633 km, cost 1068.25** — the residual ~19 m is **not** charged at 1.26 m/s. So
 the independent comparator needs explicit agreed connectors, or the attachment-model difference must
 be declared *inside* E2 and kept separate from destination-selection aggregation.
+
+## Correction to the abstention figures (pass 17)
+
+The 17.41% and 0.71% above are **`OFF_NETWORK` reason shares**, not abstention rates — some
+off-network cells yield a *known* FAIL from their access lower bound, so E0 is threshold-dependent.
+Recomputed under the layer contract, with `BEYOND_HORIZON` a known FAIL at every published threshold
+because the horizon is 120 minutes:
+
+| threshold | frame C UNKNOWN | frame B UNKNOWN |
+|---|---|---|
+| 10 min | 55,102 / 330,502 = **16.6722%** | 3,371 / 512,633 = **0.6576%** |
+| 15 min | 57,243 / 330,502 = **17.3200%** | 3,621 / 512,633 = **0.7064%** |
+| 25 min | 57,541 / 330,502 = **17.4102%** | 3,657 / 512,633 = **0.7134%** |
+| 45 min | 57,541 / 330,502 = **17.4102%** | 3,657 / 512,633 = **0.7134%** |
+
+Codex independently reprojected all 522,160 building geometries, re-binned the 512,633 inside-grid
+centroids and **reproduced the saved buildings-per-cell raster exactly**.
