@@ -1,10 +1,11 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 3, 2026-11-05.** Revision 2 was found "not fit to execute as written" (Codex pass 16,
-18 defects), and the three proposals written to repair it were reviewed at pass 17: one rejected,
-two adopted with changes. This revision implements **design revision 4**, which is the operative
-document — where this plan and that design differ, the design wins and this plan is wrong.
+**Revision 4, 2026-11-05.** Implements **design revision 5**, which is the operative document —
+where this plan and that design differ, the design wins and this plan is wrong. Pass 18 found twelve
+defects across the pair and concluded that **T1 and T2 may proceed as instrument-development work
+once their test oracles are tightened**, which this revision does; certification remains gated on the
+rest.
 
 **Branch:** `v2-rethink`
 
@@ -70,9 +71,21 @@ revision 2 specified only the upper. No DEFF, no `effective_n`, no block machine
 monotonicity while giving **0.9943% at *k* = 1, *n* = 400 against the correct 1.1804%** — enough to
 flip an E1b verdict. So:
 
-- **Non-zero fixtures from an independent route**: `BetaInv(1 − α, k + 1, n − k)` at *k* = 1…4 for
-  *n* = 400 and 500, compared with a **declared tolerance** because the design's printed table is
-  rounded and literal decimal equality is not a correct test.
+- **Non-zero fixtures, at least one from a genuinely independent route.** "A declared tolerance"
+  placed no limit on the tolerance, and at an absolute tolerance of **0.002** an implementation
+  correct everywhere *except* `n=400, k=1` — returning the old defective **0.009943** against the
+  correct **0.011804** — passes every stated fixture, both tolerated-count assertions and every
+  endpoint check **while flipping the 1% decision**. So:
+  - fixtures are stored at full precision and compared at **1e-10 absolute**, not at a tolerance wide
+    enough to hide a decision-flipping error;
+  - at least one oracle is derived by **binomial-tail inversion** — solving `P(X ≤ k | p) = α` by
+    bisection on the binomial CDF — rather than by calling the same `BetaInv` the implementation
+    calls;
+  - **non-zero lower-bound fixtures** are included, because a mistakenly **two-sided** lower bound
+    passes the zero endpoint and confidence-direction checks: at `k=1, n=500` the correct one-sided
+    value is **0.000102581** and the two-sided is **0.000050634**;
+  - **complementary upper/lower identities** are asserted, e.g. `CP_lower(k, n, c)` against
+    `1 − CP_upper(n − k, n, c)`.
 - **Two closed forms at zero failures**, independent of the table: exact `1 − α^(1/n)`; and Wilson at
   zero events `z²/(n + z²)` — which is a check on *that* formula, **not** an expected value for the
   Clopper–Pearson function.
@@ -80,11 +93,16 @@ flip an E1b verdict. So:
   consequence in code.
 - Confidence-level variation at 90% and 99% moves both bounds in the right direction; the lower bound
   is 0.0 at *k* = 0 and the upper is exactly 1.0 at *k* = *n*.
-- **The bootstrap is tested against an independently computed reference distribution**, plus seed
-  reproducibility and preserved pairing. **No width-monotonicity assertion** — it is false
-  (`[-1,0,1]` → `[-1,1]`; the smaller `[0,0]` → `[0,0]`), and revision 2 required it. Ties are
-  admissible and may give a degenerate interval; an empty or single-point domain returns
-  **not estimable**.
+- **The bootstrap is tested in two separable halves**, because a single test conflates percentile
+  arithmetic with RNG reproduction:
+  1. **percentile calculation on a fixed replicate vector** supplied directly, with no resampling —
+    including the case that exposes the convention, 50 zeros and 1,950 ones, whose 0.025 quantile is
+    **0.975** by linear interpolation against 0 or 1 under other conventions;
+  2. **resampling reproducibility** from a recorded seed, generator and bit generator, with pairing
+    preserved.
+  **No width-monotonicity assertion** — it is false (`[-1,0,1]` → `[-1,1]`; the smaller `[0,0]` →
+  `[0,0]`), and revision 2 required it. Ties are admissible and may give a degenerate interval; an
+  empty or single-point domain returns **not estimable**.
 - `srs_variance` and `two_stage_variance` against hand-computed values, including the case the wrong
   formula gets wrong: with every cell half erroneous the two-stage variance is `0.25/n` at `n = N`,
   **not zero**.
@@ -107,8 +125,12 @@ correct marginals (means 49.9574 m, sd 28.8447 m) with **correlation 1**, every 
 So the test is **not** a distributional check on marginals:
 
 - **A deterministic RNG mapping oracle on an enumerated toy grid**: for a fixed seed the exact
-  expected (cell, offset) sequence is computed independently and compared element-wise. This pins
-  joint behaviour rather than sampling it.
+  expected (cell, offset) sequence is computed independently and compared element-wise. This is a
+  **mapping regression test** — it catches centre-only placement, repeated offsets and row-direction
+  errors — but it does **not** establish joint uniformity merely because a second implementation
+  emits the same sequence. So it is paired with **independently specified RNG inputs whose two
+  offsets are drawn from distinct draws**, asserting the implementation consumes them that way, which
+  is what rules out the `(u, u)` diagonal.
 - **Enumerated-frame inclusion**: on a toy frame small enough to enumerate, every unit is reachable
   and selection is uniform without replacement.
 - Fixed seeds and **declared tolerances** throughout; no "many seeded draws" with an unstated
@@ -154,7 +176,11 @@ checks — which **supplement** exact answers and never replace them, since even
 objective-specific: adding a *cheaper* destination correctly raises objective 2's reported time from
 10 to 100 s.
 
-The suite is a frozen artifact with a digest (design §12).
+The suite is a frozen artifact with a digest (design §12) — and **"derived independently of T3" is
+an obligation that must be evidenced, not asserted.** "Written before T3 is complete" is not
+evidence, and a digest proves immutability rather than correctness. So each case ships with its
+**derivation, its provenance, and a review against the normative quantity in design §2**; where an
+expected answer is computed, it is computed by a route that does not call T3.
 
 ### T5 — `v2/locfinder/measure/diagnostics.py`
 
@@ -275,7 +301,8 @@ is not attempted here.
 
 ### T11 — the report
 
-**Depends on:** T8.
+**Depends on:** T8, **T9 and T10** — the report may not be issued without E3's outcome and the
+extraction warning, which revision 3 left able to complete without them.
 
 `docs/experiments/s3-walk-grocery-measurement.md`:
 
@@ -285,15 +312,18 @@ is not attempted here.
   exact upper bound, and the **tolerated failure count** alongside so a near-miss is legible — and an
   explicit statement that tolerance is **not** power (at true rates 0.001/0.005/0.01 the pass
   probability at *n* = 500 is 90.99%/28.65%/3.98%).
-- The §8 verdict per combination with all 16 shown, **none averaged**, and a note that these are
-  **not** simultaneous 95% bounds.
+- The §8 verdict for **all eight** frame-by-threshold combinations (1 mode × 4 thresholds × 2
+  frames), **none averaged**, together with all **sixteen** directional bounds (8 × 2 directions) —
+  and a note that the sixteen are **not** simultaneous 95% bounds.
 - The **comparator-unresolved** bucket bounded **in one direction only** per design §7, with
   INCONCLUSIVE declared where the bounds straddle a threshold.
 - **Unwarranted abstention** from D1 and D2.
 - The **selection gap** (objective 2 − objective 1) as its own signed distribution, since it is
   inside E1 by construction.
 - **E2** on its declared jointly-finite domain, per frame, with denominators and a status
-  cross-tabulation — never silently dropping pairs — and its bootstrap interval.
+  cross-tabulation — never silently dropping pairs — reporting **median, IQR, the bootstrap interval
+  and the share with |d| above one encoding increment**, all four.
+- **E3's outcome** from T9 and the **extraction warning** from T10, both required.
 - Each diagnostic's conditional rate and bound as **descriptive screening**.
 - The full manifest, and **run failures** recorded rather than deleted.
 - Zero-failure results as **"0 observed, 95% upper bound x%"**, never "0%".

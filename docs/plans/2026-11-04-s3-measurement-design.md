@@ -2,9 +2,14 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
-**Revision 4, 2026-11-05**, after Codex pass 16 found eighteen defects in revision 3 and pass 17
-rejected one of the three proposals written to repair them. Change log in §13; revisions 2 and 3 are
-kept there too.
+**Revision 5, 2026-11-05**, after Codex pass 18 found twelve defects in revision 4 — three of them
+blocking. Change log in §13; revisions 2, 3 and 4 are kept there too.
+
+Pass 18's verdict on revision 4 was that "the statistical redesign largely survives" and the
+remaining blockers concerned **which product is being measured**, unresolved comparator semantics,
+and acceptance rules that still permitted incompatible implementations. Revision 5 closes those four
+blockers (§§2.2, 2.6, 3, 8) and the five contracts that had to be settled before any freeze (§§2.3,
+6, 8, 10, 12).
 
 **What revision 4 changes in kind.** Revisions 1–3 were prose specifications of a computation.
 Pass 17's judgement is that prose cannot carry this weight — "a program can faithfully implement
@@ -114,10 +119,30 @@ in the conformance suite supplement exact expected answers; they never substitut
 ### 2.2 Attachment, partial edges and competition
 
 - A destination or origin attaches at its **nearest position on the graph**, which may be a point
-  along an edge.
-- A **partial edge** contributes `fraction × edge_time` and `fraction × edge_cost`. Any edge penalty
-  is apportioned **by the same fraction**; a penalty that is not apportionable must be declared in
-  the normative spec, not resolved in code.
+  along an edge. **Geometric ties are resolved by keeping every minimiser.** "Nearest" alone does
+  not determine an attachment, and that is not a corner case: two disconnected directed roads from
+  x = 0 to x = 100 at y = ±1, with an origin at `(0,0)` and a destination at `(100,0)` each exactly
+  1 m from both, give **101.587 s** or **1001.587 s** depending on which road is chosen — a different
+  verdict at ten minutes — while *both* choices satisfy nearest-position, the access cap, connector
+  charging, direction and objective minimisation. So:
+  - **every** attachment whose geometric distance is within `attach_tie_m` = **0.01 m** of the minimum
+    is retained as a routing candidate, and the objective minimises over all of them. The reported
+    quantity is then a property of the geometry rather than of a convention, and no frozen arbitrary
+    order is needed;
+  - where one geometry has several equally nearest positions — a point equidistant from two places on
+    the same curve — each is retained as a candidate under the same tolerance;
+  - equality is **tolerance-based** at `attach_tie_m`, declared here, not exact float equality.
+  - the set of retained candidates is **recorded per point** in the manifest, since it is part of what
+    determines the answer.
+- A **partial edge** contributes `fraction × edge_time` and `fraction × edge_cost`. **Every edge
+  penalty is apportioned by the same fraction, with no exceptions**, and an implementation may not
+  invent one. The consequential case is the restricted-access penalty: `access.py` adds a fixed
+  **120 s per restricted walking edge** to cost, so on a 1% traversal apportionment charges 1.21
+  while an entry fee would charge 120.01, and against a 5 s open bypass the two select different
+  routes. Apportionment is **already the existing attachment model** and is adopted deliberately —
+  it is a fractional-cost model, not a charge for entering restricted access. Changing it to an entry
+  charge is a **semantic amendment** under §13 requiring different fixtures, not an implementation
+  choice.
 - A partial traversal is legal only in a direction the edge permits. Walk symmetrisation supplies the
   pedestrian reverse; **bike and drive do not inherit it**.
 - **A same-physical-edge direct traversal is a candidate, not the route.** It competes with
@@ -159,9 +184,39 @@ benchmarked in development.
 alternatives of time 10 and 1, reversing insertion order changes the reported time from **10 to 1**
 in both the CSR and the edge index.
 
-> Among alternatives tied on the objective's selection weight, choose the one with the **smallest
-> travel time**; if still tied, the smallest `osmid` tuple; if still tied, the smallest rounded
-> length. The same rule applies in projection, attachment and path reconstruction.
+**Identity and grouping are frozen separately from ranking**, because repeating one tie comparator
+in three stages cannot repair incompatible grouping — and today the three stages disagree.
+`speeds._physical_key` groups by `osmid` plus length rounded to 2 dp;
+`snap._canonical_geometry_key` uses exact coordinates and tolerates reversal; the CSR collapse uses
+the ordered endpoint pair. Executed consequence: a straight forward road and a curved reverse road
+sharing endpoints, `osmid = [7]`, length 100, time 100 and cost 100 are **identical** to
+`_physical_key` and **distinct** to the geometry key, so **`symmetrise` suppresses both reverses as
+duplicates while the attachment index treats them as two roads, leaving reverse weight `inf` for
+each.**
+
+So, normatively:
+
+1. **Canonical directed-edge identity** is `(start node, end node, canonical geometry key, osmid
+   normalised to a sorted tuple, length rounded to 2 dp)`. Geometry keys are canonicalised so a
+   reversed traversal of the same geometry maps to the same physical road but a *different* directed
+   identity.
+2. **Reverse pairing** for `symmetrise` uses that same canonical identity, so a road is only ever
+   suppressed as a duplicate of a road it is genuinely identical to.
+3. **The CSR → directed-edge mapping is preserved**, so a collapsed entry can name the directed edge
+   it came from.
+4. **Destination identity** is the Overture `id`; **route identity** is the sequence of canonical
+   directed-edge identities.
+5. Rounding precision is **2 dp on metres** everywhere, stated once.
+
+**Ranking, applied only after identity and grouping:**
+
+> Among alternatives tied on the objective's selection weight, choose the smallest **travel time**;
+> then the smallest normalised `osmid` tuple; then the smallest rounded length; then the smallest
+> canonical geometry key. The same rule applies in projection, attachment and reconstruction.
+
+The fourth key makes the order **total**: alternatives agreeing on all four are identical in every
+quantity this design reports, so the choice among them cannot change a result, and any of them may
+be named as the selected edge provided the choice is deterministic.
 
 ### 2.5 Bounds: metric, strictness, soundness
 
@@ -173,6 +228,8 @@ edge with **time 1, cost 121** under a **cost limit of 60** returns `inf` while 
 
 Each comparator result retains **bound metric, bound value, strictness and termination reason**, and:
 
+- **a finite time was found** → that time is the answer, and none of the no-result branches applies.
+  This branch is stated first because the others are only reached when nothing was found.
 - **unbounded and exhausted** → `NO_PATH`, definitive.
 - **a sound lower bound `L` on travel time** → known failure iff `L > T`, or `L ≥ T` only when the
   bound is strict. `t > H` fails *T* = *H*; `t ≥ H` does not.
@@ -190,11 +247,29 @@ reference layers to 60, and comparing them without carrying each horizon reads o
 data as the other's disagreement. Its **tileset identifier, engine version and exact request and
 costing configuration** are frozen in the manifest (local `/status` exposes them).
 
-**Its connectors must be made explicit.** Supplying coordinates is not enough: executed, a target at
-`(35.999, −78.905)` and its correlated road position `(35.999022, −78.905211)` both returned
-**448 s, cost 1068.25**, so the residual ~19 m is **not** charged at 1.26 m/s. Either add agreed
-connectors to the independent comparator, or declare the attachment-model difference **inside E2** —
-and keep that declaration separate from destination-selection aggregation.
+**Its connectors are added, and that choice is now made rather than offered.** Supplying coordinates
+is not enough: executed, a target at `(35.999, −78.905)` and its correlated road position
+`(35.999022, −78.905211)` both returned **448 s, cost 1068.25**, so the residual ~19 m is **not**
+charged at 1.26 m/s. Revision 4 permitted either adding agreed connectors or retaining the engine's
+attachment model and declaring the difference inside E2 — **but those are different estimands**, and
+leaving the choice open left E2 undefined: on destinations A (cost 10, time 10 s, 100 m residual) and
+B (cost 20, time 20 s, 0 m), the raw engine policy selects A and reports **10 s** while charging A's
+connector moves the cost-`argmin` to B and reports **20 s**.
+
+**Predeclared: agreed connectors are added to the independent comparator**, because E2 is meant to
+measure *engine* disagreement and retaining two different attachment models would conflate that with
+attachment disagreement. Specifically:
+
+- the connector's residual is charged at the **access speed** and contributes to **both** the
+  independent engine's selection cost and its reported time, exactly as it does for our own
+  comparator;
+- the correlation position used by the engine is **recorded**, and the residual is measured from the
+  place's own coordinate to that position;
+- the same `max_access_m` and `poi_snap_max_m` caps apply, so both sides share one eligible set;
+- a destination the engine **cannot correlate** is excluded from both sides and recorded by identity.
+
+This declaration is kept separate from destination-selection aggregation (§2.1): they are independent
+choices and conflating them is what produced revision 3's −9 s of phantom disagreement.
 
 ---
 
@@ -209,12 +284,30 @@ Four. They are never combined, and each names its own frame.
 For a frozen raster-lookup product the verdict is known at **every** cell and threshold, so E0 needs
 **no sampling at all**:
 
-> `a_B(T) = Σᵢ bᵢ · 1{Pᵢ(T) = UNKNOWN} / Σᵢ bᵢ`  and  `a_C(T) = Σᵢ 1{Pᵢ(T) = UNKNOWN} / N_C`
+**E0 is defined over the actual published lookup, not over the original cells.** A cell's verdict
+determines every point inside it *only while the lookup uses that same partition*, and export breaks
+that: executed with rasterio, two original 100 m cells holding UNKNOWN and PASS, exported
+nearest-neighbour onto a shifted 80 m grid, give published bytes `[UNKNOWN, UNKNOWN, PASS]` — the
+second original cell's centre at x = 150 returns PASS while its interior point at x = 110 returns
+UNKNOWN, so **20% of that cell is now UNKNOWN** and a structure at x = 110 is UNKNOWN although its
+cell centre is not. Frame C's within-cell draw does not break the census; export does.
 
-with `bᵢ` the structure count per cell and equal-area cells giving equal area weight. There is no
-sampling uncertainty in E0 and no interval is reported for it. It is computed **after** freezing the
-actual evaluation behaviour, and on the **published representation** if export or reprojection
-changes that behaviour.
+So, with `published_lookup` the frozen function the product actually answers with:
+
+> `E0_B(T)` = mean over the frozen structure centroids of `1{published_lookup(centroid, T) = UNKNOWN}`
+>
+> `E0_C(T)` = (area of the original frame-C domain on which `published_lookup` is UNKNOWN) ÷ (area of
+> that domain)
+
+Frame C stays uniform over the **original projected ground area**, so counting exported pixels would
+change the measure. The simple cell sums `Σ bᵢ·1{·}/Σ bᵢ` and `Σ 1{·}/N_C` are valid **shortcuts**
+only once `published_lookup` is shown constant on every original frame cell — which is a checkable
+property and is checked, not assumed.
+
+E0 carries **no sampling uncertainty**. But an exact exported census requires projected-area
+intersection; if a numerical approximation is used instead, **its error is reported separately and
+the result is not called uncertainty-free**. Lookup behaviour **outside the exported footprint** is
+defined explicitly rather than left to the implementation.
 
 Reported **by frame, threshold and reason**, because the reasons have different remedies:
 `BEYOND_HORIZON` beyond the horizon is answerable by searching further (contract §2's
@@ -240,10 +333,20 @@ in `cell_arrival_with_provenance` but **does not save**, so only `seconds` and `
 and the table cannot be recomputed from the saved rasters alone. What *is* checked here is internal
 consistency, and it holds exactly: the complements are 57,541 − 55,102 = **2,439** cells proven over
 at *T* = 10 and 57,541 − 57,243 = **298** at *T* = 15, matching the independently reported
-proven-over counts; at *T* = 25 and 45 none is proven over, as a 200 m cap and 1.26 m/s require a
-nearest-edge distance above 756 m to fail *T* = 10 and above 1,134 m to fail *T* = 15. Exact
-recomputation is a task, and must happen **after** the evaluation behaviour is frozen (§10) — doing
-it now would have to be redone.
+proven-over counts.
+
+The **physical reason**, corrected: a sound lower bound divides by an upper bound on speed, so
+`snap.py:291` computes `min_possible_s = access_m / max_speed_mps(mode)` and walk's maximum is
+**1.40 m/s**, not the access speed 1.26 — whose docstring says so explicitly, because access factors
+below 1 would make an over-estimate masquerade as a lower bound. Proven-over therefore requires a
+nearest-edge distance above **840 m** at *T* = 10, **1,260 m** at 15, **2,100 m** at 25 and
+**3,780 m** at 45. The measured maximum nearest-edge distance is **1,688.99 m**, which is why nothing
+is proven over at 25 and 45 minutes. The 200 m access cap does **not** bound how far an off-network
+cell lies from the graph. (An earlier revision used 1.26 m/s here and would have implied 3,534 and
+604 proven-over cells rather than 2,439 and 298.)
+
+Pass 18 **independently reproduced the whole table**, so its figures are verified; exact recomputation
+under §10's frozen published lookup remains a task.
 
 ### E1a, E1b — construction fidelity (the gate)
 
@@ -340,11 +443,26 @@ can satisfy several predicates at once, so pooling would count the same mass rep
 and so cannot be an opposite one. (In the current artifact none of those 2,439 touches a passing
 cell, so this changes no count today; it is the general predicate that must be right.)
 
-**D1 and D2 are where abstention is audited.** The comparator at an abstaining point either confirms
-the abstention was warranted or produces a definitive verdict the product declined to give. That
-second case is a defect and is reported as **unwarranted abstention**, with its own conditional rate
-and interval. It is the reason an all-abstaining product could not quietly satisfy E1: its
-abstentions would be measurably unwarranted.
+**D1 and D2 measure coordinate-answerable product abstention.** At an abstaining point the
+comparator either also declines or returns a definitive verdict the product did not give. The second
+case is reported as **coordinate-answerable abstention**, with:
+
+- **numerator** — sampled points of that diagnostic at which the comparator returns a definitive
+  verdict;
+- **denominator** — *all* sampled points of that diagnostic, **including** any whose product verdict
+  is a known FAIL, so the measure is a share of the sampled conditional frame and not of a subset
+  selected by outcome.
+
+**It is an opportunity measure, not proof of a contract violation, and it does not protect the
+gate.** An earlier revision claimed it stopped an all-abstaining product satisfying E1. That was
+**false**: an all-`UNKNOWN` product produces zero E1a and zero E1b events, so both upper bounds are
+**0.5974%** at *n* = 500 and it **passes both construction thresholds**. No diagnostic can reverse
+that without an acceptance rule, and making this one an acceptance condition requires a §13
+amendment. A deliberately capped or coarser raster may also correctly return `UNKNOWN` under its
+published rules while a more expensive coordinate calculation answers — so a definitive comparator
+answer is an opportunity, not a defect.
+
+**Only the coverage requirement bounds abstention, and it is separately blocked** (§8).
 
 **The diagnostic-versus-population comparison is descriptive screening, not inference.** Revision 3's
 rule — a factor of two plus a lower bound above the population *point estimate* — is not a 95%
@@ -425,9 +543,20 @@ A zero-failure result is reported as **"0 observed, 95% upper bound x%"**, never
 
 ### The bootstrap, fully specified
 
-E2's interval is a **percentile bootstrap over points**: **95%**, the **2.5th and 97.5th**
-percentiles of 2,000 replicate statistics, resampling points with replacement within each frame,
-seeded and recorded, **pairing preserved** within a resampled point.
+E2's interval is a **percentile bootstrap over points**, fully specified because "the 2.5th
+percentile" does not identify a number: on 2,000 replicates of 50 zeros and 1,950 ones it is **0.975**
+by linear interpolation, **0** by the lower convention, and **1** by higher or nearest.
+
+| | |
+|---|---|
+| replicate statistic | the **median** of the paired differences |
+| replicates | **2,000** |
+| resampling | points drawn **with replacement within each frame**, `n` equal to that frame's sample size, **pairing preserved** within a resampled point |
+| endpoint quantile method | **linear interpolation** (`numpy.quantile` default), at **0.025 and 0.975** |
+| RNG | `numpy.random.Generator` on **PCG64**, seeded from a recorded integer |
+
+A recorded seed alone does not identify a sequence without its generator and resampling convention,
+so all three are frozen together.
 
 - **Ties are admissible** and may legitimately give a degenerate interval.
 - **An empty or single-point domain returns "not estimable"**, not an interval.
@@ -455,9 +584,10 @@ comparator failure at an abstaining point.
 
 - **Comparator unresolved** means timeout, engine error, snap failure, or no sound bound (§2.5). It
   is bounded **in one direction only** — the direction the observed product claim permits — because a
-  product PASS cannot generate a false exclusion. The reported result gives each rate with every
-  unresolved case counted as agreement and again as an error **of its own direction**. If those two
-  bounds straddle an acceptance threshold, the result is **INCONCLUSIVE**.
+  product PASS cannot generate a false exclusion. Write **`k`** for identified errors of a direction
+  and **`u`** for unresolved observations that could be errors of *that* direction. Both are reported,
+  as **distinct objects**: the **identification range** `[k/n, (k+u)/n]` and the **confidence bounds**
+  at each end. §8 turns them into a verdict.
 - **Comparator failures are retained** for E2 and for operational diagnostics even where they cannot
   identify a directional error.
 - **Product reasons are retained** at every `UNKNOWN`, since `BEYOND_HORIZON` and `OFF_NETWORK` have
@@ -473,10 +603,20 @@ comparator failure at an abstaining point.
 
 For each published mode *m* and threshold *T* ∈ {10, 15, 25, 45} minutes, on **each** frame:
 
-- **PASS** if the one-sided 95% upper bound on **E1a** is ≤ **2.0%** and on **E1b** is ≤ **1.0%**.
-- **FAIL** if the point estimate of either exceeds its threshold.
-- **INCONCLUSIVE** otherwise, including whenever §7's one-directional unresolved bounds straddle a
-  threshold.
+With `k` identified errors of a direction, `u` unresolved observations that could be errors of that
+direction, `n` the **full-frame** sample size, and `θ` that direction's threshold (E1a 2.0%,
+E1b 1.0%):
+
+> **PASS** if `CP_upper(k + u, n) ≤ θ`
+> **FAIL** if `k / n > θ`
+> **INCONCLUSIVE** otherwise
+
+Both directions must PASS. Revision 4 said "the point estimate of either exceeds its threshold"
+without saying which completion supplies the point estimate, which left the verdict ambiguous: at
+*n* = 500 with `k` = 1 and `u` = 1 the completed proportions are 0.2%–0.4%, below 1%, while the
+completed upper bounds are 0.9452%–1.2538%, crossing it — so the rule above returns INCONCLUSIVE,
+which is correct, whereas reading the pessimistic completion as "the point estimate" would have
+returned FAIL at `k` = 4, `u` = 2.
 
 At *n* = 500 this admits **at most one observed false inclusion and four false exclusions**, stated
 here before measurement.
@@ -556,10 +696,27 @@ codes** (121–254) remain, against 14 at a 240-minute maximum; and the built ho
 ceiling, because `needs_recomputation` makes a threshold past *H* answerable by a fresh search.
 
 **One code per reason is not sufficient.** Verdicts are not recoverable from a reason alone:
-`OFF_NETWORK` at 250 m and at 1,000 m share a reason and differ at *T* = 10. So the wire format must
-carry, per cell, the **reason plus the bound or horizon metadata its verdict needs** — as subcodes or
-a companion plane — and the decoder must implement the **verdict and combination algebra**, not merely
-recognise more sentinels.
+`OFF_NETWORK` at 250 m and at 1,000 m share a reason and differ at *T* = 10. What a cell must carry
+for all four thresholds to be decidable in the browser:
+
+| reason | what the decoder needs |
+|---|---|
+| `OK` | the decoded duration |
+| `OFF_NETWORK` | its lower bound, or the bound's exact equivalence class relative to the supported thresholds |
+| `BEYOND_HORIZON` | the horizon and **strict**-bound semantics (`t > H`) |
+| `NO_PATH` | the reason alone |
+| layer-wide failure | the reason, plus invalid/publication handling |
+
+plus versioned spatial lookup, footprint behaviour, units, and the combination and recomputation
+algebra.
+
+**Capacity, specified rather than asserted.** For the four fixed published thresholds `OFF_NETWORK`
+needs only **five ordered bound classes** — below 10, 10–15, 15–25, 25–45, above 45 minutes, derived
+from `access_m / max_speed_mps` — so codes **121–254 plus one companion byte plane** suffice: the
+plane carries the bound class for `OFF_NETWORK` and is unused for other reasons. **A numeric bound is
+required only if arbitrary thresholds are ever supported**, which is a §13 amendment. "One companion
+plane" without its precision and capacity says nothing, so both are fixed here: **one byte per cell,
+values 0–4 for the bound classes and 255 unused.**
 
 **The whole chain changes together, and "no rebuild" applies only to the float surface.**
 `encode_minutes([121*60, 254*60])` still returns `[121, 254]`, so those remain valid durations for
@@ -603,13 +760,25 @@ rest `500/(N − N_dev)`, so the estimator would target the complement of the de
 claiming all 512,633. **Accidental overlap is permitted**; what is forbidden is reusing a development
 *observation* as a certification observation.
 
-**Repeated attempts are controlled, not merely redrawn.** Fresh points prevent holdout reuse but do
-not preserve a nominal interpretation if the first successful attempt is the one reported: at
-*p* = 0.01 a single attempt meets E1b's count rule with probability **0.0398**, so twenty attempts
-give ≈**55.6%** of at least one pass at the boundary. Therefore: **every attempt's identity and
-outcome is retained and reported**, and **one final attempt is prespecified** — or a sequential error
-budget is declared in advance. A void-and-redraw after an instrument change is recorded as an
-amendment in §13.
+**Repeated attempts are controlled by a registration, not by good intentions.** Fresh points prevent
+holdout reuse but do not preserve a nominal interpretation if the first successful attempt is the one
+reported: at *p* = 0.01 a single attempt meets E1b's count rule with probability **0.0397547**, so
+twenty attempts give **0.5557336** of at least one pass at the boundary. Retaining outcomes is not
+enough either — it does not stop an operator amending the instrument and designating the *next*
+attempt "final".
+
+So, **before any certification outcome is observed**, a registration is written and timestamped
+**independently of the report**, recording:
+
+1. the claim being certified, and the digests of the instrument and design it is made against;
+2. the **uniquely identified designated attempt**;
+3. the draw procedure and the **seed-generation rule** — how the seed is obtained, not just its value;
+4. the stopping, invalidation and replacement rules;
+5. how any earlier outcome and any later amendment affect the certification claim.
+
+Every attempt's identity and outcome is retained and reported, void attempts included. A replacement
+drawn after outcomes are seen requires an explicit selection or error-control policy declared in that
+registration — "a fresh sample" alone is insufficient — and an instrument change is a §13 amendment.
 
 ---
 
@@ -640,7 +809,10 @@ Collected here because they were found as defects and must not be lost again.
       observable decision rules.
 - [ ] **A versioned reference comparator** implementing them, built fixture-first.
 - [ ] **A conformance suite** of independently derived expected results, containing every
-      counterexample from Codex passes 15, 16 and 17 and the objective-specific properties of §2.1.
+      counterexample from Codex passes 15, 16, 17 and 18 and the objective-specific properties of
+      §2.1 — shipped with **evidence of that independence**: the derivation of each expected answer,
+      its provenance, and a review against the normative quantity. A digest establishes immutability,
+      not correctness or independence.
 - [ ] **Digests of every input and configuration**: the float, encoded and status rasters, the
       prepared graph, the eligible and selected destination lists, the independent engine's tileset,
       version and costing configuration, frame artifacts, seeds, and code, profile and grid versions.
@@ -649,11 +821,24 @@ Collected here because they were found as defects and must not be lost again.
       quantity, an allocation, a threshold, an uncertainty convention or the selection policy, and
       requires a §13 row and fresh certification.
 - [ ] **A run manifest and persisted rows** sufficient to **reproduce the report with routing and the
-      original sources unavailable**: per point and **per threshold**, the product outcome, reason and
-      bounds; per objective, the own comparator's status, bound metric, strictness and value; the
-      independent engine's status, bound and horizon; the selected destination and cost; path
-      references; the origin's access distance **and** the product cell's own bound, which are
-      different quantities; and every diagnostic membership. Report reconstruction is tested.
+      original sources unavailable** — the payload must satisfy that test *by construction*, not merely
+      be checked against it. Per point:
+      - **all five numeric values with units**, or an explicit reason-coded absence for each: the
+        **float product value**, the **decoded encoded product value**, **objective 1**,
+        **objective 2 own**, and **objective 2 independent**. A verdict cannot recover a number —
+        100 s and 200 s both PASS at all four thresholds — so the numbers are stored, not inferred.
+      - **per threshold**, the product outcome, reason and bounds.
+      - per objective, the own comparator's status, bound **metric**, strictness and value; the
+        independent engine's status, bound and horizon.
+      - the **retained attachment candidate set** (§2.2), the selected destination and its cost, and
+        **path references that resolve inside the saved bundle** — or the diagnostic sufficient
+        statistics that make the source graph unnecessary.
+      - the origin's access distance **and** the product cell's own bound, which are different
+        quantities.
+      - every diagnostic membership.
+    - [ ] **E0's census numerators and denominators by frame, threshold and reason**, stored
+      explicitly. The census cannot be rebuilt from 500 sampled rows and a raster digest once the
+      rasters are unavailable — a digest identifies missing data, it does not reconstruct it.
 - [x] A decision on the published **maximum duration** — §9.
 - [ ] **The coverage requirement** — §8. Open; blocks coverage certification only.
 
@@ -684,6 +869,22 @@ Collected here because they were found as defects and must not be lost again.
 | **16-F17** | boundary touch bounds extraction damage | **false** — 0% touch with 100% affected. A warning diagnostic (§11) |
 | **16-F18** | reject centre-only placement via marginals | marginals admit a diagonal (correlation 1). A **joint mapping oracle** on an enumerated toy frame (§11) |
 | **17** | — | **ties were non-deterministic** in production (10 vs 1 on insertion order): a normative tie rule (§2.4). Independent-engine connectors made explicit (§2.6). The diagnostic audit of abstention named (§4). Tolerance is **not** power (§4). The frame-B gate is **not** dropped (§1) |
+
+### Revision 5, after Codex pass 18 (3 High, 8 Medium, 1 Low)
+
+| finding | revision 4 said | revision 5 says |
+|---|---|---|
+| **18-F1** | a tie rule on the objective's selection weight | that tie never fires, because **attachment** minimises geometric distance — two equidistant roads give 101.587 s or 1001.587 s, a different verdict at ten minutes, with both choices obeying every stated rule. **Every geometric minimiser within `attach_tie_m` = 0.01 m is retained as a candidate** (§2.2) |
+| **18-F2** | E0 as a cell-sum census | valid only while the lookup uses that partition. Export breaks it: a shifted 80 m export makes **20% of an original cell UNKNOWN** while its centre says PASS. E0 is defined over the **published lookup**, frame B at frozen centroids and frame C as an **area** over the original domain; the cell sums are shortcuts to be *checked* (§3) |
+| **18-F5** | add connectors **or** declare the difference in E2 | different estimands, so E2 was undefined — 10 s against 20 s on the same pair. **Agreed connectors are added** to the independent comparator, in both its cost and its reported time (§2.6) |
+| **18-F3** | proven-over above 756 m and 1,134 m at 1.26 m/s | the bound divides by **`max_speed_mps` = 1.40 m/s**, so **840 / 1,260 / 2,100 / 3,780 m**; the measured maximum nearest-edge distance is **1,688.99 m**, which is why nothing is proven over at 25 and 45 minutes (§3) |
+| **18-F4** | one tie rule repeated in three stages | cannot repair incompatible **grouping**: `_physical_key`, `_canonical_geometry_key` and the CSR collapse disagree, and `symmetrise` suppresses two reverses the index treats as two roads. **Identity and grouping are frozen separately from ranking**, and a fourth key makes the order total (§2.3) |
+| **18-F6** | "the point estimate of either exceeds its threshold" | ambiguous about which completion. **`PASS` iff `CP_upper(k+u, n) ≤ θ`; `FAIL` iff `k/n > θ`; else INCONCLUSIVE**, with the identification range and the confidence bounds reported as distinct objects (§§7–8) |
+| **18-F7** | the abstention diagnostic stops an all-abstaining product passing E1 | **false** — an all-`UNKNOWN` product has zero E1 events and both bounds at 0.5974%, passing. It is an **opportunity measure** with a defined numerator and denominator, and only the blocked coverage requirement bounds abstention (§4) |
+| **18-F8** | own-objective values persisted | a verdict cannot recover a number. **All five numeric values with units**, plus E0's census numerators and denominators, and path references resolving inside the bundle (§12) |
+| **18-F10** | "the 2.5th and 97.5th percentiles" | not a number — 0.975, 0 or 1 on the same replicates by convention. Statistic, quantile method, RNG, bit generator and resampling convention all frozen (§6) |
+| **18-F11** | "one final attempt is prespecified" | unauditable. A **registration written and timestamped before any outcome**, naming the claim, digests, the designated attempt, the seed-generation rule and the stopping rules (§10) |
+| **18** | partial penalties "declared in the spec if not apportionable" | a hole. **Every penalty is apportioned, no exceptions**; the restricted-access 120 s is named as apportioned cost and changing it is an amendment (§2.2). The wire companion plane's **capacity and precision are fixed** — one byte, five `OFF_NETWORK` bound classes (§9). The **finite-time branch** is stated before the no-result branches (§2.5) |
 
 ### Revision 3, after Codex pass 15 (8 High, 10 Medium)
 
