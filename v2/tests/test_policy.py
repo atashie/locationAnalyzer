@@ -228,3 +228,43 @@ def test_the_product_graph_has_three_blocks_per_node():
     _, _, index = graph_to_cost_time_csr(G)
     p = product_graph(class_separated_times(G, index, mode="walk"))
     assert p.shape == (3 * len(index), 3 * len(index))
+
+
+def test_symmetrise_adds_a_reverse_per_road_not_per_node_pair():
+    """Codex pass-14 H3, its executed input. `symmetrise` asked `G.has_edge(v, u)`, so the presence
+    of *any* v->u edge suppressed the reverse of *every* u->v road. Here the only B->A edge is a
+    1 s **restricted** one, so the 100 s **open** A->B road got no walkable reverse and P could not
+    reach D under any policy that declines the restricted edge. Separating access classes downstream
+    cannot recover an alternative already discarded upstream."""
+    from locfinder.traveltime.speeds import symmetrise
+    G = nx.MultiDiGraph()
+    for node in ("P", "A", "B", "D"):
+        G.add_node(node, x=0.0, y=0.0)
+    G.add_edge("P", "B", travel_time=5.0, length=5.0, osmid=1)
+    G.add_edge("A", "B", travel_time=100.0, length=100.0, osmid=2)
+    G.add_edge("B", "A", travel_time=1.0, length=1.0, osmid=3, access="private")
+    G.add_edge("A", "D", travel_time=5.0, length=5.0, osmid=4)
+
+    H = symmetrise(G.copy())
+    # the open road now has a walkable reverse, distinct from the restricted one
+    reverses = [d for _, _, d in H.edges(data=True)
+                if d.get("osmid") == 2 and d["travel_time"] == 100.0]
+    assert len(reverses) == 2, "the open A->B road should exist in both directions"
+
+    _, _, index = graph_to_cost_time_csr(H)
+    seconds, _ = lawful_arrival(class_separated_times(H, index, mode="walk"),
+                                dest_idx=[index["D"]])
+    # P -> B -> A (open, 100) -> D (5): the restricted shortcut is not needed
+    assert seconds[index["P"]] == pytest.approx(110.0), seconds[index["P"]]
+
+
+def test_symmetrise_does_not_duplicate_a_road_that_is_already_two_way():
+    """The other half: a genuine two-way street must not gain a third edge."""
+    from locfinder.traveltime.speeds import symmetrise
+    G = nx.MultiDiGraph()
+    for node in ("A", "B"):
+        G.add_node(node, x=0.0, y=0.0)
+    G.add_edge("A", "B", travel_time=10.0, length=10.0, osmid=7)
+    G.add_edge("B", "A", travel_time=10.0, length=10.0, osmid=7)
+    H = symmetrise(G.copy())
+    assert H.number_of_edges() == 2

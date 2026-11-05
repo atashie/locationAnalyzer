@@ -1,237 +1,278 @@
 # S3 measurement design — predeclared
 
-**Status:** design, predeclared before any sampling. Nothing in this document reports a result.
-**Supersedes:** the sampling sketch inside revision 2 of `2026-11-03-phase1-plan.md` (S3.1–S3.4),
-which this expands into something executable.
+**Status:** design, predeclared before any sampling. Nothing here reports a result.
+**Revision 2, 2026-11-04**, after Codex pass 14 found four High and three Medium defects in
+revision 1. What changed, and why, is in §10 — because a predeclared design that is quietly edited
+is not predeclared.
 
-The reason for predeclaring is specific and not ceremonial. Revision 1 chose "60 cells per side per
+The reason for predeclaring is specific. Revision 1 of the *plan* chose "60 cells per side per
 threshold" with no estimand, and Codex's arithmetic showed what that buys: with 60 independent
-observations and **zero** observed failures, the one-sided 95% upper bound on the failure rate is
-**4.87%**, not zero. A design chosen after seeing the data can always be the design that passes. So
-the estimands, strata, allocations, weights, interval method and missing-data rules are fixed here,
-in advance, and the first run is explicitly a **pilot that estimates variance**, not a verdict.
+observations and **zero** observed failures the one-sided 95% exact upper bound on the failure rate
+is **4.8703%**, not zero. A design chosen after seeing the data can always be the design that
+passes.
 
 ---
 
-## 1. One frozen set of locations, used by everything
+## 1. Two frames, because there are two populations
 
-Codex established that `TRIANGLE.grid()` is **not nested** across resolutions: 100 m has origin
-661900/4003500 and is 643 × 514; 200 m has origin 661800/4003600 and is 322 × 258. Sampling each
-grid at its own cell centres would confound three things at once — resolution, alignment, and which
-piece of ground is being asked about.
+Revision 1 had one frame — buildings — and reported both a building rate and a cell rate from it.
+That is not possible (pass-14 H6): **a cell containing no buildings has zero probability of
+selection**, and a cell containing a hundred buildings has a hundred times the chance of a cell
+containing one. Swapping `N_h` from buildings to cells does not repair either problem.
 
-So every candidate grid and every candidate encoding is evaluated at **one frozen set of
-coordinates**, and nothing is ever evaluated at cell centres.
+So there are two frames and two estimands, and they are never computed from each other's sample.
 
-**Frame construction.** Locations come from the S2.4 building set
-(`overture_buildings_accepted.parquet`, 522,160 rows, 512,633 with a centroid inside the 100 m
-grid), projected to EPSG:32617, one point per building centroid. Destination-side points are the
-550 grocery places with their own coordinates, not their snapped nodes.
+**Frame B — buildings.** The S2.4 set (`overture_buildings_accepted.parquet`; 522,160 rows,
+512,633 with a centroid inside the 100 m grid), one point per building centroid, projected to
+EPSG:32617. **A building frame, not a household frame**: Overture carries no reliable residential
+flag here, so a shed, a barn, a warehouse and each of a hospital campus's many structures count
+once each. Every frame-B estimand is therefore about **structures**, and the word "household"
+appears nowhere in the outputs.
 
-**The frame is an artifact with a digest**, written once and referenced by every S3 measurement, for
-the reason recorded in S2.5: file order is not stable across downloads and "the first N" silently
-changed which POIs an experiment used. A measurement that cannot name its frame cannot be compared
-with another.
+**Frame C — cells.** All 330,502 cells of the 100 m grid, sampled by simple random sampling without
+replacement. This is the frame for any claim about the published surface as a surface.
 
-**This is a building frame, not a household frame.** Overture carries no reliable residential flag
-in this metro, so a shed, a barn, a warehouse and each of a hospital campus's several hundred
-structures are one location each. Every estimand below is therefore **building-weighted**, and the
-phrase "household" appears nowhere in the outputs. S2.4 measured why this matters: cell coverage is
-77.6855% and building coverage 97.3423%, so the choice of denominator moves the headline by twenty
-points.
+**Neither frame is evaluated at cell centres.** `TRIANGLE.grid()` is **not nested** across
+resolutions — 100 m has origin 661900/4003500 and is 643 × 514; 200 m has origin 661800/4003600 and
+is 322 × 258 — so sampling each grid at its own centres would confound resolution, alignment and
+which piece of ground is being asked about. Frame B uses building coordinates. Frame C samples a
+cell and then draws **one uniformly random point inside it**, which is a property of the ground
+rather than of the grid, so the same point set can be evaluated against every candidate grid and
+encoding.
+
+**Both frames are frozen artifacts with digests**, for the reason S2.5 recorded: file order is not
+stable across downloads, and "the first N" silently changed which POIs an experiment used. A
+measurement that cannot name its frame cannot be compared with another.
 
 ---
 
-## 2. Estimands
+## 2. The comparator, specified before the estimands
 
-Three, measuring different things, with different units and different standards of evidence. They
-are never combined into one score.
+Revision 1 said "the engine's own answer at that coordinate", which is not executable (pass-14
+M5). Every number below depends on these choices, so they are fixed here.
 
-### E1 — Construction fidelity (the PASS/FAIL gate)
-
-For a mode *m* and published threshold *T*, over the building frame:
-
-> **the proportion of locations at which the product's verdict at *T* differs from the verdict
-> obtained by routing to that location's own coordinate with the same engine.**
-
-Decomposed, because the two directions are not equally harmful and S0's H2 bracket predicts only
-one of them:
-
-- **E1a false exclusion** — the product says *fail*, the exact route says *pass*. A home the
-  household never sees. The category surface is an upper bound on time, so this is the direction
-  the bracket predicts.
-- **E1b false inclusion** — the product says *pass*, the exact route says *fail*. A wasted viewing.
-
-Reported separately, both building-weighted and cell-weighted. This is **ours to fix**: the
-comparison is against the same engine, so a difference is a defect in our pipeline, not a
-disagreement about the world.
-
-### E2 — Engine disagreement (descriptive, reported with magnitude)
-
-> **the signed paired difference, in seconds, between our reported time and an independent
-> engine's answer at the same coordinate with a matched arrival time.**
-
-Reported as median, IQR, and the proportion exceeding one encoding increment. Four paired values
-are retained per location, never summed and never reduced to a median of medians:
-
-| value | what it is |
+| | |
 |---|---|
-| exact route to the location | the engine's own answer at that coordinate |
-| float surface at the location | our reconstruction, pre-encoding |
-| encoded surface at the location | what the product actually ships |
-| independent prediction | a different engine, matched arrival time |
+| **origin** | the sampled point (a building centroid, or a random point in a sampled cell) |
+| **destination set** | the same 550 grocery places the layer was built from, by their own coordinates, **not** their snapped nodes |
+| **direction** | the product answers "how long to *reach* a destination", so the comparator routes **origin → destination**. The arrival surface is built on the transposed graph; a one-way road can make origin→destination routable while destination→origin is not, so the comparator must not be run in the surface's internal direction |
+| **selection objective** | **two runs**: `min over destinations of time` (the quantity the surface approximates) and `time along the cost-nearest destination's path` (what the surface *reports*). Both are retained, because the gap between them is the pass-8 H2 bound and must not be charged to the pipeline |
+| **departure/arrival** | walk and bike are time-independent; drive and transit use the fixed arrival datetime in the `SurfaceKey` being tested |
+| **connectors** | the origin's access leg is charged at the layer's own access speed and capped at `max_access_m`; a point with no network within the cap is a **status**, not a missing value (§7) |
 
-E1 is (column 3 vs column 1). The encoding's own contribution is (column 3 vs column 2). E2 is
-(column 4 vs column 2). Keeping all four paired is what stops "model error" from absorbing
-encoding, snapping, entrance choice and route choice into one unattributable number, which is how
-revision 1 went wrong.
-
-### E3 — Real-world accuracy (supported / failed / **UNVERIFIED**)
-
-> **the signed difference between a hand-timed journey and the product's reported time for that
-> journey.**
-
-**Predeclared now, before any journey is walked:** 5–8 journeys cannot support a rate. They can
-support a *direction and magnitude* check — "the product is not out by a factor of two" — and
-nothing more. With 8 observations and zero discrepancies the one-sided 95% upper bound on the
-discrepancy rate is **31%**. So decision 12's accuracy claim stays **UNVERIFIED** whatever these
-journeys show, and the published label says so, unless and until a far larger independent sample
-exists.
-
-This is the honesty mechanism revision 1 got wrong. It required *both* Google disagreement *and*
-confirming owner journeys before weakening the claim, which made an untaken or inconclusive journey
-an escape hatch that strengthened the claim by default. One condition, stated plainly: **absent
-independent observation, the claim is unverified.** Shipping with an unverified accuracy claim is a
-legitimate decision for a friends-and-family release; it is the owner's to make explicitly, and not
-something this measurement design may grant by construction.
+E1 compares the **encoded** surface — what ships — against the comparator's first objective. The
+encoding's own contribution is the encoded-minus-float difference, kept separately.
 
 ---
 
-## 3. Strata
+## 3. Estimands
 
-Four, and the first two are **different populations that are never pooled** — Codex's point, and the
-reason revision 1's "cells per side" was ill-defined.
+Three, with different units and different standards of evidence. They are never combined.
 
-| stratum | definition | what it is for |
-|---|---|---|
-| **A — boundary-adjacent** | the location's cell is 4-adjacent to a cell with the opposite verdict at *T* | where misclassification concentrates geometrically |
-| **B — within one encoding increment** | \|reported − *T*\| ≤ one encoding step (60 s at today's uint8 whole minutes) | where misclassification concentrates *numerically*; a cell can be in B without being in A and vice versa |
-| **C — independent residential** | a systematic sample over the whole building frame, unstratified by boundary | catches a pipeline that wrongly deletes a neighbourhood, which A and B can never sample because they condition on being near a boundary |
-| **D — predicted unreachable** | the product reports no value (`OFF_NETWORK` or `BEYOND_HORIZON`) | catches false exclusion at the extreme; A and B both condition on *having* a value, so neither can see this |
+### E1 — construction fidelity (the PASS/FAIL gate)
 
-A and B are defined on the shipped surface, which is what makes them computable before routing. C
-and D are defined without reference to *T*.
+For a mode *m* and published threshold *T*:
 
-D is stratified further by reason, because the two have different remedies and very different
-building counts (3,657 off-network buildings against 9,967 beyond-horizon): **D1 off-network**,
-**D2 beyond-horizon**.
+> **the proportion of sampled points at which the product's verdict at *T* differs from the
+> comparator's verdict at the same point.**
+
+Split, because the two directions are not equally harmful and S0's H2 bracket predicts only one:
+
+- **E1a false exclusion** — product says *fail*, comparator says *pass*. A home never shown.
+- **E1b false inclusion** — product says *pass*, comparator says *fail*. A wasted viewing.
+
+Estimated **separately on each frame**: on frame B as a share of structures, on frame C as a share
+of cells. This is ours to fix — same engine both sides, so a difference is a defect.
+
+### E2 — engine disagreement (descriptive)
+
+> **d = t_independent − t_float**, in seconds, at the same point with matched arrival time,
+
+where `t_float` is our pre-encoding reconstruction and `t_independent` the other engine's answer
+under the same comparator rules. Signed, reported as median and IQR with a block bootstrap, plus
+the share with |d| greater than one encoding increment. Revision 1 defined E2 against "reported
+time" in one place and the float surface in another; it is the float surface, so that encoding does
+not appear twice (pass-14 L2).
+
+Four paired values are retained per point — comparator, float surface, encoded surface, independent
+engine — so that encoding, snapping, entrance choice and route choice cannot be absorbed into one
+unattributable "model error".
+
+### E3 — real-world accuracy (supported / **failed** / UNVERIFIED)
+
+> **the signed difference between a hand-timed journey and the product's reported time.**
+
+5–8 owner-chosen journeys cannot establish a population rate: they are a convenience sample, so the
+binomial bound does not even apply to them, and with 8 observations and no discrepancy the
+one-sided 95% exact bound would in any case be **31.2344%**. The population-rate claim is therefore
+**UNVERIFIED** and the published label says so.
+
+**But it can still fail, and revision 1 made that impossible** (pass-14 M6). "UNVERIFIED whatever
+these journeys show" means eight journeys each taking three times the predicted time could not
+produce the `failed` outcome the design advertises. A small sample cannot establish a rate; it can
+exhibit a counterexample. So, predeclared:
+
+> **E3 returns `failed` if any single journey's observed time exceeds the product's reported time by
+> more than a factor of 1.5 and by more than 5 minutes, or if the median signed difference across
+> the journeys taken exceeds 25% of the median reported time.**
+
+`failed` is a statement about the product, not about a rate. Absent a failure, the outcome is
+UNVERIFIED — never "supported" — until an independent sample large enough for a rate exists.
 
 ---
 
-## 4. Allocations
+## 4. Samples
 
-**The first run is a pilot.** Its output is a variance and design-effect estimate, not a verdict.
+**Frame C — the population estimator for cells.** A simple random sample, *n* = 400.
 
-| stratum | pilot *n* | main *n* (conditional on the pilot) |
-|---|---|---|
-| A boundary-adjacent | 60 | 150 |
-| B within one increment | 60 | 150 |
-| C independent residential | 60 | 400 |
-| D1 off-network | 60 | 200 |
-| D2 beyond-horizon | 60 | 200 |
+**Frame B — the population estimator for structures.** A simple random sample, *n* = 400.
 
-**Where the numbers come from.** For a worst-case proportion (*p* = 0.5), a five-point margin at 95%
-needs 1.96² · 0.25 / 0.05² ≈ **385** observations per denominator. But the rates we expect are
-small — S0's H2 bracket moves under 1% of cells across every threshold tested — and at *p* ≈ 0.01,
-*n* = 385 gives a half-width of about **1.0 point**, which is ample, while *n* = 150 gives about
-1.6 points. So the allocation is sized for small rates and the 385 figure is the pessimistic bound,
-not the target. Both are reported so a reader can see which regime a result is in.
+**And four diagnostics, which are NOT pooled into either estimate.** Revision 1 called these strata
+and planned to combine them with `N_h / n_h` weights. They are not a partition (pass-14 H5): a
+building can be boundary-adjacent *and* within one encoding increment *and* in the whole-frame
+sample simultaneously, so pooling counts the same population mass several times. An overlapping-frame
+estimator needs real inclusion probabilities and a covariance treatment, which is more machinery
+than the question deserves.
 
-**Clustering inflates all of this and the pilot measures by how much.** Locations in the same
-neighbourhood share a road network, a snapping geometry and a nearest destination, so observations
-are not independent. The pilot estimates a design effect **DEFF** by comparing the observed variance
-of E1 within spatial blocks against the binomial variance. The main allocation is multiplied by the
-estimated DEFF, or — if that is unaffordable — the margin is widened and reported, never the other
-way round.
+So they are **targeted diagnostics**, each reported on its own terms and never added to a total:
 
-**Predeclared stopping rule:** the main run's allocation is fixed by the pilot's DEFF before any
-main-run routing is done, and is not revised afterwards.
+| diagnostic | sampling frame | *n* | what it is for |
+|---|---|---|---|
+| **A — boundary-adjacent** | points whose cell is 4-adjacent to a cell with the opposite verdict at *T* | 150 | where misclassification concentrates geometrically |
+| **B — within one encoding increment** | points whose reported value is within one encoding step (60 s today) of *T* | 150 | where it concentrates *numerically*; a point can be in one without the other |
+| **D1 — off-network** | points the product reports `OFF_NETWORK` | 200 | false exclusion at the extreme, which A and B cannot see because both require a value |
+| **D2 — beyond-horizon** | points the product reports `BEYOND_HORIZON` | 200 | the same, with a different remedy and a very different population (3,657 against 9,967 buildings) |
+
+A diagnostic answers "is the rate *here* materially worse than the population rate", and is reported
+as its own proportion with its own interval. The population rates come from frames B and C alone.
 
 ---
 
 ## 5. Weights
 
-Each stratum is sampled at a different rate, so nothing may be reported as a raw proportion of the
-sample. Inverse-probability weights:
+The two population samples are simple random samples, so they are **self-weighting**: the estimate
+is the sample proportion and no `N_h / n_h` correction applies. That is a deliberate simplification
+bought by abandoning the pooled-strata design — it removes the whole class of error pass-14 H5
+found.
 
-> *w<sub>i</sub>* = *N<sub>h</sub>* / *n<sub>h</sub>* for a location *i* in stratum *h*,
-
-where *N<sub>h</sub>* is the stratum's size in the frame and *n<sub>h</sub>* the number sampled.
-Two totals are reported for every estimand, because S2.4 showed they disagree by twenty points:
-
-- **building-weighted**, with *N<sub>h</sub>* counted in buildings — the headline;
-- **cell-weighted**, with *N<sub>h</sub>* counted in cells — comparable with every coverage figure
-  published so far.
-
-A and B are defined per threshold *T*, so their stratum sizes — and therefore their weights — are
-recomputed for each *T*. C, D1 and D2 are *T*-independent and keep one set of weights.
+The diagnostics carry no weights at all, because they estimate nothing about the population.
 
 ---
 
-## 6. Confidence intervals
+## 6. Intervals, with one convention
 
-- Proportions (E1a, E1b): **Wilson score intervals** on the effective sample size *n* / DEFF, not
-  Wald. Wald is degenerate at zero observed failures, which is precisely the case the whole design
-  exists to handle honestly, and it was the implicit method behind "zero failures means zero".
-- Where zero failures are observed, the result is reported as **"0 observed, 95% upper bound x%"**
-  and never as "0%".
-- Stratified totals: Taylor-linearised variance across strata, with the DEFF applied per stratum.
-- Paired differences (E2): bootstrap percentile intervals over **spatial blocks**, not over
-  individual locations, so the resampling respects the clustering rather than assuming it away.
+**One-sided 95% exact (Clopper–Pearson) upper bounds for failure rates**, throughout. The quantity
+of interest is "how bad could this be", the bound is exact rather than approximate, and it behaves
+at zero observed failures — which is the case the design exists to handle honestly. Revision 1 said
+"Wilson on *n*/DEFF", which is an approximation, and mixed one- and two-sided language (pass-14 M4).
+
+Zero observed failures, for reference, with the alternatives Codex asked be made explicit:
+
+| *n* | exact one-sided | Wilson one-sided | Wilson two-sided |
+|---|---|---|---|
+| 8 | **31.2344%** | 25.2724% | 32.4408% |
+| 60 | **4.8703%** | 4.3147% | 6.0172% |
+| 150 | **1.9773%** | 1.7717% | 2.4970% |
+| 400 | **0.7461%** | 0.6718% | 0.9512% |
+
+A zero-failure result is reported as **"0 observed, 95% upper bound x%"** and never as "0%".
+
+**Clustering.** Points near each other share a road network, a snapping geometry and a nearest
+destination, so observations are not independent and the exact binomial bound is optimistic. The
+design effect is estimated as follows, and the zero-event case is predeclared because it is the
+expected one (pass-14 M4):
+
+- **Blocks** are the 2 km × 2 km squares of the grid's own projected coordinates — fixed, not
+  data-dependent.
+- DEFF is estimated by the **between-block variance of the block-level failure proportions** against
+  the binomial variance at the pooled rate, over blocks containing **at least 5 sampled points**;
+  blocks below that are pooled with their nearest qualifying neighbour.
+- **If the pooled failure count is 0, DEFF is not estimable.** The predeclared fallback is
+  **DEFF = 2.0**, applied by dividing *n* before computing the bound, which is the conventional
+  allowance for a moderately clustered design. The reported bound then says it used the fallback.
+
+Paired differences (E2) use a **block bootstrap over those same blocks**, resampling blocks with
+replacement, 2,000 replicates, percentile interval.
 
 ---
 
-## 7. Missing data
+## 7. Every outcome has a verdict
 
-Three kinds, all **reported with counts and treated as informative**. None is dropped, because each
-of them is a result.
+Revision 1 said missing data would be "reported with counts and treated as informative", which
+leaves the arithmetic undefined. A verdict table instead (pass-14 M5), so no status can quietly
+contribute a zero to an error count:
 
-1. **The engine will not route to a sampled coordinate** — no snap within the access bound, or no
-   path. This is not missing data about the world; it is an observation about our pipeline, and it
-   enters the denominator as its own category.
-2. **A planned hand-timed journey was not walked.** The claim stays UNVERIFIED. An untaken journey
-   is never read as absence of disagreement — that is exactly the escape hatch S3.4 was written to
-   close.
-3. **A sampled building lies outside the routable extent.** Counted and reported; the routing bbox
-   exists to make this rare, and if it is not rare that is a finding about the buffer.
+| comparator outcome | product says *pass* | product says *fail* |
+|---|---|---|
+| route found, ≤ *T* | agree | **E1a** false exclusion |
+| route found, > *T* | **E1b** false inclusion | agree |
+| **definitive no path** (search exhausted) | **E1b** — the product promised a journey that does not exist | agree |
+| no network within `max_access_m` of the point | **E1b** | agree |
+| **unknown** (timeout, engine error, snap failure) | counted in an **unknown** bucket | counted in **unknown** |
 
-The primary analysis reports every estimand with the missing categories visible in the denominator.
-A secondary complete-case analysis may be reported *alongside* it, never instead of it, and the two
-must be shown together so a reader can see what the exclusion did.
+The unknown bucket is **bounded both ways**, never dropped and never assumed benign: the reported
+result gives the rate with every unknown counted as agreement and again with every unknown counted
+as an error. If those two bounds straddle the acceptance threshold in §8, the result is
+**inconclusive** and the gate does not pass.
+
+A planned hand-timed journey that was not walked leaves E3 UNVERIFIED. It is never read as absence
+of disagreement — that is the escape hatch S3.4 exists to close.
 
 ---
 
-## 8. What a result may say
+## 8. The acceptance rule, predeclared
 
-Per S3.4, three outcomes, not a pass/fail:
+Revision 1 called E1 a PASS/FAIL gate without saying what passes (pass-14 H7), which leaves the
+verdict selectable after the fact. So:
 
-1. **Construction fidelity: PASS or FAIL.** Ours to fix. A failure is a defect, and the gate is
-   stated as a rate with an interval, not as "no failures seen".
-2. **Engine disagreement: reported with magnitude.** Descriptive. Not a defect and not evidence
-   about reality; it is two models differing until the cause is controlled.
-3. **Real-world accuracy: supported / failed / UNVERIFIED**, with UNVERIFIED the predeclared
-   default.
+For each published mode *m* and threshold *T*, on **each** frame:
+
+- **PASS** if the one-sided 95% upper bound on **E1a** is **≤ 2.0%** and on **E1b** is **≤ 1.0%**.
+- **FAIL** if the point estimate of either exceeds its threshold.
+- **INCONCLUSIVE** otherwise — including whenever the unknown-bucket bounds of §7 straddle a
+  threshold. Inconclusive is not a pass, and shipping on one is an explicit owner decision.
+
+**E1b is held to the tighter bound** because a false inclusion is a claim the product made and a
+false exclusion is a home it failed to mention; both are harmful, and only the first is a statement
+we would have to defend. The thresholds are judgements, recorded here before measurement, and are
+the owner's to move — but not after seeing the result.
+
+**Every published mode and threshold must pass on both frames** for the layer to be described as
+construction-verified. A single failing combination is reported as such rather than averaged away.
 
 ---
 
 ## 9. What has to exist before the pilot runs
 
-- [ ] The frozen frame artifact and its digest (§1), built from the S2.4 building set.
-- [ ] Stratum membership computed on the shipped surface for each published *T* (§3).
-- [ ] An exact-route harness that routes to a **coordinate**, not a cell centre, for each engine.
-- [ ] The spatial block definition used by both the DEFF estimate and the bootstrap (§4, §6).
-- [ ] A decision on the published **maximum duration**, since it bounds the encoding (S3.5) and the
-      current layer cannot distinguish a cell *at* the 120-minute horizon from a genuine 120-minute
-      answer.
+- [ ] Frame B and frame C artifacts with digests (§1).
+- [ ] The comparator harness, implementing §2 exactly, for each engine.
+- [ ] Diagnostic membership computed on the shipped surface per published *T* (§4).
+- [ ] The 2 km block grid, and the bootstrap over it (§6).
+- [ ] A decision on the published **maximum duration**, which bounds the encoding (S3.5) — today a
+      cell *at* the 120-minute horizon is indistinguishable from a genuine 120-minute answer.
 
-The last item is the owner's, and the encoding freeze in S3.5 waits on it.
+The last item is the owner's, and the encoding freeze waits on it.
+
+---
+
+## 10. What revision 2 changed, and why
+
+Recorded rather than silently edited, because the point of predeclaring is that changes are visible.
+
+| pass-14 | revision 1 said | revision 2 says |
+|---|---|---|
+| **H5** | four strata pooled with `N_h / n_h` weights | they overlap, so they are not a partition. Two self-weighting simple random samples estimate the populations; the four are **diagnostics**, never pooled |
+| **H6** | one building frame, reporting both building and cell rates | a cell with no buildings has zero selection probability. **Two frames**, each reporting only its own estimand |
+| **H7** | "PASS / FAIL", no rule | explicit bounds (E1a ≤ 2.0%, E1b ≤ 1.0%, one-sided 95% upper), an INCONCLUSIVE outcome, and all modes/thresholds/frames must pass |
+| **M4** | "Wilson on *n*/DEFF"; DEFF from the pilot | one convention (exact one-sided); fixed 2 km blocks; a named variance estimator; and a **predeclared DEFF = 2.0 fallback**, because zero observed failures makes DEFF inestimable and zero is the expected case |
+| **M5** | "the engine's own answer at that coordinate" | a full comparator specification (§2) and a **verdict table for every status** (§7), with the unknown bucket bounded both ways and a definitive "no path" scored as a false inclusion rather than filed under missing |
+| **M6** | E3 "UNVERIFIED whatever these journeys show" | unfalsifiable as written. A magnitude-based **falsification rule** can return `failed`; the population *rate* stays UNVERIFIED |
+| **L2** | E2 defined against reported time, compared against the float surface | defined once, against the float surface, with an explicit signed formula |
+
+One judgement deliberately kept from revision 1: the allocations are sized for **small** rates. At
+*n* = 400 and a true rate near 1%, the exact one-sided bound is about 1.8 points; the familiar
+"385 for five points" figure assumes *p* = 0.5 and is the pessimistic bound, not the target. Codex
+notes that extrapolating small-rate expectations from the S0 encoding bracket to the building and
+boundary populations is not evidence, and that is fair: the expectation is a **planning assumption**,
+and if the pilot shows rates near 0.5 the allocations are insufficient and the result will say so
+rather than being reported at a margin it cannot support.

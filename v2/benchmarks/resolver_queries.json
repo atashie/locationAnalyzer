@@ -65,9 +65,12 @@
         "lead_role_not": [
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "unc"
         ]
       },
-      "basis": "justified reference point; the original decision-D4 benchmark query that Nominatim resolved to Morganton, 180 km away"
+      "basis": "justified reference point; the original decision-D4 benchmark query that Nominatim resolved to Morganton, 180 km away Tightened after pass-14 M3: an unrelated non-stop leader passed while another candidate supplied the nearby point."
     },
     {
       "query": "UNC Hospitals Chapel Hill",
@@ -77,6 +80,9 @@
         "lead_role_not": [
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "unc"
         ]
       },
       "basis": "a correct locality must not make a correct answer worse"
@@ -89,6 +95,9 @@
         "lead_role_not": [
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "unc"
         ]
       },
       "basis": "strip_region_noise must remove 'NC' without touching the name"
@@ -112,6 +121,9 @@
         "lead_role_not": [
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "duke"
         ]
       },
       "basis": "justified reference point"
@@ -128,25 +140,32 @@
           "stop",
           "station"
         ],
-        "offered_near": "Duke University Hospital"
+        "offered_near": "Duke University Hospital",
+        "lead_near": "Duke University Hospital"
       },
-      "basis": "pass-12 M5 / pass-13 M6: explicit transport intent must not be abstained away, and the phrase must be the tail of the query. The role assertion admits `station` as well as `stop` — both are transport features and the query asked for one; the location assertion is what keeps it meaningful, since a stop of this name in Raleigh is the wrong answer"
+      "basis": "pass-12 M5 / pass-13 M6: explicit transport intent must not be abstained away, and the phrase must be the tail of the query. The role assertion admits `station` as well as `stop` — both are transport features and the query asked for one; the location assertion is what keeps it meaningful, since a stop of this name in Raleigh is the wrong answer Tightened after pass-14 M1: a Raleigh bus stop led while a different candidate supplied the proximity. The LEADER must be the nearby one."
     },
     {
       "query": "Southpoint",
       "intent": "the mall in south Durham",
       "expect": {
-        "not_far_from": "Southpoint Mall"
+        "not_far_from": "Southpoint Mall",
+        "lead_name_contains": [
+          "southpoint"
+        ]
       },
-      "basis": "justified reference point; Nominatim resolved this to Kenosha, Wisconsin"
+      "basis": "justified reference point; Nominatim resolved this to Kenosha, Wisconsin Tightened after pass-14 M1: a 5 km distance check passed a dessert shop 731 m from the mall reference, which is not the mall. The leader's name must contain the mall's name."
     },
     {
       "query": "The Streets at Southpoint",
       "intent": "the mall by its full name, which begins with a connective",
       "expect": {
-        "not_far_from": "Southpoint Mall"
+        "not_far_from": "Southpoint Mall",
+        "lead_name_contains": [
+          "southpoint"
+        ]
       },
-      "basis": "pass-11 H2: stripping 'The' from both ends matched a different record exactly"
+      "basis": "pass-11 H2: stripping 'The' from both ends matched a different record exactly Tightened after pass-14 M1: any leader within 5 km passed."
     },
     {
       "query": "RTP",
@@ -192,17 +211,24 @@
       "query": "Carrboro Farmers Market",
       "intent": "the market in Carrboro; the locality is part of the name",
       "expect": {
-        "offered_near": "Carrboro Town Hall"
+        "offered_near": "Carrboro Town Hall",
+        "lead_name_contains": [
+          "farmers",
+          "market"
+        ]
       },
-      "basis": "pass-11 H2: a locality word that belongs to the name must survive. The reference is the town hall, which the market is beside"
+      "basis": "pass-11 H2: a locality word that belongs to the name must survive. The reference is the town hall, which the market is beside Tightened after pass-14 M3: any nearby candidate passed."
     },
     {
       "query": "Weaver Street Market",
       "intent": "the co-operative grocery in Carrboro",
       "expect": {
-        "not_far_from": "Carrboro Town Hall"
+        "lead_name_contains": [
+          "weaver",
+          "street"
+        ]
       },
-      "basis": "justified reference point nearby; several branches exist, so ambiguity is acceptable"
+      "basis": "Several branches exist, so ambiguity is acceptable and no single branch is the right answer. Pass-14 M3 showed the previous 5 km-from-Carrboro assertion would REJECT a correct Hillsborough or Raleigh branch — an assertion no correct answer can pass is as bad as one a wrong answer can. Identity only."
     },
     {
       "query": "Harris Teeter Carrboro",
@@ -211,9 +237,13 @@
         "outcome": [
           "resolved"
         ],
-        "locality_match": true
+        "locality_match": true,
+        "lead_name_contains": [
+          "harris",
+          "teeter"
+        ]
       },
-      "basis": "pass-9: locality was a score bonus that min(1.0, ...) erased, so this tied four exact matches and the Carrboro shop was not in the top four"
+      "basis": "pass-9: locality was a score bonus that min(1.0, ...) erased, so this tied four exact matches and the Carrboro shop was not in the top four Tightened after pass-14 M3: locality_match alone does not establish brand identity."
     },
     {
       "query": "Harris Teeter",
@@ -244,9 +274,13 @@
           "station",
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "whole",
+          "foods"
         ]
       },
-      "basis": "pass-10 H2: a LEADING locality sent this to the Amtrak station at 0.85"
+      "basis": "pass-10 H2: a LEADING locality sent this to the Amtrak station at 0.85 Tightened after pass-14 M3: a wrong business with locality_match satisfied this."
     },
     {
       "query": "Durham Whole Foods",
@@ -257,6 +291,10 @@
           "station",
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "whole",
+          "foods"
         ]
       },
       "basis": "pass-10 H2, the exact form that failed"
@@ -270,6 +308,10 @@
           "station",
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "whole",
+          "foods"
         ]
       },
       "basis": "pass-11 H2: a leading 'the' is filler here and part of the name in 'The Streets At Southpoint', so it has to be a reading rather than a rule"
@@ -353,9 +395,12 @@
           "stop",
           "fixture",
           "parking"
+        ],
+        "lead_name_contains": [
+          "wegmans"
         ]
       },
-      "basis": "a grocery query of the kind the product is actually for; the assertion is identity, not location"
+      "basis": "a grocery query of the kind the product is actually for; the assertion is identity, not location Tightened after pass-14 M3: an unrelated facility passed."
     },
     {
       "query": "Trader Joes",
@@ -365,9 +410,12 @@
           "stop",
           "fixture",
           "parking"
+        ],
+        "lead_name_contains": [
+          "trader"
         ]
       },
-      "basis": "normalise() folds punctuation, so the apostrophe must not matter"
+      "basis": "normalise() folds punctuation, so the apostrophe must not matter Tightened after pass-14 M3: returning the same WRONG facility for both spellings satisfied same_lead_as."
     },
     {
       "query": "Trader Joe's",
@@ -378,7 +426,10 @@
           "fixture",
           "parking"
         ],
-        "same_lead_as": "Trader Joes"
+        "same_lead_as": "Trader Joes",
+        "lead_name_contains": [
+          "trader"
+        ]
       },
       "basis": "the pair is the test: punctuation must not change the answer"
     },
@@ -400,24 +451,29 @@
         "lead_role_not": [
           "stop",
           "fixture"
+        ],
+        "lead_name_contains": [
+          "station"
         ]
       },
-      "basis": "pass-11 M1 and pass-13 M7: station/train_station/halt are one role and a station is not a platform"
+      "basis": "pass-11 M1 and pass-13 M7: station/train_station/halt are one role and a station is not a platform Tightened after pass-14 M3: an unrelated facility passed."
     },
     {
       "query": "Durham train station",
       "intent": "the station, explicit transport phrase",
       "expect": {
         "outcome": [
-          "resolved",
           "ambiguous"
         ],
-        "lead_role_in": [
-          "station",
-          "stop"
-        ]
+        "offered_named_near": {
+          "name_contains": [
+            "durham",
+            "station"
+          ],
+          "near": "Downtown Durham"
+        }
       },
-      "basis": "pass-13 M6: an explicit transport phrase at the tail of the query is intent"
+      "basis": "pass-13 M6: an explicit transport phrase at the tail of the query is intent, and the phrase-free form is a further reading so the words do not inflate candidates whose NAMES contain them. pass-14 M1 then showed this resolved CONFIDENTLY to a place named 'Train Station' 32 km away in Raleigh; a typed locality must now be confirmed for confidence, so it is correctly ambiguous. KNOWN RANKING LIMIT, recorded not hidden: the Raleigh record still LEADS, because it matches the locality-stripped reading exactly at 1.000 while 'Durham Station' matches partially, and locality breaks ties rather than outranking score. Demanding the right leader would be an assertion no correct answer can pass today, which is as bad as one a wrong answer can. So this asserts the contract for ambiguity: abstain, and OFFER the right place — pinned to a candidate named 'Durham ... Station' near downtown Durham, so an unrelated business cannot satisfy it."
     },
     {
       "query": "Bay Leaf",
@@ -473,9 +529,10 @@
       "expect": {
         "outcome": [
           "not_found"
-        ]
+        ],
+        "no_candidates": true
       },
-      "basis": "an empty query must not be an error and must not return a candidate"
+      "basis": "an empty query must not be an error and must not return a candidate Tightened after pass-14 M3: a malformed not_found carrying garbage candidates passed."
     },
     {
       "query": "zzzzqqq not a place",
@@ -483,9 +540,21 @@
       "expect": {
         "outcome": [
           "not_found"
-        ]
+        ],
+        "no_candidates": true
       },
-      "basis": "below SCORE_FLOOR nothing is worth showing"
+      "basis": "below SCORE_FLOOR nothing is worth showing Tightened after pass-14 M3."
+    },
+    {
+      "query": "Harris Teeter",
+      "intent": "merge tripwire: a chain present in both sources must still corroborate",
+      "expect": {
+        "outcome": [
+          "ambiguous"
+        ],
+        "min_corroborated": 1
+      },
+      "basis": "pass-14 M2: Codex reverted each historical merge over-correction in memory and found that three of four turned NO benchmark assertion red — the unit tests catch them, the benchmark did not. This is a tripwire on real data: if a merge rule regresses, cross-source clusters come apart and the corroborated count drops. The baseline was measured, not assumed."
     }
   ]
 }

@@ -257,34 +257,34 @@ Full candidate lists, scores, source-native ids and licences are in `v2/data/s2_
 **3 of 5 graded queries land on the right place**, and 0 resolve confidently onto a feature that merely *refers* to a place (a stop, a platform, an ATM) rather than the place itself — a distance test calls those correct, which is why identity is checked separately. Only queries whose intended answer was written down beforehand can be graded; the rest are printed for reading rather than scored, because a resolver cannot be marked against an answer nobody recorded. For an *ambiguous* outcome the grading asks whether the right place is **offered** at all, since ambiguity is a legitimate answer and a chooser the household resolves.
 
 
-### S2.1 expanded graded benchmark (2026-11-04 16:17:52)
+### S2.1 expanded graded benchmark (2026-11-04 21:08:23)
 
-**40 of 41 graded assertions pass.** 41 queries, 0 ungraded. Index 113,720 places, 228 localities.
+**41 of 42 graded assertions pass.** 42 queries, 0 ungraded. Index 113,720 places, 228 localities.
 
 Written because four consecutive Codex passes found over-corrections in `resolve.py`, each closing the reviewed case and breaking an adjacent one, and the five-query benchmark could not see them. Intended answers are recorded in `v2/benchmarks/resolver_queries.json` **before** the run. Location grading uses only the twelve independently justified spot-check reference points; everything else is a property assertion, because most of what keeps breaking is identity and confidence rather than position.
 
 | query | outcome | leading candidate | category | verdict | detail |
 |---|---|---|---|---|---|
-| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | pass | lead role facility; offered within 800 m |
-| `UNC Hospitals Chapel Hill` | ambiguous | Unc Hospitals, Chapel Hill NC | hospital | pass | lead role facility; offered within 800 m |
-| `UNC Hospitals, Chapel Hill NC` | ambiguous | Unc Hospitals, Chapel Hill NC | hospital | pass | lead role facility; offered within 800 m |
+| `UNC Hospitals` | ambiguous | UNC Hospitals & Pharmacy | pharmacy | pass | lead role facility; offered within 800 m; leader name matches |
+| `UNC Hospitals Chapel Hill` | ambiguous | Unc Hospitals, Chapel Hill NC | hospital | pass | lead role facility; offered within 800 m; leader name matches |
+| `UNC Hospitals, Chapel Hill NC` | ambiguous | Unc Hospitals, Chapel Hill NC | hospital | pass | lead role facility; offered within 800 m; leader name matches |
 | `Duke Hospital` | ambiguous | Duke Hospital | platform | pass | outcome ambiguous; a real place is among the options |
-| `Duke University Hospital` | ambiguous | Duke University Hospital Imaging Services | radiology | pass | lead role facility; offered within 800 m |
-| `Duke Hospital bus stop` | ambiguous | Duke Raleigh Hospital CAT Bus Stop | bus_station | pass | outcome ambiguous; lead role station; offered within 800 m |
-| `Southpoint` | resolved | Southpoint | dessert_shop | pass | leader 731 m away |
-| `The Streets at Southpoint` | ambiguous | The Streets At Southpoint | shopping_mall | pass | leader 311 m away |
+| `Duke University Hospital` | ambiguous | Duke University Hospital Imaging Services | radiology | pass | lead role facility; offered within 800 m; leader name matches |
+| `Duke Hospital bus stop` | resolved | Duke Hospital | platform | pass | outcome resolved; lead role stop; offered within 800 m; leader within 56 m |
+| `Southpoint` | resolved | Southpoint | dessert_shop | pass | leader name matches; leader 731 m away |
+| `The Streets at Southpoint` | ambiguous | The Streets At Southpoint | shopping_mall | pass | leader name matches; leader 311 m away |
 | `RTP` | ambiguous | Aventura RTP | historic_site | pass | ambiguous, so no confident claim was made |
 | `Research Triangle Park` | ambiguous | Research Triangle Park | professional_service | pass | ambiguous, so no confident claim was made |
 | `RDU` | ambiguous | CrossFit RDU | gym | pass | lead role facility; ambiguous, so no confident claim was made |
 | `RDU Airport` | ambiguous | RDU Airport | airport_terminal | pass | lead role facility; ambiguous, so no confident claim was made |
-| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | pass | offered within 800 m |
-| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | pass | leader 3418 m away |
-| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | pass | outcome resolved; locality matched |
+| `Carrboro Farmers Market` | resolved | Carrboro Farmers Market | farmers_market | pass | offered within 800 m; leader name matches |
+| `Weaver Street Market` | ambiguous | Weaver Street Market | supermarket | pass | leader name matches |
+| `Harris Teeter Carrboro` | resolved | Harris Teeter | supermarket | pass | outcome resolved; locality matched; leader name matches |
 | `Harris Teeter` | ambiguous | Harris Teeter | supermarket | pass | outcome ambiguous |
 | `Whole Foods` | ambiguous | Whole Foods Market | supermarket | pass | outcome ambiguous |
-| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched |
-| `Durham Whole Foods` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched |
-| `the Whole Foods in Durham` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched |
+| `Whole Foods Durham` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched; leader name matches |
+| `Durham Whole Foods` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched; leader name matches |
+| `the Whole Foods in Durham` | resolved | Whole Foods Market | supermarket | pass | lead role facility; locality matched; leader name matches |
 | `Chapel Hill` | ambiguous | Chapel Hill | gym | pass | ambiguous, so no confident claim was made |
 | `Franklin Street` | resolved | Franklin Street | — | pass | confident, 325 m away |
 | `NC State` | resolved | NC State | college_university | pass | confident, 4805 m away |
@@ -293,19 +293,20 @@ Written because four consecutive Codex passes found over-corrections in `resolve
 | `Cary` | ambiguous | Cary | — | pass | ambiguous, so no confident claim was made |
 | `Morganton` | not_found | — | — | pass | outcome not_found |
 | `Asheville` | ambiguous | Grove Park Inn, Asheville NC | hotel | pass | outcome ambiguous |
-| `Wegmans Chapel Hill` | ambiguous | Wegmans | supermarket | pass | lead role facility |
-| `Trader Joes` | ambiguous | Trader Joe's | supermarket | pass | lead role facility |
-| `Trader Joe's` | ambiguous | Trader Joe's | supermarket | pass | lead role facility; same leader as its pair |
+| `Wegmans Chapel Hill` | ambiguous | Wegmans | supermarket | pass | lead role facility; leader name matches |
+| `Trader Joes` | ambiguous | Trader Joe's | supermarket | pass | lead role facility; leader name matches |
+| `Trader Joe's` | ambiguous | Trader Joe's | supermarket | pass | lead role facility; leader name matches; same leader as its pair |
 | `Duke Street Durham` | ambiguous | Durham Pediatrics at North Duke Street | pediatric_clinic | pass | lead role facility |
-| `Durham Station` | resolved | Durham Station | bus_station | pass | lead role station |
-| `Durham train station` | resolved | Train Station | platform | pass | outcome resolved; lead role stop |
+| `Durham Station` | resolved | Durham Station | bus_station | pass | lead role station; leader name matches |
+| `Durham train station` | ambiguous | Train Station | platform | pass | outcome ambiguous; a candidate named ['durham', 'station'] is 466 m away |
 | `Bay Leaf` | ambiguous | Bay Leaf Fire Department | fire_station | pass | lead role facility |
 | `ATM` | ambiguous | ATM | atm | pass | outcome ambiguous |
 | `parking` | resolved | Parking | parking | **FAIL** | outcome 'resolved', wanted one of ['ambiguous', 'not_found'] |
 | `Downtown Durham` | ambiguous | Downtown Durham | farmers_market | pass | ambiguous, so no confident claim was made |
 | `Durham` | ambiguous | Durham | station | pass | ambiguous, so no confident claim was made |
-| `` | not_found | — | — | pass | outcome not_found |
-| `zzzzqqq not a place` | not_found | — | — | pass | outcome not_found |
+| `` | not_found | — | — | pass | outcome not_found; no candidates, as required |
+| `zzzzqqq not a place` | not_found | — | — | pass | outcome not_found; no candidates, as required |
+| `Harris Teeter` | ambiguous | Harris Teeter | supermarket | pass | outcome ambiguous; 8 corroborated |
 
 **Failures, with the assertion each one guards:**
 

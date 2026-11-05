@@ -770,3 +770,87 @@ def test_a_locality_word_inside_a_longer_query_is_unaffected():
                         category="supermarket")])
     assert idx.resolve("Harris Teeter Carrboro").outcome == "resolved"
     assert idx.resolve("Carrboro Farmers Market").outcome in {"resolved", "ambiguous", "not_found"}
+
+
+# --------------------------------------------------------------------------------------------
+# Codex pass 14, plus the defects the TIGHTENED benchmark exposed once its assertions could no
+# longer be satisfied by a different candidate than the one they were written about.
+# --------------------------------------------------------------------------------------------
+
+
+def test_presentation_reordering_cannot_manufacture_confidence():
+    """pass-14 H4, its executed input. Promotion ran inside `_merge_corroborating`, so `_decide`
+    saw the reordered list: for "Northside Durham" the bus stop named exactly that scored 1.00 on
+    the intact reading and a restaurant aliased "Northside" scored 0.95 on a stripped one, and
+    after promotion `_decide` read the restaurant's sole locality match as decisive — **resolved**.
+    A reordering meant to improve a chooser must never be able to remove the chooser."""
+    idx = PlaceIndex([
+        P("Northside Durham", -78.9000, 35.9900, sid="osm:stop", category="bus_stop",
+          locality="Durham"),
+        P("Acme", -78.9010, 35.9910, sid="osm:rest", category="restaurant",
+          aliases=("Northside",), locality="Durham"),
+    ])
+    r = idx.resolve("Northside Durham")
+    assert r.outcome == "ambiguous", [(c.place.name, c.score, c.reading) for c in r.candidates]
+    # the presentation benefit is kept: the real place is still shown first
+    assert r.candidates[0].place.category == "restaurant"
+
+
+def test_an_explicit_transport_phrase_is_intent_not_part_of_the_name():
+    """The tightened benchmark's find. "Duke Hospital bus stop" led with a stop named "Duke Raleigh
+    Hospital CAT Bus Stop" **34.9 km away**, because that name contains all four query words while
+    the platform actually called "Duke Hospital" matches only two. The phrase-free form is now a
+    further reading, so the intent words stop inflating names that happen to contain them."""
+    idx = PlaceIndex([
+        P("Duke Hospital", -78.9370, 36.0070, sid="osm:near", category="platform"),
+        P("Duke Raleigh Hospital CAT Bus Stop", -78.6400, 35.7900, sid="osm:far",
+          category="bus_stop", locality="Raleigh"),
+    ])
+    r = idx.resolve("Duke Hospital bus stop")
+    assert r.candidates[0].place.source_id == "osm:near", [
+        (c.place.name, c.score, c.reading) for c in r.candidates]
+
+
+def test_a_reading_that_is_nothing_but_a_locality_is_not_offered():
+    """Stripping "train station" from "Durham train station" leaves the bare locality, which then
+    matched a place literally named Durham at 1.000. That looks like disambiguation and is
+    coincidence."""
+    idx = PlaceIndex([P("Durham Station", -78.9010, 35.9950, sid="osm:s",
+                        category="bus_station", locality="Durham")])
+    readings = [r for r, _ in idx._readings(["durham", "train", "station"])]
+    assert ["durham"] not in readings, readings
+
+
+def test_a_typed_locality_must_be_confirmed_for_a_confident_answer():
+    """The tightened benchmark's other find. "Durham train station" resolved **confidently** to a
+    place named "Train Station" 32 km away whose locality field is empty — so a contradiction test
+    would not have fired. A typed locality has to be confirmed, not merely un-contradicted; this is
+    the Morganton failure mode in miniature."""
+    idx = PlaceIndex([
+        P("Train Station", -78.6382, 35.7796, sid="osm:far", category="station"),
+        P("Durham Station", -78.9010, 35.9950, sid="osm:near", category="bus_station",
+          locality="Durham"),
+    ])
+    r = idx.resolve("Durham train station")
+    assert r.outcome == "ambiguous", [(c.place.name, c.place.locality) for c in r.candidates]
+    # both are still offered: locality ranks, it does not filter
+    assert {c.place.source_id for c in r.candidates} == {"osm:far", "osm:near"}
+
+
+def test_a_confirmed_locality_still_resolves_confidently():
+    """The guard on the rule above, and the case that caught my first version of it: a leader that
+    won on the *intact* query has `locality_match=False` even when its locality is exactly what was
+    typed, so the rule has to read the locality **field**, not the per-reading flag. Using the flag
+    made "market carrboro" ambiguous although Carrboro Farmers Market is in Carrboro."""
+    assert IDX.resolve("market carrboro").outcome == "resolved"
+    assert IDX.resolve("Harris Teeter Carrboro").outcome == "resolved"
+    assert IDX.resolve("Whole Foods Durham").outcome == "resolved"
+
+
+def test_every_apostrophe_variant_normalises_the_same_way():
+    """pass-14 L1. `_INTRAWORD` ran *after* NFKD, which decomposes U+00B4 into a space plus a
+    combining acute; the mark was stripped and the space survived, so "Trader Joe´s" became
+    "trader joe s" while the ASCII form became "trader joes"."""
+    for variant in ("Trader Joe's", "Trader Joe’s", "Trader Joe´s", "Trader Joeʼs",
+                    "Trader Joes"):
+        assert normalise(variant) == "trader joes", variant

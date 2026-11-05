@@ -156,7 +156,7 @@ def main() -> None:
         "shipped_reachable": int(np.isfinite(shipped).sum()),
         "lawful_reachable": int(has_lawful.sum()),
         "no_lawful_journey": int((reach & ~has_lawful).sum()),
-        "lawful_but_slower": int(slower.sum()),
+        "lawful_more_than_1s_slower": int(slower.sum()),
         "state_of_lawful_best": {int(k): int(c) for k, c in
                                  zip(*np.unique(state[has_lawful], return_counts=True))},
     }
@@ -165,7 +165,7 @@ def main() -> None:
           f"(shipped surface finite at {nd['shipped_reachable']:,}); **no lawful journey** "
           f"{nd['no_lawful_journey']:,} "
           f"({nd['no_lawful_journey'] / max(1, nd['reachable_without_the_policy']):.4%}); "
-          f"lawful but slower {nd['lawful_but_slower']:,}", flush=True)
+          f"lawful but >1 s slower {nd['lawful_more_than_1s_slower']:,}", flush=True)
     if slower.any():
         d = lawful[slower] - baseline[slower]
         out["nodes"]["slower_median_s"] = float(np.median(d))
@@ -243,7 +243,7 @@ def main() -> None:
         }
         si = out["split_invariance"]
         print(f"  split invariance: finiteness identical={si['finiteness_identical']}, "
-              f"max abs diff {si['max_abs_diff_s']:.6f} s", flush=True)
+              f"max abs diff {si['max_abs_diff_s']:.3e} s", flush=True)
 
     out["versions"] = {"profile": profile.profile_version(), "grid": profile.grid_version(GRID)}
     append_results("spotcheck-engines.md", render(out, args))
@@ -303,7 +303,8 @@ def render(out: dict, args) -> str:
              f"| the shipped surface is finite at | {nd['shipped_reachable']:,} |",
              f"| **no journey in `R* O* R*`** | **{nd['no_lawful_journey']:,}** "
              f"({nd['no_lawful_journey'] / max(1, nd['reachable_without_the_policy']):.4%}) |",
-             f"| lawful but slower | {nd['lawful_but_slower']:,} |"]
+             f"| lawful but **more than one second** slower | "
+             f"{nd['lawful_more_than_1s_slower']:,} |"]
     if "slower_median_s" in nd:
         lines.append(f"| where slower: median / p90 / max | +{nd['slower_median_s']:.1f} s / "
                      f"+{nd['slower_p90_s']:.1f} s / +{nd['slower_max_s']:.1f} s |")
@@ -330,7 +331,7 @@ def render(out: dict, args) -> str:
         si = out["split_invariance"]
         lines += ["", f"**Split invariance** (pass-13 H3), subdividing every restricted edge at its "
                       f"midpoint: finiteness identical **{si['finiteness_identical']}**, maximum "
-                      f"absolute difference **{si['max_abs_diff_s']:.6f} s** over "
+                      f"absolute difference **{si['max_abs_diff_s']:.3e} s** over "
                       f"{si['nodes_compared']:,} shared nodes. The journey set is unchanged by "
                       f"subdivision, so a measure of journeys must be unchanged; the withdrawn "
                       f"first-edge rule was not."]

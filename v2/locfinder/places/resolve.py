@@ -143,6 +143,25 @@ STOP_INTENT_PHRASES = frozenset({
 _STOP_PHRASE_MAX_N = max(len(q.split()) for q in STOP_INTENT_PHRASES)
 
 
+def strip_stop_phrase(tokens) -> list[str]:
+    """Remove a trailing transport phrase, leaving the name the user was qualifying.
+
+    When "bus stop" is *intent*, it is not part of the place's name — but the scorer does not know
+    that, so those words inflate every candidate whose name happens to contain them. The expanded
+    benchmark caught it twice: "Duke Hospital bus stop" led with **Duke Raleigh Hospital CAT Bus
+    Stop, 34.9 km away**, because that name contains all four query words while the Durham platform
+    actually called "Duke Hospital" matches only two.
+
+    So the phrase-free form becomes one more rung on the readings ladder rather than a rewrite:
+    it is more destructive than the intact query, so it only wins where it scores better.
+    """
+    toks = list(tokens)
+    for n in range(_STOP_PHRASE_MAX_N, 1, -1):
+        if len(toks) > n and " ".join(toks[-n:]) in STOP_INTENT_PHRASES:
+            return toks[:-n]
+    return toks
+
+
 def names_a_stop(tokens) -> bool:
     """Did the query itself ask for a stop? Used only to suppress the mixed-reference abstention.
 
@@ -180,13 +199,18 @@ _REGION_NOISE = frozenset({
 _CONNECTIVES = frozenset({"the", "in", "at", "on", "near", "of", "a"})
 _PUNCT = re.compile(r"[^\w\s]+", re.UNICODE)
 _WS = re.compile(r"\s+")
-#: Deleted rather than replaced by a space. An apostrophe sits *inside* a word in the possessive
-#: form that business names are full of, so spacing it splits the word: "Trader Joe's" became
-#: `['trader', 'joe', 's']` while "Trader Joes" became `['trader', 'joes']`, and the two spellings
-#: of one query returned different leading candidates. The existing test only covered a *trailing*
-#: apostrophe ("Carrboro Farmers' Market"), where adding a space is harmless, which is why this
-#: survived — found by the expanded benchmark.
-_INTRAWORD = re.compile(r"[\u0027\u2019\u02bc\u0060\u00b4]+")
+#: Deleted rather than replaced by a space, and deleted **before** NFKD. An apostrophe sits *inside*
+#: a word in the possessive form that business names are full of, so spacing it splits the word:
+#: "Trader Joe's" became `['trader', 'joe', 's']` while "Trader Joes" became `['trader', 'joes']`,
+#: and the two spellings of one query returned different leading candidates. The existing test only
+#: covered a *trailing* apostrophe ("Carrboro Farmers' Market"), where adding a space is harmless,
+#: which is why this survived — found by the expanded benchmark.
+#:
+#: Deletion is not a universal rule for these characters: "fish'n'chips" becomes "fishnchips" rather
+#: than "fish n chips" (Codex pass-14 L1). That is accepted here because the possessive dominates
+#: real names by a wide margin, and an elided conjunction is rare enough to be a known limit rather
+#: than a reason to break every "Joe's".
+_INTRAWORD = re.compile(r"[\u0027\u2019\u02bc\u0060\u00b4\u2018\u201b]+")
 
 
 def normalise(text: str) -> str:
@@ -198,9 +222,13 @@ def normalise(text: str) -> str:
     """
     if not text:
         return ""
-    s = unicodedata.normalize("NFKD", str(text))
+    # Before NFKD, not after (Codex pass-14 L1). NFKD decomposes U+00B4 ACUTE ACCENT into a space
+    # plus a combining acute; the combining mark is then stripped and the space survives, so
+    # "Trader Joe´s" became "trader joe s" while the ASCII form became "trader joes". Removing
+    # the apostrophe-likes first means the decomposition never happens.
+    s = _INTRAWORD.sub("", str(text))
+    s = unicodedata.normalize("NFKD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
-    s = _INTRAWORD.sub("", s)
     s = _PUNCT.sub(" ", s).casefold()
     return _WS.sub(" ", s).strip()
 
@@ -359,6 +387,16 @@ class PlaceIndex:
         base = out[-1][0]
         if base and base[0] in _CONNECTIVES and len(base) > 1:
             out.append((base[1:], locality))
+        # And the same treatment for an explicit transport phrase, which is intent rather than name.
+        # A rung that is empty, or that is nothing but a locality name, is not a reading of anything
+        # — "Durham train station" would otherwise offer the bare reading "durham" and match a place
+        # literally called Durham, which looks like disambiguation and is coincidence.
+        for name_tokens, loc in list(out):
+            without = strip_stop_phrase(name_tokens)
+            if (without != name_tokens and without
+                    and " ".join(without) not in self._localities
+                    and (without, loc) not in out):
+                out.append((without, loc))
         return out
 
     @staticmethod
@@ -455,6 +493,9 @@ class PlaceIndex:
                 scored.append(Candidate(place=p, score=round(score, 4), matched_on=how,
                                         locality_match=loc_hit, reading=r_idx))
         locality = any(loc for _, loc in readings[1:]) if len(readings) > 1 else None
+        # The locality itself, not just whether one was found: `locality` above is a bool, and
+        # comparing a place's locality against it silently compared against the string "true".
+        typed_locality = next((loc for _, loc in readings[1:] if loc), None)
 
         if not scored:
             return Resolution(query=query, outcome="not_found")
@@ -464,20 +505,44 @@ class PlaceIndex:
         merged = _merge_corroborating(scored)
         # Decide on the COMPLETE ranking, then truncate for presentation. Deciding after the cut
         # let `limit=1` turn an ambiguous pair into a confident answer (Codex pass-10 H3).
+        # Decide on the canonical score ranking, then reorder for presentation. The order matters:
+        # see `_promote_real_places_within_the_leading_tier` (pass-14 H4).
         outcome = _decide(merged, bool(locality), stop_intent=names_a_stop(raw))
-        # A query that IS a locality name cannot be answered confidently by an index of POIs.
-        # This generalises the area gap recorded in the module docstring for "RTP". The mechanism
-        # the expanded benchmark exposed: Overture's listing noise contains records whose *name* is
-        # exactly a place name — a gym called "Chapel Hill" 6.2 km from Chapel Hill — and a sole
-        # exact match scores 1.000 and wins outright, so the resolver confidently returned the gym.
-        # "Durham" was passing its benchmark assertion only because the record of that name happens
-        # to sit 520 m from the reference, which is luck rather than correctness.
+        merged = _promote_real_places_within_the_leading_tier(merged)
+        # A query that IS a locality name is ambiguous **between entity types**, and this index can
+        # only represent one of them. The mechanism the expanded benchmark exposed: a sole exact
+        # match scores 1.000 and wins outright, so "Chapel Hill" resolved confidently to a **gym**
+        # 6.2 km from Chapel Hill. "Durham" was passing its assertion only because the record of
+        # that name happens to sit 520 m from the reference, which is luck.
         #
-        # Downgrading to `ambiguous` keeps the candidates, which are worth showing, and withholds a
-        # confidence the index cannot support. Areas need an area index; until then this is the
-        # honest outcome.
+        # The first version of this comment said a POI index cannot hold a place with a locality's
+        # name, which is false (Codex pass-14 M3): there are **62 records whose normalised names
+        # equal 29 distinct locality strings** in this index, including Burlington stores and a Gulf
+        # fuel station, and those are legitimate businesses. So this is not "the index cannot answer
+        # it" — it is "the query names two kinds of thing and nothing here chooses between them".
+        #
+        # Abstaining keeps both readings visible and withholds a confidence neither deserves. The
+        # real fix is an area index plus an explicit entity-type choice in the chooser; until then a
+        # business whose entire name is a locality is reachable but never confident, which is a cost
+        # this records rather than hides.
         if outcome == "resolved" and " ".join(raw) in self._localities:
             outcome = "ambiguous"
+        # A typed locality must be **confirmed** for a confident answer, not merely un-contradicted.
+        # "Durham train station" resolved confidently to a place named "Train Station" **32 km away**
+        # whose locality field is empty — so a contradiction test would not have fired, and an
+        # unconfirmable cross-metro answer is the Morganton failure mode in miniature. Found by the
+        # expanded benchmark.
+        #
+        # The test is against the leader's own `locality` **field**, not its `locality_match` flag:
+        # that flag is per *reading*, and a leader that won on the intact query has it False even
+        # when its locality is exactly what the user typed. Using the flag made "market carrboro"
+        # ambiguous although Carrboro Farmers Market is in Carrboro.
+        #
+        # Locality still ranks rather than filters: the candidates are unchanged and all remain
+        # offered. Only the confidence is withdrawn.
+        if outcome == "resolved" and typed_locality and merged:
+            if normalise(merged[0].place.locality or "") != normalise(typed_locality):
+                outcome = "ambiguous"
         return Resolution(query=query, outcome=outcome, candidates=tuple(merged[:limit]),
                           n_matched=len(merged))
 
@@ -638,11 +703,20 @@ def _merge_corroborating(scored: list[Candidate]) -> list[Candidate]:
             members[len(out)] = {cand.place.source}
             out.append(cand)
     out.sort(key=_rank_key)
-    return _promote_real_places_within_the_leading_tier(out)
+    return out
 
 
 def _promote_real_places_within_the_leading_tier(ranked: list[Candidate]) -> list[Candidate]:
     """Within the leading score tier, a real place outranks a feature that merely refers to one.
+
+    **Presentation only. The outcome is decided before this runs, and must be.** Applying it inside
+    `_merge_corroborating` meant `_decide` saw the promoted order, and promotion turned an ambiguous
+    pair into a confident wrong answer (Codex pass-14 H4): for "Northside Durham", with a bus stop
+    named exactly that at 1.00 on the intact reading and a restaurant "Acme" aliased "Northside" at
+    0.95 on a stripped reading, promotion put the restaurant first and `_decide` then read its sole
+    locality match as decisive — **resolved to Acme**. Unpromoted, the same input is ambiguous,
+    which is correct. A reordering intended to improve a chooser must never be able to remove the
+    chooser.
 
     `_rank_key` already carries `is_reference_feature`, but it sits *after* the score, so it only
     decides an **exact** tie, and exact ties are rare. Widening that to the ambiguity tier means a

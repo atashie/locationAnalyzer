@@ -99,6 +99,64 @@ def grade(spec: dict, res, refs: dict, same_m: float, far_m: float,
                             + (f"; nearest candidate {best:.0f} m" if best else ""))
         notes.append(f"offered within {same_m:.0f} m")
 
+    if "lead_near" in want:
+        # The same candidate must satisfy location AND role. `offered_near` is satisfied by *any*
+        # candidate, which let a bus platform 56 m from a hospital pass an assertion written to
+        # exclude it, and let a Raleigh bus stop lead while a Durham one supplied the proximity
+        # (Codex pass-13 and pass-14 M1).
+        ref = refs[want["lead_near"]]
+        if lead is None:
+            return "FAIL", "no candidate"
+        d = metres((lead.place.lat, lead.place.lon), ref)
+        if d > same_m:
+            return "FAIL", (f"the LEADER {lead.place.name!r} is {d:.0f} m from "
+                            f"{want['lead_near']}, beyond {same_m:.0f} m")
+        notes.append(f"leader within {d:.0f} m")
+
+    if "offered_named_near" in want:
+        # A *named* candidate must be near the reference. Plain `offered_near` is satisfied by any
+        # candidate, which is how a bus platform 56 m from a hospital passed an assertion written to
+        # exclude it (pass-13) — and plain `lead_name_contains` cannot be required of an
+        # `ambiguous` outcome, whose contract is to *offer* the right place rather than to lead with
+        # it. This pins both halves to one candidate without demanding it lead.
+        spec_words = [w.lower() for w in want["offered_named_near"]["name_contains"]]
+        ref = refs[want["offered_named_near"]["near"]]
+        named = [c for c in cands if all(w in c.place.name.lower() for w in spec_words)]
+        if not named:
+            return "FAIL", f"no candidate whose name contains all of {spec_words}"
+        best = min(metres((c.place.lat, c.place.lon), ref) for c in named)
+        if best > same_m:
+            return "FAIL", (f"the nearest candidate named {spec_words} is {best:.0f} m from "
+                            f"{want['offered_named_near']['near']}, beyond {same_m:.0f} m")
+        notes.append(f"a candidate named {spec_words} is {best:.0f} m away")
+
+    if "lead_name_contains" in want:
+        # Identity, not proximity. A dessert shop 731 m from the mall reference passed a 5 km
+        # distance check for "Southpoint" without being the mall (pass-14 M1).
+        need = [w.lower() for w in want["lead_name_contains"]]
+        if lead is None:
+            return "FAIL", "no candidate"
+        got = lead.place.name.lower()
+        if not all(w in got for w in need):
+            return "FAIL", f"leader {lead.place.name!r} does not contain all of {need}"
+        notes.append("leader name matches")
+
+    if want.get("no_candidates"):
+        if cands:
+            return "FAIL", (f"{len(cands)} candidate(s) returned with outcome {res.outcome!r}; "
+                            "a not-found answer must carry none")
+        notes.append("no candidates, as required")
+
+    if "min_corroborated" in want:
+        # A merge tripwire on the real index: if a merge rule regresses, cross-source clusters come
+        # apart and this count drops. Guards the rules the unit tests cover, on real data
+        # (pass-14 M2).
+        n = sum(1 for c in cands if c.corroborated_by)
+        if n < want["min_corroborated"]:
+            return "FAIL", (f"{n} corroborated candidate(s), expected at least "
+                            f"{want['min_corroborated']} — a merge rule may have regressed")
+        notes.append(f"{n} corroborated")
+
     if "not_far_from" in want:
         ref = refs[want["not_far_from"]]
         if lead is None:

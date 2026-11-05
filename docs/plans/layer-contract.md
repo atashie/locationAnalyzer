@@ -618,27 +618,41 @@ errors run in **both** directions, so the 0.95% is reproducible but is **not a b
 destination — recognised by a three-state automaton and solved on the graph x automaton product
 (`locfinder/traveltime/policy.py`). A *chain* is invariant to how a driveway is divided into ways,
 which the single-edge rule was not, and the audit demonstrates that directly: subdividing every
-restricted edge changes the result by **0.000000 s**.
+restricted edge changes the result by **1.46 x 10^-11 s** — floating-point noise, not a difference.
 
 | | value |
 |---|---|
 | nodes with no journey in `R* O* R*` | **2,833 of 539,814 — 0.5248%** |
-| nodes lawful but slower | 38,939; median **+12.3 s**, p90 +312.6 s |
-| **buildings the policy would cost** | **2,092 of 507,037 — 0.4126%** |
+| nodes lawful but **more than one second** slower | 38,956; median **+12.2 s**, p90 +312.6 s |
+| buildings the policy would cost, **nearest-node proxy** | **2,092 of 507,037 — 0.4126%** |
 
-So a published **time** may be read as "the time along the route this model chooses, which may cross
-roads tagged as restricted"; forbidding through-traffic over such roads would withhold **under half
-a percent of buildings**. That is small enough that it does not constrain what the layer publishes,
-and the earlier claim that this was "a precondition on S6 drawing routes" was right in spirit and
-wrong in substance — the precondition was the measurement, and this is it.
+**What that supports, and what it does not.** A published **time** may be read as "the time along
+the route this model chooses, which may cross roads tagged as restricted". The figures above say how
+much coverage depends on journeys *outside* the language `R* O* R*`. They do **not** say how much is
+unlawful, and the second and third rows are weaker than they look:
 
-**Two limits stay on the record.** `access=private` describes restricted *public* access and not who
-is entitled, so membership of the language means a journey is **not through-traffic over private
-land**; it does not establish that a particular traveller may make it, which would need the access
-area a property belongs to and OSM does not reliably carry that. And this is measured at **nodes,
-weighted by buildings**, not at cells: carrying the automaton states through the cell snap is a real
-change to the production snap, and the first attempt lost the policy below the node level. No
-cell-level figure is claimed.
+- **The language does not decide lawfulness** (Codex pass-14 H1). An origin in one private estate
+  and a destination in another, joined by a continuous restricted road through an unrelated third,
+  is `RRR` and is **accepted** — plainly through-traffic. The automaton sees edge *classes* and
+  cannot see whose access chain an edge belongs to. Conversely `ORO` can describe an entitled
+  traveller using a connection they may legitimately use. And requiring a non-empty open middle
+  would wrongly reject a resident walking across their own estate. So these are counts of language
+  membership, and the earlier sentence here — that membership means "not through-traffic over
+  private land" — is **withdrawn**.
+- **The building figure is a nearest-node proxy** (pass-14 H2). Each building is assigned to its
+  nearest node within 200 m, which assumes a connector that is **zero-time, unrestricted and
+  traversable**; a straight line to the nearest node may cross a fence or another property, and the
+  connector's own travel time is not added, so a node at 7,190 s with a 100 m connector still counts
+  as inside a 120-minute horizon. Destination snapping makes the matching assumption at the other
+  end (a grocery becomes a zero-cost destination node up to 300 m away). Read **2,092** as a
+  nearest-node proxy, not as buildings served.
+- **No cell-level figure is claimed.** Carrying the automaton states through the production cell snap
+  is a real change to a tested module and the first attempt lost the policy below the node level.
+
+What the contract can therefore assert today is narrow and true: **under one node in 190 has no
+journey in this edge-class language**, and a policy restricted to that language is not the
+constraint on what the layer publishes. "Legal coverage" remains unmeasured, and measuring it needs
+access-area and entitlement data that OSM does not carry.
 
 
 ### How far the category surface is from a minimum over destinations

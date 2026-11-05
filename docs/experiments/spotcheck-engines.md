@@ -1260,3 +1260,42 @@ Replaces the withdrawn audit (pass-13 H1-H4). The lawful journey set is **`R* O*
 **Split invariance** (pass-13 H3), subdividing every restricted edge at its midpoint: finiteness identical **True**, maximum absolute difference **0.000000 s** over 539,814 shared nodes. The journey set is unchanged by subdivision, so a measure of journeys must be unchanged; the withdrawn first-edge rule was not.
 
 - profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.3 rebuilt — access policy cost: grocery / walk (2026-11-04 21:10:25)
+
+Replaces the withdrawn audit (pass-13 H1-H4). The lawful journey set is **`R* O* R*`** — a restricted chain from the origin, an open middle, a restricted chain into the destination — recognised by a three-state automaton and solved as a shortest path on the graph x automaton product. A *chain* is invariant to how a driveway is split into ways, which is what the withdrawn first-edge rule was not. Costs are times, not penalised costs, because this policy forbids rather than discourages.
+
+- directed pairs **1,395,589**: with an open edge 1,278,388, with a restricted edge 119,949, **with both 2,748**
+- that last number is the one the shipped CSR hides: it keeps the cost-minimal edge per pair, so deleting a restricted winner also deletes a lawful public alternative. Classes are separated on the **multigraph**, before any collapse.
+
+**The baseline is the unrestricted *time* minimum, not the shipped surface.** The shipped surface reports the time along the **cost**-selected path, so it is an upper bound on the minimum time (pass-8 H2); measuring the policy against it credited that bound to the policy and made 26,376 nodes look faster *with* the policy than without — which a subset of journeys cannot be. The soundness assertion caught it.
+
+| | nodes |
+|---|---|
+| reachable with no policy (time minimum) | 539,814 |
+| the shipped surface is finite at | 539,814 |
+| **no journey in `R* O* R*`** | **2,833** (0.5248%) |
+| lawful but **more than one second** slower | 38,956 |
+| where slower: median / p90 / max | +12.2 s / +312.6 s / +5318.5 s |
+| lawful faster than the baseline (must be 0) | 0 |
+
+**Buildings, assigned to their nearest node.** Not cells: the withdrawn version lost the policy inside the cell snap (H1), and a building's own access leg is off-network so all three states are admissible from it, which is the case that does not have that subtlety. No cell-level strict surface is claimed here.
+
+| | buildings |
+|---|---|
+| total | 522,160 |
+| within the 200 m access bound of a node | 516,839 |
+| served within 120 min, no policy | 507,037 |
+| served within 120 min, under the policy | 504,945 |
+| **cost of the policy** | **2,092** (0.4126%) |
+
+| threshold | buildings, no policy | under the policy | lost |
+|---|---|---|---|
+| 10min | 85,949 | 85,243 | 706 |
+| 15min | 171,174 | 169,956 | 1,218 |
+| 25min | 305,194 | 303,488 | 1,706 |
+| 45min | 430,845 | 428,748 | 2,097 |
+
+**Split invariance** (pass-13 H3), subdividing every restricted edge at its midpoint: finiteness identical **True**, maximum absolute difference **0.000000 s** over 539,814 shared nodes. The journey set is unchanged by subdivision, so a measure of journeys must be unchanged; the withdrawn first-edge rule was not.
+
+- profile `speeds-v0+9893b1b0168ff19a`, grid `grid-v0+7ab61db26b3cc98e`

@@ -117,12 +117,39 @@ def add_travel_times(G: nx.MultiDiGraph, *, mode: str) -> nx.MultiDiGraph:
     return G
 
 
+def _physical_key(data) -> tuple:
+    """Identity of the *road*, not of the node pair.
+
+    `osmid` names the way; a simplified edge carries a list of them. Length disambiguates two
+    distinct ways that happen to share an id list, and is rounded because reprojection is not
+    bit-exact.
+    """
+    osmid = data.get("osmid")
+    if isinstance(osmid, (list, tuple)):
+        osmid = tuple(osmid)
+    return (osmid, round(float(data.get("length", 0.0)), 2))
+
+
 def symmetrise(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
-    """Add a reverse edge wherever one is missing. ONLY valid for walk graphs:
-    pedestrians ignore one-way restrictions; cyclists and drivers do not."""
+    """Add a reverse edge for every road that lacks one. ONLY valid for walk graphs: pedestrians
+    ignore one-way restrictions; cyclists and drivers do not.
+
+    **Deduplicated per physical road, not per node pair** (Codex pass-14 H3). The first version
+    asked `G.has_edge(v, u)`, so the existence of *any* edge from `v` to `u` suppressed the reverse
+    of *every* road from `u` to `v`. Where those are different roads with different access classes,
+    a legitimate pedestrian route disappears: Codex's executed case had an **open** `A->B` at 100 s
+    and a **restricted** `B->A` at 1 s, so the open road got no walkable reverse and a node behind
+    it became unreachable under any policy that declines the restricted one. Adding the missing open
+    reverse makes that journey 110 s.
+
+    This matters beyond the access audit, because it silently removed pedestrian edges from the
+    shipped walk graph. Separating access classes downstream cannot recover an alternative that was
+    already discarded here.
+    """
+    present = {(u, v, _physical_key(data)) for u, v, data in G.edges(data=True)}
     missing = []
     for u, v, data in G.edges(data=True):
-        if not G.has_edge(v, u):
+        if (v, u, _physical_key(data)) not in present:
             missing.append((v, u, dict(data)))
     for v, u, data in missing:
         G.add_edge(v, u, **data)

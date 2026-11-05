@@ -25,12 +25,28 @@ becomes through traffic (Codex pass-13 H3). A chain has no such dependence, and
 `spikes/s2_access_lawfulness_v2.py --split-check` subdivides every restricted edge to demonstrate
 it.
 
-**What this still does not establish.** `access=private` describes restricted *public* access; it
-does not record who is entitled. So membership of `R* O* R*` says a journey has the shape of a
-lawful one, not that a particular traveller may make it. Establishing entitlement needs the access
-area or chain a property belongs to, which OSM does not reliably carry. The honest reading of a
-result from here is "this journey is not through-traffic over private land", which is the part that
-is decidable from the tags.
+**What this does not establish, stated carefully because I got it wrong twice.**
+
+This module decides **membership in an edge-class language**. That is all it decides.
+
+It does *not* establish "this journey is not through-traffic over private land" — which is what I
+claimed next, and Codex pass-14 H1 gives the counterexample: an origin in estate A and a destination
+in estate C, joined by a continuous restricted road through unrelated estate B, is `RRR` and is
+**accepted**, while B is plainly being used for through-traffic. The automaton sees edge *classes*;
+it cannot see whose access chain an edge belongs to, so it cannot tell a driveway from a private
+road belonging to someone else.
+
+Nor does rejection establish unlawfulness: `ORO` can perfectly well describe an entitled traveller
+using a restricted connection they are allowed to use. `access=private` records restricted *public*
+access, not who is entitled.
+
+And the tempting repair does not work either: **requiring a non-empty open middle would wrongly
+reject journeys that legitimately stay inside one private area** — a resident walking from one side
+of an estate to a shop on the other.
+
+So a result from here supports statements of the form "N nodes have no journey in `R* O* R*`", and
+no stronger. A claim about lawfulness needs access-area and entitlement data, which OSM does not
+carry. That is a limit of the available data, not a task to schedule.
 
 ## Recognising it
 
