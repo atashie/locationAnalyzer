@@ -189,3 +189,32 @@ them.
 On the rhythm strips, anchor every bar to the *earliest* departure across all options and draw
 the waiting time as a hatched lead-in. Otherwise an option that leaves two hours later looks
 shorter than it is, which is the one thing the strips exist to prevent.
+
+## Basemap layering
+
+`basemap.py` writes `basemap.json`; the generator inlines it as four SVG groups, in this order,
+all **beneath** the route paths:
+
+```
+base-states        state outlines, stroked (never filled -- clipped runs are open polylines)
+base-roads         stitched interstate centrelines, thinner and fainter than any route
+base-road-labels   I-95, I-85 ... with paint-order:stroke and a halo in the map background colour
+base-cities        dots plus labels, two weights (major / minor), same halo treatment
+```
+
+Then routes, then the selected option's markers, then origin/destination. Getting the order
+wrong is not subtle: roads over routes makes the corridors unreadable.
+
+Three details that make the difference between a basemap and clutter:
+
+- **Give the `svg` its own background token** (`--map-bg`) distinct from the page panel, so the
+  map reads as a map rather than as a diagram on a card. Define it in all three theme blocks.
+- **Halo every label** with `paint-order:stroke; stroke:var(--map-bg); stroke-width:5px`. Without
+  it, city names sitting on a route line are illegible, and you will not notice in one theme.
+- **Keep basemap strokes thinner and lower-contrast than the thinnest route.** The basemap is
+  reference, not content; if it competes, the comparison is harder to read than with no basemap
+  at all. Interstate lines at 2.4 px against routes at 4 px unselected and 9 px selected worked.
+
+Pad the projection bbox (0.45° here) *before* projecting anything, so routes and basemap share
+one `proj()`. Deriving the padded window inside the generator rather than in `basemap.py` keeps
+the basemap reusable across trips in the same region.

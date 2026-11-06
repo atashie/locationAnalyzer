@@ -232,8 +232,32 @@ What the page owes the reader:
 
 ### Map mechanics
 
-Four things that silently ruin a baked map. `comparison-page.md` has the working code for all of
-it, plus the projection, the rhythm strips and the copy rules.
+**Every map carries a basemap** — political boundaries, major roads, place labels. A route drawn
+on blank ground is unfalsifiable: nobody can tell a correct line from one decoded at the wrong
+polyline precision or projected with a sign error. The basemap is the reader's version of the
+numerical assertion you should already be making. `basemap.py` builds one from keyless sources
+(US Census TIGERweb for boundaries, OSM via Overpass for motorways) and writes bakeable JSON.
+
+Three traps it exists to handle:
+
+- **Stitch OSM road fragments before simplifying.** OSM splits a motorway at every junction and
+  carries each carriageway separately: one `ref` query returned **8473 two-point fragments**,
+  which RDP cannot reduce at all. Chaining them on rounded endpoints first took 77k points to
+  636, and the baked file from 389 KB to 22 KB. `endpoint-notes.md` already warned about this
+  and the first attempt did it wrong anyway.
+- **Clip into runs, never by dropping points.** Dropping off-view vertices draws a false
+  straight line across the map. Split into runs, each with one lead-in and lead-out point — and
+  stroke those open runs rather than filling them, or a clipped ring renders as a blob.
+- **Pad the projection window** past the routes' own extent (0.45° worked), or the basemap is
+  clipped flush to the outermost route and provides no context at all.
+
+**Traffic cannot be baked, and usually should not be claimed.** There is no keyless traffic
+source these tools reach, and a page cannot call one at view time. More to the point, for a trip
+weeks out live traffic is a fact about *now*, not about the travel date — a layer drawn today is
+decoration. Say so, and keep the free-flow caveat instead.
+
+Four more things that silently ruin a baked map. `comparison-page.md` has the working code for
+all of it, plus the projection, the rhythm strips and the copy rules.
 
 - Artifact pages block external fetches, so **tiles never load and Leaflet renders blank**. Bake
   the geometry in and draw inline SVG.
@@ -281,6 +305,8 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - `corridor_scan.py` — candidates → detour, share, arrival vs sunset, in one instrument. Use it
   to shortlist stops, then `itinerary_compare.py` to assemble options from them.
 - `research-brief.md` — the per-region brief that forces the three-state status back out.
+- `basemap.py` — keyless basemap builder: Census state outlines + OSM motorways, stitched,
+  clipped and simplified into `basemap.json` for baking into the page. Every map gets one.
 - `endpoint-notes.md` — public-endpoint limits worth knowing before you hit them.
 - `comparison-page.md` — the switcher-and-map page: structure, the bake-the-geometry pattern,
   and the copy rules that keep it suggestive.
@@ -296,6 +322,8 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - Options that differ by one swapped stop rather than in kind
 - A route comparison with no map
 - Leaflet, or any tile layer, in an artifact page
+- A map with no basemap — route geometry floating on blank ground cannot be checked
+- A traffic layer on a map for a date weeks away
 
 **Numbers**
 

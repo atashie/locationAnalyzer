@@ -25,6 +25,24 @@ Limits worth knowing before you hit them. All free, no keys.
 - `highway=trunk` for US routes comes back as **hundreds of disconnected fragments**, because
   the tag only applies where the road is limited-access. US-1 returned 190 separate lines.
   Stitch by `ref` and endpoint proximity, or stick to `motorway`.
+- **`motorway` fragments too, and worse than you expect.** Sticking to `motorway` is not a way
+  out of stitching: a nine-interstate `ref` query over one bbox returned **8473 ways averaging
+  two points each**, because OSM splits at every junction and carries each carriageway
+  separately. RDP cannot reduce a two-point fragment, so simplifying first achieved nothing —
+  17859 points and a 389 KB payload. Chaining on endpoints rounded to 5 decimals first, *then*
+  simplifying, gave 636 points and 22 KB. Stitch, then simplify; never the reverse.
+- Expect both carriageways of a dual road as separate chains. At state scale they are sub-pixel
+  apart, so drawing both is harmless — just budget for double the points.
+
+## Basemaps without tiles
+
+- **US Census TIGERweb** serves keyless GeoJSON:
+  `tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/0/query`
+  with `f=geojson&geometryPrecision=3&outSR=4326`. Seven states came back as 3.25 MB in 1.4 s —
+  193k points, which simplify to 371 (0.19%) at eps 0.02 deg with no visible loss at state scale.
+- `way["boundary"="administrative"]["admin_level"="4"]` in Overpass is **not** a state outline:
+  the tag usually lives on the relation, so a bbox query returned 25 stray ways and 98 points.
+  Use the relation members, or use Census.
 
 ## Geometry
 
