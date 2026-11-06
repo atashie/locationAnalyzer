@@ -137,3 +137,34 @@ sel.parentNode.insertBefore(sel, sel.parentNode.querySelector(".markers"));
 - Count your tags before publishing. A generated page makes a cheap smoke test possible: open vs
   close counts per element, and one assertion that each option produced exactly one switcher
   button, one route path, one marker group, one timeline, one rhythm strip and one table row.
+
+## Hours belong next to the stop, not in a note below
+
+The timeline's job is not only *when you arrive* but *what is open when you do*. Render each
+stop as its facilities, each with the verdict `itinerary_compare.py` computed:
+
+| Verdict | Treatment |
+|---|---|
+| `always` / `open` | accent rule on the left, normal weight |
+| `opens` | warning rule, and the wait spelled out: "opens 07:00, 6 min into the halt" |
+| `shut` / `closed` | dimmed, struck through, with when it opens |
+| `unknown` | flag rule — hours exist but nobody published them in a checkable form |
+
+Two rules learned the hard way:
+
+- **A collision belongs beside the stop it affects.** The first version of one page *did* state
+  that a stop's attractions opened at 11:00 while the arrival was 06:53 — in a prose section well
+  below the timeline. The reader asked why a shut stop was being suggested, and was right to. Put
+  the verdict in the row; the prose section explains, it does not carry the warning.
+- **Rewriting the timeline is where status labels get dropped.** Replacing a chips row with a
+  facilities list silently removed every "standing hours / could not determine" label, breaking
+  rule 4 inside a change that had nothing to do with it. Facilities carry their own `status`;
+  render it per row, and assert the counts after generating:
+
+```python
+for cls in ("standing", "confirmed", "unknown"):
+    print(cls, len(re.findall(rf'class="src src-{cls}"', html)))
+```
+
+Flag the collisions on the switcher too — an option whose lunch stop opens half an hour after you
+reach it should say so before the reader selects it, not after.

@@ -44,6 +44,7 @@ every drive time as a floor and say so wherever you quote it.
 """
 
 import argparse
+import datetime
 import json
 import math
 import sys
@@ -216,6 +217,95 @@ def clock(h):
     return f"{total // 60 % 24:02d}:{total % 60:02d}"
 
 
+# ---------------------------------------------------------------- opening hours
+
+DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+
+def parse_days(spec):
+    """'daily' | 'Mon-Thu' | 'Mon,Fri-Sun' -> set of weekday indices (Mon=0)."""
+    if not spec or spec.strip().lower() in ("daily", "mon-sun", "everyday", "all"):
+        return set(range(7))
+    out = set()
+    for part in spec.split(","):
+        part = part.strip().lower()[:]
+        if "-" in part:
+            a, b = (p.strip()[:3] for p in part.split("-", 1))
+            if a not in DAYS or b not in DAYS:
+                raise ValueError(f"unknown day range {part!r}")
+            i, j = DAYS.index(a), DAYS.index(b)
+            out.update((i + k) % 7 for k in range((j - i) % 7 + 1))
+        else:
+            d = part[:3]
+            if d not in DAYS:
+                raise ValueError(f"unknown day {part!r}")
+            out.add(DAYS.index(d))
+    return out
+
+
+def hhmm_to_h(s):
+    hh, mm = s.split(":")
+    return int(hh) + int(mm) / 60.0
+
+
+def facility_state(fac, arrive_h, depart_h, weekday):
+    """Where a stop's arrival sits against one facility's published hours.
+
+    Returns (verdict, detail). Verdicts:
+      always   no hours to miss -- an outdoor space, a 24h pump
+      open     open on arrival
+      opens    shut on arrival but opens during the halt, with the wait
+      shut     shut for the whole halt, with when it opens
+      closed   not open at all on this weekday
+      unknown  no machine-readable hours given; the caller must not pretend otherwise
+    """
+    if fac.get("always"):
+        return "always", fac.get("note", "no fixed hours")
+    if "open" not in fac or "close" not in fac:
+        return "unknown", "hours not published in a form this could check"
+    try:
+        days = parse_days(fac.get("days", "daily"))
+    except ValueError as exc:
+        return "unknown", str(exc)
+    if weekday is not None and weekday not in days:
+        return "closed", f"closed {DAYS[weekday].capitalize()}"
+    o, c = hhmm_to_h(fac["open"]), hhmm_to_h(fac["close"])
+    if o <= arrive_h < c:
+        return "open", f"open until {clock(c)}"
+    if arrive_h < o:
+        wait = (o - arrive_h) * 60.0
+        if o < depart_h:
+            return "opens", f"opens {clock(o)}, {int(round(wait))} min into the halt"
+        return "shut", f"opens {clock(o)}, {int(round(wait))} min after you leave"
+    return "shut", f"shut at {clock(c)}"
+
+
+def stop_hours_report(stop, arrive_h, dwell_min, weekday):
+    """Per-facility verdicts plus a single rollup for the stop."""
+    facs = stop.get("facilities")
+    if not facs:
+        facs = [{"name": stop.get("name", "the stop"),
+                 **{k: stop[k] for k in ("open", "close", "days") if k in stop}}]
+    depart_h = arrive_h + dwell_min / 60.0
+    rows = []
+    for fac in facs:
+        verdict, detail = facility_state(fac, arrive_h, depart_h, weekday)
+        rows.append({"name": fac.get("name", "?"), "verdict": verdict, "detail": detail,
+                     "url": fac.get("url"), "status": fac.get("status", "standing")})
+    usable = [r for r in rows if r["verdict"] in ("always", "open", "opens")]
+    missed = [r for r in rows if r["verdict"] in ("shut", "closed")]
+    if not rows:
+        roll = "unknown"
+    elif not usable:
+        roll = "nothing-open"
+    elif any(r["verdict"] in ("always", "open") for r in usable):
+        roll = "open-on-arrival"
+    else:
+        roll = "opens-during"
+    return {"rollup": roll, "facilities": rows,
+            "usable": len(usable), "missed": len(missed)}
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -230,12 +320,22 @@ def main():
     "stops": {
       "sob":        {"name": "South of the Border", "where": "Dillon, SC",
                      "lat": 34.4985, "lon": -79.3093, "dwell_min": 15,
-                     "cost_usd": 0, "url": "https://...",
-                     "hours": "daily 09:00-17:00", "status": "standing"},
+                     "cost_usd": 0,
+                     "facilities": [
+                       {"name": "Sunoco West pumps", "always": true,
+                        "note": "24 h", "status": "standing"},
+                       {"name": "Pantry + restrooms", "days": "daily",
+                        "open": "07:00", "close": "23:00", "status": "standing"},
+                       {"name": "Sombrero Tower", "days": "Mon-Thu",
+                        "open": "11:00", "close": "19:00", "status": "standing"},
+                       {"name": "Reptile Lagoon", "days": "Mon,Fri-Sun",
+                        "open": "10:00", "close": "19:00", "status": "standing"}]},
       "okefenokee": {"name": "Okefenokee Swamp Park", "where": "Waycross, GA",
                      "lat": 31.0578, "lon": -82.2725, "dwell_min": 80,
                      "cost_usd": 98, "url": "https://...",
-                     "hours": "daily 09:00-17:00", "status": "standing"}
+                     "facilities": [
+                       {"name": "Train, boardwalk, reptile show", "days": "daily",
+                        "open": "09:00", "close": "17:00", "status": "standing"}]}
     },
     "options": {
       "fewest-stops":  {"label": "Fewest stops, earliest arrival",
@@ -245,6 +345,15 @@ def main():
                         "dwell_min": {"okefenokee": 90}}
     }
   }
+
+  A stop is a SITE, and a site has facilities on different schedules -- pumps open 24 h
+  while the tower opens at 11:00 and the best attraction is shut on Wednesdays. Model
+  facilities, or "open" and "closed" will both be wrong. Each facility takes either
+  "always": true (no fixed hours: an outdoor space, a 24 h pump) or "days" + "open" +
+  "close". "days" accepts "daily", "Mon-Thu", "Mon,Fri-Sun". Omit the hours entirely and
+  the facility reports as unknown rather than being quietly assumed open.
+
+  Pass --date, or day-of-week closures cannot be checked at all.
 
   status is one of: confirmed | standing | unknown  (carried through to the output)
   cost_usd is per party, as published; omit it rather than guessing.
@@ -291,10 +400,15 @@ Example:
           f"   ({a.costing}, free-flow, no traffic model)\n")
     time.sleep(0.8)
 
-    sunset_h = None
+    sunset_h, weekday = None, None
     if a.date:
         y, m, dd = (int(x) for x in a.date.split("-"))
         _, _, sunset_h = sun_events(d[0], d[1], y, m, dd, a.utc_offset)
+        weekday = datetime.date(y, m, dd).weekday()
+        print(f"travel date {a.date} is a {DAYS[weekday].capitalize()} -- "
+              f"day-of-week closures are checked against it\n")
+    else:
+        print("no --date given: day-of-week closures CANNOT be checked. Pass --date.\n")
 
     results, all_pts = {}, []
     for key, opt in options.items():
@@ -321,11 +435,14 @@ Example:
         schedule = []
         for i, s in enumerate(seq_keys):
             t += legs[i] / 3600.0
+            hours = stop_hours_report(stops[s], t, dwells[i], weekday)
             schedule.append({"stop": s, "arrive": clock(t), "arrive_h": round(t, 4),
-                             "dwell_min": dwells[i], "leg_s": legs[i]})
+                             "dwell_min": dwells[i], "leg_s": legs[i], "hours": hours})
             t += dwells[i] / 60.0
         t += legs[-1] / 3600.0
         arrive_h = t
+        shut_on_arrival = [r for r in schedule if r["hours"]["rollup"] == "nothing-open"]
+        waits = [r for r in schedule if r["hours"]["rollup"] == "opens-during"]
 
         geom, raw_n, eps_used = simplify_route(
             [leg["shape"] for leg in trip["legs"]], a.rdp_epsilon, a.max_points)
@@ -345,6 +462,8 @@ Example:
             "arrive": clock(arrive_h),
             "elapsed_s": total + sum(dwells) * 60.0,
             "schedule": schedule,
+            "shut_on_arrival": [r["stop"] for r in shut_on_arrival],
+            "opens_during_halt": [r["stop"] for r in waits],
             "geometry": geom,
             "geometry_raw_points": raw_n,
             "rdp_epsilon_used": eps_used,
@@ -379,6 +498,29 @@ Example:
     for key, v in results.items():
         chain = " -> ".join(hm(s) for s in v["legs_s"])
         print(f"  {v['label']}: {chain}")
+
+    # The check that matters: does the derived arrival land inside the published hours?
+    print("\narrival vs published hours (DERIVED arrival against stated hours):")
+    MARK = {"always": "  ", "open": "  ", "opens": " ~", "shut": " !",
+            "closed": " X", "unknown": " ?"}
+    any_dead = False
+    for key, v in results.items():
+        print(f"  {v['label']}")
+        for row in v["schedule"]:
+            h = row["hours"]
+            flag = {"open-on-arrival": "", "opens-during": "  <- opens mid-halt",
+                    "nothing-open": "  <- NOTHING OPEN ON ARRIVAL",
+                    "unknown": "  <- hours unknown"}[h["rollup"]]
+            print(f"    {row['arrive']}  {stops[row['stop']].get('name', row['stop'])}"
+                  f"  ({int(row['dwell_min'])} min){flag}")
+            for f in h["facilities"]:
+                print(f"      {MARK[f['verdict']]} {f['name']:<42} {f['detail']}")
+        if v["shut_on_arrival"]:
+            any_dead = True
+    if any_dead:
+        print("\n  ! At least one stop has nothing open when you get there. Either move the")
+        print("    stop, change the departure hour, or say plainly on the page what IS")
+        print("    reachable at that time -- a 24h pump, an outdoor space, a view.")
 
     print("\ngeometry for baking into the page (tiles are blocked in artifacts):")
     for key, v in results.items():

@@ -18,7 +18,7 @@ agents doing it well unprompted. Two things fail reproducibly:
 
 This skill is those two. It does not teach travel knowledge.
 
-## The six rules
+## The seven rules
 
 ### 1. The traveller weighs; you measure
 
@@ -117,7 +117,35 @@ hardened into an absolute.
 Status labels belong to the stop, not to the view. A stop that appears in three options carries
 its label in all three.
 
-### 5. Sweep off-corridor before you accept the corridor
+### 5. Reconcile the arrival against the hours, in code
+
+Publishing an arrival time and an opening time side by side is not the same as comparing them.
+**Compute it.** For every stop in every option, check the derived arrival against the published
+hours and carry the verdict — open on arrival / opens during the halt / shut / closed that
+weekday / hours unknown — into the output.
+
+> Worked example. A plan shipped with the same stop first in **all five** options, arriving
+> 06:53, against hours of 11:00. The page even printed both numbers in adjacent columns. The
+> user caught it: *"I'm confused as to the suggestion to stop at South of the Border, as it opens
+> at 11:00 am but you suggest we arrive before 7:00 am."* Adding the computed check then caught a
+> **second** collision nobody had noticed — a lunch stop reached at 10:29 that opens at 11:00,
+> a half-hour wait sitting in two options.
+
+Two things make this harder than it looks:
+
+- **A stop is not one thing with one schedule.** One roadside stop had *seven* facilities on
+  five different schedules: pumps open 24 h, restrooms from 07:00, shops from 08:00, an
+  observation tower from 11:00, and the best attraction closed Tuesday–Thursday. Model
+  facilities, not stops — otherwise "closed" and "open" are both wrong.
+- **"Nothing is open" is a finding, not a disqualification.** Say what *is* reachable at that
+  hour: a 24 h pump, an outdoor space with no hours, a view at first light. The stop above
+  survived on exactly that — and the restrooms opened six minutes into the halt, which only the
+  computed check revealed.
+
+Where the arrival lands outside the hours, the fix is to move the stop, change the departure
+hour, or say plainly what the stop is for. Never to leave the collision for the reader to spot.
+
+### 6. Sweep off-corridor before you accept the corridor
 
 Enumerate candidates **off** the obvious road and price each one's detour against the direct
 route. Assuming the corridor is the most common structural miss: a baseline considered four
@@ -126,7 +154,7 @@ towns on one interstate and never priced a detour at all. In a real case the win
 
 A dead-end spur costs its detour **twice**. Route to it and back before judging.
 
-### 6. Publish what you could not verify
+### 7. Publish what you could not verify
 
 A short "not verified" list, plus the calls worth making. Booking engines return 403/429 to
 automation: "no live rate was obtainable" is the honest result, not a reason to substitute a
@@ -161,7 +189,10 @@ What the page owes the reader:
   small child.
 - **All options' totals visible at once.** A compact row of drive time / added time / cost /
   arrival, every option side by side, so switching is not the only way to compare.
-- **Per-stop links and status labels in every view.** Rules 2 and 4 do not relax inside a tab.
+- **Per-facility hours verdicts in every view.** Each stop lists what is open on arrival, what
+  opens during the halt, and what is shut, computed not eyeballed. When a stop is shut on
+  arrival, that belongs next to the stop, not in a note further down the page.
+- **Per-stop links and status labels in every view.** Rules 2, 4 and 5 do not relax inside a tab.
 - **Soft figures shown as soft.** An option over the traveller's rough budget is annotated with
   the overage, in the same type as everything else. No strike-through, no red, no "rejected".
 - **Suggestive copy.** "Fewest stops, earliest arrival" beats "Recommended". Describe what an
@@ -195,7 +226,7 @@ construction, since a generated page cannot carry a retyped or stale figure.
 
 Match the work to the question, and let each piece be earned separately:
 
-- **Always:** measure the candidates, measure each option end to end, and apply the six rules.
+- **Always:** measure the candidates, measure each option end to end, and apply the seven rules.
 - **Commission per-region research** only when the deciding facts are local and unknown
   (opening hours on a date, a seasonal programme), not merely because there are several stops.
 - **Skip the page** for a single-stop question, or one answered in a sentence.
@@ -237,6 +268,8 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - A time in a table you cannot name the source of
 - A route variant changed, and the detour column untouched
 - A detour quoted as the sum of its stops' individual detours
+- An arrival time and an opening time printed side by side without being compared
+- One set of hours attached to a site that has several facilities on different schedules
 - Two engines, one table
 - Every candidate on one road
 
