@@ -5,8 +5,8 @@ identify it, so design §12's frozen-artifact checklist has somewhere to point. 
 itself is `s3-walk-grocery-measurement.md`, which does not exist yet.
 
 **Design:** [`2026-11-04-s3-measurement-design.md`](../plans/2026-11-04-s3-measurement-design.md)
-revision 7. **Plan:** [`2026-11-04-s3-execution-plan.md`](../plans/2026-11-04-s3-execution-plan.md)
-revision 6.
+revision 8. **Plan:** [`2026-11-04-s3-execution-plan.md`](../plans/2026-11-04-s3-execution-plan.md)
+revision 7.
 
 **Ten statements across two versions of this record overstated what had been evidenced** — five found
 by Codex pass 19, five by pass 20. Each is corrected in place below rather than quietly dropped, and
@@ -264,6 +264,70 @@ resolves to a real case and that no case is unclaimed — **bookkeeping, not sem
 The strict-cap mutant is the proof that those are different things. Independence from T3 is
 established; coverage of §2 is not, and no claim here says otherwise.
 
+## T4's second layer — invariants and a mutation guard · 2026-11-06
+
+`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**293 tests**),
+`v2/tests/test_mutants.py` (**18 tests**). 22 scenarios, 8 mutants.
+
+**This exists because pass 21 named the process rather than a rule.** Its diagnosis, after the third
+consecutive pass where closing the reviewed defects opened adjacent ones: *"treating repair of the
+motivating example as evidence that a replacement rule's domain is settled."* And its
+recommendation: *"a compact set of invariants and admissible-input rules exercised across
+representations, rather than another claim that the previous named examples now pass."* That is the
+resolver lesson arriving from outside, and this was the third round, so it was taken.
+
+The layer declares three things a corpus of cases cannot: **what an admissible input is** (enforced
+in the constructors, with 22 scenarios tagged by structural shape), **what must hold of every
+admissible input**, and **which re-expressions of one input must give the same answer**.
+
+### What it found before it was finished
+
+Four times, and every time by rejecting something written rather than the code:
+
+| it rejected | the sharper statement that replaced it |
+|---|---|
+| "every re-expression preserves everything" | re-expressing one bidirectional edge as two opposed one-ways preserves every **number** and **doubles** the candidate count, because there genuinely are two routing records — so **answers and provenance are invariant under different things**, and §12's equivalence contract is about implementations varying on *one* input |
+| "a total is proportional to a uniform weight scale" | a total is **affine**: `87.9365079365 s` becomes `567.9365079365 s` at ×7, which is `7 × 80 + 7.9365079365`, because the connector does not scale. Three factors pin both coefficients, so **one check verifies the connectors are in both objectives' time *and* cost** — the pass-20 F1 defect that no fixture separated |
+| "re-expression preserves a time exactly" | exact float equality is a stronger claim than the arithmetic supports. Translating a **curved** geometry 12 km moves a 90.8601039862 s answer by **2.0e-12 s** and subdividing it by **1.4e-14 s**, with every identity unchanged. Every axis-aligned geometry in the first domain hid it; discrete fields now compare exactly and continuous ones at a decision-irrelevant tolerance |
+| "the pass-21 fixes are protected" | **three were not guarded at all.** The orientation bit, the zero-span branch and the route's partial traversals all survived both suites. The absolute anchors exist because the mutation check said so |
+
+### The measured division of labour
+
+`test_mutants.py` installs each historical wrong implementation and requires some layer to reject
+it — the *"verify the guard by reverting the fix"* experiment, run on every test run rather than once.
+
+| mutant | invariants | corpus |
+|---|---|---|
+| pass-20 F1 connector-free cost | — | **caught** |
+| pass-20 F5 strict cap | — | **caught** |
+| pass-20 F4 identity-keyed dedup | **caught** | **caught** |
+| pass-21 F1 rounded occurrence bucket | **caught** | — |
+| pass-21 F4 dropped zero-span branch | **caught** | — |
+| pass-21 F5 route without partials | **caught** | — |
+| pass-21 F6 rank without cost | **caught** | — |
+| pass-21 F7 bit-complemented orientation | **caught** | — |
+
+**Five escape the corpus, two escape the invariants, and every one is caught by the other**, so
+neither layer may be dropped and the split is pinned in `EXPECTED_COVERAGE` where a drift in it is
+visible. A uniformly tightened cap and a uniformly connector-free cost preserve every *relative*
+property — both sides are equally wrong — so only an exact-boundary or exact-value case sees them.
+
+**Getting that table right took two harness fixes**, both worth recording because they are easy to
+repeat: a patched module global cannot reach a binding another module imported **by name**, so
+`invariants.py` had to stop holding its own reference to `directed_identity`; and the orientation
+mutant stayed invisible until the domain gained an input whose **selected route traverses a
+palindromic edge backwards**, since the bit flip and the renormalisation agree on every other
+geometry.
+
+### What is recorded as deliberately not an invariant
+
+Objective 2 is **not** monotone in the destination set. Subdivision is **not** required to preserve
+the answer, because §2.2's candidate rule is per segment — measured divergence across the domain is
+float noise everywhere except a zero-length segment, where a candidate count changes. And the answer
+is **not continuous** in the geometry: 2 mm can move it 899.99 s.
+
+---
+
 ## T9 — E3 scoring · done 2026-11-06
 
 `v2/locfinder/measure/e3.py`, `v2/tests/test_e3.py` (**15 tests**). Depends only on T1, so it is
@@ -294,23 +358,36 @@ than 0.0, because zero would assert the product was accurate.
 
 ## Suite
 
-**625 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4 and 15 for T9.
+**936 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4's corpus, **293 for the
+invariant layer**, **18 for the mutation guard**, and 15 for T9.
 
 ## Not yet built
 
 T3 the reference comparator · T5 diagnostics · T6 the run manifest · T7 development including the
 encoding and wire migration · T8 freeze and certify · T10 the extraction warning · T11 the report.
 
-**T3 is gated, and has now been refused twice.** Pass 19: *"Do not start a purportedly normative T3
-until F1 and F2 are settled."* Revision 6 settled both — and pass 20 found that its **replacements**
-opened four new numeric ambiguities: the candidate key merged distinct occurrences and distinct weight
-alternatives, closed edges had no directed identity, and cost summation order could decide a verdict.
-Revision 7 settles those, so T3 waits on a review of revision 7.
+**T3 is gated, and has now been refused three times** — by passes 19, 20 and 21. Each refusal was
+for different rules, and each time the new rules were *revisions of the previous refusal's fix*.
+Pass 21 stopped describing the rules and described the pattern: *"treating repair of the motivating
+example as evidence that a replacement rule's domain is settled."*
 
-That pattern is the finding, not an inconvenience. Twice now, closing the blockers has opened new
-ones, and in both cases only an adversarial pass **over the fix** found them. It is the same failure
-mode recorded for the resolver — four passes of point fixes each breaking an adjacent case — arriving
-in a design document rather than in code, where it is harder to see because nothing executes.
+Design revision 8 settles the four items pass 21 named as the finish line, and the **invariant
+layer** above is the structural answer to the diagnosis. The useful question is no longer "which
+rules are wrong" but "would anything have noticed", and the mutation guard answers it on every run.
+
+Pass 21 also stated what remains, which is worth having written down rather than discovered one pass
+at a time: a coherent contract for the four items, independently derived decision and provenance
+fixtures for them, an oracle representing the complete declared journey key, frame verification at
+measurement consumption, and the remaining bundle fields. **None of it changes an owner decision, an
+allocation or an acceptance threshold.**
+
+**One question is the owner's, not mine.** §2.2's per-segment candidate rule makes the measured value
+depend on how a polyline is **subdivided**, which the exact per-geometry reading would not. Pass 20
+measured the two readings as 599.9747619048 s against 600.0399682540 s on its L-shaped edge — PASS
+against FAIL at ten minutes. Across the whole scenario domain the measured divergence is now float
+noise everywhere except a zero-length segment, so the exposure looks far smaller than that worked
+example suggests. But the data source can re-densify geometries, so the choice is a real one and it
+is recorded rather than settled.
 
 **Still open and owner-gated:** the **coverage requirement** (design §8), which blocks the coverage
 claim only — not the build and not the construction gate.
