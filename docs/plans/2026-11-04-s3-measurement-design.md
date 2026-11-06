@@ -5,6 +5,22 @@
 **Revision 8, 2026-11-06**, after Codex pass 21 found nine defects in revision 7 and in T4 — three
 of them High. Change log in §13; revisions 2–7 are kept there too.
 
+**Codex pass 22 then found twelve defects in revision 8 and in the instrument — three of them High —
+and refused T3 a fourth time.** Eight are against the instrument and are recorded in the build
+record. **Two claims this design made are withdrawn** and are at the top of §13: the affine scaling
+law, refuted by the connector term that made it affine in the first place, and the subdivision
+exposure, which was an observation on 22 scenarios reported as a property of the domain and is wrong
+on an ordinary straight edge. **Four rules it found under-specified are deferred to revision 9** and
+are named there: the geometry arithmetic that produces a traversal fraction, what uniqueness §2.4
+promises about a reconstructed route, the admissible numerical domain, and the final cost
+discriminator. None of the four changes an owner decision, an allocation or an acceptance threshold.
+
+Pass 22's central result is worth carrying here rather than only in the build record, because it
+bears on how much the instrument licenses: **a uniform `<=4`-edge bound on path enumeration passed
+all 423 tests of the conformance corpus and the invariant layer together.** The gap was a declared
+coverage *dimension*, hop depth, not a missing input. So the instrument can expose a wrong rule on a
+dimension someone has declared, and nothing more than that is claimed for it.
+
 Pass 21's verdict refused T3 a third time, and its diagnosis was of the **process** rather than of a
 rule: *"treating repair of the motivating example as evidence that a replacement rule's domain is
 settled."* Revision 8 settles the four items it named as the finish line — the occurrence key (§2.2),
@@ -1109,6 +1125,83 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
+### Claims withdrawn after Codex pass 22 (3 High, 9 Medium) — no rule amended
+
+Pass 22 reviewed revision 8 and the instrument. Eight of its findings are against the instrument and
+are recorded in the build record. **Two claims this design made are false and are withdrawn here**,
+and **four rules it found under-specified are deferred to revision 9**, named at the end of this
+entry so they are not rediscovered one pass at a time.
+
+**Withdrawn 1 — the affine scaling law.** Revision 8's row above offered "a journey total is affine,
+not proportional, in a uniform weight scale" as a settled property, and the instrument asserted the
+*selection* was scale-invariant as well. Both are false, and the connector term that makes a total
+affine is exactly what refutes them: it gives two journeys different intercepts, so their lines
+cross. Two bidirectional edges from `(0,0)` — A to `(100,0)` at time/cost 1, B to `(0,-100)` at 20,
+with destination A at `(100,100)` carrying a 100 m connector and B's zero — select B, B, **A** at
+scales 1, 3 and 7, reporting 20 s, 60 s and `7 + 100/1.26` = **86.3650793651 s**. Continuing B as a
+supposedly invariant selection reports 140 s: **FAIL where the correct answer is PASS** at a 100 s
+threshold.
+
+What survives is weaker and true: objective 1's reported time and objective 2's reported cost are
+each a minimum over journeys whose totals are affine in the scale, hence **concave** in it, with
+equality exactly where the argmin does not switch; and a journey *held fixed* has an affine total.
+Objective 2's reported time and objective 1's reported cost are concave in nothing.
+
+Also withdrawn with it: the inference that a non-negative intercept establishes the connectors are
+present in both objectives' time and cost. **A zero intercept is non-negative and affine**, so no
+check of that family can distinguish a connector from its absence. Connector inclusion is now an
+absolute anchor instead.
+
+**Withdrawn 2 — the subdivision exposure.** Revision 8's row said the measured divergence was "float
+noise everywhere except a zero-length segment, where it changes a candidate count only — so the
+exposure is far smaller than the worked example suggests". That was an observation on 22 scenarios
+reported as a property of the admissible domain, and it is wrong on an ordinary straight edge. One
+one-way edge `(0,0)→(100,0)` of time/cost **1199.95**, origin `(49.995,0)`, destination `(100,0)`:
+
+| | candidates | reported | verdict at ten minutes |
+|---|---:|---:|---|
+| as drawn | 1 | 600.0349975000 s | **FAIL** |
+| midpoint `(50,0)` inserted | 2 | 599.9789682540 s | **PASS** |
+
+The inserted vertex puts a clamped segment start **0.005 m** from the origin, inside the 0.01 m tie
+band, and it wins. No zero-length segment is involved and no road changed. Raising the weight
+amplifies the lost network fraction with no bound from connector speed. §2.2's owner-open question is
+framed correctly; its stakes are this table, not float noise.
+
+**Deferred to revision 9 — four rules, none an owner decision, an allocation or a threshold.**
+
+1. **§2.4's geometry arithmetic.** Freezing `f × (cost_base + penalty)` as one term froze the
+   multiplication and left the **fraction** unfrozen. Segment-length summation, prefix arclength, the
+   projection parameter, the traversal fraction, the same-edge interval formula and the
+   zero-total-length convention all decide the exact cost argmin before any `fsum` sees a term. On one
+   three-segment edge, `sum` of its segment lengths gives a first-vertex fraction of
+   0.16666666666666669 against a competing cost of 0.16666666666666666 and reports **1,000 s**;
+   explicit left accumulation gives 0.16666666666666666, the costs tie, and the time discriminator
+   reports **1 s**. Both obey the frozen multiplication rule.
+2. **§2.4's uniqueness promise.** Node simplicity makes the route set finite; it does not make a
+   reconstruction unique. On a zero-weight self-crossing edge, direct partial journeys over
+   arclengths 25→75, 25→475 and 425→475 — lengths 50, 450 and 50 m — tie on time, cost, destination
+   and the one-element identity sequence. That flips T10's reported boundary touch between **0% and
+   100%** for one selected route. Either traversal intervals and a tie convention enter the key, or
+   §2.4 states the weaker promise and T10 gets its own reconstruction specification.
+3. **The admissible numerical domain.** Finite constructor fields are not a domain. A
+   `(0,0)→(1e-200,0)` segment underflows to degenerate and attaches the destination at its start,
+   reporting 7.936507936507936e-201 s where the endpoint-to-endpoint 1,000 s is required — PASS
+   against FAIL. A `1e308` base cost with a `1e308` penalty validates, totals to `inf`, reaches
+   `0*inf` and raises from an empty `min()` rather than returning its promised zero. Query
+   coordinates are not validated at all.
+4. **§2.4's final discriminator.** The oracle orders journeys by `(time, destination_id, route,
+   cost)`, which repaired pass-21 F6 in code; the normative lift still ends at the route sequence. A
+   conforming reader of the prose may therefore report a different selected cost on two
+   same-identity equal-time records of cost 1 and 2. Implemented, not amended.
+
+Pass 22 also **qualified** two revision-8 statements without refuting them. A palindrome's two
+directions share one identity only for a **closed** palindrome: an open edge whose endpoint node ids
+differ keeps `(u,v)` against `(v,u)`, and an exact geometric palindrome necessarily has equal
+endpoint coordinates. And candidate counts double under an explicit-reverse re-expression only for
+candidates on replaced bidirectional records, so a mixture of one one-way and one bidirectional
+candidate gives 2→3, not 2→4.
+
 ### Revision 8, after Codex pass 21 (3 High, 6 Medium)
 
 Pass 21 refused T3 a third time and named the cause as the process rather than any one rule:
@@ -1134,18 +1227,17 @@ each caught by the other — so the two layers are complementary and neither may
 two opposed one-ways preserves every number and **doubles** the candidate count, which is a property
 of the input rather than of the implementation — so §12's equivalence contract is about
 implementations varying on *one* input, and answers and provenance are invariant under different
-things. A journey total is **affine**, not proportional, in a uniform weight scale, because the
-connector does not scale. And exact float equality across representations is a stronger claim than
-the arithmetic supports: translating a curved geometry 12 km moves a 90.8601039862 s answer by
-**2.0e-12 s** with every identity unchanged, which every axis-aligned fixture had hidden.
+things. A journey total is affine, not proportional, in a uniform weight scale, because the connector
+does not scale — *and pass 22 refuted that too; see the withdrawals below.* And exact float equality
+across representations is a stronger claim than the arithmetic supports: translating a curved
+geometry 12 km moves a 90.8601039862 s answer by **2.0e-12 s** with every identity unchanged, which
+every axis-aligned fixture had hidden.
 
 **Not amended.** The per-segment candidate rule still makes the answer depend on how a polyline is
 subdivided, which pass 20 measured as 599.9747619048 s against 600.0399682540 s on its L-shaped
-edge. Measured across the whole scenario domain the divergence is now float noise everywhere except
-a zero-length segment, where it changes a candidate count only — so the exposure is far smaller than
-the worked example suggests. **Whether to adopt the subdivision-invariant exact-per-geometry reading
-instead is an owner decision**, because the data source can re-densify geometries, and it is recorded
-here rather than settled.
+edge. **Whether to adopt the subdivision-invariant exact-per-geometry reading instead is an owner
+decision**, because the data source can re-densify geometries, and it is recorded here rather than
+settled. The measured exposure stated in this row was wrong and is withdrawn below.
 
 ### Revision 7, after Codex pass 20 (4 High, 7 Medium)
 

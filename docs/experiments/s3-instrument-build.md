@@ -264,10 +264,10 @@ resolves to a real case and that no case is unclaimed — **bookkeeping, not sem
 The strict-cap mutant is the proof that those are different things. Independence from T3 is
 established; coverage of §2 is not, and no claim here says otherwise.
 
-## T4's second layer — invariants and a mutation guard · 2026-11-06
+## T4's second layer — invariants and a mutation guard · 2026-11-06, corrected after pass 22
 
-`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**293 tests**),
-`v2/tests/test_mutants.py` (**18 tests**). 22 scenarios, 8 mutants.
+`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**392 tests**),
+`v2/tests/test_mutants.py` (**23 tests**). 27 scenarios, 10 mutants.
 
 **This exists because pass 21 named the process rather than a rule.** Its diagnosis, after the third
 consecutive pass where closing the reviewed defects opened adjacent ones: *"treating repair of the
@@ -277,19 +277,88 @@ representations, rather than another claim that the previous named examples now 
 resolver lesson arriving from outside, and this was the third round, so it was taken.
 
 The layer declares three things a corpus of cases cannot: **what an admissible input is** (enforced
-in the constructors, with 22 scenarios tagged by structural shape), **what must hold of every
+in the constructors, with scenarios tagged by structural shape), **what must hold of every
 admissible input**, and **which re-expressions of one input must give the same answer**.
+
+### What it does not do, measured
+
+Pass 22 was asked to construct a wrong implementation that passes **both** layers, which is the
+question the layer was built to answer. It did, and the result reproduced here exactly:
+
+```
+uniform <=4-edge bound on _simple_paths  ->  423/423 pass
+baseline                                 ->  423/423 pass
+```
+
+The mutant is **uniform**: it recognises no fixture, and every journey it does return is correct. It
+simply stops looking. Every relative invariant is satisfied because both sides are equally
+truncated, and no named case needed a journey more than four edges deep. What it violates is design
+§2.5 — `NO_PATH` may never be reported from a bounded search.
+
+The missing thing was not an input but a **dimension**: hop depth. `CHAIN_DEPTHS` now declares it at
+2, 4, 5, 7 and 9. Adding the scenarios was **not sufficient and the measurement said so** — a mutant
+that removes journeys reports `None` for every field, the transform comparisons find `None` equal to
+`None`, and every per-result check sits behind `objective1_s is not None`. **A relative invariant
+cannot see an absence.** So the depth is anchored to numbers, the same way the cap and the connector
+had to be.
+
+The honest statement of what this layer is: it is not evidence that the comparator is right. It is
+the thing that keeps establishing that my *rules* are wrong — six times now — and it finds a wrong
+implementation only on a dimension someone has thought to declare.
 
 ### What it found before it was finished
 
-Four times, and every time by rejecting something written rather than the code:
+Every time by rejecting something written here rather than the code:
 
 | it rejected | the sharper statement that replaced it |
 |---|---|
 | "every re-expression preserves everything" | re-expressing one bidirectional edge as two opposed one-ways preserves every **number** and **doubles** the candidate count, because there genuinely are two routing records — so **answers and provenance are invariant under different things**, and §12's equivalence contract is about implementations varying on *one* input |
-| "a total is proportional to a uniform weight scale" | a total is **affine**: `87.9365079365 s` becomes `567.9365079365 s` at ×7, which is `7 × 80 + 7.9365079365`, because the connector does not scale. Three factors pin both coefficients, so **one check verifies the connectors are in both objectives' time *and* cost** — the pass-20 F1 defect that no fixture separated |
-| "re-expression preserves a time exactly" | exact float equality is a stronger claim than the arithmetic supports. Translating a **curved** geometry 12 km moves a 90.8601039862 s answer by **2.0e-12 s** and subdividing it by **1.4e-14 s**, with every identity unchanged. Every axis-aligned geometry in the first domain hid it; discrete fields now compare exactly and continuous ones at a decision-irrelevant tolerance |
+| "a total is proportional to a uniform weight scale" | a total is **affine**, because the connector does not scale — *and this replacement was itself refuted; see below* |
+| "re-expression preserves a time exactly" | exact float equality is a stronger claim than the arithmetic supports. Translating a **curved** geometry 12 km moves a 90.8601039862 s answer by **2.0e-12 s** and subdividing it by **1.4e-14 s**, with every identity unchanged. Every axis-aligned geometry in the first domain hid it |
 | "the pass-21 fixes are protected" | **three were not guarded at all.** The orientation bit, the zero-span branch and the route's partial traversals all survived both suites. The absolute anchors exist because the mutation check said so |
+| "an empty route means the journey went nowhere" | an empty route is legal when both points attach at one position and all movement is in the connectors — **and** a non-empty route with zero network seconds is legal on a zero-weight edge, which `zero_weight_edge` established within a minute of the first repair. Only the implication survives: an empty route implies zero network seconds |
+| "the two layers together are hard to slip past" | a uniform bound on path enumeration passed all 423 tests of both. The gap was a declared **dimension**, not a missing input |
+
+### The affine law, withdrawn
+
+The second row above deserves its own entry, because it is the clearest instance of the pattern the
+whole layer exists to break: **proportional → affine → refuted**, each step closing the example that
+motivated it and leaving the domain unexamined.
+
+The affine law asserted two things — that a uniform weight scaling leaves the *selection* alone, and
+that a total is exactly affine in the scale — and offered the non-negative intercept as proof that
+the connectors were present in both objectives' time and cost. Pass-22 F3 refuted all three with one
+input. Two bidirectional edges from `(0,0)`: A to `(100,0)` at time/cost 1, B to `(0,-100)` at 20.
+Destination A sits at `(100,100)` so it carries a 100 m connector; B's is zero.
+
+| scale | selected | reported |
+|---:|---|---:|
+| 1 | B | 20 s |
+| 3 | B | 60 s |
+| 7 | **A** | `7 + 100/1.26` = **86.3650793651 s** |
+
+The connector term that makes a total affine is exactly what gives two journeys different intercepts,
+so their lines **cross** and the selection switches. The refuted law would have continued B and
+reported 140 s — FAIL where the correct answer is PASS at a 100 s threshold. The slopes it compared,
+20 and 6.5912698413, are not equal and were never required to be.
+
+What stands in its place, in `SCALE_LAW`:
+
+- **concavity.** Objective 1's reported time and objective 2's reported cost are each a minimum over
+  journeys whose totals are affine in the scale, so each is concave in the scale, with equality
+  exactly where the argmin does not switch. Objective 2's reported *time* and objective 1's reported
+  *cost* are the other quantity of the selected journey, so they are concave in nothing and are not
+  claimed.
+- **affinity, conditioned.** A journey held fixed has an affine total, asserted only where the
+  selected route and destination are identical at all three scales.
+
+And the intercept argument is gone entirely. **A zero intercept is non-negative and affine**, so no
+check of this family could ever have established that a connector was included — and
+`EXPECTED_COVERAGE` had recorded the connector-free mutant escaping this layer from the day it was
+written. That row *was* the refutation, sitting in my own table, and pass 22 had to point at it. The
+connector is now an absolute anchor instead: two destinations, one over a 100 m connector and one
+with none, where omitting the connector from cost selects the wrong one and reports 89.3650793651 s
+instead of 650 s.
 
 ### The measured division of labour
 
@@ -298,7 +367,7 @@ it — the *"verify the guard by reverting the fix"* experiment, run on every te
 
 | mutant | invariants | corpus |
 |---|---|---|
-| pass-20 F1 connector-free cost | — | **caught** |
+| pass-20 F1 connector-free cost | **caught** | **caught** |
 | pass-20 F5 strict cap | — | **caught** |
 | pass-20 F4 identity-keyed dedup | **caught** | **caught** |
 | pass-21 F1 rounded occurrence bucket | **caught** | — |
@@ -306,25 +375,69 @@ it — the *"verify the guard by reverting the fix"* experiment, run on every te
 | pass-21 F5 route without partials | **caught** | — |
 | pass-21 F6 rank without cost | **caught** | — |
 | pass-21 F7 bit-complemented orientation | **caught** | — |
+| pass-22 F2 bounded path enumeration | **caught** | — |
+| pass-22 F8 inflated evaluate (sentinel) | **caught** | **caught** |
 
-**Five escape the corpus, two escape the invariants, and every one is caught by the other**, so
+**Six escape the corpus, one escapes the invariants, and every one is caught by the other**, so
 neither layer may be dropped and the split is pinned in `EXPECTED_COVERAGE` where a drift in it is
-visible. A uniformly tightened cap and a uniformly connector-free cost preserve every *relative*
-property — both sides are equally wrong — so only an exact-boundary or exact-value case sees them.
+visible. The connector-free cost moved into the invariants when the anchor replaced the intercept
+inference. The strict cap is the remaining relative-invariant blind spot and will stay one: a cap
+tightened everywhere preserves every relative property, because both sides are equally wrong, so only
+an exact-boundary case sees it.
 
-**Getting that table right took two harness fixes**, both worth recording because they are easy to
-repeat: a patched module global cannot reach a binding another module imported **by name**, so
-`invariants.py` had to stop holding its own reference to `directed_identity`; and the orientation
-mutant stayed invisible until the domain gained an input whose **selected route traverses a
-palindromic edge backwards**, since the bit flip and the renormalisation agree on every other
-geometry.
+**Getting that table right took three harness fixes**, all worth recording because they are easy to
+repeat:
+
+1. A patched module global cannot reach a binding another module imported **by name**, so
+   `invariants.py` had to stop holding its own reference to `directed_identity`.
+2. **I fixed that one binding and not the others.** Pass-22 F8 patched `toy.evaluate` with a wrapper
+   adding 1000 s to every finite time — a 100 s PASS becoming an 1100 s FAIL — and
+   `invariant_violations()` returned `[]` while every corpus `check()` stayed clean, because both
+   modules still bound `evaluate` at import. Fixing the example instead of the domain, inside the
+   module whose entire purpose is not doing that. Both now call through the module attribute, and
+   `test_a_sentinel_evaluator_mutation_reaches_both_layers` fails if either ever stops seeing an
+   evaluator replacement — without it, every other row of the table measures nothing.
+3. The orientation mutant stayed invisible until the domain gained an input whose **selected route
+   traverses a palindromic edge backwards**, since the bit flip and the renormalisation agree on
+   every other geometry.
 
 ### What is recorded as deliberately not an invariant
 
-Objective 2 is **not** monotone in the destination set. Subdivision is **not** required to preserve
-the answer, because §2.2's candidate rule is per segment — measured divergence across the domain is
-float noise everywhere except a zero-length segment, where a candidate count changes. And the answer
-is **not continuous** in the geometry: 2 mm can move it 899.99 s.
+Objective 2 is **not** monotone in the destination set. A uniform weight scaling does **not**
+preserve the selection, and a total is **not** proportional to it. The answer is **not continuous**
+in the geometry: 2 mm can move it 899.99 s. And a cost tolerance is **not** decision-irrelevant —
+`NOT_PROVEN` says so where the number is used, because a cost never faces a published threshold, only
+an argmin, so a competing cost 2e-10 away can flip the selection while a 5e-10 difference passes any
+such test.
+
+**Subdivision is not required to preserve the answer, and the exposure is not small.** This record
+previously said the measured divergence was "float noise everywhere except a zero-length segment".
+That was an observation on 22 scenarios reported as a property of the domain, and pass-22 F5 refuted
+it on an ordinary straight edge. One one-way edge `(0,0)→(100,0)` of time/cost **1199.95**, origin
+`(49.995,0)`, destination `(100,0)`:
+
+| | candidates | reported | verdict at ten minutes |
+|---|---:|---:|---|
+| as drawn | 1 | 600.0349975000 s | **FAIL** |
+| midpoint `(50,0)` inserted | 2 | 599.9789682540 s | **PASS** |
+
+The inserted vertex puts a clamped segment start **0.005 m** from the origin, inside the 0.01 m tie
+band, and it wins. No road changed and no zero-length segment is involved, and raising the weight
+amplifies the lost network fraction without any bound from connector speed. The divergence
+*signature* across the scenario domain is still a single name, and that signature is checked rather
+than the claim.
+
+### The owner's question, with its real stakes
+
+§2.2's per-segment candidate rule makes the measured value depend on how a polyline is
+**subdivided**. The exact per-geometry reading would not. Overture can re-densify a geometry without
+any road changing, so this is a live exposure rather than a hypothetical one, and the table above is
+what it costs.
+
+Retaining the per-segment estimand is coherent — it delivers the equidistant-points-on-one-curve case
+rather than assuming it — but it must be retained **with that verdict flip visible**, not with the
+float-noise claim that this record carried until pass 22. Moving to exact per-geometry minimisers is a
+**design amendment and an owner policy choice**, not an oracle repair.
 
 ---
 
@@ -358,36 +471,58 @@ than 0.0, because zero would assert the product was accurate.
 
 ## Suite
 
-**936 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4's corpus, **293 for the
-invariant layer**, **18 for the mutation guard**, and 15 for T9.
+**1,040 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4's corpus, **392 for the
+invariant layer**, **23 for the mutation guard**, and 15 for T9.
 
 ## Not yet built
 
 T3 the reference comparator · T5 diagnostics · T6 the run manifest · T7 development including the
 encoding and wire migration · T8 freeze and certify · T10 the extraction warning · T11 the report.
 
-**T3 is gated, and has now been refused three times** — by passes 19, 20 and 21. Each refusal was
+**T3 is gated, and has now been refused four times** — by passes 19, 20, 21 and 22. Each refusal was
 for different rules, and each time the new rules were *revisions of the previous refusal's fix*.
 Pass 21 stopped describing the rules and described the pattern: *"treating repair of the motivating
 example as evidence that a replacement rule's domain is settled."*
 
-Design revision 8 settles the four items pass 21 named as the finish line, and the **invariant
-layer** above is the structural answer to the diagnosis. The useful question is no longer "which
-rules are wrong" but "would anything have noticed", and the mutation guard answers it on every run.
+The **invariant layer** is the structural answer to that diagnosis, and pass 22's verdict on it is
+the one to keep: it makes the evidence requirement more concrete without removing the finish line,
+and it had not stopped the pattern. The clearest instance was in the layer itself — proportional →
+affine → refuted — and a uniform bound on path enumeration passed all 423 tests of both layers. So
+the useful question is still "would anything have noticed", and the honest answer is "on the
+dimensions someone has declared".
 
-Pass 21 also stated what remains, which is worth having written down rather than discovered one pass
-at a time: a coherent contract for the four items, independently derived decision and provenance
-fixtures for them, an oracle representing the complete declared journey key, frame verification at
-measurement consumption, and the remaining bundle fields. **None of it changes an owner decision, an
-allocation or an acceptance threshold.**
+**What remains before T3 can be frozen**, now naming pass 22's additions rather than discovering them
+one pass at a time:
 
-**One question is the owner's, not mine.** §2.2's per-segment candidate rule makes the measured value
-depend on how a polyline is **subdivided**, which the exact per-geometry reading would not. Pass 20
-measured the two readings as 599.9747619048 s against 600.0399682540 s on its L-shaped edge — PASS
-against FAIL at ten minutes. Across the whole scenario domain the measured divergence is now float
-noise everywhere except a zero-length segment, so the exposure looks far smaller than that worked
-example suggests. But the data source can re-densify geometries, so the choice is a real one and it
-is recorded rather than settled.
+1. **The geometry arithmetic** (F1). Freezing `f × (cost_base + penalty)` as one term froze the
+   multiplication and left the *fraction* unfrozen. Segment-length summation, prefix arclength, the
+   projection parameter, the traversal fraction, the same-edge interval formula and the
+   zero-total-length convention all still decide the exact cost argmin before any `fsum` sees a term.
+   Pass 22's worked case: `sum` of a three-segment edge's lengths gives 0.6 and a first-vertex
+   fraction of 0.16666666666666669, losing to a competing cost of 0.16666666666666666 and reporting
+   **1,000 s**; explicit left accumulation gives 0.6000000000000001, the fraction ties, and the time
+   discriminator reports **1 s**. Both obey the frozen multiplication rule.
+2. **What uniqueness §2.4 promises** (F6). Node simplicity makes the route set finite; it does not
+   make a reconstruction unique. On a self-crossing zero-weight edge, direct partial journeys over
+   arclengths 25→75, 25→475 and 425→475 — lengths 50, 450 and 50 m — tie on time, cost, destination
+   and the one-element identity sequence. That flips T10's boundary-touch between **0% and 100%** for
+   one selected route. Either the key gains traversal intervals and a tie convention, or §2.4 states
+   the weaker promise and T10 gets its own reconstruction spec.
+3. **The admissible numerical domain** (F9). Finite constructor fields are not a domain: a
+   `(0,0)→(1e-200,0)` segment underflows to degenerate and reports 7.94e-201 s instead of 1,000 s,
+   and a `1e308` base with a `1e308` penalty validates, totals to `inf`, reaches `0*inf` and raises
+   from `min()` instead of returning zero. Query coordinates are not validated at all.
+4. **The final cost discriminator** (F10). The oracle ranks by `(time, destination_id, route, cost)`;
+   normative §2.4 still stops at the route sequence, so a conforming reader may report a different
+   selected cost. Implemented, not amended.
+5. **Independently derived decision *and provenance* fixtures** for all of the above, an oracle
+   carrying the complete declared observables, frame verification at measurement consumption, and
+   the remaining bundle fields.
+
+**None of it changes an owner decision, an allocation or an acceptance threshold.** One item **is**
+the owner's, and its stakes changed: see "The owner's question, with its real stakes" above —
+subdivision moves a ten-minute verdict on an ordinary straight edge, which is not what this record
+previously claimed.
 
 **Still open and owner-gated:** the **coverage requirement** (design §8), which blocks the coverage
 claim only — not the build and not the construction gate.
@@ -396,10 +531,12 @@ claim only — not the build and not the construction gate.
 
 ## Corrections — what this record claimed and could not show
 
-Ten statements across two versions of this record claimed more than had been shown, five found by
-each of passes 19 and 20. All are corrected above; they are listed here because a record that
-silently repairs its own overstatements teaches nothing, and because the *pattern* is the useful
-part: each time, the overstatement was in the section describing work I had just finished.
+Seventeen statements across three versions of this record claimed more than had been shown: five
+found by each of passes 19 and 20, and seven by pass 22. All are corrected above; they are listed
+here because a record that silently repairs its own overstatements teaches nothing, and because the
+*pattern* is the useful part: **every time, the overstatement was in the section describing work I
+had just finished.** Pass 22's seven are all in the invariant-layer section, written the same day,
+exactly as pass 20's four were in the T4 section written the same day.
 
 ### Pass 19's five, against the first version
 
@@ -436,3 +573,28 @@ and deliberately not evidence about coverage.
 
 It could not run five frame tests, because this environment denied it temporary directories, and it
 said so rather than reporting the failure as a finding.
+
+### Pass 22's seven, against the invariant layer written the same day
+
+| the claim | why it was wrong |
+|---|---|
+| constructors and 22 shapes **declare and enforce** the admissible domain | they exercise selected points. A `1e-200` segment underflows to degenerate, a `1e308` cost pair totals to `inf` and then raises, and query coordinates are never validated. The finite-field check is a necessary condition presented as the domain |
+| a total is **affine** in a weight scale, and the non-negative intercept verifies connector inclusion | a *held* journey is affine; the **selection switches**, because connectors give journeys different intercepts and their lines cross. And a zero intercept is non-negative and affine, so the check cannot distinguish a connector from its absence — which `EXPECTED_COVERAGE` had recorded all along |
+| a translation preserves orientation, and the compared route **captures the route identity** | orientation is chosen lexicographically on the **rounded** geometry, so an offset can make a geometry palindromic and flip it legitimately. And `_route` drops the node pair and the geometry key, so two different roads of one osmid, orientation and rounded length are indistinguishable in it |
+| domain-wide float spread stays under **1e-11 s** | an observation on 22 scenarios. One straight edge of 1,000,000 s with origin `(.1,0)` and destination `(99.9,0)` moves 998000.0000000001 s to 997999.9999999927 s under translation — **7.5e-9 s**, past the 1e-9 tolerance; at 601.2024048096 s it crosses the ten-minute boundary |
+| subdivision exposure is **float noise except on a zero-length segment** | also an observation on 22 scenarios. A midpoint on one ordinary straight edge moves 600.0349975000 s to 599.9789682540 s — **FAIL to PASS** — because the inserted vertex's clamped start lands 0.005 m away, inside the tie band |
+| the harness **stopped retaining patched names** | `directed_identity` stopped being retained. `evaluate` was still imported by name in **both** layers, so a wrapper adding 1000 s to every journey left `invariant_violations()` returning `[]`. The fix was applied to the example, not the domain |
+| the mutation guard answers **"would anything have noticed"** | it answers that for the installed mutations along their actual call paths. A uniform `<=4`-edge bound on path enumeration passed all 423 tests of both layers |
+
+Pass 22 also checked and **did not** overturn: occurrence identity merges adjacent descriptions of
+one vertex and keeps non-adjacent repeats, overlapping segments and a ring's 0 and *L* apart;
+`0.0` and `-0.0` take the same branch; reverse identity by renormalisation is correct; the
+answers/provenance split is right, and so is its stated reason; and all eight then-recorded coverage
+pairs reproduce. It qualified two statements rather than refuting them — a palindrome's two
+directions share an identity only for a **closed** palindrome, since an open edge with different
+endpoint node ids keeps `(u,v)` against `(v,u)`; and candidate counts under `explicit_reverses`
+double only for candidates on replaced bidirectional records, so a mixture gives 2→3, not 2→4.
+
+It could not reproduce the full suite: five frame tests error in this environment's pytest temporary
+directories with `PermissionError [WinError 5]`, which it reported as an environment limit rather
+than a finding.

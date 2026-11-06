@@ -1,7 +1,7 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 7, 2026-11-06.** Implements **design revision 8**, which is the operative document —
+**Revision 8, 2026-11-06.** Implements **design revision 8**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
 Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
@@ -19,11 +19,28 @@ refused T3 a third time — but also gave the finish line: a coherent contract f
 independently derived fixtures for them, and an oracle representing the complete declared journey
 key. Design revision 8 settles the four.
 
-**T1, T2, T4 and T9 are built, and T4 now has a second layer.** 936 tests pass: the conformance corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard** asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the motivating example as evidence that a replacement rule's domain is settled". T4's expected answers come from hand arithmetic and
-from an exhaustive enumerator, neither of which calls T3 — a construction pass 19 independently
-described as the right one, and which pass 20 confirmed is adequate evidence of *independence*
-while being explicit that independence is not coverage. It found a wrong comparator that passed the
-whole twelve-case corpus. T3 remains gated on a review of design revision 7.
+**Pass 22 refused T3 a fourth time**, and its three High findings were in the *instrument* rather
+than the design. Two were invariants that reject correct implementations, including the affine
+scaling law written to replace a proportionality that pass 21 had refuted — proportional → affine →
+refuted, the pattern running inside the thing built to stop it. The third was the answer to the
+question the instrument was built to answer: a **uniform `<=4`-edge bound on path enumeration passed
+all 423 tests** of the conformance corpus and the invariant layer together, because hop depth was not
+a declared dimension of the domain.
+
+**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,040 tests pass**: the conformance
+corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard**
+asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for
+that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the
+motivating example as evidence that a replacement rule's domain is settled". T4's expected answers
+come from hand arithmetic and from an exhaustive enumerator, neither of which calls T3 — a
+construction pass 19 independently described as the right one, and which pass 20 confirmed is
+adequate evidence of *independence* while being explicit that independence is not coverage. It found
+a wrong comparator that passed the whole corpus as it then stood, and pass 22 found one that passed
+**both** layers.
+
+**T3 is gated on design revision 9**, which must settle the geometry arithmetic, what uniqueness
+§2.4 promises, the admissible numerical domain and the final cost discriminator. The build record's
+"Not yet built" section carries the five items with their worked counterexamples.
 
 **Branch:** `v2-rethink`
 
@@ -186,21 +203,48 @@ authorise.**
 Implements design §2's decision rules. Built **fixture-first**, and the fixtures are T4's, derived
 from the design and from the four reviews' counterexamples rather than from this code.
 
-**Six preconditions, all now met in the design and none yet reviewed.** Pass 19 named two: §2.2's
-candidate domain was a continuum rather than a set, and §2.6 let the independent engine remove
-destinations from E1. Revision 6 settled both — and pass 20 found that its *replacements* opened four
-more: the candidate key merged distinct occurrences and distinct weight alternatives (F2, F4), closed
-edges had no directed identity (F3), and cost summation order could decide a verdict (F7). Revision 7
-settles those with §13 rows.
+**Four refusals, each over rules that were revisions of the previous refusal's fix.** Pass 19 named
+two preconditions: §2.2's candidate domain was a continuum rather than a set, and §2.6 let the
+independent engine remove destinations from E1. Revision 6 settled both — and pass 20 found its
+*replacements* opened four more: the candidate key merged distinct occurrences and distinct weight
+alternatives (F2, F4), closed edges had no directed identity (F3), and cost summation order could
+decide a verdict (F7). Revision 7 settled those; pass 21 refuted three of them in turn, and revision
+8 settled those. Pass 22 then refused again.
 
 Pass 20's standing instruction is unchanged in form: *"Do not start a purportedly frozen T3 yet.
-Ordinary development and the unambiguous fixture subset can proceed."* So T3 waits on a review of
-revision 7. The pattern is worth naming — twice now, closing the blockers has opened new ones, and
-only an adversarial pass over the fix found them.
+Ordinary development and the unambiguous fixture subset can proceed."*
 
-T4's twelve cases and the oracle in `toy.py` already cover eight of the nine rules below; the ninth,
+**What revision 9 must settle before a freeze**, with the counterexample for each in the build
+record's "Not yet built":
+
+1. **The geometry arithmetic.** Revision 8 froze `f × (cost_base + penalty)` as one term and left the
+   *fraction* unfrozen. `sum` against left accumulation of one three-segment edge's lengths gives
+   0.16666666666666669 against 0.16666666666666666 as the first-vertex fraction, which loses or wins
+   a cost argmin and reports **1,000 s or 1 s**. Needs: segment-length summation, prefix arclength,
+   the projection parameter, the traversal fraction, the same-edge interval formula, and the
+   zero-total-length convention.
+2. **What uniqueness §2.4 promises.** Node simplicity makes the route set finite, not a
+   reconstruction unique: three direct partial journeys over one zero-weight self-crossing edge tie
+   on every declared field at lengths 50, 450 and 50 m, flipping T10's boundary-touch between **0%
+   and 100%**. Either traversal intervals and a tie convention enter the key, or §2.4 states the
+   weaker promise and T10 gets its own reconstruction spec.
+3. **The admissible numerical domain.** Finite fields are not a domain: a `(0,0)→(1e-200,0)` segment
+   underflows to degenerate and reports 7.94e-201 s where 1,000 s is required; `1e308` base plus
+   `1e308` penalty validates, totals to `inf`, reaches `0*inf` and raises from `min()`. Query
+   coordinates are unvalidated.
+4. **The final cost discriminator.** `toy.py` ranks by `(time, destination_id, route, cost)`;
+   normative §2.4 stops at the route sequence, so a conforming reader may report a different selected
+   cost. Implemented, not amended.
+
+The pattern is worth naming, because it has now run four times: closing the blockers opens new ones,
+and only an adversarial pass over the fix finds them. Pass 22 showed it running inside the
+**instrument** too — the affine law written to replace a refuted proportionality was itself refuted —
+and showed that a uniform bound on path enumeration passed all 423 tests of both layers.
+
+T4's **17 cases** and the oracle in `toy.py` already cover eight of the nine rules below; the ninth,
 the independent engine's connector charge, is deliberately absent from the corpus because it depends
-on Valhalla's observed correlation position and belongs to T6.
+on Valhalla's observed correlation position and belongs to T6. Coverage of the *rules* is not
+coverage of their domains: five mutants escape the corpus and one escapes the invariant layer.
 
 Required shape, from design §2.3: **objective-specific views, correctly paired, never hybrid** —
 sharing immutable geometry and the spatial tree with per-objective weight views, or processing
@@ -223,7 +267,9 @@ What this task must get right, each with its conformance case in T4:
 
 ### T4 — the conformance suite
 
-**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `e645be28`. Five cases and the seven mutants came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `e645be28`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
+
+**Second layer, same date:** `invariants.py`, `mutants.py`, **392 invariant tests and 23 mutation-guard tests**. 27 scenarios tagged by structural shape and hop depth, 10 mutants. Six mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Pass 22 then defeated both layers at once with a uniform `<=4`-edge bound on path enumeration, which is why `CHAIN_DEPTHS` exists and why the hop depths are anchored to numbers rather than compared across transforms.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property
@@ -304,6 +350,44 @@ Manifest digests: float, encoded and status rasters; the prepared graph; eligibl
 destination lists plus **E2's recorded intersection** (§2.6 revision 6); **the independent engine's
 tileset, version and costing configuration**; frame artifacts; seeds; code, profile and grid
 versions; and the conformance suite.
+
+**Pass-22 F12 found the list still insufficient for the whole report**, not just for E2. The routing
+rows can be complete and identical while a *mandatory report result* is undetermined, because T6 says
+nothing about the inputs of T9, T10, the diagnostics or the certification history. With an E3
+reported time of 300 s, an observed 300 s yields `UNVERIFIED` and an observed 1200 s yields `FAILED`
+with a 900 s discrepancy — and neither the observation nor the walked/missing flag is required
+anywhere. Implementing the T9 scorer does not persist what it scored. Likewise a retained path 15 m
+from the extraction boundary counts under a 20 m band and not under a 10 m band, and route geometry
+alone supplies neither the band nor the footprint; saving only surviving paths also loses T10's
+denominator.
+
+So the regeneration bundle must additionally require, in T6 or in named companion artifacts, and the
+regeneration test must **disable** every source including implicit access to these:
+
+1. **T9's inputs** — journey ids, reported seconds, observed seconds *or* an explicit
+   unwalked/missing state, and the scoring configuration and version. Planned journeys are preserved
+   as well as completed ones, since a silently dropped plan changes the denominator.
+2. **T10's inputs** — the extraction footprint and its CRS, the boundary band width and predicate,
+   which objective and population the counted routes come from, point and route membership, missing
+   path statuses, and the complete denominator. Either traversal intervals and geometry, or
+   sufficient boundary statistics computed under that exact predicate.
+3. **The diagnostic screening inputs** — actual frame and stratum memberships with counts, the
+   population-reference estimates and counts with their domains, the chosen predicates and
+   thresholds, and enough sampling metadata to recover the conditional denominators and the
+   empty-stratum behaviour. Sampled memberships cannot reconstruct an omitted population summary.
+4. **The certification history** — the independently timestamped registration, the designated
+   attempt, the seed-generation, stopping and replacement policy, and every attempt identity and
+   outcome **including voided runs**. A successful run manifest alone cannot regenerate the mandatory
+   failed-attempt account, which is the whole point of §8's registration.
+5. **The analysis configuration itself**, not only its identifiers and digests — units, frame and
+   grid specifications, population qualifications, uncertainty and bootstrap settings with seeds, and
+   the decoder/lookup version where one is used. Every selected destination, cost, status and
+   residual is qualified **by objective and by full-set or intersection population**; "both
+   residuals" names each of the origin and destination residual with the journey it belongs to,
+   rather than an unqualified aggregate.
+6. **Any development figure the report quotes** — the paired grid-comparison observations and their
+   configuration, and the phone latency and transfer observations and theirs. Conditional on those
+   figures appearing in the report; they are not extra operands for the routing distributions.
 
 **Test:** the report is regenerated from the saved bundle **with routing and the original source
 artifacts unavailable**. Revision 2's test would have passed by re-querying a live engine. The test
