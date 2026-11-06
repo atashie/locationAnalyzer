@@ -47,7 +47,7 @@ import itertools
 import math
 from dataclasses import dataclass, field, replace
 
-from .conformance import TIME_TOL_S, tolerance_is_decision_irrelevant
+from .conformance import PUBLISHED_THRESHOLDS_MIN, TIME_TOL_S
 from . import toy
 from .toy import ToyEdge, ToyGraph
 
@@ -78,10 +78,12 @@ def _route(result, objective: int) -> tuple:
     at all. It is a comparison key for the transforms below, and nothing in the design says the
     reported route identity is this tuple.
 
-    The two fields are dropped for different reasons. `translate` changes every coordinate, so the
-    geometry key cannot survive it. `explicit_reverses` re-expresses a reverse traversal as a
-    forward traversal of a reversed record, which legitimately swaps the endpoint pair while
-    describing the same physical traversal.
+    Only one of the two drops has a reason. `translate` changes every coordinate, so the geometry
+    key cannot survive it. The explanation previously given for dropping the **node pair** was
+    simply wrong, and pass-23 F4 corrected it: a reverse traversal of `u→v` and a forward traversal
+    of the explicitly reversed record both carry endpoints `(v, u)`, so `explicit_reverses` does not
+    require discarding them. The pair stays dropped only because this is a comparison key shared by
+    both transforms, and nothing currently needs it; that is a convenience, not a derivation.
     """
     route = result.objective1_route if objective == 1 else result.objective2_route
     return tuple((ident[3], ident[4], ident[5]) for ident in (route or ()))
@@ -92,12 +94,22 @@ def _route(result, objective: int) -> tuple:
 DISCRETE_FIELDS = ("objective1_destination_id", "objective2_destination_id", "eligible_ids",
                    "objective1_route", "objective2_route", "origin_candidates")
 
-#: Seconds. Compared at `TIME_TOL_S` and additionally required to be decision-irrelevant against the
-#: published minute thresholds, which is the only unit where that proof is available.
+#: Seconds. Compared at `TIME_TOL_S`, and additionally required to produce the **same PASS/FAIL
+#: pattern** at the published minute thresholds — seconds are the only unit where a verdict predicate
+#: exists to compare. Note this is predicate equality, not a clean `±tol` neighbourhood: pass-23 F7
+#: showed the neighbourhood test rejecting 600.0000000010021 s against 600.0000000009976 s, which
+#: differ by 4.5e-12 s and are both FAIL at every threshold.
 SECONDS_FIELDS = ("objective1_s", "objective2_s", "objective1_network_s", "objective2_network_s")
 
-#: Metres. Compared at `DISTANCE_TOL_M` and checked against the thresholds a residual actually
-#: faces — the two caps and the tie band — rather than against a time.
+#: Metres. Compared at `DISTANCE_TOL_M`, which is a **measured numeric allowance and not a proof of
+#: decision irrelevance**. Pass-23 F7: `origin_nearest_m` does not face a fixed threshold at all. The
+#: tie band is a *relative* gap — a candidate is retained when its residual is within 0.01 m of the
+#: **global minimum** — and the 300 m cap applies to destination residuals, not to this one. So being
+#: nine orders below a band width bounds nothing: two disconnected edges at residuals 100.0 and
+#: 100.0099999997 m sit either side of the band depending on a 5e-10 m move of the query, which
+#: changes the candidate count 1→2 and the answer from 1158.7301587302 s to 158.7460317456 s, FAIL to
+#: PASS. The full answer comparison catches that through the time and the count; this helper does not
+#: catch it and no longer claims to.
 METRE_FIELDS = ("origin_nearest_m",)
 
 #: Our cost, which is in seconds but is **not** compared against a time threshold. Pass-22 F7: a
@@ -112,61 +124,69 @@ COST_FIELDS = ("objective1_cost", "objective2_cost")
 #: 0.01 m tie band, so this must stay well below it.
 DISTANCE_TOL_M = 1e-9
 
-#: The thresholds a metre quantity faces: both caps, inclusive, and the tie band.
-DISTANCE_THRESHOLDS_M = (toy.ATTACH_TIE_M, toy.MAX_ACCESS_M, toy.POI_SNAP_MAX_M)
+#: What a tolerance in these units does **not** establish. Referenced by the build record, so the
+#: limitation travels with the number.
+NOT_PROVEN = {
+    "cost": "A cost tolerance is not decision-irrelevant: cost faces no published threshold, only "
+            "an argmin, so an accepted difference can coexist with a flipped selection.",
+    "m": "A metre tolerance is not decision-irrelevant either. The tie band is a *relative* gap "
+         "against the global minimum, not a fixed level this value crosses, and the 300 m cap "
+         "applies to destination residuals. 1e-9 m is a measured numeric allowance.",
+}
 
-#: What a tolerance on a cost does not establish. Referenced by the build record.
-NOT_PROVEN = ("A cost tolerance is not decision-irrelevant: cost faces no published threshold, "
-              "only an argmin, so an accepted difference can coexist with a flipped selection.")
 
-
-def _distance_is_decision_irrelevant(metres: float, *, tol: float = DISTANCE_TOL_M) -> bool:
-    """True when `metres ± tol` falls the same side of every threshold a residual faces."""
-    for t in DISTANCE_THRESHOLDS_M:
-        if (metres - tol <= t) != (metres + tol <= t):
-            return False
-    return True
+def _verdicts(time_s: float, thresholds_min=PUBLISHED_THRESHOLDS_MIN) -> tuple[bool, ...]:
+    """The PASS/FAIL pattern this time actually produces at the published thresholds."""
+    return tuple(time_s <= minutes * 60.0 for minutes in thresholds_min)
 
 
 def differences(before: dict, after: dict) -> dict:
     """Fields that differ: discrete ones exactly, continuous ones in their own unit.
 
-    Four things in order, and the order is the fix for pass-22 F7:
+    The order of the checks is the substance here, and it has been wrong twice.
 
-    1. **Exact equality is never a difference.** The previous version asked whether the value was
-       decision-irrelevant *before* asking whether it had moved, so two identical answers of exactly
-       600.0 s were reported as differing — the threshold test fails on a value sitting on a
-       threshold, even when the difference is zero. It rejected correct implementations at precisely
-       the values a verdict turns on.
-    2. **A non-finite value is always a difference.** `abs(a - nan) > tol` is false, so a finite
-       answer replaced by NaN or an infinity passed clean. A non-result is not a small change.
-    3. **Magnitude, in the field's own unit.**
-    4. **Decision relevance, where it can be established** — against minute thresholds for seconds
-       and against the caps and tie band for metres. For a cost it cannot be, and `COST_FIELDS`
-       records that rather than borrowing the seconds test.
+    1. **A missing value is its own case.** `None` against a number is a difference; `None` against
+       `None` is not.
+    2. **A non-finite float is always a difference**, before any equality test. Pass-22 F7 found
+       `abs(a - nan) > tol` being false, so NaN replacing a finite answer passed clean. Putting exact
+       equality first then introduced the mirror defect, which pass-23 F6 found: two equal
+       infinities, or the same NaN object on both sides, were silently accepted as unchanged. An
+       infinite reported time is not a small change and not an answer.
+    3. **Exact equality of finite values is never a difference.** This is pass-22 F7's other half:
+       asking about decision-relevance *before* asking whether anything had moved called two
+       identical answers of exactly 600.0 s different, because the threshold test fails on a value
+       sitting on a threshold even when the difference is zero. It rejected correct implementations
+       at precisely the values a verdict turns on.
+    4. **Magnitude, in the field's own unit** — never one unit's tolerance applied to another's.
+    5. **Verdict equality, where a verdict exists.** For seconds, compare the PASS/FAIL patterns the
+       two values actually produce. Pass-23 F7 showed that requiring the whole `±tol` neighbourhood
+       to be clean rejects pairs that agree on every verdict: 600.0000000010021 s against
+       600.0000000009976 s are both FAIL at ten minutes and differ by 4.5e-12 s, and the
+       neighbourhood test refuses them. Comparing the predicates proves what is needed and nothing
+       stronger. For a cost and for a residual no such predicate exists — see `NOT_PROVEN`.
     """
     out = {}
     for key in before:
         a, b = before[key], after[key]
-        if a is b or a == b:
-            continue                                        # (1)
+        if a is None or b is None:                              # (1)
+            if a is not b:
+                out[key] = (a, b)
+            continue
         unit = ("s" if key in SECONDS_FIELDS else "m" if key in METRE_FIELDS
                 else "cost" if key in COST_FIELDS else None)
-        if unit is None or not isinstance(a, float) or not isinstance(b, float):
-            out[key] = (a, b)
+        if unit is not None and isinstance(a, float) and isinstance(b, float):
+            if not (math.isfinite(a) and math.isfinite(b)):     # (2)
+                out[key] = (a, b)
+                continue
+            if a == b:                                          # (3)
+                continue
+            tol = DISTANCE_TOL_M if unit == "m" else TIME_TOL_S
+            if abs(a - b) > tol:                                # (4)
+                out[key] = (a, b)
+            elif unit == "s" and _verdicts(a) != _verdicts(b):   # (5)
+                out[key] = (a, b)
             continue
-        if not (math.isfinite(a) and math.isfinite(b)):
-            out[key] = (a, b)                               # (2)
-            continue
-        tol = DISTANCE_TOL_M if unit == "m" else TIME_TOL_S
-        if abs(a - b) > tol:                                # (3)
-            out[key] = (a, b)
-            continue
-        if unit == "s" and not (tolerance_is_decision_irrelevant(a)      # (4)
-                                and tolerance_is_decision_irrelevant(b)):
-            out[key] = (a, b)
-        elif unit == "m" and not (_distance_is_decision_irrelevant(a)
-                                  and _distance_is_decision_irrelevant(b)):
+        if a != b:
             out[key] = (a, b)
     return out
 
@@ -197,10 +217,15 @@ def answers(scenario: Scenario) -> dict:
         # identity must agree: that is what catches the orientation defect.
         "objective1_route": _route(r, 1),
         "objective2_route": _route(r, 2),
-        # Network seconds, so the route check can be the equivalence it should always have been
-        # (pass-22 F4) rather than a test on whether the endpoints differ.
-        "objective1_network_s": r.objective1_network_s,
-        "objective2_network_s": r.objective2_network_s,
+        # The selected journeys' **network** seconds are deliberately *not* here, though the oracle
+        # reports them and the per-result route implication uses them. Pass-23 F3: they are not
+        # determined by the declared ranking fields, so two tied winners can disagree on them and a
+        # faithful implementation then fails a permutation. Two records 0→1 over `(0,0),(50,0),
+        # (100,0)` and `(0,0),(50,.004),(100,0)` of time/cost 2 and 1.9936507809117465 share a
+        # complete rounded identity and tie on time 1, cost 1, destination and route, while their
+        # network decompositions are 1 and 0.9968253968355556 — so edge order alone decides the
+        # reported decomposition. Comparing it across representations would assert a uniqueness
+        # §2.4 does not yet promise. That promise is design revision 9's item 2.
     }
 
 
@@ -334,6 +359,33 @@ SCENARIOS: tuple[Scenario, ...] = (
         (80.0, 0.0), ((20.0, 0.0),), shapes=("no-path", "oneway")),
     Scenario("empty_graph", ToyGraph(edges=()), (0.0, 0.0), ((10.0, 0.0),),
              shapes=("empty-graph",)),
+    # --- destination cardinality. Pass-23 F1: a uniform `destinations[:4]` truncation in
+    # `journeys` never activated anywhere in the suite, because the largest destination list any
+    # oracle call received was **three**. Eligibility examined every destination and every surviving
+    # journey was correct, so nothing saw it. The optimum sits **last** in the list here, which is
+    # what makes a positional cutoff decide the answer.
+    Scenario("five_spokes_best_last", ToyGraph(edges=(
+        _e(0, 1, ((0, 0), (1000, 0)), 1000.0, 1000.0, osmid=(1,), oneway=True),
+        _e(0, 2, ((0, 0), (0, 1000)), 1000.0, 1000.0, osmid=(2,), oneway=True),
+        _e(0, 3, ((0, 0), (-1000, 0)), 1000.0, 1000.0, osmid=(3,), oneway=True),
+        _e(0, 4, ((0, 0), (0, -1000)), 1000.0, 1000.0, osmid=(4,), oneway=True),
+        _e(0, 5, ((0, 0), (1000, 1000)), 1.0, 1.0, osmid=(5,), oneway=True),
+    )), (0.0, 0.0), ((1000.0, 0.0), (0.0, 1000.0), (-1000.0, 0.0), (0.0, -1000.0),
+                     (1000.0, 1000.0)),
+        destination_ids=("a", "b", "c", "d", "e"),
+        shapes=("many-destinations", "best-destination-last")),
+    # The same cardinality with the optimum **first**, so a cutoff that happens to keep the head
+    # of the list is not mistaken for a correct implementation by this scenario alone.
+    Scenario("five_spokes_best_first", ToyGraph(edges=(
+        _e(0, 1, ((0, 0), (1000, 1000)), 1.0, 1.0, osmid=(5,), oneway=True),
+        _e(0, 2, ((0, 0), (1000, 0)), 1000.0, 1000.0, osmid=(1,), oneway=True),
+        _e(0, 3, ((0, 0), (0, 1000)), 1000.0, 1000.0, osmid=(2,), oneway=True),
+        _e(0, 4, ((0, 0), (-1000, 0)), 1000.0, 1000.0, osmid=(3,), oneway=True),
+        _e(0, 5, ((0, 0), (0, -1000)), 1000.0, 1000.0, osmid=(4,), oneway=True),
+    )), (0.0, 0.0), ((1000.0, 1000.0), (1000.0, 0.0), (0.0, 1000.0), (-1000.0, 0.0),
+                     (0.0, -1000.0)),
+        destination_ids=("a", "b", "c", "d", "e"),
+        shapes=("many-destinations", "best-destination-first")),
     # --- hop depth. Pass-22 F2: a uniform <=4-edge cutoff in `_simple_paths` passed all 423 tests
     # in this layer and the corpus together, because no scenario above needs a journey more than
     # four edges deep. The missing thing was not an input but a **coverage dimension**, so these are
@@ -489,6 +541,22 @@ NOT_PRESERVING: dict = {
 #: The three collinear scales the law is checked on. Collinear so the middle one has a chord.
 SCALE_POINTS = (1.0, 3.0, 7.0)
 
+#: Relative slack for the scale law, because the theorem is about real arithmetic and the
+#: observations are binary64. Pass-23 F5: on one edge of time/cost **100000000.1** the correct
+#: evaluator reports 100000000.1, 300000000.29999995 and 700000000.6999999, whose chord exceeds the
+#: middle value by **5.96e-8** — and by 1.99e-8 even in exact rational arithmetic over those three
+#: outputs, so it is not an artefact of evaluating the chord. An absolute 1e-9 rejected a correct
+#: implementation. Each value passes through a weight multiplication, term formation, a summation and
+#: the chord itself, so the slack is magnitude-proportional with the absolute floor retained for
+#: small values. This is an **allowance, not an error analysis**: a supported numerical domain is
+#: design revision 9's item 3.
+SCALE_REL_SLACK = 1e-12
+
+
+def _scale_allowance(values) -> float:
+    """Absolute slack for a scale-law comparison over these magnitudes."""
+    return max(1e-9, SCALE_REL_SLACK * max(abs(v) for v in values))
+
 #: What a uniform positive weight scaling *does* imply, stated so the false version cannot come
 #: back. Both limbs are properties of a minimum over affinely-parameterised journeys.
 SCALE_LAW = (
@@ -581,23 +649,33 @@ def invariant_violations() -> list[str]:
         for key in ("objective1_s", "objective2_cost"):
             values = [p[key] for p in points]
             if any(v is None for v in values):
+                # Reachability is weight-independent under a positive finite scaling, so `None`
+                # must occur at every scale or none. Skipping a mixed triple would hide that.
+                if not all(v is None for v in values):
+                    bad.append(f"{scenario.name}: {key} is None at some scales and not others, "
+                               f"but a positive scaling cannot change reachability — {values!r}")
                 continue
             chord = weight * values[0] + (1.0 - weight) * values[2]
-            if values[1] < chord - 1e-9:
+            if values[1] < chord - _scale_allowance(values + [chord]):
                 bad.append(f"{scenario.name}: {key} is not concave in the weight scale — "
                            f"{values[1]!r} at scale {mid} is below the chord {chord!r}")
-        # Affinity, conditioned on the journey actually holding. Where the selection is stable the
-        # law is exact arithmetic and worth asserting; where it switches, the switch is correct.
-        if all(p["objective1_route"] == points[0]["objective1_route"]
-               and p["objective1_destination_id"] == points[0]["objective1_destination_id"]
-               for p in points):
+        # Affinity, on a graph that admits **exactly one journey**. Pass-23 F2: conditioning on the
+        # selected route and destination being unchanged does *not* establish that the journey held,
+        # because neither names the attachment occurrence. On `(0,0),(50,0),(100,0)` of time/cost 40
+        # with the origin at `(49.995,0)`, the attachment switches between the exact projection and
+        # the next segment's clamped start while the destination id stays `"0"` and the route stays
+        # one identity — slopes 20.000984126984125 against 20, nearly a million tolerances apart,
+        # and the check rejected a correct oracle. `n_journeys == 1` is the condition that actually
+        # means what the old one was trying to say.
+        if scenario.run().n_journeys == 1:
             values = [p["objective1_s"] for p in points]
             if not any(v is None for v in values):
                 first = (values[1] - values[0]) / (mid - lo)
                 second = (values[2] - values[1]) / (hi - mid)
-                if abs(first - second) > 1e-9:
+                if abs(first - second) > _scale_allowance(values):
                     bad.append(f"{scenario.name}: objective1_s is not affine in the weight scale "
-                               f"although the selected journey held — slopes {first!r}, {second!r}")
+                               f"although the graph admits one journey — slopes {first!r}, "
+                               f"{second!r}")
 
     # The subdivision *signature*, not an invariance claim. Pass-21 F1's bucket mutant is caught
     # here and nowhere else: merging occurrences also merges the extra vertex subdivision adds, so
@@ -621,10 +699,43 @@ def _absolute_violations() -> list[str]:
         if r.objective1_s is None or abs(r.objective1_s) > 1e-12:
             bad.append(f"coincident origin and destination at {at}: {r.objective1_s!r}, not 0")
 
-    # Both connectors are in both totals, as an absolute number. This replaces the claim pass-22 F3
+    # Both connectors are in both totals, as absolute numbers. This replaces the claim pass-22 F3
     # withdrew: a zero intercept is affine and non-negative, so no scaling check could ever have
     # established connector inclusion — and `EXPECTED_COVERAGE` already recorded the connector-free
     # mutant escaping this layer, which should have been read as the refutation it was.
+    #
+    # **Two anchors, because one was not enough.** Pass-23 F8: the selection anchor below has a zero
+    # origin connector and its objective-2 winner has a zero destination connector, so a wrapper
+    # stripping connectors from `objective1_cost` and from `objective2_s` passed it untouched —
+    # two of the four outputs were never asserted. The first anchor now pins all four on one journey
+    # with **both** residuals non-zero.
+    #
+    # One straight 100 m edge of time/cost 580, origin 10 m off one end and destination 20 m off the
+    # other: every total is 580 + 30/1.26 = 603.8095238095 s, and 580 alone would turn objective 2
+    # from a ten-minute FAIL into a PASS.
+    both = ToyGraph(edges=(_e(0, 1, ((0, 0), (100, 0)), 580.0, 580.0, osmid=(1,)),))
+    r = toy.evaluate(both, (0.0, 10.0), [(100.0, 20.0)])
+    want = math.fsum((580.0, 30.0 / toy.ACCESS_SPEED_MPS))
+    for name, got in (("objective1_s", r.objective1_s), ("objective1_cost", r.objective1_cost),
+                      ("objective2_s", r.objective2_s), ("objective2_cost", r.objective2_cost)):
+        if got is None or abs(got - want) > 1e-9:
+            bad.append(f"both connectors must be in {name}: {got!r}, not {want!r}")
+
+    # The affine law with its **intercept pinned**, on the same graph. The conditioned relative check
+    # in `invariant_violations` only fires where the graph admits one journey, and all six such
+    # scenarios have zero connectors — so it exercises the proportional case only and cannot tell
+    # affine from proportional, which is the vacuity pass-23 F2 warned about arriving in a different
+    # place. Scaling this graph's single weight must give exactly `k × 580 + 30/1.26`, so the slope
+    # and the intercept are both named rather than inferred from two differences.
+    for k in SCALE_POINTS:
+        scaled = ToyGraph(edges=(_e(0, 1, ((0, 0), (100, 0)), 580.0 * k, 580.0 * k, osmid=(1,)),))
+        got = toy.evaluate(scaled, (0.0, 10.0), [(100.0, 20.0)]).objective1_s
+        expect = math.fsum((580.0 * k, 30.0 / toy.ACCESS_SPEED_MPS))
+        if got is None or abs(got - expect) > 1e-9:
+            bad.append(f"affine law at scale {k}: {got!r}, not {expect!r} "
+                       f"(= {k} x 580 network + 30/1.26 connector)")
+
+    # And the selection anchor, which is the one the historical connector-free-cost mutant fails.
     # Two destinations, one reached over a 100 m connector and one with none. Own costs are
     # 10 + 100/1.26 = 89.3650793651 against 20, so objective 2 must select the second and report
     # 650 s; dropping the connector from cost selects the first and reports 89.3650793651 s.
@@ -638,6 +749,35 @@ def _absolute_violations() -> list[str]:
     if r.objective1_s is None or abs(r.objective1_s - want) > 1e-9:
         bad.append(f"connector omitted from the reported time: objective 1 reports "
                    f"{r.objective1_s!r}, not {want!r}")
+
+    # Destination cardinality, as named numbers. Pass-23 F1: a `destinations[:4]` truncation in
+    # `journeys` never activated anywhere in the suite, because no oracle call ever received more
+    # than three destinations. Like hop depth, this is a **dimension**, and like hop depth a relative
+    # invariant cannot see it: a positional truncation leaves both sides of every transform equally
+    # truncated, and the eligible set still names all five.
+    for name, want_id in (("five_spokes_best_last", "e"), ("five_spokes_best_first", "a")):
+        scenario = next(sc for sc in SCENARIOS if sc.name == name)
+        r = scenario.run()
+        if r.objective1_s is None or abs(r.objective1_s - 1.0) > 1e-9:
+            bad.append(f"{name}: objective 1 reports {r.objective1_s!r}, not 1.0")
+        elif r.objective1_destination_id != want_id:
+            bad.append(f"{name}: selected {r.objective1_destination_id!r}, not {want_id!r}")
+        if len(r.eligible) != 5:
+            bad.append(f"{name}: {len(r.eligible)} eligible destinations, not 5")
+
+    # Orientation is correct at **large absolute coordinates**, which is the evidence the weakened
+    # translate comparison discards. Pass-23 F4 installed an identity rule forcing orientation 0
+    # outside a coordinate box and it passed all 527 tests: every other identity anchor sits near the
+    # origin, and the route-legality check recomputes identities with the same mutated function, so
+    # it compares wrong against wrong. The dimension is **absolute-coordinate dependence of
+    # identity**. A reverse traversal of a left-to-right edge has orientation 1 wherever the edge is.
+    for dx, dy in ((0.0, 0.0), (12345.678, -98765.432), (-987654.321, 654321.987)):
+        far = ToyEdge(0, 1, ((dx, dy), (dx + 100.0, dy)), time_s=1.0, cost_base=1.0, osmid=(7,))
+        forward = toy.directed_identity(far, forward=True)
+        reverse = toy.directed_identity(far, forward=False)
+        if (forward[3], reverse[3]) != (0, 1):
+            bad.append(f"orientation at offset ({dx}, {dy}) is {(forward[3], reverse[3])}, "
+                       f"not (0, 1) — identity depends on absolute position")
 
     # Reachability at depth, as named numbers. Adding the chain *scenarios* was not enough on its
     # own and the measurement said so: a mutant that removes journeys makes every reported field

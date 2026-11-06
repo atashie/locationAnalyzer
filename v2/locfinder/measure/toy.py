@@ -361,11 +361,22 @@ class Journey:
     destination_id: str = ""
     route: tuple = field(compare=False, default=())
 
-    #: The journey's **network** seconds — the total less both connectors. Exposed because the
-    #: route invariant needs it: pass-22 F4 showed that "a journey whose endpoints differ has a
-    #: non-empty route" rejects a legal answer, since two points can attach at one position on one
-    #: edge and move only through their connectors. The correct statement is an equivalence
-    #: between an empty route and zero network traversal, and that is not derivable from the total.
+    #: The journey's **network** seconds: the sum of its own network terms, not a subtraction of
+    #: connectors from a rounded total. Exposed because the route invariant needs it — pass-22 F4
+    #: showed that "a journey whose endpoints differ has a non-empty route" rejects a legal answer,
+    #: since two points can attach at one position on one edge and move only through their
+    #: connectors.
+    #:
+    #: The statement it supports is an **implication**, not an equivalence: an empty route implies
+    #: zero network seconds. The converse is false on a zero-weight edge, which has a real
+    #: one-element route and no network time.
+    #:
+    #: `compare=False`, so it enters neither `Journey` equality nor `rank_key`, and it is **not**
+    #: compared across representations. Pass-23 F3: it is not determined by the declared ranking
+    #: fields, so two winners that tie on every one of them can carry different network
+    #: decompositions — 1 against 0.9968253968355556 on two records sharing a rounded identity —
+    #: and edge order alone would then decide a reported number. Whether that tie should be broken
+    #: is design revision 9's item 2.
     network_s: float = field(compare=False, default=0.0)
 
     @property
@@ -591,9 +602,9 @@ class OracleResult:
     objective1_route: tuple = ()
     objective2_route: tuple = ()
 
-    #: The selected journeys' **network** seconds, total less both connectors. See
-    #: `Journey.network_s`: the route invariant is an equivalence with this, not with whether the
-    #: endpoints differ.
+    #: The selected journeys' **network** seconds — the sum of their network terms. See
+    #: `Journey.network_s`: the route invariant is an *implication* from this, not a test on whether
+    #: the endpoints differ, and it is deliberately not compared across representations.
     objective1_network_s: float | None = None
     objective2_network_s: float | None = None
 

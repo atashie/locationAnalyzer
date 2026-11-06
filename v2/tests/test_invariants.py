@@ -31,6 +31,7 @@ from locfinder.measure.invariants import (
     _chain,
     CHAIN_DEPTHS,
     SCALE_POINTS,
+    _scale_allowance,
     compare,
     differences,
     FULLY_PRESERVING,
@@ -88,6 +89,12 @@ def test_the_domain_covers_every_shape_a_review_has_turned_up():
         # journey is. A uniform bound on path enumeration preserved every other shape and every
         # relative property, and passed all 423 tests.
         "chain",
+        # Pass-23 F1, the same lesson a second time: destination **cardinality**. No oracle call
+        # anywhere in the suite ever received more than three destinations, so a
+        # `destinations[:4]` truncation never activated. Both list positions of the optimum are
+        # carried, because a cutoff keeping the head of the list is a different defect from one
+        # keeping the tail.
+        "many-destinations", "best-destination-last", "best-destination-first",
     }
     assert required <= covered, f"uncovered shapes: {sorted(required - covered)}"
     assert all(s.shapes for s in SCENARIOS), "every scenario says which shapes it carries"
@@ -218,35 +225,42 @@ def test_a_minimum_over_journeys_is_concave_in_the_weight_scale(scenario):
     for key in ("objective1_s", "objective2_cost"):
         values = [p[key] for p in points]
         if any(v is None for v in values):
+            # Reachability is weight-independent under a positive finite scaling, so `None` must
+            # occur at every scale or none.
             assert all(v is None for v in values), f"{key}: {values}"
             continue
         chord = weight * values[0] + (1.0 - weight) * values[2]
-        assert values[1] >= chord - 1e-9, (
+        assert values[1] >= chord - _scale_allowance(values + [chord]), (
             f"{key} is not concave in the scale: {values[1]!r} at scale {mid} is below the "
             f"chord {chord!r} joining {values[0]!r} and {values[2]!r}"
         )
 
 
 @ALL
-def test_a_total_is_affine_in_the_scale_while_the_selected_journey_holds(scenario):
-    """The affine law, correctly conditioned.
+def test_a_total_is_affine_in_the_scale_where_only_one_journey_exists(scenario):
+    """The affine law, conditioned on something that actually holds the journey fixed.
 
     A *fixed* journey's total is `scale x network + connector`, so three collinear scales pin both
-    coefficients and the slopes must agree. The condition is what the first version lacked: this
-    asserts it only where the selected route and destination are identical at all three scales,
-    because where they are not, the switch is the correct answer rather than a defect.
+    coefficients and the slopes must agree. Getting the **condition** right has taken three goes.
 
-    The intercept is no longer offered as evidence that the connectors are present. A zero intercept
-    is non-negative and affine, so no check in this family can distinguish a connector from its
-    absence. `EXPECTED_COVERAGE` already recorded the connector-free mutant escaping this whole
-    layer, and that should have been read as the refutation it was;
-    `test_both_connectors_are_in_both_totals` does that job instead.
+    It began unconditional, and pass-22 F3 refuted that: the selection switches, because connectors
+    give journeys different intercepts. I then conditioned it on the selected route and destination
+    being unchanged, and pass-23 F2 refuted *that*: neither names the attachment occurrence. On
+    `(0,0),(50,0),(100,0)` of time/cost 40 with the origin at `(49.995,0)`, the origin's attachment
+    switches between its exact projection and the next segment's clamped start while the destination
+    stays `"0"` and the route stays one identity — slopes **20.000984126984125 against 20**, nearly a
+    million tolerances apart. The check rejected a correct oracle.
+
+    `n_journeys == 1` is the condition the earlier two were reaching for: where the graph admits one
+    journey there is nothing to switch to. It is exact rather than inferred.
+
+    All six qualifying scenarios have **zero connectors**, so this exercises the proportional case
+    only and cannot tell affine from proportional. `test_the_affine_law_with_its_intercept_pinned`
+    names the intercept instead of inferring it from differences.
     """
+    if scenario.run().n_journeys != 1:
+        pytest.skip("more than one journey exists, so the selected one may legitimately switch")
     points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
-    if not all(p["objective1_route"] == points[0]["objective1_route"]
-               and p["objective1_destination_id"] == points[0]["objective1_destination_id"]
-               for p in points):
-        pytest.skip("the selected journey switches under scaling, which is correct")
     values = [p["objective1_s"] for p in points]
     if any(v is None for v in values):
         assert all(v is None for v in values), values
@@ -254,18 +268,83 @@ def test_a_total_is_affine_in_the_scale_while_the_selected_journey_holds(scenari
     lo, mid, hi = SCALE_POINTS
     first = (values[1] - values[0]) / (mid - lo)
     second = (values[2] - values[1]) / (hi - mid)
-    assert first == pytest.approx(second, rel=0, abs=1e-9), (
-        f"not affine although the journey held: slopes {first!r} and {second!r}"
+    assert first == pytest.approx(second, rel=0, abs=_scale_allowance(values)), (
+        f"not affine although the graph admits one journey: slopes {first!r} and {second!r}"
     )
 
 
-def test_both_connectors_are_in_both_totals():
-    """The absolute anchor that does what the intercept check was wrongly credited with.
+def test_the_affine_law_with_its_intercept_pinned():
+    """Both coefficients as named numbers, because no relative check in the domain pins the
+    intercept: every single-journey scenario has zero connectors.
+
+    One straight 100 m edge of time/cost 580, origin 10 m off one end and destination 20 m off the
+    other. Scaling the weight must give exactly `k x 580 + 30/1.26`, so a proportional
+    implementation (`k x 603.8095238095`) and a connector-free one (`k x 580`) both fail here while
+    satisfying every relative property.
+    """
+    for k in SCALE_POINTS:
+        graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=580.0 * k,
+                                                cost_base=580.0 * k, osmid=(1,)),))
+        got = toy.evaluate(graph, (0.0, 10.0), [(100.0, 20.0)]).objective1_s
+        expect = math.fsum((580.0 * k, 30.0 / 1.26))
+        assert got == pytest.approx(expect, rel=0, abs=1e-9), (
+            f"at scale {k}: {got!r}, not {expect!r}"
+        )
+
+
+def test_the_attachment_can_switch_under_scaling_with_the_route_unchanged():
+    """Pass-23 F2's input, as a regression against the condition that was wrong.
+
+    If this ever stops switching, the route-equality condition would start looking adequate again.
+    The origin has two retained candidates — its exact projection on the first segment and the
+    second segment's clamped start, 0.005 m away — whose totals have different intercepts. The
+    reported route and destination are identical throughout.
+    """
+    graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0, 0), (50, 0), (100, 0)), time_s=40.0,
+                                            cost_base=40.0, osmid=(1,), oneway=True),))
+    scenario = Scenario("f2", graph, (49.995, 0.0), ((100.0, 0.0),))
+    points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
+    assert scenario.run().n_journeys > 1
+    assert len({p["objective1_route"] for p in points}) == 1, "the route is unchanged"
+    assert len({p["objective1_destination_id"] for p in points}) == 1, "the destination too"
+    lo, mid, hi = SCALE_POINTS
+    first = (points[1]["objective1_s"] - points[0]["objective1_s"]) / (mid - lo)
+    second = (points[2]["objective1_s"] - points[1]["objective1_s"]) / (hi - mid)
+    # Yet the slopes differ by nearly a million tolerances, because the attachment switched.
+    assert abs(first - second) > 1e-4, (first, second)
+
+
+def test_both_connectors_are_in_all_four_reported_numbers():
+    """The absolute anchor that does what the intercept check was wrongly credited with — and now
+    asserts all four of the outputs it claims to cover.
+
+    Pass-23 F8: the selection anchor below has a **zero origin connector**, and the destination
+    objective 2 selects has a **zero destination connector**, so a wrapper replacing
+    `objective1_cost` and `objective2_s` with their network-only values passed it untouched. Two of
+    the four claimed inclusions were never asserted.
+
+    One straight 100 m edge of time/cost 580, origin 10 m off one end and destination 20 m off the
+    other, so both residuals are non-zero and every reported number must be
+    `580 + 30/1.26` = **603.8095238095 s**. Network-only would report 580 — objective 2 from a
+    ten-minute FAIL to a PASS — and with no alternative destination, selection cannot reveal it
+    indirectly.
+    """
+    graph = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=580.0, cost_base=580.0, osmid=(1,)),))
+    r = toy.evaluate(graph, (0.0, 10.0), [(100.0, 20.0)])
+    want = math.fsum((580.0, 30.0 / 1.26))
+    assert want == pytest.approx(603.8095238095238, rel=0, abs=1e-9)
+    for name in ("objective1_s", "objective1_cost", "objective2_s", "objective2_cost"):
+        assert getattr(r, name) == pytest.approx(want, rel=0, abs=1e-9), name
+
+
+def test_the_connector_is_in_the_cost_the_second_objective_selects_on():
+    """The selection anchor, which is the one the historical connector-free-cost mutant fails.
 
     Two destinations, one reached over a 100 m connector and one with none. The own costs are
     `10 + 100/1.26` = 89.3650793651 and 20, so objective 2 must select the second and report
     **650 s**; omitting the connector from cost selects the first and reports 89.3650793651 s,
-    turning FAIL into PASS at ten minutes. Objective 1 pins the connector in the reported time.
+    turning FAIL into PASS at ten minutes.
     """
     graph = toy.ToyGraph(edges=(
         toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=10.0, cost_base=10.0, osmid=(1,)),
@@ -491,3 +570,75 @@ def test_the_same_physical_traversal_has_one_identity_however_it_is_expressed():
         "a palindromic closed edge's two directions trace the same coordinates in the same order, "
         "so they are interchangeable and must share an identity"
     )
+
+
+def test_the_optimum_is_found_wherever_it_sits_in_the_destination_list():
+    """Destination cardinality, the dimension pass-23 F1 walked through.
+
+    A uniform `destinations[:4]` truncation in `journeys` passed every one of the 1,040 tests,
+    because the largest destination list any oracle call received was **three**. Eligibility still
+    examined all of them, so the eligible set looked right; only enumeration was cut, and every
+    journey it did return was correct.
+
+    A positional truncation is invisible to every relative invariant too — both sides of a transform
+    are equally truncated — so this is anchored, like hop depth. Five spokes, four of them 1000 s
+    and one 1 s, with the fast one at each end of the list in turn.
+    """
+    for name, want in (("five_spokes_best_last", "e"), ("five_spokes_best_first", "a")):
+        scenario = next(s for s in SCENARIOS if s.name == name)
+        r = scenario.run()
+        assert r.objective1_s == pytest.approx(1.0, rel=0, abs=1e-9), name
+        assert r.objective1_destination_id == want, name
+        assert len(r.eligible) == 5, f"{name}: eligibility must see all five"
+
+
+def test_identity_does_not_depend_on_absolute_position():
+    """Pass-23 F4, which is the evidence the weakened translate comparison discards.
+
+    An identity rule forcing orientation 0 outside a coordinate box passed all 527 conformance,
+    invariant and mutation-guard tests. Every other identity anchor sat near the origin, and the
+    route-legality check recomputes identities with the same function, so it compared wrong against
+    wrong. Excluding orientation under `translate` was defended as costing no coverage; it does, for
+    exactly the defects that only appear far from the origin.
+
+    A reverse traversal of a left-to-right edge has orientation 1 wherever the edge is.
+    """
+    for dx, dy in ((0.0, 0.0), (12345.678, -98765.432), (-987654.321, 654321.987)):
+        edge = toy.ToyEdge(0, 1, ((dx, dy), (dx + 100.0, dy)), time_s=1.0, cost_base=1.0,
+                           osmid=(7,))
+        assert toy.directed_identity(edge, forward=True)[3] == 0, (dx, dy)
+        assert toy.directed_identity(edge, forward=False)[3] == 1, (dx, dy)
+
+
+def test_a_non_finite_answer_is_never_equal_to_itself():
+    """Pass-23 F6: putting exact equality first let equal non-finite values through.
+
+    `differences` was documented as treating a non-finite value as always a difference, and it was
+    not: equality caught two infinities and object identity caught a shared NaN, so an
+    implementation returning the same non-result across representations passed the helper. An
+    infinite reported time is not an unchanged answer, it is not an answer.
+    """
+    inf, nan = float("inf"), float("nan")
+    assert differences({"objective1_s": inf}, {"objective1_s": inf})
+    assert differences({"objective1_s": nan}, {"objective1_s": nan})
+    assert differences({"objective1_s": 100.0}, {"objective1_s": inf})
+    # and the repair for identical finite values at a threshold still holds
+    assert not differences({"objective1_s": 600.0}, {"objective1_s": 600.0})
+    # `None` is a missing value, not a non-finite one, and two missing values agree
+    assert not differences({"objective1_s": None}, {"objective1_s": None})
+    assert differences({"objective1_s": None}, {"objective1_s": 100.0})
+
+
+def test_a_seconds_tolerance_compares_verdicts_rather_than_a_neighbourhood():
+    """Pass-23 F7's other half: requiring the whole `+/-tol` neighbourhood to be verdict-clean
+    rejects pairs that agree on every verdict.
+
+    600.0000000010021 s and 600.0000000009976 s differ by 4.5e-12 s and are both FAIL at ten
+    minutes. Comparing the predicates the two values actually produce accepts them; requiring a
+    clean neighbourhood around each refuses them, which is a stronger property than the comparison
+    needs.
+    """
+    a, b = 600.0000000010021, 600.0000000009976
+    assert not differences({"objective1_s": a}, {"objective1_s": b})
+    # and a pair that genuinely straddles ten minutes is still a difference
+    assert differences({"objective1_s": 599.9999999999}, {"objective1_s": 600.0000000001})

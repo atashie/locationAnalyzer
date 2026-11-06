@@ -7,11 +7,12 @@ guard turned none of its assertions red when the historical fixes were reverted.
 is installed and the suites are run against it, and `test_mutants.py` asserts that **every mutant is
 caught by at least one layer**.
 
-That check immediately earned its place. Run against the two suites it showed:
+That check immediately earned its place, and the table it produces is the measured division of
+labour rather than a claim about it:
 
 | mutant | invariants | conformance |
 |---|---|---|
-| pass-20 F1 connector-free cost | passes | **caught** |
+| pass-20 F1 connector-free cost | **caught** | **caught** |
 | pass-20 F5 strict cap | passes | **caught** |
 | pass-20 F4 identity-keyed dedup | **caught** | **caught** |
 | pass-21 F1 rounded occurrence bucket | **caught** | passes |
@@ -19,24 +20,53 @@ That check immediately earned its place. Run against the two suites it showed:
 | pass-21 F5 route without partials | **caught** | passes |
 | pass-21 F6 rank without cost | **caught** | passes |
 | pass-21 F7 bit-complemented orientation | **caught** | passes |
+| pass-22 F2 bounded path enumeration | **caught** | passes |
+| pass-22 F8 inflated evaluator (sentinel) | **caught** | **caught** |
+| pass-23 F1 bounded destinations | **caught** | passes |
+| pass-23 F4 coordinate-dependent orientation | **caught** | passes |
+| pass-23 F8 connector-free reported cost | **caught** | **caught** |
 
-The two layers are **complementary and neither subsumes the other**: five mutants escape the corpus
-and two escape the invariants, and every one is caught by the other. The corpus catches boundary and
-value defects; the invariants catch domain and representation defects. A uniformly tightened cap and
-a uniformly connector-free cost both preserve every *relative* property — scaling, translating,
-permuting and re-expressing all still agree, because both sides are equally wrong — so only an
-exact-boundary or exact-value case sees them. Conversely five of the pass-21 mutants escape the
-corpus because no named case exercised their shape, which is the whole reason this layer exists.
+The two layers are **complementary and neither subsumes the other**: eight mutants escape the corpus
+and one escapes the invariants, and every one is caught by the other. The corpus catches boundary and
+value defects; the invariants catch domain and representation defects. A uniformly tightened cap
+preserves every *relative* property — scaling, translating, permuting and re-expressing all still
+agree, because both sides are equally wrong — so only an exact-boundary case sees it.
 
-**Getting this table right required fixing the harness twice.** The orientation mutant read as
-uncaught by everything until `invariants.py` stopped importing `directed_identity` by name — a
-patched module global cannot reach a binding someone already copied. And it stayed uncaught until the
-scenario domain gained an input whose *selected route* traverses a palindromic edge backwards, since
-the bit flip and the renormalisation agree on every other geometry.
+**Three of these mutants defeated the entire instrument when they were written, and all three for
+the same reason.** The bounded path enumeration passed all 423 tests, the bounded destination list
+all 1,040, and the coordinate-dependent orientation all 527. None of them recognised a fixture; each
+was a *uniform* reduction whose surviving answers were all correct. What each exposed was an
+undeclared **dimension** of the input domain:
 
-Three of these were, at the time the mutation check first ran, defects I had **fixed with no guard at
+| mutant | the dimension nobody had declared |
+|---|---|
+| pass-22 F2 | **hop depth** — no scenario needed a journey more than four edges deep |
+| pass-23 F1 | **destination cardinality** — no oracle call anywhere received more than three |
+| pass-23 F4 | **absolute-coordinate dependence of identity** — every identity anchor sat near the origin |
+
+And in all three cases the repair had to be an **absolute anchor**, not another relative invariant. A
+relative invariant compares two runs, so it cannot see a defect that removes results (`None` equals
+`None`), nor a positional truncation (both sides truncated alike), nor a defect that appears only far
+from the origin (no near-origin transform reaches it). That is the single most reusable thing this
+file has established.
+
+**Getting the table right required fixing the harness three times**, all easy to repeat:
+
+1. A patched module global cannot reach a binding another module imported **by name**, so
+   `invariants.py` had to stop holding its own reference to `directed_identity`.
+2. Then `evaluate` turned out to be imported by name in **both** layers — the same defect, in the
+   bindings I had not looked at. A wrapper adding 1000 s to every finite time left
+   `invariant_violations()` returning `[]`. `inflated_evaluate` is the sentinel that fails if either
+   layer ever stops seeing an evaluator replacement; without it, every row above measures nothing.
+3. The orientation mutant stayed invisible until the domain gained an input whose **selected route
+   traverses a palindromic edge backwards**, since the bit flip and the renormalisation agree on
+   every other geometry.
+
+Three of these were, at the time the mutation check first ran, defects fixed with **no guard at
 all**: the orientation bit, the zero-span branch and the route's partial traversals all survived both
-suites. The absolute anchors in `test_invariants.py` were added because this file said so.
+suites. The absolute anchors in `test_invariants.py` were added because this file said so, and
+`pass23-F8-connector-free-reported-cost` is there because the anchor that replaced one of them turned
+out to assert only half of what it claimed.
 """
 
 from __future__ import annotations
@@ -232,6 +262,81 @@ def inflated_evaluate(extra_s: float = 1000.0):
         yield
 
 
+@contextmanager
+def bounded_destinations(limit: int = 4):
+    """Pass-23 F1: journey enumeration truncated to the first `limit` destinations.
+
+    The second mutant to defeat the whole instrument, and by the same mechanism as the first: a
+    **dimension** nobody had declared. Destination cardinality never exceeded **three** in any oracle
+    call across all 1,040 tests, so a cutoff at four never activated. Eligibility still examines
+    every destination — the eligible set names all of them — and every surviving journey is correct.
+
+    A positional truncation is also invisible to every relative invariant, because both sides of a
+    transform are equally truncated. `five_spokes_best_last` and `five_spokes_best_first` plus the
+    absolute anchors in `_absolute_violations` are what see it: five spokes, the 1 s one at the end
+    of the list, correct answer 1 s and the mutant's 1000 s — PASS against FAIL at ten minutes.
+    """
+    original = toy.journeys
+
+    def bounded(graph, origin, destinations, destination_ids=None):
+        return original(graph, origin, destinations[:limit],
+                        None if destination_ids is None else destination_ids[:limit])
+
+    with _patched(journeys=bounded):
+        yield
+
+
+@contextmanager
+def coordinate_dependent_orientation(box: float = 10000.0):
+    """Pass-23 F4: a directed identity whose orientation is forced to 0 outside a coordinate box.
+
+    Built to attack the decision to stop comparing orientation under `translate`, and it worked: it
+    passed all 527 conformance, invariant and mutation-guard tests. The reasoning that looked sound
+    was that orientation is still compared under the two transforms leaving coordinates alone, "so
+    this costs no coverage". It does: a defect that only appears *far from the origin* is reachable
+    by no near-origin transform, and the route-legality check recomputes identities with the same
+    wrong function, so it compares wrong against wrong.
+
+    The dimension is **absolute-coordinate dependence of identity**, and the answer is an absolute
+    anchor at several offsets rather than a relative comparison.
+    """
+    original = toy.directed_identity
+
+    def wrong(edge, *, forward):
+        ident = original(edge, forward=forward)
+        if max(abs(c) for point in edge.geometry for c in point) > box:
+            ident = ident[:3] + (0,) + ident[4:]
+        return ident
+
+    with _patched(directed_identity=wrong):
+        yield
+
+
+@contextmanager
+def connector_free_reported_cost():
+    """Pass-23 F8: connectors stripped from `objective1_cost` and from `objective2_s`.
+
+    Not a historical defect — a probe of the connector anchor, which claimed to establish the
+    connectors were in both objectives' time *and* cost and asserted only two of those four
+    outputs. Its origin connector was zero and its objective-2 winner had a zero destination
+    connector, so this wrapper passed it untouched while turning a 603.8095238095 s FAIL into a
+    580 s PASS.
+    """
+    original = toy.evaluate
+
+    def stripped(*args, **kwargs):
+        r = original(*args, **kwargs)
+        patch = {}
+        if r.objective1_cost is not None and r.objective1_network_s is not None:
+            patch["objective1_cost"] = r.objective1_network_s
+        if r.objective2_s is not None and r.objective2_network_s is not None:
+            patch["objective2_s"] = r.objective2_network_s
+        return replace(r, **patch) if patch else r
+
+    with _patched(evaluate=stripped):
+        yield
+
+
 #: Every mutant, by the finding that produced it.
 MUTANTS: dict = {
     "pass20-F5-strict-cap": strict_cap,
@@ -244,4 +349,8 @@ MUTANTS: dict = {
     "pass21-F7-bit-complemented-orientation": bit_complemented_orientation,
     "pass22-F2-bounded-path-enumeration": bounded_path_enumeration,
     "pass22-F8-inflated-evaluate": inflated_evaluate,
+    # Pass 23's three, two of which defeated the whole instrument as it stood after pass 22.
+    "pass23-F1-bounded-destinations": bounded_destinations,
+    "pass23-F4-coordinate-dependent-orientation": coordinate_dependent_orientation,
+    "pass23-F8-connector-free-reported-cost": connector_free_reported_cost,
 }

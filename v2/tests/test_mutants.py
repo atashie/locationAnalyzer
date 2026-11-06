@@ -74,6 +74,14 @@ EXPECTED_COVERAGE = {
     # The sentinel. Caught by both, and if it ever stops being caught by both, every other row here
     # is unsupported -- see `test_a_sentinel_evaluator_mutation_reaches_both_layers`.
     "pass22-F8-inflated-evaluate": (True, True),
+    # Pass 23's three. F1 and F4 each defeated the entire instrument as it stood after pass 22, and
+    # for the same reason as F2 before them: an undeclared dimension. F1's was destination
+    # cardinality, F4's was absolute-coordinate dependence of identity. Both are now caught by
+    # absolute anchors, because a relative invariant sees neither a positional truncation nor a
+    # defect that only appears far from the origin.
+    "pass23-F1-bounded-destinations": (True, False),
+    "pass23-F4-coordinate-dependent-orientation": (True, False),
+    "pass23-F8-connector-free-reported-cost": (True, True),
 }
 
 
@@ -111,7 +119,7 @@ def test_the_invariant_layer_catches_what_no_named_case_does():
         if not invariants:
             invariant_blind.append((name, corpus))
 
-    assert len(corpus_blind) == 6, f"{len(corpus_blind)} mutants escape the corpus, recorded 6"
+    assert len(corpus_blind) == 8, f"{len(corpus_blind)} mutants escape the corpus, recorded 8"
     assert [n for n, caught in corpus_blind if not caught] == []
 
     # and the other direction, which is why neither layer may be dropped: a uniformly tightened cap
