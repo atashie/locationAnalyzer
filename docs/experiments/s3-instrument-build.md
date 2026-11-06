@@ -498,20 +498,42 @@ one pass at a time:
    multiplication and left the *fraction* unfrozen. Segment-length summation, prefix arclength, the
    projection parameter, the traversal fraction, the same-edge interval formula and the
    zero-total-length convention all still decide the exact cost argmin before any `fsum` sees a term.
-   Pass 22's worked case: `sum` of a three-segment edge's lengths gives 0.6 and a first-vertex
-   fraction of 0.16666666666666669, losing to a competing cost of 0.16666666666666666 and reporting
-   **1,000 s**; explicit left accumulation gives 0.6000000000000001, the fraction ties, and the time
-   discriminator reports **1 s**. Both obey the frozen multiplication rule.
+
+   **Verified at `eeb22e3` on Python 3.13.1.** On the edge `(0,0),(.1,0),(.1,.2),(.1,.5)` against a
+   competitor of cost `1/6`, the current `sum` of segment lengths gives **0.6**, a first-vertex
+   fraction of **0.16666666666666669**, and objective 2 reports **1,000 s**. Left accumulation gives
+   0.6000000000000001, the costs tie, and the time discriminator reports **1 s**. Both obey the
+   frozen multiplication rule, so the finding stands: the rule decides a verdict and is unspecified.
+
+   **Pass 22's proposed repair is backwards, and that settles the amendment.** It suggested replacing
+   `length_m` with left accumulation, which is the *less accurate* option. Over the exact rational
+   values of those three doubles the true sum is nearer 0.6 than 0.6000000000000001 by a factor of
+   three — errors of `1/2**55` against `3/2**55` — so **0.6 is the exactly-rounded sum** and
+   `math.fsum` returns it. The 1 s answer left accumulation produces is right only by the accident of
+   a tie it creates through being wrong.
+
+   So revision 9 does not choose between arithmetics on which answer reads better. It extends the
+   rule §2.4 **already** states for journey totals — exactly-rounded, order-independent summation —
+   down into the geometry, which happens to be what the code does and is defensible for the reason
+   the existing rule is defensible. The amendment is still required: an implementation accumulating
+   left to right conforms to revision 8 and reports a different verdict.
 2. **What uniqueness §2.4 promises** (F6). Node simplicity makes the route set finite; it does not
    make a reconstruction unique. On a self-crossing zero-weight edge, direct partial journeys over
    arclengths 25→75, 25→475 and 425→475 — lengths 50, 450 and 50 m — tie on time, cost, destination
    and the one-element identity sequence. That flips T10's boundary-touch between **0% and 100%** for
    one selected route. Either the key gains traversal intervals and a tie convention, or §2.4 states
    the weaker promise and T10 gets its own reconstruction spec.
-3. **The admissible numerical domain** (F9). Finite constructor fields are not a domain: a
-   `(0,0)→(1e-200,0)` segment underflows to degenerate and reports 7.94e-201 s instead of 1,000 s,
-   and a `1e308` base with a `1e308` penalty validates, totals to `inf`, reaches `0*inf` and raises
-   from `min()` instead of returning zero. Query coordinates are not validated at all.
+3. **The admissible numerical domain** (F9). Finite constructor fields are not a domain. **Both
+   limbs verified at `eeb22e3`:** a `(0,0)→(1e-200,0)` segment is accepted, underflows to degenerate
+   and reports **7.936507936507936e-201 s** where the endpoint-to-endpoint 1,000 s is required — PASS
+   against FAIL; and a `1e308` base with a `1e308` penalty validates, totals to `inf`, and raises
+   `ValueError: min() iterable argument is empty` instead of returning its promised zero.
+
+   **A third, found while checking and worse than the "no corresponding validation" pass 22
+   recorded:** a **NaN origin coordinate is accepted and returns `objective1_s = None`**. Design §2.5
+   reads `None` from this oracle as a genuine `NO_PATH`, because the enumeration is unbounded — so an
+   invalid query does not raise, it manufactures an authoritative absence. Query coordinates must be
+   validated at the boundary rather than left to produce a reportable verdict.
 4. **The final cost discriminator** (F10). The oracle ranks by `(time, destination_id, route, cost)`;
    normative §2.4 still stops at the route sequence, so a conforming reader may report a different
    selected cost. Implemented, not amended.

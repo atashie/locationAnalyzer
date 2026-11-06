@@ -1178,6 +1178,13 @@ framed correctly; its stakes are this table, not float noise.
    0.16666666666666669 against a competing cost of 0.16666666666666666 and reports **1,000 s**;
    explicit left accumulation gives 0.16666666666666666, the costs tie, and the time discriminator
    reports **1 s**. Both obey the frozen multiplication rule.
+
+   The amendment is already determined, and not by which answer reads better. Over the exact
+   rational values of those doubles, **0.6 is the exactly-rounded sum** — nearer the true total than
+   0.6000000000000001 by a factor of three — so extending the exactly-rounded, order-independent
+   summation this section already requires for journey totals down into the geometry both settles the
+   rule and keeps the reason the existing rule has. Pass 22's suggestion of left accumulation is the
+   less accurate option and is not adopted.
 2. **§2.4's uniqueness promise.** Node simplicity makes the route set finite; it does not make a
    reconstruction unique. On a zero-weight self-crossing edge, direct partial journeys over
    arclengths 25→75, 25→475 and 425→475 — lengths 50, 450 and 50 m — tie on time, cost, destination
