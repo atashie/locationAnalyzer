@@ -124,13 +124,40 @@ class Frame:
         pts = np.array(self.points, dtype=np.float64, copy=True)
         if not np.isfinite(pts).all():
             raise ValueError("frame points must all be finite")
-        ids = np.array(self.source_ids, copy=True)
+        # An **object** array is converted to fixed-width text, because copying one copies the
+        # pointers and not the referents, so freezing it would not freeze what it points at
+        # (pass-20 F8). Frame B's Overture ids arrive from pandas as `dtype=object`; frame C's cell
+        # indices are integers and keep their dtype, since a numeric copy owns its data. The digest
+        # stringifies ids either way, so this does not change any frame's identity.
+        raw_ids = np.asarray(self.source_ids)
+        ids = (np.array([str(s) for s in raw_ids], dtype=np.str_) if raw_ids.dtype == object
+               else np.array(raw_ids, copy=True))
+
+        # **Read-only views over private storage**, not read-only arrays. Clearing the writeable
+        # flag on an array that *owns* its buffer is not protection: NumPy lets the owner set it
+        # back, and pass-20 F8 executed exactly that — `f.points.setflags(write=True)` followed by a
+        # 999 m move, leaving `digest` describing points the frame no longer holds. A view does not
+        # own its buffer, so it cannot re-enable writing; the base arrays are private.
         pts.flags.writeable = False
         ids.flags.writeable = False
-        object.__setattr__(self, "points", pts)
-        object.__setattr__(self, "source_ids", ids)
+        object.__setattr__(self, "_points_base", pts)
+        object.__setattr__(self, "_ids_base", ids)
+        object.__setattr__(self, "points", pts.view())
+        object.__setattr__(self, "source_ids", ids.view())
+        self.points.flags.writeable = False
+        self.source_ids.flags.writeable = False
         if self.digest != self.recomputed_digest:
             raise ValueError("the supplied digest does not describe these points and ids")
+
+    def verify(self) -> None:
+        """Raise unless the contents still match the recorded digest.
+
+        Called before writing, and **to be called where a measurement consumes a frame**: in-memory
+        protection is a guard, not a proof, and the identity a measurement reports should be checked
+        against the data it actually used.
+        """
+        if self.digest != self.recomputed_digest:
+            raise ValueError("this frame's contents no longer match its digest")
 
     @property
     def n(self) -> int:

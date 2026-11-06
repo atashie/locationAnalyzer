@@ -39,15 +39,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from enum import Enum
 
 from ..status import Outcome
 from .toy import ToyEdge, ToyGraph, OracleResult, evaluate
 
-#: Declared absolute tolerance on a time in seconds, ~500x the observed float-association spread of
-#: 1.42e-14 s and ~11 orders below the smallest published threshold (600 s). Never used without
-#: `tolerance_is_decision_irrelevant`.
+#: Declared absolute tolerance on a time in seconds: about **70,400x** the observed
+#: float-association spread of 1.42e-14 s, and about 11 orders below the smallest published
+#: threshold of 600 s. (An earlier comment here said "~500x", which was simply wrong —
+#: pass-20 recomputed the ratio.) Never used without `tolerance_is_decision_irrelevant`,
+#: and it bounds only the oracle-versus-hand **time** comparison: it says nothing about
+#: cost-argmin stability, cap equality or selected provenance.
 TIME_TOL_S = 1e-9
 
 #: Design §1 and the execution plan §1: the published thresholds, in minutes.
@@ -89,6 +93,19 @@ def comparator_outcome(*, threshold_s: float, time_s: float | None, search_bound
     `status.node_reasons` requires keyword-only `search_bounded`.
     """
     if time_s is not None:
+        # Design §2.5's first branch is "a finite time **was found**", and `is not None` is not that
+        # test. Pass-20 F11: `inf` is how this repository represents a routing non-result, and it
+        # arrived here as a definitive **FAIL**, while `-inf` arrived as **PASS**. Ten such points
+        # against a product PASS move the gate from INCONCLUSIVE (`k`=0, `u`=10) to FAIL (`k`=10),
+        # on no established point failure at all. A non-result must be normalised to `None` by its
+        # caller, carrying its termination reason and bound, not passed through as a number.
+        if not math.isfinite(time_s):
+            raise ValueError(
+                f"time_s must be a finite number of seconds or None, got {time_s!r}: a non-result "
+                "carries a reason and a bound, and cannot be a verdict"
+            )
+        if time_s < 0:
+            raise ValueError(f"time_s must be non-negative, got {time_s!r}")
         return ComparatorOutcome.PASS if time_s <= threshold_s else ComparatorOutcome.FAIL
     if exhausted and not search_bounded:
         return ComparatorOutcome.FAIL          # NO_PATH: definitive, fails every finite threshold
