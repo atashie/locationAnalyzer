@@ -84,6 +84,17 @@ def cell_bounds(flat_index: np.ndarray, grid: GridSpec) -> np.ndarray:
 # ----------------------------------------------------------------------------- the frame
 
 
+def _frozen(array: np.ndarray) -> np.ndarray:
+    """An array with the same contents whose buffer is an immutable `bytes` object.
+
+    Nothing in the returned array's base chain owns a writable buffer, so `setflags(write=True)`
+    raises at every level. That is the difference between "not currently writable" and "cannot be
+    made writable", and two reviews got through the former.
+    """
+    contiguous = np.ascontiguousarray(array)
+    return np.frombuffer(contiguous.tobytes(), dtype=contiguous.dtype)
+
+
 #: Bumped when the digest's *byte layout* changes, so a stale recorded digest is recognisable as
 #: belonging to an older identity rather than mistaken for a different frame. Version 2 adds `kind`
 #: and `crs`, fixes little-endian float bytes and length-delimits the ids (pass-19 F7, F10).
@@ -127,27 +138,33 @@ class Frame:
         # An **object** array is converted to fixed-width text, because copying one copies the
         # pointers and not the referents, so freezing it would not freeze what it points at
         # (pass-20 F8). Frame B's Overture ids arrive from pandas as `dtype=object`; frame C's cell
-        # indices are integers and keep their dtype, since a numeric copy owns its data. The digest
-        # stringifies ids either way, so this does not change any frame's identity.
+        # indices are integers and keep their dtype. The digest stringifies ids either way, so this
+        # does not change any frame's identity.
         raw_ids = np.asarray(self.source_ids)
         ids = (np.array([str(s) for s in raw_ids], dtype=np.str_) if raw_ids.dtype == object
-               else np.array(raw_ids, copy=True))
+               else np.asarray(raw_ids))
 
-        # **Read-only views over private storage**, not read-only arrays. Clearing the writeable
-        # flag on an array that *owns* its buffer is not protection: NumPy lets the owner set it
-        # back, and pass-20 F8 executed exactly that — `f.points.setflags(write=True)` followed by a
-        # 999 m move, leaving `digest` describing points the frame no longer holds. A view does not
-        # own its buffer, so it cannot re-enable writing; the base arrays are private.
-        pts.flags.writeable = False
-        ids.flags.writeable = False
-        object.__setattr__(self, "_points_base", pts)
-        object.__setattr__(self, "_ids_base", ids)
-        object.__setattr__(self, "points", pts.view())
-        object.__setattr__(self, "source_ids", ids.view())
-        self.points.flags.writeable = False
-        self.source_ids.flags.writeable = False
+        # **Arrays backed by immutable `bytes`.** Clearing the writeable flag is not enough, and
+        # neither is handing out a view: pass-20 F8 re-enabled writing on an owning array, and
+        # pass-21 F3 then reached the owner straight back through the view's public `.base` and
+        # moved a point 999 m under an unchanged digest. `np.frombuffer` over a `bytes` object has
+        # no writable array anywhere in its base chain, so `setflags(write=True)` raises at every
+        # level — there is no owner to ask.
+        object.__setattr__(self, "points", _frozen(pts).reshape(len(ids), 2))
+        object.__setattr__(self, "source_ids", _frozen(ids))
         if self.digest != self.recomputed_digest:
             raise ValueError("the supplied digest does not describe these points and ids")
+
+    def __reduce__(self):
+        """Rebuild through `__init__`, so unpickling re-runs validation and re-freezes the arrays.
+
+        Pass-21 F3: `pickle.loads(pickle.dumps(frame))` returned a frame whose arrays were both
+        **writeable**, because unpickling a dataclass restores `__dict__` without calling
+        `__post_init__`. Direct assignment then invalidated its digest silently.
+        """
+        return (self.__class__, (self.kind, self.points, self.source_ids, self.seed,
+                                 self.population_n, self.crs, self.source_digest, self.digest,
+                                 self.source_spec))
 
     def verify(self) -> None:
         """Raise unless the contents still match the recorded digest.

@@ -133,8 +133,20 @@ class ToyEdge:
     def __post_init__(self) -> None:
         if len(self.geometry) < 2:
             raise ValueError("an edge geometry needs at least two coordinates")
-        if self.time_s < 0 or self.cost_base < 0 or self.penalty < 0:
-            raise ValueError("times, costs and penalties are non-negative")
+        # The **admissible-input contract**. Pass-21: a claim of total ordering over floats needs a
+        # finite-input contract to stand on, and not every constructor enforced one. Comparisons,
+        # `fsum` and the geometry arithmetic are all well defined on finite values and none of them
+        # is on NaN, so a non-finite input is rejected here rather than producing a silently
+        # unordered result later.
+        for x, y in self.geometry:
+            if not (math.isfinite(x) and math.isfinite(y)):
+                raise ValueError(f"edge coordinates must be finite, got ({x!r}, {y!r})")
+        for name, value in (("time_s", self.time_s), ("cost_base", self.cost_base),
+                            ("penalty", self.penalty)):
+            if not math.isfinite(value):
+                raise ValueError(f"{name} must be finite, got {value!r}")
+            if value < 0:
+                raise ValueError(f"{name} must be non-negative, got {value!r}")
 
     @property
     def total_cost(self) -> float:
@@ -159,31 +171,33 @@ class ToyEdge:
     def orientation(self) -> int:
         """0 if this traversal's rounded geometry *is* the canonical key, 1 if it is the reversal.
 
-        Design §2.4 revision 7. For an open edge `(u, v)` the endpoints already separate the two
-        directions, so this adds nothing. For a **closed** edge `u == v` — a ring, a loop — swapping
-        the endpoints does nothing and canonicalising the geometry against reversal removes the only
-        remaining direction information, so the two traversals had **identical** identities.
+        Design §2.4. For an open edge `(u, v)` the endpoints already separate the two directions, so
+        this adds nothing. For a **closed** edge `u == v` — a ring, a loop — swapping the endpoints
+        does nothing and canonicalising the geometry against reversal removes the only remaining
+        direction information, so the two traversals had **identical** identities (pass-20 F3: two
+        one-way square loops gave 3,800 s or 200 s purely on insertion order).
 
-        Pass-20 F3: two one-way self-loops around the square `(0,0),(100,0),(100,100),(0,100),(0,0)`
-        with the same `osmid`, origin `(10,0)`, destination `(0,10)`. The correct journey is
-        **200 s** the reverse way round. With the forward loop first, attachment dedup discarded the
-        reverse and the answer was **3,800 s**; reversing the input order gave 200 s. A PASS/FAIL
-        flip at ten minutes decided entirely by insertion order.
+        **For a palindromic geometry — one equal to its own reversal — both traversals get 0, and
+        that is correct.** Pass-21 F7: on `((0,0),(1,0),(0,0))` the reverse traces the same ordered
+        coordinate sequence, so the two descriptions *are* interchangeable and must share an
+        identity. The field is derived from the geometry, so it cannot also be guaranteed different
+        under reversal; requiring both was the error.
         """
-        fwd = tuple((round(x, ROUND_DP), round(y, ROUND_DP)) for x, y in self.geometry)
-        return 0 if fwd == self.geometry_key else 1
+        return 0 if self.rounded_geometry == self.geometry_key else 1
+
+    @property
+    def rounded_geometry(self) -> tuple[tuple[float, float], ...]:
+        return tuple((round(x, ROUND_DP), round(y, ROUND_DP)) for x, y in self.geometry)
 
     @property
     def identity(self) -> tuple:
         """Design §2.4's canonical **directed**-edge identity: start node, end node, canonical
         geometry key, traversal orientation, osmid normalised to a sorted tuple, length at 2 dp.
 
-        The orientation field is revision 7's addition and exists only for closed edges; see
-        `orientation`. It is placed before `osmid` so that the comparison order remains
-        structural-then-attributive.
+        The orientation field exists for closed edges; see `orientation`. It is placed before `osmid`
+        so that the comparison order remains structural-then-attributive.
         """
-        return (self.u, self.v, self.geometry_key, self.orientation,
-                tuple(sorted(self.osmid)), round(self.length_m, ROUND_DP))
+        return directed_identity(self, forward=True)
 
     def permits(self, *, forward: bool) -> bool:
         return True if forward else not self.oneway
@@ -221,9 +235,22 @@ class Attachment:
 
     edge: int           # index into ToyGraph.edges
     fraction: float     # along the whole polyline, by length, from the `u` end
-    arclength_m: float  # fraction x length, the occurrence's identifying coordinate
+    arclength_m: float  # fraction x length
     residual_m: float   # straight-line from the coordinate to the attached position
     position: tuple[float, float]
+
+    #: The occurrence's **exact structural** identity — `(edge, "v", vertex index)` for a position
+    #: at a vertex, `(edge, "s", segment index, parameter)` for one interior to a segment. This is
+    #: what deduplication keys on, and it involves **no rounding at all**.
+    #:
+    #: Revision 8, after pass-21 F1. Keying on a rounded arclength merged occurrences that are not
+    #: interchangeable: on the 1.004 m out-and-back `(0,0),(0.002,0),(0,0),(0,1)` of 602 s, the two
+    #: zero-residual origin occurrences at arclengths 0 and 0.004 m both round to 0.00, and keeping
+    #: the first returns **602 s** where keeping the other returns **599.6015936255 s** — FAIL
+    #: against PASS at ten minutes, from 4 mm of arclength. Scaling the edge weight scales the loss
+    #: without bound, so no tolerance on metres can be safe. Two *descriptions* of one occurrence
+    #: still collapse, because that is what they are.
+    occurrence: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -277,16 +304,27 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
     for i, e in enumerate(graph.edges):
         total = e.length_m
         run = 0.0
-        for a, b in itertools.pairwise(e.geometry):
+        for seg_index, (a, b) in enumerate(itertools.pairwise(e.geometry)):
             seg = math.hypot(b[0] - a[0], b[1] - a[1])
             d, t = _segment_nearest(px, py, a[0], a[1], b[0], b[1])
             along = run + t * seg
+            # The occurrence key. A position at a *vertex* is keyed by that vertex's index, so the
+            # two descriptions of one shared vertex — t = 1 on segment k and t = 0 on segment k+1 —
+            # collapse exactly, and so does a zero-length segment's endpoint. An interior position
+            # is keyed by its segment and parameter and never collapses with anything.
+            if t == 0.0:
+                key: tuple = (i, "v", seg_index)
+            elif t == 1.0:
+                key = (i, "v", seg_index + 1)
+            else:
+                key = (i, "s", seg_index, t)
             raw.append(Attachment(
                 edge=i,
                 fraction=0.0 if total == 0.0 else along / total,
                 arclength_m=along,
                 residual_m=d,
                 position=(a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])),
+                occurrence=key,
             ))
             run += seg
     if not raw:
@@ -294,14 +332,13 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
 
     best = min(a.residual_m for a in raw)
     window = [a for a in raw if a.residual_m <= best + ATTACH_TIE_M]
-    buckets: dict[tuple[int, float], Attachment] = {}
+    merged: dict[tuple, Attachment] = {}
     for a in window:
-        key = (a.edge, round(a.arclength_m, ROUND_DP))
-        current = buckets.get(key)
+        current = merged.get(a.occurrence)
         if current is None or (a.residual_m, a.arclength_m) < (current.residual_m,
                                                                current.arclength_m):
-            buckets[key] = a
-    kept = sorted(buckets.values(), key=lambda a: (a.edge, a.arclength_m))
+            merged[a.occurrence] = a
+    kept = sorted(merged.values(), key=lambda a: (a.edge, a.arclength_m))
     return NearestOnGraph(
         candidates=tuple(a for a in kept if a.residual_m <= cap_m),
         global_min_m=best,
@@ -349,15 +386,25 @@ class Journey:
           coordinate reached identically tie on every edge key. No reported number moves, but the
           manifest would name different destinations on two runs of the same code.
         """
-        return (self.time_s, self.destination_id, self.route)
+        return (self.time_s, self.destination_id, self.route, self.cost)
 
 
 def directed_identity(edge: ToyEdge, *, forward: bool) -> tuple:
-    """`edge.identity` for a forward traversal, and the same shape with the endpoints and the
-    orientation flipped for a reverse one."""
-    if forward:
-        return edge.identity
-    return (edge.v, edge.u, edge.geometry_key, 1 - edge.orientation,
+    """Design §2.4's identity for a traversal of `edge` in the given direction.
+
+    **The reverse is derived by actually reversing the geometry and renormalising**, not by
+    complementing the orientation bit. Pass-21 F7: on the palindrome `((0,0),(1,0),(0,0))` the bit
+    flip produced orientation 1, while *constructing* the explicitly reversed edge produced
+    orientation 0 — so one traversal had two identities depending on which representation the caller
+    used, breaking reverse pairing and route identity. Deriving it the same way for both
+    representations makes them agree, and makes a palindrome's two directions share an identity,
+    which is correct because they trace the same ordered coordinates.
+    """
+    geometry = edge.geometry if forward else edge.geometry[::-1]
+    u, v = (edge.u, edge.v) if forward else (edge.v, edge.u)
+    rounded = tuple((round(x, ROUND_DP), round(y, ROUND_DP)) for x, y in geometry)
+    key = min(rounded, rounded[::-1])
+    return (u, v, key, 0 if rounded == key else 1,
             tuple(sorted(edge.osmid)), round(edge.length_m, ROUND_DP))
 
 
@@ -403,6 +450,19 @@ def _simple_paths(graph: ToyGraph, start: int, goal: int):
     return results
 
 
+def _partial_route(edge: ToyEdge, *, forward: bool, span: float) -> tuple:
+    """The route-identity contribution of a partial traversal: its directed identity when the span
+    is nonzero, and nothing when it is zero.
+
+    Pass-21 F5: endpoint journeys carried only the intervening path's identities and omitted both
+    partial traversals, so `rank_key` compared different *representations* of a route. On a
+    zero-weight edge the selected route came back as the **empty tuple** — a route that travels from
+    arclength 20 to 80 without traversing anything. A zero-span traversal contributes no identity
+    because nothing is traversed, and that convention is declared rather than left implicit.
+    """
+    return () if span == 0.0 else (directed_identity(edge, forward=forward),)
+
+
 def _entries(graph: ToyGraph, att: Attachment):
     """Leaving the origin's attached position: `(node, time, cost)` for each legal direction.
 
@@ -411,9 +471,11 @@ def _entries(graph: ToyGraph, att: Attachment):
     penalty, with no exceptions (design §2.2).
     """
     e = graph.edges[att.edge]
-    out = [(e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost)]
+    out = [(e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost,
+            _partial_route(e, forward=True, span=1.0 - att.fraction))]
     if e.permits(forward=False):
-        out.append((e.u, att.fraction * e.time_s, att.fraction * e.total_cost))
+        out.append((e.u, att.fraction * e.time_s, att.fraction * e.total_cost,
+                    _partial_route(e, forward=False, span=att.fraction)))
     return out
 
 
@@ -424,9 +486,11 @@ def _exits(graph: ToyGraph, att: Attachment):
     reverse, which a one-way edge forbids.
     """
     e = graph.edges[att.edge]
-    out = [(e.u, att.fraction * e.time_s, att.fraction * e.total_cost)]
+    out = [(e.u, att.fraction * e.time_s, att.fraction * e.total_cost,
+            _partial_route(e, forward=True, span=att.fraction))]
     if e.permits(forward=False):
-        out.append((e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost))
+        out.append((e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost,
+                    _partial_route(e, forward=False, span=1.0 - att.fraction)))
     return out
 
 
@@ -486,14 +550,16 @@ def journeys(graph: ToyGraph, origin: tuple[float, float],
                         time_s=math.fsum((access_o, access_d, direct[0])),
                         cost=math.fsum((access_o, access_d, direct[1])),
                         destination=di, destination_id=ids[di],
-                        route=(directed_identity(e, forward=da.fraction >= oa.fraction),)))
-                for en, et, ec in _entries(graph, oa):
-                    for xn, xt, xc in _exits(graph, da):
+                        route=_partial_route(e, forward=da.fraction >= oa.fraction,
+                                             span=abs(da.fraction - oa.fraction))))
+                for en, et, ec, entry_route in _entries(graph, oa):
+                    for xn, xt, xc, exit_route in _exits(graph, da):
                         for pt, pc, path_ids in _simple_paths(graph, en, xn):
                             out.append(Journey(
                                 time_s=math.fsum((access_o, access_d, et, xt, *pt)),
                                 cost=math.fsum((access_o, access_d, ec, xc, *pc)),
-                                destination=di, destination_id=ids[di], route=path_ids))
+                                destination=di, destination_id=ids[di],
+                                route=entry_route + path_ids + exit_route))
     return out
 
 
@@ -521,6 +587,8 @@ class OracleResult:
     objective1_destination_id: str | None = None
     objective2_destination_id: str | None = None
     objective1_cost: float | None = None
+    objective1_route: tuple = ()
+    objective2_route: tuple = ()
 
     #: The measured nearest distance to the graph, retained even when the cap left no candidate,
     #: because `OFF_NETWORK`'s bound is `nearest / max_speed_mps` and the cap discards the distance
@@ -568,6 +636,8 @@ def evaluate(graph: ToyGraph, origin: tuple[float, float],
         objective1_destination=best_t.destination,
         objective1_cost=best_t.cost,
         objective1_destination_id=best_t.destination_id,
+        objective1_route=best_t.route,
+        objective2_route=best_c.route,
         objective2_s=best_c.time_s,
         objective2_cost=best_c.cost,
         objective2_destination=best_c.destination,

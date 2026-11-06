@@ -1,0 +1,110 @@
+"""Every historical wrong implementation must still be caught by at least one layer.
+
+**This is the guard on the guards.** `feedback-benchmark-over-point-fixes` records the experiment
+that matters here: pass 14 reverted four historical fixes and found the benchmark I had called the
+guard turned **none** of its assertions red — the unit tests were the real guard all along. So a
+claim that a suite protects something is worth nothing until the fix is reverted and the suite is
+watched. That is what this file does, on a schedule: every time it runs.
+
+It is also how three unguarded fixes were found. When this check first ran, the orientation bit, the
+zero-span branch and the route's partial traversals were all repaired and **nothing anywhere would
+have noticed if they regressed**. The absolute anchors in `test_invariants.py` exist because of this
+file.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from locfinder.measure.conformance import check
+from locfinder.measure.conformance_cases import CASES
+from locfinder.measure.invariants import invariant_violations
+from locfinder.measure.mutants import MUTANTS
+
+
+def corpus_failures() -> list[str]:
+    return [f"{case.name}: {problem}" for case in CASES for problem in check(case)]
+
+
+def test_both_layers_are_clean_on_the_real_implementation():
+    """The control. Without this, "the mutant is caught" could mean "everything always fails"."""
+    assert invariant_violations() == []
+    assert corpus_failures() == []
+
+
+@pytest.mark.parametrize("name", sorted(MUTANTS), ids=sorted(MUTANTS))
+def test_every_historical_mutant_is_caught_by_at_least_one_layer(name):
+    """Install the wrong implementation and require some layer to reject it.
+
+    The two layers are **complementary**, and this test deliberately does not demand that both
+    catch everything: the corpus catches boundary and value defects, the invariants catch domain and
+    representation defects. Demanding both would force padding one suite with the other's cases.
+    """
+    with MUTANTS[name]():
+        invariants = invariant_violations()
+        corpus = corpus_failures()
+    assert invariants or corpus, (
+        f"{name} passes both the conformance corpus and the invariant layer. It is a defect a "
+        "review already found, so nothing guards it: add the check that separates it before "
+        "treating the fix as protected."
+    )
+
+
+#: The division of labour, as it actually measures — recorded so a change in it is visible rather
+#: than discovered later. `True` means that layer rejects the mutant.
+EXPECTED_COVERAGE = {
+    # (caught by invariants, caught by the conformance corpus)
+    "pass20-F1-connector-free-cost": (False, True),
+    "pass20-F4-identity-keyed-dedup": (True, True),
+    "pass20-F5-strict-cap": (False, True),
+    "pass21-F1-rounded-occurrence-bucket": (True, False),
+    "pass21-F4-dropped-zero-span": (True, False),
+    "pass21-F5-route-without-partials": (True, False),
+    "pass21-F6-rank-without-cost": (True, False),
+    "pass21-F7-bit-complemented-orientation": (True, False),
+}
+
+
+@pytest.mark.parametrize("name", sorted(EXPECTED_COVERAGE), ids=sorted(EXPECTED_COVERAGE))
+def test_the_division_of_labour_between_the_two_layers_is_as_recorded(name):
+    """Which layer catches which, pinned.
+
+    Not because the split matters in itself, but because a drift in it is information: if the
+    invariant layer starts catching the strict cap, some invariant has become absolute and that is
+    worth knowing; if it stops catching the occurrence bucket, the domain has shrunk.
+    """
+    want_invariants, want_corpus = EXPECTED_COVERAGE[name]
+    with MUTANTS[name]():
+        got_invariants = bool(invariant_violations())
+        got_corpus = bool(corpus_failures())
+    assert (got_invariants, got_corpus) == (want_invariants, want_corpus), (
+        f"{name}: invariants {got_invariants} (recorded {want_invariants}), "
+        f"corpus {got_corpus} (recorded {want_corpus})"
+    )
+
+
+def test_the_invariant_layer_catches_what_no_named_case_does():
+    """The argument for the approach change, as an assertion.
+
+    Five of the eight mutants escape the conformance corpus entirely, and the invariant layer
+    catches all five. Three of those were pass 21's, found in code that had just been fixed in
+    response to pass 20 — which is the pattern the invariant layer was built to break.
+    """
+    corpus_blind, invariant_blind = [], []
+    for name, mutant in MUTANTS.items():
+        with mutant():
+            corpus, invariants = bool(corpus_failures()), bool(invariant_violations())
+        if not corpus:
+            corpus_blind.append((name, invariants))
+        if not invariants:
+            invariant_blind.append((name, corpus))
+
+    assert len(corpus_blind) == 5, f"{len(corpus_blind)} mutants escape the corpus, recorded 5"
+    assert [n for n, caught in corpus_blind if not caught] == []
+
+    # and the other direction, which is why neither layer may be dropped: a uniformly tightened cap
+    # and a uniformly connector-free cost both preserve every relative property, and only an
+    # exact-boundary or exact-value case sees them
+    assert len(invariant_blind) == 2, (
+        f"{len(invariant_blind)} mutants escape the invariants, recorded 2")
+    assert [n for n, caught in invariant_blind if not caught] == []
