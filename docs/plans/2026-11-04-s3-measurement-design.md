@@ -2,8 +2,19 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 8, 2026-11-06**, after Codex pass 21 found nine defects in revision 7 and in T4 — three
+of them High. Change log in §13; revisions 2–7 are kept there too.
+
+Pass 21's verdict refused T3 a third time, and its diagnosis was of the **process** rather than of a
+rule: *"treating repair of the motivating example as evidence that a replacement rule's domain is
+settled."* Revision 8 settles the four items it named as the finish line — the occurrence key (§2.2),
+the arithmetic that forms a total's terms (§2.4), closed-edge reverse identity (§2.4), and the
+provenance route domain (§2.4) — and the work that accompanies it is an **invariant layer** over the
+admissible-input domain rather than more named cases. `v2/locfinder/measure/invariants.py` and
+`mutants.py`; the measured division of labour between the two layers is in the build record.
+
 **Revision 7, 2026-11-06**, after Codex pass 20 found eleven defects in revision 6 and in T4 — four
-of them High. Change log in §13; revisions 2–6 are kept there too.
+of them High.
 
 Pass 20's verdict was again that **T3 is not ready to become a frozen reference**, and this time the
 reason is instructive: revision 6 closed pass 19's two blockers and its *replacement* rules opened
@@ -189,9 +200,24 @@ in the conformance suite supplement exact expected answers; they never substitut
     > geometry contributes exactly one — its closest point to the coordinate, with the segment's
     > endpoints included as the clamped cases. The candidate set is then those segment positions
     > whose distance is within `attach_tie_m` = **0.01 m** of the global minimum, **deduplicated by
-    > (edge record, along-edge arclength rounded to 2 dp in metres)**, the representative of a
-    > merged bucket being the candidate with the **smallest residual**, then the smallest exact
-    > arclength.
+    > the occurrence's exact structural identity** — `(edge record, vertex index)` for a position at
+    > a polyline vertex, `(edge record, segment index, segment parameter)` for one interior to a
+    > segment. **No rounding enters this key.** The representative of a merged occurrence is the
+    > candidate with the smallest residual, then the smallest exact arclength.
+
+    Revision 8 replaced a rounded arclength with the structural identity, because **rounding merges
+    occurrences that are not interchangeable**. Pass-21 F1: the 1.004 m out-and-back
+    `(0,0),(0.002,0),(0,0),(0,1)` of 602 s has two zero-residual origin occurrences at arclengths
+    **0 and 0.004 m**, both rounding to 0.00. Keeping the first returns **602 s** and keeping the
+    other **599.6015936255 s** — FAIL against PASS at ten minutes, from 4 mm. Scaling the edge
+    weight scales the loss without bound, so **no tolerance in metres can be safe**; the fix is not a
+    smaller tolerance but no tolerance.
+
+    What the structural key still merges is exactly what should merge: the **two descriptions of one
+    vertex** — parameter 1 on segment *k* and parameter 0 on segment *k*+1 — and a zero-length
+    segment's endpoint. What it keeps apart is a self-crossing road's two passes through one place,
+    and a closed edge's arclength 0 and arclength *L*, which are the same point and different
+    traversal positions.
     This is finite, enumerable, persistable, and captures the case the next bullet names. It is
     **one of three readings** — exact per-geometry minima, these per-segment minima, or the whole
     tolerance sublevel set — and choosing it is the amendment, not an interpretation.
@@ -333,7 +359,21 @@ So, normatively:
 5. Rounding precision is **2 dp on metres** everywhere, stated once.
 6. **Totals are summed by an exactly-rounded, order-independent summation** — `math.fsum` or any
    arithmetic giving the same result — for both time and cost, and cost equality is then **exact**,
-   with no tolerance.
+   with no tolerance. **The terms supplied to that summation are also frozen**, because a summation
+   rule determines the sum of given terms and not how they are formed:
+
+   > A full edge's cost is `cost_base + penalty`, formed once. A traversal of fraction *f*
+   > contributes the **single** term `f * (cost_base + penalty)` — the fraction multiplied into the
+   > already-formed total — and likewise `f * time_s`. A connector contributes `residual / 1.26`. A
+   > journey total is the exactly-rounded sum of exactly those terms.
+
+   Revision 8 adds this after pass-21 F2 showed the summation rule alone does not settle an argmin.
+   Apportioning the components separately and summing them — `fsum((f*cost_base, f*penalty))` — is
+   equally faithful to "the same fraction, no exceptions" and gives a different binary64 number:
+   `0.1 * (1.0 + 120.0)` is **12.100000000000001** while `fsum((0.1*1.0, 0.1*120.0))` is **12.1**.
+   Against a bypass of cost exactly 12.1 the first loses and the second ties, so objective 2 reports
+   **1000 s** or **1 s** — FAIL or PASS at ten minutes. Neither was wrong until one was chosen; what
+   was wrong was calling both implementations equivalent.
 
    This is revision 7's amendment and it is about the §12 equivalence contract, not about floating
    point for its own sake. Under ordinary left-to-right accumulation two routes carrying the **same
@@ -1068,6 +1108,43 @@ Collected here because they were found as defects and must not be lost again.
 ---
 
 ## 13. Change log
+
+### Revision 8, after Codex pass 21 (3 High, 6 Medium)
+
+Pass 21 refused T3 a third time and named the cause as the process rather than any one rule:
+*"treating repair of the motivating example as evidence that a replacement rule's domain is
+settled."* Four items it called the finish line are settled here; the rest were implementation
+corrections and are in the build record.
+
+| finding | revision 7 said | revision 8 says | consequence of the old text |
+|---|---|---|---|
+| **F1** §2.2 | deduplicate candidates by *(edge record, arclength at 2 dp)* | by the occurrence's **exact structural identity** — vertex index, or segment index and parameter — with **no rounding** | a centimetre bucket merges occurrences 4 mm apart that offer different remaining route: **602 s** against **599.6015936255 s**, FAIL against PASS. Scaling the edge weight scales the loss, so no tolerance in metres is safe |
+| **F2** §2.2, §2.4 | totals use an exactly-rounded sum | **and the terms are frozen**: `f * (cost_base + penalty)` as one term, never the components apportioned separately | a summation rule settles the sum of given terms, not their formation. `0.1*(1.0+120.0)` is 12.100000000000001 and `fsum((0.1*1.0, 0.1*120.0))` is 12.1; against a bypass at 12.1 that is **1000 s** or **1 s** |
+| **F7** §2.4 | orientation, with the reverse by complementing the bit | the reverse identity is derived by **reversing the geometry and renormalising**; a palindrome's two directions therefore **share** an identity | one traversal had two identities depending on which representation the caller used. A geometry-derived field cannot also be guaranteed different under reversal, and requiring both was the error |
+| **F8** §2.4 | node-simple paths suffice (for the numbers) | **and the provenance route domain is node-simple**, with every nonzero partial traversal carrying its identity and zero-span traversals carrying none | lexicographic order is not a well-order over unrestricted walks: with a zero-weight self-loop A and exit B, `AB < B` and `AAB < AB`, so there is **no smallest route**. The numeric claim was sound; the uniquely-selected-route claim was not |
+
+**The accompanying work is an instrument, not more cases.** `invariants.py` declares the admissible
+input domain, the quantities that count as answers, and the transforms that must preserve them;
+`mutants.py` keeps every wrong implementation a review has built; `test_mutants.py` asserts each is
+still caught. Five of the eight mutants escape the conformance corpus and two escape the invariants,
+each caught by the other — so the two layers are complementary and neither may be dropped.
+
+**Three things the instrument established that no case had.** Re-expressing a bidirectional edge as
+two opposed one-ways preserves every number and **doubles** the candidate count, which is a property
+of the input rather than of the implementation — so §12's equivalence contract is about
+implementations varying on *one* input, and answers and provenance are invariant under different
+things. A journey total is **affine**, not proportional, in a uniform weight scale, because the
+connector does not scale. And exact float equality across representations is a stronger claim than
+the arithmetic supports: translating a curved geometry 12 km moves a 90.8601039862 s answer by
+**2.0e-12 s** with every identity unchanged, which every axis-aligned fixture had hidden.
+
+**Not amended.** The per-segment candidate rule still makes the answer depend on how a polyline is
+subdivided, which pass 20 measured as 599.9747619048 s against 600.0399682540 s on its L-shaped
+edge. Measured across the whole scenario domain the divergence is now float noise everywhere except
+a zero-length segment, where it changes a candidate count only — so the exposure is far smaller than
+the worked example suggests. **Whether to adopt the subdivision-invariant exact-per-geometry reading
+instead is an owner decision**, because the data source can re-densify geometries, and it is recorded
+here rather than settled.
 
 ### Revision 7, after Codex pass 20 (4 High, 7 Medium)
 

@@ -1,7 +1,7 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 6, 2026-11-06.** Implements **design revision 7**, which is the operative document —
+**Revision 7, 2026-11-06.** Implements **design revision 8**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
 Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
@@ -13,11 +13,13 @@ outcome-selected attempt satisfies. Both were cases of the plan failing to carry
 already made, so both are plan corrections rather than new decisions.
 
 Pass 20 then reviewed revision 6 together with T4 and found eleven more, four High, with the same
-verdict: **T3 is not ready to become a frozen reference.** Four of its findings were consequences of
-revision 6's own replacement rules. It also found two defects in this plan's T6 payload, which
-revision 6 fixes.
+verdict. Four of its findings were consequences of revision 6's own replacement rules. **Pass 21
+then found nine in revision 7, three of them again consequences of revision 7's replacements**, and
+refused T3 a third time — but also gave the finish line: a coherent contract for four named items,
+independently derived fixtures for them, and an oracle representing the complete declared journey
+key. Design revision 8 settles the four.
 
-**T1, T2, T4 and T9 are built.** 625 tests pass. T4's expected answers come from hand arithmetic and
+**T1, T2, T4 and T9 are built, and T4 now has a second layer.** 936 tests pass: the conformance corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard** asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the motivating example as evidence that a replacement rule's domain is settled". T4's expected answers come from hand arithmetic and
 from an exhaustive enumerator, neither of which calls T3 — a construction pass 19 independently
 described as the right one, and which pass 20 confirmed is adequate evidence of *independence*
 while being explicit that independence is not coverage. It found a wrong comparator that passed the
