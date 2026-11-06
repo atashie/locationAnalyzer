@@ -2,8 +2,23 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 6, 2026-11-06**, after Codex pass 19 found ten defects in revision 5 and the first code —
+four of them High. Change log in §13; revisions 2, 3, 4 and 5 are kept there too.
+
+Pass 19's verdict was that **T3 is not ready to implement as a frozen reference**, for two reasons
+that were both specification gaps rather than coding faults: §2.2's attachment candidate domain was
+a *continuum* and not a set, and §2.6 let the independent engine remove destinations from **E1**.
+Revision 6 settles both (§§2.2, 2.6), declares what E2 actually measures once two attachment models
+are in play (§2.6), supplies the exterior-footprint rule §3 had only promised (§3), and extends
+§2.4's ranking to the selected destination, where the order was not in fact total.
+
+Revision 6 also **withdraws a claim**: §2.2's retained-minimiser rule does not make the reported
+quantity "a property of the geometry rather than of a convention". It removes the dependence on
+insertion order, which is what it was for, and it leaves a 2 mm change of geometry able to move an
+answer by 899.99 s.
+
 **Revision 5, 2026-11-05**, after Codex pass 18 found twelve defects in revision 4 — three of them
-blocking. Change log in §13; revisions 2, 3 and 4 are kept there too.
+blocking.
 
 Pass 18's verdict on revision 4 was that "the statistical redesign largely survives" and the
 remaining blockers concerned **which product is being measured**, unresolved comparator semantics,
@@ -125,15 +140,41 @@ in the conformance suite supplement exact expected answers; they never substitut
   1 m from both, give **101.587 s** or **1001.587 s** depending on which road is chosen — a different
   verdict at ten minutes — while *both* choices satisfy nearest-position, the access cap, connector
   charging, direction and objective minimisation. So:
-  - **every** attachment whose geometric distance is within `attach_tie_m` = **0.01 m** of the minimum
-    is retained as a routing candidate, and the objective minimises over all of them. The reported
-    quantity is then a property of the geometry rather than of a convention, and no frozen arbitrary
-    order is needed;
+  - **The candidate universe is finite and is defined here**, which revision 5 did not do. "Every
+    attachment within 0.01 m of the minimum" is a **continuum**, even on one straight edge, and the
+    readings differ by more than rounding. Pass-19 F1: a directed edge `(0,0) → (100,0)` of time
+    100,000 s with origin `(0,1)` and destination `(100,0)` gives `1/1.26 + 100000` =
+    **100,000.7936507940 s** at the nearest projection `(0,0)`, while `(0.1417744688, 0)` is 1.01 m
+    away — inside the literal band — and gives `1.01/1.26 + 0.9985822553 × 100000` =
+    **99,859.0271185140 s**. The gap is **141.7665322800 s**, FAIL against PASS at a 99,900 s
+    threshold, and no bound on it follows from dividing 0.01 m by the access speed. So, normatively:
+    > **A candidate is the nearest position on a polyline *segment*.** Each segment of each edge
+    > geometry contributes exactly one — its closest point to the coordinate, with the segment's
+    > endpoints included as the clamped cases. The candidate set is then those segment positions
+    > whose distance is within `attach_tie_m` = **0.01 m** of the global minimum, **deduplicated by
+    > (canonical directed-edge identity, position rounded to 2 dp in metres)** per §2.4's precision.
+    This is finite, enumerable, persistable, and captures the case the next bullet names. It is
+    **one of three readings** — exact per-geometry minima, these per-segment minima, or the whole
+    tolerance sublevel set — and choosing it is the amendment, not an interpretation.
   - where one geometry has several equally nearest positions — a point equidistant from two places on
-    the same curve — each is retained as a candidate under the same tolerance;
+    the same curve — each is retained as a candidate under the same tolerance, which the per-segment
+    rule above delivers rather than assumes.
   - equality is **tolerance-based** at `attach_tie_m`, declared here, not exact float equality.
+  - **the band is applied first and each cap afterwards.** A retained candidate must independently
+    satisfy its own cap — `max_access_m` for the origin, `poi_snap_max_m` for a destination. A
+    nearest origin candidate at 199.995 m does **not** authorise a second at 200.004 m merely because
+    it is inside the geometric band.
   - the set of retained candidates is **recorded per point** in the manifest, since it is part of what
     determines the answer.
+  - **What this rule does and does not buy.** Revision 5 claimed the reported quantity is "a property
+    of the geometry rather than of a convention". That is **withdrawn**: it is a property of the
+    geometry *given the declared candidate universe*, and the 0.01 m band **relocates** the
+    discontinuity rather than removing it. Two disconnected roads of 100 s and 1000 s with origin
+    residuals 1 m and 1.009 m give `100 + 1.009/1.26` = **100.8007936510 s**; at 1.011 m the fast
+    road leaves the band and the answer becomes `1000 + 1/1.26` = **1000.7936507940 s** — an
+    **899.9928571430 s** jump across 2 mm of geometry, and PASS to FAIL at ten minutes. What the rule
+    fixes is that the answer no longer depends on insertion order or on which minimiser a library
+    happened to return. It does not make the answer continuous, and no S3 output may say it does.
 - A **partial edge** contributes `fraction × edge_time` and `fraction × edge_cost`. **Every edge
   penalty is apportioned by the same fraction, with no exceptions**, and an implementation may not
   invent one. The consequential case is the restricted-access penalty: `access.py` adds a fixed
@@ -214,9 +255,22 @@ So, normatively:
 > then the smallest normalised `osmid` tuple; then the smallest rounded length; then the smallest
 > canonical geometry key. The same rule applies in projection, attachment and reconstruction.
 
-The fourth key makes the order **total**: alternatives agreeing on all four are identical in every
-quantity this design reports, so the choice among them cannot change a result, and any of them may
-be named as the selected edge provided the choice is deterministic.
+The fourth key makes the order total **over directed edges**: alternatives agreeing on all four are
+identical in every quantity this design reports, so the choice among them cannot change a result,
+and any of them may be named as the selected edge provided the choice is deterministic.
+
+**It is not total over the selected *destination*, and revision 5 said it was.** Pass-19: two
+distinct Overture ids at identical coordinates, reached at identical cost and time by the identical
+route, tie on every one of the four keys, so either may be recorded as selected. No reported *number*
+moves — which is why this is a provenance defect and not a fifth numeric ambiguity — but the run
+manifest would name different destinations on two runs of the same code, and §12 requires the
+selected set to be recorded by identity. So the ranking continues, after the four edge keys:
+
+> 5. the smallest **destination `id`**, lexicographically;
+> 6. the smallest sequence of canonical directed-edge identities, compared element-wise.
+
+With those the recorded provenance is a function of the inputs, which is what §12's manifest claim
+requires.
 
 ### 2.5 Bounds: metric, strictness, soundness
 
@@ -260,13 +314,52 @@ connector moves the cost-`argmin` to B and reports **20 s**.
 measure *engine* disagreement and retaining two different attachment models would conflate that with
 attachment disagreement. Specifically:
 
-- the connector's residual is charged at the **access speed** and contributes to **both** the
-  independent engine's selection cost and its reported time, exactly as it does for our own
-  comparator;
+- the connector's residual is charged at the **access speed** and is added to the engine's **reported
+  time**. It is **not** added to the engine's selection cost, which revision 5 required and which
+  pass-19 F6 showed is not a well-defined operation: generalised cost has no unit shared with
+  seconds. On destinations A `(cost, time) = (10, 10)` with a 100 m residual and B `(20, 20)` with
+  none, adding `100/1.26 = 79.3650793650` to cost selects B and reports **20 s**; another engine
+  expressing *the same path preferences* as costs 1,000 and 2,000 — a positive rescaling — selects A
+  under the same addition and reports **89.3650793650 s**. E2 would then read
+  **69.3650793650 s** of disagreement, past the reported 60 s criterion, purely because an internal
+  cost unit changed. So **each engine selects on its own cost**, within §2.6's intersection, and the
+  connector enters only the reported time;
+- before any connector is added, the raw response is **audited for a connector charge it already
+  applied**. The observed pair — a target at `(35.999, −78.905)` and its correlated road position
+  `(35.999022, −78.905211)` both returning 448 s and cost 1068.25 — shows the ~19 m residual is not
+  charged *at those two inputs*. It does not establish that no response ever charges one, so the
+  audit is a per-run obligation, not a settled fact;
 - the correlation position used by the engine is **recorded**, and the residual is measured from the
   place's own coordinate to that position;
-- the same `max_access_m` and `poi_snap_max_m` caps apply, so both sides share one eligible set;
-- a destination the engine **cannot correlate** is excluded from both sides and recorded by identity.
+- **what E2 therefore measures, named honestly.** Adding agreed connectors does not give the two
+  sides a common attachment: ours is §2.2's retained candidate set, theirs is whatever road the
+  engine correlated. Pass-19 F6: with identical 100 s on-road paths, an own residual of 1 m and an
+  engine residual of 100 m report **100.7936507940 s** and **179.3650793650 s** — **78.5714285710 s**
+  of difference past the 60 s criterion with *zero* on-road disagreement. So E2 is declared as
+  **engine disagreement inclusive of attachment and selection-policy disagreement**, and may not be
+  described as isolating routing disagreement. To keep the components separable rather than merely
+  acknowledged, each pair records **both residuals**, and E2 is reported alongside the distribution
+  of their difference, so a reader can see which component a large |d| came from;
+- the same `max_access_m` and `poi_snap_max_m` caps apply on each side's own attachment;
+- **engine exclusions touch E2 only, never E1.** Revision 5 said a destination the engine cannot
+  correlate is "excluded from both sides" without restricting "both sides" to the E2 pair, which
+  left E1's comparator free to lose destinations the product was built against. Pass-19 F2: our own
+  graph reaches grocery A in 10 s and B in 1,000 s, both eligible with zero residual, and the
+  product reports 10 s. If the engine cannot correlate A and A is dropped from the *own* comparator,
+  the comparator returns 1,000 s and manufactures a **false inclusion** — at *n* = 500 that turns
+  `k` = 1 into `k` = 2 and the E1b verdict from **PASS to INCONCLUSIVE**, since the bounds are
+  0.945228221% and 1.2537605%. So, normatively:
+  > **E1 is measured against §2's fixed own eligible set of 549**, determined solely by our own
+  > 300 m attachment and frozen before measurement. No property of the independent engine may remove
+  > a destination from it.
+  >
+  > **E2 is measured on the intersection**: destinations eligible under our own cap *and* correlated
+  > by the engine within `poi_snap_max_m` of their own coordinate. The intersection is recorded by
+  > identity, its size is reported, and both engines select within it.
+- the intersection is **not** implied by equal caps: a place 299 m from our graph and 301 m from the
+  engine's correlated road passes one and fails the other, so an over-cap correlation is an exclusion
+  needing the same explicit rule as an absent one. Both are E2-only exclusions, recorded by identity
+  and reported with a count.
 
 This declaration is kept separate from destination-selection aggregation (§2.1): they are independent
 choices and conflating them is what produced revision 3's −9 s of phantom disagreement.
@@ -306,8 +399,22 @@ property and is checked, not assumed.
 
 E0 carries **no sampling uncertainty**. But an exact exported census requires projected-area
 intersection; if a numerical approximation is used instead, **its error is reported separately and
-the result is not called uncertainty-free**. Lookup behaviour **outside the exported footprint** is
-defined explicitly rather than left to the implementation.
+the result is not called uncertainty-free**.
+
+**Outside the exported footprint the lookup returns `UNKNOWN`** — and this is now a rule rather than
+a promise of one. Revision 5 said the behaviour "is defined explicitly rather than left to the
+implementation", which pass-19 F8 correctly called a claim and not a definition: on an original
+domain `[0,200]×[0,100]` exported only over `[0,160]×[0,100]` with every covered point PASS,
+returning `UNKNOWN` outside gives `E0_C = 4000/20000 = 20%` and treating it as FAIL gives **0%**, so
+the number was still waiting on a later decoder choice. `UNKNOWN` is the answer because the product
+holds no information there; FAIL would assert a known failure with nothing behind it, which is the
+error §3 exists to prevent.
+
+**A non-empty exterior is also an export defect, and is reported as one.** The footprint is supposed
+to cover the original projected domain, so uncovered area is not a property of the world being
+measured — it is the export failing to publish ground the frame contains. Its area is reported
+separately from the `UNKNOWN` the model genuinely produced, because conflating the two would let a
+truncated export look like honest abstention.
 
 Reported **by frame, threshold and reason**, because the reasons have different remedies:
 `BEYOND_HORIZON` beyond the horizon is answerable by searching further (contract §2's
@@ -845,6 +952,28 @@ Collected here because they were found as defects and must not be lost again.
 ---
 
 ## 13. Change log
+
+### Revision 6, after Codex pass 19 (4 High, 6 Medium)
+
+Pass 19 reviewed revision 5 together with the first code (T1, T2). Six of its ten findings were
+implementation or test corrections and are recorded in the build record rather than here. The four
+that are **amendments to this design** are below, each with the counterexample that forced it.
+
+| finding | revision 5 said | revision 6 says | consequence of the old text |
+|---|---|---|---|
+| **F1** §2.2 | "every attachment whose geometric distance is within `attach_tie_m` of the minimum" | the candidate set is the **per-segment** nearest positions within the band, deduplicated by directed-edge identity and position at 2 dp | the stated set is a **continuum**; on a 100,000 s edge the nearest projection gives 100,000.7936507940 s and a position 1.01 m away — inside the band — gives 99,859.0271185140 s, a **141.7665322800 s** spread and FAIL against PASS |
+| **F1** §2.2 | the quantity is "a property of the geometry rather than of a convention" | **withdrawn.** It is a property of the geometry *given* the declared candidate universe; the band relocates the discontinuity | residuals of 1 m and 1.009 m against 1 m and 1.011 m give 100.8007936510 s and 1000.7936507940 s — **899.9928571430 s** across 2 mm, PASS to FAIL at ten minutes |
+| **F2** §2.6 | an uncorrelatable destination is "excluded from both sides" | engine exclusions touch **E2 only**; **E1 keeps §2's fixed own 549**, and E2 runs on the recorded intersection, over-cap correlations included | dropping a 10 s destination the engine cannot correlate makes the own comparator report 1,000 s and **manufactures a false inclusion**: `k` = 1 → 2 at *n* = 500, E1b **PASS → INCONCLUSIVE** |
+| **F6** §2.6 | the connector "contributes to both the independent engine's selection cost and its reported time" | each engine selects on **its own cost**; the connector enters the **reported time** only; the response is audited for a charge it already applied | seconds have no shared unit with generalised cost. Adding 79.3650793650 to costs (10, 20) selects B and reports 20 s; to costs (1,000, 2,000) — the same preferences rescaled — selects A and reports 89.3650793650 s, i.e. **69.3650793650 s** of phantom disagreement |
+| **F6** §2.6 | adding connectors makes the two sides share an attachment model | **E2 is named** as engine disagreement **inclusive of attachment and selection-policy disagreement**, with both residuals recorded and their difference reported alongside | identical 100 s on-road paths with residuals 1 m and 100 m report 100.7936507940 s and 179.3650793650 s — **78.5714285710 s** past the 60 s criterion with zero routing disagreement |
+| **F8** §3 | exterior lookup behaviour "is defined explicitly" | **outside the footprint the lookup returns `UNKNOWN`**, and a non-empty exterior is reported separately as an **export defect** | a promise is not a definition: on a domain of 20,000 m² exported over 16,000 m², `UNKNOWN` gives `E0_C` = **20%** and FAIL gives **0%** |
+| **§2.4** | "the fourth key makes the order total" | total over **directed edges**; the ranking continues to destination `id` then the route-identity sequence | two ids at identical coordinates with identical cost, time and route tie on all four keys, so §12's manifest would name different destinations on two runs of the same code. No reported number moves |
+
+**Not amended, deliberately.** Pass 19 observed that the per-segment rule still leaves a cutoff at
+0.01 m. That is accepted rather than removed: every finite rule has an edge somewhere, and the
+alternative — solving a continuous constrained optimisation per point — is a different and much
+larger design. What is not accepted is *defending* the rule as continuity, which is why the claim
+above is withdrawn instead.
 
 ### Revision 4, after Codex pass 16 (6 High, 10 Medium, 2 Low) and pass 17
 

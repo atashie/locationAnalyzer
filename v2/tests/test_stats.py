@@ -486,3 +486,25 @@ def test_the_guards_reject_impossible_inputs():
         srs_variance(0.1, 600, 500)            # n > N
     with pytest.raises(ValueError):
         two_stage_variance(np.zeros(10), 5, 11)   # q length != N
+
+
+def test_a_one_sided_confidence_below_a_half_is_refused():
+    """Pass-19's observation about the public API: the acceptance rule's three branches are not
+    mutually exclusive on all of `(0, 1)`.
+
+    `acceptance(9, 0, 10, 0.8, confidence=0.01)` used to return PASS, because the 1% "upper bound"
+    is 0.6310 and sits below theta, while `k/n = 0.9 > 0.8` satisfies FAIL at the same time. A
+    Clopper-Pearson upper bound only dominates the observed proportion once the level is at least
+    0.5, so below that it is not a bound at all and the helper now refuses it.
+    """
+    for bad in (0.01, 0.1, 0.499):
+        with pytest.raises(ValueError, match=r"\[0.5, 1\)"):
+            clopper_pearson_upper(0, 500, confidence=bad)
+        with pytest.raises(ValueError, match=r"\[0.5, 1\)"):
+            acceptance(9, 0, 10, 0.8, confidence=bad)
+
+    # and on the accepted domain the upper bound always dominates the point estimate, which is what
+    # makes PASS and FAIL disjoint
+    for confidence in (0.5, 0.75, 0.95, 0.99):
+        for k, n in ((0, 10), (1, 10), (9, 10), (1, 500), (250, 500)):
+            assert clopper_pearson_upper(k, n, confidence=confidence) >= k / n

@@ -1,11 +1,20 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 4, 2026-11-05.** Implements **design revision 5**, which is the operative document —
-where this plan and that design differ, the design wins and this plan is wrong. Pass 18 found twelve
-defects across the pair and concluded that **T1 and T2 may proceed as instrument-development work
-once their test oracles are tightened**, which this revision does; certification remains gated on the
-rest.
+**Revision 5, 2026-11-06.** Implements **design revision 6**, which is the operative document —
+where this plan and that design differ, the design wins and this plan is wrong.
+
+Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
+was that **T3 is not ready to implement as a frozen reference** until §2.2's candidate domain and
+§2.6's eligible population were settled. Design revision 6 settles both. Pass 19 also found two
+defects in *this plan*, which revision 5 fixes: T6's persistence list was insufficient to
+reconstruct E2, and T8's attempt registration had been reduced to a sentence that an
+outcome-selected attempt satisfies. Both were cases of the plan failing to carry a fix the design had
+already made, so both are plan corrections rather than new decisions.
+
+**T1, T2 and T4 are built.** 576 tests pass. T4's expected answers come from hand arithmetic and
+from an exhaustive enumerator, neither of which calls T3 — and pass 19 independently described that
+same construction as the way to derive them. T3 remains gated on a review of design revision 6.
 
 **Branch:** `v2-rethink`
 
@@ -50,7 +59,7 @@ E2, the four diagnostics, the conformance suite, the wire-format migration, and 
 
 ### T1 — `v2/locfinder/measure/stats.py`
 
-**Depends on:** nothing.
+**Depends on:** nothing. **Built** 2026-11-05, corrected 2026-11-06 after pass 19. 140 tests.
 
 ```python
 def clopper_pearson_upper(failures: int, n: int, *, confidence: float = 0.95) -> float
@@ -77,7 +86,15 @@ flip an E1b verdict. So:
   correct **0.011804** — passes every stated fixture, both tolerated-count assertions and every
   endpoint check **while flipping the 1% decision**. So:
   - fixtures are stored at full precision and compared at **1e-10 absolute**, not at a tolerance wide
-    enough to hide a decision-flipping error;
+    enough to hide a decision-flipping error — and passed as `rel=0, abs=1e-10`, because
+    `pytest.approx(x, abs=...)` retains pytest's default *relative* tolerance and at an expected 0.8
+    allows about 8e-7 (pass-19 F3);
+  - **every exact fixture is parametrised over the confidence level**, at 0.90, 0.95 and 0.99. With
+    the level fixed at the default, one global miscalibration — `c* = 0.95 + (c − 0.95)/2` — passed
+    all 65 tests while delivering the 92.5% bound for a requested 90% and the 97% bound for a
+    requested 99%, because the non-default tests checked only direction (pass-19 F3). The level is
+    also checked to reach `acceptance` and `tolerated_failures`, and the percentile interval's
+    **central two-sided** convention is pinned separately from the one-sided bounds;
   - at least one oracle is derived by **binomial-tail inversion** — solving `P(X ≤ k | p) = α` by
     bisection on the binomial CDF — rather than by calling the same `BetaInv` the implementation
     calls;
@@ -109,7 +126,7 @@ flip an E1b verdict. So:
 
 ### T2 — `v2/locfinder/measure/frames.py`, plus frozen artifacts
 
-**Depends on:** T1.
+**Depends on:** T1. **Built** 2026-11-05, corrected 2026-11-06 after pass 19. 30 tests. Development frames `51a59463` (B) and `7914e80a` (C).
 
 Design §1. Two SRSs at ***n* = 500***, digests, never overwritten.
 
@@ -135,6 +152,18 @@ So the test is **not** a distributional check on marginals:
   and selection is uniform without replacement.
 - Fixed seeds and **declared tolerances** throughout; no "many seeded draws" with an unstated
   parameter.
+- **The population is constructed in a test, not supplied to one.** Pass-19 F4: every draw test
+  handed in an already ordered synthetic population, so none called `structure_population` and
+  deleting its stable sort passed all 17 tests. Real parquet populations now exercise projection
+  before centroids, the half-open filter on all four sides, and the same sample from a file written
+  in either order.
+- **Both entry points enforce the population's order**, since the cached path took the caller's order
+  as given and returned two different digests for two orderings of the same two units (F5). The
+  frozen counts live on the builder as `expect_population_n`, not only in a build script.
+- **The artifact's identity resists its own holder**: arrays are copied read-only and the digest is
+  verified on construction and before writing, because `frozen=True` did not stop a 999 m in-place
+  move under an unchanged digest (F7). `kind` and `crs` are in the identity, bytes are explicitly
+  little-endian and ids length-delimited UTF-8 (F7, F10).
 - Frame C points fall inside the cell their flat index names, tested at the **first and last row**,
   since the grid origin is `(x_min, y_max)` = (661900, 4003500) with `y_min` = 3952100 and rows
   running **downward**.
@@ -142,10 +171,21 @@ So the test is **not** a distributional check on marginals:
 
 ### T3 — `v2/locfinder/measure/comparator.py` — the reference implementation
 
-**Depends on:** T2. **The task with the real risk in it.**
+**Depends on:** T2, T4. **The task with the real risk in it, and the one pass 19 refused to
+authorise.**
 
 Implements design §2's decision rules. Built **fixture-first**, and the fixtures are T4's, derived
-from the design and from the three reviews' counterexamples rather than from this code.
+from the design and from the four reviews' counterexamples rather than from this code.
+
+**Two preconditions, both now met in the design and neither yet reviewed.** Pass 19: "Do not start a
+purportedly normative T3 until F1 and F2 are settled. Development prototypes and the unambiguous
+fixture subset can proceed." F1 was §2.2's candidate domain — a continuum, not a set — and F2 was
+§2.6 allowing the independent engine to remove destinations from E1. Design revision 6 settles both
+with §13 rows. T3 therefore waits on a review of revision 6, not on more design work.
+
+T4's twelve cases and the oracle in `toy.py` already cover eight of the nine rules below; the ninth,
+the independent engine's connector charge, is deliberately absent from the corpus because it depends
+on Valhalla's observed correlation position and belongs to T6.
 
 Required shape, from design §2.3: **objective-specific views, correctly paired, never hybrid** —
 sharing immutable geometry and the spatial tree with per-objective weight views, or processing
@@ -168,7 +208,7 @@ What this task must get right, each with its conformance case in T4:
 
 ### T4 — the conformance suite
 
-**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.**
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, 78 tests, corpus digest `b09596d1`.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property
@@ -214,12 +254,35 @@ comparator's status, bound metric, strictness and value; the independent engine'
 horizon; the selected destination and its cost; path references; the origin's access distance **and**
 the product cell's own bound, which are different quantities; and every diagnostic membership.
 
+**Pass-19 F9 found this list insufficient**, and the gap is not stylistic: two bundles can satisfy
+every field above and still make E2 unrecoverable. With `objective2_own` = 100 s on both and the
+independent engine at 100 s in one bundle and 200 s in the other, equal *selected generalised costs*
+and no retained raw times leave E2 at **0 s against +100 s** and the `|d| > 60 s` share at **0
+against 1**, from rows that each look complete and each show four PASSes. So, additionally required,
+and a regeneration test must **fail** a bundle missing any of them:
+
+- **all five numeric values per point and threshold** — objective 1 own, objective 2 own, the
+  independent engine's selected time, and both sides' selected generalised costs — never a
+  difference in place of its operands;
+- **both connector residuals** (ours and the engine's correlation residual), per design §2.6
+  revision 6, since E2 is declared inclusive of attachment disagreement and the components must stay
+  separable;
+- **the retained attachment candidate set** per point, which design §2.2 revision 6 makes part of
+  what determines the answer;
+- **self-contained path references** — a route identity resolvable from the bundle alone, not a key
+  into a graph the bundle does not carry;
+- **the E0 census numerators and denominators** by frame, threshold and reason, since §3's area
+  census cannot be reconstructed from a digest.
+
 Manifest digests: float, encoded and status rasters; the prepared graph; eligible and selected
-destination lists; **the independent engine's tileset, version and costing configuration**; frame
-artifacts; seeds; code, profile and grid versions; and the conformance suite.
+destination lists plus **E2's recorded intersection** (§2.6 revision 6); **the independent engine's
+tileset, version and costing configuration**; frame artifacts; seeds; code, profile and grid
+versions; and the conformance suite.
 
 **Test:** the report is regenerated from the saved bundle **with routing and the original source
-artifacts unavailable**. Revision 2's test would have passed by re-querying a live engine.
+artifacts unavailable**. Revision 2's test would have passed by re-querying a live engine. The test
+must also reject a bundle that omits any required value above, because a developer happening to save
+extra fields is not the same as the format requiring them.
 
 ### T7 — development: everything that can change a measured quantity
 
@@ -263,17 +326,40 @@ change after certification, violating the design's own freeze.
 
 **Freeze** the five artifacts of design §12 with frames, allocations, thresholds and analysis. Then:
 
-- **E0 as a census** (design §3) over every cell and threshold, by frame and reason, on the **frozen
-  published representation**. This also **recomputes the reference table in design §3**, which was
-  carried from pass 17 and cannot be reproduced from the saved rasters because
-  `cell_arrival_with_provenance` computes `min_possible_s` without saving it.
+- **E0 as a census** (design §3) by frame, threshold and reason, on the **frozen published
+  representation** — **not** "over every cell", which revision 4 still said and which pass-19 F8
+  showed is the wrong partition. The census integrates the frozen `published_lookup` over its
+  intersection with the **original projected domain** for frame C, and evaluates **every retained
+  centroid** for frame B. In the documented shifted-export case a centre-based original-cell census
+  reports **0%** for a cell whose required area answer is **20%**, and a structure in that strip must
+  be counted individually whatever its old cell's centre says. The cell sums remain shortcuts, valid
+  only once `published_lookup` is shown constant on every original frame cell.
+  - This requires that the export **retain its georeferencing, projection, status and bound planes
+    and footprint policy**, since none of the census can be computed from a digest. Exterior area is
+    `UNKNOWN` and is additionally reported as an **export defect** (design §3 revision 6).
+  - It also **recomputes the reference table in design §3**, which was carried from pass 17 and
+    cannot be reproduced from the saved rasters because `cell_arrival_with_provenance` computes
+    `min_possible_s` without saving it.
+  - Any numerical approximation in the area integration has **its error quantified separately**, and
+    the result is then not called uncertainty-free.
 - **Certification**: an **independent full-frame SRS** at *n* = 500 per frame plus the diagnostics —
   **development points are not excluded from eligibility**, because excluding them would target the
   complement of the development set while claiming all 512,633. Accidental overlap is permitted;
   reusing a development *observation* is not.
-- **Every attempt's identity and outcome is retained**, and **one final attempt is prespecified**. At
-  *p* = 0.01 a single attempt meets E1b's count rule with probability 0.0398, so twenty attempts give
-  ≈55.6% of at least one pass at the boundary.
+- **Attempt registration, which revision 4 reduced to a sentence.** "Every attempt's identity and
+  outcome is retained, and one final attempt is prespecified" is satisfied by retaining twenty
+  outcomes and *then* naming the first success "final" — which moves the boundary-pass probability
+  from **0.0397547** per attempt to **0.5557336** over twenty, and is exactly what design §10's
+  registration exists to forbid. Carried over from the design, and binding here:
+  - each attempt is **registered before it is drawn**, with an independent timestamp, its seed and
+    its intended analysis;
+  - the **seed-generation rule, the stopping rule and the replacement rule** are fixed in that
+    registration, so "one more attempt" is not available after seeing an outcome;
+  - **which attempt is the final one is named before its outcome is known**;
+  - every attempt's identity and outcome is retained whether or not it is the final one, and the
+    report lists them all.
+  At *p* = 0.01 a single attempt meets E1b's count rule with probability 0.0398, which is why
+  outcome-selected attempts and prespecified ones are not the same measurement.
 
 ### T9 — E3 ingestion and scoring
 

@@ -38,12 +38,13 @@ it before a normative comparator can exist:
    gap is **141.7665322800 s**, and at a 99,900 s threshold the two readings are FAIL and PASS.
    There is no bound on that gap obtained by dividing the spatial tolerance by the access speed.
 
-   This oracle takes the candidate set to be the **per-segment** nearest positions — one per
-   polyline segment — filtered to those within `ATTACH_TIE_M` of the global minimum and
-   deduplicated at `ROUND_DP`. That is finite and well defined, but it is **one of three readings**
-   (exact per-geometry minima, per-segment minima, the whole tolerance sublevel set), so it is a
-   **design amendment waiting to be made**, not an interpretation this module is entitled to. The
-   cases marked `reading="per-segment minima"` are the ones a different choice invalidates.
+   **Design revision 6 settled this**, choosing the reading this oracle had adopted: a candidate is
+   the nearest position on a polyline **segment**, the set is those segment positions within
+   `ATTACH_TIE_M` of the global minimum, and duplicates are removed by *(canonical directed-edge
+   identity, position rounded to `ROUND_DP` in metres)*. It was one of three readings — exact
+   per-geometry minima, per-segment minima, the whole tolerance sublevel set — and choosing it was
+   an amendment with a §13 row, not an interpretation this module was entitled to make. The cases
+   marked `reading="per-segment minima"` are the ones a different choice would have invalidated.
 
    Related, and separately true: the 0.01 m rule **relocates** the discontinuity rather than
    removing it. Two disconnected roads of 100 s and 1000 s with origin residuals 1 m and 1.009 m
@@ -222,10 +223,14 @@ def attachments(graph: ToyGraph, point: tuple[float, float], *, cap_m: float) ->
         return ()
     best = min(a.residual_m for a in raw)
     window = [a for a in raw if a.residual_m <= best + ATTACH_TIE_M]
-    seen: set[tuple[int, float]] = set()
+    seen: set[tuple[tuple, float, float]] = set()
     kept: list[Attachment] = []
     for a in sorted(window, key=lambda a: (a.edge, a.fraction)):
-        key = (a.edge, round(a.fraction, ROUND_DP))
+        # design §2.2 revision 6: deduplicate by (canonical directed-edge identity, position
+        # rounded to 2 dp in metres) -- §2.4's precision, applied to the position rather than to
+        # the fraction, since 2 dp of a fraction is 1 m on a 100 m edge and 10 m on a 1 km one.
+        key = (graph.edges[a.edge].identity,
+               round(a.position[0], ROUND_DP), round(a.position[1], ROUND_DP))
         if key not in seen:
             seen.add(key)
             kept.append(a)

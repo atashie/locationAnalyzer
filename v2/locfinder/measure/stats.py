@@ -282,5 +282,24 @@ def _check_counts(failures: int, n: int) -> None:
 
 
 def _check_confidence(confidence: float) -> None:
-    if not 0.0 < confidence < 1.0:
-        raise ValueError(f"confidence must lie in (0, 1), got {confidence}")
+    """A one-sided level below 0.5 does not produce a bound, so it is rejected rather than served.
+
+    Pass-19 found the acceptance rule's three branches are not mutually exclusive on the whole of
+    `(0, 1)`: `acceptance(9, 0, 10, 0.8, confidence=0.01)` returns PASS because the 1% upper bound is
+    0.6310 and sits below theta, while `k/n = 0.9 > 0.8` satisfies the FAIL predicate at the same
+    time. The cause is that a Clopper-Pearson upper bound only dominates the observed proportion
+    once the level is at least 0.5; below that it is an upper *quantile of the wrong tail*, and
+    calling it a bound is the error.
+
+    At `confidence >= 0.5` the branches are exhaustive and disjoint for every valid `(k, u, n)`, so
+    the docstring's claim of mutual exclusivity is true across the accepted domain rather than only
+    at the frozen 0.95. S3 uses 0.95 throughout; this guard is what makes the helper safe to reuse.
+
+    The same domain is applied to the **two-sided** percentile interval, where the argument above
+    does not apply — a 30% central interval is perfectly well defined. It is restricted anyway
+    because S3 reports no such interval and one domain is easier to reason about than two. That is a
+    convenience, not a mathematical requirement, and is recorded as one.
+    """
+    if not 0.5 <= confidence < 1.0:
+        raise ValueError(f"confidence must lie in [0.5, 1), got {confidence}: a one-sided level "
+                         "below 0.5 gives a 'bound' that can fall below the point estimate")
