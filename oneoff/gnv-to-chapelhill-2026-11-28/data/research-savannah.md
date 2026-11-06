@@ -136,3 +136,135 @@ here, be on I-95 north before 10:00.** Hardeeville (Exit 8) rebalances the split
 ### Caution on the evening shape
 The events do not peak until 19:00 (boats). After a four-hour drive that is a long night for
 a 6-year-old — the **17:00 tree-lighting/Santa/food-truck slice is the realistic portion**.
+
+---
+
+# Second pass (deeper research; WebSearch budget exhausted, WebFetch only)
+
+## Sunday morning: a free option sitting at the exits you would sleep at
+
+**Savannah NWR — Laurel Hill Wildlife Drive.** A **4.5-mile wildlife drive, free** ("We do
+not charge an entrance fee"), open **daily sunrise to sunset** — so **no opening hour to wait
+for**, which is the whole point on a day you want to leave early. It sits off US-17 beside
+Hardeeville, by **I-95 Exits 5–8**, i.e. already northbound. The visitor centre is Mon–Fri
+10:00–14:00 (closed Sunday), which does not matter for the drive. A 45–60 minute stop.
+<https://www.fws.gov/refuge/savannah>
+*Not verified:* the exact turn-off address — the refuge map page did not yield it.
+
+**This dissolves the "leave at dawn vs. do something" conflict.** Everything ticketed and
+kid-facing in Savannah opens at 09:00 at the earliest and is downtown — the wrong side of
+town for a northbound start. Specifically:
+
+- **Mighty Eighth Air Force Museum opens at 12:00 on Sundays.** That rules it out of any
+  sensible departure. <https://www.mightyeighth.org/visit/>
+  **Correction to the first pass: the $44 admission figure is unverified** — no price is
+  published on the visit page or the museum shop.
+- Georgia State Railroad Museum: 7 days 09:00–16:00, **$68** for four (includes STEAM Center).
+- Savannah Children's Museum: Wed–Sun 09:00–15:00, **$64** for four.
+- **Fort Pulaski is a 13-mile dead-end spur east on US-80** — wrong direction entirely on the
+  long day. Fee confirmed **$10/person, under-16 free, so $20**, no cash. *Sunday hours could
+  not be determined this pass* — the NPS hours page returned empty on four URL variants and
+  its visitor-centre page says "This page is currently being worked on."
+- Tanger Outlets Pooler opens **11:00 Sunday** — too late, and no kid attraction found.
+- **savannahswaterfront.com lists no events at all for Nov 29** — a clean negative.
+
+## Hardeeville / Ridgeland as the base: one property, and a limit
+
+**I-95 Exit 8 (Hardeeville)** — **Holiday Inn Express & Suites**, 145 Independence Blvd, is
+**the only indoor pool at the exit**: "heated indoor swimming pool," free hot breakfast
+buffet, 76 rooms, from **$129** — but rated only *Average*.
+- The neighbours are traps: **Fairfield Inn** and **Hampton Inn** both have **"outdoor
+  swimming pool open in summer"** (Hampton from $220), and aggregators routinely show these
+  as pool properties without the season caveat. Days Inn rates *Very Low — Not Recommended*.
+- **I-95 Exit 5 has no indoor pool at all.**
+
+**I-95 Exit 21 (Ridgeland)** — **Quality Inn & Suites**, 221 James L. Taylor Dr: **heated
+indoor pool**, free hot breakfast, from **$76** (note a $5/night "service fee"), rated
+*Average*.
+
+**The trade:** Exit 8 takes roughly 20–25 minutes and ~20 miles off Sunday and puts the
+Talmadge Bridge behind you — a reasonable deal. **Exit 21 is not:** it turns the evening into
+~75–80 minutes of round-trip driving and unloads two children near 21:45. Pooler is itself on
+I-95 at Exit 102 and still removes ~10 miles.
+
+**Neither Hardeeville nor Ridgeland has any kid-facing event that night.** Hardeeville's
+"Merry on Main & Christmas Parade" is **Sat Dec 12** — two weeks late. Ridgeland's events page
+carries only stale 2023 content.
+
+## The evening, sequenced — and a better plan than Eastern Wharf
+
+**The key practical finding: the parade loops *twice* from Eastern Wharf to the Talmadge
+Bridge and back.** It therefore passes the **entire River Street frontage** — so **River
+Street, Rousakis Plaza, the Waving Girl statue at Morrell Park (about midway), and Plant
+Riverside at the Talmadge end are all on the route.** You do not need to be at Eastern Wharf
+at all. And Plant Riverside is where the **free** Christmas Market (11:00–21:00), the **free**
+Festival of Trees, Generator Hall and the splash-pad Riverwalk (08:00–22:00) already are.
+Because there are two passes, a 19:30 arrival at a riverfront rail should still catch boats.
+*No official page publishes a best-viewing list or pass times — that is a genuine gap.*
+
+**Parking, now concrete.** Eastern Wharf Parking Garage, 301 Passage Way, 696 spaces, open
+24/7, **cards only, no cash**, **$10 flat on weekends**. But the City's garage table carries a
+separate **special-events column at $25/day**, and **whether Nov 28 triggers it is not
+published anywhere** — no special-event calendar exists on savannahga.gov.
+**Cheaper, same event:** Bryan St (100 E Bryan), State St, Robinson and Liberty St garages are
+**$5 all-day on weekends**. Street meters are $1.50–2.50/hr, enforced only **08:00–20:00
+Mon–Sat** — so roughly $5–7 for 17:00–20:00, and **free after 20:00**.
+
+**Timing.** The **19:00 parade start is the only time-anchored element** — tree-lighting and
+Santa times are **not published by any of the three official pages**, and the Eastern Wharf
+holiday page still carries a stale "November 29th, 2025" string. So: arrive **17:00–17:15**
+for the lighting/Santa/food-truck window, be at a rail by **18:50**, catch the first pass,
+leave **19:30** — about 2h15 on site. **Leaving before ~19:15 risks seeing no boats**, which
+would forfeit the one thing that makes Savannah the stop.
+
+## Dinner — and a finding that reframes it
+
+**Eastern Wharf has no family restaurant.** Its open tenants are *fleeting*, *bar by
+fleeting*, *Bar Julian* (rooftop) and *Stevedore Bakery*, plus **Honeysuckle Gelato** — the
+only kid win on site. Bowdie's Chophouse, The Aberdeen and Mint to Be are listed "Opening
+Soon," status for Nov 2026 unverified. <https://easternwharfsavannah.com/retail>
+
+Best options on the parade frontage:
+- **Spanky's Pizza Galley & Saloon**, 317 E River St, **Sat 11:00–23:00** — "Home of the
+  Original Chicken Finger," plus pizza, family-owned since 1976. Sits *between* Eastern Wharf
+  and Plant Riverside, directly on the route. **Operationally the safest bet for a
+  six-year-old** — but no reservations and no published prices.
+- **Savannah Tequila Company**, 400 W River St (Plant Riverside), **Sat 11:00–23:00**,
+  "reservations are recommended," tacos/enchiladas/quesadillas, described as suited to
+  families. 912-373-9133. No kids menu or prices published.
+- **District Smokehouse**, 400 W River St, Sat 11:00–23:00 — explicitly "no separate KIDS
+  MENU... but family-friendly and offers options that appeal to kids." **First-come only.**
+- **Chart House**, 202 W Bay St, **Sat 15:00–22:30** (opens early, which matters), on-site
+  reservations — but entrées **$29–55 and no children's menu**.
+- **Sorry Charlie's Oyster Bar**, 116 W Congress St, daily 11:00–24:00, **reservations via
+  Resy**.
+- *Could not verify:* The Pirates' House menus and hours — its menu, hours and reservation
+  paths all 404'd, so the first pass's kids-menu prices stand on the earlier source only.
+
+## Lodging: rates still blocked, one confirmation, one correction
+
+**No Nov 28 2026 rate or availability was obtained from any first-party engine.** IHG,
+Hilton (current and legacy URLs), Choice, Hyatt, Best Western and Marriott all returned
+**403**; Drury's rooms page 404'd; the hotelplanner Hardeeville URL served **Walterboro
+listings — wrong city**. **No Savannah occupancy or compression signal was obtainable either.**
+
+**Confirmed from the operator — Drury Plaza Savannah Pooler**, 500 E US-80: **"Indoor Pool &
+Whirlpool"**; hot breakfast **07:00–10:00 weekends**; **"5:30 Kickback" free evening food
+17:30–19:00 every evening**; free soda and popcorn 16:00–20:00; **Queen rooms have two queen
+beds**, Suites add a pull-out queen sofa; **parking free**. No rate published anywhere.
+
+**Correction to the first pass: the Hampton Inn Savannah I-95 South (Exit 94) indoor pool is
+UNVERIFIED.** Hilton 403'd, and the directory's Exit 94 list does not include it — the four
+Exit 94 properties it does list are Super 8 (no pool), Howard Johnson and Days Inn Gateway
+(both outdoor/summer) and GLo Best Western (no pool). **Treat that indoor pool as unconfirmed
+until someone phones.**
+
+## The plan this points at
+
+**Base at Drury Plaza Pooler.** Take the **free 5:30 Kickback 17:30–18:15** — dinner solved,
+free. Drive the ~20 minutes in, park in a **$5 weekend city garage** or a meter that goes free
+at 20:00, and watch the parade from **River Street / Plant Riverside** amid the free Christmas
+Market and Generator Hall. Back by 20:00. No dinner reservation, no $25 event-garage gamble,
+no late unload — and Pooler still takes ~10 miles off Sunday. The cost is the 17:00
+tree-lighting window, whose time nobody publishes anyway. Then **Laurel Hill Wildlife Drive**
+on the way out Sunday morning: free, no opening hour, already on the road.

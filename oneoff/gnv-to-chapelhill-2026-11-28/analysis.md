@@ -127,6 +127,35 @@ near-free halfway stop at +0:07 — and on an ordinary weekend it would be. On *
 weekend its 4:16 Sunday leg runs the full length of the worst stretch, while Columbia's
 3:37 does not.
 
+### Follow-up: the I-95 dodge is not exclusive to Columbia
+
+Columbia's I-95-free Sunday prompted an obvious question — Orangeburg, Summerville and
+Charleston all sit on or near I-26, which runs northwest to Columbia and I-77. Can they take
+the same inland line? I re-routed each with a forced via-point **on I-77 north of Columbia**
+(Blythewood, 34.21/-80.97) rather than downtown Columbia, so the detour is not inflated by
+city driving:
+
+| Stop | Sunday direct | Via I-77 | Cost to dodge I-95 | I-95-free? |
+|---|---:|---:|---:|:--:|
+| **Orangeburg** | 4:04 | **4:19** | **+15 min** | **Yes** |
+| Charleston | 4:41 | 5:25 | +45 min | Yes |
+| Summerville | 4:19 | 5:04 | +45 min | Yes |
+| Santee | 3:44 | 4:46 | +61 min | Yes |
+| Columbia (control) | 3:37 | 3:40 | +3 min | already |
+
+The control confirms the method: forcing Columbia through I-77 costs 3 minutes, because I-77
+is already its natural route.
+
+**The finding: Orangeburg can avoid I-95 for 15 extra minutes — the others cannot do so
+affordably.** From Orangeburg the inland line is I-26 → I-77 → I-85 → I-40, and a 4:19
+I-95-free Sunday compares respectably with Columbia's 3:37. This materially weakens the main
+objection to Orangeburg, which was that it carried the longest Sunday *on I-95*. It can
+instead carry a slightly longer Sunday on roads that are not the problem.
+
+Charleston and Summerville sit far enough down I-26 that the inland line costs 45 minutes —
+on top of Charleston's +1:22 outbound detour. For them, I-95 is effectively the only sensible
+route home.
+
 ### The real trade-off
 
 The table reduces to one axis: **Saturday daylight versus Sunday traffic exposure.**
@@ -153,7 +182,8 @@ called out as unverified:
 | `data/research-savannah.md` | Savannah, Pooler, Tybee, Hardeeville |
 | `data/research-lowcountry.md` | Hilton Head, Beaufort, Walterboro, Summerville |
 | `data/research-charleston.md` | Charleston, Mount Pleasant, North Charleston |
-| `data/research-columbia.md` | Columbia, Congaree, Orangeburg, Santee, Camden |
+| `data/research-columbia.md` | Columbia, Congaree, Santee, Camden |
+| `data/research-orangeburg.md` | Orangeburg and Santee, second pass |
 | `data/research-sandhills-florence.md` | Florence, Fayetteville, Southern Pines, Myrtle Beach |
 
 ## 5. Recommendation

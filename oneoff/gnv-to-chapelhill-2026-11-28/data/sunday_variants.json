@@ -1,0 +1,37 @@
+{
+  "Orangeburg": {
+    "direct_h": 4.07,
+    "direct_i95": true,
+    "via_i77_h": 4.31,
+    "via_i77_i95": false,
+    "penalty_min": 15
+  },
+  "Charleston": {
+    "direct_h": 4.68,
+    "direct_i95": true,
+    "via_i77_h": 5.42,
+    "via_i77_i95": false,
+    "penalty_min": 45
+  },
+  "Summerville": {
+    "direct_h": 4.32,
+    "direct_i95": true,
+    "via_i77_h": 5.06,
+    "via_i77_i95": false,
+    "penalty_min": 45
+  },
+  "Santee": {
+    "direct_h": 3.74,
+    "direct_i95": true,
+    "via_i77_h": 4.76,
+    "via_i77_i95": false,
+    "penalty_min": 61
+  },
+  "Columbia(ref)": {
+    "direct_h": 3.61,
+    "direct_i95": false,
+    "via_i77_h": 3.66,
+    "via_i77_i95": false,
+    "penalty_min": 3
+  }
+}

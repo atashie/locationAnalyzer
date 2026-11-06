@@ -127,3 +127,206 @@ Sunday morning is spent on the USS Yorktown (10:00–12:30, $102) — which conv
 from "nice lights" into the thing the boys remember, at the cost of arriving in Chapel Hill
 around 18:00 on the worst traffic evening of the year. As a pure overnight waypoint, the
 +1:22 is hard to justify against Columbia's confirmed zoo lights at +0:49 with no I-95.
+
+---
+
+# Second pass (deeper research; WebSearch exhausted, WebFetch/OSM only)
+
+## A drive-time discrepancy, resolved
+
+The second-pass research used OSRM and reported **Patriots Point → Chapel Hill as 5h44**. My
+Valhalla measurement is **4h42 / 294 mi**. I re-measured to settle it:
+
+| From | To Chapel Hill (Valhalla) |
+|---|---|
+| Charleston downtown | 4:41 / 292 mi |
+| **Patriots Point** | **4:42 / 294 mi** |
+| Embassy Suites N. Charleston | 4:30 / 284 mi |
+| Home2 Suites Summerville | 4:16 / 270 mi |
+| James Island County Park | 4:47 / 297 mi |
+
+The two engines agreed closely on every **intra-metro** leg (19 vs 19 min, 22 vs 21, 18 vs 19,
+35 vs 39), and diverged only on the long highway leg — consistent with OSRM applying a slower
+motorway speed profile. **I use the Valhalla figures throughout**, because they are the same
+engine used for all 38 candidates in `../analysis.md` and are therefore internally comparable.
+The research's structural conclusions hold under either set.
+
+## Patriots Point: the Sunday-morning plan holds, with three corrections
+
+- **Hours Sun Nov 29: 10:00–17:00, ticket office closes 16:00.** Published closures are
+  Thanksgiving Day, Christmas Eve and Christmas Day only, so Nov 29 is a normal day. No
+  date-specific calendar exists to confirm further. <https://www.patriotspoint.org/visit/hours-operation>
+- **Tickets carry zero date risk — buy now.** Adult 13–61 **$28**, child 6–12 **$23**,
+  5 and under free → **$102** for this family (the 6-year-old just misses the free bracket).
+  And explicitly: *"Tickets are non-refundable, not date-specific, and valid for one-time use
+  within one year of purchase."* No family or combo discount is published.
+  Worth adding: the **scavenger hunt is $3** — the cheap kid-engagement buy. Flight simulator
+  $10, VR ride $11, bundle $19.
+- **Parking is extra: $5.50/hour, $25/day max**, visitor lot on Club House Road, run by
+  Palmetto Parking, pay-by-app. A 2.5-hour visit ≈ **$17**, so the morning is **~$119 all-in**.
+- **Time needed: the museum's own guide says "2–3 hours minimum."** So 10:00–12:30, out by
+  12:45, home in Chapel Hill about 17:30.
+
+**Correction 1 — the submarine is gone.** USS Clamagore appears nowhere on the museum's
+current "things to do" or "explore" pages, which list only the Yorktown, the Laffey, the
+Vietnam Experience, the Medal of Honor Museum, Apollo 8, the Engine Room, the Combat
+Information Center and Mount 53. Charleston Harbor Resort's page still advertises it — **that
+page is stale. Do not promise the boys a submarine.**
+
+**Correction 2 — the 6-year-old question resolves better than expected.** There is an
+**onboard elevator reaching three levels (Hangar Bay, Flight Deck, Quarters)**, a **free
+golf-cart shuttle from ticketing to the ships**, complimentary wheelchairs, and over half the
+28 aircraft viewable from accessible decks. The caveats: several exhibits are *"not accessible
+to those who are not able to climb stairs"* owing to *"steep stairwells, enclosed spaces, and
+layout,"* and **the USS Laffey "is not wheelchair accessible" and "may be difficult for guests
+with physical limitations."** Read: a stair-confident 6-year-old is fine on the Yorktown;
+**treat the Laffey as optional.** No stroller policy is published.
+
+**Correction 3 — no food service is published on site** (only the Ship Store, 09:00–17:00).
+Eat breakfast first and carry snacks.
+
+**A route that works.** There are four numbered self-guided tours, all starting on the hangar
+deck. Suggested order: information desk → **elevator to the Flight Deck** (aircraft, open air,
+instant payoff) → **Tour 2 up to the Captain's Bridge, Admiral's Bridge and Lookout Platform**
+(the single best thing for a 9-year-old; stairs) → down to the Hangar Bays for the **Apollo 8
+capsule** and the **Engine Room interactive kiosks** → Medal of Honor Museum → Vietnam
+Experience holograms if time → Laffey only if the 6-year-old is still going. The
+**climate-controlled Smokey Stover Theater** is the warm-up break.
+<https://www.patriotspoint.org/things-to-do/uss-yorktown/interactive-map>
+
+## Lodging: one claim withdrawn, one still unresolved
+
+**Withdraw the Charleston Harbor Resort "heated pool" framing — it is almost certainly
+open-air.** The resort's own wording: *"year round heated cabana pool"* with whirlpool, a
+*"sprawling waterfront pool deck with two heated pools, hot tub, fire pits, and outdoor
+dining,"* and Harborside's *"seasonal outdoor"* pool. **Nothing on the site says "indoor."**
+"Year round" distinguishes the cabana pool by *heating*, not by enclosure, and Harborside's own
+page refers to *"outdoor pools."* On Nov 28, with the family at the lights 17:30–21:00, the only
+windows are ~16:00–17:00 in fading light or ~21:00–22:00 in the dark. A heated pool with fire
+pits is plausible for half an hour; **it is not an indoor-pool substitute for a 6-year-old.**
+
+**Embassy Suites Charleston Airport: the indoor pool is still unresolved.** hilton.com returned
+**403 to every route** — the property page directly, two public proxies (which returned
+Hilton's own error page), and the legacy `embassysuites3` host (301 to the brand page);
+archive.org is blocked in this environment. Verified only: **5055 International Blvd, North
+Charleston 29418, +1 843-747-1882**, 0.3 mi from the convention centre. **The whole lodging
+recommendation rests on this one fact, so phone rather than trust either aggregator.**
+Home2 Suites Summerville's indoor saline pool hits the same 403 wall.
+
+**Rooms that sleep four at Charleston Harbor Resort** — the best configuration found anywhere
+in this project: Beach Club **"Family Parlor Room," 750 sq ft** — *"a king bed and sitting area
+and a separate room with two twin beds."* Also a 535 sq ft Harbor Deluxe (king or two queens)
+and a Harborside "Superior Two Queen."
+**Charleston Harbor Fish House serves breakfast 07:00–10:30 daily** — a clean fit for a 10:00
+Patriots Point opening. Saturday dinner on site: Fish House 16:30–22:00, *"reservations strongly
+recommended"*; **Reel Bar Sat 12:00–24:00 with a kids menu, 3 options at $12**. Breakfast
+inclusion, parking fees and any resort fee are **not published — assume both exist and ask.**
+
+**So does Mount Pleasant beat the airport?** On this date, yes. Staying at 20 Patriots Point Rd
+means **no Sunday positioning drive and no $17 parking** — the Yorktown is about half a mile
+up the road. From the airport you pay 18 minutes plus parking to reach the same 10:00 opening,
+and the Saturday-evening run to the lights is a wash (19 vs 22 min). You give up a *possible*
+indoor pool plus Embassy's free made-to-order breakfast and evening reception. **Since pool
+time on Nov 28 is 30–60 minutes at best at either property, proximity to the Yorktown is the
+stronger criterion and the indoor pool the weaker one.**
+
+**Unexplored lead worth ten minutes of phone time:** there are **ten vacation cottages inside
+James Island County Park** — the park the festival runs in — *"tucked in among the oaks and
+overlooking the high marsh."* That would eliminate all Saturday-evening driving and the gate
+queue entirely, at the cost of 19 minutes to Patriots Point on Sunday. Occupancy, rates and any
+festival-access benefit are **not published**; reservations run through ReserveAmerica.
+<https://www.ccprc.com/campground/>
+
+**No Nov 28 2026 rate was obtained for any Charleston-area property.** Both Charleston Harbor
+Resort properties book through TravelClick/iHotelier, which renders rates browser-side only —
+fetched with the correct date parameters, both returned an Internet Explorer 9 compatibility
+notice.
+
+## Moving the base does not trim the detour — the arithmetic is decisive
+
+Sunday driving total, with Patriots Point in the plan (my Valhalla figures):
+
+| Base | Positioning drive | Sunday total |
+|---|---|---|
+| **Charleston Harbor Resort** | **0 (walk)** | **4:42** |
+| Embassy Suites airport | +18 min | ~5:00 |
+| Home2 Suites Summerville | +31 min | ~5:13 |
+
+And the Saturday-evening round trip to the lights: Mount Pleasant ~38 min, airport ~44 min,
+**Summerville ~70 min**.
+
+**Summerville's apparent Sunday advantage is not real once Patriots Point is in the plan** — it
+costs ~30 extra minutes of Saturday-evening driving *and* a half-hour Sunday backtrack.
+Summerville only wins if you **drop Patriots Point**, and dropping Patriots Point is exactly
+what makes the +1:22 detour indefensible. **The two things that justify Charleston — the lights
+on James Island and the Yorktown in Mount Pleasant — both sit on the far side of the metro from
+I-26. There is no version of this where moving the base recovers the detour.** Home2 Suites
+Summerville is a good pass-through hotel for a trip that skips both.
+
+## The 15:50–17:14 window: do not schedule an attraction
+
+Two facts reframe it:
+
+- **The village rides do not start at 17:30.** The Festival Express train runs **18:00–22:00**
+  ($5, 15 min) and **the carousel begins at 18:00** ($2; under 42" needs an adult). So **there
+  is no premium on being at the gate at 17:30** — and the climbing wall I had listed as a
+  possible daytime draw is itself a *festival* attraction.
+- **The festival sells snacks, not dinner, and outside food is prohibited.** Santa's Sweet
+  Shoppe has hot chocolate, pretzels, popcorn, ice cream and baked goods, with indoor seating.
+  **Eat a real dinner before the gate or you will be buying four ice creams as a meal.**
+
+So the best use of 15:50–17:15 is **check in, decompress, and eat early** — after five hours in
+the car and before four hours standing outdoors in the dark. If you want something anyway:
+
+1. **Nothing.** Genuinely the best answer here.
+2. **Folly Beach Pier** — 14 min from the park, the closest real payoff; sand and a pier at
+   dusk. Downsides: Center St parking, sandy/wet kids before a cold evening, and Folly faces
+   east-southeast so there is no ocean sunset. Hours unverified.
+3. **Waterfront Park / Pineapple Fountain** — the hours conflict is **unresolved**: the Parks
+   Conservancy publishes *"Sunrise to Sunset"* **and** says the fountains *"are illuminated
+   after dark."* Moot in practice — you would leave by 17:10 to make the lights, so you would
+   never see it lit, and you would pay downtown parking plus a 20–30 minute Ashley River
+   crossing at 17:00 Saturday.
+4. **The Battery / White Point Garden** — twenty minutes of cannons for forty minutes of
+   friction, with a sunset hard-close at 17:14.
+5. **James Island County Park itself** would rank first if verifiable, but **day-use hours,
+   gate admission and the playground/dog-park/rental hours are all unverified** — CCPRC
+   migrated its site and the replacement pages are client-rendered. Call **843-795-4386**.
+6. **Mount Pleasant Pier** — wrong direction, a ~40 min round-trip penalty before the lights.
+
+## Dinner near the lights
+
+1. **Martin's Bar-B-Que Joint**, 1622 Highland Ave, James Island — **~1.5 mi from the park,
+   Fri–Sat 11:00–22:00** (publisher-confirmed, and OSM agrees). Online ordering via Toast.
+   Live music Fridays only, so Saturday is quieter. Reservations not mentioned; prices not
+   published. **Best pick: closest, open latest, and BBQ plates are fast and kid-proof.**
+   <https://www.martinsbbqjoint.com/charleston> · (843) 790-0838
+2. **Melvin's Legendary Bar-B-Que**, 538 Folly Rd — **Mon–Sat 10:30–21:00, closed Sundays.**
+   Counter service, so **the fastest option with tired kids.** Menu prices not published.
+3. **Charleston Crab House**, 145 Wappoo Creek Dr — water views over Wappoo Creek and **the
+   only nearby option that clearly takes reservations** (online via Tabit). But **its hours are
+   not published anywhere on its own site** — call (843) 795-1963.
+
+Backups (hours from OpenStreetMap tags only, not publisher-confirmed): **Fam's Brewing Co**,
+1291 Folly Rd (burgers/pizza, daily to 22:00); **Charlotte's on Maybank**, 1739 Maybank Hwy;
+**Jack's Cosmic Dogs**, 811 Folly Rd (space-themed hot dogs, a kid magnet, hours untagged);
+hard fallback **Chick-fil-A**, 849 Folly Rd, Mon–Sat to 21:00. If arriving on US-17 and eating
+before crossing to James Island: **Home Team BBQ West Ashley**, 1205 Ashley River Rd, daily
+11:00–24:00 with a kids menu, first-come only.
+
+## What failed, and what it leaves open
+
+- **hilton.com 403 on every route** → **Embassy Suites' and Home2 Summerville's indoor pools
+  both unresolved.** archive.org blocked in this environment.
+- **All search discovery unavailable** (Yelp 403, DuckDuckGo CAPTCHA, Mojeek 403, Bing
+  unrelated). Everything above came from direct URL fetches, link-following, OpenStreetMap and
+  routing engines.
+- **CCPRC migrated its website** — both park URLs now 404 and the replacements are
+  client-rendered → **James Island County Park day-use hours and gate admission, the
+  climbing-wall/playground/rental hours, and Mount Pleasant and Folly Beach pier hours are all
+  unverified.** No festival FAQ page exists, and the tickets page publishes neither the
+  colour-tier prices nor the date calendar.
+- **ticketing.patriotspoint.org 403** → gate/walk-up prices and any stroller policy unverified.
+- **TravelClick renders rates browser-side only** → no Nov 28 2026 rate anywhere.
+- City of Charleston's facilities directory has no URL-addressable pagination → **official
+  Waterfront Park and White Point Garden hours unverified.**

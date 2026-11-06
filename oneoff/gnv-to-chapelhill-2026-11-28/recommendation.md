@@ -1,6 +1,7 @@
 # Recommendation — overnight stop, Sat 28 Nov 2026
 
-Companion to `analysis.md` (routing and daylight) and the five files in `data/`.
+Companion to `analysis.md` (routing and daylight) and the six research files in `data/`.
+Revised after a second research pass on Orangeburg, Savannah and Charleston.
 
 ## The one fact that reorganised everything
 
@@ -91,28 +92,90 @@ with no mosquitoes in November — but it is unlit and 30 minutes out. **Save it
 
 ---
 
-## Runner-up, and the better choice if cost is the priority: ORANGEBURG, SC
+## Runner-up: ORANGEBURG, SC — now stronger on routing, weaker on lodging
 
-**Sat 4:56 → arrive 15:19 · Sun 4:04 / 250 mi · detour +0:41 · 55% of the trip**
+**Sat 4:56 → arrive 15:19 · Sun 4:04 via I-95, or 4:19 avoiding it · detour +0:41 · 55%**
 
-**Children's Garden Christmas Walk**, Edisto Memorial Gardens — **Nov 23 – Jan 1, seven
-nights a week, 17:00–22:00, free.** It is both a drive-through with 60+ displays *and* a
-walk-on "Kids' Walk" with 40 more. Free, kid-specific, date-confirmed.
-<https://www.orangeburg.sc.us/edisto-memorial-gardens/childrens-garden-christmas-walk>
-The park also has a free 2,600-ft wetland boardwalk, dawn to dusk — and you arrive at 15:19
-with nearly two hours of light, **42 minutes more daylight than Columbia**.
+The deeper pass moved Orangeburg in both directions.
 
-It is also **8 minutes further inside your detour budget** than Columbia.
+**Better than I thought — it can dodge I-95 too, for 15 minutes.** I re-routed every in-band
+stop through a forced via-point on I-77 north of Columbia. **Orangeburg goes I-95-free for only
++15 minutes** (I-26 → I-77 → I-85 → I-40, 4:19). Charleston and Summerville pay +45, Santee
++61. So the first pass's main objection to Orangeburg — longest Sunday *on I-95* — largely
+dissolves: it can instead carry a slightly longer Sunday on roads that are not the problem.
 
-Two real costs: the **longest Sunday of any in-band stop (4:04, on I-95)**, because you
-backtrack east to pick up the interstate; and **no Orangeburg lodging rate could be confirmed
-at all**, which in a small town on Thanksgiving weekend is a genuine booking risk rather than
-a formality.
+**And the day has the best shape of any stop on the route.** Edisto Memorial Gardens is open
+dawn to dusk and free, **and the Christmas Walk starts at 17:00 in the same park.** They walk
+the gardens from 15:30, are at the Kids' Walk as it switches on, and never move the car. The
+**2,600-ft Horne Wetlands boardwalk** over tupelo-cypress swamp is free, flat and genuinely
+exciting at 6 and 9 — do that in the light. Some roses may still be blooming; the city's own
+description says blooms "stretch all the way to the Thanksgiving season."
 
-**Take Orangeburg if a free activity and more daylight matter more than Sunday's traffic.
-Take Columbia if you would rather pay $30 and skip I-95.**
+**The Christmas Walk, confirmed:** seven nights a week **17:00–22:00**, **"there's no admission
+fee"** and no donation request, **60+ displays** on the drive-through along Riverside Drive plus
+**40 more** on the walk-on Kids' Walk, many interactive. Draws 300,000 a season, so expect
+Saturday traffic. Gardens at 218 Riverside Dr SW.
 
----
+Two caveats: the **Nov 23 – Jan 1 dates are derived** from the city's standing rule ("the Monday
+preceding Thanksgiving through the dawn of New Year's Day"), not from a published 2026 calendar
+entry. And **Santa on Nov 28 is not confirmed** — the city says "select days" without
+specifying, and Nov 28 is four weeks out. Don't promise it.
+
+**Worse than I thought — no indoor pool can be confirmed in Orangeburg.** Sources flatly
+contradict each other on every property, and the widely-repeated "heated indoor pool at 731
+Citadel Rd" turns out to be **stale legacy data from before that hotel rebranded from Country
+Inn to Spark by Hilton** — both current-brand sources say outdoor. Every brand site (IHG,
+Choice, Marriott, Hilton) returned 403, so the authoritative source was never reachable.
+**Do not promise the boys a pool here. One call settles it:** Holiday Inn Express & Suites,
+118 Sleep Inn Rd — "is the pool indoors, and open Nov 28?"
+
+- **Holiday Inn Express & Suites** (118 Sleep Inn Rd) — 2-queen rooms and 1-bedroom suites with
+  2 queens, free hot buffet breakfast, from $109. TripAdvisor 3.7/5 (285), #5 of 23.
+- **Tru by Hilton** (739 Citadel Rd) — **best-rated in town, 4.3/5, #2 of 23**, hot breakfast,
+  and a **pool table in the lobby**, which is a real draw on a cold evening. **No pool at all.**
+- **Hampton Inn & Suites** (749 Citadel Rd) — best-reviewed full-service, Booking 9.0/10.
+  Pool is outdoor, triple-confirmed.
+- **Rule out: Comfort Inn & Suites, 746 Citadel Rd — TripAdvisor 1.0/5, #19 of 23**, one review
+  describing a pet room that "reeks of dog urine so strong it is unbearable." Also avoid
+  SpringHill Suites (3.5/5, repeated mould and housekeeping complaints), Days Inn (a bed-bug
+  report), and both Super 8s.
+- Rate baseline: Orangeburg isn't separately listed in the FY2026 per diem tables, so it falls
+  to the **$110 Standard CONUS rate**. Asking prices of $98–139 straddle it — **no visible
+  holiday spike.** Airbnb showed real inventory for the date with no sign of a sellout
+  (a 3-bed at $303, a Bowman guesthouse at $152/4.93★), though one-night cleaning fees couldn't
+  be broken out.
+
+**If the pool matters, sleep in Santee instead — but know the cost.** Santee (I-95 Exit 98) has
+**two confirmed indoor pools**: **Tru by Hilton Santee** (273 Britain St, indoor per two
+independent sources, **free buffet breakfast, 2 queens, ~$107**) and **Holiday Inn Santee**
+(indoor per three sources plus a pool hoist, on-site restaurant, but **breakfast is not free**,
+~$126). The catch I measured: **Edisto Gardens → Santee is 38 minutes**, not the 20 the research
+implied — a long night drive at about 20:30 with tired kids. And from Santee, **avoiding I-95
+costs an hour** rather than 15 minutes.
+
+| | Sleep Orangeburg | Sleep Santee |
+|---|---|---|
+| Indoor pool | **Unconfirmed** | **Confirmed**, ~$107 w/ breakfast |
+| After the lights | 8–10 min | **38 min night drive** |
+| Sunday via I-95 | 4:04 | **3:44** |
+| Sunday avoiding I-95 | **4:19 (+15 min)** | 4:46 (+61 min) |
+
+**Dinner:** **House of Pizza / The Barrel Room** (1375 Sims St) is the safest pick — Sat
+06:30–21:30, family-friendly, an in-house ice cream parlour, and the only place in town with a
+published holiday policy ("closed Thanksgiving and Christmas Day" only, so **open Nov 28**).
+For entertainment value, **Tokyo Steak & Seafood** (1338 Grove Park Dr) has hibachi cooked at
+the table and a kids' menu, open to 22:30. Note the small-town limit: only two local sit-down
+restaurants are open past 20:00 on a Saturday.
+
+**Indoor backup if it rains: there isn't one.** The I.P. Stanback Museum & Planetarium at SC
+State would be ideal for these ages, but the university publishes no hours and **Nov 28 is the
+Saturday of its Thanksgiving break** — assume closed. The Fine Arts Center has no working
+website, the civil rights museum's site has a broken certificate, and no playground could be
+confirmed anywhere in the city's parks.
+
+**Also worth knowing before you walk into it:** the gardens contain the **Angel of Hope
+Garden**, a memorial to children who have died. Not something to encounter unprepared with two
+small boys.
 
 ## Three off-spec options worth knowing about
 
@@ -123,38 +186,111 @@ Each breaks one of your stated constraints, but each is the best at something.
 
 The richest free programme on the route, all on Nov 28: **Holiday Kickoff at Eastern Wharf,
 17:00–21:00 — tree lighting, Santa, food trucks — plus the 25th Annual Lighted Boat Parade,
-19:00–21:00, 30+ lit boats looping twice to the Talmadge Bridge. Both free.** Add the free
-Savannah Belles Ferry (a real boat ride, to 22:00), the free Plant Riverside Christmas Market
-and its free Generator Hall with a full-scale dinosaur replica. You also arrive at 13:50 with
-3½ hours of daylight — the Mighty Eighth Air Force Museum in Pooler ($44, indoor, closes
-17:00) is right off I-95.
+19:00–21:00, 30+ lit boats. Both free.**
 
-**Why it is not the recommendation: at 38% of the trip it front-loads the easy day and leaves
-335 miles of I-95 for Thanksgiving Sunday.** Stay here and you must be northbound before
-10:00. Best hotel is **Drury Plaza Pooler** — indoor pool, free hot breakfast, **free 5:30
-Kickback hot food and drinks**, free parking; dinner, breakfast and parking all cost nothing.
-Or **Holiday Inn Express Hardeeville at I-95 Exit 8** (~$129, heated indoor pool), already
-past the Talmadge Bridge, which rebalances Sunday a little.
+**The deeper pass found two things that make this materially easier than it looked.**
+
+**1. You don't need Eastern Wharf at all.** The parade **loops twice** from Eastern Wharf to the
+Talmadge Bridge and back, so it passes the **entire River Street frontage** — River Street,
+Rousakis Plaza, the Waving Girl statue, and Plant Riverside at the far end. Plant Riverside is
+where the **free** Christmas Market (11:00–21:00), the **free** Festival of Trees, the free
+Generator Hall with its full-scale dinosaur replica, and the kid-safe dinner options already
+are. And because there are two passes, arriving at a riverfront rail by 19:30 still catches
+boats. This also sidesteps a parking trap: Eastern Wharf's garage is $10 on weekends but the
+City's table has a **$25 special-events tier and nobody publishes whether Nov 28 triggers it** —
+whereas **Bryan St, State St, Robinson and Liberty St garages are $5 flat on weekends**, and
+street meters are **free after 20:00**.
+
+**2. Sunday morning is solved for free.** **Savannah NWR's Laurel Hill Wildlife Drive** is a
+**4.5-mile wildlife drive, free, open sunrise to sunset — so no opening hour to wait for** —
+sitting off US-17 right by the **I-95 Exits 5–8** you'd sleep at. A 45–60 minute stop that costs
+nothing and is already on the road. Everything else is wrong: the **Mighty Eighth opens at 12:00
+on Sundays**, Fort Pulaski is a 13-mile dead-end spur east, and Tanger opens at 11:00.
+
+**Best base: Drury Plaza Pooler**, 500 E US-80 — confirmed from the operator: indoor pool and
+whirlpool, **two queen beds**, weekend breakfast 07:00–10:00, **free "5:30 Kickback" hot food
+and drinks 17:30–19:00 every evening**, free parking. Dinner, breakfast and parking all cost
+nothing. **Correction from the first pass: the Hampton Inn I-95 South (Exit 94) indoor pool is
+now unverified** — treat it as unconfirmed until someone phones. At **I-95 Exit 8 (Hardeeville)**
+the **Holiday Inn Express** ($129, heated indoor pool, rated only *Average*) is the **only**
+indoor pool at that exit — its Fairfield and Hampton neighbours are both outdoor/summer. Exit 21
+Ridgeland has a cheaper heated indoor pool (~$76) but turns the evening into 75–80 minutes of
+round-trip driving.
+
+**Dinner:** Eastern Wharf has **no family restaurant** — only bars, a bakery and gelato. On the
+parade frontage, **Spanky's Pizza Galley** (317 E River St, Sat to 23:00, "home of the original
+chicken finger") is operationally the safest bet for a six-year-old, though it takes no
+reservations.
+
+**Why it is still not the recommendation: at 38% of the trip it front-loads the easy day and
+leaves 335 miles of I-95 for Thanksgiving Sunday** — and unlike Orangeburg, **Savannah cannot
+dodge I-95** (the inland alternative still uses it and costs +50 minutes). If you stay here, be
+northbound before 10:00: AAA's 2025 figures had Sunday return traffic worst from 11:00 to 20:00.
+Also note **only the 19:00 parade start is time-anchored** — no official page publishes the
+tree-lighting or Santa times, and leaving before ~19:15 risks seeing no boats at all.
 
 ### CHARLESTON, SC — best drive-through lights, double the detour
-**Sat 5:00 → arrive 15:50 · Sun 4:41 / 292 mi · detour +1:22 · 52% of the trip**
+**Sat 5:00 → arrive 15:50 · Sun 4:42 / 294 mi · detour +1:22 · 52% of the trip**
 
-The **best-balanced split on the whole route** (52%) and the best single light event:
-**Holiday Festival of Lights**, James Island County Park, **17:30–22:00, $25/vehicle online**
-($35 at the gate) — a 3-mile drive-through with 750+ displays and **unlimited loops on one
-entry**, plus a village with a train, carousel, climbing wall, **free marshmallow fire pits**
-and Santa. Enter from Folly Road via Griffith or Grimball, not the Central Park Rd route GPS
-prefers. Also available: **Aquarium Aglow** with **Scuba Claus diving the Great Ocean Tank**
-($109.80 at the 18:30 slot).
+The **best-balanced split on the route** and the best single light event: **Holiday Festival of
+Lights**, James Island County Park, **17:30–22:00, $25/vehicle online** ($35 gate) — a 3-mile
+drive-through, 750+ displays, **unlimited loops on one entry**, plus a village with a train,
+carousel, climbing wall, free marshmallow fire pits and Santa.
 
-**The detour is +1:22 — nearly double your budget.** It is only clearly worth it if you spend
-Sunday morning on the **USS Yorktown** at Patriots Point (10:00–12:30, $102), which is
-plausibly the thing the boys would remember longest — at the cost of reaching Chapel Hill
-around 18:00 on the worst traffic evening of the year. Note that **every indoor pool in the
-Charleston metro is in North Charleston or Summerville** (Hilton's own filter returns zero for
-Charleston and zero for Mount Pleasant), and downtown valet parking is **$34–62**, not the
-$25–40 I assumed. Stay at **Embassy Suites Charleston Airport**: indoor heated pool, free hot
-breakfast, two-room suites, $10 parking, sitting at the I-26/I-526 junction.
+**Four practical corrections from the deeper pass:**
+
+1. **There's no rush to the 17:30 gate.** The **train and carousel don't start until 18:00**, so
+   arriving at opening buys nothing — and the climbing wall I'd listed as a daytime draw is
+   itself a festival attraction.
+2. **Eat dinner before you go in. The festival sells snacks only and outside food is
+   prohibited.** Santa's Sweet Shoppe has hot chocolate, pretzels, popcorn and ice cream — so
+   without a plan you'll be buying four ice creams as a meal. **Martin's Bar-B-Que Joint**
+   (1622 Highland Ave, ~1.5 mi, Sat to 22:00) is the closest and latest; **Melvin's** (538 Folly
+   Rd, to 21:00, counter service) is the fastest with tired kids.
+3. **Don't schedule anything in the 15:50–17:15 window.** After five hours in the car and before
+   four hours standing outdoors in the dark, the best use is check in, decompress and eat early.
+   If you insist, Folly Beach Pier is 14 minutes away; downtown is not worth the Ashley River
+   crossing at 17:00 Saturday.
+4. **Patriots Point tickets carry zero date risk — buy them now.** They are explicitly
+   "non-refundable, **not date-specific**, and valid for one-time use within one year." $28
+   adult / $23 child 6–12 → **$102**, plus parking at $5.50/hr ($25 max), so ~$119 for the
+   morning. Add the **$3 scavenger hunt**.
+
+**On Patriots Point itself:** Sunday 10:00–17:00, ticket office closes 16:00, and the museum's
+own guide says **2–3 hours minimum** — so 10:00–12:30, out by 12:45, Chapel Hill about 17:30.
+The 6-year-old question resolves better than expected: there's an **onboard elevator serving the
+Hangar Bay, Flight Deck and Quarters** plus a **free golf-cart shuttle**, though several exhibits
+need stairs and **the USS Laffey is explicitly not accessible** — treat it as optional. **The
+submarine is gone** (USS Clamagore no longer appears on any current museum page; the resort's
+site still advertising it is stale) — **don't promise the boys a submarine.** No food service on
+site, so eat first and carry snacks.
+
+**Lodging — one claim withdrawn, one unresolved.** **Withdraw the Charleston Harbor Resort
+"heated pool" framing: it is almost certainly open-air.** Nothing on the resort's site says
+indoor; "year round" distinguishes the cabana pool by *heating*, and Harborside's own page says
+"outdoor pools." It is still arguably the right base anyway — it's **half a mile from the
+Yorktown**, so Sunday needs **no positioning drive and no $17 parking**, breakfast is served on
+site from 07:00, and its Beach Club **"Family Parlor Room" (750 sq ft, king plus a separate room
+with two twin beds)** is the best family configuration found anywhere in this project. **Embassy
+Suites Charleston Airport's indoor pool is still unresolved** — hilton.com returned 403 on every
+route — and the whole lodging case rests on it, so **phone rather than trust an aggregator**.
+Since pool time on Nov 28 is 30–60 minutes at best either way, proximity to the Yorktown is the
+stronger criterion.
+
+**Moving the base does not recover the detour.** With Patriots Point in the plan, Sunday totals
+are: Charleston Harbor Resort **4:42** (walk to the ship), Embassy airport ~5:00, **Home2 Suites
+Summerville ~5:13 plus a 70-minute Saturday-evening round trip to the lights.** Summerville only
+wins if you drop Patriots Point — which is exactly what makes the +1:22 indefensible. The two
+things that justify Charleston both sit on the far side of the metro from I-26.
+
+**Unexplored lead worth ten minutes of phone time:** there are **ten vacation cottages inside
+James Island County Park** — the park the festival runs in. That would eliminate all
+Saturday-evening driving and the gate queue. Rates and occupancy aren't published; reservations
+go through ReserveAmerica.
+
+**Verdict unchanged: +1:22 is nearly double your budget, and it's only worth it if Sunday
+morning is the Yorktown.** As a pure overnight waypoint it's hard to justify against Columbia's
+confirmed zoo lights at +0:49 with no I-95.
 
 ### SOUTHERN PINES, NC — best single event, abandons the halfway premise
 **Sat 7:19 → arrive 18:09 · Sun 1:09 / 72 mi · detour +0:09 · 86% of the trip**
@@ -226,13 +362,34 @@ Stated plainly, because three weeks out these are the things that could change t
   $74–97 range is my arithmetic on the published band.
 - **Sandhills Garden of Lights pricing** is not published anywhere (demand-based), and the
   **Southern Pines tree lighting** is blog-sourced and absent from the town's own calendar.
-- **Orangeburg and Santee lodging** — no price evidence at all.
-- **Airbnb/VRBO was never covered** — the session's 200-call web-search budget ran out first.
+- **No indoor pool could be confirmed at any Orangeburg property.** Sources contradict each
+  other on all of them, and every brand site 403'd. This is the single open question that most
+  affects the runner-up. One phone call settles it.
+- **Embassy Suites Charleston Airport's indoor pool is unresolved** — hilton.com 403'd on every
+  route, including proxies and the legacy host. The Charleston lodging case rests on it.
+  Home2 Suites Summerville's pool hits the same wall.
+- **Santa on Nov 28 at Orangeburg is not confirmed** ("select days," unspecified), and the
+  Christmas Walk's Nov 23–Jan 1 dates are **derived from the city's standing rule**, not from a
+  published 2026 calendar entry.
+- **Savannah's tree-lighting and Santa times are published nowhere** — only the 19:00 parade
+  start is time-anchored, and the venue's holiday page still carries a stale 2025 date string.
+- **Whether Nov 28 triggers Savannah's $25 special-event garage rate** (vs $5–10 weekend flat)
+  is not published; no special-event calendar exists on the city site.
+- **James Island County Park's day-use hours and gate admission** are unverified — the county
+  parks site migrated and the replacement pages are client-rendered. Call 843-795-4386.
+- **Airbnb/VRBO was only covered for Orangeburg**, where dated inventory did appear for Nov 28
+  with no sign of a sellout. VRBO rate-limited everywhere. The web-search budget (200 calls) was
+  exhausted during the first pass, so the second pass ran on direct URL fetches only.
 - **Fort Pulaski's Nov 28 hours** — open on the standing rule, but a 2023 release announced
   an early Thanksgiving close and no 2026 notice exists.
 - **Thanksgiving traffic is not in any drive time here.** Valhalla has no traffic model;
   these are free-flow times and a lower bound. That understates the I-95 options more than
-  it understates Columbia.
+  it understates Columbia and Orangeburg's inland alternative.
+- **One cross-engine discrepancy, resolved in favour of my figures.** The Charleston pass used
+  OSRM and reported Patriots Point → Chapel Hill as 5h44; I measure **4h42**. The two engines
+  agreed closely on every intra-metro leg and diverged only on the long highway run, consistent
+  with a slower OSRM motorway profile. All times in these files are Valhalla, so they stay
+  comparable across all 38 candidates.
 - **Weather normals were only obtained for the coast** (Charleston Nov 69°F/46°F, Hilton Head
   70°F/50°F). I could not verify Columbia's — the search budget was gone. Expect cooler
   inland, and dress for a 19:00 outdoor walk near 45°F.
