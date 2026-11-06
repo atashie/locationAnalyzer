@@ -6,6 +6,12 @@ The point of the shape below is that it forces the **three-state status** back o
 agent. A brief that just asks "what's good in X" returns uniform confidence, and then you
 cannot tell a confirmed opening time from a guess.
 
+**Do not ask a researcher which stop is best.** Research feeds the options; it does not pick
+among them (rule 1). A brief that asks for a recommendation gets one, and the weighing then
+happens in a subagent that never met the traveller. Ask what each candidate *is*, costs and
+requires — and ask explicitly for the candidates that suit **different** priorities, since that
+is what the options are built from.
+
 ---
 
 Research **[REGION]** as a **[overnight stop / layover base / charging-and-meal stop]** on
@@ -14,6 +20,10 @@ Research **[REGION]** as a **[overnight stop / layover base / charging-and-meal 
 **Context.** [Party: who, ages.] They arrive about **[TIME]** with **[N]** hours before
 **[sunset / last entry / departure]**, and leave **[WHEN]**. [One line on why this region made
 the shortlist, and the one thing that would disqualify it.]
+
+I am building **two to four itineraries that differ in kind** — fewest stops, most time
+outdoors, cheapest, a wet-weather version. Report candidates that suit *different* priorities
+rather than ranking them against each other.
 
 **Find, in priority order:**
 

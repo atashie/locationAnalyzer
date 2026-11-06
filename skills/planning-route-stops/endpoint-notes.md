@@ -56,6 +56,18 @@ Limits worth knowing before you hit them. All free, no keys.
 - A cross-domain `navigate` **inside a batch aborts the whole batch**. Navigate standalone
   first; batch only same-domain actions afterwards.
 - `computer` screenshots accept `save_to_disk`, which returns a path you can post-process.
+- **`file://` URLs are refused** — "Can't interact with browser-internal or unparseable URLs",
+  both standalone and with an explicit `tabId`. You cannot screenshot a local HTML file you just
+  wrote. Verify generated geometry numerically instead (landmark positions, viewBox bounds, tag
+  balance) and treat the published artifact as the review surface.
+
+## Writing generator scripts via the Bash tool
+
+- **`\n` inside a quoted heredoc does not survive.** Writing a Python generator through
+  `python - <<'PY'` turned `'...\n'` into a real line break mid-literal, producing
+  `SyntaxError: unterminated string literal` — three times, at successively later lines, because
+  each repair introduced the next one. Build newlines with `chr(10)` and backslashes with
+  `chr(92)`, or write the generator with the Write tool instead.
 
 ## Prices and availability
 
