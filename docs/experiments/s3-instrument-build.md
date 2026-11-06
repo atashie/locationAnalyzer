@@ -5,13 +5,13 @@ identify it, so design §12's frozen-artifact checklist has somewhere to point. 
 itself is `s3-walk-grocery-measurement.md`, which does not exist yet.
 
 **Design:** [`2026-11-04-s3-measurement-design.md`](../plans/2026-11-04-s3-measurement-design.md)
-revision 6. **Plan:** [`2026-11-04-s3-execution-plan.md`](../plans/2026-11-04-s3-execution-plan.md)
-revision 5.
+revision 7. **Plan:** [`2026-11-04-s3-execution-plan.md`](../plans/2026-11-04-s3-execution-plan.md)
+revision 6.
 
-**Five statements in the first version of this record overstated what had been evidenced.** Codex
-pass 19 named each one, and each is corrected in place below rather than quietly dropped — the list
-is in [§Corrections](#corrections-to-the-first-version-of-this-record) so the overstatement and its
-repair stay visible together.
+**Ten statements across two versions of this record overstated what had been evidenced** — five found
+by Codex pass 19, five by pass 20. Each is corrected in place below rather than quietly dropped, and
+the list is in [§Corrections](#corrections--what-this-record-claimed-and-could-not-show) so each
+overstatement and its repair stay visible together.
 
 ---
 
@@ -186,11 +186,11 @@ versions and the byte order. It does **not** promise bit-identical regeneration 
 guarantee does not freeze `permutation`'s internal shuffle. **The saved points are the artifact**; a
 redraw is a check to run, not a claim the manifest makes.
 
-## T4 — the conformance suite · done 2026-11-06
+## T4 — the conformance suite · done 2026-11-06, corrected the same day after pass 20
 
 `v2/locfinder/measure/toy.py`, `conformance.py`, `conformance_cases.py`,
-`v2/tests/test_conformance.py` (**78 tests**). Twelve cases, corpus digest
-`b09596d19ed0efe61a3bf8fe5948805d73fd94ee5b25f6048e0ce38eb6a055f6`.
+`v2/tests/test_conformance.py` (**112 tests**). **Seventeen** cases, corpus digest
+`e645be289098f2a599cf727110e50b81a430cbcc14772f2405395d5f320e0977`.
 
 Design §12 artifact 3. The execution plan requires that "derived independently of T3" be
 **evidenced, not asserted**, and notes that "written before T3 is complete" is not evidence and a
@@ -198,66 +198,133 @@ digest proves immutability rather than correctness. So every case carries three 
 
 1. **hand arithmetic** with the derivation written out, taken where possible from a review pass's own
    executed counterexample rather than computed now;
-2. **the exhaustive oracle's answer** — `toy.py` enumerates every attachment candidate, every entry
-   and exit choice and every simple path, then takes the extremum. It has no shortest-path algorithm,
-   no spatial index and no "objective view", so design §2.3's hybrid defect is *unrepresentable* in
-   it rather than merely absent;
-3. **the numbers the case rejects**, as values rather than prose — 16 of them. A case that cannot
+2. **the exhaustive oracle's answer** — `toy.py` enumerates attachment candidates, entry and exit
+   choices and simple paths, then takes the extremum. It has no shortest-path algorithm, no spatial
+   index and no "objective view", so design §2.3's hybrid defect is *unrepresentable* in it rather
+   than merely absent;
+3. **the numbers the case rejects**, as values rather than prose — 23 of them. A case that cannot
    name a wrong answer it separates is evidence of nothing.
+
+**Pass 20 asked the question this suite exists to answer — can a wrong comparator pass the whole
+corpus? — and the answer was yes, twice.** That is the most important thing in this section, and the
+reason the figures above are larger than the first version's:
+
+- **A strict-cap comparator passed all 78 tests.** `< cap` rather than `<= cap`, executed by
+  replacing each cap with its next float down. Every case used 250 m or 350 m and none sat on a
+  boundary. On a destination exactly 300 m from the network it finds **no journey at all** where the
+  answer is a 338.0952380952 s ten-minute PASS.
+- **The oracle itself charged both connectors to objective 2's reported time and omitted them from
+  the cost it selects on**, against design §2.1 and §2.2. With destinations at
+  `(cost, time) = (10, 10)` carrying a 100 m residual and `(20, 650)` carrying none, the own costs
+  are `10 + 100/1.26` = 89.3650793651 and 20, so objective 2 must select the second and report
+  **650 s**; omitting the connector selects the first and reports 89.3650793651 s — **FAIL becomes
+  PASS**. No case separated it because only *unequal* connectors on *different* destinations can, and
+  none had both.
+
+Five cases and three further mutants close those, and the generalisable lesson is recorded: **the
+corpus is evidence only of the dimensions it actually varies.** Seven mutants are now built and each
+is shown to be killed by a named case — a one-candidate attachment, the forbidden objective-2
+functional, a symmetrised graph, a penalty charged on entry, the strict cap, the connector-free cost,
+and a text-ordered route rank.
 
 **The two routes disagreed once, which is why there are two.** The same-edge competition case was
 written with one origin candidate and has **two**: a node origin attaches to every incident edge, all
 at distance zero and all inside the tie band. The hand value was wrong and the oracle rejected it.
-That is the clearest evidence available that the routes are independent, and it is recorded in the
-case's own derivation.
+Pass 20 independently recalculated all twelve original expected times and found **none of them
+arithmetically wrong**, which is evidence about the derivations and not about coverage.
 
-**Building the wrong implementations found a second defect in my own work.** Four are constructed and
-shown to be caught — a one-candidate attachment, the forbidden objective-2 functional, a symmetrised
-graph, and a penalty charged on entry. The one-way case originally had a **fast** return route, so an
-implementation ignoring the one-way flag took the illegal 60 s shortcut, lost to the legal 50 s
-route, and returned the **correct** answer: the case separated nothing. Its return route is now slow
-enough (240 s legal against the 60 s shortcut) that the illegal path would win.
+**Building the wrong implementations found two defects in my own work.** The one-way case originally
+had a **fast** return route, so an implementation ignoring the one-way flag took the illegal 60 s
+shortcut, lost to the legal 50 s route, and returned the **correct** answer: the case separated
+nothing. Its return route is now slow enough — 240 s legal against the 60 s shortcut — that the
+illegal path would win. And two of my annotations were simply wrong, both found by pass 20: the
+multi-segment case's verdicts differ at *T* = 2 min, not the 2.5 min I wrote, where 100 s and 150 s
+both pass an inclusive threshold; and the eligibility case does **not** separate "ineligible treated
+as unreachable", because a minimum over `{248.4126984127, inf}` is still 248.4126984127 — only the
+explicitly checked identity tuples separate that.
 
-**The tolerance is argued, not declared.** Pass 18 defeated T1 through a tolerance wide enough to
-hide a decision flip, so a small number is not an argument here either. Times are compared at 1e-9 s
-— about 70,000× the observed float-association spread of 1.42e-14 s and 11 orders below the smallest
-threshold — and every pinned time is additionally checked to give the **same verdict at ±tolerance at
-all four published thresholds**. A case whose time sits within a nanosecond of a threshold is
-**refused**, not admitted.
+**The tolerance is argued, not declared — and its scope is now stated.** Pass 18 defeated T1 through
+a tolerance wide enough to hide a decision flip, so a small number is not an argument here either.
+Times are compared at 1e-9 s — about **70,400×** the observed float-association spread of 1.42e-14 s
+and 11 orders below the smallest threshold — and every pinned time is additionally checked to give
+the **same verdict at ±tolerance at all four published thresholds**. A case whose time sits within a
+nanosecond of a threshold is **refused**, not admitted.
 
-Eight of the nine rules in the plan's T3 table have graph cases. The ninth — the independent engine's
-connector charge — is **deliberately absent and recorded as absent**, because it depends on
-Valhalla's observed correlation position and belongs to T6, where that position is persisted.
-Asserting it here would mean inventing the engine's answer. Four further rules are tested without a
-graph (bound soundness, `NO_PATH` exhaustiveness, canonical identity, the §7 cross-tab), and a test
-asserts that exactly one rule is knowingly untested, so a second gap cannot open silently.
+What that argument does *not* cover, and pass 20 was right to say so: it bounds the oracle-versus-hand
+**time** comparison only. It says nothing about cost-argmin stability, cap equality, or selected
+provenance — which is why cost totals now use an exactly-rounded sum (design §2.4 revision 7), the
+caps have exact-boundary cases, and the selected destination id is asserted directly.
 
+**Coverage, stated honestly.** Every rule in the plan's T3 table has at least one graph case except
+the independent engine's connector charge, which is **deliberately absent and recorded as absent**
+because it depends on Valhalla's observed correlation position and belongs to T6. Four further rules
+are tested without a graph (bound soundness, `NO_PATH` exhaustiveness, canonical identity, the §7
+cross-tab). But the coverage *test* inspects a hand-maintained map, so it proves that every name
+resolves to a real case and that no case is unclaimed — **bookkeeping, not semantic completeness.**
+The strict-cap mutant is the proof that those are different things. Independence from T3 is
+established; coverage of §2 is not, and no claim here says otherwise.
+
+## T9 — E3 scoring · done 2026-11-06
+
+`v2/locfinder/measure/e3.py`, `v2/tests/test_e3.py` (**15 tests**). Depends only on T1, so it is
+unaffected by the items gating T3.
+
+E3 is the one estimand that can **only** fail. 5–8 owner-chosen journeys are a convenience sample —
+with 8 observations and no discrepancy the one-sided 95% bound is **31.2344%** — so the outcome is
+`FAILED` or `UNVERIFIED` and there is no third value. The word "supported" appears nowhere, and a
+test asserts the enum has exactly two members and that neither contains it.
+
+**Plan revision 2's fixture for the rule was impossible**, which is why the tests are shaped as they
+are. It asserted that a journey 1.6× over but only 3 minutes over does not fail. Limb (i) is indeed
+quiet — it needs more than 1.5× **and** more than 5 minutes — but for a single journey of reported
+5 min and observed 8 min the median signed difference is 3 min against a limit of 1.25 min, so limb
+(ii) fires. That singleton is tested as a **failure**, with both limbs' quantities asserted: a
+disjunction cannot be fixtured one limb at a time.
+
+Each limb is also tested where only it can fire, and both boundaries are tested as strict — exactly
+1.5×, exactly 5 minutes and exactly 25% of the median all pass, and a second past each fails. The
+median is **signed**: three journeys 10 minutes early and three 10 minutes late give a median of zero
+and must not fail, where a median of absolute differences would read 10 minutes and would.
+
+The one-way rule is tested as one-way. Adding 1, 3 or 20 unwalked journeys to an established failure
+keeps it failing, and the medians stay over walked journeys only — counting a missing observation as
+a zero difference would dilute a failure away. With no walked journey both medians are `None` rather
+than 0.0, because zero would assert the product was accurate.
 ---
 
 ## Suite
 
-**576 tests pass**: 328 before S3, plus 140 for T1, 30 for T2 and 78 for T4.
+**625 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4 and 15 for T9.
 
 ## Not yet built
 
 T3 the reference comparator · T5 diagnostics · T6 the run manifest · T7 development including the
-encoding and wire migration · T8 freeze and certify · T9 E3 scoring · T10 the extraction warning ·
-T11 the report.
+encoding and wire migration · T8 freeze and certify · T10 the extraction warning · T11 the report.
 
-**T3 is gated.** Pass 19's verdict: *"Do not start a purportedly normative T3 until F1 and F2 are
-settled."* Design revision 6 settles both — §2.2's candidate universe is now a finite per-segment set
-and §2.6 can no longer remove destinations from E1 — so T3 waits on a review of revision 6 rather
-than on more design work.
+**T3 is gated, and has now been refused twice.** Pass 19: *"Do not start a purportedly normative T3
+until F1 and F2 are settled."* Revision 6 settled both — and pass 20 found that its **replacements**
+opened four new numeric ambiguities: the candidate key merged distinct occurrences and distinct weight
+alternatives, closed edges had no directed identity, and cost summation order could decide a verdict.
+Revision 7 settles those, so T3 waits on a review of revision 7.
+
+That pattern is the finding, not an inconvenience. Twice now, closing the blockers has opened new
+ones, and in both cases only an adversarial pass **over the fix** found them. It is the same failure
+mode recorded for the resolver — four passes of point fixes each breaking an adjacent case — arriving
+in a design document rather than in code, where it is harder to see because nothing executes.
 
 **Still open and owner-gated:** the **coverage requirement** (design §8), which blocks the coverage
 claim only — not the build and not the construction gate.
 
 ---
 
-## Corrections to the first version of this record
+## Corrections — what this record claimed and could not show
 
-Pass 19 named five statements that claimed more than had been shown. All five are corrected above;
-they are listed here because a record that silently repairs its own overstatements teaches nothing.
+Ten statements across two versions of this record claimed more than had been shown, five found by
+each of passes 19 and 20. All are corrected above; they are listed here because a record that
+silently repairs its own overstatements teaches nothing, and because the *pattern* is the useful
+part: each time, the overstatement was in the section describing work I had just finished.
+
+### Pass 19's five, against the first version
 
 | the claim | why it was wrong |
 |---|---|
@@ -270,3 +337,25 @@ they are listed here because a record that silently repairs its own overstatemen
 One statement pass 19 examined and **did not** overturn: the recorded **412 tests pass** described
 the build environment accurately. The review could not reproduce it because this environment denied
 it temporary directories, and it said so rather than treating its own failure as a finding.
+
+### Pass 20's five, against the version written the same day
+
+Pass 20 confirmed the five above were materially repaired, then found five more. Four are in the T4
+section I had just written, which is the point worth keeping: a fresh section is not a safer one.
+
+| the claim | why it was wrong |
+|---|---|
+| "**T4 done**", eight of nine rules covered, exactly one rule knowingly untested | refuted by a strict-cap mutant that passed all 78 tests and by five further semantic gaps. The coverage test inspects a hand-maintained map, so it proves bookkeeping — every name resolves, no case is unclaimed — and not semantic completeness |
+| "the exhaustive oracle enumerates **every journey**" | too strong while the candidate key was discarding occurrences and closed-edge directions. Simple paths suffice *numerically*, but only once the candidate and identity domain is right |
+| "T3 waits on a review of revision 6, **not on more design work**" | revision 6's replacement rules opened four new design decisions — the candidate key, closed-edge identity, weight grouping and cost arithmetic — all of which had to be made before any freeze |
+| the plan's repaired T6 payload | still named the two **selected costs** where design §12's five are objective 1, objective 2 own, the **float product**, the **decoded** product and the independent engine's objective 2 — and §2.6's intersection had meanwhile created a second own objective-2 operand |
+| "about **70,000×** the float-association spread" | the ratio is right (70,423), but the claim's *scope* was not stated: it bounds the oracle-versus-hand **time** comparison only, and says nothing about cost-argmin stability, cap equality or selected provenance. A comment inside `conformance.py` also said "~500×", which was simply wrong |
+
+Two further things pass 20 checked and **did not** overturn: the cycle-excision argument for
+node-simple paths is sound for both numeric objectives on this model, and the entry/exit enumeration
+covers all four directional combinations. It also recalculated all twelve original expected times
+independently and found none of them arithmetically wrong — which is evidence about the derivations,
+and deliberately not evidence about coverage.
+
+It could not run five frame tests, because this environment denied it temporary directories, and it
+said so rather than reporting the failure as a finding.
