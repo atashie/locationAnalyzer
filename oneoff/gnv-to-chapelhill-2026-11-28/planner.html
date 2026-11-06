@@ -1,0 +1,874 @@
+<title>Carolina Pitstop Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800&family=Overpass+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --paper:#F3F4F8;
+  --surface:#FFFFFF;
+  --surface-2:#E9ECF3;
+  --ink:#171B2B;
+  --ink-2:#4A5168;
+  --ink-3:#767D94;
+  --line:#D7DBE6;
+  --line-strong:#BFC5D4;
+  --dusk:#2E4A7D;
+  --dusk-soft:#E2E8F4;
+  --amber:#B96A0C;
+  --amber-soft:#FAEDD9;
+  --gold:#E8B54B;
+  --night:#263049;
+  --good:#27705F;
+  --good-soft:#DEEDE8;
+  --warn:#8A5A10;
+  --warn-soft:#F9EACD;
+  --shadow:0 1px 2px rgba(23,27,43,.06),0 8px 24px -12px rgba(23,27,43,.18);
+  --sans:"Overpass",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"Overpass Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#10131D;
+    --surface:#191D2A;
+    --surface-2:#232838;
+    --ink:#ECEEF4;
+    --ink-2:#A5ACBF;
+    --ink-3:#7C8398;
+    --line:#2E3447;
+    --line-strong:#3D4459;
+    --dusk:#86A8DD;
+    --dusk-soft:#1C2740;
+    --amber:#E6A849;
+    --amber-soft:#2C2416;
+    --gold:#E8B54B;
+    --night:#070A12;
+    --good:#6BBFA8;
+    --good-soft:#14281F;
+    --warn:#DCA94A;
+    --warn-soft:#2A2213;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10131D;
+  --surface:#191D2A;
+  --surface-2:#232838;
+  --ink:#ECEEF4;
+  --ink-2:#A5ACBF;
+  --ink-3:#7C8398;
+  --line:#2E3447;
+  --line-strong:#3D4459;
+  --dusk:#86A8DD;
+  --dusk-soft:#1C2740;
+  --amber:#E6A849;
+  --amber-soft:#2C2416;
+  --gold:#E8B54B;
+  --night:#070A12;
+  --good:#6BBFA8;
+  --good-soft:#14281F;
+  --warn:#DCA94A;
+  --warn-soft:#2A2213;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:40px 24px 72px}
+@media (max-width:640px){.wrap{padding:28px 16px 56px}}
+
+a{color:var(--dusk);text-decoration-thickness:1px;text-underline-offset:2px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--dusk);outline-offset:3px;border-radius:3px}
+
+/* ---------- masthead ---------- */
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  margin:0 0 14px;
+}
+h1{
+  font-size:clamp(30px,5vw,46px);
+  font-weight:800;
+  letter-spacing:-.022em;
+  line-height:1.04;
+  margin:0 0 14px;
+  text-wrap:balance;
+}
+.standfirst{
+  font-family:var(--serif);
+  font-size:17.5px;
+  line-height:1.58;
+  color:var(--ink-2);
+  max-width:60ch;
+  margin:0;
+}
+.masthead{border-bottom:1px solid var(--line);padding-bottom:30px;margin-bottom:30px}
+
+/* ---------- option chooser ---------- */
+h2.sec{
+  font-size:12px;
+  font-family:var(--mono);
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  font-weight:600;
+  margin:0 0 14px;
+}
+.choices{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(186px,1fr));
+  gap:10px;
+  margin-bottom:34px;
+}
+.choice{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  text-align:left;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:14px 14px 12px;
+  cursor:pointer;
+  font-family:inherit;
+  color:inherit;
+  transition:border-color .14s,box-shadow .14s,transform .14s;
+}
+.choice:hover{border-color:var(--line-strong)}
+.choice[aria-pressed="true"]{
+  border-color:var(--dusk);
+  box-shadow:inset 0 0 0 1px var(--dusk),var(--shadow);
+}
+.choice-name{font-weight:700;font-size:17px;letter-spacing:-.01em;line-height:1.2}
+.choice-state{font-size:12.5px;color:var(--ink-3);font-weight:600;margin-top:-6px}
+.choice-tag{
+  align-self:flex-start;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  padding:3px 7px;
+  border-radius:4px;
+  background:var(--surface-2);
+  color:var(--ink-2);
+}
+.choice[data-accent="pick"] .choice-tag{background:var(--good-soft);color:var(--good)}
+.choice[data-accent="free"] .choice-tag{background:var(--amber-soft);color:var(--amber)}
+.choice-legs{
+  display:flex;
+  gap:16px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-2);
+  border-top:1px solid var(--line);
+  padding-top:9px;
+}
+.choice-legs span{display:flex;flex-direction:column;gap:1px}
+.choice-legs b{font-size:13.5px;color:var(--ink);font-weight:600}
+.choice-legs i{font-style:normal;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- the day bar ---------- */
+.daycard{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:24px 26px 20px;
+  box-shadow:var(--shadow);
+  margin-bottom:26px;
+}
+@media (max-width:640px){.daycard{padding:20px 16px 16px}}
+.daycard-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:22px;
+}
+.daycard-head h3{margin:0;font-size:21px;font-weight:700;letter-spacing:-.015em}
+.daycard-head p{margin:0;font-size:13px;color:var(--ink-3);font-family:var(--mono)}
+
+.track{position:relative;height:64px;margin:0 0 6px}
+.track-bg{
+  position:absolute;inset:0;
+  border-radius:6px;
+  overflow:hidden;
+  background:linear-gradient(90deg,var(--dusk-soft) 0%,var(--dusk-soft) 100%);
+  border:1px solid var(--line);
+}
+.track-night{
+  position:absolute;top:0;bottom:0;
+  background:var(--night);
+  opacity:.9;
+}
+.bar{
+  position:absolute;
+  height:19px;
+  border-radius:4px;
+  display:flex;
+  align-items:center;
+  padding:0 8px;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.bar-drive{top:10px;background:var(--dusk);color:#fff}
+.bar-event{top:35px;background:var(--amber);color:#fff}
+.bar-label-out{
+  position:absolute;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+  color:var(--ink-2);
+}
+.sunset{
+  position:absolute;top:-6px;bottom:-6px;
+  width:2px;
+  background:var(--gold);
+  border-radius:2px;
+}
+.sunset::after{
+  content:"";
+  position:absolute;top:-4px;left:-3px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--gold);
+}
+.axis{
+  position:relative;
+  height:18px;
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--ink-3);
+}
+.axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.legend{
+  display:flex;flex-wrap:wrap;gap:16px;
+  margin-top:14px;padding-top:14px;
+  border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-2);
+}
+.legend span{display:flex;align-items:center;gap:6px}
+.swatch{width:11px;height:11px;border-radius:3px;flex:none}
+
+/* ---------- numbers + route ---------- */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:26px;
+}
+.stat{background:var(--surface);padding:15px 17px}
+.stat dt{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 5px;
+}
+.stat dd{
+  margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.stat dd small{display:block;font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:0;margin-top:2px}
+
+.routes{display:flex;flex-direction:column;gap:12px;margin-bottom:30px}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.route-day{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);min-width:74px;
+}
+.shield{
+  font-family:var(--mono);font-size:11.5px;font-weight:600;
+  padding:3px 8px;border-radius:4px;
+  background:var(--dusk);color:#fff;letter-spacing:.02em;
+}
+.shield.state{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line-strong)}
+.arrow{color:var(--ink-3);font-size:12px}
+.i95{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:3px 9px;border-radius:999px;margin-left:2px;
+}
+.i95.clear{background:var(--good-soft);color:var(--good)}
+.i95.onit{background:var(--warn-soft);color:var(--warn)}
+
+/* ---------- verdict ---------- */
+.verdict{
+  font-family:var(--serif);
+  font-size:16.5px;
+  line-height:1.6;
+  color:var(--ink-2);
+  border-left:3px solid var(--dusk);
+  padding:2px 0 2px 16px;
+  margin:0 0 34px;
+  max-width:68ch;
+}
+.verdict strong{color:var(--ink);font-weight:600}
+
+/* ---------- lists ---------- */
+.cols{display:grid;grid-template-columns:1fr;gap:34px}
+@media (min-width:860px){.cols{grid-template-columns:1.25fr 1fr;gap:44px}}
+
+.item{
+  border-top:1px solid var(--line);
+  padding:16px 0 15px;
+}
+.item:first-of-type{border-top:1px solid var(--line-strong)}
+.item-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:5px}
+.item-name{font-size:16.5px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+.item-name a{color:var(--ink);text-decoration-color:var(--line-strong)}
+.item-name a:hover{color:var(--dusk);text-decoration-color:currentColor}
+.pill{
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;padding:3px 7px;border-radius:4px;flex:none;
+}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.flat{background:var(--surface-2);color:var(--ink-2)}
+.item-meta{
+  font-family:var(--mono);font-size:12px;color:var(--ink-2);
+  margin:0 0 6px;font-variant-numeric:tabular-nums;
+}
+.item-meta b{color:var(--ink);font-weight:600}
+.item-desc{font-family:var(--serif);font-size:15.5px;line-height:1.55;color:var(--ink-2);margin:0;max-width:62ch}
+.item-note{
+  font-size:13px;color:var(--warn);margin:7px 0 0;
+  display:flex;gap:7px;align-items:flex-start;
+}
+.item-note::before{content:"!";font-family:var(--mono);font-weight:600;flex:none}
+
+.skipbox{
+  margin-top:20px;padding:13px 15px;
+  background:var(--surface-2);border-radius:8px;
+  font-size:13.5px;color:var(--ink-2);line-height:1.5;
+}
+.skipbox b{color:var(--ink);font-weight:600}
+
+/* ---------- calls ---------- */
+.calls{margin-top:40px;border-top:1px solid var(--line-strong);padding-top:26px}
+.calls ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.calls li{display:flex;gap:13px;align-items:baseline;font-size:15px;color:var(--ink-2)}
+.calls .num{
+  font-family:var(--mono);font-size:11px;font-weight:600;color:var(--dusk);
+  flex:none;padding-top:2px;
+}
+.calls b{color:var(--ink);font-weight:600}
+.tel{font-family:var(--mono);font-size:14px;white-space:nowrap}
+
+footer{
+  margin-top:48px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-3);line-height:1.6;max-width:72ch;
+}
+footer p{margin:0 0 9px}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Gainesville FL → Chapel Hill NC · Sat 28–Sun 29 November 2026</p>
+    <h1>Where to stop for the night</h1>
+    <p class="standfirst">Five places to break the drive, with two kids aged 6 and 9. The thing
+      that decides it isn't distance — it's that the sun sets at <strong>5:15pm</strong> and almost
+      every town's Christmas lights don't switch on until December. Pick an option to see how the
+      two days change.</p>
+  </header>
+
+  <h2 class="sec">Choose a stop</h2>
+  <div class="choices" id="choices" role="group" aria-label="Overnight stop options"></div>
+
+  <section class="daycard" aria-labelledby="dayh">
+    <div class="daycard-head">
+      <h3 id="dayh">Saturday, hour by hour</h3>
+      <p id="daysub"></p>
+    </div>
+    <div class="track" id="track"></div>
+    <div class="axis" id="axis"></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--dusk)"></i> Driving</span>
+      <span><i class="swatch" style="background:var(--amber)"></i> Lights &amp; activities</span>
+      <span><i class="swatch" style="background:var(--gold)"></i> Sunset</span>
+      <span><i class="swatch" style="background:var(--night)"></i> Dark</span>
+    </div>
+  </section>
+
+  <dl class="stats" id="stats"></dl>
+
+  <h2 class="sec">The roads you'd take</h2>
+  <div class="routes" id="routes"></div>
+
+  <p class="verdict" id="verdict"></p>
+
+  <div class="cols">
+    <div>
+      <h2 class="sec">What to do</h2>
+      <div id="acts"></div>
+    </div>
+    <div>
+      <h2 class="sec">Where to stay</h2>
+      <div id="stays"></div>
+      <div class="skipbox" id="skip"></div>
+    </div>
+  </div>
+
+  <section class="calls" aria-labelledby="callh">
+    <h2 class="sec" id="callh">Before you book</h2>
+    <ol id="callist"></ol>
+  </section>
+
+  <footer>
+    <p>Drive times are free-flow estimates from OpenStreetMap routing — they don't include
+      Thanksgiving traffic, so treat them as a floor. Saturday assumes leaving Gainesville at
+      9:30am with normal stops for fuel, lunch and bathrooms.</p>
+    <p>Prices marked <em>call first</em> couldn't be confirmed online: hotel booking sites block
+      automated checks, so no price here is a live quote for 28 November. Everything else links to
+      the official source.</p>
+  </footer>
+</div>
+
+<script>
+const T0 = 9*60, T1 = 22.5*60;           /* the bar runs 9:00am to 10:30pm */
+const pct = m => ((m - T0) / (T1 - T0)) * 100;
+const clock = m => {
+  const h24 = Math.floor(m/60), mm = String(m%60).padStart(2,'0');
+  const h = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h}:${mm}${h24 < 12 ? 'am' : 'pm'}`;
+};
+
+const OPTIONS = [
+  {
+    id:'columbia', name:'Columbia', state:'South Carolina',
+    tag:'Recommended', accent:'pick',
+    depart:9*60+30, arrive:16*60+1, sunset:17*60+15,
+    event:[18*60, 22*60], eventName:'Saluda Shoals lights',
+    satDrive:'5 hr 31 min', sunDrive:'3 hr 37 min', sunMiles:'231 miles',
+    detour:'+49 min', share:'60%',
+    routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['I-26','i']],
+    routeSun:[['I-77','i'],['I-85','i'],['I-40','i'],['NC-86','s']],
+    avoidsI95:true,
+    verdict:`<strong>The one I'd pick.</strong> It's the only stop that skips I-95 entirely on
+      Sunday — every other option funnels onto the Fayetteville stretch, which is the worst
+      northbound road in the country on the Sunday of Thanksgiving weekend. It also has
+      <strong>three</strong> different light shows confirmed open that evening, the shortest
+      Sunday drive of any sensible stop, and no home football game to fill the hotels.`,
+    acts:[
+      {name:'Holiday Lights on the River, Saluda Shoals',
+       url:'https://www.icrc.net/event/holiday-lights-river-1',
+       pill:['good','Best value'], meta:'<b>$30 per car</b> · 6–10pm · everything included',
+       desc:`Three miles of animated lights you drive through, then get out for tube slides, a
+         hayride, a train, a laser show along the wetland trail and a letter-to-Santa craft —
+         none of it costs extra. Santa is there this weekend. The 28th is officially a
+         lighter-traffic night.`,
+       note:'Tickets are for that specific night and aren\'t refundable or transferable — buy ahead.'},
+      {name:'Wild Lights at Riverbanks Zoo',
+       url:'https://www.riverbanks.org/events/wild-lights',
+       pill:['warn','Book now'], meta:'<b>$74–97</b> + $3 parking · 5–9pm',
+       desc:`Sixty-plus handmade animal lanterns, snowfall on the hour, a carousel and a train —
+         and some of the real animals are out after dark: koalas, flamingos, sea lions. The nicer
+         experience of the three if the boys still have energy.`,
+       note:'Price changes by date and the 28th is a peak night; the exact price wasn\'t published.'},
+      {name:'Fireflies Holiday Lights, Segra Park',
+       url:'https://www.milb.com/columbia',
+       pill:['flat','Middle option'], meta:'<b>$40</b> · 6–9pm, last entry 8:30',
+       desc:`Two million lights filling a minor-league ballpark, with a train ride for under-12s,
+         s'mores pits, light tunnels and Santa every night from 6:30 to 8:30.`},
+      {name:'Glide & Gather ice rink',
+       url:'https://www.richlandcountyrecreation.com/360/Glide-Gather-Ice-Skating-Rink',
+       pill:['flat','Novelty'], meta:'<b>$50</b> for four, skates included · 11am–9pm',
+       desc:`An outdoor rink set up on the tennis courts at North Springs Park, north-east of the
+         city. An hour on the ice is a genuine novelty for two Florida boys.`},
+      {name:'Lisznyai Christmas House',
+       pill:['good','Free'], meta:'<b>Free</b> · 5:30–10:30pm · 725 Formby Dr',
+       desc:`A private house in Spring Valley that goes completely overboard — a synchronised
+         display you tune your car radio to, on 88.7 FM. Ten minutes, no tickets, no queue.`},
+      {name:'Congaree National Park boardwalk',
+       url:'https://www.nps.gov/cong/planyourvisit/Trail-Information.htm',
+       pill:['flat','Sunday morning'], meta:'<b>Free</b> · trails open all hours',
+       desc:`Worth building Sunday morning around: a flat, railed boardwalk loop through
+         old-growth cypress, rebuilt and reopened in 2026, with no mosquitoes in November. It's
+         30 minutes out of town and unlit, so it only works in daylight.`}
+    ],
+    stays:[
+      {name:'Homewood Suites Greystone', pill:['good','Best fit'], meta:'<b>about $110</b> · 230 Greystone Blvd',
+       desc:`Heated indoor pool, free hot breakfast, a separate bedroom and a full kitchen — and
+         it's 0.7 miles from the zoo lights.`},
+      {name:'Comfort Suites, I-77 Exit 17', pill:['flat','Easiest exit'], meta:'<b>about $123</b> · 1540 Daulton Dr',
+       desc:`Heated indoor pool, free breakfast, free parking, and practically sitting on the
+         on-ramp for Sunday morning. Closest to the ice rink.`},
+      {name:'Home2 Suites Harbison', pill:['flat','Nearest the lights'], meta:'<b>$96–124</b> · I-26 Exit 102A',
+       desc:`Indoor pool and all suites, in the biggest hotel cluster in the city — Dave &
+         Buster's and a dozen dinner options share the parking lot. Nearest to Saluda Shoals.`}
+    ],
+    skip:`<b>Don't book these for the pool:</b> Hilton Columbia Center, Hampton Inn Harbison,
+      Courtyard Downtown and every Holiday Inn Express here have <b>outdoor</b> pools — useless in
+      late November. Hyatt Place has no pool at all, and Embassy Suites Greystone appears to have
+      closed. Avoid Days Inn & Suites on Garners Ferry (2.0 out of 5 on 627 reviews).`,
+    calls:[
+      {who:'Irmo Chapin Recreation', tel:'803-772-1228', why:'Buy the Saluda Shoals ticket for the 28th — they\'re night-specific and non-refundable.'},
+      {who:'Riverbanks Zoo', tel:'803-779-8717', why:'Confirm the Wild Lights price for that night and buy ahead; capacity is limited on peak nights.'},
+      {who:'Your hotel, direct', tel:'', why:'Confirm the pool is indoors and open, and get a real price for 28 November.'}
+    ]
+  },
+  {
+    id:'orangeburg', name:'Orangeburg', state:'South Carolina',
+    tag:'Runner-up · free', accent:'free',
+    depart:9*60+30, arrive:15*60+19, sunset:17*60+16,
+    event:[17*60, 22*60], eventName:'Christmas Walk',
+    satDrive:'4 hr 56 min', sunDrive:'4 hr 04 min', sunMiles:'250 miles',
+    detour:'+41 min', share:'55%',
+    routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['US-301','s']],
+    routeSun:[['I-26','i'],['I-77','i'],['I-85','i'],['I-40','i']],
+    avoidsI95:true, i95note:'if you take the inland route — 15 min slower',
+    verdict:`<strong>The best-shaped day, and it's free.</strong> You arrive with two hours of
+      daylight — more than anywhere else — and the gardens, the swamp boardwalk and the Christmas
+      lights are all in the <strong>same park</strong>, so you park once and never move the car.
+      It can also skip I-95 on Sunday for only 15 extra minutes. The catch is the hotels: no
+      indoor pool could be confirmed anywhere in town.`,
+    acts:[
+      {name:'Children\'s Garden Christmas Walk',
+       url:'https://www.orangeburg.sc.us/edisto-memorial-gardens/childrens-garden-christmas-walk',
+       pill:['good','Free'], meta:'<b>No admission fee</b> · 5–10pm · 218 Riverside Dr SW',
+       desc:`Sixty-plus displays you drive through along Riverside Drive, plus a separate walk-on
+         "Kids' Walk" with forty more, many of them interactive. Genuinely free — there isn't even
+         a donation box. About 300,000 people come each season, so expect company on a Saturday.`,
+       note:'Santa is only there on "select days" and the 28th isn\'t one of the confirmed ones — don\'t promise it.'},
+      {name:'Horne Wetlands boardwalk',
+       url:'https://www.orangeburg.sc.us/edisto-memorial-gardens',
+       pill:['good','Free'], meta:'<b>Free</b> · dawn to dusk · same park',
+       desc:`A 2,600-foot boardwalk out over tupelo-cypress swamp, with a gazebo and a boat dock
+         for spotting wildlife. Flat the whole way, so fine for short legs — and it's a ten-minute
+         walk from where the lights start at 5pm.`},
+      {name:'The rose garden',
+       pill:['flat','Free'], meta:'<b>Free</b> · dawn to dusk',
+       desc:`187 labelled varieties and five thousand plants. The city reckons the blooms carry
+         right through Thanksgiving, so there may still be colour when you walk through.`}
+    ],
+    stays:[
+      {name:'Holiday Inn Express & Suites', pill:['warn','Call first'], meta:'<b>from $109</b> · 118 Sleep Inn Rd',
+       desc:`Two-queen rooms and one-bedroom suites, free hot breakfast, eight minutes from the
+         gardens. Rated 3.7 out of 5.`,
+       note:'Sources disagree on whether its pool is indoors. Ring and ask before you promise the boys a swim.'},
+      {name:'Tru by Hilton Orangeburg', pill:['flat','Best reviewed'], meta:'<b>about $110</b> · 739 Citadel Rd',
+       desc:`The highest-rated hotel in town (4.3 out of 5), with a hot breakfast and a pool table
+         in the lobby — which is its own kind of win on a cold evening. There's no pool at all.`},
+      {name:'Tru by Hilton Santee', pill:['good','Confirmed pool'], meta:'<b>about $107</b> · I-95 Exit 98',
+       desc:`If a swim matters, this is where to sleep: an indoor pool confirmed by two
+         independent sources, free breakfast and two queen beds.`,
+       note:'It\'s a 38-minute drive from the gardens — a long haul at 8:30pm with tired kids.'}
+    ],
+    skip:`<b>Rule out Comfort Inn & Suites at 746 Citadel Rd</b> — 1.0 out of 5, ranked 19th of 23
+      hotels in town, with a review describing a room that "reeks of dog urine." Also skip
+      SpringHill Suites (repeated mould and housekeeping complaints), the Days Inn on St Matthews
+      Rd (a bed-bug report) and both Super 8s. <b>Dinner:</b> House of Pizza on Sims St is open to
+      9:30pm with an ice cream parlour inside; Tokyo Steak & Seafood does hibachi at the table
+      until 10:30. Only two sit-down places in town stay open past 8.`,
+    calls:[
+      {who:'Orangeburg Parks & Recreation', tel:'803-533-6020', why:'Ask about parking, restrooms and whether Santa will be there on the 28th.'},
+      {who:'Holiday Inn Express', tel:'', why:'The one question that decides this stop: is the pool indoors, and open on 28 November?'}
+    ]
+  },
+  {
+    id:'savannah', name:'Savannah', state:'Georgia',
+    tag:'Best free evening', accent:'free',
+    depart:9*60+30, arrive:13*60+50, sunset:17*60+20,
+    event:[17*60, 21*60], eventName:'Boat parade & kickoff',
+    satDrive:'3 hr 17 min', sunDrive:'5 hr 16 min', sunMiles:'335 miles',
+    detour:'+15 min', share:'38%',
+    routeSat:[['I-75','i'],['I-10','i'],['I-95','i']],
+    routeSun:[['I-95','i'],['I-295','i'],['US-1','s'],['US-15-501','s']],
+    avoidsI95:false,
+    verdict:`<strong>The best free evening anywhere on the route — but it's too early in the
+      trip.</strong> At 38% of the way you'd front-load the easy day and leave 335 miles of I-95
+      for Thanksgiving Sunday, and unlike Orangeburg there's no inland way round. If you stay here,
+      be northbound before 10am: holiday return traffic is at its worst from 11am to 8pm.`,
+    acts:[
+      {name:'Lighted Boat Parade & Holiday Kickoff',
+       url:'https://savannahswaterfront.com/event/lighted-boat-parade/',
+       pill:['good','Free'], meta:'<b>Free</b> · kickoff 5–9pm, boats 7–9pm',
+       desc:`Thirty-plus lit-up boats loop <em>twice</em> from Eastern Wharf to the Talmadge Bridge
+         and back — which means you can watch from anywhere along River Street, not just the
+         official spot. Tree lighting, Santa and food trucks from 5pm.`,
+       note:'Only the 7pm boat start is published. Leave before about 7:15 and you risk seeing no boats at all.'},
+      {name:'Plant Riverside Christmas Market',
+       url:'https://www.plantriverside.com/savannah-christmas-market/',
+       pill:['good','Free'], meta:'<b>Free</b> · 11am–9pm · 400 W River St',
+       desc:`The easiest place to spend the evening: a free market right on the parade route, with
+         the free Festival of Trees next door and Generator Hall's full-size dinosaur skeleton and
+         giant geodes — also free — a few steps away. Dinner options are right here too.`},
+      {name:'December Nights & Holiday Lights',
+       url:'https://coastalbg.uga.edu/2026/10/december-nights-and-holiday-lights-2026/',
+       pill:['flat','Opening night'], meta:'<b>$60</b> for four · timed entry 5:30–8pm',
+       desc:`Opening night of the season at the Coastal Georgia Botanical Gardens, about an hour's
+         walk through the lights. Twelve miles west of downtown, and you must book a time slot
+         online in advance.`},
+      {name:'Savannah Belles Ferry',
+       url:'https://www.catchacat.org/routes/savannah-belles-ferry/',
+       pill:['good','Free'], meta:'<b>Free</b> · every 10 min, 7am–10pm',
+       desc:`A real boat ride across the Savannah River, running every ten minutes, for nothing at
+         all. Probably the best thirty minutes you can give a six-year-old downtown.`},
+      {name:'Laurel Hill Wildlife Drive',
+       url:'https://www.fws.gov/refuge/savannah',
+       pill:['flat','Sunday morning'], meta:'<b>Free</b> · sunrise to sunset · no opening hour',
+       desc:`The answer to a long Sunday: a 4.5-mile wildlife drive through the Savannah refuge,
+         free, with no gate time to wait for, sitting right by the I-95 exits you'd sleep at. Forty
+         minutes, alligators and wading birds, then straight onto the interstate.`}
+    ],
+    stays:[
+      {name:'Drury Plaza Pooler', pill:['good','Best fit'], meta:'<b>500 E US-80</b> · 20 min from downtown',
+       desc:`Indoor pool and whirlpool, two queen beds, free parking, breakfast until 10am — and
+         free hot food and drinks every evening from 5:30 to 7. Dinner, breakfast and parking all
+         cost nothing, which is hard to beat.`},
+      {name:'Holiday Inn Express Hardeeville', pill:['flat','Shortens Sunday'], meta:'<b>from $129</b> · I-95 Exit 8',
+       desc:`Heated indoor pool and free hot breakfast, twenty minutes north of the city and past
+         the Talmadge Bridge — so it takes that bit off Sunday. It's the only indoor pool at
+         that exit; the Fairfield and Hampton next door are both summer-only outdoor.`}
+    ],
+    skip:`<b>Parking, carefully:</b> use the Bryan St, State St, Robinson or Liberty St garages at
+      <b>$5 flat</b> on weekends, or a street meter, which is free after 8pm. The Eastern Wharf
+      garage is $10 — and the city has a $25 special-event rate with no published list saying
+      whether the 28th triggers it. <b>Dinner:</b> Eastern Wharf has no family restaurant at all,
+      only bars and a gelato counter. Spanky's at 317 E River St ("home of the original chicken
+      finger") is right on the parade route and open to 11pm, but takes no reservations.`,
+    calls:[
+      {who:'Drury Plaza Pooler', tel:'', why:'Get a price for 28 November — no booking site would return one.'},
+      {who:'Note', tel:'', why:'The Hampton Inn at I-95 Exit 94 is often listed with an indoor pool; that couldn\'t be verified. Ring before relying on it.'}
+    ]
+  },
+  {
+    id:'charleston', name:'Charleston', state:'South Carolina',
+    tag:'Best light show', accent:'',
+    depart:9*60+30, arrive:15*60+50, sunset:17*60+14,
+    event:[17*60+30, 22*60], eventName:'Festival of Lights',
+    satDrive:'5 hr 00 min', sunDrive:'4 hr 42 min', sunMiles:'294 miles',
+    detour:'+1 hr 22 min', share:'52%',
+    routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['US-17','s']],
+    routeSun:[['I-95','i'],['I-295','i'],['US-1','s'],['US-15-501','s']],
+    avoidsI95:false,
+    verdict:`<strong>The best light show on the route, at the most even halfway point — for
+      nearly double the extra driving you wanted.</strong> An hour and twenty minutes off the
+      direct route is a lot. It's worth it only if you also spend Sunday morning on the USS
+      Yorktown, which is the part the boys would still be talking about next year.`,
+    acts:[
+      {name:'Holiday Festival of Lights, James Island',
+       url:'https://www.ccprc.com/holiday-festival-of-lights/',
+       pill:['good','Best on route'], meta:'<b>$25 per car</b> online ($35 at the gate) · 5:30–10pm',
+       desc:`Three miles of drive-through lights with 750 displays, and you can loop as many times
+         as you like on one ticket — the best bit happens with the kids strapped in and warm. The
+         village has a train and carousel from 6pm, a climbing wall, a 50-ton sand sculpture and
+         free marshmallow fire pits.`,
+       note:'Eat dinner before you go in — it sells snacks only and outside food isn\'t allowed. Enter from Folly Rd, not the way your GPS suggests.'},
+      {name:'USS Yorktown, Patriots Point',
+       url:'https://www.patriotspoint.org/visit/',
+       pill:['flat','Sunday morning'], meta:'<b>$102</b> + about $17 parking · Sun 10am–5pm',
+       desc:`Walk through a real aircraft carrier: the flight deck, the bridges, the hangar bays, an
+         Apollo capsule. There's a lift serving three levels and a free golf-cart shuttle from the
+         ticket office, so the six-year-old will be fine. Allow two to three hours.`,
+       note:'Tickets aren\'t date-specific and last a year, so buy now at no risk. There\'s no submarine any more, and the destroyer Laffey isn\'t step-free.'},
+      {name:'Aquarium Aglow',
+       url:'https://scaquarium.org/aquarium-aglow',
+       pill:['flat','Indoor option'], meta:'<b>$110</b> at the 6:30pm slot · open to 9pm',
+       desc:`The whole aquarium after dark, strung with light installations, with a diver dressed as
+         Santa in the big ocean tank every night. Warm and indoors — but four times the price of
+         the lights.`}
+    ],
+    stays:[
+      {name:'Charleston Harbor Resort', pill:['good','Walk to the ship'], meta:'<b>20 Patriots Point Rd</b> · Mount Pleasant',
+       desc:`Half a mile from the Yorktown, so Sunday needs no driving and no parking fee. Its Beach
+         Club "Family Parlor Room" is 750 sq ft with a king and a separate room with two twin beds
+         — the best family layout found anywhere on this trip. Breakfast on site from 7am.`,
+       note:'Its "year-round heated" pool is open-air, not indoors. Fine for half an hour; not a swim.'},
+      {name:'Embassy Suites Airport', pill:['warn','Call first'], meta:'<b>5055 International Blvd</b> · North Charleston',
+       desc:`Two-room suites that genuinely sleep four, free cooked-to-order breakfast, $10 parking,
+         and sitting on the I-26 junction. Eighteen minutes from the Yorktown.`,
+       note:'Whether its pool is indoors could not be confirmed at all — Hilton blocks automated checks. One call settles it.'}
+    ],
+    skip:`<b>Every indoor pool in the Charleston area is in North Charleston or Summerville</b> —
+      there are none downtown and none in Mount Pleasant. Don't bother moving out to Summerville to
+      shorten Sunday: with the Yorktown in the plan it costs an extra 70 minutes of Saturday-evening
+      driving and half an hour of Sunday backtracking. <b>Dinner near the lights:</b> Martin's
+      Bar-B-Que on Highland Ave is closest and open to 10pm; Melvin's on Folly Rd is counter
+      service, so it's the fastest with tired kids.`,
+    calls:[
+      {who:'Embassy Suites Charleston Airport', tel:'843-747-1882', why:'Is the pool indoors? The whole hotel choice rests on it.'},
+      {who:'Charleston County Parks', tel:'843-795-4386', why:'Buy Festival of Lights tickets online at $25 rather than $35 at the gate.'},
+      {who:'Patriots Point', tel:'', why:'Buy tickets whenever — they aren\'t tied to a date and last a year.'}
+    ]
+  },
+  {
+    id:'pines', name:'Southern Pines', state:'North Carolina',
+    tag:'Shortest Sunday', accent:'',
+    depart:9*60+30, arrive:18*60+9, sunset:17*60+9,
+    event:[17*60, 22*60], eventName:'Garden of Lights',
+    satDrive:'7 hr 19 min', sunDrive:'1 hr 09 min', sunMiles:'72 miles',
+    detour:'+9 min', share:'86%',
+    routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['US-1','s']],
+    routeSun:[['US-15-501','s'],['NC-87','s']],
+    avoidsI95:true,
+    verdict:`<strong>The best single evening, and barely a halfway stop at all.</strong> You'd drive
+      86% of the trip on Saturday and arrive at 6:09pm — after dark, with two tired boys. What you
+      get for it is a brand-new million-light garden walk and a town tree lighting on the same
+      evening, and a Sunday that's over in an hour. Worth knowing about; not what you asked for.`,
+    acts:[
+      {name:'Sandhills Garden of Lights',
+       url:'https://www.sandhills.edu/horticultural-gardens/garden-of-lights.html',
+       pill:['warn','Call for price'], meta:'<b>Price not published</b> · 5–10pm · Pinehurst',
+       desc:`Brand new this year: over a million lights, interactive glowing orbs and a short flat
+         walk-through ending in oversized flowers and a giant mushroom. Santa is there this
+         weekend, and parking is free with shuttles from the campus.`,
+       note:'Pricing is demand-based and published nowhere. It\'s timed entry in its first year on a holiday Saturday — book now or risk a sellout.'},
+      {name:'Downtown tree lighting',
+       pill:['warn','Confirm it'], meta:'<b>Free</b> · Santa 4:30pm, tree lit 6:15pm',
+       desc:`Right in the middle of town the same evening, at the Sunrise Theater green on NW Broad
+         St — Santa arrives by fire truck, then the tree goes on. It sequences neatly into the
+         garden lights afterwards.`,
+       note:'Three local sources give this date but it\'s missing from the town\'s own calendar. Check before counting on it.'},
+      {name:'Weymouth Woods',
+       url:'https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve',
+       pill:['flat','Sunday morning'], meta:'<b>Free</b> · park closes 6pm in November',
+       desc:`A longleaf pine preserve with easy sandy trails, good for forty-five minutes on Sunday
+         morning before the short hop home.`}
+    ],
+    stays:[
+      {name:'Hampton Inn & Suites Southern Pines', pill:['flat','Indoor pool'], meta:'<b>$120–235</b> · Aberdeen',
+       desc:`Indoor pool and free hot breakfast, a few minutes from both the tree lighting and the
+         garden lights.`},
+      {name:'SpringHill Suites Pinehurst', pill:['flat','Family rooms'], meta:'<b>from $149</b>',
+       desc:`All-suite rooms with space for four. Pinehurst is golf-resort country, so this is the
+         priciest area of the five.`}
+    ],
+    skip:`<b>Check the pool before booking a cheaper option</b> — the budget hotels nearby appear to
+      have outdoor pools. <b>Dinner:</b> Broad Street is walkable and The Ice Cream Parlor does
+      burgers, hot dogs and hand-dipped ice cream at an old-fashioned soda fountain, which is the
+      obvious call. Shops will be shut by the time you arrive.`,
+    calls:[
+      {who:'Sandhills Garden of Lights', tel:'910-695-3884', why:'Get the price and book a time slot — first year, holiday Saturday, timed entry.'},
+      {who:'Southern Pines Business Association', tel:'', why:'Confirm the tree lighting is actually on the 28th.'}
+    ]
+  }
+];
+
+/* ---------- render ---------- */
+const $ = id => document.getElementById(id);
+let current = OPTIONS[0];
+
+function buildChoices(){
+  $('choices').innerHTML = OPTIONS.map(o => `
+    <button class="choice" type="button" role="button" aria-pressed="${o===current}"
+            data-id="${o.id}" data-accent="${o.accent}">
+      <span class="choice-tag">${o.tag}</span>
+      <span class="choice-name">${o.name}</span>
+      <span class="choice-state">${o.state}</span>
+      <span class="choice-legs">
+        <span><i>Saturday</i><b>${o.satDrive.replace(' hr ','h ').replace(' min','m')}</b></span>
+        <span><i>Sunday</i><b>${o.sunDrive.replace(' hr ','h ').replace(' min','m')}</b></span>
+      </span>
+    </button>`).join('');
+  $('choices').querySelectorAll('.choice').forEach(b =>
+    b.addEventListener('click', () => select(b.dataset.id)));
+}
+
+function drawDay(o){
+  const t = $('track');
+  const driveL = pct(o.depart), driveR = pct(o.arrive);
+  const evL = pct(o.event[0]), evR = pct(o.event[1]);
+  const sun = pct(o.sunset);
+  const wide = (driveR - driveL) > 16;
+
+  t.innerHTML = `
+    <div class="track-bg">
+      <div class="track-night" style="left:${sun}%;right:0"></div>
+    </div>
+    <div class="bar bar-drive" style="left:${driveL}%;width:${driveR-driveL}%">
+      ${wide ? 'Driving &nbsp;·&nbsp; ' + o.satDrive : ''}
+    </div>
+    ${wide ? '' : `<div class="bar-label-out" style="left:${driveL}%;top:13px">${o.satDrive}</div>`}
+    <div class="bar bar-event" style="left:${evL}%;width:${evR-evL}%">${o.eventName}</div>
+    <div class="sunset" style="left:${sun}%" title="Sunset ${clock(o.sunset)}"></div>`;
+
+  const marks = [
+    {m:o.depart, txt:'Leave ' + clock(o.depart)},
+    {m:o.arrive, txt:'Arrive ' + clock(o.arrive)},
+    {m:o.sunset, txt:'Sunset ' + clock(o.sunset)}
+  ];
+  $('axis').innerHTML = marks.map(k =>
+    `<span style="left:${Math.min(96,Math.max(4,pct(k.m)))}%">${k.txt}</span>`).join('');
+
+  const light = o.sunset - o.arrive;
+  $('daysub').textContent = light > 0
+    ? `${Math.floor(light/60)} hr ${String(light%60).padStart(2,'0')} min of daylight after you arrive`
+    : `You arrive ${Math.abs(light)} minutes after dark`;
+}
+
+function drawStats(o){
+  $('stats').innerHTML = `
+    <div class="stat"><dt>Saturday driving</dt><dd>${o.satDrive}<small>leave 9:30am, arrive ${clock(o.arrive)}</small></dd></div>
+    <div class="stat"><dt>Sunday driving</dt><dd>${o.sunDrive}<small>${o.sunMiles} home</small></dd></div>
+    <div class="stat"><dt>Extra driving</dt><dd>${o.detour}<small>vs. the direct route</small></dd></div>
+    <div class="stat"><dt>Done by Saturday night</dt><dd>${o.share}<small>of the whole trip</small></dd></div>`;
+}
+
+function drawRoutes(o){
+  const chain = arr => arr.map(([n,k]) =>
+    `<span class="shield ${k==='s'?'state':''}">${n}</span>`).join('<span class="arrow">→</span>');
+  const flag = o.avoidsI95
+    ? `<span class="i95 clear">Skips I-95${o.i95note ? ' — ' + o.i95note : ''}</span>`
+    : `<span class="i95 onit">Uses I-95 — heaviest traffic day</span>`;
+  $('routes').innerHTML = `
+    <div class="route"><span class="route-day">Saturday</span>${chain(o.routeSat)}</div>
+    <div class="route"><span class="route-day">Sunday</span>${chain(o.routeSun)}${flag}</div>`;
+}
+
+function itemHTML(it){
+  const nm = it.url
+    ? `<a href="${it.url}" target="_blank" rel="noopener">${it.name}</a>`
+    : it.name;
+  return `<div class="item">
+    <div class="item-top">
+      <span class="item-name">${nm}</span>
+      ${it.pill ? `<span class="pill ${it.pill[0]}">${it.pill[1]}</span>` : ''}
+    </div>
+    ${it.meta ? `<p class="item-meta">${it.meta}</p>` : ''}
+    <p class="item-desc">${it.desc}</p>
+    ${it.note ? `<p class="item-note">${it.note}</p>` : ''}
+  </div>`;
+}
+
+function select(id){
+  current = OPTIONS.find(o => o.id === id) || OPTIONS[0];
+  $('choices').querySelectorAll('.choice').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.id === current.id));
+  drawDay(current);
+  drawStats(current);
+  drawRoutes(current);
+  $('verdict').innerHTML = current.verdict;
+  $('acts').innerHTML = current.acts.map(itemHTML).join('');
+  $('stays').innerHTML = current.stays.map(itemHTML).join('');
+  $('skip').innerHTML = current.skip;
+  $('callist').innerHTML = current.calls.map((c,i) => `
+    <li><span class="num">${String(i+1).padStart(2,'0')}</span>
+      <span><b>${c.who}</b>${c.tel ? ` <span class="tel">${c.tel}</span>` : ''} — ${c.why}</span></li>`).join('');
+}
+
+buildChoices();
+select(OPTIONS[0].id);
+</script>
