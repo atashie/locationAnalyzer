@@ -52,7 +52,9 @@ Four specific traps:
   entry, a ferry, sunset.
 - **Options that differ by one swapped stop.** Six variations on one plan are not a choice.
   Options differ *in kind*: fewest stops, most time outdoors, cheapest, earliest arrival, one
-  big destination versus several small ones.
+  big destination versus several small ones — and, where the geography allows it, **a different
+  road entirely** (rule 6). Seven options that are all the same corridor plus excursions is one
+  option with seven footnotes.
 
 A single recommendation is right only when the traveller asked which one to take, or when the
 measurements genuinely collapse the field — and then say *that*, showing the numbers that
@@ -77,8 +79,9 @@ treat it as a signal rather than a proven effect — but the mechanism is not su
 verification-status rule gave the model a way to *sound* careful, and it stopped doing the thing
 that made it careful. **Status says how sure you are; the link says why. Ship both.**
 
-Keep **corridor experiments separate from stop itineraries**. A route forced through three
-cities cost +1:55; stopping in the middle city cost +1:22. Quoting one as the other shipped.
+Keep **corridor experiments separate from stop itineraries** (rule 6 measures both). A route
+forced through three cities cost +1:55; stopping in the middle city cost +1:22. Quoting one as
+the other shipped.
 
 ### 3. Change a leg, recompute the whole row
 
@@ -145,14 +148,41 @@ Two things make this harder than it looks:
 Where the arrival lands outside the hours, the fix is to move the stop, change the departure
 hour, or say plainly what the stop is for. Never to leave the collision for the reader to spot.
 
-### 6. Sweep off-corridor before you accept the corridor
+### 6. Sweep alternative corridors, then off-corridor stops
 
-Enumerate candidates **off** the obvious road and price each one's detour against the direct
-route. Assuming the corridor is the most common structural miss: a baseline considered four
-towns on one interstate and never priced a detour at all. In a real case the winning stop sat
-**+49 minutes off the fastest line** — unreachable by corridor-only thinking.
+Two sweeps, in this order. Skipping the first is the deeper miss, because it silently fixes
+which stops are even candidates.
 
-A dead-end spur costs its detour **twice**. Route to it and back before judging.
+**The corridors.** Measure each plausible long-distance route *bare* — no stops, forced through
+its defining cities — before shortlisting anything. On one 540-mile drive: coastal 8h41 (the
+direct route), fall line +40 min, Atlanta +1h00, Jacksonville +1h08. Only then do you know what
+a corridor costs as a corridor.
+
+> Worked example — the failure this half exists to stop. A comparison shipped with seven
+> options that were all the same road plus small excursions. The corridor alternatives *had*
+> been measured and were then dismissed in prose — "the stops over there are thinner" — which
+> was an assertion, never a measurement. The traveller pushed back. Measured properly, the fall
+> line carried a major zoo and a free national monument for **the same +52 min** as the best
+> coastal option.
+
+**Then the stops, per corridor.** A stop's detour is meaningless without naming the corridor it
+is measured against. The same zoo was **+46 min** off the coastal line and essentially **free**
+on the fall line. A shortlist scored against one corridor is not a shortlist for another.
+
+A dead-end spur costs its detour **twice**. Route to it and back before judging: one national
+park looked tempting on both corridors and measured **+2h45** either way.
+
+**Check what road each option actually uses.** Naming a corridor from the cities you picked is
+guesswork. Reading `maneuvers[].street_names` caught an option labelled "piedmont via Atlanta"
+that the router had sent down I-77 and I-20 instead — the same corridor as the fall line, 6
+miles apart. A genuine Atlanta route needed Atlanta itself as a waypoint.
+
+**Corridor choice can set the departure time.** One corridor's first stop was a 24-hour fuel
+station beside an hours-free outdoor curiosity, which rewards a 04:45 start; the others opened
+at 09:00, so the same early start just means waiting in a car park. Those options had to leave
+33 and 120 minutes later, and every minute landed on the far end after sunset. Give each option
+its own departure hour or the comparison is rigged toward whichever corridor suits the one you
+picked.
 
 ### 7. Publish what you could not verify
 
@@ -177,10 +207,12 @@ What the page owes the reader:
   option stacked down the page.
 - **A map that redraws per option** — to *orient*, not to compare. Draw every option at once,
   unselected de-emphasised and selected lifted, with markers on the selected option's stops.
-  But expect the routes to nearly coincide: options on one corridor use the same roads, and on a
-  real five-option drive two were **geometrically identical** and the widest pairwise separation
-  was 0.5°. Measure the separation before you design around it, and when it is small, say so in
-  the legend rather than letting five overlapping lines imply a divergence that is not there.
+  **Measure the separation before designing around it** — it decides what the map is for. Within
+  one corridor, options nearly coincide: on one drive two were *geometrically identical* and the
+  widest pairwise gap was 0.5°, so the map could only orient, and the legend had to say so. Add
+  genuinely alternative corridors and the same measurement came back at **2.7° — about 185
+  miles** — and the map became the clearest thing on the page. Same test, opposite conclusion;
+  run it, don't assume either way.
 - **Something that carries the comparison the map cannot.** When the routes coincide, what
   differs is how the day is carved up. One **leg-rhythm strip** per option — all on a shared time
   axis, driving in one tone and stopped in another, labelled with arrival and *longest single
@@ -243,7 +275,9 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 ## Tools
 
 - `itinerary_compare.py` — several named itineraries → measured legs, detour vs direct, derived
-  arrival clocks, and simplified geometry for the map, all from one engine. `--help` for usage.
+  arrival clocks, per-facility opening-hours verdicts, and simplified geometry for the map, all
+  from one engine. Options may each carry their own `depart_h`, which is what makes comparing
+  corridors fair. `--help` for usage.
 - `corridor_scan.py` — candidates → detour, share, arrival vs sunset, in one instrument. Use it
   to shortlist stops, then `itinerary_compare.py` to assemble options from them.
 - `research-brief.md` — the per-region brief that forces the three-state status back out.
@@ -268,6 +302,10 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - A time in a table you cannot name the source of
 - A route variant changed, and the detour column untouched
 - A detour quoted as the sum of its stops' individual detours
+- A corridor alternative dismissed in prose rather than measured
+- A stop's detour quoted without naming the corridor it was measured against
+- A corridor named from the cities you chose rather than the roads the router returned
+- Every option sharing one departure time when their first stops open hours apart
 - An arrival time and an opening time printed side by side without being compared
 - One set of hours attached to a site that has several facilities on different schedules
 - Two engines, one table

@@ -430,8 +430,14 @@ Example:
             dwells.append(float(dwell_over.get(s, stops[s].get("dwell_min", 0))))
             cost += float(stops[s].get("cost_usd", 0) or 0)
 
+        # Corridors differ in what they offer at dawn: one built on 24 h fuel and
+        # outdoor space rewards a 04:45 start, one built on ticketed attractions that
+        # open at 09:00 punishes it. Comparing them fairly means letting each option
+        # state its own departure.
+        depart = float(opt.get("depart_h", a.depart))
+
         # DERIVED: departure + measured legs + spec dwell times.
-        t = a.depart
+        t = depart
         schedule = []
         for i, s in enumerate(seq_keys):
             t += legs[i] / 3600.0
@@ -457,7 +463,9 @@ Example:
             "detour_s": detour,
             "dwell_total_min": sum(dwells),
             "cost_usd": round(cost, 2),
-            "depart_h": a.depart,
+            "depart_h": depart,
+            "depart": clock(depart),
+            "corridor": opt.get("corridor", ""),
             "arrive_h": round(arrive_h, 4),
             "arrive": clock(arrive_h),
             "elapsed_s": total + sum(dwells) * 60.0,
@@ -479,14 +487,16 @@ Example:
             "min_lon": min(lons), "max_lon": max(lons)}
 
     w = max(len(v["label"]) for v in results.values())
-    hdr = (f"{'option':<{w}}  {'drive':>6} {'added':>8} {'miles':>6} {'stops':>5} "
-           f"{'dwell':>6} {'elapsed':>8} {'cost':>7} {'arrive':>7}")
+    cw = max([len(v["corridor"]) for v in results.values()] + [8])
+    hdr = (f"{'option':<{w}}  {'corridor':<{cw}} {'leave':>5} {'drive':>6} {'added':>8} "
+           f"{'miles':>6} {'stops':>5} {'dwell':>6} {'elapsed':>8} {'cost':>7} {'arrive':>7}")
     if sunset_h is not None:
         hdr += f"  {'sunset':>7}"
     print(hdr)
     print("-" * len(hdr))
     for key, v in sorted(results.items(), key=lambda kv: kv[1]["total_s"]):
-        line = (f"{v['label']:<{w}}  {hm(v['total_s']):>6} {plus_min(v['detour_s']):>8} "
+        line = (f"{v['label']:<{w}}  {v['corridor']:<{cw}} {v['depart']:>5} "
+                f"{hm(v['total_s']):>6} {plus_min(v['detour_s']):>8} "
                 f"{v['miles']:>6.0f} {len(v['stops']):>5} {int(v['dwell_total_min']):>5}m "
                 f"{hm(v['elapsed_s']):>8} {('$' + str(int(v['cost_usd']))) if v['cost_usd'] else '-':>7} "
                 f"{v['arrive']:>7}")
@@ -545,6 +555,7 @@ Example:
     print("  drive/added/miles/legs       MEASURED   routed, one engine, free-flow")
     print("                                          (no traffic model -- quote as a floor)")
     print("  elapsed/arrive               DERIVED    departure hour + measured legs + spec dwells")
+    print("  leave                        GIVEN      per-option depart_h, else --depart")
     print("  cost                         DERIVED    sum of stops[].cost_usd as given in the spec")
     if a.date:
         print("  sunset                       CALCULATED NOAA solar position, approximate")

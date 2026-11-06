@@ -168,3 +168,24 @@ for cls in ("standing", "confirmed", "unknown"):
 
 Flag the collisions on the switcher too — an option whose lunch stop opens half an hour after you
 reach it should say so before the reader selects it, not after.
+
+## Grouping by corridor
+
+Once the options span genuinely different roads, the flat switcher stops working: a reader
+scanning seven buttons cannot see that three are the same road and one goes via Atlanta. Group
+them.
+
+- One column per corridor, headed by its name and the roads it actually uses
+  (`I-77, I-20, Fall Line Fwy, I-75`) — read from `maneuvers[].street_names`, not from the cities
+  you chose. A corridor label guessed from waypoints was wrong once in three.
+- Colour the routes **by corridor, not by option**, and tint the group heading to match. Within a
+  corridor the lines overlap anyway, so per-option colours buy nothing and spend the palette.
+- Put each option's **departure** in its button alongside the arrival, because once corridors set
+  their own departure hours "arrive 17:36" is meaningless without "leave 05:18".
+- Add a **longest leg** column to the totals table. With corridors in play it varies from 2:08 to
+  4:34, and it is the number that decides whether a plan survives a small child — more decisive
+  than total drive time, which barely moves.
+
+On the rhythm strips, anchor every bar to the *earliest* departure across all options and draw
+the waiting time as a hatched lead-in. Otherwise an option that leaves two hours later looks
+shorter than it is, which is the one thing the strips exist to prevent.
