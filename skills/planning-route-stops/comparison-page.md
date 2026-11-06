@@ -7,17 +7,33 @@ hypotheticals.
 ## Generate the page, don't hand-write it
 
 Write a small generator that reads `itinerary_compare.py --out` JSON and emits the HTML. The
-point is not tidiness — it is **rule 3 enforced by construction**. A hand-written page lets you
-retype a figure, and the moment you change a dwell time or reroute an option, every clock below
-it is stale. A generator cannot drift.
+point is not tidiness — it is **rule 3 enforced by construction** for everything the generator
+actually derives. A hand-written page lets you retype a figure, and the moment you change a dwell
+time or reroute an option, every clock below it is stale.
 
 ```
 itinerary_compare.py --spec trip.json --out measured.json   # measure
 build_page.py                                               # emit HTML from measured.json
 ```
 
-One real consequence: when a dwell time changed late, the page's arrival times, the elapsed
-totals, the rhythm bars and the table all moved together. Nothing needed checking.
+**A generator does not protect the prose.** An adversarial review of one of these pages found
+**14 numeric literals in the generator's own copy** — corridor times, two leg durations, a
+"+16 min" comparison, two arrival clocks — all of which would survive a reroute unchanged. The
+structured tables were live; the sentences around them were not, which is worse than obvious
+staleness because they read as derived.
+
+Two rules, then:
+
+- **Derive every number that appears in prose**, from `measured.json` or from a small
+  `experiments.json` holding one-off measurements (corridor baselines, rejected candidates). If a
+  figure cannot be derived, it does not belong in a sentence.
+- **Grep your own generator before publishing**: `grep -n '"n">[0-9+]' build_page.py` and check
+  nothing comes back that is not an f-string substitution.
+
+Doing this caught two further errors that had survived every earlier pass: a corridor quoted as
+"+1h00" was +1h01, and the direct drive quoted as 8h41 was 8h42 — because the duration helpers
+truncated seconds instead of rounding to the nearest minute, and a small negative rendered as
+"-1h59".
 
 ## Structure that worked
 

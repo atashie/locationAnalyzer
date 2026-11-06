@@ -5,9 +5,15 @@ Artifact pages block every external fetch, so tiles can never load. Everything h
 fetched once at build time, simplified hard, and written into basemap.json for the page
 generator to inline as SVG path data.
 
-Point budgets matter: the raw Census state polygons are 193k points. At this map's scale
-(~7 deg wide rendered under 900 px) anything finer than ~1.5 km is invisible, so RDP takes
-the whole basemap to a couple of thousand points -- about 1% of the raw data.
+Point budgets matter: the raw Census state polygons alone are 193k points. Clipping to the
+view, stitching, dropping sub-2-mile stubs and RDP together take the whole basemap to about
+a thousand points -- roughly 0.4% of the combined input. RDP is only part of that reduction;
+the script prints raw and kept counts for each layer so the split stays visible.
+
+Tolerances are in degrees of latitude with longitude scaled by cos(mean lat), so eps 0.02
+is about 1.9-2.2 km depending on orientation. That is coarse enough to move a state border
+a few pixels at this scale, which is acceptable for orientation and would not be for
+anything measured off the map.
 """
 import json, math, io, os, sys, time, urllib.request, urllib.parse
 
@@ -20,8 +26,14 @@ KEEP_STATES = {"North Carolina", "South Carolina", "Georgia", "Florida",
                "Tennessee", "Alabama", "Virginia"}
 
 
-def rdp(points, eps):
-    """Iterative Ramer-Douglas-Peucker; recursion blows the stack on long rings."""
+def rdp(points, eps, kx=1.0):
+    """Iterative Ramer-Douglas-Peucker; recursion blows the stack on long rings.
+
+    Distance is to the replacement *segment*, clamped, not to the infinite line through
+    its endpoints -- otherwise a path that doubles back has its turning point measured as
+    zero distance and dropped at any epsilon. kx scales longitude so eps is near-isotropic
+    (at 33 N, leaving it 1.0 exaggerates east-west distance by 19%).
+    """
     if len(points) < 3:
         return list(points)
     keep = [False] * len(points)
@@ -31,15 +43,19 @@ def rdp(points, eps):
         lo, hi = stack.pop()
         if hi <= lo + 1:
             continue
-        ax, ay = points[lo]
-        bx, by = points[hi]
+        ay, ax = points[lo][0], points[lo][1] * kx
+        by, bx = points[hi][0], points[hi][1] * kx
         dx, dy = bx - ax, by - ay
-        norm = math.hypot(dx, dy)
+        den = dx * dx + dy * dy
         worst_d, worst_i = -1.0, -1
         for i in range(lo + 1, hi):
-            px, py = points[i]
-            d = (math.hypot(px - ax, py - ay) if norm == 0.0
-                 else abs(dy * (px - ax) - dx * (py - ay)) / norm)
+            py, px = points[i][0], points[i][1] * kx
+            if den == 0.0:
+                d = math.hypot(px - ax, py - ay)
+            else:
+                t = ((px - ax) * dx + (py - ay) * dy) / den
+                t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)
+                d = math.hypot(px - (ax + t * dx), py - (ay + t * dy))
             if d > worst_d:
                 worst_d, worst_i = d, i
         if worst_d > eps:
@@ -49,26 +65,69 @@ def rdp(points, eps):
     return [p for p, k in zip(points, keep) if k]
 
 
+KX = math.cos(math.radians((VIEW["min_lat"] + VIEW["max_lat"]) / 2))
+MIN_RUN_MI = 2.0        # shorter than this is a ramp stub, not a road worth drawing
+
+
+def run_len_mi(pts):
+    return sum(math.hypot(b[0] - a[0], (b[1] - a[1]) * KX) * 69.0
+               for a, b in zip(pts, pts[1:]))
+
+
+def _inside(p, pad):
+    return (VIEW["min_lat"] - pad <= p[0] <= VIEW["max_lat"] + pad
+            and VIEW["min_lon"] - pad <= p[1] <= VIEW["max_lon"] + pad)
+
+
+def _crosses(a, b, pad):
+    """Does segment a-b intersect the padded view box at all? (Liang-Barsky slab test.)
+
+    Needed because a segment can span the whole view with *both* endpoints outside it --
+    a simplified state outline does exactly that -- and an endpoint-only test drops it,
+    leaving a visible gap in the border.
+    """
+    y0, x0 = a
+    y1, x1 = b
+    dy, dx = y1 - y0, x1 - x0
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, x0 - (VIEW["min_lon"] - pad)), (dx, (VIEW["max_lon"] + pad) - x0),
+                 (-dy, y0 - (VIEW["min_lat"] - pad)), (dy, (VIEW["max_lat"] + pad) - y0)):
+        if p == 0.0:
+            if q < 0.0:
+                return False
+            continue
+        r = q / p
+        if p < 0.0:
+            if r > t1:
+                return False
+            t0 = max(t0, r)
+        else:
+            if r < t0:
+                return False
+            t1 = min(t1, r)
+    return t0 <= t1
+
+
 def clip_runs(ring, pad=0.6):
-    """Split a ring into the runs that fall inside the padded view.
+    """Split a polyline into the runs that touch the padded view.
 
     Dropping off-view points outright would draw a false straight line across the map;
-    splitting into runs keeps each visible stretch honest and discards the rest.
+    splitting into runs keeps each visible stretch honest and discards the rest. A span
+    whose endpoints are both outside but which crosses the view is kept whole.
     """
-    inside = [(VIEW["min_lat"] - pad <= a <= VIEW["max_lat"] + pad
-               and VIEW["min_lon"] - pad <= b <= VIEW["max_lon"] + pad)
-              for a, b in ring]
+    if len(ring) < 2:
+        return []
+    inside = [_inside(p, pad) for p in ring]
     runs, cur = [], []
-    for i, p in enumerate(ring):
-        if inside[i]:
-            if not cur and i > 0:
-                cur.append(ring[i - 1])      # one point of lead-in, so the run reaches the edge
-            cur.append(p)
-        else:
-            if cur:
-                cur.append(p)                # and one of lead-out
-                runs.append(cur)
-                cur = []
+    for i in range(len(ring) - 1):
+        a, b = ring[i], ring[i + 1]
+        if inside[i] or inside[i + 1] or _crosses(a, b, pad):
+            if not cur:
+                cur.append(a)
+            cur.append(b)
+        elif cur:
+            runs.append(cur)
+            cur = []
     if cur:
         runs.append(cur)
     return [r for r in runs if len(r) >= 2]
@@ -111,7 +170,7 @@ def states(eps):
                 pts = [(la, lo) for lo, la in ring]   # geojson is lon,lat
                 raw_n += len(pts)
                 for run in clip_runs(pts):
-                    s = rdp(run, eps)
+                    s = rdp(run, eps, KX)
                     if len(s) >= 2:
                         kept_n += len(s)
                         out.append({"state": nm,
@@ -129,10 +188,16 @@ def stitch(segments, snap=5):
     """Chain OSM way fragments end-to-end into long polylines.
 
     OSM splits a motorway at every junction and carries each carriageway separately, so a
-    ref query returns thousands of 2-point fragments -- 8921 of them here, which RDP cannot
+    ref query returns thousands of 2-point fragments -- 8473 of them here, which RDP cannot
     simplify because nothing is longer than a single span. Joining them first is what turns
-    77k raw points into a few hundred. Endpoints are matched on a rounded key (1e-5 deg,
-    about a metre) rather than exact equality, since shared nodes differ in the last digit.
+    73k raw points into a few hundred.
+
+    Endpoints are matched on a rounded key (5 dp, a grid cell of about 1.1 m by 0.9 m at 33 N).
+    On this data that is equivalent to exact matching -- no rounded key merged two distinct
+    exact endpoints -- so the rounding buys tolerance that has not yet been needed rather than
+    fixing an observed problem. It is also not a true distance snap: points up to ~1.45 m apart
+    can share a cell while arbitrarily close points can straddle a boundary. Joining by OSM node
+    id would be exact; the ids are in the cached response if this ever matters.
     """
     def key(p):
         return (round(p[0], snap), round(p[1], snap))
@@ -209,13 +274,16 @@ def motorways(eps):
         chains.sort(key=len, reverse=True)
         for chain in chains:
             for run in clip_runs(chain, pad=0.1):
-                s = rdp(run, eps)
-                if len(s) >= 4:           # drop ramp stubs that survived stitching
+                s = rdp(run, eps, KX)
+                # Keep by visible LENGTH, not vertex count: a straight interstate
+                # simplifies to two points, and a >=4-point filter silently deleted 43
+                # runs including two 17-mile stretches of I-75.
+                if len(s) >= 2 and run_len_mi(s) >= MIN_RUN_MI:
                     kept_n += len(s)
                     by_ref.setdefault(ref, []).append(
                         [[round(a, 4), round(b, 4)] for a, b in s])
     print(f"  stitched {n_frag} fragments into {n_chain} chains")
-    return by_ref, raw_n, kept_n
+    return by_ref, raw_n, kept_n, n_frag, n_chain
 
 
 # ---------------------------------------------------------- cities
@@ -237,16 +305,25 @@ def main():
     st, s_raw, s_kept = states(eps_state)
     print(f"states     {s_raw:>7} raw -> {s_kept:>5} pts in {len(st)} runs "
           f"({100*s_kept/max(s_raw,1):.2f}%, eps={eps_state})")
-    rd, r_raw, r_kept = motorways(eps_road)
+    rd, r_raw, r_kept, n_frag_total, n_chain_total = motorways(eps_road)
     print(f"interstates {r_raw:>6} raw -> {r_kept:>5} pts in "
           f"{sum(len(v) for v in rd.values())} runs across {len(rd)} refs "
           f"({100*r_kept/max(r_raw,1):.2f}%, eps={eps_road})")
     for ref in sorted(rd, key=lambda r: -sum(len(x) for x in rd[r])):
         print(f"   {ref:<8} {len(rd[ref]):>3} runs, {sum(len(x) for x in rd[ref]):>4} pts")
+    total_raw, total_kept = s_raw + r_raw, s_kept + r_kept
+    print(f"combined   {total_raw:>7} raw -> {total_kept:>5} pts "
+          f"({100*total_kept/total_raw:.2f}%) -- clipping and short-run removal "
+          f"contribute alongside RDP")
     payload = {"view": VIEW, "states": st, "interstates": rd,
                "cities": [{"name": n, "lat": la, "lon": lo, "major": m}
                           for n, la, lo, m in CITIES],
-               "simplify": {"state_eps_deg": eps_state, "road_eps_deg": eps_road},
+               "simplify": {"state_eps_deg": eps_state, "road_eps_deg": eps_road,
+                            "lon_scale_kx": round(KX, 5), "min_run_mi": MIN_RUN_MI},
+               "counts": {"states_raw": s_raw, "states_kept": s_kept,
+                          "roads_raw": r_raw, "roads_kept": r_kept,
+                          "road_fragments": n_frag_total, "road_chains": n_chain_total,
+                          "combined_raw": s_raw + r_raw, "combined_kept": s_kept + r_kept},
                "provenance": {
                    "states": "US Census TIGERweb State_County MapServer, geometryPrecision 3",
                    "interstates": "OpenStreetMap via Overpass, highway=motorway filtered by ref",

@@ -107,8 +107,17 @@ def decode_polyline6(encoded):
 
 # ---------------------------------------------------------------- geometry
 
-def rdp(points, epsilon):
-    """Iterative Ramer-Douglas-Peucker. Recursion blows the stack on long routes."""
+def rdp(points, epsilon, kx=1.0):
+    """Iterative Ramer-Douglas-Peucker. Recursion blows the stack on long routes.
+
+    Distance is to the replacement *segment*, not to the infinite line through its
+    endpoints. The difference only shows up where a path doubles back -- but there it is
+    severe: [(0,0), (2,0), (1,0)] has the middle point a full unit beyond the segment,
+    and the infinite-line form measures it as zero and drops it at any epsilon.
+
+    kx scales the x axis (longitude) so epsilon means the same distance in both
+    directions. At 33 deg N, leaving it at 1.0 exaggerates east-west distance by 19%.
+    """
     if len(points) < 3:
         return list(points)
     keep = [False] * len(points)
@@ -118,17 +127,19 @@ def rdp(points, epsilon):
         lo, hi = stack.pop()
         if hi <= lo + 1:
             continue
-        ax, ay = points[lo]
-        bx, by = points[hi]
+        ay, ax = points[lo][0], points[lo][1] * kx
+        by, bx = points[hi][0], points[hi][1] * kx
         dx, dy = bx - ax, by - ay
-        norm = math.hypot(dx, dy)
+        den = dx * dx + dy * dy
         worst_d, worst_i = -1.0, -1
         for i in range(lo + 1, hi):
-            px, py = points[i]
-            if norm == 0.0:
+            py, px = points[i][0], points[i][1] * kx
+            if den == 0.0:
                 d = math.hypot(px - ax, py - ay)
             else:
-                d = abs(dy * (px - ax) - dx * (py - ay)) / norm
+                t = ((px - ax) * dx + (py - ay) * dy) / den
+                t = 0.0 if t < 0.0 else (1.0 if t > 1.0 else t)   # clamp to the segment
+                d = math.hypot(px - (ax + t * dx), py - (ay + t * dy))
             if d > worst_d:
                 worst_d, worst_i = d, i
         if worst_d > epsilon:
@@ -138,20 +149,27 @@ def rdp(points, epsilon):
     return [p for p, k in zip(points, keep) if k]
 
 
-def simplify_route(legs_shapes, epsilon, cap):
+def simplify_route(legs_shapes, epsilon, cap, kx=1.0):
     """One flat, de-duplicated, simplified polyline for the whole option."""
+    if not (math.isfinite(epsilon) and epsilon > 0):
+        raise ValueError(f"rdp epsilon must be finite and positive, got {epsilon!r}")
+    if cap < 2:
+        raise ValueError(f"max-points cap must be >= 2, got {cap!r}")
     pts = []
     for shape in legs_shapes:
         for p in decode_polyline6(shape):
             if not pts or (abs(p[0] - pts[-1][0]) > 1e-9 or abs(p[1] - pts[-1][1]) > 1e-9):
                 pts.append(p)
     eps = epsilon
-    out = rdp(pts, eps)
+    out = rdp(pts, eps, kx)
     # Tighten until it fits the cap; a map at state scale needs far fewer points than
     # people expect, and an oversized array is the thing that bloats a baked page.
+    # Bounded so a pathological cap cannot spin: the loop can only run while eps < 1 deg.
     while len(out) > cap and eps < 1.0:
         eps *= 1.6
-        out = rdp(pts, eps)
+        out = rdp(pts, eps, kx)
+    if len(out) > cap:
+        print(f"  note: could not reach the {cap}-point cap; kept {len(out)} at eps={eps:.4f}")
     return [[round(a, 5), round(b, 5)] for a, b in out], len(pts), round(eps, 6)
 
 
@@ -167,8 +185,13 @@ def _julian(y, m, d):
 
 def sun_events(lat, lon, y, m, d, utc_offset, altitude=-0.833):
     """Local decimal hours (sunrise, solar noon, sunset), or None in polar day/night.
-    NOAA solar position evaluated once at local midnight -- a minute or two of error at
-    mid-latitudes, far finer than any arrival time it gets compared against."""
+
+    NOAA solar position evaluated once at the date's *UTC* midnight rather than iterated
+    to each event. Measured against an iterated solution at 31 N, -82.27, UTC-5 in late
+    November, that costs ~26 s on sunrise and ~13 s on sunset -- well inside the minute
+    this is ever quoted to, and far finer than any arrival time it is compared against.
+    Signs follow NOAA: western (negative) longitude delays UTC solar noon, a negative UTC
+    offset converts it back to an earlier local hour."""
     t = (_julian(y, m, d) - 2451545.0) / 36525.0
     L0 = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360.0
     M = 357.52911 + t * (35999.05029 - 0.0001537 * t)
@@ -199,11 +222,17 @@ def sun_events(lat, lon, y, m, d, utc_offset, altitude=-0.833):
 
 # ---------------------------------------------------------------- formatting
 
+def _hm_parts(sec):
+    """Round to the nearest minute first, then split. Truncating seconds showed 60.8 min
+    as "1h00"; and int(-6.9)//3600 made a 7-second negative render as "-1h59"."""
+    m = int(round(sec / 60.0))
+    sign = "-" if m < 0 else ""
+    m = abs(m)
+    return sign, m // 60, m % 60
+
 def hm(seconds):
-    s = int(round(seconds))
-    sign = "-" if s < 0 else ""
-    s = abs(s)
-    return f"{sign}{s // 3600}h{s % 3600 // 60:02d}"
+    sg, h, m = _hm_parts(seconds)
+    return f"{sg}{h}h{m:02d}"
 
 
 def plus_min(seconds):
@@ -249,61 +278,106 @@ def hhmm_to_h(s):
 
 
 def facility_state(fac, arrive_h, depart_h, weekday):
-    """Where a stop's arrival sits against one facility's published hours.
+    """Where a stop's halt sits against one facility's published hours.
 
-    Returns (verdict, detail). Verdicts:
+    arrive_h/depart_h are local decimal hours on the arrival day; values >= 24 mean the
+    halt has rolled past midnight and are handled by the same wrapped-interval logic.
+
+    Returns (verdict, detail, usable_min). Verdicts:
       always   no hours to miss -- an outdoor space, a 24h pump
-      open     open on arrival
+      open     open on arrival (usable_min says how much of the halt it stays open)
       opens    shut on arrival but opens during the halt, with the wait
       shut     shut for the whole halt, with when it opens
       closed   not open at all on this weekday
-      unknown  no machine-readable hours given; the caller must not pretend otherwise
+      unknown  no machine-readable hours given; callers must not render this as "shut"
     """
     if fac.get("always"):
-        return "always", fac.get("note", "no fixed hours")
+        return "always", fac.get("note", "no fixed hours"), (depart_h - arrive_h) * 60.0
     if "open" not in fac or "close" not in fac:
-        return "unknown", "hours not published in a form this could check"
+        return "unknown", "hours not published in a form this could check", None
     try:
         days = parse_days(fac.get("days", "daily"))
     except ValueError as exc:
-        return "unknown", str(exc)
-    if weekday is not None and weekday not in days:
-        return "closed", f"closed {DAYS[weekday].capitalize()}"
+        return "unknown", str(exc), None
+
     o, c = hhmm_to_h(fac["open"]), hhmm_to_h(fac["close"])
-    if o <= arrive_h < c:
-        return "open", f"open until {clock(c)}"
-    if arrive_h < o:
-        wait = (o - arrive_h) * 60.0
-        if o < depart_h:
-            return "opens", f"opens {clock(o)}, {int(round(wait))} min into the halt"
-        return "shut", f"opens {clock(o)}, {int(round(wait))} min after you leave"
-    return "shut", f"shut at {clock(c)}"
+    overnight = c <= o                      # e.g. 22:00-02:00
+    span = (c + 24.0) if overnight else c
+
+    # Candidate opening intervals in arrival-day hours: today's, plus yesterday's if it
+    # runs past midnight, plus tomorrow's if the halt itself crosses midnight.
+    intervals = []
+    for day_off in (-1, 0, 1):
+        day = None if weekday is None else (weekday + day_off) % 7
+        if day is not None and day not in days:
+            continue
+        if day is None and day_off != 0:
+            continue                        # no weekday known: only the nominal window
+        intervals.append((o + 24.0 * day_off, span + 24.0 * day_off))
+
+    if not intervals:
+        return "closed", f"closed {DAYS[weekday].capitalize()}", 0.0
+
+    # open on arrival?
+    for lo, hi in intervals:
+        if lo <= arrive_h < hi:
+            usable = (min(depart_h, hi) - arrive_h) * 60.0
+            shuts_during = hi < depart_h
+            detail = (f"open until {clock(hi)} -- only {int(round(usable))} min of your halt"
+                      if shuts_during else f"open until {clock(hi)}")
+            return "open", detail, usable
+    # opens later?
+    later = sorted(lo for lo, _ in intervals if lo > arrive_h)
+    if later:
+        lo = later[0]
+        if lo < depart_h:
+            wait = (lo - arrive_h) * 60.0
+            hi = next(h for l, h in intervals if l == lo)
+            usable = (min(depart_h, hi) - lo) * 60.0
+            return ("opens",
+                    f"opens {clock(lo)}, {int(round(wait))} min into the halt "
+                    f"({int(round(usable))} min usable)", usable)
+        return ("shut",
+                f"opens {clock(lo)}, {int(round((lo - depart_h) * 60.0))} min after you leave",
+                0.0)
+    return "shut", f"shut at {clock(max(h for _, h in intervals))}", 0.0
 
 
 def stop_hours_report(stop, arrive_h, dwell_min, weekday):
     """Per-facility verdicts plus a single rollup for the stop."""
     facs = stop.get("facilities")
     if not facs:
-        facs = [{"name": stop.get("name", "the stop"),
-                 **{k: stop[k] for k in ("open", "close", "days") if k in stop}}]
+        # A stop given without a facilities list still has to keep whatever it declared:
+        # dropping "always" turned a 24 h fuel stop into "nothing open" in one run.
+        fallback = {k: stop[k] for k in
+                    ("open", "close", "days", "always", "note", "url", "status")
+                    if k in stop}
+        fallback.setdefault("name", stop.get("name", "the stop"))
+        facs = [fallback]
     depart_h = arrive_h + dwell_min / 60.0
     rows = []
     for fac in facs:
-        verdict, detail = facility_state(fac, arrive_h, depart_h, weekday)
+        verdict, detail, usable = facility_state(fac, arrive_h, depart_h, weekday)
         rows.append({"name": fac.get("name", "?"), "verdict": verdict, "detail": detail,
+                     "usable_min": None if usable is None else round(usable),
                      "url": fac.get("url"), "status": fac.get("status", "standing")})
     usable = [r for r in rows if r["verdict"] in ("always", "open", "opens")]
+    unknown = [r for r in rows if r["verdict"] == "unknown"]
     missed = [r for r in rows if r["verdict"] in ("shut", "closed")]
     if not rows:
         roll = "unknown"
-    elif not usable:
-        roll = "nothing-open"
-    elif any(r["verdict"] in ("always", "open") for r in usable):
+    elif usable and any(r["verdict"] in ("always", "open") for r in usable):
         roll = "open-on-arrival"
-    else:
+    elif usable:
         roll = "opens-during"
+    elif unknown:
+        # Nothing is known to be open, but something is merely unchecked -- that is not
+        # the same claim as "nothing here is open", and must not render as one.
+        roll = "unknown"
+    else:
+        roll = "nothing-open"
     return {"rollup": roll, "facilities": rows,
-            "usable": len(usable), "missed": len(missed)}
+            "usable": len(usable), "missed": len(missed), "unknown": len(unknown)}
 
 
 # ---------------------------------------------------------------- main
@@ -375,7 +449,8 @@ Example:
     ap.add_argument("--costing", default="auto",
                     help="auto | bicycle | pedestrian | truck | motor_scooter")
     ap.add_argument("--rdp-epsilon", type=float, default=0.004,
-                    help="initial RDP tolerance in degrees (default 0.004, ~400 m)")
+                    help="initial RDP tolerance in degrees of latitude, longitude scaled "
+                         "by cos(mean lat) so it is near-isotropic (default 0.004, ~440 m)")
     ap.add_argument("--max-points", type=int, default=120,
                     help="per-option geometry point cap (default 120)")
     ap.add_argument("--out", help="write the full measured JSON here")
@@ -437,21 +512,29 @@ Example:
         depart = float(opt.get("depart_h", a.depart))
 
         # DERIVED: departure + measured legs + spec dwell times.
+        # t accumulates past 24 on a long day. Opening hours are a property of the local
+        # calendar day, so the weekday has to advance with it -- otherwise a 01:00 arrival
+        # is checked against the previous day's hours.
         t = depart
         schedule = []
         for i, s in enumerate(seq_keys):
             t += legs[i] / 3600.0
-            hours = stop_hours_report(stops[s], t, dwells[i], weekday)
+            day_off = int(t // 24)
+            local_wd = None if weekday is None else (weekday + day_off) % 7
+            hours = stop_hours_report(stops[s], t - 24.0 * day_off, dwells[i], local_wd)
             schedule.append({"stop": s, "arrive": clock(t), "arrive_h": round(t, 4),
+                             "day_offset": day_off,
                              "dwell_min": dwells[i], "leg_s": legs[i], "hours": hours})
             t += dwells[i] / 60.0
         t += legs[-1] / 3600.0
         arrive_h = t
+        days_spanned = int(arrive_h // 24)
         shut_on_arrival = [r for r in schedule if r["hours"]["rollup"] == "nothing-open"]
         waits = [r for r in schedule if r["hours"]["rollup"] == "opens-during"]
 
+        kx = math.cos(math.radians((o[0] + d[0]) / 2.0))
         geom, raw_n, eps_used = simplify_route(
-            [leg["shape"] for leg in trip["legs"]], a.rdp_epsilon, a.max_points)
+            [leg["shape"] for leg in trip["legs"]], a.rdp_epsilon, a.max_points, kx)
         all_pts.extend(geom)
 
         results[key] = {
@@ -468,6 +551,7 @@ Example:
             "corridor": opt.get("corridor", ""),
             "arrive_h": round(arrive_h, 4),
             "arrive": clock(arrive_h),
+            "days_spanned": days_spanned,
             "elapsed_s": total + sum(dwells) * 60.0,
             "schedule": schedule,
             "shut_on_arrival": [r["stop"] for r in shut_on_arrival],
@@ -477,8 +561,18 @@ Example:
             "rdp_epsilon_used": eps_used,
         }
         if sunset_h is not None:
-            results[key]["sunset"] = clock(sunset_h)
-            results[key]["after_sunset"] = arrive_h > sunset_h
+            # sunset is computed for the arrival date, which is not the departure date on
+            # an itinerary that rolls past midnight
+            if days_spanned and a.date:
+                yy, mm, dd0 = (int(x) for x in a.date.split("-"))
+                arr_date = datetime.date(yy, mm, dd0) + datetime.timedelta(days=days_spanned)
+                _, _, ss = sun_events(d[0], d[1], arr_date.year, arr_date.month,
+                                      arr_date.day, a.utc_offset)
+            else:
+                ss = sunset_h
+            results[key]["sunset"] = clock(ss)
+            results[key]["after_sunset"] = (arrive_h - 24.0 * days_spanned) > ss
+            results[key]["arrives_next_day"] = bool(days_spanned)
         time.sleep(0.8)
 
     lats = [p[0] for p in all_pts]
@@ -527,6 +621,10 @@ Example:
                 print(f"      {MARK[f['verdict']]} {f['name']:<42} {f['detail']}")
         if v["shut_on_arrival"]:
             any_dead = True
+    if any(v.get("arrives_next_day") for v in results.values()):
+        print("\n  note: at least one option arrives after midnight. Weekday and sunset")
+        print("        advance with it, but a single --utc-offset applies throughout, so")
+        print("        crossing a time zone shifts every hours verdict by an hour.")
     if any_dead:
         print("\n  ! At least one stop has nothing open when you get there. Either move the")
         print("    stop, change the departure hour, or say plainly on the page what IS")

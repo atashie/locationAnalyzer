@@ -92,10 +92,13 @@ variant and every one of them moves.
 > "+41 min" and share stayed "55%". Correct values: **+56 min and 53%** — which moved the stop
 > outside the traveller's stated detour budget. Nobody noticed for two revisions.
 
-Several options multiply this: **N options means N full recomputations**, and a detour is never
-the sum of its stops' individual detours. In one run the per-stop detours summed to +43 min
-while the routed itinerary measured **+51**. Route each option as a single multi-point request
-and read the total off that.
+Several options multiply this: **N options means N full recomputations**, and a detour
+**cannot in general be obtained by summing its stops' individual detours**. In one run the
+per-stop detours summed to +43 min while the routed itinerary measured **+51**. The two can
+coincide — independent dead-end spurs off an otherwise unchanged route sum exactly — but shared
+access makes the combined detour smaller and routing interactions or a different stop order make
+it larger, and you cannot tell which case you are in without routing it. Route each option as a
+single multi-point request and read the total off that.
 
 ### 4. Verification status travels all the way to the output
 

@@ -4,9 +4,12 @@ Limits worth knowing before you hit them. All free, no keys.
 
 ## Valhalla (routing) — `https://valhalla1.openstreetmap.de`
 
-- **`/sources_to_targets` caps path distance at 150 km** and returns HTTP 400 beyond it. For
-  anything longer, use `/route` with the candidate as a via point: one call returns both legs,
-  which is what you need anyway.
+- **`/sources_to_targets` rejected pairs beyond ~150 km** on this public deployment (HTTP 400),
+  observed 2026-11. That is a *configured* limit, not a property of Valhalla: upstream
+  `max_matrix_distance` defaults to 400 km for `auto`, and the check is on straight-line
+  source-to-target distance before routing, not on routed path length. Treat the number as a
+  dated observation of one server. Either way, use `/route` with the candidate as a via point for
+  anything long: one call returns both legs, which is what you need anyway.
 - `trip.legs[].shape` is an **encoded polyline at precision 6**, not the usual 5. Decoding at 5
   puts your geometry in the wrong hemisphere-ish place.
 - Road refs live in `maneuvers[].street_names` as `"I 85 North"` — **a space, not a hyphen**.
