@@ -1,0 +1,135 @@
+{
+  "Walterboro SC": {
+    "hours": 4.27,
+    "uses_i95": true,
+    "refs": [
+      "US 15",
+      "SC 64",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Santee SC": {
+    "hours": 3.74,
+    "uses_i95": true,
+    "refs": [
+      "SC 6",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Columbia SC": {
+    "hours": 3.61,
+    "uses_i95": false,
+    "refs": [
+      "I 85",
+      "US 29",
+      "I 40",
+      "NC 86"
+    ]
+  },
+  "Orangeburg SC": {
+    "hours": 4.07,
+    "uses_i95": true,
+    "refs": [
+      "US 601",
+      "US 21",
+      "US 301",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Sumter SC": {
+    "hours": 3.36,
+    "uses_i95": true,
+    "refs": [
+      "US 76",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Florence SC": {
+    "hours": 2.72,
+    "uses_i95": true,
+    "refs": [
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Savannah GA": {
+    "hours": 5.27,
+    "uses_i95": true,
+    "refs": [
+      "US 17",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Beaufort SC": {
+    "hours": 5.01,
+    "uses_i95": true,
+    "refs": [
+      "US 21",
+      "US 17",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  },
+  "Summerville SC": {
+    "hours": 4.32,
+    "uses_i95": true,
+    "refs": [
+      "US 17",
+      "I 26",
+      "I 95",
+      "I 295",
+      "NC 24",
+      "NC 87",
+      "US 1",
+      "US 15",
+      "US 501",
+      "NC 86"
+    ]
+  }
+}
