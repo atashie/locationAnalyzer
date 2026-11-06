@@ -9,13 +9,20 @@ Three things are tested here, and the third is the one that matters:
    satisfied every fixture then stated; pass 18 produced two more that satisfied the replacements;
    and the first sampling tests admitted a `(u, u)` offset draw with correct marginals and
    correlation 1. A suite that cannot be shown to reject a specific wrong answer is a regression
-   baseline, not evidence. So this file builds four wrong comparators and shows which case kills
-   each.
+   baseline, not evidence. So this file builds wrong comparators and shows which case kills each.
+
+**Pass 20 answered "can a wrong comparator pass the whole corpus?" with yes, twice.** A strict-cap
+implementation — `< cap` rather than `<= cap` — passed all 78 tests, because no case sat on a
+boundary. And the oracle itself omitted both connectors from objective 2's **selection cost**, which
+no case separated because none combined unequal connectors with different destinations. Five cases
+and the mutants below close those, and the lesson is recorded: the corpus is evidence only of the
+dimensions it actually varies.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import math
 
 import pytest
 
@@ -77,7 +84,7 @@ def test_the_answer_does_not_depend_on_edge_insertion_order(case):
         if first is None or second is None:
             assert first is None and second is None, f"{field}: {first!r} against {second!r}"
         else:
-            assert first == pytest.approx(second, abs=cf.TIME_TOL_S), field
+            assert first == pytest.approx(second, rel=0, abs=cf.TIME_TOL_S), field
     assert a.origin_candidates == b.origin_candidates
     assert a.eligible == b.eligible
 
@@ -550,3 +557,263 @@ def test_reordering_the_corpus_changes_its_digest():
 def test_the_corpus_has_no_duplicate_names():
     names = [c.name for c in CASES]
     assert len(names) == len(set(names))
+
+
+# ----------------------------------------------------------------------------- pass-20's mutants
+#
+# Every one of these exposed a defect the twelve original cases did not separate. The strict-cap
+# mutant is the sharpest: it passed all 78 tests, which is the answer to "construct a wrong
+# comparator that passes the entire corpus" — the answer was yes.
+
+
+def test_a_strict_cap_comparator_is_now_caught(monkeypatch):
+    """Wrong implementation 5, and the one that passed everything. `< cap` instead of `<= cap`.
+
+    Pass-20 F5 executed it by replacing each cap with its next float down; all 78 tests passed,
+    because every case used 250 m or 350 m and none sat on a boundary. On a destination exactly
+    300 m from the network the mutant excludes it and finds no journey at all, where the answer is
+    a 338.0952380952 s ten-minute PASS.
+    """
+    real = toy.nearest_on_graph
+    monkeypatch.setattr(toy, "nearest_on_graph",
+                        lambda g, p, *, cap_m: real(g, p, cap_m=math.nextafter(cap_m, -math.inf)))
+
+    case = next(c for c in CASES if c.name == "a_destination_exactly_at_the_cap_is_eligible")
+    problems = cf.check(case)
+    assert problems, "a strict cap must fail the boundary case"
+    assert any("no finite time" in p or "eligible" in p for p in problems)
+
+
+def test_the_caps_are_inclusive_on_both_sides():
+    """Exactly at the cap is in; one float past it is out. Both sides, independently."""
+    g = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=100.0, cost_base=100.0, osmid=(1,)),
+    ))
+    for cap in (toy.MAX_ACCESS_M, toy.POI_SNAP_MAX_M):
+        at = toy.attachments(g, (50.0, cap), cap_m=cap)
+        past = toy.attachments(g, (50.0, math.nextafter(cap, math.inf)), cap_m=cap)
+        assert len(at) == 1, f"exactly {cap} m must attach"
+        assert at[0].residual_m == pytest.approx(cap, rel=0, abs=1e-9)
+        assert past == (), f"one float past {cap} m must not"
+
+
+def test_the_tie_band_is_inclusive_at_exactly_the_tolerance():
+    """`<= ATTACH_TIE_M`, not `<`. A second road exactly 0.01 m further is retained."""
+    def candidates(second_offset: float) -> int:
+        g = toy.ToyGraph(edges=(
+            toy.ToyEdge(0, 1, ((0, 1.0), (100, 1.0)), time_s=1.0, cost_base=1.0, osmid=(1,)),
+            toy.ToyEdge(2, 3, ((0, -second_offset), (100, -second_offset)), time_s=2.0,
+                        cost_base=2.0, osmid=(2,)),
+        ))
+        return len(toy.attachments(g, (50.0, 0.0), cap_m=toy.MAX_ACCESS_M))
+
+    assert candidates(1.0 + toy.ATTACH_TIE_M) == 2
+    assert candidates(1.0 + toy.ATTACH_TIE_M + 1e-9) == 1
+
+
+def test_the_connector_is_in_objective_2s_cost_not_only_its_time(monkeypatch):
+    """Wrong implementation 6: pass-20 F1, the defect that passed all twelve original cases.
+
+    Design §2.1 says both objectives include both connectors and §2.2 says they are part of both
+    objectives' totals. Revision 6's time-only connector policy is for the independent engine, where
+    seconds share no unit with that engine's generalised cost; it does not repeal §2.2 for ours.
+    """
+    case = next(c for c in CASES if c.name == "connectors_enter_objective_2s_selection_cost")
+    r = case.run()
+    assert r.objective2_s == pytest.approx(650.0) and r.objective2_destination == 1
+    assert r.objective2_cost == pytest.approx(20.0)
+    assert r.objective1_s == pytest.approx(10.0 + 100.0 / toy.ACCESS_SPEED_MPS)
+    assert r.objective1_destination == 0, "the two objectives must select different destinations"
+
+    # the mutant: charge the connector to time only
+    real = toy.journeys
+
+    def time_only(graph, origin, destinations, destination_ids=None):
+        out = []
+        for j in real(graph, origin, destinations, destination_ids):
+            out.append(dataclasses.replace(j, cost=j.cost - _connector_part(graph, origin,
+                                                                           destinations, j)))
+        return out
+
+    def _connector_part(graph, origin, destinations, journey):
+        oa = toy.attachments(graph, origin, cap_m=toy.MAX_ACCESS_M)
+        da = toy.attachments(graph, destinations[journey.destination], cap_m=toy.POI_SNAP_MAX_M)
+        return (min(a.residual_m for a in oa) + min(a.residual_m for a in da)) \
+            / toy.ACCESS_SPEED_MPS
+
+    monkeypatch.setattr(toy, "journeys", time_only)
+    problems = cf.check(case)
+    assert problems, "omitting the connector from cost must fail this case"
+    assert any("objective2" in p for p in problems)
+
+
+def test_a_self_crossing_edge_keeps_both_occurrences_of_one_position():
+    """Pass-20 F2. Two zero-distance occurrences of `(0,0)` at arclengths 100 m and 500 m: the same
+    place, not the same decision. A rounded-XY key merges them and loses 400 m of route."""
+    case = next(c for c in CASES if c.name == "two_occurrences_at_one_position_are_two_candidates")
+    kept = toy.attachments(case.graph, case.origin, cap_m=toy.MAX_ACCESS_M)
+    assert len(kept) == 2
+    assert sorted(round(a.arclength_m, 6) for a in kept) == [100.0, 500.0]
+    assert all(a.residual_m == pytest.approx(0.0) for a in kept)
+    assert {round(a.position[0], 6) for a in kept} == {0.0}, (
+        "both occurrences are at the same XY, which is exactly why a position key merges them"
+    )
+    assert case.run().objective1_s == pytest.approx(1000.0 / 6.0, rel=0, abs=cf.TIME_TOL_S)
+
+
+def test_the_dedup_representative_is_the_nearest_not_the_first():
+    """Pass-20 F2's second half. Two projections round to the same bucket at 200.004 m and
+    199.996 m; keeping the first and then applying the 200 m cap returns **zero** candidates where
+    one is attached. The representative is the smallest residual."""
+    g = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((-100, -0.004), (100, -0.004), (100, 0.004), (-100, 0.004)),
+                    time_s=100.0, cost_base=100.0, osmid=(1,)),
+    ))
+    found = toy.nearest_on_graph(g, (0.0, 200.0), cap_m=toy.MAX_ACCESS_M)
+    assert found.global_min_m == pytest.approx(199.996, rel=0, abs=1e-9)
+    assert len(found.candidates) >= 1, "the in-cap representative must survive"
+    assert found.candidates[0].residual_m == pytest.approx(199.996, rel=0, abs=1e-9)
+
+
+def test_the_two_directions_of_a_closed_edge_have_different_identities():
+    """Pass-20 F3. For `u == v` the endpoints cannot separate the directions and canonicalising the
+    geometry against reversal removes the rest, so revision 6's identity made them equal."""
+    fwd = toy.ToyEdge(0, 0, ((0, 0), (100, 0), (100, 100), (0, 100), (0, 0)),
+                      time_s=4000.0, cost_base=4000.0, osmid=(7,), oneway=True)
+    rev = toy.ToyEdge(0, 0, ((0, 0), (0, 100), (100, 100), (100, 0), (0, 0)),
+                      time_s=4000.0, cost_base=4000.0, osmid=(7,), oneway=True)
+    assert fwd.geometry_key == rev.geometry_key, "the same physical ring"
+    assert fwd.orientation != rev.orientation
+    assert fwd.identity != rev.identity, "but not the same directed edge"
+
+    # an open edge needs no orientation help: its endpoints already separate the directions
+    open_fwd = toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=1.0, cost_base=1.0, osmid=(1,))
+    open_rev = toy.ToyEdge(1, 0, ((100, 0), (0, 0)), time_s=1.0, cost_base=1.0, osmid=(1,))
+    assert open_fwd.identity != open_rev.identity
+
+
+@pytest.mark.parametrize("name,expected", [
+    ("the_two_directions_of_a_closed_edge_are_distinct", 200.0),
+    ("same_identity_alternatives_still_compete_on_weights", 1.2),
+])
+def test_the_insertion_order_defects_are_closed(name, expected):
+    """Pass-20 F3 and F4 both reported PASS/FAIL flips decided purely by input order — 3800 against
+    200, and 802 against 1.2. The general edge-order test covers every case; these two pin the
+    numbers, because both are cases where one record was being discarded before either objective
+    could compete."""
+    case = next(c for c in CASES if c.name == name)
+    forward = case.run()
+    backward = toy.evaluate(toy.ToyGraph(edges=tuple(reversed(case.graph.edges))),
+                            case.origin, list(case.destinations))
+    assert forward.objective1_s == pytest.approx(expected, rel=0, abs=1e-9)
+    assert backward.objective1_s == pytest.approx(expected, rel=0, abs=1e-9)
+    assert forward.origin_candidates == backward.origin_candidates == 2
+
+
+def test_cost_totals_do_not_depend_on_summation_order():
+    """Pass-20 F7. Two routes carrying the **same multiset** of costs in different orders: left
+    accumulation gives 0.6000000000000001 and 0.6, so the 1,000 s route wins the cost argmin over
+    the 1 s one — a FAIL/PASS flip at ten minutes decided by summation order.
+
+    `math.fsum` is exactly rounded, so the total of a multiset is one number and genuinely equal
+    costs compare equal. No epsilon is introduced: §2.4 declares no cost tolerance.
+    """
+    assert math.fsum((0.1, 0.2, 0.3)) == math.fsum((0.3, 0.2, 0.1))
+    assert (0.1 + 0.2 + 0.3) != (0.3 + 0.2 + 0.1), "which is the problem fsum solves"
+
+    def graph(fast, slow):
+        return toy.ToyGraph(edges=(
+            toy.ToyEdge(0, 1, ((-100, 0), (0, 0)), time_s=0.0, cost_base=0.0, osmid=(1,),
+                        oneway=True),
+            toy.ToyEdge(1, 2, ((0, 0), (100, 100)), time_s=1 / 3, cost_base=fast[0], osmid=(2,),
+                        oneway=True),
+            toy.ToyEdge(2, 3, ((100, 100), (200, 100)), time_s=1 / 3, cost_base=fast[1],
+                        osmid=(3,), oneway=True),
+            toy.ToyEdge(3, 4, ((200, 100), (300, 0)), time_s=1 / 3, cost_base=fast[2], osmid=(4,),
+                        oneway=True),
+            toy.ToyEdge(1, 5, ((0, 0), (100, -100)), time_s=1000 / 3, cost_base=slow[0],
+                        osmid=(5,), oneway=True),
+            toy.ToyEdge(5, 6, ((100, -100), (200, -100)), time_s=1000 / 3, cost_base=slow[1],
+                        osmid=(6,), oneway=True),
+            toy.ToyEdge(6, 4, ((200, -100), (300, 0)), time_s=1000 / 3, cost_base=slow[2],
+                        osmid=(7,), oneway=True),
+            toy.ToyEdge(4, 7, ((300, 0), (400, 0)), time_s=0.0, cost_base=0.0, osmid=(8,),
+                        oneway=True),
+        ))
+
+    r = toy.evaluate(graph((0.1, 0.2, 0.3), (0.3, 0.2, 0.1)), (-50.0, 0.0), [(350.0, 0.0)])
+    assert r.objective2_cost == pytest.approx(0.6, rel=0, abs=1e-15)
+    assert r.objective2_s == pytest.approx(1.0, rel=0, abs=1e-9), (
+        "the costs tie, so §2.4's travel-time key selects the fast route"
+    )
+    # and swapping which route carries which order changes nothing
+    swapped = toy.evaluate(graph((0.3, 0.2, 0.1), (0.1, 0.2, 0.3)), (-50.0, 0.0), [(350.0, 0.0)])
+    assert swapped.objective2_s == pytest.approx(1.0, rel=0, abs=1e-9)
+
+
+def test_the_selected_destination_is_ranked_by_id_not_by_input_order():
+    """Pass-20 F9 and design §2.4 revision 6's key 5. Two ids at one coordinate reached identically
+    tie on every edge key, so without the id key the manifest names whichever came first."""
+    g = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=1.0, cost_base=1.0, osmid=(1,)),
+    ))
+    for ids in (["z", "a"], ["a", "z"]):
+        r = toy.evaluate(g, (0.0, 0.0), [(100.0, 0.0), (100.0, 0.0)], ids)
+        assert r.objective1_destination_id == "a", f"input order {ids} changed the selection"
+        assert r.objective2_destination_id == "a"
+
+
+def test_the_route_rank_compares_structurally_not_as_text():
+    """Pass-20 F9's other half: node pairs `(2,3)` and `(10,11)` compare `2 < 10` structurally and
+    `'10' < '2'` as text, so the old `repr` key selected the wrong route."""
+    a = toy.Journey(time_s=1.0, cost=1.0, destination=0, destination_id="d",
+                    route=((2, 3, (), 0, (1,), 1.0),))
+    b = toy.Journey(time_s=1.0, cost=1.0, destination=0, destination_id="d",
+                    route=((10, 11, (), 0, (1,), 1.0),))
+    assert min(a, b, key=lambda j: j.rank_key) is a
+    assert repr(a.route[0]) > repr(b.route[0]), "which is what the text key got wrong"
+
+
+def test_a_non_finite_time_is_not_a_verdict():
+    """Pass-20 F11. `inf` is how this repository represents a routing non-result, and it arrived at
+    the §2.5 rule as a definitive FAIL while `-inf` arrived as PASS. Ten such points against a
+    product PASS move the gate from INCONCLUSIVE (k=0, u=10) to FAIL (k=10) on no established
+    failure at all."""
+    for bad in (math.inf, -math.inf, math.nan):
+        with pytest.raises(ValueError, match="finite"):
+            cf.comparator_outcome(threshold_s=600.0, time_s=bad, search_bounded=True,
+                                  exhausted=False)
+    with pytest.raises(ValueError, match="non-negative"):
+        cf.comparator_outcome(threshold_s=600.0, time_s=-1.0, search_bounded=True, exhausted=False)
+
+    # a non-result is `None`, and then the bound branches decide
+    assert cf.comparator_outcome(threshold_s=600.0, time_s=None, search_bounded=True,
+                                 exhausted=False) is cf.ComparatorOutcome.UNRESOLVED
+
+
+def test_an_off_network_origin_keeps_the_distance_its_bound_needs():
+    """Pass-20: the cap discards the very distance `OFF_NETWORK`'s bound is computed from, so an
+    empty candidate tuple is not enough. The bound is `nearest / max_speed_mps` — never the 200 m
+    cap, which is a different number, and never invented when there is no nearest distance at all.
+    """
+    far = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=100.0, cost_base=100.0, osmid=(1,)),
+    ))
+    found = toy.nearest_on_graph(far, (50.0, 200.5), cap_m=toy.MAX_ACCESS_M)
+    assert found.candidates == ()
+    assert found.global_min_m == pytest.approx(200.5, rel=0, abs=1e-9)
+
+    bound_s = found.global_min_m / max_speed_mps("walk")
+    assert bound_s == pytest.approx(143.2142857143, rel=0, abs=1e-9)
+    assert bound_s < 600.0, "so this point is UNKNOWN at ten minutes, not a known failure"
+    assert toy.MAX_ACCESS_M / max_speed_mps("walk") != pytest.approx(bound_s), (
+        "the cap is not the measured distance and would give a different bound"
+    )
+
+    # the distance that does prove failure at ten minutes
+    further = toy.nearest_on_graph(far, (50.0, 840.5), cap_m=toy.MAX_ACCESS_M)
+    assert further.global_min_m / max_speed_mps("walk") > 600.0
+
+    # an empty graph has no nearest distance, and none is invented
+    empty = toy.nearest_on_graph(toy.ToyGraph(edges=()), (0.0, 0.0), cap_m=toy.MAX_ACCESS_M)
+    assert empty.candidates == () and empty.global_min_m is None

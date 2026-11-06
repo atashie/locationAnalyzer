@@ -156,10 +156,33 @@ class ToyEdge:
         return min(fwd, fwd[::-1])
 
     @property
+    def orientation(self) -> int:
+        """0 if this traversal's rounded geometry *is* the canonical key, 1 if it is the reversal.
+
+        Design §2.4 revision 7. For an open edge `(u, v)` the endpoints already separate the two
+        directions, so this adds nothing. For a **closed** edge `u == v` — a ring, a loop — swapping
+        the endpoints does nothing and canonicalising the geometry against reversal removes the only
+        remaining direction information, so the two traversals had **identical** identities.
+
+        Pass-20 F3: two one-way self-loops around the square `(0,0),(100,0),(100,100),(0,100),(0,0)`
+        with the same `osmid`, origin `(10,0)`, destination `(0,10)`. The correct journey is
+        **200 s** the reverse way round. With the forward loop first, attachment dedup discarded the
+        reverse and the answer was **3,800 s**; reversing the input order gave 200 s. A PASS/FAIL
+        flip at ten minutes decided entirely by insertion order.
+        """
+        fwd = tuple((round(x, ROUND_DP), round(y, ROUND_DP)) for x, y in self.geometry)
+        return 0 if fwd == self.geometry_key else 1
+
+    @property
     def identity(self) -> tuple:
         """Design §2.4's canonical **directed**-edge identity: start node, end node, canonical
-        geometry key, osmid normalised to a sorted tuple, length rounded to 2 dp."""
-        return (self.u, self.v, self.geometry_key,
+        geometry key, traversal orientation, osmid normalised to a sorted tuple, length at 2 dp.
+
+        The orientation field is revision 7's addition and exists only for closed edges; see
+        `orientation`. It is placed before `osmid` so that the comparison order remains
+        structural-then-attributive.
+        """
+        return (self.u, self.v, self.geometry_key, self.orientation,
                 tuple(sorted(self.osmid)), round(self.length_m, ROUND_DP))
 
     def permits(self, *, forward: bool) -> bool:
@@ -189,19 +212,65 @@ class ToyGraph:
 @dataclass(frozen=True)
 class Attachment:
     """One retained attachment candidate. Design §2.2 keeps **every** geometric minimiser, so this
-    is one of a set and the set is part of what determines the answer."""
+    is one of a set and the set is part of what determines the answer.
+
+    `arclength_m` is the identifying coordinate, not `position`. An XY point is not an *occurrence*
+    along a polyline: a self-crossing road passes the same place twice with different remaining
+    route, and merging the two loses that route (pass-20 F2).
+    """
 
     edge: int           # index into ToyGraph.edges
     fraction: float     # along the whole polyline, by length, from the `u` end
+    arclength_m: float  # fraction x length, the occurrence's identifying coordinate
     residual_m: float   # straight-line from the coordinate to the attached position
     position: tuple[float, float]
 
 
-def attachments(graph: ToyGraph, point: tuple[float, float], *, cap_m: float) -> tuple[Attachment, ...]:
-    """Design §2.2's candidate set: every per-segment minimiser within `ATTACH_TIE_M` of the global
-    minimum, deduplicated at `ROUND_DP`, then filtered to those within `cap_m`.
+@dataclass(frozen=True)
+class NearestOnGraph:
+    """What `attachments` found, including what it then discarded at the cap.
 
-    An empty result is a **status**, not a missing value: no network within the cap.
+    `global_min_m` exists because an empty candidate set is a **status with a bound**, not an
+    absence. Pass-20: at a global minimum of 200.5 m there is no in-cap attachment, and the sound
+    `OFF_NETWORK` bound is `200.5 / 1.40 = 143.2142857143 s` — computed from the *measured* nearest
+    distance, never from the 200 m cap (which would give a different number) and never invented when
+    the graph has no edges at all (where there is no nearest distance and the absence must be
+    reported as such). 840.5 m gives 600.3571 s and proves failure at ten minutes; 200 m does not.
+    """
+
+    candidates: tuple[Attachment, ...]
+    global_min_m: float | None      # None only when the graph has no edge geometry at all
+
+
+def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
+                     cap_m: float) -> NearestOnGraph:
+    """Design §2.2's candidate set, plus the measured nearest distance for the off-network bound.
+
+    The candidate set is: the nearest position on **each polyline segment**; those within
+    `ATTACH_TIE_M` of the global minimum; deduplicated by **(edge record, along-edge arclength
+    rounded to `ROUND_DP` metres)**; then filtered to those independently within `cap_m`.
+
+    **Two things in that key are load-bearing, and both were wrong in revision 6.**
+
+    *Arclength, not position.* Pass-20 F2: one one-way edge with geometry
+    `(-100,0),(0,0),(0,100),(100,100),(100,0),(0,0),(0,-100)` — length 600 m, time 1,000 s — has two
+    zero-distance occurrences of the origin `(0,0)`, at arclengths **100 m and 500 m**. Keeping both
+    gives `100/600 x 1000` = **166.6666666667 s**; a rounded-XY key merges them, keeps one, and
+    returns **833.3333333333 s**. PASS becomes FAIL at ten minutes, from merging two points that are
+    the same place and not the same decision.
+
+    *Per edge record, not per canonical identity.* Pass-20 F4: identity excludes time and cost, so
+    two parallel `0 → 1` edges with the same `osmid` and geometry but weights 2000/2000 and 2/2 share
+    an identity. Keying on it discarded one by input order **before either objective could compete**:
+    with the slow edge first the answer was **802 s**, with the fast edge first **1.2 s**. Design §2.4
+    freezes identity and grouping *separately from* ranking precisely so that grouping cannot decide
+    a ranking question.
+
+    The representative of a merged bucket is the candidate with the **smallest residual**, then the
+    smallest exact arclength. Taking the earliest instead interacts with the cap: on
+    `(-100,-.004),(100,-.004),(100,.004),(-100,.004)` from `(0,200)` the two horizontal projections
+    are **200.004 m and 199.996 m**, and keeping the first then dropping it at the 200 m cap returned
+    **zero** candidates where one is attached.
     """
     px, py = point
     raw: list[Attachment] = []
@@ -215,26 +284,35 @@ def attachments(graph: ToyGraph, point: tuple[float, float], *, cap_m: float) ->
             raw.append(Attachment(
                 edge=i,
                 fraction=0.0 if total == 0.0 else along / total,
+                arclength_m=along,
                 residual_m=d,
                 position=(a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])),
             ))
             run += seg
     if not raw:
-        return ()
+        return NearestOnGraph(candidates=(), global_min_m=None)
+
     best = min(a.residual_m for a in raw)
     window = [a for a in raw if a.residual_m <= best + ATTACH_TIE_M]
-    seen: set[tuple[tuple, float, float]] = set()
-    kept: list[Attachment] = []
-    for a in sorted(window, key=lambda a: (a.edge, a.fraction)):
-        # design §2.2 revision 6: deduplicate by (canonical directed-edge identity, position
-        # rounded to 2 dp in metres) -- §2.4's precision, applied to the position rather than to
-        # the fraction, since 2 dp of a fraction is 1 m on a 100 m edge and 10 m on a 1 km one.
-        key = (graph.edges[a.edge].identity,
-               round(a.position[0], ROUND_DP), round(a.position[1], ROUND_DP))
-        if key not in seen:
-            seen.add(key)
-            kept.append(a)
-    return tuple(a for a in kept if a.residual_m <= cap_m)
+    buckets: dict[tuple[int, float], Attachment] = {}
+    for a in window:
+        key = (a.edge, round(a.arclength_m, ROUND_DP))
+        current = buckets.get(key)
+        if current is None or (a.residual_m, a.arclength_m) < (current.residual_m,
+                                                               current.arclength_m):
+            buckets[key] = a
+    kept = sorted(buckets.values(), key=lambda a: (a.edge, a.arclength_m))
+    return NearestOnGraph(
+        candidates=tuple(a for a in kept if a.residual_m <= cap_m),
+        global_min_m=best,
+    )
+
+
+def attachments(graph: ToyGraph, point: tuple[float, float], *, cap_m: float) -> tuple[Attachment, ...]:
+    """The candidate set alone. An empty result is a **status**, not a missing value — use
+    `nearest_on_graph` when the off-network bound is needed, since the cap discards the distance the
+    bound is computed from."""
+    return nearest_on_graph(graph, point, cap_m=cap_m).candidates
 
 
 # ----------------------------------------------------------------------------- enumeration
@@ -251,29 +329,65 @@ class Journey:
     time_s: float
     cost: float
     destination: int
+    destination_id: str = ""
     route: tuple = field(compare=False, default=())
 
     @property
     def rank_key(self) -> tuple:
-        """Design §2.4's ranking, lifted to a whole journey: smallest travel time first, then a
-        deterministic total order. Journeys agreeing on both are identical in every quantity this
-        design reports."""
-        return (self.time_s, tuple(repr(r) for r in self.route))
+        """Design §2.4's ranking, lifted to a whole journey: smallest travel time, then smallest
+        **destination id**, then the smallest route-identity sequence compared element-wise.
+
+        Pass-20 F9 found two defects in the first version, which keyed on
+        `tuple(repr(r) for r in route)`:
+
+        * **`repr` is the wrong order.** Route identities beginning with node pairs `(2, 3)` and
+          `(10, 11)` compare `2 < 10` structurally and `'10' < '2'` as text, so the string key
+          selected the wrong one. Element-wise comparison on the tuples themselves is well defined
+          here — every position holds a like-typed field — and is what the design means.
+        * **destination identity was missing, and route order came first.** Revision 6 added the
+          destination `id` as key 5 *before* the route sequence, exactly because two ids at one
+          coordinate reached identically tie on every edge key. No reported number moves, but the
+          manifest would name different destinations on two runs of the same code.
+        """
+        return (self.time_s, self.destination_id, self.route)
+
+
+def directed_identity(edge: ToyEdge, *, forward: bool) -> tuple:
+    """`edge.identity` for a forward traversal, and the same shape with the endpoints and the
+    orientation flipped for a reverse one."""
+    if forward:
+        return edge.identity
+    return (edge.v, edge.u, edge.geometry_key, 1 - edge.orientation,
+            tuple(sorted(edge.osmid)), round(edge.length_m, ROUND_DP))
 
 
 def _simple_paths(graph: ToyGraph, start: int, goal: int):
-    """Every node-simple directed path `start -> goal`, as `(time, cost, identities)`.
+    """Every node-simple directed path `start -> goal`, as `(time terms, cost terms, identities)`.
+
+    **The terms are returned, not their running sums**, so the caller can total them with an
+    order-independent summation. Design §2.4 revision 7, after pass-20 F7: with ordinary left
+    accumulation two routes carrying the *same multiset* of weights can compare unequal. Its
+    counterexample is a fast route of per-edge costs `(.1, .2, .3)` taking 1 s against a slow route
+    of `(.3, .2, .1)` taking 1,000 s — the same three binary floats in a different order. Left
+    accumulation gives **0.6000000000000001** and **0.6**, so the slow route wins the cost argmin and
+    the answer is **1,000 s**; an exactly-rounded sum gives **0.6** for both, they tie, and §2.4's
+    travel-time key selects **1 s**. A FAIL/PASS flip at ten minutes decided by summation order.
+
+    That mattered because §12's contract says implementations may vary while preserving the rules.
+    Under left accumulation reassociation changes the answer, so no two implementations could be
+    shown equivalent; under an exactly-rounded sum the total of a multiset is a well-defined number
+    and the contract is true.
 
     Yields the empty path when `start == goal`. Non-negative weights make node-simple sufficient; see
     the module docstring.
     """
-    results: list[tuple[float, float, tuple]] = []
+    results: list[tuple[tuple, tuple, tuple]] = []
 
-    def walk(node: int, visited: frozenset[int], t: float, c: float, ids: tuple) -> None:
+    def walk(node: int, visited: frozenset[int], times: tuple, costs: tuple, ids: tuple) -> None:
         if node == goal:
-            results.append((t, c, ids))
-            # fall through: a longer path to the same goal would have to revisit `goal`, so there
-            # is nothing more to explore from here.
+            results.append((times, costs, ids))
+            # a longer path to the same goal would have to revisit `goal`, so there is nothing more
+            # to explore from here.
             return
         for e in graph.edges:
             for forward in (True, False):
@@ -282,12 +396,10 @@ def _simple_paths(graph: ToyGraph, start: int, goal: int):
                 a, b = (e.u, e.v) if forward else (e.v, e.u)
                 if a != node or b in visited:
                     continue
-                ident = e.identity if forward else (e.v, e.u, e.geometry_key,
-                                                   tuple(sorted(e.osmid)),
-                                                   round(e.length_m, ROUND_DP))
-                walk(b, visited | {b}, t + e.time_s, c + e.total_cost, ids + (ident,))
+                walk(b, visited | {b}, times + (e.time_s,), costs + (e.total_cost,),
+                     ids + (directed_identity(e, forward=forward),))
 
-    walk(start, frozenset({start}), 0.0, 0.0, ())
+    walk(start, frozenset({start}), (), (), ())
     return results
 
 
@@ -335,11 +447,30 @@ def _same_edge_direct(graph: ToyGraph, origin: Attachment, dest: Attachment):
 
 
 def journeys(graph: ToyGraph, origin: tuple[float, float],
-             destinations: list[tuple[float, float]]) -> list[Journey]:
+             destinations: list[tuple[float, float]],
+             destination_ids=None) -> list[Journey]:
     """Every journey from `origin` to every **eligible** destination. Design §2.2 in full.
 
-    Both connectors are charged at the access speed and are part of both objectives' totals.
+    **Both connectors are charged at the access speed and enter BOTH objectives' totals** — design
+    §2.1 ("Both include both connectors") and §2.2 ("part of both objectives' totals"). That means
+    the connector is in the **cost** objective 2 selects on, not only in the reported time.
+
+    Pass-20 F1 found this module adding the connectors to `time_s` and omitting them from `cost`, and
+    the defect survived all twelve conformance cases: two edges from `(0,0)`, A to `(100,0)` at
+    time/cost 10/10 and B to `(0,-100)` at 650/20, with destination A at `(100,100)` carrying a 100 m
+    connector and B none. The own costs are `10 + 100/1.26` = **89.3650793651** and **20**, so
+    objective 2 must select B and report **650 s**; omitting the connector selects A at cost 10 and
+    reports 89.3650793651 s — **FAIL becomes PASS at ten minutes**. Objective 1 is unaffected, which
+    is why only a case with *unequal* connectors and *different* destinations separates it.
+
+    Revision 6's time-only connector policy is for the **independent engine** (§2.6), where seconds
+    share no unit with that engine's generalised cost. It does not repeal §2.2 for ours, whose cost
+    is already in seconds — `access.py` adds 120 s per restricted edge to it.
     """
+    ids = ([str(i) for i in range(len(destinations))] if destination_ids is None
+           else [str(d) for d in destination_ids])
+    if len(ids) != len(destinations):
+        raise ValueError("one destination id per destination")
     origin_atts = attachments(graph, origin, cap_m=MAX_ACCESS_M)
     out: list[Journey] = []
     for di, dxy in enumerate(destinations):
@@ -351,17 +482,18 @@ def journeys(graph: ToyGraph, origin: tuple[float, float],
                 direct = _same_edge_direct(graph, oa, da)
                 if direct is not None:
                     e = graph.edges[oa.edge]
-                    ident = e.identity if da.fraction >= oa.fraction else (
-                        e.v, e.u, e.geometry_key, tuple(sorted(e.osmid)),
-                        round(e.length_m, ROUND_DP))
-                    out.append(Journey(time_s=access_o + direct[0] + access_d,
-                                       cost=direct[1], destination=di, route=(ident,)))
+                    out.append(Journey(
+                        time_s=math.fsum((access_o, access_d, direct[0])),
+                        cost=math.fsum((access_o, access_d, direct[1])),
+                        destination=di, destination_id=ids[di],
+                        route=(directed_identity(e, forward=da.fraction >= oa.fraction),)))
                 for en, et, ec in _entries(graph, oa):
                     for xn, xt, xc in _exits(graph, da):
-                        for pt, pc, ids in _simple_paths(graph, en, xn):
+                        for pt, pc, path_ids in _simple_paths(graph, en, xn):
                             out.append(Journey(
-                                time_s=access_o + et + pt + xt + access_d,
-                                cost=ec + pc + xc, destination=di, route=ids))
+                                time_s=math.fsum((access_o, access_d, et, xt, *pt)),
+                                cost=math.fsum((access_o, access_d, ec, xc, *pc)),
+                                destination=di, destination_id=ids[di], route=path_ids))
     return out
 
 
@@ -386,45 +518,63 @@ class OracleResult:
     ineligible: tuple[int, ...]
     origin_candidates: int
     n_journeys: int
+    objective1_destination_id: str | None = None
+    objective2_destination_id: str | None = None
+    objective1_cost: float | None = None
+
+    #: The measured nearest distance to the graph, retained even when the cap left no candidate,
+    #: because `OFF_NETWORK`'s bound is `nearest / max_speed_mps` and the cap discards the distance
+    #: it is computed from. `None` only when the graph holds no edge geometry at all, where there is
+    #: no nearest distance and the absence must be reported rather than a number invented.
+    origin_nearest_m: float | None = None
 
 
 def evaluate(graph: ToyGraph, origin: tuple[float, float],
-             destinations: list[tuple[float, float]]) -> OracleResult:
+             destinations: list[tuple[float, float]],
+             destination_ids=None) -> OracleResult:
     """Objective 1 by exhaustive minimisation of **time**; objective 2 by exhaustive minimisation of
-    **cost**, then reporting *that* journey's time.
+    **cost**, then reporting *that* journey's time. Both totals carry both connectors.
 
     Objective 2 is deliberately **not** a minimum over the times of cost-optimal paths. Design §2.1:
     with identical engines on destinations `(cost, time) = (10, 10)` and `(100, 1)` the wrong
     functional reports -9 s of disagreement where there is none.
 
-    Cost ties are broken by design §2.4 — smallest travel time, then a deterministic total order —
-    which matters because the current code is non-deterministic on insertion order, returning 10 or 1
-    for equal-cost coincident alternatives of time 10 and 1.
+    Cost ties are broken by design §2.4 — smallest travel time, then destination id, then the route
+    identity sequence — which matters because the production code is non-deterministic on insertion
+    order, returning 10 or 1 for equal-cost coincident alternatives of time 10 and 1.
+
+    **Cost equality is exact, and that is now safe.** It was not when costs accumulated left to
+    right: pass-20 F7 built two routes carrying the same multiset of weights whose running sums
+    differed in the last bit, selecting a 1,000 s route over a 1 s one. Totals are now computed with
+    `math.fsum`, which is exactly rounded, so the sum of a multiset is one number whatever order it
+    is presented in and genuinely equal costs compare equal. An epsilon is still *not* introduced —
+    §2.4 declares no cost tolerance, and inventing one here would be this module making a rule.
     """
+    nearest = nearest_on_graph(graph, origin, cap_m=MAX_ACCESS_M)
     eligible = tuple(i for i, d in enumerate(destinations)
                      if attachments(graph, d, cap_m=POI_SNAP_MAX_M))
     ineligible = tuple(i for i in range(len(destinations)) if i not in eligible)
-    js = journeys(graph, origin, destinations)
-    origin_candidates = len(attachments(graph, origin, cap_m=MAX_ACCESS_M))
+    js = journeys(graph, origin, destinations, destination_ids)
     if not js:
         return OracleResult(None, None, None, None, None, eligible, ineligible,
-                            origin_candidates, 0)
+                            len(nearest.candidates), 0,
+                            origin_nearest_m=nearest.global_min_m)
 
     best_t = min(js, key=lambda j: j.rank_key)
     cheapest = min(j.cost for j in js)
-    # Exact equality against the minimum, deliberately. Design §2.2 declares a tolerance for
-    # *geometric* ties only; §2.4 declares none for cost, so introducing one here would be this
-    # module inventing a rule. Cases are built from small exact values so no near-tie arises; a real
-    # graph could produce one, which is recorded as a design question rather than resolved here.
-    best_c = min((j for j in js if j.cost <= cheapest), key=lambda j: j.rank_key)
+    best_c = min((j for j in js if j.cost == cheapest), key=lambda j: j.rank_key)
     return OracleResult(
         objective1_s=best_t.time_s,
         objective1_destination=best_t.destination,
+        objective1_cost=best_t.cost,
+        objective1_destination_id=best_t.destination_id,
         objective2_s=best_c.time_s,
         objective2_cost=best_c.cost,
         objective2_destination=best_c.destination,
+        objective2_destination_id=best_c.destination_id,
         eligible=eligible,
         ineligible=ineligible,
-        origin_candidates=origin_candidates,
+        origin_candidates=len(nearest.candidates),
         n_journeys=len(js),
+        origin_nearest_m=nearest.global_min_m,
     )

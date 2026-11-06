@@ -2,8 +2,19 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 7, 2026-11-06**, after Codex pass 20 found eleven defects in revision 6 and in T4 — four
+of them High. Change log in §13; revisions 2–6 are kept there too.
+
+Pass 20's verdict was again that **T3 is not ready to become a frozen reference**, and this time the
+reason is instructive: revision 6 closed pass 19's two blockers and its *replacement* rules opened
+four new numeric ambiguities. That is the project's recorded failure mode — a fix that breaks an
+adjacent case — arriving in the design rather than in code. Revision 7 settles the candidate key
+(§2.2), closed-edge identity and weight grouping (§2.4), the cost-arithmetic convention (§2.4), the
+lift from edge keys to whole journeys (§2.4), and names the two own objective-2 operands §2.6's
+intersection policy created (§2.1).
+
 **Revision 6, 2026-11-06**, after Codex pass 19 found ten defects in revision 5 and the first code —
-four of them High. Change log in §13; revisions 2, 3, 4 and 5 are kept there too.
+four of them High.
 
 Pass 19's verdict was that **T3 is not ready to implement as a frozen reference**, for two reasons
 that were both specification gaps rather than coding faults: §2.2's attachment candidate domain was
@@ -124,8 +135,34 @@ per-pair costs (verified live: a two-target response carried `(cost, time) = (10
 and is forbidden: with identical engines on destinations `(cost, time) = (10, 10), (100, 1)` it
 reports −9 s of "disagreement" where there is none.
 
-**E2's own input is the coordinate objective-2 comparator value, named `objective2_own_s`** — not the
-float cell surface. Revision 3 called it `t_float` and conflated two separately retained values.
+**Our own comparator charges both connectors to both objectives' TIME and COST**, which is what
+"both include both connectors" means and is worth saying twice because it is easy to implement as a
+time-only charge. Pass-20 F1: with destinations A at `(cost, time) = (10, 10)` carrying a 100 m
+residual and B at `(20, 650)` carrying none, the own costs are `10 + 100/1.26` =
+**89.3650793651** and **20**, so objective 2 selects B and reports **650 s**; omitting the connector
+from cost selects A and reports 89.3650793651 s — **FAIL becomes PASS at ten minutes**. Objective 1
+is unaffected, which is why only unequal connectors on *different* destinations expose it. §2.6's
+time-only connector rule is for the **independent engine**, whose generalised cost shares no unit
+with seconds; ours is already in seconds, since `access.py` adds 120 s per restricted edge to it.
+
+**E2's own input is the coordinate objective-2 comparator value** — not the float cell surface;
+revision 3 called it `t_float` and conflated two separately retained values. Revision 7 splits it in
+two, because §2.6's intersection policy means the own comparator now answers over **two different
+destination populations**:
+
+| name | destination population | what it serves |
+|---|---|---|
+| `objective2_own_full_s` | §2's fixed own eligible set (**549**) | the H2 **selection gap**, against objective 1 on the same set |
+| `objective2_own_intersection_s` | §2.6's recorded intersection | **E2**, paired with the independent engine |
+
+Pass-20 F6: own destinations A `(cost, time) = (1, 10)` and B `(2, 1000)` with zero connectors, and
+an engine that cannot correlate A. Full-own objective 1 and objective 2 are both **10 s**, so the
+selection gap is **0 s**; on the intersection `{B}` own objective 2 is **1,000 s**. Persisting only
+10 makes reconstructed E2 **+990 s** and flips `|d| > 60` from false to true; persisting only 1,000
+makes the reconstructed selection gap **990 s** and blames own selection for a destination the engine
+excluded. Both operands are retained, with their own selected destinations, costs and statuses, and
+**only the intersection value is ever paired with the engine**. No E1 verdict moves either way: E1 is
+defined against objective 1 on the full own set.
 
 **No property replaces these definitions.** Monotonicity is objective-specific: adding a *cheaper*
 destination correctly **increases** objective 2's reported time (executed: 10 s → 100 s). Properties
@@ -152,10 +189,31 @@ in the conformance suite supplement exact expected answers; they never substitut
     > geometry contributes exactly one — its closest point to the coordinate, with the segment's
     > endpoints included as the clamped cases. The candidate set is then those segment positions
     > whose distance is within `attach_tie_m` = **0.01 m** of the global minimum, **deduplicated by
-    > (canonical directed-edge identity, position rounded to 2 dp in metres)** per §2.4's precision.
+    > (edge record, along-edge arclength rounded to 2 dp in metres)**, the representative of a
+    > merged bucket being the candidate with the **smallest residual**, then the smallest exact
+    > arclength.
     This is finite, enumerable, persistable, and captures the case the next bullet names. It is
     **one of three readings** — exact per-geometry minima, these per-segment minima, or the whole
     tolerance sublevel set — and choosing it is the amendment, not an interpretation.
+
+    **Three parts of that key were wrong in revision 6 and are corrected in revision 7**, each with
+    an executed counterexample:
+    - **arclength, not position.** An XY point is not an *occurrence* along a polyline. A
+      self-crossing edge `(-100,0),(0,0),(0,100),(100,100),(100,0),(0,0),(0,-100)` — 600 m, 1,000 s —
+      passes `(0,0)` at arclengths **100 m and 500 m**, with 500 m and 100 m of edge remaining. Both
+      retained gives **166.6666666667 s**; a rounded-XY key merges them and returns
+      **833.3333333333 s**, PASS to FAIL at ten minutes, from discarding 400 m of route between two
+      points with zero spatial separation (pass-20 F2).
+    - **per edge record, not per canonical identity.** Identity excludes time and cost, so two
+      parallel `0 → 1` edges sharing geometry, `osmid` and length but carrying weights 2000/2000 and
+      2/2 share an identity. Keying on it discards one **before either objective competes**: 802 s
+      with the slow edge first, 1.2 s with the fast one first (pass-20 F4). §2.4 freezes identity and
+      grouping *separately from* ranking precisely so that grouping cannot answer a ranking question,
+      and a candidate key on identity breaks that.
+    - **the representative is the nearest, not the first.** On
+      `(-100,-0.004),(100,-0.004),(100,0.004),(-100,0.004)` from `(0,200)` the two horizontal
+      projections are **200.004 m and 199.996 m**; keeping the first and then applying the 200 m cap
+      returned **zero** candidates where one is attached (pass-20 F2).
   - where one geometry has several equally nearest positions — a point equidistant from two places on
     the same curve — each is retained as a candidate under the same tolerance, which the per-segment
     rule above delivers rather than assumes.
@@ -163,7 +221,15 @@ in the conformance suite supplement exact expected answers; they never substitut
   - **the band is applied first and each cap afterwards.** A retained candidate must independently
     satisfy its own cap — `max_access_m` for the origin, `poi_snap_max_m` for a destination. A
     nearest origin candidate at 199.995 m does **not** authorise a second at 200.004 m merely because
-    it is inside the geometric band.
+    it is inside the geometric band. **Both caps are inclusive**: exactly 200 m attaches and exactly
+    300 m is eligible. A `<` comparator passed every conformance case written before pass 20,
+    because none sat on a boundary, while turning a 338.0952380952 s PASS into no journey at all.
+  - **the measured nearest distance is retained even when the cap leaves no candidate**, because
+    `OFF_NETWORK`'s bound is computed from it. At a global minimum of 200.5 m the sound bound is
+    `200.5 / max_speed_mps` = **143.2142857143 s**, which does not prove failure at ten minutes;
+    840.5 m gives 600.3571 s, which does. The bound is **never** computed from the 200 m cap, which
+    is a different number, and where the graph has no edge at all there is no nearest distance and
+    the absence is reported rather than a distance invented.
   - the set of retained candidates is **recorded per point** in the manifest, since it is part of what
     determines the answer.
   - **What this rule does and does not buy.** Revision 5 claimed the reported quantity is "a property
@@ -237,10 +303,27 @@ each.**
 
 So, normatively:
 
-1. **Canonical directed-edge identity** is `(start node, end node, canonical geometry key, osmid
-   normalised to a sorted tuple, length rounded to 2 dp)`. Geometry keys are canonicalised so a
-   reversed traversal of the same geometry maps to the same physical road but a *different* directed
-   identity.
+1. **Canonical directed-edge identity** is `(start node, end node, canonical geometry key,
+   traversal orientation, osmid normalised to a sorted tuple, length rounded to 2 dp)`. Geometry keys
+   are canonicalised so a reversed traversal of the same geometry maps to the same physical road but
+   a *different* directed identity.
+
+   **The orientation field is revision 7's addition**, and it exists for closed edges. Where
+   `u == v` — a ring, a loop — swapping the endpoints does nothing, and canonicalising the geometry
+   against reversal removes the only remaining direction information, so revision 6's identity made
+   the two traversals **equal**. Pass-20 F3: two one-way self-loops around the square
+   `(0,0),(100,0),(100,100),(0,100),(0,0)` with the same `osmid`, origin `(10,0)`, destination
+   `(0,10)`. The answer is **200 s** the reverse way round; with equal identities the attachment
+   candidate set discarded one loop and returned **3,800 s** with the forward loop first and 200 s
+   with the reverse first — a PASS/FAIL flip at ten minutes decided by input order. Orientation is
+   `0` when the traversal's rounded geometry *is* the canonical key and `1` when it is the reversal,
+   which adds nothing for an open edge and separates the two directions of a closed one.
+
+   **Identity does not group weight alternatives.** It excludes time and cost by construction, so two
+   records can share an identity and differ in exactly the quantity an objective minimises. Nothing
+   upstream of ranking — attachment, candidate deduplication, index construction — may collapse such
+   records, because that resolves a ranking question by input order (pass-20 F4, and §2.2's candidate
+   key).
 2. **Reverse pairing** for `symmetrise` uses that same canonical identity, so a road is only ever
    suppressed as a duplicate of a road it is genuinely identical to.
 3. **The CSR → directed-edge mapping is preserved**, so a collapsed entry can name the directed edge
@@ -248,6 +331,25 @@ So, normatively:
 4. **Destination identity** is the Overture `id`; **route identity** is the sequence of canonical
    directed-edge identities.
 5. Rounding precision is **2 dp on metres** everywhere, stated once.
+6. **Totals are summed by an exactly-rounded, order-independent summation** — `math.fsum` or any
+   arithmetic giving the same result — for both time and cost, and cost equality is then **exact**,
+   with no tolerance.
+
+   This is revision 7's amendment and it is about the §12 equivalence contract, not about floating
+   point for its own sake. Under ordinary left-to-right accumulation two routes carrying the **same
+   multiset** of weights can compare unequal: pass-20 F7's fast route of per-edge costs
+   `(0.1, 0.2, 0.3)` taking 1 s against a slow route of `(0.3, 0.2, 0.1)` taking 1,000 s accumulates
+   to **0.6000000000000001** and **0.6**, so the slow route wins the cost argmin and the answer is
+   **1,000 s** — a FAIL/PASS flip at ten minutes decided by summation order. §12 says implementations
+   may vary while preserving the rules; under left accumulation reassociation changes the answer, so
+   no two implementations could be shown equivalent. Under an exactly-rounded sum the total of a
+   multiset is one number, genuinely equal costs compare equal, and §2.4's travel-time key decides —
+   here selecting **1 s**.
+
+   **No epsilon is introduced.** A cost tolerance would be a new rule with its own boundary; an exact
+   summation removes the need for one. Declaring left accumulation instead would also have been
+   coherent, but it would mean withdrawing §12's equivalence claim, which is the more valuable of the
+   two.
 
 **Ranking, applied only after identity and grouping:**
 
@@ -271,6 +373,20 @@ selected set to be recorded by identity. So the ranking continues, after the fou
 
 With those the recorded provenance is a function of the inputs, which is what §12's manifest claim
 requires.
+
+**The lift from edge keys to a whole journey, stated because revision 6 left it implicit.** The four
+edge keys order *alternatives at one step*; they do not by themselves order two complete journeys.
+Pass-20 F9 asked for the lift, and it is:
+
+> Among journeys tied on the objective's selection weight: smallest **travel time**, then smallest
+> **destination `id`**, then the smallest **sequence of canonical directed-edge identities**,
+> compared element-wise.
+
+Destination identity comes **before** the route sequence, because the destination is what the
+product's answer is about and the route is how it got there. Element-wise comparison is the normative
+one: comparing identity tuples as *text* gives a different order — node pairs `(2,3)` and `(10,11)`
+order `2 < 10` structurally and `'10' < '2'` as strings — and an implementation that stringified them
+selected the wrong route.
 
 ### 2.5 Bounds: metric, strictness, soundness
 
@@ -952,6 +1068,29 @@ Collected here because they were found as defects and must not be lost again.
 ---
 
 ## 13. Change log
+
+### Revision 7, after Codex pass 20 (4 High, 7 Medium)
+
+Pass 20 reviewed revision 6 together with T4. Six findings were implementation or test corrections
+to T4 and the frames and are recorded in the build record. The five that amend **this design** are
+below. Four of them are consequences of revision 6's own replacement rules, which is worth stating
+plainly: closing two blockers opened four ambiguities, and only an adversarial pass over the fix
+found them.
+
+| finding | revision 6 said | revision 7 says | consequence of the old text |
+|---|---|---|---|
+| **F2** §2.2 | deduplicate candidates by *(canonical identity, position at 2 dp)* | by *(edge record, along-edge **arclength** at 2 dp)*, representative = smallest residual | an XY point is not an occurrence: a self-crossing edge passes `(0,0)` at arclengths 100 m and 500 m, and merging them returned **833.3333333333 s** against **166.6666666667 s** — PASS to FAIL at ten minutes |
+| **F4** §2.2, §2.4 | the candidate key uses the canonical identity | identity **never groups weight alternatives**; the key is per edge record | identity excludes time and cost, so two records sharing it and carrying 2000/2000 and 2/2 were collapsed by input order **before either objective competed**: **802 s** or **1.2 s** |
+| **F3** §2.4 | identity is `(u, v, geometry key, osmid, length)` | plus a **traversal orientation** | for `u == v` the endpoints cannot separate the directions and canonicalising the geometry removes the rest, so two one-way loops had equal identities: **3,800 s** or **200 s** on insertion order |
+| **F7** §2.4 | nothing about summation | totals use an **exactly-rounded, order-independent** sum; cost equality is exact, with no epsilon | the same multiset of costs summed in two orders gives 0.6000000000000001 and 0.6, so a 1,000 s route beat a 1 s one. §12 says implementations may vary; under left accumulation reassociation changes the answer, so none could be shown equivalent |
+| **F9** §2.4 | "the fourth key makes the order total", then destination `id`, then the route sequence | the **lift** is stated: travel time, then destination `id`, then the route sequence compared **element-wise** | edge keys order alternatives at one step, not whole journeys. Comparing identities as text orders `'10' < '2'` where the structural order is `2 < 10` |
+| **F6** §2.1 | one own objective-2 value, `objective2_own_s` | **two** named operands: `objective2_own_full_s` for the selection gap, `objective2_own_intersection_s` for E2 | §2.6's intersection means the own comparator answers over two populations. Keeping one made reconstructed E2 **+990 s** or the selection gap **990 s**, neither real |
+| **F1** §2.1 | "both include both connectors" | the same, said twice and with its counterexample — connectors are in both objectives' **cost** as well as time | not an amendment but a clarification: T4's own oracle charged connectors to time only, and that defect passed all twelve conformance cases |
+
+**Accepted rather than amended.** Pass 20 showed that the per-segment rule gives different answers
+from the exact per-geometry rule — `599.9747619048 s` against `600.0399682540 s` on its L-shaped
+edge, PASS against FAIL at ten minutes. That is the declared consequence of revision 6's deliberate
+choice, not a reason to reverse it.
 
 ### Revision 6, after Codex pass 19 (4 High, 6 Medium)
 

@@ -346,9 +346,12 @@ DESTINATION_ELIGIBILITY = Case(
     ),
     provenance="design §2's destination-eligibility row",
     rejects=(
-        "treating the ineligible destination as unreachable and letting it influence a minimum, or "
-        "conflating poi_snap_max_m = 300 m with max_access_m = 200 m. They are different quantities "
-        "on different sides of the journey."
+        "conflating poi_snap_max_m = 300 m with max_access_m = 200 m — different quantities on "
+        "different sides of the journey — which the eligible/ineligible identities pin directly.\n"
+        "What this case does NOT separate, recorded because the first version of it claimed "
+        "otherwise: treating the ineligible destination as merely unreachable. A minimum over "
+        "{248.4126984127, inf} is still 248.4126984127, so no time assertion can see the "
+        "difference. Only the explicitly checked eligible and ineligible tuples do (pass-20)."
     ),
 )
 
@@ -403,10 +406,178 @@ MULTI_SEGMENT_POLYLINE = Case(
     provenance="design §2.2; the oracle's per-segment candidate reading",
     rejects=(
         "100 s — using the within-segment fraction 0.5 instead of the along-polyline fraction 0.75, "
-        "a 50 s error on a 150 s journey. At T = 2.5 min the two answers differ in verdict."
+        "a 50 s error on a 150 s journey. The verdicts differ at T = 2 min (120 s), where 100 "
+        "PASSES and 150 FAILS. An earlier note here said 2.5 min, which is wrong: at 150 s both "
+        "values pass an inclusive threshold (pass-20). Neither is a published threshold, so this "
+        "case separates arithmetic rather than a current published verdict."
     ),
     reading="per-segment minima",
 )
+
+# --------------------------------------------------------------------------------------------------
+# Pass-20's counterexamples. Every one of these exposed a defect that the twelve cases above did
+# **not** separate, which is why each arrives with the wrong answer it rejects.
+# --------------------------------------------------------------------------------------------------
+
+CONNECTORS_IN_BOTH_OBJECTIVES = Case(
+    name="connectors_enter_objective_2s_selection_cost",
+    rule="§2.1 both objectives include both connectors",
+    graph=ToyGraph(edges=(
+        ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=10.0, cost_base=10.0, osmid=(1,)),
+        ToyEdge(0, 2, ((0, 0), (0, -100)), time_s=650.0, cost_base=20.0, osmid=(2,)),
+    )),
+    origin=(0.0, 0.0),
+    destinations=((100.0, 100.0), (0.0, -100.0)),
+    expected=Expected(objective1_s=10.0 + 100.0 / ACCESS_SPEED_MPS, objective1_destination=0,
+                      objective2_s=650.0, objective2_cost=20.0, objective2_destination=1,
+                      origin_candidates=2,
+                      rejected_objective2_s=(10.0 + 100.0 / ACCESS_SPEED_MPS,)),
+    derivation=(
+        "Two edges leaving the origin node. A reaches (100,0) at time 10 and cost 10; B reaches "
+        "(0,-100) at time 650 and cost 20. Destination 0 sits at (100,100), which is 100 m from A's "
+        "far end, so it carries a 100 m connector; destination 1 is B's far node, with none.\n"
+        "The connector is charged at the access speed in BOTH totals: 100 / 1.26 = "
+        "79.3650793651 s, and the same number in cost, since our cost is in seconds — access.py "
+        "adds 120 s per restricted edge to it.\n"
+        "Objective 1 minimises time: 10 + 79.3650793651 = 89.3650793651 s to destination 0, against "
+        "650 s to destination 1.\n"
+        "Objective 2 minimises cost: destination 0 costs 10 + 79.3650793651 = 89.3650793651 and "
+        "destination 1 costs 20, so it selects destination 1 and reports ITS time, 650 s."
+    ),
+    provenance="pass-20 F1, executed",
+    rejects=(
+        "89.3650793651 s for objective 2 — omitting the connector from the selection cost, which "
+        "makes destination 0 cost 10 against destination 1's 20. FAIL becomes PASS at ten minutes. "
+        "This defect passed all twelve earlier cases: only UNEQUAL connectors on DIFFERENT "
+        "destinations separate it, and none of them had both."
+    ),
+)
+
+SELF_CROSSING_OCCURRENCES = Case(
+    name="two_occurrences_at_one_position_are_two_candidates",
+    rule="§2.2 candidate occurrences",
+    graph=ToyGraph(edges=(
+        ToyEdge(0, 1, ((-100, 0), (0, 0), (0, 100), (100, 100), (100, 0), (0, 0), (0, -100)),
+                time_s=1000.0, cost_base=1000.0, osmid=(1,), oneway=True),
+    )),
+    origin=(0.0, 0.0),
+    destinations=((0.0, -100.0),),
+    expected=Expected(objective1_s=1000.0 / 6.0, objective2_s=1000.0 / 6.0,
+                      origin_candidates=2,
+                      rejected_objective1_s=(5000.0 / 6.0,),
+                      rejected_objective2_s=(5000.0 / 6.0,)),
+    derivation=(
+        "One one-way edge whose geometry crosses itself: it reaches (0,0) at arclength 100 m, loops "
+        "away through (0,100), (100,100), (100,0), returns to (0,0) at arclength 500 m, and ends at "
+        "(0,-100) at arclength 600 m. Total length 600 m, total time 1000 s.\n"
+        "The origin (0,0) therefore has TWO zero-distance occurrences, at arclengths 100 and 500. "
+        "They are the same place and not the same decision: from the second, only 100 m of edge "
+        "remains.\n"
+        "Attaching at arclength 500 gives (600 - 500)/600 x 1000 = 166.6666666667 s.\n"
+        "Attaching at arclength 100 gives (600 - 100)/600 x 1000 = 833.3333333333 s."
+    ),
+    provenance="pass-20 F2, executed",
+    rejects=(
+        "833.3333333333 s — what a candidate key on the rounded XY position returns, because it "
+        "merges the two occurrences and keeps one. PASS becomes FAIL at ten minutes, from discarding "
+        "400 m of route choice between two points with zero spatial separation. Revision 6 specified "
+        "exactly that key; revision 7 keys on along-edge arclength instead."
+    ),
+    reading="per-segment minima",
+)
+
+_SQUARE_FORWARD = ((0, 0), (100, 0), (100, 100), (0, 100), (0, 0))
+_SQUARE_REVERSE = ((0, 0), (0, 100), (100, 100), (100, 0), (0, 0))
+
+CLOSED_EDGE_DIRECTION = Case(
+    name="the_two_directions_of_a_closed_edge_are_distinct",
+    rule="§2.4 canonical directed identity",
+    graph=ToyGraph(edges=(
+        ToyEdge(0, 0, _SQUARE_FORWARD, time_s=4000.0, cost_base=4000.0, osmid=(7,), oneway=True),
+        ToyEdge(0, 0, _SQUARE_REVERSE, time_s=4000.0, cost_base=4000.0, osmid=(7,), oneway=True),
+    )),
+    origin=(10.0, 0.0),
+    destinations=((0.0, 10.0),),
+    expected=Expected(objective1_s=200.0, objective2_s=200.0, origin_candidates=2,
+                      rejected_objective1_s=(3800.0,), rejected_objective2_s=(3800.0,)),
+    derivation=(
+        "Two one-way self-loops at node 0, the same square ring traversed in opposite directions. "
+        "Perimeter 400 m, time 4000 s, so 10 s per metre.\n"
+        "On the REVERSE loop the origin (10,0) lies on the closing segment at arclength 390 "
+        "(fraction 0.975) and the destination (0,10) on the opening segment at arclength 10 "
+        "(fraction 0.025). Going forward from 0.975 reaches node 0 for 0.025 x 4000 = 100 s, and "
+        "continuing forward to 0.025 costs another 100 s: 200 s total.\n"
+        "On the FORWARD loop the same two points are at fractions 0.025 and 0.975, so the direct "
+        "traversal is 0.95 x 4000 = 3800 s."
+    ),
+    provenance="pass-20 F3, executed",
+    rejects=(
+        "3800 s — what results when the two loops share an identity and attachment dedup discards "
+        "one of them. For a closed edge `u == v` the endpoints cannot separate the directions and "
+        "canonicalising the geometry against reversal removes the only remaining information, so "
+        "revision 6's identity made them equal. The answer then depended entirely on insertion "
+        "order: 3800 s with the forward loop first, 200 s with the reverse first. PASS/FAIL at ten "
+        "minutes decided by input order."
+    ),
+)
+
+DUPLICATE_IDENTITY_WEIGHTS = Case(
+    name="same_identity_alternatives_still_compete_on_weights",
+    rule="§2.4 identity and grouping are separate from ranking",
+    graph=ToyGraph(edges=(
+        ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=2000.0, cost_base=2000.0, osmid=(7,)),
+        ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=2.0, cost_base=2.0, osmid=(7,)),
+    )),
+    origin=(20.0, 0.0),
+    destinations=((80.0, 0.0),),
+    expected=Expected(objective1_s=1.2, objective2_s=1.2, objective2_cost=1.2,
+                      origin_candidates=2,
+                      rejected_objective1_s=(802.0,), rejected_objective2_s=(802.0,)),
+    derivation=(
+        "Two parallel 0 -> 1 edges with the SAME geometry, osmid and length, so the same canonical "
+        "directed identity — but weights 2000/2000 and 2/2. Design §2.4 freezes identity and "
+        "grouping separately from ranking precisely so that grouping cannot answer a ranking "
+        "question.\n"
+        "Origin at x=20 is fraction 0.2 along either; destination at x=80 is fraction 0.8. Both "
+        "objectives should use the fast alternative: 0.6 x 2 = 1.2 s, cost 1.2.\n"
+        "Resolving the duplicate identity to the SLOW edge gives 0.2 x 2000 = 400 s back to node 0, "
+        "the fast edge for 2 s, and 0.2 x 2000 = 400 s out again: 802 s."
+    ),
+    provenance="pass-20 F4, executed",
+    rejects=(
+        "802 s — what a candidate key on the canonical identity returns when it discards one record "
+        "by input order before either objective competes. Identity excludes time and cost, so two "
+        "records can share it and differ in exactly the quantity being minimised. FAIL/PASS flips at "
+        "ten minutes on insertion order."
+    ),
+)
+
+CAP_IS_INCLUSIVE = Case(
+    name="a_destination_exactly_at_the_cap_is_eligible",
+    rule="§2 destination eligibility",
+    graph=ToyGraph(edges=(
+        ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=100.0, cost_base=100.0, osmid=(1,)),
+    )),
+    origin=(0.0, 0.0),
+    destinations=((100.0, 300.0),),
+    expected=Expected(objective1_s=100.0 + 300.0 / ACCESS_SPEED_MPS,
+                      objective1_destination=0, eligible=(0,), ineligible=(),
+                      origin_candidates=1),
+    derivation=(
+        "One 100 m edge. The destination is EXACTLY poi_snap_max_m = 300 m from its far end, so it "
+        "is eligible: the cap is `<= 300`, not `< 300`.\n"
+        "The journey traverses the whole edge for 100 s and then the 300 m connector at the access "
+        "speed, 300 / 1.26 = 238.0952380952 s. Total 338.0952380952 s, a ten-minute PASS."
+    ),
+    provenance="pass-20 F5, executed",
+    rejects=(
+        "no finite journey at all — which is what a `< cap` comparator returns here, excluding the "
+        "destination and leaving an empty eligible set. Read as exhaustion that is a FAIL where the "
+        "answer is a 338 s PASS. A mutant replacing each cap with its next float down passed all 78 "
+        "tests, because every earlier case used 250 m or 350 m and none sat on a boundary."
+    ),
+)
+
 
 # --------------------------------------------------------------------------------------------------
 
@@ -424,6 +595,11 @@ CASES: tuple[Case, ...] = (
     DESTINATION_ELIGIBILITY,
     OFF_NETWORK_ORIGIN,
     MULTI_SEGMENT_POLYLINE,
+    CONNECTORS_IN_BOTH_OBJECTIVES,
+    SELF_CROSSING_OCCURRENCES,
+    CLOSED_EDGE_DIRECTION,
+    DUPLICATE_IDENTITY_WEIGHTS,
+    CAP_IS_INCLUSIVE,
 )
 
 #: Each design rule the plan's T3 table names, mapped to the cases that cover it. A rule with no
@@ -431,7 +607,10 @@ CASES: tuple[Case, ...] = (
 RULE_COVERAGE: dict[str, tuple[str, ...]] = {
     "objective-specific views, never hybrid": ("objective_views_are_never_hybrid",),
     "the normative tie rule": ("geometric_attachment_tie_keeps_every_minimiser",
-                               "equal_cost_alternatives_rank_by_travel_time"),
+                               "equal_cost_alternatives_rank_by_travel_time",
+                               "two_occurrences_at_one_position_are_two_candidates",
+                               "the_two_directions_of_a_closed_edge_are_distinct",
+                               "same_identity_alternatives_still_compete_on_weights"),
     "partial-edge time, cost and penalty apportionment": (
         "edge_penalties_are_apportioned_not_charged_on_entry",
         "fraction_is_measured_along_the_whole_polyline"),
@@ -439,12 +618,14 @@ RULE_COVERAGE: dict[str, tuple[str, ...]] = {
                            "oneway_with_no_return_is_no_path_not_off_network"),
     "same-edge traversal as a candidate": (
         "same_edge_direct_traversal_is_a_candidate_and_loses",),
-    "destination eligibility at 300 m": ("destination_eligibility_is_the_300_m_cap",),
+    "destination eligibility at 300 m": ("destination_eligibility_is_the_300_m_cap",
+                                        "a_destination_exactly_at_the_cap_is_eligible"),
     "origin attachment at 200 m": (
         "origin_beyond_max_access_m_is_off_network_not_no_path",),
     "objective 2 is cost-argmin then its time": (
         "objective2_is_cost_argmin_then_that_pairs_time",
-        "adding_a_cheaper_destination_raises_objective2"),
+        "adding_a_cheaper_destination_raises_objective2",
+        "connectors_enter_objective_2s_selection_cost"),
 }
 
 #: Rules of §2 and §2.5 that are **not** graph cases, with where they are tested instead. Recorded

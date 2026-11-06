@@ -1,7 +1,7 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 5, 2026-11-06.** Implements **design revision 6**, which is the operative document —
+**Revision 6, 2026-11-06.** Implements **design revision 7**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
 Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
@@ -12,9 +12,16 @@ reconstruct E2, and T8's attempt registration had been reduced to a sentence tha
 outcome-selected attempt satisfies. Both were cases of the plan failing to carry a fix the design had
 already made, so both are plan corrections rather than new decisions.
 
-**T1, T2 and T4 are built.** 576 tests pass. T4's expected answers come from hand arithmetic and
-from an exhaustive enumerator, neither of which calls T3 — and pass 19 independently described that
-same construction as the way to derive them. T3 remains gated on a review of design revision 6.
+Pass 20 then reviewed revision 6 together with T4 and found eleven more, four High, with the same
+verdict: **T3 is not ready to become a frozen reference.** Four of its findings were consequences of
+revision 6's own replacement rules. It also found two defects in this plan's T6 payload, which
+revision 6 fixes.
+
+**T1, T2, T4 and T9 are built.** 625 tests pass. T4's expected answers come from hand arithmetic and
+from an exhaustive enumerator, neither of which calls T3 — a construction pass 19 independently
+described as the right one, and which pass 20 confirmed is adequate evidence of *independence*
+while being explicit that independence is not coverage. It found a wrong comparator that passed the
+whole twelve-case corpus. T3 remains gated on a review of design revision 7.
 
 **Branch:** `v2-rethink`
 
@@ -177,11 +184,17 @@ authorise.**
 Implements design §2's decision rules. Built **fixture-first**, and the fixtures are T4's, derived
 from the design and from the four reviews' counterexamples rather than from this code.
 
-**Two preconditions, both now met in the design and neither yet reviewed.** Pass 19: "Do not start a
-purportedly normative T3 until F1 and F2 are settled. Development prototypes and the unambiguous
-fixture subset can proceed." F1 was §2.2's candidate domain — a continuum, not a set — and F2 was
-§2.6 allowing the independent engine to remove destinations from E1. Design revision 6 settles both
-with §13 rows. T3 therefore waits on a review of revision 6, not on more design work.
+**Six preconditions, all now met in the design and none yet reviewed.** Pass 19 named two: §2.2's
+candidate domain was a continuum rather than a set, and §2.6 let the independent engine remove
+destinations from E1. Revision 6 settled both — and pass 20 found that its *replacements* opened four
+more: the candidate key merged distinct occurrences and distinct weight alternatives (F2, F4), closed
+edges had no directed identity (F3), and cost summation order could decide a verdict (F7). Revision 7
+settles those with §13 rows.
+
+Pass 20's standing instruction is unchanged in form: *"Do not start a purportedly frozen T3 yet.
+Ordinary development and the unambiguous fixture subset can proceed."* So T3 waits on a review of
+revision 7. The pattern is worth naming — twice now, closing the blockers has opened new ones, and
+only an adversarial pass over the fix found them.
 
 T4's twelve cases and the oracle in `toy.py` already cover eight of the nine rules below; the ninth,
 the independent engine's connector charge, is deliberately absent from the corpus because it depends
@@ -208,7 +221,7 @@ What this task must get right, each with its conformance case in T4:
 
 ### T4 — the conformance suite
 
-**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, 78 tests, corpus digest `b09596d1`.
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `e645be28`. Five cases and the seven mutants came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property
@@ -261,9 +274,20 @@ and no retained raw times leave E2 at **0 s against +100 s** and the `|d| > 60 s
 against 1**, from rows that each look complete and each show four PASSes. So, additionally required,
 and a regeneration test must **fail** a bundle missing any of them:
 
-- **all five numeric values per point and threshold** — objective 1 own, objective 2 own, the
-  independent engine's selected time, and both sides' selected generalised costs — never a
-  difference in place of its operands;
+- **design §12's five numeric values per point and threshold** — objective 1 own, objective 2 own,
+  the **float product**, the **decoded encoded product**, and the independent engine's objective 2 —
+  never a difference in place of its operands. Revision 5's first attempt at this bullet named the
+  two *selected costs* in place of the two product values, which pass-20 F10 caught: two bundles can
+  then agree on every listed number and four PASSes while their float/decoded product pairs are
+  100/120 s and 200/240 s, making the snapping deviation from objective 1 **0 against 100 s** and the
+  encoding deviation **20 against 40 s**, neither recoverable once the source rasters are gone;
+- **the two selected generalised costs as well** — ours and the engine's — which are additional
+  values, not substitutes for the product pair;
+- **both own objective-2 operands** (design §2.1 revision 7): `objective2_own_full_s` over the fixed
+  549 for the H2 selection gap, and `objective2_own_intersection_s` over §2.6's intersection for E2,
+  each with its own selected destination, cost and status. Keeping one made reconstructed E2 **+990 s**
+  or the reconstructed selection gap **990 s** on pass-20 F6's two-destination case — and **only the
+  intersection value is ever paired with the engine**;
 - **both connector residuals** (ours and the engine's correlation residual), per design §2.6
   revision 6, since E2 is declared inclusive of attachment disagreement and the components must stay
   separable;
@@ -363,7 +387,7 @@ change after certification, violating the design's own freeze.
 
 ### T9 — E3 ingestion and scoring
 
-**Depends on:** T1.
+**Depends on:** T1. **Built** 2026-11-06: `measure/e3.py`, 15 tests.
 
 `score_e3(journeys)` implementing design §3 as a **disjunction**: `failed` if any journey exceeds its
 reported time by more than a factor of 1.5 **and** by more than 5 minutes, **or** if the median
