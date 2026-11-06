@@ -190,8 +190,8 @@ redraw is a check to run, not a claim the manifest makes.
 
 `v2/locfinder/measure/toy.py`, `conformance.py`, `conformance_cases.py`,
 `v2/tests/test_conformance.py` (**112 tests**). **Seventeen** cases, corpus digest
-`f5ced7a0f1aeab2f776bea9cc90668678e475cfe1a8cbbba14200ee69011608a`
-(was `e645be28…` until design revision 9 relabelled the two reading-dependent cases; `case_json` covers each case's justification on purpose, so an annotation edit moves the digest and that is the intended behaviour).
+`47f4beb6f254c2afca8ec458a4820b054fb9328196199bb7f8018f4258c0e893`
+(`e645be28…` → `f5ced7a0…` → this, as revisions 9 and 10 relabelled and then restored the two reading-dependent cases. `case_json` covers each case's justification on purpose, so an annotation edit moves the digest; that is intended, and the two cases' expected values never changed.)
 
 Design §12 artifact 3. The execution plan requires that "derived independently of T3" be
 **evidenced, not asserted**, and notes that "written before T3 is complete" is not evidence and a
@@ -267,7 +267,7 @@ established; coverage of §2 is not, and no claim here says otherwise.
 
 ## T4's second layer — invariants and a mutation guard · 2026-11-06, corrected after passes 22 and 23
 
-`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**457 tests, 433
+`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**459 tests, 435
 passing and 24 skipped**), `v2/tests/test_mutants.py` (**31 tests**). 31 scenarios, 14 mutants.
 
 **This exists because pass 21 named the process rather than a rule.** Its diagnosis, after the third
@@ -518,8 +518,8 @@ than 0.0, because zero would assert the product was accurate.
 
 ## Suite
 
-**1,113 collected: 1,089 pass and 24 skip.** 328 before S3, plus 140 for T1, 30 for T2, 112 for
-T4's corpus, **457 for the invariant layer** (433 passing, 24 skipped), **31 for the mutation
+**1,115 collected: 1,091 pass and 24 skip.** 328 before S3, plus 140 for T1, 30 for T2, 112 for
+T4's corpus, **459 for the invariant layer** (435 passing, 24 skipped), **31 for the mutation
 guard**, and 15 for T9.
 The skips are the affine law declining to assert where more than one journey exists and the selected
 one may legitimately switch — visible, rather than silently asserting something false.
@@ -603,8 +603,9 @@ claim only — not the build and not the construction gate.
 
 ## Corrections — what this record claimed and could not show
 
-Twenty-two statements across four versions of this record claimed more than had been shown: five
-found by each of passes 19 and 20, seven by pass 22, and five by pass 23. All are corrected above;
+Twenty-seven statements across five versions of this record claimed more than had been shown: five
+found by each of passes 19 and 20, seven by pass 22, five by pass 23, and **five by passes 24 and 26
+about the amendment I recommended and the reversal I then recommended**. All are corrected above;
 they are listed here because a record that silently repairs its own overstatements teaches nothing,
 and because the *pattern* is the useful part: **every time, the overstatement was in the section
 describing work I had just finished.** Pass 22's seven are in the invariant-layer section written
@@ -708,3 +709,41 @@ deduplication; `_drop_orientation` slices the correct tuple positions; `EXPECTED
 in full; and the hop-depth anchors are arithmetically right at their declared depths. It noted that
 the chain shape is simultaneously straight, one-way, equal-weight and zero-connector, so those remain
 unexercised at depth.
+
+### Passes 24 and 26's five — about an amendment and its reversal, both proposed by me
+
+This is the worst entry in the record, because the overstatements are not in work a review found
+wrong — they are in the **two consecutive decisions I put to the owner**, an hour apart, and the
+owner approved the first on my evidence.
+
+**Pass 24, against design revision 9**, which I recommended and the owner adopted:
+
+| the claim | why it was wrong |
+|---|---|
+| the exact per-record minimum "keeps **every** position achieving the minimum, so genuine within-record equidistance survives" | it compares **computed** residuals. Two arms whose exact rational squared distances are both **exactly 1** compute as 0.9999999999999999 and 1.0 — adjacent binary64 values — so one is discarded: **996.7640294933123 s FAIL** where keeping both gives **16.912 s PASS** |
+| the amendment removes the subdivision verdict flip | not on that input. `split_segments` still moves **996.764 FAIL → 16.912 PASS**, because the sensitivity is in the **projection arithmetic**, not in the band. I changed the step that was not the cause |
+| "across the whole 29-scenario invariant domain the two readings never disagree" and the residues are a zero-length count and 1.4e-14 s | the scenario measurements were correct and the **inference from them was not**. Pass 24 confirmed both and added a large verdict-changing residue outside the domain. This is `feedback-a-relative-invariant-cannot-see-an-absence`'s own rule — *"'measured across the domain' is a lie if you measured the scenarios"* — broken within hours of writing it down |
+
+**Pass 26, against the reversal I then proposed:**
+
+| the claim | why it was wrong |
+|---|---|
+| revision 9 "bought nothing" and is "strictly worse than what it replaced" | it **did** fix its motivating straight-edge subdivision case, and revision 10 reinstates that sensitivity. Agreement on two of pass-24 F2's representations does not establish that the reverted rule is **generally** better. Adding candidates can also admit a shortcut to a different journey |
+| the 60 s product tolerance makes the reversal proportionate | median ≤10% / p90 ≤20% is an **aggregate real-world accuracy target**, not an allowance to assign the attachment rule the entire budget. I had been using it as a licence |
+
+Pass 26 also corrected a statistical argument I used to suggest the choice might not matter: *"With
+zero events in 1,000 random observations **per frame**, a conservative one-sided 95% upper bound is
+about **0.30%**, not 'a handful in 512,633'."* A small pilot can identify a common problem; it cannot
+establish extreme rarity. And it rejected my practicality objection to the proper fix as equally
+unestablished — population size alone does not make exact rational comparison impractical, since
+indexed local searches and reuse of destination work matter and neither has been benchmarked.
+
+**What this entry is for.** Four passes diagnosed the *process* and I built an instrument in response.
+The instrument did not stop it, and the reason is now visible: the failure is not in the rules, it is
+that I keep **deciding by argument and then describing the argument as a measurement**. Pass 26's
+decision procedure is in the execution plan §2a, and T0 — measure prevalence on the real graph before
+choosing a convention — exists because five rounds of reasoning produced a rule that lasted an hour.
+
+The one thing that worked as intended: `revision9-per-record-exact-minimum` is executable in
+`mutants.py`, so the withdrawn rule cannot return silently. A withdrawn estimand needs a guard as much
+as a fixed defect does, and this one needed it after sixty minutes.

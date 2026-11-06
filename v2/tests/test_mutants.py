@@ -82,11 +82,10 @@ EXPECTED_COVERAGE = {
     "pass23-F1-bounded-destinations": (True, False),
     "pass23-F4-coordinate-dependent-orientation": (True, False),
     "pass23-F8-connector-free-reported-cost": (True, True),
-    # The estimand design revision 9 replaced, not a defect a review found. The invariant layer
-    # catches it through the subdivision signature and the `subdivision_sensitive` scenario; the
-    # corpus does not, because both reading-marked cases survive the amendment unchanged -- which
-    # is part of the evidence that settled it.
-    "revision9-per-segment-candidate-band": (True, False),
+    # The estimand design revision 9 adopted and revision 10 reverted, not a defect a review found.
+    # The invariant layer catches it through the subdivision signature; the corpus does not, because
+    # both reading-marked cases survive either convention unchanged.
+    "revision9-per-record-exact-minimum": (True, False),
 }
 
 

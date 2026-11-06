@@ -1,7 +1,7 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 9, 2026-11-06.** Implements **design revision 9**, which is the operative document —
+**Revision 10, 2026-11-06.** Implements **design revision 10**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
 Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
@@ -36,7 +36,7 @@ more than three destinations, and an orientation rule wrong only outside a coord
 record: **a relative invariant cannot see an absence, a positional truncation, or a defect that
 appears only far from the origin.** All such repairs are absolute anchors.
 
-**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,089 tests pass and 24 skip**: the conformance
+**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,091 tests pass and 24 skip**: the conformance
 corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard**
 asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for
 that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the
@@ -91,6 +91,73 @@ E2, the four diagnostics, the conformance suite, the wire-format migration, and 
 ---
 
 ## 2. Tasks
+
+### T0 — the attachment prevalence-and-impact pilot
+
+**Depends on:** nothing that is not already built and on disk. **This is the next task**, ahead of T3
+and ahead of choosing a candidate convention. Codex pass 26 designed it after five rounds of choosing
+attachment rules by argument produced revision 9; the owner's stated trust order is **experimental
+results > research > priors**, and the rule has been chosen from priors throughout.
+
+**What it answers.** How often does any of the attachment ambiguity we have been legislating actually
+occur on the real Triangle graph, and when it occurs, does it change anything a user sees? That
+decides between the four conventions — **A** per-segment plus band (the current provisional one),
+**B** an exact rational predicate with degree-two normalisation, **C** revision 9 with record
+dependence declared, **D** exact minima globally with no band.
+
+**Time box: one developer day**, including a routing-cost estimate. If route comparison turns out
+unaffordable, publish the attachment result and leave verdict impact **explicitly unknown** — do not
+substitute candidate frequency for it.
+
+**Stage 1 — attachment only.** Pin the prepared walk graph, geometry, coordinates, caps, runtime and
+rule versions. Reuse a **recorded** random sample from each existing frame: 500 structure centroids
+(frame B) and 500 independent within-cell points (frame C). Audit all **550** grocery coordinates
+too, including eligibility changes — one destination's attachment change can affect many origins.
+Benchmark the first batch before choosing a larger sample or a census. An indexed query must enumerate
+every segment potentially inside the global-minimum-plus-band window; a nearest-record-only API is
+insufficient. Keep occurrence deduplication and cap order identical across variants.
+
+**Stage 2 — retain separate counts.** These are different events and must not be pooled: points with
+multiple candidates; points with candidates on multiple distinct **records**; points with multiple
+occurrences on **one** record; within-record band survivors that an exact filter would remove; and
+candidate-set differences between A, revision 9 and D. On the local segment sets, exact rational
+squared-distance checks distinguish genuine ties from merely close residuals — keep that diagnostic
+separate from a full B implementation, and **do not label a floating-point near-tie window as
+exact-tie detection**. Record denominators, residual gaps, statuses and timing. Add a small separate
+set of lawful subdivision transformations: the untransformed graph cannot measure representation
+sensitivity.
+
+**Stage 3 — route only where candidates or eligibility differ.** Use a scalable development
+comparator, not the exhaustive toy oracle. Cache shared routing work. If destination candidates
+change, every sampled origin is potentially affected even when its own candidates agree. Compare
+paired seconds, objective-specific selections, exact threshold verdicts **and actual whole-minute
+encoded verdicts** at the release limits. Report absolute changes, tails, maximum and false-inclusion
+direction separately — pass 24's exact ten-minute flip is **not** itself an encoded-minute flip.
+Retain timeouts and unresolved comparisons rather than counting them as agreement. Keep targeted
+transformation results separate from population estimates.
+
+**What the numbers can and cannot support.** With **zero events in 1,000 random observations per
+frame**, the conservative one-sided 95% upper bound is about **0.30%** — a small pilot can identify a
+common problem, it cannot establish extreme rarity. Keep the two frames separate. Census the cheap
+attachment stage if benchmarking supports it; a ground-area sample still does not count every affected
+location within each cell. Also report impact **among displayed PASS results**, where a low
+full-frame rate can conceal concentrated harm.
+
+**Allocate the sensitivity budget before looking.** Take it from the existing product requirements —
+median ≤10% and p90 ≤20% of the limit is an *aggregate real-world* target, not an allowance to spend
+entirely on the attachment rule — and do not invent a new release tolerance from the data.
+
+**Then choose:**
+
+| pick | if |
+|---|---|
+| **A** (current) | its consequential differences fit the budget and no repeatable harmful pattern emerges |
+| **B** | meaningful harm is attributable to exact-tie loss or lawful representation changes, representation independence is still required, **and** a bounded implementation meets the measured runtime budget |
+| **C** | the within-record minimum shows a demonstrated benefit over A, exact ties need preserving, and record dependence is expressly acceptable |
+| **D** | extra band attachments produce harmful competing routes and the owner deliberately accepts losing across-road alternatives |
+
+"Thousands of candidates" alone selects none of these. Differences between conventions also do not
+identify truth — inspect consequential cases against legal access and usable grocery journeys.
 
 ### T1 — `v2/locfinder/measure/stats.py`
 
@@ -226,11 +293,13 @@ Ordinary development and the unambiguous fixture subset can proceed."*
 **What revision 9 must settle before a freeze**, with the counterexample for each in the build
 record's "Not yet built":
 
-0. **Done — the candidate universe** (design revision 9, an owner decision rather than a review
-   finding): exact minima per edge record, then the tie band across records. The superseded rule let a
-   vertex that changed no geometry move a ten-minute verdict, 600.0349975000 s FAIL to
-   599.9789682540 s PASS. The justification this design gave for the superseded rule was measured and
-   found false.
+0. **Deferred to measurement, not settled — the candidate universe.** Design revision 9 adopted an
+   exact per-record minimum and **revision 10 reverted it within the hour**: the exact test compared
+   *computed* residuals, which discards genuine geometric ties (996.764 s FAIL against 16.912 s PASS
+   on two arms at exact squared distance 1), did not fix the subdivision case it was adopted for, and
+   made the answer depend on record segmentation. §2.2 now **declares** per-segment minima plus the
+   band as a convention, provisionally, with its sensitivities listed. **T0 below is what settles
+   it.**
 1. **The geometry arithmetic.** Revision 8 froze `f × (cost_base + penalty)` as one term and left the
    *fraction* unfrozen. `sum` against left accumulation of one three-segment edge's lengths gives
    0.16666666666666669 against 0.16666666666666666 as the first-vertex fraction, which loses or wins
@@ -283,9 +352,9 @@ What this task must get right, each with its conformance case in T4:
 
 ### T4 — the conformance suite
 
-**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `f5ced7a0`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `47f4beb6`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
 
-**Second layer, same date:** `invariants.py`, `mutants.py`, **457 invariant tests and 31 mutation-guard tests**. 31 scenarios tagged by structural shape, hop depth, destination cardinality and subdivision sensitivity, 14 mutants — the last being the candidate universe design revision 9 superseded, kept executable because a withdrawn estimand needs a guard too. Eight mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Three mutants defeated both layers at once when they were written — a bounded path enumeration, a bounded destination list and a coordinate-dependent orientation — which is why `CHAIN_DEPTHS`, the five-spoke scenarios and the multi-offset orientation anchor exist, and why all three are anchored to numbers rather than compared across transforms.
+**Second layer, same date:** `invariants.py`, `mutants.py`, **459 invariant tests and 31 mutation-guard tests**. 31 scenarios tagged by structural shape, hop depth, destination cardinality and subdivision sensitivity, 14 mutants — the last being the candidate universe design revision 9 superseded, kept executable because a withdrawn estimand needs a guard too. Eight mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Three mutants defeated both layers at once when they were written — a bounded path enumeration, a bounded destination list and a coordinate-dependent orientation — which is why `CHAIN_DEPTHS`, the five-spoke scenarios and the multi-offset orientation anchor exist, and why all three are anchored to numbers rather than compared across transforms.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property
@@ -550,6 +619,25 @@ that real-world accuracy is supported (E3 returns UNVERIFIED absent a counterexa
 containing the word "household".
 
 ---
+
+## 2a. The decision procedure, after five rounds of choosing a rule by argument
+
+Codex pass 26 supplied this, and it is recorded as a rule rather than as advice because the failure it
+addresses has now happened five times — each replacement rule became the next pass's finding, and twice
+the replacement was mine, adopted on evidence whose scope I overstated.
+
+1. Write **one page** naming the product decision, the supported scope, the required claims, the
+   sensitivity budget and the time box.
+2. Run the **paired pilot** (T0).
+3. **Inspect the consequential cases** — not the aggregate.
+4. Choose the **simplest convention supported by that evidence**.
+5. **Version it** and proceed to real recommendation checks.
+
+**Reopen only** for a measured budget breach, a reproducible consequential error, or a required scope
+change. A new **synthetic** witness updates the declared limitation; it does not reopen the choice
+unless it contradicts a retained claim.
+
+> **Do not convert success on the latest corpus into a property of the rule again.**
 
 ## 3. What would invalidate this plan
 

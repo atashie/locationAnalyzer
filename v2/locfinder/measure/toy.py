@@ -44,12 +44,17 @@ they are the ones an implementation gets wrong:
 `ATTACH_TIE_M` is a threshold, so the answer is well defined but **not continuous** in the geometry;
 §2.2 says so and no output may claim otherwise.
 
-The candidate universe is **exact minima per edge record, then the tie band across records** — design
-revision 9, which replaced a rule applying the band directly to every segment minimum. That earlier
-rule made the answer depend on how a polyline was *drawn*: a midpoint inserted into one straight
-edge moved 600.0349975000 s to 599.9789682540 s, FAIL to PASS. The cases marked
-`reading="exact per-edge minima"` are the ones a different choice of universe would bear on; both
-survive the amendment unchanged, which is part of the evidence that settled it.
+The candidate universe is **per-segment minima, then the tie band across all records** — design
+revision 10, which **reverted** revision 9's per-record exact filter. Revision 9 compared computed
+residuals for exact equality, which discards genuine geometric ties (996.764 s FAIL against 16.912 s
+PASS on two arms at exact squared distance 1), still moved under subdivision through the projection
+arithmetic, and made the answer depend on record segmentation (600.035 s FAIL on one record against
+599.979 s PASS on two degree-two records).
+
+It is a **declared convention** and not a property of the road: the answer is a function of the
+supplied geometry as given. Its sensitivities are listed on `nearest_on_graph` and are stated, not
+denied. The cases marked `reading=` are the ones a different choice of universe would bear on; both
+survive either choice unchanged, so the corpus does not distinguish them.
 
 ## Why node-simple paths suffice, and for what
 
@@ -273,43 +278,44 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
     The candidate set is, in this order:
 
     1. the nearest position on **each polyline segment** of each edge;
-    2. **per edge record**, only those achieving that edge's **exact minimum** residual;
-    3. of the survivors, those within `ATTACH_TIE_M` of the **global** minimum across edges;
-    4. deduplicated by **occurrence** — `(edge, "v", vertex index)` or `(edge, "s", segment index,
+    2. those within `ATTACH_TIE_M` of the **global** minimum across all edges;
+    3. deduplicated by **occurrence** — `(edge, "v", vertex index)` or `(edge, "s", segment index,
        parameter)`, with no rounding;
-    5. filtered to those independently within `cap_m`.
+    4. filtered to those independently within `cap_m`.
 
-    **Step 2 is design revision 9's amendment, and it is the step that makes the answer a property
-    of the road rather than of the way the road was drawn.** Until revision 9 the band in step 3 was
-    applied directly to every segment minimum, which let a vertex that changes no geometry change
-    the answer: on one one-way edge `(0,0)→(100,0)` of time/cost **1199.95** with the origin at
-    `(49.995,0)`, inserting the midpoint `(50,0)` creates a second segment whose *clamped start* sits
-    0.005 m away — inside the band — and reports **599.9789682540 s** where the undivided edge
-    reports **600.0349975000 s**. PASS against FAIL at ten minutes, with no road changed and the
-    candidate count 1→2. The data source re-densifies geometries, so that was a live exposure.
+    **This is a declared convention, not a property of the road.** Design revision 10 withdrew the
+    ambition that it could be the latter. The candidate set is a function of the **supplied geometry
+    as given**, computed by this sequence of operations, and the sensitivities below are its stated
+    consequences rather than defects awaiting repair.
 
-    **Steps 2 and 3 are deliberately different tests, and that is the whole content of the rule.**
-    Within one record the minimum is exact, so a position a hair further along the same road is not a
-    candidate. Across records the band applies, so two roads 1 m either side of a point are both
-    candidates even though their residuals differ in the last bits — which is the case the band
-    exists for, and which can differ by 900 s.
+    **The known sensitivities of this convention, stated rather than denied.** Each is measured; none
+    is claimed to be absent.
 
-    Exact equidistance **within** one record still yields both positions, because both achieve the
-    edge minimum: on `(0,1),(200,1),(200,-1),(0,-1)` from `(0,0)` the two arms are both exactly 1 m
-    away at arclengths 0 and 402, both retained, and the answer is 0.7936507937 s under this rule and
-    under the superseded one alike. The justification §2.2 used to give for per-segment minima — that
-    they "deliver the equidistant-points-on-one-curve case rather than assuming it" — was false, and
-    measuring it is what settled the amendment. Across the whole 29-scenario invariant domain the two
-    readings **never disagree**; they differ only on a *near* tie inside the 10 mm band, where the
-    superseded rule's answer was itself a threshold artefact — a far arm at 9.9 mm reporting
-    0.8015079365 s and at 10.1 mm reporting 1000.7936507937 s, a 1000 s jump across 0.2 mm.
+    * **Segment subdivision can move a verdict.** On one one-way edge `(0,0)→(100,0)` of time/cost
+      **1199.95** with the origin at `(49.995,0)`, inserting the midpoint `(50,0)` creates a segment
+      whose clamped start sits 0.005 m away, inside the band, and reports **599.9789682540 s** where
+      the undivided edge reports **600.0349975000 s** — PASS against FAIL at an exact ten-minute
+      comparator threshold, candidate count 1→2. Revision 9 was adopted to remove this and **did**
+      remove it on this input; revision 10 reinstates it deliberately, because revision 9's way of
+      removing it discarded genuine geometric ties and introduced a record-segmentation dependence
+      instead. Note both values round to the **same whole minute**, so this is a comparator-verdict
+      flip and not necessarily an encoded-map flip.
+    * **The band is a threshold, so the answer is not continuous.** Two roads at residuals 1 m and
+      1.009 m give 100.8007936510 s; at 1 m and 1.011 m, 1000.7936507940 s. An **899.99 s** jump
+      across 2 mm.
+    * **Projection arithmetic can drop a genuine tie.** Two arms whose exact rational squared
+      distances are both exactly 1 compute as 0.9999999999999999 and 1.0. Under this convention the
+      band admits both, so the tie survives *here* — but nothing in the arithmetic guarantees that,
+      and a narrower band would not.
+    * **Zero-length segments and curved re-expression.** Subdividing a zero-length segment adds
+      vertices at one position, so the occurrence count changes (2→3 on `zero_length_segment`, with
+      the reported time unchanged at 100.0 s); re-expressing a curved geometry moves the answer about
+      **1.4e-14 s**. Neither moves a verdict on the declared scenarios.
 
-    This does **not** make the answer subdivision-invariant in general, and no output may say it does.
-    Two residues remain, neither of which moves a verdict: subdividing a **zero-length** segment adds
-    vertices at one position, so the occurrence count changes (2→3 on `zero_length_segment`, with the
-    reported time unchanged at 100.0 s); and re-expressing a curved geometry changes the float
-    arithmetic by about **1.4e-14 s**. `measure_split_divergence` reports both rather than asserting
-    them away.
+    `measure_split_divergence` reports these rather than asserting them away. **What determines
+    whether this convention is acceptable is a prevalence-and-impact measurement on the real Triangle
+    graph, which has not been run.** Until it has, this rule is a *provisional development baseline*
+    chosen for simplicity, not a demonstrated improvement over the alternatives.
 
     **Two things in the occurrence key are load-bearing, and both were wrong in revision 6.**
 
@@ -362,12 +368,17 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
                 occurrence=key,
             ))
             run += seg
-        # Step 2, design revision 9: **per edge record, the exact minimum**. Exact, not banded --
-        # a band here is what let polyline subdivision move a verdict, and exactness is what keeps
-        # genuine equidistance (every position achieving the minimum survives).
-        if per_edge:
-            edge_best = min(a.residual_m for a in per_edge)
-            raw.extend(a for a in per_edge if a.residual_m == edge_best)
+        # Design revision 10 **reverted** revision 9's per-record exact filter, which used to sit
+        # here. It compared *computed* residuals for exact equality, and pass-24 F1 showed that
+        # discards genuine geometric ties: two arms whose exact rational squared distances are both
+        # exactly 1 compute as 0.9999999999999999 and 1.0, one ulp apart, so one was dropped --
+        # 996.7640294933123 s FAIL where keeping both gives 16.912 s PASS. It also did not fix what
+        # it was adopted for: `split_segments` on that same input still moves 996.764 FAIL to
+        # 16.912 PASS, because the sensitivity was in the projection arithmetic and not in the band.
+        # And it made the answer depend on **record segmentation** instead: one record reports
+        # 600.0349975000001 s FAIL where two degree-two records report 599.9789682539683 s PASS on
+        # the same road with the same weights (pass-24 F2).
+        raw.extend(per_edge)
     if not raw:
         return NearestOnGraph(candidates=(), global_min_m=None)
 

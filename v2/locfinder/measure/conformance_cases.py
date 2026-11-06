@@ -403,7 +403,7 @@ MULTI_SEGMENT_POLYLINE = Case(
         "This case exists because the fraction must be measured along the WHOLE polyline by length, "
         "not within the segment that happens to contain the nearest position."
     ),
-    provenance="design §2.2; the oracle's exact-per-edge candidate reading",
+    provenance="design §2.2; the oracle's per-segment candidate convention",
     rejects=(
         "100 s — using the within-segment fraction 0.5 instead of the along-polyline fraction 0.75, "
         "a 50 s error on a 150 s journey. The verdicts differ at T = 2 min (120 s), where 100 "
@@ -411,7 +411,7 @@ MULTI_SEGMENT_POLYLINE = Case(
         "values pass an inclusive threshold (pass-20). Neither is a published threshold, so this "
         "case separates arithmetic rather than a current published verdict."
     ),
-    reading="exact per-edge minima",
+    reading="per-segment minima",
 )
 
 # --------------------------------------------------------------------------------------------------
@@ -483,7 +483,7 @@ SELF_CROSSING_OCCURRENCES = Case(
         "400 m of route choice between two points with zero spatial separation. Revision 6 specified "
         "exactly that key; revision 7 keys on along-edge arclength instead."
     ),
-    reading="exact per-edge minima",
+    reading="per-segment minima",
 )
 
 _SQUARE_FORWARD = ((0, 0), (100, 0), (100, 100), (0, 100), (0, 0))

@@ -583,6 +583,20 @@ SCALE_LAW = (
 )
 
 
+#: Where subdivision is **expected** to change something, as a signature rather than a claim of
+#: invariance. Design revision 10's convention is a function of the supplied geometry, so this set is
+#: part of what it declares.
+#:
+#: * `zero_length_segment` — occurrence count 2→3, reported time unchanged at 100.0 s.
+#: * `subdivision_sensitive` — **600.0349975000001 s → 599.9789682539683 s**, which flips an exact
+#:   ten-minute comparator verdict. Both values round to the same whole minute, so it is not
+#:   necessarily an encoded-map flip. Revision 9 removed this and was reverted for other reasons;
+#:   see `nearest_on_graph`.
+#:
+#: A change in this signature is information, in both directions.
+SUBDIVISION_DIVERGES_ON = {"zero_length_segment", "subdivision_sensitive"}
+
+
 def measure_split_divergence():
     """Where subdivision changes the answer, and by how much. Reported, not asserted."""
     out = []
@@ -696,9 +710,9 @@ def invariant_violations() -> list[str]:
     # here and nowhere else: merging occurrences also merges the extra vertex subdivision adds, so
     # the measured divergence silently becomes empty. A change in this signature is information.
     divergence = {name for name, _ in measure_split_divergence()}
-    if divergence != {"zero_length_segment"}:
+    if divergence != SUBDIVISION_DIVERGES_ON:
         bad.append(f"subdivision divergence is now {sorted(divergence)}, not "
-                   "{'zero_length_segment'}")
+                   f"{sorted(SUBDIVISION_DIVERGES_ON)}")
 
     bad.extend(_absolute_violations())
     return bad

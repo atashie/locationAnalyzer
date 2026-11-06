@@ -37,6 +37,7 @@ from locfinder.measure.invariants import (
     FULLY_PRESERVING,
     NOT_PRESERVING,
     SCENARIOS,
+    SUBDIVISION_DIVERGES_ON,
     Scenario,
     answers,
     measure_split_divergence,
@@ -330,19 +331,24 @@ def test_the_attachment_can_switch_under_scaling_with_the_route_unchanged():
     assert abs(first - second) > 1e-6, (first, second)
 
 
-def test_subdivision_no_longer_moves_the_answer_on_a_straight_edge():
-    """Design revision 9's amendment, as the counterexample that forced it.
+def test_subdivision_moves_this_answer_and_that_is_a_declared_consequence():
+    """Design revision 10's convention, pinned as a **disclosure** rather than an invariance claim.
 
-    Until revision 9 the tie band was applied directly to every **segment** minimum, so inserting a
-    vertex that changes no geometry could add a candidate and move a verdict. One one-way edge
-    `(0,0)→(100,0)` of time/cost 1199.95 with the origin at `(49.995,0)`: as drawn it reports
-    600.0349975000 s and **FAILS** at ten minutes; with the midpoint `(50,0)` inserted, the second
-    segment's clamped start sits 0.005 m away, inside the band, and it reports 599.9789682540 s and
-    **PASSES**. The data source re-densifies geometries, so that was a live exposure rather than a
-    hypothetical.
+    Inserting a vertex that changes no geometry adds a candidate and moves this answer. One one-way
+    edge `(0,0)→(100,0)` of time/cost 1199.95 with the origin at `(49.995,0)`: as drawn it reports
+    600.0349975000 s; with the midpoint `(50,0)` inserted, the new segment's clamped start sits
+    0.005 m away, inside the band, and it reports 599.9789682540 s. That flips an **exact ten-minute
+    comparator** verdict.
 
-    Taking the **exact** minimum per edge record first removes it: the clamped start no longer
-    competes, because it does not achieve that edge's minimum.
+    Revision 9 removed this and was reverted, which is the part worth not misremembering: the revert
+    was not an improvement on this axis. Revision 9's per-record exact filter discarded genuine
+    geometric ties and made the answer depend on record segmentation instead, so revision 10 takes
+    this sensitivity back **knowingly**, as the price of a simpler convention whose consequences are
+    stated. Which convention is right is a prevalence question on the real graph, unmeasured.
+
+    Pass-26's qualification, which keeps this honest in the other direction: **both values round to
+    the same whole minute**, so this is a comparator-verdict flip and not necessarily a flip in what
+    the product ships.
     """
     def at(geometry):
         graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, geometry, time_s=1199.95, cost_base=1199.95,
@@ -352,11 +358,76 @@ def test_subdivision_no_longer_moves_the_answer_on_a_straight_edge():
     drawn = at(((0, 0), (100, 0)))
     split = at(((0, 0), (50, 0), (100, 0)))
     assert drawn.origin_candidates == 1
-    assert split.origin_candidates == 1, "the inserted vertex must not add a candidate"
+    assert split.origin_candidates == 2, "the inserted vertex adds a candidate under this convention"
     assert drawn.objective1_s == pytest.approx(600.0349975000001, rel=0, abs=1e-9)
-    assert split.objective1_s == drawn.objective1_s, "subdivision may not move the answer here"
-    # and the superseded rule's answer, recorded so the flip it caused stays legible
-    assert 599.9789682539683 < 600.0 < drawn.objective1_s
+    assert split.objective1_s == pytest.approx(599.9789682539683, rel=0, abs=1e-9)
+    # the exact comparator verdict flips ...
+    assert (drawn.objective1_s <= 600.0) != (split.objective1_s <= 600.0)
+    # ... and the whole-minute encoding does not
+    assert round(drawn.objective1_s / 60.0) == round(split.objective1_s / 60.0) == 10
+
+
+def test_revision_9_discarded_a_genuine_geometric_tie():
+    """Pass-24 F1, as the reason revision 9 was reverted. Verified against exact rational arithmetic.
+
+    One record whose first and last segments lie on `3x + 4y = 5` and `3x + 4y = -5`. Both arms are
+    at exact squared distance **1** from the origin — a genuine tie — but `hypot` computes
+    0.9999999999999999 and 1.0, one ulp apart. Revision 9's exact per-record filter kept only the
+    first and reported **996.7640294933123 s FAIL**; keeping both reports **16.912 s PASS**, because
+    the second arm leaves only 8 m of network travel.
+
+    Under revision 10's convention the band admits both, so the tie survives here. That is a
+    consequence of the band being 0.01 m and not a guarantee from the arithmetic — the third bullet
+    on `nearest_on_graph` says so.
+    """
+    from fractions import Fraction as F
+    geom = ((-1, 2), (195, -145), (189, -143), (-7, 4))
+    # exact rational clamped point-to-segment squared distance from (0,0)
+    def exact_sq(a, b):
+        ax, ay, bx, by = F(a[0]), F(a[1]), F(b[0]), F(b[1])
+        dx, dy = bx - ax, by - ay
+        t = max(F(0), min(F(1), (-ax * dx - ay * dy) / (dx * dx + dy * dy)))
+        return (ax + t * dx) ** 2 + (ay + t * dy) ** 2
+
+    assert exact_sq(geom[0], geom[1]) == 1, "first arm is exactly 1 m away"
+    assert exact_sq(geom[2], geom[3]) == 1, "last arm is exactly 1 m away"
+
+    graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, geom, time_s=1000.0, cost_base=1000.0,
+                                            osmid=(1,), oneway=True),))
+    found = toy.nearest_on_graph(graph, (0.0, 0.0), cap_m=200.0)
+    # the computed residuals differ by one ulp, which is why an exact filter on them was wrong
+    residuals = sorted(c.residual_m for c in found.candidates)
+    assert len(found.candidates) == 2, "revision 10's band keeps both arms"
+    assert residuals[0] == 0.9999999999999999 and residuals[1] == 1.0
+    assert math.nextafter(residuals[0], math.inf) == residuals[1], "adjacent binary64 values"
+    r = toy.evaluate(graph, (0.0, 0.0), [(-7.0, 4.0)])
+    assert r.objective1_s == pytest.approx(16.912135995005965, rel=0, abs=1e-9)
+
+
+def test_revision_9_made_the_answer_depend_on_record_segmentation():
+    """Pass-24 F2, the second reason revision 9 was reverted.
+
+    A pure degree-two split of one straight road into two records, with weights apportioned
+    proportionally and the same legal traversals, changed the answer under revision 9:
+    600.0349975000001 s FAIL on one record against 599.9789682539683 s PASS on two. Revision 10's
+    convention gives the **same** answer for the one-record-with-midpoint and two-record forms,
+    because both expose the clamped start at 50 m — so on this axis the reverted rule is the more
+    representation-consistent of the two.
+    """
+    one = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0, 0), (50, 0), (100, 0)), time_s=1199.95,
+                                          cost_base=1199.95, osmid=(1,), oneway=True),))
+    two = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (50, 0)), time_s=599.975, cost_base=599.975, osmid=(1,),
+                    oneway=True),
+        toy.ToyEdge(1, 2, ((50, 0), (100, 0)), time_s=599.975, cost_base=599.975, osmid=(1,),
+                    oneway=True),
+    ))
+    a = toy.evaluate(one, (49.995, 0.0), [(100.0, 0.0)])
+    b = toy.evaluate(two, (49.995, 0.0), [(100.0, 0.0)])
+    assert a.objective1_s == pytest.approx(b.objective1_s, rel=0, abs=1e-9), (
+        "the two representations of one road must agree under this convention"
+    )
+    assert a.origin_candidates == b.origin_candidates == 2
 
 
 def test_exact_equidistance_within_one_record_still_yields_both_positions():
@@ -516,22 +587,34 @@ def _names(scenario: Scenario) -> list[str]:
 
 
 def test_subdivision_is_not_required_to_preserve_the_answer_and_is_measured_instead():
-    """Design §2.2's candidate rule is per polyline **segment**, so inserting a vertex can add a
-    candidate. Asserting invariance would be asserting a different design.
+    """Design revision 10's candidate convention is per polyline **segment**, so inserting a vertex
+    can add a candidate. Asserting invariance would be asserting a different design.
 
-    Measured on the whole domain: subdivision preserves every **answer**, and perturbs provenance on
-    exactly one input — a zero-length segment, whose midpoint becomes a third vertex. That is a
-    useful thing to know and a wrong thing to assume, so it is recorded as a measurement.
+    So this records the **signature** of where subdivision changes something, and
+    `SUBDIVISION_DIVERGES_ON` names it. A change in either direction is information: one more entry
+    means a new sensitivity, one fewer means the convention moved.
+
+    Two entries today. `zero_length_segment` perturbs provenance only — its midpoint becomes a third
+    vertex at the same position, with the reported time unchanged. `subdivision_sensitive` moves the
+    **answer**, 600.0349975000001 s to 599.9789682539683 s, which flips an exact ten-minute
+    comparator verdict while rounding to the same whole minute. That one is the input revision 9 was
+    adopted to fix and revision 10 knowingly took back; see `nearest_on_graph`.
     """
     assert "split_segments" in NOT_PRESERVING
     divergences = dict(measure_split_divergence())
-    assert set(divergences) == {"zero_length_segment"}, (
-        f"subdivision now diverges on {sorted(divergences)} — if that is intended, record why; "
-        "if not, it is a finding"
+    assert set(divergences) == SUBDIVISION_DIVERGES_ON, (
+        f"subdivision now diverges on {sorted(divergences)} — if that is intended, record why in "
+        "SUBDIVISION_DIVERGES_ON; if not, it is a finding"
     )
-    assert set(divergences["zero_length_segment"]) == {"origin_candidates"}
+    assert set(divergences["zero_length_segment"]) == {"origin_candidates"}, (
+        "the zero-length case must still perturb provenance only"
+    )
 
+    # Every other scenario preserves every answer, which is what makes the two entries above a
+    # signature rather than a shrug.
     for s in SCENARIOS:
+        if s.name in SUBDIVISION_DIVERGES_ON:
+            continue
         before, after = answers(s), answers(split_segments(s))
         assert not differences(before, after), (
             f"{s.name}: subdivision changed an answer: {_diff(before, after)}")

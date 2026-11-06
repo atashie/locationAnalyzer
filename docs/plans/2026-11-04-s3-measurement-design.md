@@ -2,11 +2,20 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
-**Revision 9, 2026-11-06.** One amendment, and it is an **owner decision** rather than a review
-finding: §2.2's candidate universe is now **exact minima per edge record, then the tie band across
-records**. The superseded rule let a vertex that changed no geometry move a ten-minute verdict
-(600.0349975000 s FAIL to 599.9789682540 s PASS). The justification this design had given for the
-superseded rule was measured and found false. §13's revision-9 row carries both.
+**Revision 10, 2026-11-06.** **Revision 9 is reverted after one hour.** §2.2's candidate universe
+returns to per-segment minima plus the tie band across records, now **declared as a convention** —
+a function of the supplied geometry, not a property of the road — with its sensitivities listed
+rather than denied. §12's equivalence contract is rewritten, because the old wording claimed
+cross-implementation equivalence that this project has not supplied.
+
+Revision 9 compared *computed* residuals for exact equality, which discards genuine geometric ties
+(two arms at exact squared distance 1 compute one ulp apart: **996.764 s FAIL** against **16.912 s
+PASS**), did not fix the subdivision case it was adopted for, and made the answer depend on record
+segmentation. **Revision 10 is a provisional development baseline chosen for simplicity, not a
+demonstrated improvement** — it knowingly reinstates the sensitivity revision 9 did remove. Which
+convention is right is deferred to a prevalence-and-impact measurement on the real graph, which has
+not been run. §13's revision-10 row carries all of it, including three overstatements of mine that
+pass 26 corrected.
 
 **Revision 8, 2026-11-06**, after Codex pass 21 found nine defects in revision 7 and in T4 — three
 of them High. Change log in §13; revisions 2–7 are kept there too.
@@ -84,8 +93,29 @@ rather than catching it. So revision 4 freezes **five artifacts**, not one docum
 The boundary between what is frozen and what is free is **not** "anything that could change the
 measured rate", which fails literally because correcting a bug changes the rate. It is:
 
-> **Freeze the quantity and its observable decision rules. Implementations may vary only while
-> preserving those rules across admissible inputs.**
+> **This comparator version defines an operational baseline on the identified input artifacts and
+> supported runtime and platform.** Freeze its candidate convention, implementation, numerical
+> environment, configuration and saved operands and results. Requalification compares candidate
+> membership, statuses, selections and decision predicates, alongside numeric differences; passing
+> finite fixtures is evidence **only over those checks**. **Cross-implementation equivalence over all
+> admissible inputs is not claimed.** A changed convention is a semantic version change; an unproved
+> implementation change receives a new comparator version and affected measurements are rerun.
+
+**Revision 10 replaced the previous wording, which claimed more than this project has supplied.** It
+read: *"Freeze the quantity and its observable decision rules. Implementations may vary only while
+preserving those rules across admissible inputs."* Pass 26's correction is precise about why that
+could not stand alongside §2.2: a named operation sequence does not *logically* require identical
+arithmetic — different algorithms can preserve specified observables — but neither does it *ensure*
+portable equivalence, and floating-point semantics can be made deterministic while **this project has
+not supplied that portable contract**. Pass 23 had already said naming an operation sequence is
+"necessary but not sufficient" for portable bitwise equivalence. Keeping the old sentence while §2.2
+declares a computation convention would have left the promise unsupported.
+
+The consequence for T3 is the useful part: it can be a **frozen versioned development comparator**
+and an immutable record of what an experiment used, and saved rows can regenerate a report without
+rerouting. Neither freezing nor report reproducibility certifies physical accuracy or universal
+implementation interchangeability. The stronger equivalence ambition is kept separate, for if it is
+ever needed.
 
 **Four owner decisions stand** (2026-11-04, before any sampling): finite-population SRS inference;
 coordinate destination attachment with modelled connectors; diagnostic A defined on product
@@ -219,18 +249,15 @@ each objective minimises over it.
 >
 > 1. **Generator.** Each *segment* of each edge geometry contributes exactly one position: its
 >    closest point to the coordinate, with the segment's endpoints as the clamped cases.
-> 2. **Exact minimum per edge record.** Of one record's segment positions, retain only those whose
->    distance **exactly equals** that record's smallest. Exact, not banded.
-> 3. **Band across records.** Of the survivors, retain those whose distance is within
->    `attach_tie_m` = **0.01 m** of the global minimum across all records. Equality here is by this
->    tolerance, not by exact float comparison.
-> 4. **Occurrence identity.** Two positions are the *same candidate* iff they are the same
+> 2. **Band.** Retain those positions whose distance is within `attach_tie_m` = **0.01 m** of the
+>    global minimum across all records. Equality is by this tolerance, not by exact float comparison.
+> 3. **Occurrence identity.** Two positions are the *same candidate* iff they are the same
 >    **occurrence along the polyline**: `(edge record, vertex index)` for a position at a vertex,
 >    `(edge record, segment index, segment parameter)` for one interior to a segment. **No rounding
 >    enters this key.** Where one occurrence is described twice — parameter 1 on segment *k* and
 >    parameter 0 on segment *k*+1 — the representative is the candidate with the smallest residual,
 >    then the smallest exact arclength.
-> 5. **Caps, after the band and per candidate.** Each retained candidate must independently satisfy
+> 4. **Caps, after the band and per candidate.** Each retained candidate must independently satisfy
 >    its own cap: `max_access_m` = **200 m** for an origin, `poi_snap_max_m` = **300 m** for a
 >    destination. **Both are inclusive.** A nearest origin candidate at 199.995 m does not authorise
 >    a second at 200.004 m merely because it is inside the band.
@@ -268,31 +295,40 @@ roads at residuals 1 m and 1.009 m give 100.8007936510 s while 1 m and 1.011 m g
 1000.7936507940 s — an **899.9928571430 s** jump across 2 mm, PASS to FAIL at ten minutes. The
 quantity is a property of the geometry *given this candidate universe*.
 
-**Steps 2 and 3 are different tests on purpose, and that difference is the whole content of the
-rule.** Within one record the minimum is **exact**, so a position a hair further along the same road
-does not compete. Across records the **band** applies, so two roads 1 m either side of a point are
-both candidates even where their residuals differ in the last bits — which is the case the band
-exists for, and which can differ by 900 s.
+**This candidate set is a declared convention, not a property of the road.** It is a function of the
+**supplied geometry as given**, computed by the sequence above. Revision 9 tried to make it the
+former by taking an exact minimum per record before the band, and revision 10 reverted that: the
+exact test ran on *computed* residuals, which discards genuine geometric ties, and it made the answer
+depend on record segmentation instead. §13's revision-10 row has the numbers.
 
-The reason is that a tie *within* a record is almost always an artefact of how the polyline was
-drawn, and a tie *between* records is almost always real. Under the superseded rule — the band
-applied directly to every segment minimum — a vertex that changed no geometry could change the
-answer: on one one-way edge `(0,0)→(100,0)` of time/cost **1199.95** with the origin at
-`(49.995,0)`, inserting the midpoint `(50,0)` put that segment's clamped start 0.005 m away, inside
-the band, and reported **599.9789682540 s** where the undivided edge reported **600.0349975000 s**.
-FAIL to PASS at ten minutes, candidate count 1→2, no road changed. The data source re-densifies
-geometries, so that was a live exposure. §13's revision-9 row carries the owner decision.
+So the sensitivities below are **stated consequences**, not defects awaiting repair. Each is measured.
 
-**Exactness does not discard genuine equidistance.** Every position achieving a record's minimum
-survives step 2, so a record that doubles back with both arms exactly 1 m from the coordinate keeps
-both: on `(0,1),(200,1),(200,-1),(0,-1)` from `(0,0)`, arclengths 0 and 402 are both retained and
-the answer is **0.7936507937 s** under this rule and under the superseded one alike.
+- **Segment subdivision can move a verdict.** On one one-way edge `(0,0)→(100,0)` of time/cost
+  **1199.95** with the origin at `(49.995,0)`, inserting the midpoint `(50,0)` creates a segment whose
+  clamped start sits 0.005 m away, inside the band, giving **599.9789682540 s** where the undivided
+  edge gives **600.0349975000 s**. That flips an exact ten-minute **comparator** verdict; both values
+  round to the **same whole minute**, so it is not necessarily a flip in what the product ships.
+  Revision 9 removed this case and was reverted for other reasons, so revision 10 carries it
+  knowingly.
+- **A degree-two record split does *not* move it.** The one-record-with-midpoint and two-record forms
+  of the same road agree under this convention. That was revision 9's defect, not this one's.
+- **The band is a threshold.** Two roads at residuals 1 m and 1.009 m give 100.8007936510 s; at 1 m
+  and 1.011 m, 1000.7936507940 s — an **899.99 s** jump across 2 mm. The answer is well defined and
+  **not continuous**, and no S3 output may say otherwise.
+- **The band is what preserves a genuine tie, not the arithmetic.** Two arms at exact squared distance
+  1 compute as 0.9999999999999999 and 1.0; the 0.01 m band admits both. Nothing in the projection
+  arithmetic guarantees that, and a narrower band would not.
+- **Zero-length segments and curved re-expression.** Subdividing a zero-length segment changes the
+  occurrence count (2 to 3, reported time unchanged at **100.0 s**); re-expressing a curved geometry
+  moves the answer about **1.4e-14 s**. Neither moves a verdict on the declared scenarios.
 
-**This does not make the answer subdivision-invariant, and no S3 output may say it does.** Two
-residues remain, neither of which moves a verdict: subdividing a **zero-length** segment adds
-vertices at one position, so the occurrence count changes — 2 to 3 on the zero-length fixture, with
-the reported time unchanged at 100.0 s — and re-expressing a curved geometry moves the answer by
-about **1.4e-14 s**. The build record measures both rather than asserting them away.
+**What would settle the convention.** Not argument — five rounds of it produced revision 9. A
+prevalence-and-impact measurement on the real Triangle graph: how often a point has more than one
+candidate, on one record or several; how often a near-tie within a record would be dropped by an exact
+filter; how often any of it changes a whole-minute verdict or a displayed result. The execution plan
+carries the staged pilot. Until it runs, **this convention is provisional and chosen for simplicity**,
+and a sensitivity budget must be allocated from existing product requirements *before* the results
+are seen.
 
 #### Partial edges
 
@@ -1152,7 +1188,58 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
-### Revision 9, the candidate universe — an owner decision, 2026-11-06
+### Revision 10, reverting revision 9 — 2026-11-06
+
+**Revision 9 is reverted.** §2.2's candidate universe returns to **per-segment minima, then the tie
+band across all records**, and the ambition that it could be a property of the road rather than of the
+supplied geometry is **withdrawn**. §12's equivalence contract is rewritten accordingly, above.
+
+Pass 24 found revision 9 unsound within an hour of its adoption. Two findings, both reproduced here:
+
+1. **It compared *computed* residuals for exact equality, which discards genuine geometric ties.** One
+   record whose first and last segments lie on `3x + 4y = 5` and `3x + 4y = -5`: both arms are at
+   **exact rational squared distance 1** from the origin, verified symbolically, but `hypot` returns
+   **0.9999999999999999** and **1.0** — adjacent binary64 values. Revision 9 kept one and reported
+   **996.7640294933123 s FAIL**; keeping both reports **16.912 s PASS**, the second arm leaving 8 m of
+   network travel.
+2. **It did not fix what it was adopted for, and introduced a worse dependence.** `split_segments` on
+   that same input still moves **996.764 FAIL → 16.912 PASS**, because the sensitivity lives in the
+   projection arithmetic and not in the band. And a pure **degree-two record split** of one straight
+   road — weights apportioned, same legal traversals — moves **600.0349975000001 s FAIL** on one
+   record to **599.9789682539683 s PASS** on two. The superseded rule *agreed* on those two
+   representations; revision 9 separated them, so record segmentation became part of the answer.
+
+**What revision 10 does not claim, and what I overstated in proposing it.** Pass 26 reviewed the
+reversal before it was made and corrected three things:
+
+| I said | the correction |
+|---|---|
+| revision 9 "bought nothing" | it **did** fix its motivating straight-edge subdivision case. Revision 10 **reinstates** that sensitivity. Reverting is not a demonstrated improvement, and adding candidates can admit a shortcut to a different journey |
+| revision 9 is "strictly worse than what it replaced" | agreement on two F2 representations does not establish that the reverted rule is **generally** better |
+| the 60 s product tolerance makes this proportionate | that is an **aggregate real-world accuracy target**, not an allowance to assign the attachment rule the entire budget |
+
+So revision 10 is adopted **as a provisional development baseline chosen for simplicity**, with its
+consequences stated — not as a demonstrated improvement. §2.2 lists the sensitivities it carries. One
+of pass 26's framings is worth keeping in front: *"Calling this a convention makes the result
+specified, not physically justified."*
+
+**The choice is not settled; it is deferred to measurement.** Pass 26: *"prevalence and impact
+measurement should precede the final A–D choice"* — A being this convention, B an exact rational
+predicate with degree-two normalisation, C revision 9 with record dependence declared, D exact minima
+globally with no band. The execution plan carries the staged pilot design. Picking among them needs a
+**sensitivity budget allocated before the results are seen**, from the existing product requirements
+rather than invented from the data.
+
+Pass 26 also corrected the statistics I used to argue the choice might not matter: with **zero events
+in 1,000 random observations per frame** the conservative one-sided 95% upper bound is about
+**0.30%**, not "a handful in 512,633". A small pilot can identify a common problem; it cannot
+establish extreme rarity.
+
+Revision 9's rule is kept executable as `revision9-per-record-exact-minimum` in
+`v2/locfinder/measure/mutants.py`. It was live for about an hour, and the guard is what stops it
+returning by accident.
+
+### Revision 9, the candidate universe — an owner decision, 2026-11-06 (REVERTED by revision 10)
 
 **§2.2's candidate universe is now exact minima per edge record, then the tie band across records.**
 The superseded rule applied the band directly to every segment minimum, which made the measured value
