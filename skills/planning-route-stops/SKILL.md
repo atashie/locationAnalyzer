@@ -9,16 +9,20 @@ description: Use when recommending where to stop, stay, or spend time along a jo
 
 A route recommendation is **a set of options, a table of numbers, and a set of claims**.
 Finding good places and spotting constraints is already a strength — baseline testing showed
-agents doing it well unprompted. Two things fail reproducibly:
+agents doing it well unprompted. Three things fail reproducibly:
 
-- **Shape** — the work collapses into one recommendation and a defence of it, when the question
-  had no single answer.
-- **Bookkeeping** — numbers from different instruments compared as if alike, derived figures left
-  stale when a route changes, caveats that evaporate before the final page.
+- **Shape** (rule 1) — the work collapses into one recommendation and a defence of it, when the
+  question had no single answer.
+- **Bookkeeping** (rules 2–7) — numbers from different instruments compared as if alike, derived
+  figures left stale when a route changes, caveats that evaporate before the final page,
+  an arrival time printed beside an opening time without being compared.
+- **Arithmetic** (rule 8) — the figures you computed yourself, carrying correct provenance
+  labels and wrong values. On this project that was the *largest* source of false statements,
+  and the last one anybody looked for.
 
-This skill is those two. It does not teach travel knowledge.
+This skill is those three. It does not teach travel knowledge.
 
-## The seven rules
+## The eight rules
 
 ### 1. The traveller weighs; you measure
 
@@ -123,6 +127,11 @@ hardened into an absolute.
 Status labels belong to the stop, not to the view. A stop that appears in three options carries
 its label in all three.
 
+**An absence of data is not a negative finding.** "Could not determine" must never be rendered,
+rolled up or summarised as a definite claim about the world. A rollup that collapsed *unknown*
+hours into "nothing-open" printed "nothing here is open when you arrive" about a venue whose
+hours nobody had published — a flat falsehood, carrying a correct provenance label.
+
 ### 5. Reconcile the arrival against the hours, in code
 
 Publishing an arrival time and an opening time side by side is not the same as comparing them.
@@ -206,6 +215,49 @@ stale headline price.
 When no stop was checked against the date, **say so in one sentence** rather than letting a page
 of "standing hours" labels imply otherwise.
 
+### 8. Check your own arithmetic the way you check a venue's hours
+
+Rules 2 and 4 govern facts you got from the world: where they came from, how sure you are.
+Nothing in them touches the figures **you computed yourself**, and those turned out to be
+the larger source of false statements.
+
+> Worked example. Two adversarial reviews of this skill's own tooling returned **20
+> findings**. Twelve had already reached a published page as confident statements: a venue
+> whose hours were simply *unknown* rendered as "nothing here is open when you arrive"; a
+> "the corridors are 185 miles apart" figure that became 223 if you reordered the list;
+> a drive time quoted as 8h41 that was 8h42, because every duration truncated seconds
+> instead of rounding; two 17-mile stretches of I-75 silently deleted from the map by a
+> filter that mistook vertex count for importance. Provenance labels were correct on all
+> of them. They were measured, by one instrument, and wrong.
+
+None were hard to catch. **They were never looked for.** The checks that find this class
+are cheap, and `selftest.py` now runs them — extend it rather than re-deriving them:
+
+- **Round-trip anything you decode.** Encode a known polyline, decode it, compare.
+- **Assert landmarks and bounds on anything projected.** Named places in the right
+  quadrant, no point outside the viewBox.
+- **Swap the arguments of anything that should be symmetric.** `sep(a,b)` versus
+  `sep(b,a)` is how the order-dependent separation surfaced.
+- **Test rounding at the boundaries**: ±30 s, exactly an hour, a small negative. A small
+  negative once rendered as `-1h59`.
+- **Feed the degenerate case**: zero epsilon, a two-point line, a venue open past
+  midnight, a stop with no hours at all, a closed weekday.
+- **Re-derive one published figure by hand** from the raw response, end to end.
+- **Grep the generator for numeric literals.** Prose is not covered by a data pipeline.
+
+Two rules of thumb that would have prevented most of them:
+
+- **An absence of data is not a negative finding.** Unknown hours are not "closed"; an
+  unpriced ticket is not "free". Every collapse of unknown into a definite claim on this
+  project produced a confident falsehood.
+- **Never filter on a proxy for the thing you care about.** Vertex count is not road
+  importance — a straight interstate simplifies to two points. Filter on the quantity you
+  actually mean, here visible length.
+
+And the discipline that makes it stick: **a fix needs a failing test first**, exactly as a
+skill does. Every case in `selftest.py` is a defect that shipped; each was reproduced
+before it was fixed. A fix without a test beside it is a fix that comes back.
+
 ## The deliverable
 
 A route comparison is **operated, not read**. Its job is letting someone flip between options
@@ -255,9 +307,9 @@ Three traps it exists to handle:
 
 - **Stitch OSM road fragments before simplifying.** OSM splits a motorway at every junction and
   carries each carriageway separately: one `ref` query returned **8473 two-point fragments**,
-  which RDP cannot reduce at all. Chaining them on rounded endpoints first took 77k points to
-  636, and the baked file from 389 KB to 22 KB. `endpoint-notes.md` already warned about this
-  and the first attempt did it wrong anyway.
+  which RDP cannot reduce at all. Chaining them on rounded endpoints first turned 8473
+  fragments into 118 chains, 73.5k points into 673, and the baked file from 389 KB to 22 KB.
+  `endpoint-notes.md` already warned about this and the first attempt did it wrong anyway.
 - **Clip into runs, never by dropping points.** Dropping off-view vertices draws a false
   straight line across the map. Split into runs, each with one lead-in and lead-out point — and
   stroke those open runs rather than filling them, or a clipped ring renders as a blob.
@@ -289,13 +341,16 @@ all of it, plus the projection, the rhythm strips and the copy rules.
 
 `itinerary_compare.py` emits measured legs per option plus simplified, ready-to-bake geometry.
 **Generate the page from its JSON rather than hand-writing it** — that is rule 3 enforced by
-construction, since a generated page cannot carry a retyped or stale figure.
+construction **for every value the generator actually derives**. It does nothing for prose: one
+generator held 14 numeric literals in its own sentences, and a second review found four more
+after the first sweep. Derive the numbers in the copy too, and grep the generator for stray
+digits before publishing.
 
 ## Scale the effort, never the honesty
 
 Match the work to the question, and let each piece be earned separately:
 
-- **Always:** measure the candidates, measure each option end to end, and apply the seven rules.
+- **Always:** measure the candidates, measure each option end to end, and apply the eight rules.
 - **Commission per-region research** only when the deciding facts are local and unknown
   (opening hours on a date, a seasonal programme), not merely because there are several stops.
 - **Skip the page** for a single-stop question, or one answered in a sentence.
@@ -321,6 +376,13 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - `corridor_scan.py` — candidates → detour, share, arrival vs sunset, in one instrument. Use it
   to shortlist stops, then `itinerary_compare.py` to assemble options from them.
 - `research-brief.md` — the per-region brief that forces the three-state status back out.
+- `selftest.py` — 42 invariants for the measuring tools, no network, no fixtures, one second.
+  Run it after touching either, and add a case whenever you fix something: every case in it is
+  a defect that shipped.
+- `doccheck.py` — checks this prose against this code: files and flags that are named must
+  exist, spec fields promised must be read, the rule count must match, and figures quoted about
+  a worked example must match its JSON. It caught the docs still claiming a basemap of "636
+  points" one commit after a fix made it 673.
 - `basemap.py` — keyless basemap builder: Census state outlines + OSM motorways, stitched,
   clipped and simplified into `basemap.json` for baking into the page. Every map gets one.
 - `endpoint-notes.md` — public-endpoint limits worth knowing before you hit them.
@@ -359,6 +421,11 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 
 **Claims**
 
+- A computed figure published without one assertion behind it
+- "Unknown" rendered as "closed", "unpriced" rendered as "free"
+- A filter on a proxy (vertex count) for the property you mean (visible length)
+- A fix with no failing test written before it
+- A number in the prose that `doccheck.py` cannot trace to the code or the measurement
 - "No mosquitoes" where the source said "generally not a problem"
 - A recommendation with no "unverified" section
 - **Status labels everywhere and almost no links** — the vocabulary has replaced the evidence

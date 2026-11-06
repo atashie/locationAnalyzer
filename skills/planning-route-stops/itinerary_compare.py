@@ -49,6 +49,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -63,13 +64,34 @@ RANK_WORDS = {"recommended", "recommend", "best", "winner", "preferred", "optima
 # ---------------------------------------------------------------- routing
 
 _CACHE_DIR = None
-_CACHE_STATS = {"hit": 0, "miss": 0}
+_CACHE_STATS = {"hit": 0, "miss": 0, "bad": 0}
+_CACHE_VERSION = 2          # bump when the request body or response handling changes
 
 
-def _cache_key(points, costing):
-    raw = json.dumps([[round(p[0], 6), round(p[1], 6)] for p in points] + [costing],
-                     separators=(",", ":"))
+def _cache_key(body):
+    """Key the whole request, not a summary of it.
+
+    Keying only coordinates and costing meant changing ROUTE_URL or directions_options
+    silently reused answers from the old endpoint or the old units.
+    """
+    raw = json.dumps({"v": _CACHE_VERSION, "url": ROUTE_URL, "body": body},
+                     separators=(",", ":"), sort_keys=True)
     return hashlib.sha256(raw.encode()).hexdigest()[:24]
+
+
+def _usable_trip(payload):
+    """Does this response actually contain a routed trip?
+
+    A 200 carrying {"error": ...} is not a route, and caching one makes every later run
+    return the same non-answer without ever retrying.
+    """
+    try:
+        trip = payload["trip"]
+        return (bool(trip["legs"])
+                and "time" in trip["summary"] and "length" in trip["summary"]
+                and all("shape" in leg for leg in trip["legs"]))
+    except (KeyError, TypeError):
+        return False
 
 
 def _post(points, costing, timeout=120, tries=3):
@@ -80,78 +102,195 @@ def _post(points, costing, timeout=120, tries=3):
     time re-routed all eight requests -- the network is far and away the dominant cost
     here, and the geometry work is milliseconds beside it.
     """
-    if _CACHE_DIR:
-        path = os.path.join(_CACHE_DIR, _cache_key(points, costing) + ".json")
-        if os.path.exists(path):
-            _CACHE_STATS["hit"] += 1
-            with open(path, encoding="utf-8") as fh:
-                return json.load(fh)
     body = {
         "locations": [{"lat": p[0], "lon": p[1]} for p in points],
         "costing": costing,
         "directions_options": {"units": "miles"},
     }
+    key = _cache_key(body)
+    path = os.path.join(_CACHE_DIR, key + ".json") if _CACHE_DIR else None
+
+    if path and os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                cached = json.load(fh)
+            if _usable_trip(cached):
+                _CACHE_STATS["hit"] += 1
+                return cached
+            raise ValueError("cached entry has no usable trip")
+        except (ValueError, OSError) as exc:
+            # A truncated or non-route body is a miss, never a hard failure.
+            _CACHE_STATS["bad"] += 1
+            print(f"  cache entry {key[:8]} unusable ({exc}); re-requesting")
+
     req = urllib.request.Request(
         ROUTE_URL, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json", "User-Agent": UA})
     last = None
+    out = None
     for attempt in range(tries):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 out = json.load(r)
-            _CACHE_STATS["miss"] += 1
-            if _CACHE_DIR:
-                os.makedirs(_CACHE_DIR, exist_ok=True)
-                with open(os.path.join(_CACHE_DIR, _cache_key(points, costing) + ".json"),
-                          "w", encoding="utf-8") as fh:
-                    json.dump(out, fh)
-            return out
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as exc:
+            break
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError,
+                ValueError) as exc:
             last = exc
             if attempt < tries - 1:
                 time.sleep(2 + 2 * attempt)
-    raise RuntimeError(f"routing failed after {tries} attempts: {last}")
+    if out is None:
+        raise RuntimeError(f"routing failed after {tries} attempts: {last}")
+    # Be polite to a public endpoint -- but only when a request was actually sent. This
+    # used to sit in the caller's loop, so a fully warm run slept 6.4 s for nothing.
+    time.sleep(0.8)
+    if not _usable_trip(out):
+        raise RuntimeError(f"routing returned no usable trip: "
+                           f"{json.dumps(out)[:200]}")
+    _CACHE_STATS["miss"] += 1
+
+    # Persisting is best-effort and deliberately outside the retry loop: a read-only
+    # cache directory once turned three *successful* responses into three more requests
+    # and then a hard failure.
+    if path:
+        try:
+            os.makedirs(_CACHE_DIR, exist_ok=True)
+            tmp = path + f".{os.getpid()}.tmp"
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(out, fh)
+            os.replace(tmp, path)            # atomic: no half-written entry to read back
+        except OSError as exc:
+            print(f"  note: could not cache response ({exc}); continuing")
+    return out
+
+
+def _num(errs, where, value, lo, hi):
+    """Coerce to float and range-check, collecting the error instead of raising.
+
+    Validation that crashes is not validation: a stop of `null` or a latitude of "north"
+    used to come out as a bare TypeError/ValueError from inside the checker.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        errs.append(f"{where}: expected a number, got {type(value).__name__}")
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        errs.append(f"{where}: {value!r} is not a number")
+        return None
+    if not math.isfinite(v):
+        errs.append(f"{where}: {value!r} is not finite")
+        return None
+    if not lo <= v <= hi:
+        errs.append(f"{where}: {v} is outside [{lo}, {hi}]")
+        return None
+    return v
+
+
+def _check_schedule(errs, where, fac):
+    times = {}
+    for field in ("open", "close", "last_entry"):
+        raw = fac.get(field)
+        if raw in (None, ""):
+            continue
+        if not isinstance(raw, str) or not re.fullmatch(r"\d{1,2}:\d{2}", raw.strip()):
+            errs.append(f"{where}: {field}={raw!r} is not HH:MM")
+            continue
+        hh, mm = (int(x) for x in raw.split(":"))
+        if hh > 23 or mm > 59:
+            errs.append(f"{where}: {field}={raw!r} is not a real clock time")
+            continue
+        times[field] = hh + mm / 60.0
+    if "days" in fac:
+        try:
+            parse_days(fac["days"])
+        except (ValueError, AttributeError, TypeError) as exc:
+            errs.append(f"{where}: days={fac.get('days')!r} -- {exc}")
+    if ("open" in times) != ("close" in times):
+        errs.append(f"{where}: give both open and close, or neither")
+    if "last_entry" in times and "open" in times and "close" in times:
+        o, c, li = times["open"], times["close"], times["last_entry"]
+        span = c + 24.0 if c <= o else c
+        li_abs = li if li >= o else li + 24.0
+        if not o <= li_abs <= span:
+            errs.append(f"{where}: last_entry {fac['last_entry']} is outside "
+                        f"{fac['open']}-{fac['close']}")
 
 
 def validate_spec(spec, date_str):
     """Fail on everything checkable before spending a single request.
 
-    A bad stop key or a malformed date used to surface after seven routing calls.
+    A bad stop key or a malformed date used to surface after seven routing calls; the
+    first version of this checker then crashed on the malformed input it was meant to
+    report.
     """
     errs = []
+    if not isinstance(spec, dict):
+        sys.exit("spec must be a JSON object")
     for side in ("origin", "dest"):
         node = spec.get(side)
-        if not isinstance(node, dict) or "lat" not in node or "lon" not in node:
+        if not isinstance(node, dict):
             errs.append(f"{side} must be an object with lat and lon")
             continue
-        if not -90 <= float(node["lat"]) <= 90 or not -180 <= float(node["lon"]) <= 180:
-            errs.append(f"{side} coordinates out of range: {node['lat']},{node['lon']}")
-    for key, st in spec.get("stops", {}).items():
-        if "lat" not in st or "lon" not in st:
-            errs.append(f"stop '{key}' has no lat/lon")
-        for fac in st.get("facilities", []):
-            for field in ("open", "close", "last_entry"):
-                if field in fac and fac[field]:
-                    try:
-                        hhmm_to_h(fac[field])
-                    except Exception:
-                        errs.append(f"stop '{key}' facility '{fac.get('name','?')}': "
-                                    f"{field}={fac[field]!r} is not HH:MM")
-            if "days" in fac:
-                try:
-                    parse_days(fac["days"])
-                except ValueError as exc:
-                    errs.append(f"stop '{key}' facility '{fac.get('name','?')}': {exc}")
-    for okey, opt in spec.get("options", {}).items():
-        missing = [s for s in opt.get("stops", []) if s not in spec.get("stops", {})]
+        _num(errs, f"{side}.lat", node.get("lat"), -90, 90)
+        _num(errs, f"{side}.lon", node.get("lon"), -180, 180)
+
+    stops = spec.get("stops")
+    if not isinstance(stops, dict):
+        errs.append("stops must be an object of stop-key -> stop")
+        stops = {}
+    for key, st in stops.items():
+        if not isinstance(st, dict):
+            errs.append(f"stop '{key}' must be an object, got {type(st).__name__}")
+            continue
+        _num(errs, f"stop '{key}'.lat", st.get("lat"), -90, 90)
+        _num(errs, f"stop '{key}'.lon", st.get("lon"), -180, 180)
+        if "dwell_min" in st:
+            _num(errs, f"stop '{key}'.dwell_min", st["dwell_min"], 0, 24 * 60)
+        if "utc_offset" in st:
+            _num(errs, f"stop '{key}'.utc_offset", st["utc_offset"], -12, 14)
+        if "cost_usd" in st:
+            _num(errs, f"stop '{key}'.cost_usd", st["cost_usd"], 0, 1e6)
+        _check_schedule(errs, f"stop '{key}' (top level)", st)
+        facs = st.get("facilities", [])
+        if not isinstance(facs, list):
+            errs.append(f"stop '{key}'.facilities must be a list")
+            continue
+        for fac in facs:
+            if not isinstance(fac, dict):
+                errs.append(f"stop '{key}': each facility must be an object")
+                continue
+            _check_schedule(errs, f"stop '{key}' facility '{fac.get('name','?')}'", fac)
+
+    options = spec.get("options")
+    if not isinstance(options, dict) or not options:
+        errs.append("options must be a non-empty object of option-key -> option")
+        options = {}
+    for okey, opt in options.items():
+        if not isinstance(opt, dict):
+            errs.append(f"option '{okey}' must be an object")
+            continue
+        seq = opt.get("stops")
+        if not isinstance(seq, list) or not seq:
+            errs.append(f"option '{okey}' needs a non-empty 'stops' list")
+            seq = []
+        missing = [s for s in seq if s not in stops]
         if missing:
             errs.append(f"option '{okey}' references unknown stops: {missing}")
-        for s in opt.get("dwell_min", {}):
-            if s not in opt.get("stops", []):
-                errs.append(f"option '{okey}' overrides dwell for '{s}', which it does not visit")
+        if "depart_h" in opt:
+            _num(errs, f"option '{okey}'.depart_h", opt["depart_h"], 0, 24)
+        dw = opt.get("dwell_min", {})
+        if not isinstance(dw, dict):
+            errs.append(f"option '{okey}'.dwell_min must be an object of stop -> minutes")
+        else:
+            for s, v in dw.items():
+                if s not in seq:
+                    errs.append(f"option '{okey}' overrides dwell for '{s}', "
+                                f"which it does not visit")
+                _num(errs, f"option '{okey}'.dwell_min['{s}']", v, 0, 24 * 60)
+
     if date_str:
         try:
-            datetime.date(*(int(x) for x in date_str.split("-")))
+            datetime.date(*(int(x) for x in str(date_str).split("-")))
         except Exception:
             errs.append(f"--date {date_str!r} is not YYYY-MM-DD")
     if errs:
@@ -183,14 +322,14 @@ def decode_polyline6(encoded):
                     raise ValueError(
                         f"bad polyline character {encoded[i]!r} (0x{ord(encoded[i]):02x}) "
                         f"at {i}: expected printable ASCII 63..126")
+                if shift > 30:               # a 7th byte would overflow a 32-bit delta
+                    raise ValueError(f"polyline chunk at {start} exceeds 7 bytes; "
+                                     f"input is probably not an encoded polyline")
                 i += 1
                 result |= (b & 0x1F) << shift
                 shift += 5
                 if b < 0x20:
                     break
-                if shift > 35:
-                    raise ValueError(f"polyline chunk at {start} exceeds 7 bytes; "
-                                     f"input is probably not an encoded polyline")
             delta = ~(result >> 1) if result & 1 else (result >> 1)
             if axis == 0:
                 lat += delta
@@ -401,54 +540,71 @@ def facility_state(fac, arrive_h, depart_h, weekday):
     last_in = hhmm_to_h(fac["last_entry"]) if fac.get("last_entry") else None
 
     o, c = hhmm_to_h(fac["open"]), hhmm_to_h(fac["close"])
-    overnight = c <= o                      # e.g. 22:00-02:00
-    span = (c + 24.0) if overnight else c
+    span = (c + 24.0) if c <= o else c       # 22:00-02:00 -> (22, 26); 00:00-00:00 -> 24 h
 
-    # Candidate opening intervals in arrival-day hours: today's, plus yesterday's if it
-    # runs past midnight, plus tomorrow's if the halt itself crosses midnight.
+    # Every opening interval that could touch the halt, expressed in arrival-day hours.
+    #
+    # The first version of this generated exactly three candidate days and stopped at the
+    # first match, which was wrong three ways: a halt longer than a day saw only part of
+    # its open time, an unknown weekday dropped the overnight tail entirely, and the
+    # "closed today" branch was unreachable once yesterday's interval existed.
+    lo_day = int(math.floor(arrive_h / 24.0)) - 1
+    hi_day = int(math.floor(depart_h / 24.0)) + 1
     intervals = []
-    for day_off in (-1, 0, 1):
-        day = None if weekday is None else (weekday + day_off) % 7
-        if day is not None and day not in days:
-            continue
-        if day is None and day_off != 0:
-            continue                        # no weekday known: only the nominal window
-        intervals.append((o + 24.0 * day_off, span + 24.0 * day_off))
+    for d in range(lo_day, hi_day + 1):
+        if weekday is not None and (weekday + d) % 7 not in days:
+            continue                         # unknown weekday: no day filtering at all
+        intervals.append((o + 24.0 * d, span + 24.0 * d))
+    intervals.sort()
 
-    if not intervals:
+    def entry_cut(lo):
+        """Last entry placed on the same day as this interval's opening."""
+        return None if last_in is None else last_in + (lo - o)
+
+    def open_minutes(frm):
+        """Open time inside [frm, depart_h], summed over every interval, not just one."""
+        return sum(max(0.0, min(depart_h, hi) - max(frm, lo))
+                   for lo, hi in intervals) * 60.0
+
+    covering = [(lo, hi) for lo, hi in intervals if lo <= arrive_h < hi]
+    if covering:
+        lo, hi = covering[0]
+        li = entry_cut(lo)
+        if li is not None and arrive_h >= li:
+            return ("shut",
+                    f"too late to get in: last entry {clock(li)}, shuts {clock(hi)}", 0.0)
+        usable = open_minutes(arrive_h)
+        entry = f", last entry {clock(li)}" if li is not None else ""
+        tail = (f" -- only {int(round(usable))} min of your halt"
+                if usable < (depart_h - arrive_h) * 60.0 - 0.5 else "")
+        return "open", f"open until {clock(hi)}{entry}{tail}", usable
+
+    later = [(lo, hi) for lo, hi in intervals if lo > arrive_h]
+    if later and later[0][0] < depart_h:
+        lo, hi = later[0]
+        li = entry_cut(lo)
+        if li is not None and li >= depart_h:
+            return ("shut",
+                    f"opens {clock(lo)} but last entry is {clock(li)}, after you leave", 0.0)
+        usable = open_minutes(lo)
+        wait = (lo - arrive_h) * 60.0
+        return ("opens",
+                f"opens {clock(lo)}, {int(round(wait))} min into the halt "
+                f"({int(round(usable))} min usable)", usable)
+
+    # Nothing open during the halt. Distinguish "shut right now" from "shut all day",
+    # which is a different thing to tell a traveller and was being conflated.
+    if weekday is not None and weekday not in days:
         return "closed", f"closed {DAYS[weekday].capitalize()}", 0.0
-
-    # open on arrival?
-    for lo, hi in intervals:
-        if lo <= arrive_h < hi:
-            if last_in is not None:
-                li = lo - (lo % 24.0) + last_in     # same wrapped day as this interval
-                if li < lo:
-                    li += 24.0
-                if arrive_h >= li:
-                    return ("shut",
-                            f"too late to get in: last entry {clock(li)}, shuts {clock(hi)}",
-                            0.0)
-            usable = (min(depart_h, hi) - arrive_h) * 60.0
-            entry = f", last entry {clock(last_in)}" if last_in is not None else ""
-            tail = (f" -- only {int(round(usable))} min of your halt"
-                    if hi < depart_h else "")
-            return "open", f"open until {clock(hi)}{entry}{tail}", usable
-    # opens later?
-    later = sorted(lo for lo, _ in intervals if lo > arrive_h)
     if later:
-        lo = later[0]
-        if lo < depart_h:
-            wait = (lo - arrive_h) * 60.0
-            hi = next(h for l, h in intervals if l == lo)
-            usable = (min(depart_h, hi) - lo) * 60.0
-            return ("opens",
-                    f"opens {clock(lo)}, {int(round(wait))} min into the halt "
-                    f"({int(round(usable))} min usable)", usable)
+        lo = later[0][0]
         return ("shut",
                 f"opens {clock(lo)}, {int(round((lo - depart_h) * 60.0))} min after you leave",
                 0.0)
-    return "shut", f"shut at {clock(max(h for _, h in intervals))}", 0.0
+    past = [hi for lo, hi in intervals if hi <= arrive_h]
+    if past:
+        return "shut", f"shut at {clock(max(past))}", 0.0
+    return "shut", "not open during your halt", 0.0
 
 
 def stop_hours_report(stop, arrive_h, dwell_min, weekday):
@@ -458,7 +614,7 @@ def stop_hours_report(stop, arrive_h, dwell_min, weekday):
         # A stop given without a facilities list still has to keep whatever it declared:
         # dropping "always" turned a 24 h fuel stop into "nothing open" in one run.
         fallback = {k: stop[k] for k in
-                    ("open", "close", "days", "always", "note", "url", "status")
+                    ("open", "close", "last_entry", "days", "always", "note", "url", "status")
                     if k in stop}
         fallback.setdefault("name", stop.get("name", "the stop"))
         facs = [fallback]
@@ -594,7 +750,6 @@ Example:
     print(f"direct  {origin.get('name', 'origin')} -> {dest.get('name', 'dest')}:  "
           f"{hm(direct['time'])}  {direct['length']:.0f} mi"
           f"   ({a.costing}, free-flow, no traffic model)\n")
-    time.sleep(0.8)
 
     origin_off = a.utc_offset if a.origin_utc_offset is None else a.origin_utc_offset
     zones = {float(st.get("utc_offset", a.utc_offset)) for st in stops.values()}
@@ -708,10 +863,11 @@ Example:
                                       arr_date.day, a.utc_offset)
             else:
                 ss = sunset_h
-            results[key]["sunset"] = clock(ss)
-            results[key]["after_sunset"] = (arrive_h - 24.0 * days_spanned) > ss
+            # High latitudes have dates with no sunset at all; formatting None crashed.
+            results[key]["sunset"] = clock(ss) if ss is not None else "--"
+            results[key]["after_sunset"] = (
+                None if ss is None else (arrive_h - 24.0 * days_spanned) > ss)
             results[key]["arrives_next_day"] = bool(days_spanned)
-        time.sleep(0.8)
 
     lats = [p[0] for p in all_pts]
     lons = [p[1] for p in all_pts]

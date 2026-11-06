@@ -29,7 +29,23 @@ rather than ranking them against each other.
 
 1. **[The single highest-value unknown — the thing that decides this region.]**
 2. What is actually open and worth doing in the arrival window. For each: what it is, why it
-   suits this party, cost for the whole party, and **closing time**.
+   suits this party, and cost for the whole party.
+
+   **Report hours as fields, not prose**, because they are checked by machine against a
+   computed arrival time. One line per *facility*, since a site often has several on
+   different schedules (a pump open 24 h, a shop from 08:00, the attraction from 11:00):
+
+   | field | notes |
+   |---|---|
+   | `open` / `close` | `HH:MM`. Give both or neither. `22:00`-`02:00` for overnight is fine. |
+   | `days` | `daily`, `Mon-Thu`, `Mon,Fri-Sun`. A weekday closure is the single most common trap. |
+   | `last_entry` | **Separate from closing.** A zoo open to 17:00 with last entry 15:30 is shut to a 16:00 arrival. |
+   | `utc_offset` | Only if the stop is in a different zone from the origin; hours are local to the venue. |
+   | `always: true` | For anything with no fixed hours — an outdoor space, a 24 h forecourt. |
+
+   Where a field is genuinely unpublished, **say so explicitly rather than omitting it**.
+   Omission reads as "no constraint"; an explicit unknown is carried through to the output
+   as unknown, which is the honest verdict.
 3. [Lodging / logistics], with the binding amenity named explicitly.
 4. Food that works at the hour they will want it.
 5. Anything date-specific that weekend — events, closures, seasonal programmes, local traffic.

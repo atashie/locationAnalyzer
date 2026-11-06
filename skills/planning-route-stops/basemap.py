@@ -10,10 +10,10 @@ view, stitching, dropping sub-2-mile stubs and RDP together take the whole basem
 a thousand points -- roughly 0.4% of the combined input. RDP is only part of that reduction;
 the script prints raw and kept counts for each layer so the split stays visible.
 
-Tolerances are in degrees of latitude with longitude scaled by cos(mean lat), so eps 0.02
-is about 1.9-2.2 km depending on orientation. That is coarse enough to move a state border
-a few pixels at this scale, which is acceptable for orientation and would not be for
-anything measured off the map.
+Tolerances are in degrees of latitude, with longitude scaled by cos(mean lat) inside the
+distance computation, so eps 0.02 means about 2.2 km in any direction rather than varying
+with orientation. That is coarse enough to move a state border a few pixels at this scale:
+acceptable for orientation, not for anything measured off the map.
 """
 import json, math, io, os, sys, time, urllib.request, urllib.parse
 
@@ -188,9 +188,10 @@ def stitch(segments, snap=5):
     """Chain OSM way fragments end-to-end into long polylines.
 
     OSM splits a motorway at every junction and carries each carriageway separately, so a
-    ref query returns thousands of 2-point fragments -- 8473 of them here, which RDP cannot
-    simplify because nothing is longer than a single span. Joining them first is what turns
-    73k raw points into a few hundred.
+    ref query returns thousands of short fragments -- 8473 of them here, averaging 8.7 points
+    but each carrying only a span or two of distinct shape, which RDP cannot reduce because
+    the redundancy lives across fragment boundaries rather than inside any one of them.
+    Joining them first is what turns 73.5k raw points into 673.
 
     Endpoints are matched on a rounded key (5 dp, a grid cell of about 1.1 m by 0.9 m at 33 N).
     On this data that is equivalent to exact matching -- no rounded key merged two distinct

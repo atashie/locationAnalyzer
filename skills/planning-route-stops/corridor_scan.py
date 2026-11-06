@@ -211,10 +211,19 @@ def main():
             # depart is origin-local; add the zone shift so arrival is local AT THE STOP,
             # the only clock that can legitimately be compared with the stop's sunset
             arrive = a.depart + t1 * (1 + a.break_frac) + tz_shift
-            ss = sunset(la, lo, y, m, dd, a.utc_offset)
-            row.update(arrive_local=hhmm(arrive), sunset_local=hhmm(ss),
-                       arrive_next_day=arrive >= 24,
-                       daylight_left_hours=round(ss - arrive, 2) if ss is not None else None)
+            # Advance the solar date with the arrival and compare against the wrapped
+            # clock. Using the departure date's sunset against an unwrapped hour-25
+            # arrival reported -7.5 hours of daylight left instead of +16.5 -- a 24-hour
+            # error whose sign looked plausible enough to go unnoticed.
+            day_off = int(math.floor(arrive / 24.0))
+            local = arrive - 24.0 * day_off
+            sol = datetime.date(y, m, dd) + datetime.timedelta(days=day_off)
+            ss = sunset(la, lo, sol.year, sol.month, sol.day, a.utc_offset)
+            row.update(arrive_local=hhmm(local),
+                       sunset_local=hhmm(ss) if ss is not None else "--",
+                       arrive_day_offset=day_off,
+                       arrive_next_day=day_off >= 1,
+                       daylight_left_hours=round(ss - local, 2) if ss is not None else None)
         rows.append(row)
         time.sleep(0.6)
 

@@ -100,13 +100,21 @@ mean_lat = math.radians((bbox["min_lat"] + bbox["max_lat"]) / 2)
 kx = math.cos(mean_lat)
 w_deg = (bbox["max_lon"] - bbox["min_lon"]) * kx
 h_deg =  bbox["max_lat"] - bbox["min_lat"]
-VH = 1000.0; VW = VH * w_deg / h_deg; PAD = VH * 0.035
+PAD    = 35.0
+DRAW_H = 1000.0 - 2 * PAD
+SCALE  = DRAW_H / h_deg            # px per degree of latitude -- used for x as well
+VH     = 1000.0
+VW     = w_deg * SCALE + 2 * PAD
 
 def proj(lat, lon):
-    x = ((lon - bbox["min_lon"]) * kx / w_deg) * (VW - 2*PAD) + PAD
-    y = (1 - (lat - bbox["min_lat"]) / h_deg) * (VH - 2*PAD) + PAD
+    x = (lon - bbox["min_lon"]) * kx * SCALE + PAD
+    y = (bbox["max_lat"] - lat) * SCALE + PAD
     return x, y
 ```
+
+Size the drawing area first and add the margin after. Deriving `VW` from the aspect ratio and
+*then* subtracting an equal margin from each axis gives them different scales — 1.29% of
+horizontal compression on one real bbox.
 
 Emit SVG `path` strings from Python, not coordinates plus in-page projection code — the page then
 has no geometry logic to get wrong, and markers use the same `proj()` as the paths by construction.
@@ -270,3 +278,29 @@ The residual distortion is the equirectangular approximation itself: a single
 `cos(mean latitude)` over a 6-degree span runs about 3% small at the southern edge and 4% large
 at the northern one, or 3–4 miles per 100 east–west. Fine for orientation, not for measuring
 off the map — and worth saying rather than implying the map is metrically true.
+
+## The checks worth running before publishing
+
+A generated page makes these cheap, and each one has caught something real:
+
+```python
+# every option produced exactly one of everything
+for pat in (r'class="opt"', r'class="route c', r'class="markers"',
+            r'class="tl"', r'class="rhy"', r'<tr data-opt='):
+    assert len(re.findall(pat, html)) == len(ORDER)
+
+# tags balance (a rewritten timeline is where this breaks)
+for t in ("div", "ul", "li", "ol", "section", "p", "span", "svg", "g", "text"):
+    assert html.count(f"<{t} ") + html.count(f"<{t}>") == html.count(f"</{t}>")
+
+# no geometry escaped the viewBox, and landmarks sit in the right quadrant
+# no f-string placeholder leaked through as literal text
+assert not re.findall(r"\{[a-z_]+\}", html)
+# every verification state that should appear, does
+assert re.findall(r'class="src src-standing"', html)
+```
+
+The one that keeps paying: **count the status labels after any change to the timeline**.
+Rewriting the timeline to show facilities silently deleted every "standing hours / could not
+determine" chip, breaking rule 4 inside a change that had nothing to do with it. Nothing else
+in the page would have told you.

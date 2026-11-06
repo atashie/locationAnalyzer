@@ -33,7 +33,8 @@ Limits worth knowing before you hit them. All free, no keys.
   two points each**, because OSM splits at every junction and carries each carriageway
   separately. RDP cannot reduce a two-point fragment, so simplifying first achieved nothing —
   17859 points and a 389 KB payload. Chaining on endpoints rounded to 5 decimals first, *then*
-  simplifying, gave 636 points and 22 KB. Stitch, then simplify; never the reverse.
+  simplifying, gave **118 chains and 673 points, 22 KB**. Stitch, then simplify; never the
+  reverse.
 - Expect both carriageways of a dual road as separate chains. At state scale they are sub-pixel
   apart, so drawing both is harmless — just budget for double the points.
 
@@ -97,3 +98,15 @@ Limits worth knowing before you hit them. All free, no keys.
   result; a stale "from" price presented as a quote is not.
 - US federal per diem is a **reimbursement ceiling**, not evidence about market pricing, and
   the fiscal year runs **October–September** — November 2026 is FY2027.
+
+## Before you believe your own output
+
+`selftest.py` in this directory checks the invariants of both measuring tools — no network,
+no fixtures, a second to run. Every case in it is a defect that reached a published page:
+unknown hours rendered as "nothing is open", a separation figure that changed with list
+order, durations truncating instead of rounding, two 17-mile stretches of interstate
+deleted by a filter on vertex count.
+
+Run it after touching `itinerary_compare.py` or `basemap.py`, and add a case whenever you
+fix something. The point is not the tests already there; it is that this class of defect is
+invisible to provenance labelling and trivially visible to one assertion.
