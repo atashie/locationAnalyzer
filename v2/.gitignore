@@ -5,5 +5,10 @@ __pycache__/
 .pytest_cache/
 spikes/**/out/
 .uv-cache/
-.review*/
 files/
+
+# NOT ignored on purpose: review scratch directories.
+# A blanket `.review*/` rule used to live here, and it let 154 KB of stale pytest
+# state and two uv caches sit in the working tree unseen across several reviews.
+# Adversarial review output belongs outside the repository; if a reviewer writes
+# into it anyway, `git status` should say so rather than swallow it.
