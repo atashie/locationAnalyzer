@@ -1236,8 +1236,9 @@ one-way edge `(0,0)→(100,0)` of time/cost **1199.95**, origin `(49.995,0)`, de
 
 The inserted vertex puts a clamped segment start **0.005 m** from the origin, inside the 0.01 m tie
 band, and it wins. No zero-length segment is involved and no road changed. Raising the weight
-amplifies the lost network fraction with no bound from connector speed. §2.2's owner-open question is
-framed correctly; its stakes are this table, not float noise.
+amplifies the lost network fraction with no bound from connector speed. §2.2's owner question was
+framed correctly; its stakes are this table, not float noise. **It has since been settled — see the
+revision-9 row above, which adopted the exact-per-record reading on the strength of this table.**
 
 **Deferred to revision 9 — four rules, none an owner decision, an allocation or a threshold.**
 
