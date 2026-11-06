@@ -1,0 +1,425 @@
+"""Toy graphs and an **exhaustive** oracle for the comparator's two objectives.
+
+This module exists to give T4's conformance suite a second route to every expected answer, and it is
+written to be independent of the reference comparator (T3) in a way that can be *checked* rather than
+asserted:
+
+* it enumerates **every** journey — every attachment candidate, every entry and exit choice, every
+  simple path — and takes the extremum, so it contains no shortest-path algorithm, no spatial index,
+  no CSR and no "objective view". Design §2.3's hybrid defect (a time-selected index paired with
+  cost-selected nodes, giving 10.5 or 6 where the answers are 1.5 and 15) is **unrepresentable**
+  here, because every candidate carries its own `(time, cost)` pair and the two are never selected
+  separately;
+* it imports nothing from `locfinder.traveltime`. The access speed is restated as a literal and
+  pinned to `access_speed_mps("walk")` by a test, so a change there is a test failure rather than a
+  silent change of the oracle;
+* it is exponential in graph size and says so. The cases are hand-sized (≤ 8 edges) on purpose.
+
+**The oracle is the second authority, not the first.** Each conformance case carries a hand-derived
+expected value with its arithmetic shown, taken where possible from a review pass's own worked
+counterexample. The suite requires hand and oracle to **agree**; where they disagree the case is a
+finding, which is the whole point of having two routes. Pass 17's warning is the reason for this
+structure: *"a program can faithfully implement each defective instruction"*, and fixtures derived
+from the same mistaken premise enforce the defect rather than catching it. One oracle derived from
+one reading of the design would be exactly that.
+
+## Two places where §2.2 is read, and the reading is recorded
+
+The first is **not** a micro-ambiguity. Pass 19's F1 established that, and the design has to settle
+it before a normative comparator can exist:
+
+1. **Which positions are candidates on a single geometry.** §2.2's text alternates between retaining
+   geometric *minimisers* and retaining "every attachment whose distance is within 0.01 m of the
+   minimum". Those are different sets, and the second is a **continuum**, even on one straight edge.
+   Pass 19's counterexample: a directed edge `(0,0) -> (100,0)` of time 100,000 s, origin `(0,1)`,
+   destination `(100,0)`. The nearest projection `(0,0)` is 1 m away and gives
+   `1/1.26 + 100000 = 100000.7936507940 s`. But `(0.1417744688, 0)` is 1.01 m away — inside the
+   literal tolerance band — and gives `1.01/1.26 + 0.9985822553 x 100000 = 99859.0271185140 s`. The
+   gap is **141.7665322800 s**, and at a 99,900 s threshold the two readings are FAIL and PASS.
+   There is no bound on that gap obtained by dividing the spatial tolerance by the access speed.
+
+   This oracle takes the candidate set to be the **per-segment** nearest positions — one per
+   polyline segment — filtered to those within `ATTACH_TIE_M` of the global minimum and
+   deduplicated at `ROUND_DP`. That is finite and well defined, but it is **one of three readings**
+   (exact per-geometry minima, per-segment minima, the whole tolerance sublevel set), so it is a
+   **design amendment waiting to be made**, not an interpretation this module is entitled to. The
+   cases marked `reading="per-segment minima"` are the ones a different choice invalidates.
+
+   Related, and separately true: the 0.01 m rule **relocates** the discontinuity rather than
+   removing it. Two disconnected roads of 100 s and 1000 s with origin residuals 1 m and 1.009 m
+   give `100 + 1.009/1.26 = 100.8007936510 s`; moving the second to 1.011 m excludes it and leaves
+   `1000 + 1/1.26 = 1000.7936507940 s` — an **899.9928571430 s** jump across 2 mm, and PASS to FAIL
+   at ten minutes. Keeping every candidate makes the answer well defined once the candidate universe
+   is specified; it does not make the answer continuous in the geometry, and §2.2 may not be defended
+   as though it did.
+
+2. **Order of the tie window and the cap.** The window is taken around the global minimum **first**,
+   and the distance cap applied **after**, so each retained candidate is independently inside the
+   cap. A nearest origin candidate at 199.995 m does **not** authorise a second at 200.004 m merely
+   because it is inside the geometric tie band. Pass 19 asked for this explicitly and it is tested.
+
+## Why simple paths suffice
+
+Every weight here is non-negative, so a journey whose node sequence repeats a node contains a
+non-negative cycle that can be excised without changing its endpoints or its partial-edge terms. The
+excised journey is no worse. So restricting the enumeration to node-simple paths cannot miss an
+optimum, and the enumeration is finite.
+"""
+
+from __future__ import annotations
+
+import itertools
+import math
+from dataclasses import dataclass, field
+
+#: Design §2: the walk access speed. Pinned to `speeds.access_speed_mps("walk")` by a test rather
+#: than imported, so that this oracle does not move when the production constant does.
+ACCESS_SPEED_MPS = 1.26
+
+#: Design §2.2.
+ATTACH_TIE_M = 0.01
+
+#: Design §2: the origin access cap and the destination eligibility cap. Different quantities.
+MAX_ACCESS_M = 200.0
+POI_SNAP_MAX_M = 300.0
+
+#: Design §2.4: "Rounding precision is 2 dp on metres everywhere, stated once."
+ROUND_DP = 2
+
+
+# ----------------------------------------------------------------------------- geometry
+
+
+def _segment_nearest(px: float, py: float, ax: float, ay: float,
+                     bx: float, by: float) -> tuple[float, float]:
+    """`(distance, t)` for the nearest point on segment `a->b` to `p`, with `t` clamped to [0, 1].
+
+    A zero-length segment returns `t = 0.0` and the distance to the shared endpoint, rather than
+    dividing by zero.
+    """
+    dx, dy = bx - ax, by - ay
+    denom = dx * dx + dy * dy
+    t = 0.0 if denom == 0.0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / denom))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy)), t
+
+
+# ----------------------------------------------------------------------------- the graph
+
+
+@dataclass(frozen=True)
+class ToyEdge:
+    """One directed edge, with time and cost carried **separately** at every stage.
+
+    `penalty` is separate from `cost_base` so that design §2.2's apportionment rule is testable
+    against the rejected alternative. `access.py` adds a fixed 120 s per restricted walking edge to
+    cost, so on a 1% traversal apportionment charges `0.01 x 121 = 1.21` while an entry charge would
+    charge `0.01 x 1 + 120 = 120.01`, and against a 5 s open bypass the two select different routes.
+    An implementation that keeps only the summed cost cannot distinguish them.
+
+    `oneway` models the state **after** walk symmetrisation: a bidirectional pedestrian edge is
+    `oneway=False`. Design §2.2 — bike and drive do not inherit the pedestrian reverse.
+    """
+
+    u: int
+    v: int
+    geometry: tuple[tuple[float, float], ...]
+    time_s: float
+    cost_base: float
+    penalty: float = 0.0
+    osmid: tuple[int, ...] = ()
+    oneway: bool = False
+
+    def __post_init__(self) -> None:
+        if len(self.geometry) < 2:
+            raise ValueError("an edge geometry needs at least two coordinates")
+        if self.time_s < 0 or self.cost_base < 0 or self.penalty < 0:
+            raise ValueError("times, costs and penalties are non-negative")
+
+    @property
+    def total_cost(self) -> float:
+        """The selection weight. Penalties are **inside** cost, per `access.py`."""
+        return self.cost_base + self.penalty
+
+    @property
+    def length_m(self) -> float:
+        return sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                   for a, b in itertools.pairwise(self.geometry))
+
+    @property
+    def geometry_key(self) -> tuple[tuple[float, float], ...]:
+        """Design §2.4: canonicalised so a reversed traversal of the same geometry maps to the
+        **same physical road**. The directed identity below then separates the two directions by
+        their endpoints, which is what `_physical_key` and `_canonical_geometry_key` disagreed about.
+        """
+        fwd = tuple((round(x, ROUND_DP), round(y, ROUND_DP)) for x, y in self.geometry)
+        return min(fwd, fwd[::-1])
+
+    @property
+    def identity(self) -> tuple:
+        """Design §2.4's canonical **directed**-edge identity: start node, end node, canonical
+        geometry key, osmid normalised to a sorted tuple, length rounded to 2 dp."""
+        return (self.u, self.v, self.geometry_key,
+                tuple(sorted(self.osmid)), round(self.length_m, ROUND_DP))
+
+    def permits(self, *, forward: bool) -> bool:
+        return True if forward else not self.oneway
+
+
+@dataclass(frozen=True)
+class ToyGraph:
+    edges: tuple[ToyEdge, ...]
+
+    def __post_init__(self) -> None:
+        coords: dict[int, tuple[float, float]] = {}
+        for e in self.edges:
+            for node, xy in ((e.u, e.geometry[0]), (e.v, e.geometry[-1])):
+                prev = coords.setdefault(node, xy)
+                if prev != xy:
+                    raise ValueError(f"node {node} has two coordinates: {prev} and {xy}")
+
+    @property
+    def nodes(self) -> tuple[int, ...]:
+        return tuple(sorted({n for e in self.edges for n in (e.u, e.v)}))
+
+
+# ----------------------------------------------------------------------------- attachment
+
+
+@dataclass(frozen=True)
+class Attachment:
+    """One retained attachment candidate. Design §2.2 keeps **every** geometric minimiser, so this
+    is one of a set and the set is part of what determines the answer."""
+
+    edge: int           # index into ToyGraph.edges
+    fraction: float     # along the whole polyline, by length, from the `u` end
+    residual_m: float   # straight-line from the coordinate to the attached position
+    position: tuple[float, float]
+
+
+def attachments(graph: ToyGraph, point: tuple[float, float], *, cap_m: float) -> tuple[Attachment, ...]:
+    """Design §2.2's candidate set: every per-segment minimiser within `ATTACH_TIE_M` of the global
+    minimum, deduplicated at `ROUND_DP`, then filtered to those within `cap_m`.
+
+    An empty result is a **status**, not a missing value: no network within the cap.
+    """
+    px, py = point
+    raw: list[Attachment] = []
+    for i, e in enumerate(graph.edges):
+        total = e.length_m
+        run = 0.0
+        for a, b in itertools.pairwise(e.geometry):
+            seg = math.hypot(b[0] - a[0], b[1] - a[1])
+            d, t = _segment_nearest(px, py, a[0], a[1], b[0], b[1])
+            along = run + t * seg
+            raw.append(Attachment(
+                edge=i,
+                fraction=0.0 if total == 0.0 else along / total,
+                residual_m=d,
+                position=(a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])),
+            ))
+            run += seg
+    if not raw:
+        return ()
+    best = min(a.residual_m for a in raw)
+    window = [a for a in raw if a.residual_m <= best + ATTACH_TIE_M]
+    seen: set[tuple[int, float]] = set()
+    kept: list[Attachment] = []
+    for a in sorted(window, key=lambda a: (a.edge, a.fraction)):
+        key = (a.edge, round(a.fraction, ROUND_DP))
+        if key not in seen:
+            seen.add(key)
+            kept.append(a)
+    return tuple(a for a in kept if a.residual_m <= cap_m)
+
+
+# ----------------------------------------------------------------------------- enumeration
+
+
+@dataclass(frozen=True)
+class Journey:
+    """One complete enumerated journey, with time and cost kept as a pair throughout.
+
+    `route` is the sequence of design §2.4 canonical directed-edge identities, which is the design's
+    route identity, and is what breaks a cost tie after travel time.
+    """
+
+    time_s: float
+    cost: float
+    destination: int
+    route: tuple = field(compare=False, default=())
+
+    @property
+    def rank_key(self) -> tuple:
+        """Design §2.4's ranking, lifted to a whole journey: smallest travel time first, then a
+        deterministic total order. Journeys agreeing on both are identical in every quantity this
+        design reports."""
+        return (self.time_s, tuple(repr(r) for r in self.route))
+
+
+def _simple_paths(graph: ToyGraph, start: int, goal: int):
+    """Every node-simple directed path `start -> goal`, as `(time, cost, identities)`.
+
+    Yields the empty path when `start == goal`. Non-negative weights make node-simple sufficient; see
+    the module docstring.
+    """
+    results: list[tuple[float, float, tuple]] = []
+
+    def walk(node: int, visited: frozenset[int], t: float, c: float, ids: tuple) -> None:
+        if node == goal:
+            results.append((t, c, ids))
+            # fall through: a longer path to the same goal would have to revisit `goal`, so there
+            # is nothing more to explore from here.
+            return
+        for e in graph.edges:
+            for forward in (True, False):
+                if not e.permits(forward=forward):
+                    continue
+                a, b = (e.u, e.v) if forward else (e.v, e.u)
+                if a != node or b in visited:
+                    continue
+                ident = e.identity if forward else (e.v, e.u, e.geometry_key,
+                                                   tuple(sorted(e.osmid)),
+                                                   round(e.length_m, ROUND_DP))
+                walk(b, visited | {b}, t + e.time_s, c + e.total_cost, ids + (ident,))
+
+    walk(start, frozenset({start}), 0.0, 0.0, ())
+    return results
+
+
+def _entries(graph: ToyGraph, att: Attachment):
+    """Leaving the origin's attached position: `(node, time, cost)` for each legal direction.
+
+    Forward pays `(1 - f)` of the edge to reach `v`; reverse pays `f` to reach `u` and is legal only
+    where the edge permits it. Apportionment is by the **same** fraction for time, base cost and
+    penalty, with no exceptions (design §2.2).
+    """
+    e = graph.edges[att.edge]
+    out = [(e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost)]
+    if e.permits(forward=False):
+        out.append((e.u, att.fraction * e.time_s, att.fraction * e.total_cost))
+    return out
+
+
+def _exits(graph: ToyGraph, att: Attachment):
+    """Arriving at the destination's attached position: `(node, time, cost)` for each legal approach.
+
+    From `u` the remaining `f` is traversed forward; from `v` the remaining `(1 - f)` is traversed in
+    reverse, which a one-way edge forbids.
+    """
+    e = graph.edges[att.edge]
+    out = [(e.u, att.fraction * e.time_s, att.fraction * e.total_cost)]
+    if e.permits(forward=False):
+        out.append((e.v, (1.0 - att.fraction) * e.time_s, (1.0 - att.fraction) * e.total_cost))
+    return out
+
+
+def _same_edge_direct(graph: ToyGraph, origin: Attachment, dest: Attachment):
+    """Design §2.2: a same-physical-edge direct traversal is a **candidate**, not the route.
+
+    Returns `(time, cost)` or `None` when the direction forbids it — a one-way `u->v` with an origin
+    at 0.8 and a destination at 0.2 cannot reach it directly at all.
+    """
+    if origin.edge != dest.edge:
+        return None
+    e = graph.edges[origin.edge]
+    span = dest.fraction - origin.fraction
+    if span < 0 and not e.permits(forward=False):
+        return None
+    f = abs(span)
+    return f * e.time_s, f * e.total_cost
+
+
+def journeys(graph: ToyGraph, origin: tuple[float, float],
+             destinations: list[tuple[float, float]]) -> list[Journey]:
+    """Every journey from `origin` to every **eligible** destination. Design §2.2 in full.
+
+    Both connectors are charged at the access speed and are part of both objectives' totals.
+    """
+    origin_atts = attachments(graph, origin, cap_m=MAX_ACCESS_M)
+    out: list[Journey] = []
+    for di, dxy in enumerate(destinations):
+        dest_atts = attachments(graph, dxy, cap_m=POI_SNAP_MAX_M)
+        for oa in origin_atts:
+            access_o = oa.residual_m / ACCESS_SPEED_MPS
+            for da in dest_atts:
+                access_d = da.residual_m / ACCESS_SPEED_MPS
+                direct = _same_edge_direct(graph, oa, da)
+                if direct is not None:
+                    e = graph.edges[oa.edge]
+                    ident = e.identity if da.fraction >= oa.fraction else (
+                        e.v, e.u, e.geometry_key, tuple(sorted(e.osmid)),
+                        round(e.length_m, ROUND_DP))
+                    out.append(Journey(time_s=access_o + direct[0] + access_d,
+                                       cost=direct[1], destination=di, route=(ident,)))
+                for en, et, ec in _entries(graph, oa):
+                    for xn, xt, xc in _exits(graph, da):
+                        for pt, pc, ids in _simple_paths(graph, en, xn):
+                            out.append(Journey(
+                                time_s=access_o + et + pt + xt + access_d,
+                                cost=ec + pc + xc, destination=di, route=ids))
+    return out
+
+
+# ----------------------------------------------------------------------------- the two objectives
+
+
+@dataclass(frozen=True)
+class OracleResult:
+    """Design §2.1's two objectives, plus the bookkeeping the manifest requires (§12).
+
+    `None` means **no finite time was found by exhaustive enumeration** — which on this toy graph is
+    a genuine `NO_PATH`, since the enumeration is unbounded (design §2.5: `NO_PATH` may never be
+    reported from a bounded search).
+    """
+
+    objective1_s: float | None
+    objective1_destination: int | None
+    objective2_s: float | None
+    objective2_cost: float | None
+    objective2_destination: int | None
+    eligible: tuple[int, ...]
+    ineligible: tuple[int, ...]
+    origin_candidates: int
+    n_journeys: int
+
+
+def evaluate(graph: ToyGraph, origin: tuple[float, float],
+             destinations: list[tuple[float, float]]) -> OracleResult:
+    """Objective 1 by exhaustive minimisation of **time**; objective 2 by exhaustive minimisation of
+    **cost**, then reporting *that* journey's time.
+
+    Objective 2 is deliberately **not** a minimum over the times of cost-optimal paths. Design §2.1:
+    with identical engines on destinations `(cost, time) = (10, 10)` and `(100, 1)` the wrong
+    functional reports -9 s of disagreement where there is none.
+
+    Cost ties are broken by design §2.4 — smallest travel time, then a deterministic total order —
+    which matters because the current code is non-deterministic on insertion order, returning 10 or 1
+    for equal-cost coincident alternatives of time 10 and 1.
+    """
+    eligible = tuple(i for i, d in enumerate(destinations)
+                     if attachments(graph, d, cap_m=POI_SNAP_MAX_M))
+    ineligible = tuple(i for i in range(len(destinations)) if i not in eligible)
+    js = journeys(graph, origin, destinations)
+    origin_candidates = len(attachments(graph, origin, cap_m=MAX_ACCESS_M))
+    if not js:
+        return OracleResult(None, None, None, None, None, eligible, ineligible,
+                            origin_candidates, 0)
+
+    best_t = min(js, key=lambda j: j.rank_key)
+    cheapest = min(j.cost for j in js)
+    # Exact equality against the minimum, deliberately. Design §2.2 declares a tolerance for
+    # *geometric* ties only; §2.4 declares none for cost, so introducing one here would be this
+    # module inventing a rule. Cases are built from small exact values so no near-tie arises; a real
+    # graph could produce one, which is recorded as a design question rather than resolved here.
+    best_c = min((j for j in js if j.cost <= cheapest), key=lambda j: j.rank_key)
+    return OracleResult(
+        objective1_s=best_t.time_s,
+        objective1_destination=best_t.destination,
+        objective2_s=best_c.time_s,
+        objective2_cost=best_c.cost,
+        objective2_destination=best_c.destination,
+        eligible=eligible,
+        ineligible=ineligible,
+        origin_candidates=origin_candidates,
+        n_journeys=len(js),
+    )
