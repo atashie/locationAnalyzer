@@ -23,7 +23,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from scipy.optimize import brentq
-from scipy.stats import binom
+from scipy.stats import beta, binom
 
 from locfinder.measure.stats import (
     BIT_GENERATOR,
@@ -69,13 +69,20 @@ def binomial_tail_inversion_lower(k: int, n: int, confidence: float = 0.95) -> f
 # --------------------------------------------------------------------------- upper bound
 
 
+@pytest.mark.parametrize("confidence", [0.90, 0.95, 0.99])
 @pytest.mark.parametrize("n", [8, 60, 150, 400, 500, 628])
 @pytest.mark.parametrize("k", [0, 1, 2, 3, 4])
-def test_the_upper_bound_matches_an_independently_inverted_binomial_tail(k, n):
+def test_the_upper_bound_matches_an_independently_inverted_binomial_tail(k, n, confidence):
     """The decisive fixture. Pass-15's wrong formula and pass-18's one-cell variant both differ from
-    this at some (k, n), and 1e-10 leaves no room to hide a difference that could flip a verdict."""
-    assert clopper_pearson_upper(k, n) == pytest.approx(
-        binomial_tail_inversion_upper(k, n), abs=TOL)
+    this at some (k, n), and 1e-10 leaves no room to hide a difference that could flip a verdict.
+
+    **Parametrised over the confidence level**, which pass-19 F3 showed is what the fixture was
+    missing: every exact comparison used the default 0.95 and the non-default tests checked only
+    direction, so a globally miscalibrated level passed all 65 tests. See
+    `test_a_globally_miscalibrated_confidence_level_is_now_rejected`.
+    """
+    assert clopper_pearson_upper(k, n, confidence=confidence) == pytest.approx(
+        binomial_tail_inversion_upper(k, n, confidence), rel=0, abs=TOL)
 
 
 def test_the_pass15_counterexample_is_rejected():
@@ -84,10 +91,10 @@ def test_the_pass15_counterexample_is_rejected():
         return k / n + (1 - k / n) * (1 - 0.05 ** (1 / n))
 
     # it agrees at k = 0 -- which is exactly why the old fixtures passed it
-    assert wrong(0, 400) == pytest.approx(clopper_pearson_upper(0, 400), abs=TOL)
+    assert wrong(0, 400) == pytest.approx(clopper_pearson_upper(0, 400), rel=0, abs=TOL)
     # and disagrees where the verdict is decided
-    assert clopper_pearson_upper(1, 400) == pytest.approx(0.01180430445398703, abs=TOL)
-    assert wrong(1, 400) == pytest.approx(0.009942702139977564, abs=TOL)
+    assert clopper_pearson_upper(1, 400) == pytest.approx(0.01180430445398703, rel=0, abs=TOL)
+    assert wrong(1, 400) == pytest.approx(0.009942702139977564, rel=0, abs=TOL)
     assert clopper_pearson_upper(1, 400) > 0.01 > wrong(1, 400)   # it flips the 1% decision
 
 
@@ -99,13 +106,13 @@ def test_the_pass18_single_cell_variant_is_rejected():
         return clopper_pearson_upper(k, n)
 
     assert wrong(1, 400) == pytest.approx(clopper_pearson_upper(1, 400), abs=0.002)   # the hole
-    assert wrong(1, 400) != pytest.approx(clopper_pearson_upper(1, 400), abs=TOL)     # closed
+    assert wrong(1, 400) != pytest.approx(clopper_pearson_upper(1, 400), rel=0, abs=TOL)     # closed
 
 
 def test_the_zero_failure_closed_form():
     """`1 - (1-c)**(1/n)`, an independent check of this formula at k = 0."""
     for n in (8, 60, 150, 400, 500):
-        assert clopper_pearson_upper(0, n) == pytest.approx(1 - 0.05 ** (1 / n), abs=TOL)
+        assert clopper_pearson_upper(0, n) == pytest.approx(1 - 0.05 ** (1 / n), rel=0, abs=TOL)
 
 
 def test_the_designs_published_zero_failure_values():
@@ -125,18 +132,97 @@ def test_the_upper_bound_is_monotone_and_hits_its_endpoints():
 # --------------------------------------------------------------------------- lower bound
 
 
+@pytest.mark.parametrize("confidence", [0.90, 0.95, 0.99])
 @pytest.mark.parametrize("k,n", [(1, 150), (1, 500), (3, 500), (10, 500), (250, 500)])
-def test_the_lower_bound_matches_an_independently_inverted_binomial_tail(k, n):
-    assert clopper_pearson_lower(k, n) == pytest.approx(
-        binomial_tail_inversion_lower(k, n), abs=TOL)
+def test_the_lower_bound_matches_an_independently_inverted_binomial_tail(k, n, confidence):
+    assert clopper_pearson_lower(k, n, confidence=confidence) == pytest.approx(
+        binomial_tail_inversion_lower(k, n, confidence), rel=0, abs=TOL)
+
+
+def test_a_globally_miscalibrated_confidence_level_is_now_rejected():
+    """Pass-19 F3, executed. A single global substitution — halve the distance of the requested
+    level from 0.95 — passed **all 65** tests, because every exact comparison used the default and
+    the non-default tests checked only direction.
+
+    The mutant is not an exception carved out for one `(k, n)`. It is one wrong formula that
+    delivers the 92.5% bound when 90% is asked for and the 97% bound when 99% is asked for, and it
+    satisfies both direction assertions because its levels are still ordered.
+    """
+    def miscalibrated_upper(k, n, *, confidence=0.95):
+        if k >= n:
+            return 1.0
+        return float(beta.ppf(0.95 + (confidence - 0.95) / 2, k + 1, n - k))
+
+    def miscalibrated_lower(k, n, *, confidence=0.95):
+        if k <= 0:
+            return 0.0
+        return float(beta.ppf(0.05 - (confidence - 0.95) / 2, k, n - k + 1))
+
+    # it is invisible at the default level, which is why the old fixtures accepted it
+    assert miscalibrated_upper(1, 500) == pytest.approx(
+        clopper_pearson_upper(1, 500), rel=0, abs=TOL)
+    assert miscalibrated_lower(1, 500) == pytest.approx(
+        clopper_pearson_lower(1, 500), rel=0, abs=TOL)
+
+    # and it still moves both bounds in the right direction with the level
+    assert (miscalibrated_upper(1, 500, confidence=0.90)
+            < miscalibrated_upper(1, 500, confidence=0.95)
+            < miscalibrated_upper(1, 500, confidence=0.99))
+
+    # the parametrised oracle above is what separates it
+    assert clopper_pearson_upper(1, 500, confidence=0.90) == pytest.approx(
+        0.007756994552213629, rel=0, abs=TOL)
+    assert miscalibrated_upper(1, 500, confidence=0.90) == pytest.approx(
+        0.008468733810849356, rel=0, abs=TOL)
+    assert miscalibrated_upper(1, 500, confidence=0.90) != pytest.approx(
+        binomial_tail_inversion_upper(1, 500, 0.90), rel=0, abs=TOL)
+
+    assert clopper_pearson_lower(1, 500, confidence=0.90) == pytest.approx(
+        0.0002106988311985045, rel=0, abs=TOL)
+    assert miscalibrated_lower(1, 500, confidence=0.90) != pytest.approx(
+        binomial_tail_inversion_lower(1, 500, 0.90), rel=0, abs=TOL)
+
+    # at a nominal 99% the mutant supplies 97% coverage
+    assert miscalibrated_upper(1, 500, confidence=0.99) == pytest.approx(
+        clopper_pearson_upper(1, 500, confidence=0.97), rel=0, abs=TOL)
+
+
+def test_the_confidence_level_reaches_the_acceptance_verdict():
+    """F3's downstream consequence. `acceptance` must forward the level, not just accept it: with
+    `k` = 1, `n` = 500 and θ = 0.8%, the correct 90% bound is 0.7757% and PASSES, while the mutant's
+    0.8469% exceeds θ and `k/n` = 0.2% does not trigger FAIL — **PASS to INCONCLUSIVE**.
+    """
+    a = acceptance(1, 0, 500, 0.008, confidence=0.90)
+    assert a.verdict is Verdict.PASS
+    assert a.bound_range[1] == pytest.approx(0.007756994552213629, rel=0, abs=TOL)
+
+    # the same counts at 95% do not pass, which is what shows the level is in use
+    assert acceptance(1, 0, 500, 0.008, confidence=0.95).verdict is Verdict.INCONCLUSIVE
+
+
+def test_tolerated_failures_uses_the_confidence_level_it_is_given():
+    """The same forwarding check on the allocation helper, where a miscalibration would silently
+    change how many failures an allocation is reported to tolerate.
+
+    At 99.9% the result is **-1**, not 0: at *n* = 500 the zero-failure bound is
+    `1 - 0.001 ** (1/500)` = 1.3816%, which already exceeds a 1% threshold, so no observation
+    satisfies the gate. That sentinel is the unreachable-gate condition revision 2 shipped
+    undetected, and raising the confidence level is one of the ways to reach it.
+    """
+    assert tolerated_failures(500, 0.01, confidence=0.95) == 1
+    assert tolerated_failures(500, 0.01, confidence=0.80) > 1
+    assert clopper_pearson_upper(0, 500, confidence=0.999) == pytest.approx(
+        1 - 0.001 ** (1 / 500), rel=0, abs=TOL)
+    assert clopper_pearson_upper(0, 500, confidence=0.999) > 0.01
+    assert tolerated_failures(500, 0.01, confidence=0.999) == -1
 
 
 def test_the_lower_bound_is_one_sided_not_two_sided():
     """Pass-18 F9's case. The two-sided value passes a zero endpoint check and moves correctly with
     the confidence level, so only a non-zero fixture separates them."""
-    assert clopper_pearson_lower(1, 500) == pytest.approx(0.000102581, abs=1e-9)
+    assert clopper_pearson_lower(1, 500) == pytest.approx(0.000102581, rel=0, abs=1e-9)
     two_sided = 1 - 0.975 ** (1 / 500)
-    assert two_sided == pytest.approx(0.000050634, abs=1e-9)
+    assert two_sided == pytest.approx(0.000050634, rel=0, abs=1e-9)
     assert clopper_pearson_lower(1, 500) != pytest.approx(two_sided, abs=1e-6)
 
 
@@ -146,7 +232,7 @@ def test_the_complementary_identity_between_the_two_bounds():
     for n in (150, 500):
         for k in range(1, 6):
             assert clopper_pearson_lower(k, n) == pytest.approx(
-                1 - clopper_pearson_upper(n - k, n), abs=TOL)
+                1 - clopper_pearson_upper(n - k, n), rel=0, abs=TOL)
 
 
 def test_the_lower_bound_is_zero_at_zero_failures():
@@ -177,8 +263,8 @@ def test_the_cliff_the_design_chose_n_500_to_avoid():
     which is why it was not predeclared; 500 tolerates one at 0.9452%."""
     assert tolerated_failures(400, 0.01) == 0
     assert tolerated_failures(473, 0.01) == 1
-    assert clopper_pearson_upper(1, 473) == pytest.approx(0.009989707, abs=1e-8)
-    assert clopper_pearson_upper(1, 500) == pytest.approx(0.009452282, abs=1e-8)
+    assert clopper_pearson_upper(1, 473) == pytest.approx(0.009989707, rel=0, abs=1e-8)
+    assert clopper_pearson_upper(1, 500) == pytest.approx(0.009452282, rel=0, abs=1e-8)
     assert tolerated_failures(628, 0.01) == 2
 
 
@@ -210,8 +296,8 @@ def test_the_ambiguity_pass18_found_resolves_to_inconclusive():
     a = acceptance(1, 1, 500, 0.01)
     assert a.verdict is Verdict.INCONCLUSIVE
     assert a.identification_range == pytest.approx((0.002, 0.004))
-    assert a.bound_range[0] == pytest.approx(0.009452282, abs=1e-8)
-    assert a.bound_range[1] == pytest.approx(0.012537605, abs=1e-8)
+    assert a.bound_range[0] == pytest.approx(0.009452282, rel=0, abs=1e-8)
+    assert a.bound_range[1] == pytest.approx(0.012537605, rel=0, abs=1e-8)
 
 
 def test_unresolved_cases_cannot_turn_a_pass_into_a_fail():
@@ -249,7 +335,7 @@ def test_an_all_abstaining_product_passes_e1_which_is_why_coverage_is_a_separate
     the (separately blocked) coverage requirement bounds abstention."""
     for threshold in (0.01, 0.02):
         assert acceptance(0, 0, 500, threshold).verdict is Verdict.PASS
-    assert clopper_pearson_upper(0, 500) == pytest.approx(0.005973552, abs=1e-8)
+    assert clopper_pearson_upper(0, 500) == pytest.approx(0.005973552, rel=0, abs=1e-8)
 
 
 # --------------------------------------------------------------------------- variance
@@ -293,8 +379,8 @@ def test_the_percentile_convention_on_a_fixed_replicate_vector():
     is what pins the convention; it cannot be satisfied by accident."""
     stats = np.concatenate([np.zeros(50), np.ones(1950)])
     lo, hi = percentile_interval(stats)
-    assert lo == pytest.approx(0.975, abs=TOL)
-    assert hi == pytest.approx(1.0, abs=TOL)
+    assert lo == pytest.approx(0.975, rel=0, abs=TOL)
+    assert hi == pytest.approx(1.0, rel=0, abs=TOL)
     assert np.quantile(stats, 0.025, method="lower") == 0.0
     assert np.quantile(stats, 0.025, method="higher") == 1.0
 
@@ -302,7 +388,33 @@ def test_the_percentile_convention_on_a_fixed_replicate_vector():
 def test_the_percentile_interval_against_a_hand_computed_case():
     stats = np.arange(101, dtype=np.float64)       # 0..100
     lo, hi = percentile_interval(stats)
-    assert (lo, hi) == pytest.approx((2.5, 97.5), abs=TOL)
+    assert (lo, hi) == pytest.approx((2.5, 97.5), rel=0, abs=TOL)
+
+
+def test_the_percentile_intervals_confidence_is_central_two_sided():
+    """Pass-19 F3's companion requirement, and a distinction worth pinning rather than inferring:
+    the Clopper-Pearson level is **one-sided** and this one is **central two-sided**. Both are
+    written `confidence=0.95` and they mean different tails.
+
+    On replicate values 0…100, 95% gives `[2.5, 97.5]` and 90% gives `[5, 95]` — not `[5, 95]` and
+    `[10, 90]`. A level forwarded to the wrong convention would halve or double each tail.
+    """
+    replicates = np.arange(101, dtype=float)
+    assert percentile_interval(replicates, confidence=0.95) == pytest.approx(
+        (2.5, 97.5), rel=0, abs=TOL)
+    assert percentile_interval(replicates, confidence=0.90) == pytest.approx(
+        (5.0, 95.0), rel=0, abs=TOL)
+    assert percentile_interval(replicates, confidence=0.99) == pytest.approx(
+        (0.5, 99.5), rel=0, abs=TOL)
+
+    # a one-sided reading of 0.90 would give [10, 90]; this is what rules it out
+    assert percentile_interval(replicates, confidence=0.90) != pytest.approx(
+        (10.0, 90.0), rel=0, abs=TOL)
+
+    # and the level reaches the resampling entry point too
+    narrow = percentile_bootstrap(replicates, seed=7, replicates=400, confidence=0.50)
+    wide = percentile_bootstrap(replicates, seed=7, replicates=400, confidence=0.99)
+    assert wide[0] < narrow[0] <= narrow[1] < wide[1]
 
 
 def test_the_bootstrap_is_reproducible_from_its_recorded_generator_and_seed():

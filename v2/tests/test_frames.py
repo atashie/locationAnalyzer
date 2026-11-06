@@ -186,15 +186,73 @@ def test_frame_c_is_reproducible_and_seed_sensitive():
 
 
 def test_the_digest_changes_when_any_point_changes():
-    from locfinder.measure.frames import Frame, _digest_points
+    from locfinder.measure.frames import Frame, frame_digest
     f = build_frame_c(TOY, n=6, seed=1)
-    moved = f.points.copy()
+    moved = np.array(f.points, copy=True)
     moved[3, 0] += 1e-9
-    assert _digest_points(moved, f.source_ids, f.seed, f.population_n,
-                          f.source_digest) != f.digest
+    assert frame_digest(kind=f.kind, points=moved, source_ids=f.source_ids, seed=f.seed,
+                        population_n=f.population_n, crs=f.crs,
+                        source_digest=f.source_digest) != f.digest
     assert Frame(kind=f.kind, points=f.points, source_ids=f.source_ids, seed=f.seed,
                  population_n=f.population_n, crs=f.crs, source_digest=f.source_digest,
                  digest=f.digest).digest == f.digest
+
+
+def test_a_frames_points_cannot_be_mutated_out_from_under_its_digest():
+    """Pass-19 F7, executed. `frozen=True` prevents rebinding an attribute, not mutating the array
+    it points at: the review moved a point 999 m, left `digest` unchanged, and `write_frame` would
+    have serialised the moved points under the old identity. A 999 m move can cross a product
+    boundary, so an agreement could silently become the second false inclusion of *n* = 500 — a
+    PASS turning INCONCLUSIVE **under the same recorded frame identity**.
+    """
+    f = build_frame_c(TOY, n=6, seed=1)
+    with pytest.raises(ValueError):
+        f.points[0, 0] = 1000.0
+    with pytest.raises(ValueError):
+        f.source_ids[0] = 999
+    assert f.digest == f.recomputed_digest
+
+
+def test_a_frame_whose_digest_does_not_describe_it_cannot_be_constructed():
+    from locfinder.measure.frames import Frame
+    f = build_frame_c(TOY, n=6, seed=1)
+    moved = np.array(f.points, copy=True)
+    moved[0, 0] += 999.0
+    with pytest.raises(ValueError, match="does not describe"):
+        Frame(kind=f.kind, points=moved, source_ids=f.source_ids, seed=f.seed,
+              population_n=f.population_n, crs=f.crs, source_digest=f.source_digest,
+              digest=f.digest)
+
+
+def test_the_digest_separates_two_frames_that_differ_only_in_crs_or_kind():
+    """Pass-19 F7: the first digest omitted `kind` and `crs`, so two frames with identical arrays,
+    seed, population size and source digest but `EPSG:32617` against `EPSG:4326` described different
+    places on Earth and shared one identity. The public constructor accepts those fields
+    independently, so they belong in the identity."""
+    from locfinder.measure.frames import frame_digest
+    f = build_frame_c(TOY, n=6, seed=1)
+    common = dict(points=f.points, source_ids=f.source_ids, seed=f.seed,
+                  population_n=f.population_n, source_digest=f.source_digest)
+    assert (frame_digest(kind="area", crs="EPSG:32617", **common)
+            != frame_digest(kind="area", crs="EPSG:4326", **common))
+    assert (frame_digest(kind="area", crs="EPSG:32617", **common)
+            != frame_digest(kind="structures", crs="EPSG:32617", **common))
+
+
+def test_the_digest_is_byte_canonical_and_cannot_run_two_ids_together():
+    """Pass-19 F10. Float bytes are written little-endian explicitly, so numerically identical
+    points keep one identity across architectures; and ids are length-delimited UTF-8, so
+    `("ab", "c")` and `("a", "bc")` cannot collide the way fixed-width native `U64` allowed."""
+    from locfinder.measure.frames import frame_digest
+    pts = np.array([[1.0, 2.0], [3.0, 4.0]])
+    common = dict(points=pts, seed=1, population_n=9, crs="EPSG:32617", kind="structures",
+                  source_digest="x")
+    assert (frame_digest(source_ids=np.array(["ab", "c"]), **common)
+            != frame_digest(source_ids=np.array(["a", "bc"]), **common))
+
+    # and the float layout is the declared one, not whatever this machine happens to use
+    assert np.ascontiguousarray(np.array([1.0]), dtype="<f8").tobytes().hex() == \
+        "000000000000f03f"
 
 
 def test_an_oversized_or_empty_draw_is_an_error():
@@ -290,3 +348,166 @@ def test_the_manifest_records_what_is_needed_to_redraw_the_frame(tmp_path):
     assert m["digest"] == f.digest
     assert m["crs"] == "EPSG:32617"
     assert "permutation" in m["sampling"] and "random((n, 2))" in m["sampling"]
+
+
+# --------------------------------------------------------------------------- population construction
+#
+# Pass-19 F4: every frame-B draw test above supplies an already ordered synthetic population, so
+# none of them calls `structure_population`. Projection, centroid computation, boundary filtering
+# and population ordering could all be broken without a single assertion noticing — the review
+# executed the mutation `order = np.arange(len(ids))` in place of the stable argsort and **all 17
+# tests passed**. These tests close that.
+
+#: The real grid's origin, cut down to 4 x 3 cells so the population is enumerable.
+REAL = GridSpec(crs="EPSG:32617", x_min=661900.0, y_max=4003500.0, cell_m=100.0, ncols=4, nrows=3)
+REAL_X_MAX = REAL.x_min + REAL.ncols * REAL.cell_m          # 662300
+REAL_Y_MIN = REAL.y_max - REAL.nrows * REAL.cell_m          # 4003200
+
+
+def _squares(ids, xy, crs="EPSG:32617"):
+    """A GeoDataFrame of 2 m squares centred on `xy`, in `crs`. Polygons, not points, so the
+    centroid computation is actually exercised."""
+    import geopandas as gpd
+    from shapely.geometry import box
+    geoms = [box(x - 1, y - 1, x + 1, y + 1) for x, y in xy]
+    return gpd.GeoDataFrame({"id": list(ids)}, geometry=geoms, crs=crs)
+
+
+def test_the_population_filter_is_half_open_on_all_four_sides(tmp_path):
+    """`[x_min, x_max) x [y_min, y_max)`. A centroid exactly on the west or south edge is **in**;
+    exactly on the east or north edge is **out**. Built directly in the grid's CRS so the
+    comparisons are exact rather than projection-rounded."""
+    from locfinder.measure.frames import structure_population
+    cases = {
+        "inside":      (661950.0, 4003450.0),
+        "on-x-min":    (REAL.x_min, 4003450.0),
+        "on-y-min":    (661950.0, REAL_Y_MIN),
+        "on-x-max":    (REAL_X_MAX, 4003450.0),
+        "on-y-max":    (661950.0, REAL.y_max),
+        "west-of":     (REAL.x_min - 0.5, 4003450.0),
+        "north-of":    (661950.0, REAL.y_max + 0.5),
+    }
+    path = tmp_path / "squares.parquet"
+    _squares(cases.keys(), cases.values()).to_parquet(path)
+
+    ids, pts, total = structure_population(path, REAL)
+    assert total == len(cases)
+    assert set(ids) == {"inside", "on-x-min", "on-y-min"}, (
+        "half-open on all four sides: west and south edges are in, east and north are out"
+    )
+    assert len(pts) == 3
+
+
+def test_the_population_projects_before_taking_centroids(tmp_path):
+    """Design §1: "Centroids are computed **projected** (EPSG:32617), never geographically."
+
+    The source is written in EPSG:4326, so `structure_population` must reproject it. A geographic
+    centroid would be a degree pair near (-78.9, 36.2) and fall outside every UTM-metre bound,
+    giving an empty population rather than a wrong one — which is why this test checks the
+    recovered coordinates, not merely the count.
+    """
+    from locfinder.measure.frames import structure_population
+    targets = [(661950.0, 4003450.0), (662150.0, 4003250.0)]
+    path = tmp_path / "wgs84.parquet"
+    _squares(["a", "b"], targets).to_crs("EPSG:4326").to_parquet(path)
+
+    ids, pts, total = structure_population(path, REAL)
+    assert total == 2
+    assert list(ids) == ["a", "b"]
+    assert pts == pytest.approx(np.array(targets), abs=1e-3)
+
+
+def test_the_population_order_is_the_id_order_not_the_file_order(tmp_path):
+    """Pass-19 F4's counterexample, and S2.5's lesson in a form that can fail.
+
+    Two units written as `[b, a]`. PCG64 seed 7 gives `permutation(2) = [0, 1]`, so at *n* = 1 the
+    correct id-sorted population selects **a** and a file-ordered one selects **b** — the same seed
+    choosing a different structure. At *n* = 500, replacing one agreement in an otherwise one-error
+    sample moves the 1% construction verdict from PASS to INCONCLUSIVE.
+    """
+    from locfinder.measure.frames import structure_population
+    descending = tmp_path / "descending.parquet"
+    ascending = tmp_path / "ascending.parquet"
+    _squares(["b", "a"], [(661901.0, 4003491.0), (661902.0, 4003492.0)]).to_parquet(descending)
+    _squares(["a", "b"], [(661902.0, 4003492.0), (661901.0, 4003491.0)]).to_parquet(ascending)
+
+    for path in (descending, ascending):
+        ids, pts, _ = structure_population(path, REAL)
+        assert list(ids) == ["a", "b"], "sorted by id, whatever order the file held"
+        assert pts[0] == pytest.approx([661902.0, 4003492.0])
+
+    assert list(np.random.Generator(BIT_GENERATOR(7)).permutation(2)) == [0, 1]
+
+    picks = set()
+    for path in (descending, ascending):
+        ids, pts, _ = structure_population(path, REAL)
+        f = build_frame_b(None, REAL, n=1, seed=7, population=(ids, pts), source_digest="same")
+        picks.add((str(f.source_ids[0]), f.digest))
+    assert len(picks) == 1, f"the file order changed the sample: {picks}"
+    assert next(iter(picks))[0] == "a"
+
+
+def test_deleting_the_population_sort_is_now_caught():
+    """The mutation that survived 17 tests, built here so the guard is visible rather than implied.
+
+    It is not caught by any assertion about the *draw*, because the draw is identical. It is caught
+    by asserting that the population handed to the draw is in id order.
+    """
+    from locfinder.measure.frames import validate_population
+    ids = np.array(["b", "a"])
+    pts = np.array([[661901.0, 4003491.0], [661902.0, 4003492.0]])
+
+    def unsorted_population(ids, pts):
+        order = np.arange(len(ids))                 # the mutation
+        return ids[order], pts[order]
+
+    assert list(validate_population(ids, pts)[0]) == ["a", "b"]
+    assert list(unsorted_population(ids, pts)[0]) == ["b", "a"]
+
+    first = np.random.Generator(BIT_GENERATOR(7)).permutation(2)[0]
+    assert str(validate_population(ids, pts)[0][first]) == "a"
+    assert str(unsorted_population(ids, pts)[0][first]) == "b"
+
+
+def test_the_builder_sorts_a_supplied_population_itself():
+    """Pass-19 F5: the cached path accepted the caller's order, so the module's claim that "frame
+    B's population is sorted by Overture id before any draw" held only on the uncached path.
+
+    The builder now orders what it is given, so both paths agree. Executed consequence of the old
+    behaviour: the same grid, seed and source digest returned **different frame digests** depending
+    on which way round the caller passed two units.
+    """
+    ids = np.array(["b", "a"])
+    pts = np.array([[661901.0, 4003491.0], [661902.0, 4003492.0]])
+    one = build_frame_b(None, REAL, n=1, seed=7, population=(ids, pts), source_digest="same")
+    two = build_frame_b(None, REAL, n=1, seed=7, population=(ids[::-1], pts[::-1]),
+                        source_digest="same")
+    assert one.digest == two.digest
+    assert str(one.source_ids[0]) == str(two.source_ids[0]) == "a"
+
+
+def test_a_population_that_cannot_be_one_is_rejected():
+    from locfinder.measure.frames import validate_population
+    pts = np.array([[1.0, 2.0], [3.0, 4.0]])
+    with pytest.raises(ValueError, match="duplicate"):
+        validate_population(np.array(["a", "a"]), pts)
+    with pytest.raises(ValueError, match="shapes do not match"):
+        validate_population(np.array(["a", "b", "c"]), pts)
+    with pytest.raises(ValueError, match="finite"):
+        validate_population(np.array(["a", "b"]), np.array([[1.0, 2.0], [np.nan, 4.0]]))
+    with pytest.raises(ValueError, match="empty"):
+        validate_population(np.array([]), np.zeros((0, 2)))
+
+
+def test_the_builder_refuses_a_population_that_is_not_the_frozen_one():
+    """Pass-19 F5: "a 500-unit cached subset can similarly be sampled exhaustively and labelled as
+    the supplied source while omitting 512,133 eligible structures." The guard belongs at the
+    builder boundary, because a one-off assertion in a build script cannot protect another call."""
+    ids = np.array([f"s{i:03d}" for i in range(20)])
+    pts = np.column_stack([np.linspace(661901, 662299, 20), np.full(20, 4003450.0)])
+    ok = build_frame_b(None, REAL, n=5, seed=1, population=(ids, pts), source_digest="x",
+                       expect_population_n=20)
+    assert ok.population_n == 20
+    with pytest.raises(ValueError, match="not the expected"):
+        build_frame_b(None, REAL, n=5, seed=1, population=(ids, pts), source_digest="x",
+                      expect_population_n=512_633)
