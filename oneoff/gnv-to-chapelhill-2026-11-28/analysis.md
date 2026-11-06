@@ -147,7 +147,13 @@ The control confirms the method: forcing Columbia through I-77 costs 3 minutes, 
 is already its natural route.
 
 **The finding: Orangeburg can avoid I-95 for 15 extra minutes — the others cannot do so
-affordably.** From Orangeburg the inland line is I-26 → I-77 → I-85 → I-40, and a 4:19
+affordably.** Stated in full, because the 15 minutes is the cost of the *dodge*, not of the
+*stop*: taking I-95 Orangeburg totals **+41 min with 55%** done by Saturday night; going inland
+it totals **+56 min with 53%**, which is past the owner's ~45-minute budget.
+
+**Scope limit.** This measures *one forced itinerary* through a via-point on I-77. It shows a
+feasible I-95-free route and its cost; it does **not** establish the cheapest possible I-95-free
+route for any stop. Read the penalties as upper bounds on the dodge, not as minima. From Orangeburg the inland line is I-26 → I-77 → I-85 → I-40, and a 4:19
 I-95-free Sunday compares respectably with Columbia's 3:37. This materially weakens the main
 objection to Orangeburg, which was that it carried the longest Sunday *on I-95*. It can
 instead carry a slightly longer Sunday on roads that are not the problem.

@@ -96,7 +96,7 @@ weaker than "no mosquitoes". It is also unlit and 30 minutes out. **Save it for 
 
 ## Runner-up: ORANGEBURG, SC — now stronger on routing, weaker on lodging
 
-**Sat 4:56 → arrive 15:19 · 55% of the trip done**
+**Sat 4:56 → arrive 15:19 · 55% of the trip via I-95, 53% via the inland route**
 
 | Sunday route | Sunday drive | Total extra driving | Uses I-95 |
 |---|---:|---:|:--:|
@@ -191,7 +191,7 @@ small boys.
 Each breaks one of your stated constraints, but each is the best at something.
 
 ### SAVANNAH, GA — best free evening, wrong position
-**Sat 3:17 → arrive 13:50 · Sun 5:16 / 335 mi · detour +0:15 · 38% of the trip**
+**Sat 3:17 → arrive 13:23 · Sun 5:16 / 335 mi · detour +0:15 · 38% of the trip**
 
 The richest free programme on the route, all on Nov 28: **Holiday Kickoff at Eastern Wharf,
 17:00–21:00 — tree lighting, Santa, food trucks — plus the 25th Annual Lighted Boat Parade,
@@ -239,7 +239,7 @@ Also note **only the 19:00 parade start is time-anchored** — no official page 
 tree-lighting or Santa times, and leaving before ~19:15 risks seeing no boats at all.
 
 ### CHARLESTON, SC — best drive-through lights, double the detour
-**Sat 5:00 → arrive 15:50 · Sun 4:42 / 294 mi · detour +1:22 · 52% of the trip**
+**Sat 5:00 → arrive 15:24 · Sun 4:42 / 294 mi · detour +1:22 · 52% of the trip**
 
 The **best-balanced split on the route** and the best single light event: **Holiday Festival of
 Lights**, James Island County Park, **17:30–22:00, $25/vehicle online** ($35 gate) — a 3-mile
@@ -256,7 +256,7 @@ carousel, climbing wall, free marshmallow fire pits and Santa.
    without a plan you'll be buying four ice creams as a meal. **Martin's Bar-B-Que Joint**
    (1622 Highland Ave, ~1.5 mi, Sat to 22:00) is the closest and latest; **Melvin's** (538 Folly
    Rd, to 21:00, counter service) is the fastest with tired kids.
-3. **Don't schedule anything in the 15:50–17:15 window.** After five hours in the car and before
+3. **Don't schedule anything in the 15:24–17:14 window.** After five hours in the car and before
    four hours standing outdoors in the dark, the best use is check in, decompress and eat early.
    If you insist, Folly Beach Pier is 14 minutes away; downtown is not worth the Ashley River
    crossing at 17:00 Saturday.
