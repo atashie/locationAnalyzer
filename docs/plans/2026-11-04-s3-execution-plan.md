@@ -27,7 +27,16 @@ question the instrument was built to answer: a **uniform `<=4`-edge bound on pat
 all 423 tests** of the conformance corpus and the invariant layer together, because hop depth was not
 a declared dimension of the domain.
 
-**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,040 tests pass**: the conformance
+**Pass 23 then reviewed the corrections**, and every one of the four replacement rules written for
+pass 22 had a defect — five of them rejecting correct implementations. It also defeated the whole
+instrument twice more, by the same mechanism and in dimensions I had not generalised to: a
+`destinations[:4]` truncation passed all **1,040** tests because no oracle call anywhere received
+more than three destinations, and an orientation rule wrong only outside a coordinate box passed all
+**527** because every identity anchor sat near the origin. The reusable conclusion is in the build
+record: **a relative invariant cannot see an absence, a positional truncation, or a defect that
+appears only far from the origin.** All such repairs are absolute anchors.
+
+**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,058 tests pass and 23 skip**: the conformance
 corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard**
 asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for
 that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the
@@ -239,7 +248,9 @@ record's "Not yet built":
 The pattern is worth naming, because it has now run four times: closing the blockers opens new ones,
 and only an adversarial pass over the fix finds them. Pass 22 showed it running inside the
 **instrument** too — the affine law written to replace a refuted proportionality was itself refuted —
-and showed that a uniform bound on path enumeration passed all 423 tests of both layers.
+and showed that a uniform bound on path enumeration passed all 423 tests of both layers. Pass 23
+then found a defect in every one of the four replacements written for pass 22, and defeated the
+instrument twice more.
 
 T4's **17 cases** and the oracle in `toy.py` already cover eight of the nine rules below; the ninth,
 the independent engine's connector charge, is deliberately absent from the corpus because it depends
@@ -269,7 +280,7 @@ What this task must get right, each with its conformance case in T4:
 
 **Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `e645be28`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
 
-**Second layer, same date:** `invariants.py`, `mutants.py`, **392 invariant tests and 23 mutation-guard tests**. 27 scenarios tagged by structural shape and hop depth, 10 mutants. Six mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Pass 22 then defeated both layers at once with a uniform `<=4`-edge bound on path enumeration, which is why `CHAIN_DEPTHS` exists and why the hop depths are anchored to numbers rather than compared across transforms.
+**Second layer, same date:** `invariants.py`, `mutants.py`, **427 invariant tests and 29 mutation-guard tests**. 29 scenarios tagged by structural shape, hop depth and destination cardinality, 13 mutants. Eight mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Three mutants defeated both layers at once when they were written — a bounded path enumeration, a bounded destination list and a coordinate-dependent orientation — which is why `CHAIN_DEPTHS`, the five-spoke scenarios and the multi-offset orientation anchor exist, and why all three are anchored to numbers rather than compared across transforms.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property

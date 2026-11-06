@@ -264,10 +264,10 @@ resolves to a real case and that no case is unclaimed — **bookkeeping, not sem
 The strict-cap mutant is the proof that those are different things. Independence from T3 is
 established; coverage of §2 is not, and no claim here says otherwise.
 
-## T4's second layer — invariants and a mutation guard · 2026-11-06, corrected after pass 22
+## T4's second layer — invariants and a mutation guard · 2026-11-06, corrected after passes 22 and 23
 
-`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**392 tests**),
-`v2/tests/test_mutants.py` (**23 tests**). 27 scenarios, 10 mutants.
+`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**427 tests, 404
+passing and 23 skipped**), `v2/tests/test_mutants.py` (**29 tests**). 29 scenarios, 13 mutants.
 
 **This exists because pass 21 named the process rather than a rule.** Its diagnosis, after the third
 consecutive pass where closing the reviewed defects opened adjacent ones: *"treating repair of the
@@ -280,31 +280,39 @@ The layer declares three things a corpus of cases cannot: **what an admissible i
 in the constructors, with scenarios tagged by structural shape), **what must hold of every
 admissible input**, and **which re-expressions of one input must give the same answer**.
 
-### What it does not do, measured
+### What it does not do, measured three times
 
-Pass 22 was asked to construct a wrong implementation that passes **both** layers, which is the
-question the layer was built to answer. It did, and the result reproduced here exactly:
+Passes 22 and 23 were each asked to construct a wrong implementation that passes **both** layers,
+which is the question the layer was built to answer. Between them they produced three, and all three
+were reproduced here:
 
-```
-uniform <=4-edge bound on _simple_paths  ->  423/423 pass
-baseline                                 ->  423/423 pass
-```
+| mutant | passed | the dimension nobody had declared |
+|---|---|---|
+| `<=4`-edge bound on `_simple_paths` (22 F2) | **423/423** | **hop depth** — no scenario needed a journey more than four edges deep |
+| `destinations[:4]` in `journeys` (23 F1) | **1,040/1,040** | **destination cardinality** — no oracle call anywhere received more than three |
+| orientation forced to 0 outside a coordinate box (23 F4) | **527/527** | **absolute-coordinate dependence of identity** — every identity anchor sat near the origin |
 
-The mutant is **uniform**: it recognises no fixture, and every journey it does return is correct. It
-simply stops looking. Every relative invariant is satisfied because both sides are equally
-truncated, and no named case needed a journey more than four edges deep. What it violates is design
-§2.5 — `NO_PATH` may never be reported from a bounded search.
+None of them recognises a fixture. Each is a *uniform* reduction, and every answer it does return is
+correct — it simply stops looking, or stops looking correctly somewhere nobody looks. The first
+violates design §2.5 outright: `NO_PATH` may never be reported from a bounded search.
 
-The missing thing was not an input but a **dimension**: hop depth. `CHAIN_DEPTHS` now declares it at
-2, 4, 5, 7 and 9. Adding the scenarios was **not sufficient and the measurement said so** — a mutant
-that removes journeys reports `None` for every field, the transform comparisons find `None` equal to
-`None`, and every per-result check sits behind `objective1_s is not None`. **A relative invariant
-cannot see an absence.** So the depth is anchored to numbers, the same way the cap and the connector
-had to be.
+**The general lesson, which took three instances because I drew it too narrowly the first time.**
+After the first I wrote down that *a relative invariant cannot see an absence* — a mutant that
+removes journeys reports `None`, the transform comparisons find `None` equal to `None`, and every
+per-result check sits behind `objective1_s is not None`. That is true and too specific. A relative
+invariant compares two runs, so it also cannot see:
+
+- a **positional truncation**, because both sides of a transform are truncated alike;
+- a defect that appears only **far from the origin**, because no near-origin transform reaches it;
+- anything the comparison key does not carry.
+
+All three repairs are therefore **absolute anchors**, like the cap and the connector before them:
+`CHAIN_DEPTHS` at 2, 4, 5, 7 and 9; five-spoke scenarios with the optimum at each end of the
+destination list; and orientation asserted at three coordinate offsets.
 
 The honest statement of what this layer is: it is not evidence that the comparator is right. It is
-the thing that keeps establishing that my *rules* are wrong — six times now — and it finds a wrong
-implementation only on a dimension someone has thought to declare.
+the thing that keeps establishing that my *rules* are wrong — eleven times now — and it finds a
+wrong implementation only on a dimension someone has thought to declare.
 
 ### What it found before it was finished
 
@@ -377,16 +385,25 @@ it — the *"verify the guard by reverting the fix"* experiment, run on every te
 | pass-21 F7 bit-complemented orientation | **caught** | — |
 | pass-22 F2 bounded path enumeration | **caught** | — |
 | pass-22 F8 inflated evaluate (sentinel) | **caught** | **caught** |
+| pass-23 F1 bounded destinations | **caught** | — |
+| pass-23 F4 coordinate-dependent orientation | **caught** | — |
+| pass-23 F8 connector-free reported cost | **caught** | **caught** |
 
-**Six escape the corpus, one escapes the invariants, and every one is caught by the other**, so
+**Eight escape the corpus, one escapes the invariants, and every one is caught by the other**, so
 neither layer may be dropped and the split is pinned in `EXPECTED_COVERAGE` where a drift in it is
 visible. The connector-free cost moved into the invariants when the anchor replaced the intercept
 inference. The strict cap is the remaining relative-invariant blind spot and will stay one: a cap
 tightened everywhere preserves every relative property, because both sides are equally wrong, so only
 an exact-boundary case sees it.
 
+`pass23-F8-connector-free-reported-cost` is not a historical defect. It is a probe of the anchor
+that replaced the intercept inference, which claimed to establish the connectors were in both
+objectives' time *and* cost and asserted only two of those four numbers — its origin connector was
+zero and its objective-2 winner had no destination connector. **The replacement for a withdrawn
+overstatement was itself an overstatement**, which is the pattern in its purest form.
+
 **Getting that table right took three harness fixes**, all worth recording because they are easy to
-repeat:
+repeat — and the second is the one to remember:
 
 1. A patched module global cannot reach a binding another module imported **by name**, so
    `invariants.py` had to stop holding its own reference to `directed_identity`.
@@ -471,8 +488,11 @@ than 0.0, because zero would assert the product was accurate.
 
 ## Suite
 
-**1,040 tests pass**: 328 before S3, plus 140 for T1, 30 for T2, 112 for T4's corpus, **392 for the
-invariant layer**, **23 for the mutation guard**, and 15 for T9.
+**1,081 collected: 1,058 pass and 23 skip.** 328 before S3, plus 140 for T1, 30 for T2, 112 for
+T4's corpus, **427 for the invariant layer** (404 passing, 23 skipped), **29 for the mutation
+guard**, and 15 for T9.
+The skips are the affine law declining to assert where more than one journey exists and the selected
+one may legitimately switch — visible, rather than silently asserting something false.
 
 ## Not yet built
 
@@ -553,12 +573,13 @@ claim only — not the build and not the construction gate.
 
 ## Corrections — what this record claimed and could not show
 
-Seventeen statements across three versions of this record claimed more than had been shown: five
-found by each of passes 19 and 20, and seven by pass 22. All are corrected above; they are listed
-here because a record that silently repairs its own overstatements teaches nothing, and because the
-*pattern* is the useful part: **every time, the overstatement was in the section describing work I
-had just finished.** Pass 22's seven are all in the invariant-layer section, written the same day,
-exactly as pass 20's four were in the T4 section written the same day.
+Twenty-two statements across four versions of this record claimed more than had been shown: five
+found by each of passes 19 and 20, seven by pass 22, and five by pass 23. All are corrected above;
+they are listed here because a record that silently repairs its own overstatements teaches nothing,
+and because the *pattern* is the useful part: **every time, the overstatement was in the section
+describing work I had just finished.** Pass 22's seven are in the invariant-layer section written
+the same day, exactly as pass 20's four were in the T4 section written the same day — and pass 23's
+five are in the **corrections** that answered pass 22.
 
 ### Pass 19's five, against the first version
 
@@ -620,3 +641,40 @@ double only for candidates on replaced bidirectional records, so a mixture gives
 It could not reproduce the full suite: five frame tests error in this environment's pytest temporary
 directories with `PermissionError [WinError 5]`, which it reported as an environment limit rather
 than a finding.
+
+### Pass 23's five, against the corrections that answered pass 22
+
+This is the sharpest instance of the pattern in the record, because the overstatements are *in the
+repairs*. Four replacement rules were written in response to pass 22 and every one had a defect; five
+of them rejected correct implementations, which is worse than an escape, because it blocks a correct
+T3 and reads as a code defect.
+
+| the claim | why it was wrong |
+|---|---|
+| the affinity law is correctly conditioned on the selected route and destination holding | neither names the **attachment occurrence**. On `(0,0),(50,0),(100,0)` of time/cost 40 with the origin at `(49.995,0)`, the attachment switches between the exact projection and the next segment's clamped start while the destination stays `"0"` and the route stays one identity — slopes **20.000984126984125 against 20**, nearly a million tolerances apart. The condition is now `n_journeys == 1`, which is exact; and since all six qualifying scenarios have zero connectors, the intercept is a named number rather than an inference |
+| a minimum over journeys is concave in the scale, at an absolute 1e-9 | true of the real-arithmetic envelope, not of binary64 observations. One edge of time/cost **100000000.1** reports 100000000.1, 300000000.29999995 and 700000000.6999999, whose chord exceeds the middle by **5.96e-8** — and by 1.99e-8 in exact rational arithmetic over those three outputs, so not an artefact of the chord. The slack is now magnitude-proportional and labelled an **allowance**, pending revision 9's numerical domain |
+| `differences` treats a non-finite value as always a difference | it did not. Equality caught two infinities and object identity caught a shared NaN, so an implementation returning the same non-result across representations passed. Putting exact equality first repaired pass-22 F7 and introduced its exact mirror |
+| the seconds tolerance is decision-irrelevant, and so is the metre one | the seconds check required a clean `±tol` **neighbourhood**, refusing 600.0000000010021 s against 600.0000000009976 s — 4.5e-12 s apart and both FAIL at every threshold. It now compares the verdict predicates, which is what was needed. And `origin_nearest_m` faces **no** fixed threshold: the tie band is a *relative* gap against the global minimum and the 300 m cap applies to destination residuals, so `NOT_PROVEN` now covers metres as well as cost |
+| the connector anchor does what the intercept check was wrongly credited with | it asserted **two of the four** numbers it claimed. Its origin connector was zero and objective 2's winner had no destination connector, so a wrapper replacing `objective1_cost` and `objective2_s` with their network-only values passed it untouched — 603.8095238095 s FAIL becoming 580 s PASS. Replaced by a case with both residuals non-zero asserting all four |
+
+Two further corrections pass 23 made to text rather than to behaviour: `_route`'s stated reason for
+dropping the node pair was simply wrong — a reverse traversal of `u→v` and a forward traversal of the
+explicitly reversed record both carry `(v, u)`, so that transform does not require discarding them,
+and the pair stays dropped as a convenience; and two `toy.py` docstrings still called the route rule
+an **equivalence** after the code had been corrected to an implication.
+
+One addition rather than a correction: exposing `network_s` created a new obligation nobody had asked
+for. It is not determined by the declared ranking fields, so two winners tying on time, cost,
+destination and route can carry decompositions of **1 against 0.9968253968355556** on two records
+sharing a rounded identity — and comparing it across representations would make edge order decide a
+reported number. It is now out of the cross-representation comparison and the per-result implication
+stays. Whether that tie should be broken is design revision 9's item 2, which is also the answer to
+pass-22 F6.
+
+Pass 23 also checked and **did not** overturn: the empty-route implication is sound for successfully
+evaluated finite journeys, including the same-edge direct candidate and a zero-span traversal;
+`network_s` is `compare=False`, absent from `rank_key`, and changes neither ranking nor
+deduplication; `_drop_orientation` slices the correct tuple positions; `EXPECTED_COVERAGE` reproduces
+in full; and the hop-depth anchors are arithmetically right at their declared depths. It noted that
+the chain shape is simultaneously straight, one-way, equal-weight and zero-connector, so those remain
+unexercised at depth.
