@@ -5,10 +5,18 @@ same thing: *"treating repair of the motivating example as evidence that a repla
 is settled."* The conformance corpus answers "is this value right?"; this file answers "is this
 *rule* right over its whole domain?", which is the question that kept being answered by assumption.
 
-**It has already earned its place twice, both times by rejecting an invariant I wrote rather than the
-code.** Separating `answers` from `provenance` was forced by `explicit_reverses`, and the affine
-scaling law replaced a plain proportionality that the connector term cannot satisfy. Both are
-sharper statements than what they replaced, and neither was reachable from a fixture.
+**Every correction to this file so far has been to an invariant I wrote, not to the code it tests.**
+Separating `answers` from `provenance` was forced by `explicit_reverses`; a plain proportionality
+became an affine law because the connector term does not scale; and then pass 22 refuted the affine
+law too, because the connector term that makes it affine is also what makes the *selection* switch.
+What stands in its place is concavity — a minimum of affine functions — plus affinity conditioned on
+the selected journey actually holding.
+
+That sequence is the honest summary of this file: it is not a proof that the comparator is right, it
+is the thing that keeps finding out my rules are wrong. Pass 22 also showed what it does **not** do.
+A uniform `<= 4`-edge bound on path enumeration passed all 423 tests here and in the conformance
+corpus, because hop depth was not a dimension of the domain. It is now, anchored to numbers rather
+than to a relative property, because a relative invariant cannot see an absence.
 """
 
 from __future__ import annotations
@@ -20,6 +28,10 @@ import pytest
 from locfinder.measure import toy
 from locfinder.measure.invariants import (
     ANSWER_PRESERVING,
+    _chain,
+    CHAIN_DEPTHS,
+    SCALE_POINTS,
+    compare,
     differences,
     FULLY_PRESERVING,
     NOT_PRESERVING,
@@ -35,16 +47,24 @@ from locfinder.measure.invariants import (
 ALL = pytest.mark.parametrize("scenario", SCENARIOS, ids=[s.name for s in SCENARIOS])
 
 
-def _diff(a: dict, b: dict) -> dict:
-    """Discrete fields compared exactly, continuous ones at a decision-irrelevant tolerance.
+def _diff(a: dict, b: dict, transform: str = "") -> dict:
+    """Discrete fields compared exactly, continuous ones in their own unit, through the
+    correspondence `transform` actually preserves.
 
     Exact equality on the times was too strong, and a curved geometry showed it: translating one by
     12,345 m moves the answer 2.0e-12 s and subdividing it moves it 1.4e-14 s, with every identity
     and the candidate set unchanged. Those are binary64 artefacts of re-expressing the input, not
     changes of answer -- and every axis-aligned geometry in the first version of this domain hid
     them.
+
+    Two later corrections, both pass-22 F7. The spread above is an **observation on these
+    scenarios**, not a bound over admissible inputs: on one straight edge of 1,000,000 s with the
+    origin at (.1,0) and the destination at (99.9,0), translation moves 998000.0000000001 s to
+    997999.9999999927 s -- 7.5e-9 s, past this tolerance. And the helper itself used to call two
+    identical values of exactly 600.0 s different, because it asked about decision-relevance before
+    asking whether anything had moved.
     """
-    return differences(a, b)
+    return compare(a, b, transform)
 
 
 # ----------------------------------------------------------------------------- the domain itself
@@ -64,9 +84,16 @@ def test_the_domain_covers_every_shape_a_review_has_turned_up():
         "disconnected", "geometric-tie", "penalty", "two-destinations", "unequal-connectors",
         "coincident-destinations", "off-network", "no-path", "empty-graph",
         "reverse-traversal",
+        # Pass-22 F2. Not a geometric shape but a **dimension**: how many edges deep the selected
+        # journey is. A uniform bound on path enumeration preserved every other shape and every
+        # relative property, and passed all 423 tests.
+        "chain",
     }
     assert required <= covered, f"uncovered shapes: {sorted(required - covered)}"
     assert all(s.shapes for s in SCENARIOS), "every scenario says which shapes it carries"
+    # The depth dimension is covered at each declared depth, not just at one of them.
+    for depth in CHAIN_DEPTHS:
+        assert f"hop-depth-{depth}" in covered, depth
 
 
 def test_every_scenario_is_an_admissible_input():
@@ -108,8 +135,9 @@ def test_re_expressing_the_input_does_not_change_the_answer(scenario, transform)
     `translate` is the one no fixture would have covered: all of them sit on tidy coordinates near
     the origin, so an accidental dependence on absolute position would never have shown.
     """
+    name = transform.__name__
     before, after = answers(scenario), answers(transform(scenario))
-    assert not _diff(before, after), _diff(before, after)
+    assert not _diff(before, after, name), _diff(before, after, name)
 
 
 @ALL
@@ -124,48 +152,149 @@ def test_the_provenance_also_survives_transforms_that_keep_the_record_structure(
     of the implementation, and §12's equivalence contract is about implementations varying on **one**
     input.
     """
+    name = transform.__name__
     before, after = reported(scenario), reported(transform(scenario))
-    assert not _diff(before, after), _diff(before, after)
+    assert not _diff(before, after, name), _diff(before, after, name)
 
 
 @ALL
-def test_scaling_every_weight_leaves_the_selection_alone(scenario):
-    """Both objectives minimise, so multiplying every time and cost by one positive constant cannot
-    change *which* journey is selected."""
-    base, scaled = answers(scenario), answers(scale_weights(scenario, 7.0))
-    for key in ("objective1_destination_id", "objective2_destination_id", "eligible_ids",
-                "origin_nearest_m"):
-        assert base[key] == scaled[key], key
+def test_scaling_every_weight_can_change_the_selection_and_that_is_correct(scenario):
+    """The invariant this file used to assert, kept as the refutation of itself.
 
-
-@ALL
-def test_a_total_is_exactly_affine_in_the_weight_scale(scenario):
-    """The sharper invariant that a plain proportionality got wrong.
-
-    A journey total is `network terms + connector terms`, and the connector is
-    `residual / 1.26` — **it does not scale with the edge weights**. So a total is affine in the
-    scale factor, not proportional: on `single_edge`, 87.9365079365 s becomes 567.9365079365 s at
-    ×7, which is `7 × 80 + 7.9365079365` and not `7 × 87.9365079365`.
-
-    Three factors pin both coefficients. The slope is the network part and the intercept is the
-    connector part, so this single check verifies that the connectors are present in **both**
-    objectives' time *and* cost — which is exactly what pass-20 F1 found missing from cost and what
-    no fixture separated.
+    It read: "both objectives minimise, so multiplying every time and cost by one positive constant
+    cannot change *which* journey is selected." That is false, and pass-22 F3 built the input.
+    Connectors do not scale, so two journeys' totals are lines with different intercepts and they
+    cross. Only the quantities that are genuinely scale-free may be asserted here, and the selected
+    destination is not one of them.
     """
-    points = [(k, answers(scale_weights(scenario, float(k)))) for k in (1, 3, 7)]
-    for key in ("objective1_s", "objective2_s", "objective1_cost", "objective2_cost"):
-        values = [v[key] for _, v in points]
+    before, after = reported(scenario), reported(scale_weights(scenario, 7.0))
+    # The attachment geometry is untouched by a weight scaling, so these must hold.
+    for key in ("eligible_ids", "origin_nearest_m", "origin_candidates"):
+        assert before[key] == after[key], key
+    # Nothing is asserted about which journey is selected. `test_a_minimum_over_journeys_is_concave`
+    # is what constrains the switch.
+
+
+def test_the_selection_really_does_switch_under_scaling():
+    """Pass-22 F3's input, as a regression. If this ever stops switching, the refuted invariant
+    would start passing again and someone would be tempted to restore it.
+
+    Two bidirectional edges from `(0,0)`: A to `(100,0)` at time/cost 1, B to `(0,-100)` at 20.
+    Destination A sits at `(100,100)`, so it carries a 100 m connector; B's is zero. B wins while
+    its flat 20 beats A's `scale + 100/1.26`, and loses once the scale passes about 6.6.
+    """
+    graph = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=1.0, cost_base=1.0, osmid=(1,)),
+        toy.ToyEdge(0, 2, ((0, 0), (0, -100)), time_s=20.0, cost_base=20.0, osmid=(2,)),
+    ))
+    scenario = Scenario("f3", graph, (0.0, 0.0), ((100.0, 100.0), (0.0, -100.0)),
+                        destination_ids=("a", "b"))
+    picked = [answers(scale_weights(scenario, k))["objective1_destination_id"]
+              for k in (1.0, 3.0, 7.0)]
+    assert picked == ["b", "b", "a"], picked
+    at7 = answers(scale_weights(scenario, 7.0))["objective1_s"]
+    assert at7 == pytest.approx(7.0 + 100.0 / 1.26, rel=0, abs=1e-12)
+    # The refuted law would have continued B and reported 140 s, which is FAIL at a 100 s
+    # threshold where the correct answer, 86.3650793651 s, is PASS.
+    assert at7 < 100.0 < 20.0 * 7.0
+
+
+@ALL
+def test_a_minimum_over_journeys_is_concave_in_the_weight_scale(scenario):
+    """What replaces the affine law: a minimum of affine functions is **concave**.
+
+    Each journey's total is `scale x network + connector`, affine in the scale. Objective 1 reports
+    the minimum of those over journeys and objective 2 the minimum of the cost ones, so both are
+    concave in the scale, with equality exactly where the argmin does not switch. This is strictly
+    weaker than the affine law it replaces and, unlike it, true.
+
+    Objective 2's reported *time* and objective 1's reported *cost* are the **other** quantity of
+    the selected journey, so they are concave in nothing and are not checked here: the argmin can
+    switch either way.
+    """
+    points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
+    lo, mid, hi = SCALE_POINTS
+    weight = (hi - mid) / (hi - lo)
+    for key in ("objective1_s", "objective2_cost"):
+        values = [p[key] for p in points]
         if any(v is None for v in values):
             assert all(v is None for v in values), f"{key}: {values}"
             continue
-        (k1, _), (k2, _), (k3, _) = points
-        first = (values[1] - values[0]) / (k2 - k1)
-        second = (values[2] - values[1]) / (k3 - k2)
-        assert first == pytest.approx(second, rel=0, abs=1e-9), (
-            f"{key} is not affine in the scale: slopes {first!r} and {second!r}"
+        chord = weight * values[0] + (1.0 - weight) * values[2]
+        assert values[1] >= chord - 1e-9, (
+            f"{key} is not concave in the scale: {values[1]!r} at scale {mid} is below the "
+            f"chord {chord!r} joining {values[0]!r} and {values[2]!r}"
         )
-        intercept = values[0] - first
-        assert intercept >= -1e-9, f"{key} implies a negative connector term: {intercept!r}"
+
+
+@ALL
+def test_a_total_is_affine_in_the_scale_while_the_selected_journey_holds(scenario):
+    """The affine law, correctly conditioned.
+
+    A *fixed* journey's total is `scale x network + connector`, so three collinear scales pin both
+    coefficients and the slopes must agree. The condition is what the first version lacked: this
+    asserts it only where the selected route and destination are identical at all three scales,
+    because where they are not, the switch is the correct answer rather than a defect.
+
+    The intercept is no longer offered as evidence that the connectors are present. A zero intercept
+    is non-negative and affine, so no check in this family can distinguish a connector from its
+    absence. `EXPECTED_COVERAGE` already recorded the connector-free mutant escaping this whole
+    layer, and that should have been read as the refutation it was;
+    `test_both_connectors_are_in_both_totals` does that job instead.
+    """
+    points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
+    if not all(p["objective1_route"] == points[0]["objective1_route"]
+               and p["objective1_destination_id"] == points[0]["objective1_destination_id"]
+               for p in points):
+        pytest.skip("the selected journey switches under scaling, which is correct")
+    values = [p["objective1_s"] for p in points]
+    if any(v is None for v in values):
+        assert all(v is None for v in values), values
+        return
+    lo, mid, hi = SCALE_POINTS
+    first = (values[1] - values[0]) / (mid - lo)
+    second = (values[2] - values[1]) / (hi - mid)
+    assert first == pytest.approx(second, rel=0, abs=1e-9), (
+        f"not affine although the journey held: slopes {first!r} and {second!r}"
+    )
+
+
+def test_both_connectors_are_in_both_totals():
+    """The absolute anchor that does what the intercept check was wrongly credited with.
+
+    Two destinations, one reached over a 100 m connector and one with none. The own costs are
+    `10 + 100/1.26` = 89.3650793651 and 20, so objective 2 must select the second and report
+    **650 s**; omitting the connector from cost selects the first and reports 89.3650793651 s,
+    turning FAIL into PASS at ten minutes. Objective 1 pins the connector in the reported time.
+    """
+    graph = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0), (100, 0)), time_s=10.0, cost_base=10.0, osmid=(1,)),
+        toy.ToyEdge(0, 2, ((0, 0), (0, -100)), time_s=650.0, cost_base=20.0, osmid=(2,)),
+    ))
+    r = toy.evaluate(graph, (0.0, 0.0), [(100.0, 100.0), (0.0, -100.0)])
+    assert r.objective2_s == pytest.approx(650.0, rel=0, abs=1e-9)
+    assert r.objective1_s == pytest.approx(10.0 + 100.0 / 1.26, rel=0, abs=1e-9)
+
+
+@pytest.mark.parametrize("depth", CHAIN_DEPTHS)
+def test_a_reachable_destination_is_reachable_at_any_hop_depth(depth):
+    """Hop depth, the coverage dimension pass-22 F2 walked through.
+
+    A uniform `<= 4`-edge bound on path enumeration passed all 423 tests of this layer and the
+    conformance corpus together. It recognised no fixture and preserved every relative property,
+    because the journeys it did return were all correct -- it simply stopped looking. What it
+    violates is design §2.5: `NO_PATH` may never come from a bounded search.
+
+    Adding the chain *scenarios* was not enough, and the measurement said so. A mutant that removes
+    journeys reports `None` everywhere, the transform comparisons find `None` equal to `None`, and
+    every per-result check sits behind `objective1_s is not None`. **A relative invariant cannot see
+    an absence**, so the depth has to be anchored to a number, exactly as the cap and the connector
+    had to be.
+    """
+    r = _chain(depth).run()
+    assert r.objective1_s is not None, f"a chain of {depth} edges reported no journey"
+    assert r.objective1_s == pytest.approx(80.0 * depth, rel=0, abs=1e-9)
+    assert len(r.objective1_route) == depth
 
 
 # ----------------------------------------------------------------------------- what must hold always
@@ -296,11 +425,25 @@ def test_a_selected_route_is_a_legal_traversal_of_this_graph(scenario):
         for ident in route:
             assert ident in legal, f"{name} route names a traversal this graph does not permit"
 
-    moved = scenario.origin != scenario.destinations[r.objective1_destination]
-    if moved:
-        assert r.objective1_route, (
-            "a journey that goes somewhere traverses something, so its route cannot be empty"
-        )
+    # **An empty route implies zero network seconds**, and only that direction.
+    #
+    # The previous form asked whether the endpoints differed, and pass-22 F4 showed it rejecting a
+    # correct answer: one bidirectional edge of 1000 s from (0,0) to (100,0), origin (50,1) and
+    # destination (50,2). Both attach at arclength 50, so the legal answer is 3/1.26 =
+    # 2.3809523810 s with an **empty** network route -- the coordinates differ and all movement is
+    # in the two connectors. Design 2.2's zero-span convention permits exactly that.
+    #
+    # Writing the repair as an equivalence was also wrong, and the `zero_weight_edge` scenario said
+    # so within the minute: a journey across a 0 s edge has a real one-element route and zero
+    # network seconds. The implication still catches what the check was for -- a route stripped of
+    # its partial traversals on a weighted edge -- without asserting a converse 2.2 does not give.
+    for name, route, network in (("objective1", r.objective1_route, r.objective1_network_s),
+                                 ("objective2", r.objective2_route, r.objective2_network_s)):
+        if not route:
+            assert network == 0.0, (
+                f"{name} reports an empty route but {network!r} network seconds, so it traversed "
+                f"something it did not name"
+            )
 
 
 def test_a_coincident_origin_and_destination_cost_nothing():

@@ -361,6 +361,13 @@ class Journey:
     destination_id: str = ""
     route: tuple = field(compare=False, default=())
 
+    #: The journey's **network** seconds — the total less both connectors. Exposed because the
+    #: route invariant needs it: pass-22 F4 showed that "a journey whose endpoints differ has a
+    #: non-empty route" rejects a legal answer, since two points can attach at one position on one
+    #: edge and move only through their connectors. The correct statement is an equivalence
+    #: between an empty route and zero network traversal, and that is not derivable from the total.
+    network_s: float = field(compare=False, default=0.0)
+
     @property
     def rank_key(self) -> tuple:
         """Design §2.4's ranking, lifted to a whole journey: smallest travel time, then smallest
@@ -542,6 +549,7 @@ def journeys(graph: ToyGraph, origin: tuple[float, float],
                         time_s=math.fsum((access_o, access_d, direct[0])),
                         cost=math.fsum((access_o, access_d, direct[1])),
                         destination=di, destination_id=ids[di],
+                        network_s=direct[0],
                         route=_partial_route(e, forward=da.fraction >= oa.fraction,
                                              span=abs(da.fraction - oa.fraction))))
                 for en, et, ec, entry_route in _entries(graph, oa):
@@ -551,6 +559,7 @@ def journeys(graph: ToyGraph, origin: tuple[float, float],
                                 time_s=math.fsum((access_o, access_d, et, xt, *pt)),
                                 cost=math.fsum((access_o, access_d, ec, xc, *pc)),
                                 destination=di, destination_id=ids[di],
+                                network_s=math.fsum((et, xt, *pt)),
                                 route=entry_route + path_ids + exit_route))
     return out
 
@@ -581,6 +590,12 @@ class OracleResult:
     objective1_cost: float | None = None
     objective1_route: tuple = ()
     objective2_route: tuple = ()
+
+    #: The selected journeys' **network** seconds, total less both connectors. See
+    #: `Journey.network_s`: the route invariant is an equivalence with this, not with whether the
+    #: endpoints differ.
+    objective1_network_s: float | None = None
+    objective2_network_s: float | None = None
 
     #: The measured nearest distance to the graph, retained even when the cap left no candidate,
     #: because `OFF_NETWORK`'s bound is `nearest / max_speed_mps` and the cap discards the distance
@@ -630,6 +645,8 @@ def evaluate(graph: ToyGraph, origin: tuple[float, float],
         objective1_destination_id=best_t.destination_id,
         objective1_route=best_t.route,
         objective2_route=best_c.route,
+        objective1_network_s=best_t.network_s,
+        objective2_network_s=best_c.network_s,
         objective2_s=best_c.time_s,
         objective2_cost=best_c.cost,
         objective2_destination=best_c.destination,

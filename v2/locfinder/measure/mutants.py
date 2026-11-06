@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import math
 from contextlib import contextmanager
+from dataclasses import replace
 
 from . import toy
 
@@ -187,6 +188,50 @@ def rank_without_cost():
         toy.Journey.rank_key = original
 
 
+@contextmanager
+def bounded_path_enumeration(limit: int = 4):
+    """Pass-22 F2: path enumeration silently bounded to `limit` edges, so a reachable destination
+    beyond that depth is reported as an absence.
+
+    This is the mutant that defeated the whole instrument. It is *uniform* — no branch recognises a
+    fixture, every relative invariant is preserved because the surviving journeys are all correct,
+    and it passed all 423 conformance, invariant and mutation-guard tests. What it violates is
+    design §2.5: `NO_PATH` may never be reported from a bounded search. The gap was a coverage
+    **dimension**, hop depth, and `CHAIN_DEPTHS` now names it: a chain of 7 edges spends its first
+    and last on entry and exit, leaving five intervening edges, and reports 560 s correctly or
+    nothing at all.
+    """
+    original = toy._simple_paths
+
+    def bounded(graph, start, goal):
+        return [p for p in original(graph, start, goal) if len(p[2]) <= limit]
+
+    with _patched(_simple_paths=bounded):
+        yield
+
+
+@contextmanager
+def inflated_evaluate(extra_s: float = 1000.0):
+    """A sentinel: every finite reported time inflated by `extra_s`, patched on `toy.evaluate`.
+
+    Not a historical defect — a test of the harness itself. Pass-22 F8 installed exactly this and
+    found `invariant_violations()` returning `[]` and every corpus `check()` clean, because both
+    layers had bound `evaluate` by name at import. A mutation this gross must be caught by both
+    layers; if it is not, the harness is measuring nothing and every other row of
+    `EXPECTED_COVERAGE` is unsupported.
+    """
+    original = toy.evaluate
+
+    def inflated(*args, **kwargs):
+        r = original(*args, **kwargs)
+        patch = {f: getattr(r, f) + extra_s for f in ("objective1_s", "objective2_s")
+                 if getattr(r, f) is not None}
+        return replace(r, **patch) if patch else r
+
+    with _patched(evaluate=inflated):
+        yield
+
+
 #: Every mutant, by the finding that produced it.
 MUTANTS: dict = {
     "pass20-F5-strict-cap": strict_cap,
@@ -197,4 +242,6 @@ MUTANTS: dict = {
     "pass21-F5-route-without-partials": route_without_partials,
     "pass21-F6-rank-without-cost": rank_without_cost,
     "pass21-F7-bit-complemented-orientation": bit_complemented_orientation,
+    "pass22-F2-bounded-path-enumeration": bounded_path_enumeration,
+    "pass22-F8-inflated-evaluate": inflated_evaluate,
 }

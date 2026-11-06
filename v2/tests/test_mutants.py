@@ -54,7 +54,12 @@ def test_every_historical_mutant_is_caught_by_at_least_one_layer(name):
 #: than discovered later. `True` means that layer rejects the mutant.
 EXPECTED_COVERAGE = {
     # (caught by invariants, caught by the conformance corpus)
-    "pass20-F1-connector-free-cost": (False, True),
+    #
+    # The connector-free cost moved from (False, True) to (True, True) when the absolute connector
+    # anchor was added. That row escaping the invariants was the evidence, available all along, that
+    # no scaling check could establish connector inclusion -- a zero intercept is affine and
+    # non-negative. Pass-22 F3 had to point it out before I read my own table.
+    "pass20-F1-connector-free-cost": (True, True),
     "pass20-F4-identity-keyed-dedup": (True, True),
     "pass20-F5-strict-cap": (False, True),
     "pass21-F1-rounded-occurrence-bucket": (True, False),
@@ -62,6 +67,13 @@ EXPECTED_COVERAGE = {
     "pass21-F5-route-without-partials": (True, False),
     "pass21-F6-rank-without-cost": (True, False),
     "pass21-F7-bit-complemented-orientation": (True, False),
+    # The mutant that defeated the whole instrument, now caught by the hop-depth anchors. It still
+    # escapes the corpus, because no named case needs a journey more than four edges deep -- which
+    # is worth keeping visible rather than fixing by padding the corpus.
+    "pass22-F2-bounded-path-enumeration": (True, False),
+    # The sentinel. Caught by both, and if it ever stops being caught by both, every other row here
+    # is unsupported -- see `test_a_sentinel_evaluator_mutation_reaches_both_layers`.
+    "pass22-F8-inflated-evaluate": (True, True),
 }
 
 
@@ -99,12 +111,42 @@ def test_the_invariant_layer_catches_what_no_named_case_does():
         if not invariants:
             invariant_blind.append((name, corpus))
 
-    assert len(corpus_blind) == 5, f"{len(corpus_blind)} mutants escape the corpus, recorded 5"
+    assert len(corpus_blind) == 6, f"{len(corpus_blind)} mutants escape the corpus, recorded 6"
     assert [n for n, caught in corpus_blind if not caught] == []
 
     # and the other direction, which is why neither layer may be dropped: a uniformly tightened cap
-    # and a uniformly connector-free cost both preserve every relative property, and only an
-    # exact-boundary or exact-value case sees them
-    assert len(invariant_blind) == 2, (
-        f"{len(invariant_blind)} mutants escape the invariants, recorded 2")
+    # preserves every relative property, and only an exact-boundary case sees it. The
+    # connector-free cost used to be the second entry here and is now caught by both, because
+    # pass-22 F3 made the connector an absolute anchor instead of an inference from an intercept.
+    assert len(invariant_blind) == 1, (
+        f"{len(invariant_blind)} mutants escape the invariants, recorded 1")
     assert [n for n, caught in invariant_blind if not caught] == []
+
+
+def test_a_sentinel_evaluator_mutation_reaches_both_layers():
+    """The guard on the harness, which pass-22 F8 showed was absent.
+
+    A harness that cannot reach the code it patches reports every mutant as caught by somebody else,
+    and every row of `EXPECTED_COVERAGE` then measures nothing. This installs the grossest possible
+    mutation -- 1000 s added to every finite reported time, turning a 100 s PASS into an 1100 s FAIL
+    -- and requires **both** layers to reject it. It is the only mutant for which both are demanded.
+
+    It is here because the same defect was fixed once and not generalised. Pass 21's orientation
+    mutant read as uncaught by everything until `invariants.py` stopped importing
+    `directed_identity` by name. I fixed that one binding. Pass 22 then patched `toy.evaluate` and
+    found `invariant_violations()` returning `[]` and every corpus `check()` clean, because both
+    modules still bound `evaluate` at import. Fixing the example instead of the domain, in the file
+    whose docstring is about not doing that.
+    """
+    from locfinder.measure.mutants import inflated_evaluate
+    with inflated_evaluate():
+        invariants = invariant_violations()
+        corpus = corpus_failures()
+    assert invariants, (
+        "the invariant layer cannot see a `toy.evaluate` replacement, so it is not calling the "
+        "module attribute and its coverage measurements are unsupported"
+    )
+    assert corpus, (
+        "the conformance corpus cannot see a `toy.evaluate` replacement, so `Case.run` is not "
+        "calling the module attribute and its coverage measurements are unsupported"
+    )

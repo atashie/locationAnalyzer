@@ -44,7 +44,8 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..status import Outcome
-from .toy import ToyEdge, ToyGraph, OracleResult, evaluate
+from . import toy
+from .toy import ToyEdge, ToyGraph, OracleResult
 
 #: Declared absolute tolerance on a time in seconds: about **70,400x** the observed
 #: float-association spread of 1.42e-14 s, and about 11 orders below the smallest published
@@ -259,7 +260,9 @@ class Case:
     thresholds_min: tuple[int, ...] = PUBLISHED_THRESHOLDS_MIN
 
     def run(self) -> OracleResult:
-        return evaluate(self.graph, self.origin, list(self.destinations))
+        # Through the module attribute: pass-22 F8 found a `toy.evaluate` wrapper
+        # invisible to this layer because the name was bound at import.
+        return toy.evaluate(self.graph, self.origin, list(self.destinations))
 
 
 def check(case: Case) -> list[str]:
