@@ -272,8 +272,8 @@ footer p{margin:0 0 9px}
     <h1>Where to stop for the night</h1>
     <p class="standfirst">Five places to break the drive, with two kids aged 6 and 9. The thing
       that decides it isn't distance — it's that the sun sets at <strong>5:15pm</strong> and almost
-      every town's Christmas lights don't switch on until December. Pick an option to see how the
-      two days change.</p>
+      every town's Christmas lights don't switch on until December. Some stops still arrive with
+      hours of daylight; the later ones don't. Pick an option to see how the two days change.</p>
   </header>
 
   <h2 class="sec">Choose a stop</h2>
@@ -365,11 +365,12 @@ const OPTIONS = [
     routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['I-26','i']],
     routeSun:[['I-77','i'],['I-85','i'],['I-40','i'],['NC-86','s']],
     avoidsI95:true,
-    verdict:`<strong>The one I'd pick.</strong> It's the only stop that skips I-95 entirely on
-      Sunday — every other option funnels onto the Fayetteville stretch, which is the worst
-      northbound road in the country on the Sunday of Thanksgiving weekend. It also has
-      <strong>three</strong> different light shows confirmed open that evening, the shortest
-      Sunday drive of any sensible stop, and no home football game to fill the hotels.`,
+    verdict:`<strong>The one I'd pick.</strong> It's the only stop whose <em>fastest</em>
+      route already skips I-95 — Orangeburg, Charleston and Summerville can dodge it too, but pay
+      15 to 45 extra minutes for the privilege. Everything else funnels onto the Fayetteville
+      stretch of I-95, which carries heavy holiday return traffic. It also has
+      <strong>three</strong> different light shows confirmed open that evening — a short Sunday
+      drive, though not the shortest in range — and no home football game to fill the hotels.`,
     acts:[
       {name:'Holiday Lights on the River, Saluda Shoals',
        url:'https://www.icrc.net/event/holiday-lights-river-1',
@@ -404,7 +405,8 @@ const OPTIONS = [
        url:'https://www.nps.gov/cong/planyourvisit/Trail-Information.htm',
        pill:['flat','Sunday morning'], meta:'<b>Free</b> · trails open all hours',
        desc:`Worth building Sunday morning around: a flat, railed boardwalk loop through
-         old-growth cypress, rebuilt and reopened in 2026, with no mosquitoes in November. It's
+         old-growth cypress, rebuilt and reopened in 2026. The Park Service says insects are generally
+         not a problem in spring and autumn — not that November is mosquito-free. It's
          30 minutes out of town and unlit, so it only works in daylight.`}
     ],
     stays:[
@@ -437,10 +439,10 @@ const OPTIONS = [
     depart:9*60+30, arrive:15*60+19, sunset:17*60+16,
     event:[17*60, 22*60], eventName:'Christmas Walk',
     satDrive:'4 hr 56 min', sunDrive:'4 hr 19 min', sunMiles:'275 miles',
-    detour:'+41 min', share:'55%',
+    detour:'+56 min', share:'53%',
     routeSat:[['I-75','i'],['I-10','i'],['I-95','i'],['US-301','s']],
     routeSun:[['I-26','i'],['I-77','i'],['I-85','i'],['I-40','i']],
-    avoidsI95:true, i95note:'inland route, 15 min slower than via I-95',
+    avoidsI95:true, i95note:'inland route — +15 min over its own I-95 option, +56 total',
     verdict:`<strong>The best-shaped day, and it's free.</strong> You arrive with two hours of
       daylight — more than anywhere else — and the gardens, the swamp boardwalk and the Christmas
       lights are all in the <strong>same park</strong>, so you park once and never move the car.
@@ -453,7 +455,7 @@ const OPTIONS = [
        desc:`Sixty-plus displays you drive through along Riverside Drive, plus a separate walk-on
          "Kids' Walk" with forty more, many of them interactive. Genuinely free — there isn't even
          a donation box. About 300,000 people come each season, so expect company on a Saturday.`,
-       note:'Santa is only there on "select days" and the 28th isn\'t one of the confirmed ones — don\'t promise it.'},
+       note:'Two gaps: the season dates are worked out from the city\'s standing rule, not a published 2026 calendar; and Santa is only there on "select days", of which the 28th is not confirmed.'},
       {name:'Horne Wetlands boardwalk',
        url:'https://www.orangeburg.sc.us/edisto-memorial-gardens',
        pill:['good','Free'], meta:'<b>Free</b> · dawn to dusk · same park',
@@ -495,7 +497,7 @@ const OPTIONS = [
   {
     id:'savannah', name:'Savannah', state:'Georgia',
     tag:'Best free evening', accent:'free',
-    depart:9*60+30, arrive:13*60+50, sunset:17*60+20,
+    depart:9*60+30, arrive:13*60+23, sunset:17*60+20,
     event:[17*60, 21*60], eventName:'Boat parade & kickoff',
     satDrive:'3 hr 17 min', sunDrive:'5 hr 16 min', sunMiles:'335 miles',
     detour:'+15 min', share:'38%',
@@ -564,7 +566,7 @@ const OPTIONS = [
   {
     id:'charleston', name:'Charleston', state:'South Carolina',
     tag:'Best light show', accent:'',
-    depart:9*60+30, arrive:15*60+50, sunset:17*60+14,
+    depart:9*60+30, arrive:15*60+24, sunset:17*60+14,
     event:[17*60+30, 22*60], eventName:'Festival of Lights',
     satDrive:'5 hr 00 min', sunDrive:'4 hr 42 min', sunMiles:'294 miles',
     detour:'+1 hr 22 min', share:'52%',
@@ -581,8 +583,8 @@ const OPTIONS = [
        pill:['good','Best on route'], meta:'<b>$25 per car</b> online ($35 at the gate) · 5:30–10pm',
        desc:`Three miles of drive-through lights with 750 displays, and you can loop as many times
          as you like on one ticket — the best bit happens with the kids strapped in and warm. The
-         village has a train and carousel from 6pm, a climbing wall, a 50-ton sand sculpture and
-         free marshmallow fire pits.`,
+         village has a train and carousel from 6pm, a 50-ton sand sculpture and free marshmallow fire
+         pits. A climbing wall is listed, but its hours could not be confirmed.`,
        note:'Eat dinner before you go in — it sells snacks only and outside food isn\'t allowed. Enter from Folly Rd, not the way your GPS suggests.'},
       {name:'USS Yorktown, Patriots Point',
        url:'https://www.patriotspoint.org/visit/',
@@ -612,7 +614,8 @@ const OPTIONS = [
        note:'Whether its pool is indoors could not be confirmed at all — Hilton blocks automated checks. One call settles it.'}
     ],
     skip:`<b>Every indoor pool in the Charleston area is in North Charleston or Summerville</b> —
-      there are none downtown and none in Mount Pleasant. Don't bother moving out to Summerville to
+      the only downtown exception is Charleston Place, whose rooftop pool has a retractable roof, at
+      $400+ a night plus a $40 amenity fee and $62 valet. There are none in Mount Pleasant. Don't bother moving out to Summerville to
       shorten Sunday: with the Yorktown in the plan it costs an extra 70 minutes of Saturday-evening
       driving and half an hour of Sunday backtracking. <b>Dinner near the lights:</b> Martin's
       Bar-B-Que on Highland Ave is closest and open to 10pm; Melvin's on Folly Rd is counter

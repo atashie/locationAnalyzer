@@ -117,7 +117,7 @@ travel days of the year. I extracted the road refs for each candidate's Sunday l
 | Beaufort, SC | 5:01 | Yes | US-21/US-17 → I-95 → I-295 |
 | Savannah, GA | 5:16 | Yes | US-17 → I-95 → I-295 |
 
-**Columbia is the only shortlisted stop that avoids I-95 altogether.** Every other option
+**Columbia is the only shortlisted stop whose *fastest* route already avoids I-95.** Every other option
 routes through the I-95 → I-295 Fayetteville corridor, which is exactly where holiday
 northbound traffic concentrates. The free-flow numbers in section 2 therefore understate
 the real Sunday cost of the coastal stops more than they understate Columbia's.
@@ -195,7 +195,7 @@ with a Christmas light display already running that night. Combined with a 17:15
 makes every daytime attraction unreachable, the stop to pick is one where darkness is the
 attraction.
 
-**Recommended: Columbia, SC** — the only in-band stop that avoids I-95 on Thanksgiving
+**Recommended: Columbia, SC** — the only in-band stop that avoids I-95 at no extra driving on Thanksgiving
 Sunday, with three confirmed light events that evening (cheapest $30/car, all-inclusive),
 no home football game, and verified indoor-pool suites around $110.
 **Runner-up: Orangeburg, SC** — a free, kid-specific light walk and 42 more minutes of

@@ -1,6 +1,6 @@
 # Research: Charleston SC (+ Mount Pleasant, North Charleston)
 
-Position: **Sat 5:00 / arrive 15:50 / Sun 4:41 (292 mi) / detour +1:22 / frac 0.52.**
+Position: **Sat 5:00 / arrive 15:24 / Sun 4:41 (292 mi) / detour +1:22 / frac 0.52.**
 
 ## A correction to the research's headline
 
@@ -8,9 +8,12 @@ The agent concluded Charleston is "**not really a detour**." **That framing is w
 its own numbers say so.** It cited direct 513.5 mi (rome2rio) against 304 + 308 = 612 mi via
 Charleston — **+98 miles** — then characterised that as "barely a detour."
 
-My Valhalla measurement: the Charleston corridor is **613.8 mi / 10.22 h** against a
-530.8 mi / 8.31 h baseline, i.e. **+83 miles and +1:22**. Routing Gainesville → Charleston →
-Chapel Hill as a three-point request gives **+1:22** over the unconstrained fastest route.
+My Valhalla measurement, keeping two different things apart:
+- The **corridor** experiment — forced through Savannah, Charleston *and* Florence — is
+  613.8 mi / 10.22 h, i.e. **+1:55**. That is the cost of that whole itinerary, not of stopping
+  in Charleston.
+- Routing **Gainesville → Charleston → Chapel Hill** as a three-point request gives 9.68 h,
+  i.e. **+1:22**. This is the figure that belongs to the stop, and the one used throughout.
 The two mileage figures agree within 15 miles. So the measurement is not in dispute — only
 the adjective is.
 

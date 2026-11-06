@@ -1,6 +1,6 @@
 # Research: Savannah GA (+ Pooler, Tybee)
 
-Position: **Sat 3:17 / arrive 13:50 / Sun 5:16 (335 mi) / detour +0:15 / frac 0.38.**
+Position: **Sat 3:17 / arrive 13:23 / Sun 5:16 (335 mi) / detour +0:15 / frac 0.38.**
 Cheap to reach, lots of daylight on arrival, and a confirmed free evening programme —
 but it is **too early in the trip**, and the 5:16 Sunday runs the length of I-95.
 

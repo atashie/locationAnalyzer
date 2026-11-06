@@ -23,7 +23,7 @@ question is not "which town is nicest" — it is **which places have something a
 that specific night.** That shrinks a 38-stop list to about six, and most of what survives
 is a Christmas light display that opened on Thanksgiving weekend.
 
-The second fact: **you arrive in the dark.** Sunset is 17:10–17:20 across the whole band, and
+The second fact: **daylight runs out early.** Sunset is 17:10–17:20 across the whole band. That does not mean every stop arrives in the dark — Savannah lands with nearly four hours of light and Orangeburg with almost two — but it does mean the *late* stops arrive with little or none, and
 anything past Walterboro gives you under two hours of daylight. Every daytime attraction on
 this route closes between 16:00 and 17:00. **Fighting that is a losing game — the right move
 is to pick a stop where darkness is the attraction.**
@@ -36,12 +36,13 @@ is to pick a stop where darkness is the attraction.**
 
 Four reasons, in order of how much they should matter to you:
 
-**1. It is the only stop that avoids I-95 on Sunday 29 November.** Columbia departs north on
+**1. It is the only stop that avoids I-95 on Sunday 29 November at no extra driving.** Orangeburg, Charleston, Summerville and Santee can all dodge I-95 too — but they pay +15, +45, +45 and +61 minutes respectively to do it, while Columbia's fastest route already does.
+Columbia departs north on
 I-77 → I-85 → I-40, through Charlotte and Greensboro. Every other candidate funnels onto
 I-95 through the Fayetteville corridor — the worst northbound stretch in the country on the
 heaviest return-travel day of the year. AAA's 2025 figures were 81.8 million travelers,
 ~73 million by car, with INRIX putting the worst window at **11:00–20:00**. Columbia also
-gives the shortest Sunday of any in-band stop (3:37). Charlotte and Greensboro have their own
+gives a short Sunday (3:37). It is **not** the shortest in band — Florence (2:43), Camden (3:13) and Sumter (3:22) all beat it, but none of them has anything open that evening, which is the whole point. Charlotte and Greensboro have their own
 holiday backups, so budget 4 hours — but it is a different and lighter risk than I-95.
 
 **2. Three separate light events are confirmed open that evening, at three price points.**
@@ -65,7 +66,7 @@ ways. The Clemson/Greenville corridor will be jammed; Columbia will not. The onl
 event is **women's basketball at 14:30** against a low-draw opponent, which puts moderate
 pressure on Vista/downtown rooms only, not the wider market.
 
-**4. Lodging is cheap, verified, and genuinely family-shaped.** GSA's federal per diem for
+**4. Lodging is cheap on every indicative figure, and genuinely family-shaped — though no live Nov 28 rate was obtainable for any property.** GSA's federal per diem for
 Columbia is **$115 flat across all twelve months** — the rate-setter treats the city as
 non-seasonal. Market ADR has run ~$105–120.
 
@@ -88,13 +89,21 @@ pool, the Airbnb case here is weak.
 Nov 19, the Governor's Carolighting Nov 23, the parade Dec 5), no Nutcracker performance on
 Nov 28 specifically, and Soda City Market ends at 13:00, three hours before you arrive.
 Congaree's boardwalk is **fully reopened as of May 2026** and flat/railed/stroller-friendly
-with no mosquitoes in November — but it is unlit and 30 minutes out. **Save it for a morning.**
+and the Park Service says insects are generally not a problem in spring and autumn — which is
+weaker than "no mosquitoes". It is also unlit and 30 minutes out. **Save it for a morning.**
 
 ---
 
 ## Runner-up: ORANGEBURG, SC — now stronger on routing, weaker on lodging
 
-**Sat 4:56 → arrive 15:19 · Sun 4:04 via I-95, or 4:19 avoiding it · detour +0:41 · 55%**
+**Sat 4:56 → arrive 15:19 · 55% of the trip done**
+
+| Sunday route | Sunday drive | Total extra driving | Uses I-95 |
+|---|---:|---:|:--:|
+| Fastest (via I-95) | 4:04 | **+41 min** | yes |
+| Inland (I-26 → I-77) | 4:19 | **+56 min** | no |
+
+**Note the inland variant costs +56 minutes total, which is past your ~45-minute budget.** The +15 minutes is the cost of the dodge alone, not of the whole stop. Taking the I-95 route keeps Orangeburg inside budget at +41; dodging I-95 puts it outside, as Columbia already is at +49.
 
 The deeper pass moved Orangeburg in both directions.
 
@@ -139,7 +148,7 @@ Choice, Marriott, Hilton) returned 403, so the authoritative source was never re
   describing a pet room that "reeks of dog urine so strong it is unbearable." Also avoid
   SpringHill Suites (3.5/5, repeated mould and housekeeping complaints), Days Inn (a bed-bug
   report), and both Super 8s.
-- Rate baseline: Orangeburg isn't separately listed in the FY2026 per diem tables, so it falls
+- Rate baseline: Orangeburg isn't separately listed in the per diem tables, so it falls
   to the **$110 Standard CONUS rate**. Asking prices of $98–139 straddle it — **no visible
   holiday spike.** Airbnb showed real inventory for the date with no sign of a sellout
   (a 3-bed at $303, a Bowman guesthouse at $152/4.93★), though one-night cleaning fees couldn't
