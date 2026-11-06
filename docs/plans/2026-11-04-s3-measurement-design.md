@@ -181,109 +181,109 @@ in the conformance suite supplement exact expected answers; they never substitut
 
 ### 2.2 Attachment, partial edges and competition
 
-- A destination or origin attaches at its **nearest position on the graph**, which may be a point
-  along an edge. **Geometric ties are resolved by keeping every minimiser.** "Nearest" alone does
-  not determine an attachment, and that is not a corner case: two disconnected directed roads from
-  x = 0 to x = 100 at y = ±1, with an origin at `(0,0)` and a destination at `(100,0)` each exactly
-  1 m from both, give **101.587 s** or **1001.587 s** depending on which road is chosen — a different
-  verdict at ten minutes — while *both* choices satisfy nearest-position, the access cap, connector
-  charging, direction and objective minimisation. So:
-  - **The candidate universe is finite and is defined here**, which revision 5 did not do. "Every
-    attachment within 0.01 m of the minimum" is a **continuum**, even on one straight edge, and the
-    readings differ by more than rounding. Pass-19 F1: a directed edge `(0,0) → (100,0)` of time
-    100,000 s with origin `(0,1)` and destination `(100,0)` gives `1/1.26 + 100000` =
-    **100,000.7936507940 s** at the nearest projection `(0,0)`, while `(0.1417744688, 0)` is 1.01 m
-    away — inside the literal band — and gives `1.01/1.26 + 0.9985822553 × 100000` =
-    **99,859.0271185140 s**. The gap is **141.7665322800 s**, FAIL against PASS at a 99,900 s
-    threshold, and no bound on it follows from dividing 0.01 m by the access speed. So, normatively:
-    > **A candidate is the nearest position on a polyline *segment*.** Each segment of each edge
-    > geometry contributes exactly one — its closest point to the coordinate, with the segment's
-    > endpoints included as the clamped cases. The candidate set is then those segment positions
-    > whose distance is within `attach_tie_m` = **0.01 m** of the global minimum, **deduplicated by
-    > the occurrence's exact structural identity** — `(edge record, vertex index)` for a position at
-    > a polyline vertex, `(edge record, segment index, segment parameter)` for one interior to a
-    > segment. **No rounding enters this key.** The representative of a merged occurrence is the
-    > candidate with the smallest residual, then the smallest exact arclength.
+A sampled point is a **coordinate**; the network is a **graph**, and nothing in it sits at that
+coordinate. This section decides the two things the data does not: **where a coordinate joins the
+network**, and **what it costs to stand partway along an edge**. Both are normative. The reasoning
+and the counterexamples that forced each rule are in §13; what follows is the rule.
 
-    Revision 8 replaced a rounded arclength with the structural identity, because **rounding merges
-    occurrences that are not interchangeable**. Pass-21 F1: the 1.004 m out-and-back
-    `(0,0),(0.002,0),(0,0),(0,1)` of 602 s has two zero-residual origin occurrences at arclengths
-    **0 and 0.004 m**, both rounding to 0.00. Keeping the first returns **602 s** and keeping the
-    other **599.6015936255 s** — FAIL against PASS at ten minutes, from 4 mm. Scaling the edge
-    weight scales the loss without bound, so **no tolerance in metres can be safe**; the fix is not a
-    smaller tolerance but no tolerance.
+#### Attachment
 
-    What the structural key still merges is exactly what should merge: the **two descriptions of one
-    vertex** — parameter 1 on segment *k* and parameter 0 on segment *k*+1 — and a zero-length
-    segment's endpoint. What it keeps apart is a self-crossing road's two passes through one place,
-    and a closed edge's arclength 0 and arclength *L*, which are the same point and different
-    traversal positions.
-    This is finite, enumerable, persistable, and captures the case the next bullet names. It is
-    **one of three readings** — exact per-geometry minima, these per-segment minima, or the whole
-    tolerance sublevel set — and choosing it is the amendment, not an interpretation.
+An origin or destination attaches at a **position on the graph**, which may lie along an edge rather
+than at a node. "Nearest" alone does not determine one — two disconnected roads 1 m either side of a
+point are equally near and can differ by 900 s — so attachment yields a **set** of candidates and
+each objective minimises over it.
 
-    **Three parts of that key were wrong in revision 6 and are corrected in revision 7**, each with
-    an executed counterexample:
-    - **arclength, not position.** An XY point is not an *occurrence* along a polyline. A
-      self-crossing edge `(-100,0),(0,0),(0,100),(100,100),(100,0),(0,0),(0,-100)` — 600 m, 1,000 s —
-      passes `(0,0)` at arclengths **100 m and 500 m**, with 500 m and 100 m of edge remaining. Both
-      retained gives **166.6666666667 s**; a rounded-XY key merges them and returns
-      **833.3333333333 s**, PASS to FAIL at ten minutes, from discarding 400 m of route between two
-      points with zero spatial separation (pass-20 F2).
-    - **per edge record, not per canonical identity.** Identity excludes time and cost, so two
-      parallel `0 → 1` edges sharing geometry, `osmid` and length but carrying weights 2000/2000 and
-      2/2 share an identity. Keying on it discards one **before either objective competes**: 802 s
-      with the slow edge first, 1.2 s with the fast one first (pass-20 F4). §2.4 freezes identity and
-      grouping *separately from* ranking precisely so that grouping cannot answer a ranking question,
-      and a candidate key on identity breaks that.
-    - **the representative is the nearest, not the first.** On
-      `(-100,-0.004),(100,-0.004),(100,0.004),(-100,0.004)` from `(0,200)` the two horizontal
-      projections are **200.004 m and 199.996 m**; keeping the first and then applying the 200 m cap
-      returned **zero** candidates where one is attached (pass-20 F2).
-  - where one geometry has several equally nearest positions — a point equidistant from two places on
-    the same curve — each is retained as a candidate under the same tolerance, which the per-segment
-    rule above delivers rather than assumes.
-  - equality is **tolerance-based** at `attach_tie_m`, declared here, not exact float equality.
-  - **the band is applied first and each cap afterwards.** A retained candidate must independently
-    satisfy its own cap — `max_access_m` for the origin, `poi_snap_max_m` for a destination. A
-    nearest origin candidate at 199.995 m does **not** authorise a second at 200.004 m merely because
-    it is inside the geometric band. **Both caps are inclusive**: exactly 200 m attaches and exactly
-    300 m is eligible. A `<` comparator passed every conformance case written before pass 20,
-    because none sat on a boundary, while turning a 338.0952380952 s PASS into no journey at all.
-  - **the measured nearest distance is retained even when the cap leaves no candidate**, because
-    `OFF_NETWORK`'s bound is computed from it. At a global minimum of 200.5 m the sound bound is
-    `200.5 / max_speed_mps` = **143.2142857143 s**, which does not prove failure at ten minutes;
-    840.5 m gives 600.3571 s, which does. The bound is **never** computed from the 200 m cap, which
-    is a different number, and where the graph has no edge at all there is no nearest distance and
-    the absence is reported rather than a distance invented.
-  - the set of retained candidates is **recorded per point** in the manifest, since it is part of what
-    determines the answer.
-  - **What this rule does and does not buy.** Revision 5 claimed the reported quantity is "a property
-    of the geometry rather than of a convention". That is **withdrawn**: it is a property of the
-    geometry *given the declared candidate universe*, and the 0.01 m band **relocates** the
-    discontinuity rather than removing it. Two disconnected roads of 100 s and 1000 s with origin
-    residuals 1 m and 1.009 m give `100 + 1.009/1.26` = **100.8007936510 s**; at 1.011 m the fast
-    road leaves the band and the answer becomes `1000 + 1/1.26` = **1000.7936507940 s** — an
-    **899.9928571430 s** jump across 2 mm of geometry, and PASS to FAIL at ten minutes. What the rule
-    fixes is that the answer no longer depends on insertion order or on which minimiser a library
-    happened to return. It does not make the answer continuous, and no S3 output may say it does.
-- A **partial edge** contributes `fraction × edge_time` and `fraction × edge_cost`. **Every edge
-  penalty is apportioned by the same fraction, with no exceptions**, and an implementation may not
-  invent one. The consequential case is the restricted-access penalty: `access.py` adds a fixed
-  **120 s per restricted walking edge** to cost, so on a 1% traversal apportionment charges 1.21
-  while an entry fee would charge 120.01, and against a 5 s open bypass the two select different
-  routes. Apportionment is **already the existing attachment model** and is adopted deliberately —
-  it is a fractional-cost model, not a charge for entering restricted access. Changing it to an entry
-  charge is a **semantic amendment** under §13 requiring different fixtures, not an implementation
-  choice.
-- A partial traversal is legal only in a direction the edge permits. Walk symmetrisation supplies the
-  pedestrian reverse; **bike and drive do not inherit it**.
-- **A same-physical-edge direct traversal is a candidate, not the route.** It competes with
-  endpoint-and-network candidates under each objective and can lose: executed, a direct 800 s
-  traversal loses to 100 + 1 + 100 = **201 s** via a bypass, and on a one-way `u→v` an origin at
-  fraction 0.8 cannot reach a destination at 0.2 directly at all.
-- The residual straight-line connector is charged at the **access speed** and is part of both
-  objectives' totals.
+> **The candidate set.**
+>
+> 1. **Generator.** Each *segment* of each edge geometry contributes exactly one position: its
+>    closest point to the coordinate, with the segment's endpoints as the clamped cases.
+> 2. **Band.** Retain those positions whose distance is within `attach_tie_m` = **0.01 m** of the
+>    global minimum. Equality is by this tolerance, not by exact float comparison.
+> 3. **Occurrence identity.** Two positions are the *same candidate* iff they are the same
+>    **occurrence along the polyline**: `(edge record, vertex index)` for a position at a vertex,
+>    `(edge record, segment index, segment parameter)` for one interior to a segment. **No rounding
+>    enters this key.** Where one occurrence is described twice — parameter 1 on segment *k* and
+>    parameter 0 on segment *k*+1 — the representative is the candidate with the smallest residual,
+>    then the smallest exact arclength.
+> 4. **Caps, after the band and per candidate.** Each retained candidate must independently satisfy
+>    its own cap: `max_access_m` = **200 m** for an origin, `poi_snap_max_m` = **300 m** for a
+>    destination. **Both are inclusive.** A nearest origin candidate at 199.995 m does not authorise
+>    a second at 200.004 m merely because it is inside the band.
+
+**An edge is a measured line, not a shape.** An attachment is a mark *along* the polyline, not a
+point *on the map*, and the difference is load-bearing wherever a road crosses itself. The edge
+`(-100,0), (0,0), (0,100), (100,100), (100,0), (0,0), (0,-100)` — 600 m long — passes through
+`(0,0)` at arclengths **100 m and 500 m**. Those are one place and two decisions, because one leaves
+500 m of road ahead and the other 100 m. Identity is therefore structural and exact: a tolerance in
+metres cannot be safe, since the time it discards scales with the edge's weight without bound.
+
+Two further consequences of the key being per **edge record** and exact:
+
+- it never merges two parallel records that share a canonical identity but carry different weights,
+  because §2.4 fixes identity and grouping *separately from* ranking, and merging would let grouping
+  answer a ranking question;
+- it does merge the only thing that should merge — one occurrence described twice, including a
+  zero-length segment's endpoint — and keeps apart a self-crossing road's two passes and a closed
+  edge's arclength 0 and arclength *L*.
+
+**The measured nearest distance is retained even when the caps leave no candidate**, because
+`OFF_NETWORK`'s bound is `nearest / max_speed_mps`. At a global minimum of 200.5 m that bound is
+**143.2142857143 s**, which does not prove failure at ten minutes; at 840.5 m it is 600.3571 s, which
+does. The bound is **never** computed from the 200 m cap, which is a different number, and where the
+graph holds no edge at all there is no nearest distance and the absence is reported rather than a
+distance invented.
+
+**The retained candidate set is recorded per point** in the run manifest, since it is part of what
+determines the answer.
+
+**What this buys, and what it does not.** It makes the reported quantity independent of insertion
+order and of which minimiser a library happened to return. It does **not** make the quantity
+continuous in the geometry, and no S3 output may say it does: `attach_tie_m` is a threshold, so two
+roads at residuals 1 m and 1.009 m give 100.8007936510 s while 1 m and 1.011 m give
+1000.7936507940 s — an **899.9928571430 s** jump across 2 mm, PASS to FAIL at ten minutes. The
+quantity is a property of the geometry *given this candidate universe*.
+
+**The candidate universe is a choice, not a reading.** Per-segment minima are one of three
+candidates for it — the others being exact per-geometry minima and the whole tolerance sublevel set
+— and they differ by more than rounding. Per-segment minima make the answer depend on how a polyline
+is **subdivided**, which the exact per-geometry rule would not; against that, they deliver the
+equidistant-points-on-one-curve case rather than assuming it. **Owner-open:** whether to adopt the
+subdivision-invariant reading instead, since the data source can re-densify a geometry without any
+road changing. Measured divergence and the trade are in the build record.
+
+#### Partial edges
+
+A partial traversal of fraction *f* contributes `f × edge_time` and `f × edge_cost`, and **every edge
+penalty is apportioned by the same fraction, with no exceptions**. An implementation may not invent
+one. The consequential case is the restricted-access penalty: `access.py` adds a fixed **120 s per
+restricted walking edge** to cost, so a 1% traversal is charged **1.21** under apportionment and
+**120.01** under an entry fee, and against a 5 s open bypass the two select different routes.
+Apportionment is **already the existing attachment model** and is adopted deliberately — it is a
+fractional-cost model, not a charge for entering restricted access. Changing it to an entry charge is
+a **semantic amendment** under §13 requiring different fixtures, not an implementation choice.
+
+§2.4 item 6 fixes the binary64 terms this forms and the summation that totals them, because
+apportioning the components separately is equally faithful to this rule and gives a different number.
+
+#### Direction
+
+A partial traversal is legal only in a direction the edge permits. Walk symmetrisation supplies the
+pedestrian reverse; **bike and drive do not inherit it**. On a one-way `u→v` an origin at fraction
+0.8 cannot reach a destination at fraction 0.2 directly at all.
+
+#### Competition
+
+**A same-physical-edge direct traversal is a candidate, not the route.** It competes with
+endpoint-and-network candidates under each objective and can lose: a direct 800 s traversal loses to
+100 + 1 + 100 = **201 s** via a bypass. A zero-span traversal — a destination at the origin's own
+attachment position — contributes zero time and zero cost, and is a candidate like any other.
+
+#### Connectors
+
+The residual straight-line connector is charged at the **access speed** and is part of **both
+objectives' totals, in time and in cost**. Our own cost is in seconds — `access.py` adds 120 s per
+restricted edge to it — so the connector enters it as the same number it contributes to time. §2.6
+states the independent engine's different rule and why it differs.
 
 ### 2.3 Objective-specific views, correctly paired
 
@@ -1119,6 +1119,7 @@ corrections and are in the build record.
 | finding | revision 7 said | revision 8 says | consequence of the old text |
 |---|---|---|---|
 | **F1** §2.2 | deduplicate candidates by *(edge record, arclength at 2 dp)* | by the occurrence's **exact structural identity** — vertex index, or segment index and parameter — with **no rounding** | a centimetre bucket merges occurrences 4 mm apart that offer different remaining route: **602 s** against **599.6015936255 s**, FAIL against PASS. Scaling the edge weight scales the loss, so no tolerance in metres is safe |
+| **F5** §2.2 | the caps were stated without their boundary | **both caps are inclusive** — exactly 200 m attaches, exactly 300 m is eligible | a clarification, not an amendment, and it was unguarded: a `<` comparator passed every conformance case written before pass 20 because none sat on a boundary, while turning a **338.0952380952 s** PASS into no journey at all |
 | **F2** §2.2, §2.4 | totals use an exactly-rounded sum | **and the terms are frozen**: `f * (cost_base + penalty)` as one term, never the components apportioned separately | a summation rule settles the sum of given terms, not their formation. `0.1*(1.0+120.0)` is 12.100000000000001 and `fsum((0.1*1.0, 0.1*120.0))` is 12.1; against a bypass at 12.1 that is **1000 s** or **1 s** |
 | **F7** §2.4 | orientation, with the reverse by complementing the bit | the reverse identity is derived by **reversing the geometry and renormalising**; a palindrome's two directions therefore **share** an identity | one traversal had two identities depending on which representation the caller used. A geometry-derived field cannot also be guaranteed different under reversal, and requiring both was the error |
 | **F8** §2.4 | node-simple paths suffice (for the numbers) | **and the provenance route domain is node-simple**, with every nonzero partial traversal carrying its identity and zero-span traversals carrying none | lexicographic order is not a well-order over unrestricted walks: with a zero-weight self-loop A and exit B, `AB < B` and `AAB < AB`, so there is **no smallest route**. The numeric claim was sound; the uniquely-selected-route claim was not |
@@ -1157,6 +1158,7 @@ found them.
 | finding | revision 6 said | revision 7 says | consequence of the old text |
 |---|---|---|---|
 | **F2** §2.2 | deduplicate candidates by *(canonical identity, position at 2 dp)* | by *(edge record, along-edge **arclength** at 2 dp)*, representative = smallest residual | an XY point is not an occurrence: a self-crossing edge passes `(0,0)` at arclengths 100 m and 500 m, and merging them returned **833.3333333333 s** against **166.6666666667 s** — PASS to FAIL at ten minutes |
+| **F2** §2.2 | the representative of a merged candidate was the first found | the candidate with the **smallest residual**, then the smallest exact arclength | on `(-100,-0.004),(100,-0.004),(100,0.004),(-100,0.004)` from `(0,200)` the two horizontal projections are **200.004 m and 199.996 m**; keeping the first and then applying the 200 m cap returned **zero** candidates where one is attached |
 | **F4** §2.2, §2.4 | the candidate key uses the canonical identity | identity **never groups weight alternatives**; the key is per edge record | identity excludes time and cost, so two records sharing it and carrying 2000/2000 and 2/2 were collapsed by input order **before either objective competed**: **802 s** or **1.2 s** |
 | **F3** §2.4 | identity is `(u, v, geometry key, osmid, length)` | plus a **traversal orientation** | for `u == v` the endpoints cannot separate the directions and canonicalising the geometry removes the rest, so two one-way loops had equal identities: **3,800 s** or **200 s** on insertion order |
 | **F7** §2.4 | nothing about summation | totals use an **exactly-rounded, order-independent** sum; cost equality is exact, with no epsilon | the same multiset of costs summed in two orders gives 0.6000000000000001 and 0.6, so a 1,000 s route beat a 1 s one. §12 says implementations may vary; under left accumulation reassociation changes the answer, so none could be shown equivalent |
