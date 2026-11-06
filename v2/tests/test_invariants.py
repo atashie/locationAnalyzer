@@ -95,6 +95,10 @@ def test_the_domain_covers_every_shape_a_review_has_turned_up():
         # carried, because a cutoff keeping the head of the list is a different defect from one
         # keeping the tail.
         "many-destinations", "best-destination-last", "best-destination-first",
+        # Design revision 9's candidate-universe amendment: the input whose answer the superseded
+        # per-segment band moved under subdivision, and the exact-equidistance case that the
+        # amendment had to preserve (and does).
+        "subdivision-sensitive", "equidistant-within-record",
     }
     assert required <= covered, f"uncovered shapes: {sorted(required - covered)}"
     assert all(s.shapes for s in SCENARIOS), "every scenario says which shapes it carries"
@@ -293,25 +297,86 @@ def test_the_affine_law_with_its_intercept_pinned():
 
 
 def test_the_attachment_can_switch_under_scaling_with_the_route_unchanged():
-    """Pass-23 F2's input, as a regression against the condition that was wrong.
+    """Pass-23 F2's lesson, rebuilt after revision 9 removed its original witness.
 
-    If this ever stops switching, the route-equality condition would start looking adequate again.
-    The origin has two retained candidates — its exact projection on the first segment and the
-    second segment's clamped start, 0.005 m away — whose totals have different intercepts. The
-    reported route and destination are identical throughout.
+    The lesson is that route and destination equality do **not** establish that the selected journey
+    held, so they are the wrong condition for the affinity law. That is still true, but the input
+    pass 23 used no longer exhibits it: it relied on two candidates **on one record** 0.005 m apart,
+    which is exactly the per-segment artefact revision 9 removed —
+    `test_subdivision_no_longer_moves_the_answer_on_a_straight_edge` is the other side of that coin.
+
+    The phenomenon is reached instead where the band is **normative**: across records. Two records
+    share an `osmid` and a 100 m length, so `_route`'s `(orientation, osmid, length)` reduction is
+    identical, while their origin residuals are 0.01 m and 0.0 — both inside the band across records
+    — so their connector intercepts differ. One carries the smaller network weight and the larger
+    connector, so the two lines **cross** inside the scale range.
     """
-    graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0, 0), (50, 0), (100, 0)), time_s=40.0,
-                                            cost_base=40.0, osmid=(1,), oneway=True),))
-    scenario = Scenario("f2", graph, (49.995, 0.0), ((100.0, 0.0),))
-    points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
+    graph = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 0.01), (100, 0.01)), time_s=1.0, cost_base=1.0, osmid=(7,),
+                    oneway=True),
+        toy.ToyEdge(2, 3, ((0, 0.0), (100, 0.0)), time_s=1.0025, cost_base=1.0025, osmid=(7,),
+                    oneway=True),
+    ))
+    scenario = Scenario("f2-rebuilt", graph, (0.0, 0.0), ((100.0, 0.005),))
+    assert scenario.run().origin_candidates == 2, "two candidates, on two different records"
     assert scenario.run().n_journeys > 1
-    assert len({p["objective1_route"] for p in points}) == 1, "the route is unchanged"
+    points = [answers(scale_weights(scenario, k)) for k in SCALE_POINTS]
+    assert len({p["objective1_route"] for p in points}) == 1, "the route reduction is unchanged"
     assert len({p["objective1_destination_id"] for p in points}) == 1, "the destination too"
     lo, mid, hi = SCALE_POINTS
     first = (points[1]["objective1_s"] - points[0]["objective1_s"]) / (mid - lo)
     second = (points[2]["objective1_s"] - points[1]["objective1_s"]) / (hi - mid)
-    # Yet the slopes differ by nearly a million tolerances, because the attachment switched.
-    assert abs(first - second) > 1e-4, (first, second)
+    # Yet the slopes differ, because the attachment switched under a held route and destination.
+    assert abs(first - second) > 1e-6, (first, second)
+
+
+def test_subdivision_no_longer_moves_the_answer_on_a_straight_edge():
+    """Design revision 9's amendment, as the counterexample that forced it.
+
+    Until revision 9 the tie band was applied directly to every **segment** minimum, so inserting a
+    vertex that changes no geometry could add a candidate and move a verdict. One one-way edge
+    `(0,0)→(100,0)` of time/cost 1199.95 with the origin at `(49.995,0)`: as drawn it reports
+    600.0349975000 s and **FAILS** at ten minutes; with the midpoint `(50,0)` inserted, the second
+    segment's clamped start sits 0.005 m away, inside the band, and it reports 599.9789682540 s and
+    **PASSES**. The data source re-densifies geometries, so that was a live exposure rather than a
+    hypothetical.
+
+    Taking the **exact** minimum per edge record first removes it: the clamped start no longer
+    competes, because it does not achieve that edge's minimum.
+    """
+    def at(geometry):
+        graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, geometry, time_s=1199.95, cost_base=1199.95,
+                                                osmid=(1,), oneway=True),))
+        return toy.evaluate(graph, (49.995, 0.0), [(100.0, 0.0)])
+
+    drawn = at(((0, 0), (100, 0)))
+    split = at(((0, 0), (50, 0), (100, 0)))
+    assert drawn.origin_candidates == 1
+    assert split.origin_candidates == 1, "the inserted vertex must not add a candidate"
+    assert drawn.objective1_s == pytest.approx(600.0349975000001, rel=0, abs=1e-9)
+    assert split.objective1_s == drawn.objective1_s, "subdivision may not move the answer here"
+    # and the superseded rule's answer, recorded so the flip it caused stays legible
+    assert 599.9789682539683 < 600.0 < drawn.objective1_s
+
+
+def test_exact_equidistance_within_one_record_still_yields_both_positions():
+    """The case §2.2 used to cite as its reason for per-segment minima — and the measurement that
+    showed the reason was false.
+
+    An exact-minimum filter keeps **every** position achieving the minimum, so genuine equidistance
+    survives it. On `(0,1),(200,1),(200,-1),(0,-1)` from `(0,0)` the two arms are both exactly 1 m
+    away, at arclengths 0 and 402, and both are retained. The reported answer is the same under the
+    amended rule and the superseded one, which is part of why the amendment cost nothing.
+    """
+    graph = toy.ToyGraph(edges=(
+        toy.ToyEdge(0, 1, ((0, 1.0), (200, 1.0), (200, -1.0), (0, -1.0)), time_s=1000.0,
+                    cost_base=1000.0, osmid=(1,), oneway=True),))
+    found = toy.nearest_on_graph(graph, (0.0, 0.0), cap_m=200.0)
+    assert len(found.candidates) == 2, "both exactly-equidistant arms are candidates"
+    assert [round(c.arclength_m, 2) for c in found.candidates] == [0.0, 402.0]
+    assert all(c.residual_m == pytest.approx(1.0, rel=0, abs=1e-12) for c in found.candidates)
+    r = toy.evaluate(graph, (0.0, 0.0), [(0.0, -1.0)])
+    assert r.objective1_s == pytest.approx(0.7936507936507936, rel=0, abs=1e-12)
 
 
 def test_both_connectors_are_in_all_four_reported_numbers():

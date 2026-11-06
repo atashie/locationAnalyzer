@@ -82,6 +82,11 @@ EXPECTED_COVERAGE = {
     "pass23-F1-bounded-destinations": (True, False),
     "pass23-F4-coordinate-dependent-orientation": (True, False),
     "pass23-F8-connector-free-reported-cost": (True, True),
+    # The estimand design revision 9 replaced, not a defect a review found. The invariant layer
+    # catches it through the subdivision signature and the `subdivision_sensitive` scenario; the
+    # corpus does not, because both reading-marked cases survive the amendment unchanged -- which
+    # is part of the evidence that settled it.
+    "revision9-per-segment-candidate-band": (True, False),
 }
 
 
@@ -119,7 +124,7 @@ def test_the_invariant_layer_catches_what_no_named_case_does():
         if not invariants:
             invariant_blind.append((name, corpus))
 
-    assert len(corpus_blind) == 8, f"{len(corpus_blind)} mutants escape the corpus, recorded 8"
+    assert len(corpus_blind) == 9, f"{len(corpus_blind)} mutants escape the corpus, recorded 9"
     assert [n for n, caught in corpus_blind if not caught] == []
 
     # and the other direction, which is why neither layer may be dropped: a uniformly tightened cap

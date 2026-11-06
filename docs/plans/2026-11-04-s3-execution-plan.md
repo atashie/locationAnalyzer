@@ -1,7 +1,7 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
-**Revision 8, 2026-11-06.** Implements **design revision 8**, which is the operative document —
+**Revision 9, 2026-11-06.** Implements **design revision 9**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
 Pass 19 found ten defects in design revision 5 and the first code, four of them High, and its verdict
@@ -36,7 +36,7 @@ more than three destinations, and an orientation rule wrong only outside a coord
 record: **a relative invariant cannot see an absence, a positional truncation, or a defect that
 appears only far from the origin.** All such repairs are absolute anchors.
 
-**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,058 tests pass and 23 skip**: the conformance
+**T1, T2, T4 and T9 are built, and T4 now has a second layer.** **1,089 tests pass and 24 skip**: the conformance
 corpus, plus an **invariant layer** over the admissible-input domain and a **mutation guard**
 asserting every historical wrong implementation is still caught by one of them. Pass 21 asked for
 that instrument by name, having diagnosed the repeated adjacent breakage as "treating repair of the
@@ -226,6 +226,11 @@ Ordinary development and the unambiguous fixture subset can proceed."*
 **What revision 9 must settle before a freeze**, with the counterexample for each in the build
 record's "Not yet built":
 
+0. **Done — the candidate universe** (design revision 9, an owner decision rather than a review
+   finding): exact minima per edge record, then the tie band across records. The superseded rule let a
+   vertex that changed no geometry move a ten-minute verdict, 600.0349975000 s FAIL to
+   599.9789682540 s PASS. The justification this design gave for the superseded rule was measured and
+   found false.
 1. **The geometry arithmetic.** Revision 8 froze `f × (cost_base + penalty)` as one term and left the
    *fraction* unfrozen. `sum` against left accumulation of one three-segment edge's lengths gives
    0.16666666666666669 against 0.16666666666666666 as the first-vertex fraction, which loses or wins
@@ -278,9 +283,9 @@ What this task must get right, each with its conformance case in T4:
 
 ### T4 — the conformance suite
 
-**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `e645be28`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
+**Depends on:** T1, the design. **Written before T3 is complete, and not derived from it.** **Built** 2026-11-06: `toy.py`, `conformance.py`, `conformance_cases.py`, **17 cases, 112 tests**, corpus digest `f5ced7a0`. Five cases came from pass 20, which found both a strict-cap comparator and a connector-cost defect that passed the original twelve.
 
-**Second layer, same date:** `invariants.py`, `mutants.py`, **427 invariant tests and 29 mutation-guard tests**. 29 scenarios tagged by structural shape, hop depth and destination cardinality, 13 mutants. Eight mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Three mutants defeated both layers at once when they were written — a bounded path enumeration, a bounded destination list and a coordinate-dependent orientation — which is why `CHAIN_DEPTHS`, the five-spoke scenarios and the multi-offset orientation anchor exist, and why all three are anchored to numbers rather than compared across transforms.
+**Second layer, same date:** `invariants.py`, `mutants.py`, **457 invariant tests and 31 mutation-guard tests**. 31 scenarios tagged by structural shape, hop depth, destination cardinality and subdivision sensitivity, 14 mutants — the last being the candidate universe design revision 9 superseded, kept executable because a withdrawn estimand needs a guard too. Eight mutants escape the case corpus and one escapes the invariants, each caught by the other, and `EXPECTED_COVERAGE` pins the split so a drift in it is visible. Three mutants defeated both layers at once when they were written — a bounded path enumeration, a bounded destination list and a coordinate-dependent orientation — which is why `CHAIN_DEPTHS`, the five-spoke scenarios and the multi-offset orientation anchor exist, and why all three are anchored to numbers rather than compared across transforms.
 
 Every cell of design §7's cross-tab, every rule of §2, with **independently derived** expected
 answers. Contains every counterexample from passes 15, 16 and 17, plus objective-specific property

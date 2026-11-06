@@ -337,6 +337,59 @@ def connector_free_reported_cost():
         yield
 
 
+@contextmanager
+def per_segment_candidate_band():
+    """The rule design revision 9 **superseded**: the tie band applied directly to every segment
+    minimum, with no exact per-edge filter first.
+
+    Kept executable because it is a withdrawn *estimand*, not a bug — the owner chose to replace it —
+    and a withdrawn estimand needs a guard just as much as a fixed defect does. If the per-edge step
+    is ever dropped, this is the mutant that should start passing.
+
+    What it does wrong: a vertex that changes no geometry adds a candidate. On one one-way edge
+    `(0,0)→(100,0)` of time/cost 1199.95 with the origin at `(49.995,0)`, inserting the midpoint
+    `(50,0)` puts that segment's clamped start 0.005 m away, inside the band, and moves the answer
+    from **600.0349975000 s FAIL** to **599.9789682540 s PASS**. The answer became a property of how
+    the polyline was drawn.
+    """
+    def banded(graph, point, *, cap_m):
+        px, py = point
+        raw = []
+        for i, e in enumerate(graph.edges):
+            total, run = e.length_m, 0.0
+            for seg_index, (a, b) in enumerate(zip(e.geometry, e.geometry[1:])):
+                seg = math.hypot(b[0] - a[0], b[1] - a[1])
+                d, t = toy._segment_nearest(px, py, a[0], a[1], b[0], b[1])
+                along = run + t * seg
+                if t == 0.0:
+                    key = (i, "v", seg_index)
+                elif t == 1.0:
+                    key = (i, "v", seg_index + 1)
+                else:
+                    key = (i, "s", seg_index, t)
+                raw.append(toy.Attachment(
+                    edge=i, fraction=0.0 if total == 0.0 else along / total, arclength_m=along,
+                    residual_m=d,
+                    position=(a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])),
+                    occurrence=key))
+                run += seg
+        if not raw:
+            return toy.NearestOnGraph(candidates=(), global_min_m=None)
+        best = min(a.residual_m for a in raw)
+        window = [a for a in raw if a.residual_m <= best + toy.ATTACH_TIE_M]
+        merged = {}
+        for a in window:
+            cur = merged.get(a.occurrence)
+            if cur is None or (a.residual_m, a.arclength_m) < (cur.residual_m, cur.arclength_m):
+                merged[a.occurrence] = a
+        kept = sorted(merged.values(), key=lambda a: (a.edge, a.arclength_m))
+        return toy.NearestOnGraph(candidates=tuple(a for a in kept if a.residual_m <= cap_m),
+                                  global_min_m=best)
+
+    with _patched(nearest_on_graph=banded):
+        yield
+
+
 #: Every mutant, by the finding that produced it.
 MUTANTS: dict = {
     "pass20-F5-strict-cap": strict_cap,
@@ -353,4 +406,7 @@ MUTANTS: dict = {
     "pass23-F1-bounded-destinations": bounded_destinations,
     "pass23-F4-coordinate-dependent-orientation": coordinate_dependent_orientation,
     "pass23-F8-connector-free-reported-cost": connector_free_reported_cost,
+    # Not a defect a review found: the estimand design revision 9 replaced. A withdrawn estimand
+    # needs a guard too, or a later edit can quietly restore it.
+    "revision9-per-segment-candidate-band": per_segment_candidate_band,
 }

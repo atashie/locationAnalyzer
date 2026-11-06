@@ -2,6 +2,12 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 9, 2026-11-06.** One amendment, and it is an **owner decision** rather than a review
+finding: §2.2's candidate universe is now **exact minima per edge record, then the tie band across
+records**. The superseded rule let a vertex that changed no geometry move a ten-minute verdict
+(600.0349975000 s FAIL to 599.9789682540 s PASS). The justification this design had given for the
+superseded rule was measured and found false. §13's revision-9 row carries both.
+
 **Revision 8, 2026-11-06**, after Codex pass 21 found nine defects in revision 7 and in T4 — three
 of them High. Change log in §13; revisions 2–7 are kept there too.
 
@@ -213,15 +219,18 @@ each objective minimises over it.
 >
 > 1. **Generator.** Each *segment* of each edge geometry contributes exactly one position: its
 >    closest point to the coordinate, with the segment's endpoints as the clamped cases.
-> 2. **Band.** Retain those positions whose distance is within `attach_tie_m` = **0.01 m** of the
->    global minimum. Equality is by this tolerance, not by exact float comparison.
-> 3. **Occurrence identity.** Two positions are the *same candidate* iff they are the same
+> 2. **Exact minimum per edge record.** Of one record's segment positions, retain only those whose
+>    distance **exactly equals** that record's smallest. Exact, not banded.
+> 3. **Band across records.** Of the survivors, retain those whose distance is within
+>    `attach_tie_m` = **0.01 m** of the global minimum across all records. Equality here is by this
+>    tolerance, not by exact float comparison.
+> 4. **Occurrence identity.** Two positions are the *same candidate* iff they are the same
 >    **occurrence along the polyline**: `(edge record, vertex index)` for a position at a vertex,
 >    `(edge record, segment index, segment parameter)` for one interior to a segment. **No rounding
 >    enters this key.** Where one occurrence is described twice — parameter 1 on segment *k* and
 >    parameter 0 on segment *k*+1 — the representative is the candidate with the smallest residual,
 >    then the smallest exact arclength.
-> 4. **Caps, after the band and per candidate.** Each retained candidate must independently satisfy
+> 5. **Caps, after the band and per candidate.** Each retained candidate must independently satisfy
 >    its own cap: `max_access_m` = **200 m** for an origin, `poi_snap_max_m` = **300 m** for a
 >    destination. **Both are inclusive.** A nearest origin candidate at 199.995 m does not authorise
 >    a second at 200.004 m merely because it is inside the band.
@@ -259,13 +268,31 @@ roads at residuals 1 m and 1.009 m give 100.8007936510 s while 1 m and 1.011 m g
 1000.7936507940 s — an **899.9928571430 s** jump across 2 mm, PASS to FAIL at ten minutes. The
 quantity is a property of the geometry *given this candidate universe*.
 
-**The candidate universe is a choice, not a reading.** Per-segment minima are one of three
-candidates for it — the others being exact per-geometry minima and the whole tolerance sublevel set
-— and they differ by more than rounding. Per-segment minima make the answer depend on how a polyline
-is **subdivided**, which the exact per-geometry rule would not; against that, they deliver the
-equidistant-points-on-one-curve case rather than assuming it. **Owner-open:** whether to adopt the
-subdivision-invariant reading instead, since the data source can re-densify a geometry without any
-road changing. Measured divergence and the trade are in the build record.
+**Steps 2 and 3 are different tests on purpose, and that difference is the whole content of the
+rule.** Within one record the minimum is **exact**, so a position a hair further along the same road
+does not compete. Across records the **band** applies, so two roads 1 m either side of a point are
+both candidates even where their residuals differ in the last bits — which is the case the band
+exists for, and which can differ by 900 s.
+
+The reason is that a tie *within* a record is almost always an artefact of how the polyline was
+drawn, and a tie *between* records is almost always real. Under the superseded rule — the band
+applied directly to every segment minimum — a vertex that changed no geometry could change the
+answer: on one one-way edge `(0,0)→(100,0)` of time/cost **1199.95** with the origin at
+`(49.995,0)`, inserting the midpoint `(50,0)` put that segment's clamped start 0.005 m away, inside
+the band, and reported **599.9789682540 s** where the undivided edge reported **600.0349975000 s**.
+FAIL to PASS at ten minutes, candidate count 1→2, no road changed. The data source re-densifies
+geometries, so that was a live exposure. §13's revision-9 row carries the owner decision.
+
+**Exactness does not discard genuine equidistance.** Every position achieving a record's minimum
+survives step 2, so a record that doubles back with both arms exactly 1 m from the coordinate keeps
+both: on `(0,1),(200,1),(200,-1),(0,-1)` from `(0,0)`, arclengths 0 and 402 are both retained and
+the answer is **0.7936507937 s** under this rule and under the superseded one alike.
+
+**This does not make the answer subdivision-invariant, and no S3 output may say it does.** Two
+residues remain, neither of which moves a verdict: subdividing a **zero-length** segment adds
+vertices at one position, so the occurrence count changes — 2 to 3 on the zero-length fixture, with
+the reported time unchanged at 100.0 s — and re-expressing a curved geometry moves the answer by
+about **1.4e-14 s**. The build record measures both rather than asserting them away.
 
 #### Partial edges
 
@@ -1125,6 +1152,50 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
+### Revision 9, the candidate universe — an owner decision, 2026-11-06
+
+**§2.2's candidate universe is now exact minima per edge record, then the tie band across records.**
+The superseded rule applied the band directly to every segment minimum, which made the measured value
+depend on how a polyline was **drawn** rather than on where the road is. One one-way edge
+`(0,0)→(100,0)` of time/cost 1199.95, origin `(49.995,0)`, destination `(100,0)`:
+
+| | candidates | reported | at ten minutes |
+|---|---:|---:|---|
+| as drawn | 1 | 600.0349975000 s | **FAIL** |
+| midpoint `(50,0)` inserted | 2 | 599.9789682540 s | **PASS** |
+
+The inserted vertex changes no geometry; its segment's clamped start merely lands 0.005 m from the
+origin, inside the band. Overture re-densifies geometries, so this was live rather than hypothetical.
+
+**The trade this design previously claimed for the superseded rule does not exist, and measuring it
+is what settled the decision.** §2.2 said per-segment minima "deliver the equidistant-points-on-one-
+curve case rather than assuming it". They do not deliver anything the exact rule does not: an
+exact-minimum filter keeps **every** position achieving the minimum, so a record doubling back with
+both arms exactly 1 m out keeps both arms under either rule and reports the same 0.7936507937 s.
+Measured further:
+
+- across the whole 29-scenario invariant domain the two readings **never disagree**;
+- they differ only on a *near* tie inside the 10 mm band, and there the superseded rule's answer was
+  itself a threshold artefact — a far arm at **9.9 mm** reporting 0.8015079365 s and at **10.1 mm**
+  reporting 1000.7936507937 s, a **1000 s jump across 0.2 mm**;
+- both conformance cases marked as reading-dependent survive the amendment **unchanged**, which is
+  why the corpus does not distinguish the two rules at all.
+
+So the decision was not "which sensitivity do you prefer" but "adopt a reading that removes a
+verdict-flipping representation dependence at no measured cost, or keep the current one because
+revision 9 already carries four amendments". The owner chose to adopt it.
+
+**What is not claimed.** The answer is still **not** subdivision-invariant in general and still not
+continuous in the geometry. Subdividing a zero-length segment still changes the occurrence count
+(2 to 3, reported time unchanged at 100.0 s) and re-expressing a curved geometry still moves the
+answer about 1.4e-14 s; neither moves a verdict. `attach_tie_m` remains a threshold, so the 2 mm /
+899.99 s discontinuity recorded in §2.2 is untouched — the amendment removes a *second* sensitivity
+sitting on top of it, not the first.
+
+The superseded rule is kept executable as `revision9-per-segment-candidate-band` in
+`v2/locfinder/measure/mutants.py`, because a withdrawn estimand needs a guard just as much as a
+fixed defect does.
+
 ### Claims withdrawn after Codex pass 22 (3 High, 9 Medium) — no rule amended
 
 Pass 22 reviewed revision 8 and the instrument. Eight of its findings are against the instrument and
@@ -1240,11 +1311,13 @@ across representations is a stronger claim than the arithmetic supports: transla
 geometry 12 km moves a 90.8601039862 s answer by **2.0e-12 s** with every identity unchanged, which
 every axis-aligned fixture had hidden.
 
-**Not amended.** The per-segment candidate rule still makes the answer depend on how a polyline is
-subdivided, which pass 20 measured as 599.9747619048 s against 600.0399682540 s on its L-shaped
-edge. **Whether to adopt the subdivision-invariant exact-per-geometry reading instead is an owner
-decision**, because the data source can re-densify geometries, and it is recorded here rather than
-settled. The measured exposure stated in this row was wrong and is withdrawn below.
+**Not amended at the time, and since settled.** This row left the per-segment candidate rule in
+place and recorded the exact-per-geometry alternative as an owner decision, noting that pass 20
+measured the two readings as 599.9747619048 s against 600.0399682540 s on its L-shaped edge. The
+measured exposure this row went on to state was wrong and is withdrawn below; the decision itself was
+taken in **revision 9**, which adopted exact minima per edge record. Note that revision 9 is not
+quite the "exact per-geometry" reading this row named: the band still applies **across** records, and
+only the within-record test became exact.
 
 ### Revision 7, after Codex pass 20 (4 High, 7 Medium)
 

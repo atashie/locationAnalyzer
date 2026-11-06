@@ -359,6 +359,19 @@ SCENARIOS: tuple[Scenario, ...] = (
         (80.0, 0.0), ((20.0, 0.0),), shapes=("no-path", "oneway")),
     Scenario("empty_graph", ToyGraph(edges=()), (0.0, 0.0), ((10.0, 0.0),),
              shapes=("empty-graph",)),
+    # --- subdivision. The input that forced design revision 9's candidate-universe amendment, kept
+    # in the domain so the transforms exercise it: under the superseded per-segment band, inserting
+    # the midpoint moved this from 600.0349975000 s FAIL to 599.9789682540 s PASS.
+    Scenario("subdivision_sensitive", ToyGraph(edges=(
+        _e(0, 1, ((0, 0), (100, 0)), 1199.95, 1199.95, osmid=(1,), oneway=True),)),
+        (49.995, 0.0), ((100.0, 0.0),), shapes=("subdivision-sensitive", "partial-edge")),
+    # Exact equidistance within one record, which the exact-minimum filter must preserve -- this is
+    # the case 2.2 cited as its reason for per-segment minima, and measuring it is what showed the
+    # reason was false.
+    Scenario("equidistant_on_one_record", ToyGraph(edges=(
+        _e(0, 1, ((0, 1.0), (200, 1.0), (200, -1.0), (0, -1.0)), 1000.0, 1000.0, osmid=(1,),
+           oneway=True),)),
+        (0.0, 0.0), ((0.0, -1.0),), shapes=("equidistant-within-record", "self-crossing")),
     # --- destination cardinality. Pass-23 F1: a uniform `destinations[:4]` truncation in
     # `journeys` never activated anywhere in the suite, because the largest destination list any
     # oracle call received was **three**. Eligibility examined every destination and every surviving
@@ -527,13 +540,15 @@ def compare(before: dict, after: dict, transform_name: str = "") -> dict:
 
 #: Transforms deliberately **not** required to preserve the answer, with the reason.
 NOT_PRESERVING: dict = {
-    "split_segments": "design §2.2's candidate rule is per polyline segment, so subdividing a "
-                      "segment can add a candidate. A subdivision-invariant rule would have to be "
-                      "the exact per-geometry one. Pass-22 F5 shows the exposure is not small: on "
-                      "one straight one-way edge of 1199.95 s, an origin at (49.995,0) has one "
-                      "candidate and reports 600.0349975000 s, FAIL; inserting the midpoint (50,0) "
-                      "puts a clamped segment start 0.005 m away, inside the tie band, giving "
-                      "599.9789682540 s, PASS. No road changed.",
+    "split_segments": "design revision 9 took the exact minimum per edge record before the tie "
+                      "band, which removed the verdict-moving case pass-22 F5 found (600.0349975000 "
+                      "s FAIL against 599.9789682540 s PASS on one straight edge, from a midpoint "
+                      "that changed no geometry). Two residues remain and neither moves a verdict: "
+                      "subdividing a ZERO-LENGTH segment adds vertices at one position, so the "
+                      "occurrence count changes (2 to 3 on zero_length_segment, reported time "
+                      "unchanged at 100.0 s); and re-expressing a curved geometry moves the answer "
+                      "about 1.4e-14 s. measure_split_divergence reports both rather than "
+                      "asserting them away.",
     "scale_weights": "selection is not scale-invariant and the total is not proportional, because "
                      "connectors do not scale. See `scale_weights` and `SCALE_LAW`.",
 }

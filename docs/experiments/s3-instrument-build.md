@@ -190,7 +190,8 @@ redraw is a check to run, not a claim the manifest makes.
 
 `v2/locfinder/measure/toy.py`, `conformance.py`, `conformance_cases.py`,
 `v2/tests/test_conformance.py` (**112 tests**). **Seventeen** cases, corpus digest
-`e645be289098f2a599cf727110e50b81a430cbcc14772f2405395d5f320e0977`.
+`f5ced7a0f1aeab2f776bea9cc90668678e475cfe1a8cbbba14200ee69011608a`
+(was `e645be28…` until design revision 9 relabelled the two reading-dependent cases; `case_json` covers each case's justification on purpose, so an annotation edit moves the digest and that is the intended behaviour).
 
 Design §12 artifact 3. The execution plan requires that "derived independently of T3" be
 **evidenced, not asserted**, and notes that "written before T3 is complete" is not evidence and a
@@ -266,8 +267,8 @@ established; coverage of §2 is not, and no claim here says otherwise.
 
 ## T4's second layer — invariants and a mutation guard · 2026-11-06, corrected after passes 22 and 23
 
-`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**427 tests, 404
-passing and 23 skipped**), `v2/tests/test_mutants.py` (**29 tests**). 29 scenarios, 13 mutants.
+`v2/locfinder/measure/invariants.py`, `mutants.py`, `v2/tests/test_invariants.py` (**457 tests, 433
+passing and 24 skipped**), `v2/tests/test_mutants.py` (**31 tests**). 31 scenarios, 14 mutants.
 
 **This exists because pass 21 named the process rather than a rule.** Its diagnosis, after the third
 consecutive pass where closing the reviewed defects opened adjacent ones: *"treating repair of the
@@ -388,8 +389,9 @@ it — the *"verify the guard by reverting the fix"* experiment, run on every te
 | pass-23 F1 bounded destinations | **caught** | — |
 | pass-23 F4 coordinate-dependent orientation | **caught** | — |
 | pass-23 F8 connector-free reported cost | **caught** | **caught** |
+| revision-9 per-segment candidate band (withdrawn estimand) | **caught** | — |
 
-**Eight escape the corpus, one escapes the invariants, and every one is caught by the other**, so
+**Nine escape the corpus, one escapes the invariants, and every one is caught by the other**, so
 neither layer may be dropped and the split is pinned in `EXPECTED_COVERAGE` where a drift in it is
 visible. The connector-free cost moved into the invariants when the anchor replaced the intercept
 inference. The strict cap is the remaining relative-invariant blind spot and will stay one: a cap
@@ -444,17 +446,45 @@ amplifies the lost network fraction without any bound from connector speed. The 
 *signature* across the scenario domain is still a single name, and that signature is checked rather
 than the claim.
 
-### The owner's question, with its real stakes
+### The owner's question, settled — and the trade I stated did not exist
 
-§2.2's per-segment candidate rule makes the measured value depend on how a polyline is
-**subdivided**. The exact per-geometry reading would not. Overture can re-densify a geometry without
-any road changing, so this is a live exposure rather than a hypothetical one, and the table above is
-what it costs.
+§2.2's per-segment candidate rule made the measured value depend on how a polyline was **subdivided**.
+The owner adopted the alternative on 2026-11-06; design **revision 9** is the amendment, and §2.2 now
+takes the **exact minimum per edge record** before applying the tie band **across** records.
 
-Retaining the per-segment estimand is coherent — it delivers the equidistant-points-on-one-curve case
-rather than assuming it — but it must be retained **with that verdict flip visible**, not with the
-float-noise claim that this record carried until pass 22. Moving to exact per-geometry minimisers is a
-**design amendment and an owner policy choice**, not an oracle repair.
+**I put the decision to the owner with a trade that measurement then refuted**, which is the third
+time a claim about what a measurement decides has had to be withdrawn after measuring it
+(`feedback-computable-property-is-not-the-claim`). I had said per-segment minima "deliver the
+equidistant-points-on-one-curve case rather than assuming it". They deliver nothing the exact rule
+does not: an exact-minimum filter keeps **every** position achieving the minimum, so a record
+doubling back with both arms exactly 1 m out keeps both under either rule and reports the same
+**0.7936507937 s**.
+
+What the implemented comparison showed:
+
+| question | measured |
+|---|---|
+| does the exact rule fix the verdict flip? | yes — 600.0349975000 s both ways, candidates 1 both ways |
+| do the two readings disagree anywhere in the scenario domain? | **no**, 0 of 29 |
+| does the exact rule keep genuine within-record equidistance? | yes — arclengths 0 and 402 both retained |
+| what does the per-segment rule buy on a *near* within-record tie? | a far arm at **9.9 mm** gives 0.8015079365 s and at **10.1 mm** gives 1000.7936507937 s — **a 1000 s jump across 0.2 mm** |
+| do the reading-marked conformance cases change? | **no**, both survive unchanged |
+
+So what the superseded rule "protected" on the one input where the two differ was the band's own
+discontinuity, not a correct answer. The real decision was amendment surface against a known defect,
+and that is how it was put the second time.
+
+**What is still not claimed.** The answer is **not** subdivision-invariant in general. Two residues
+remain and neither moves a verdict: subdividing a **zero-length** segment changes the occurrence
+count (2→3 on `zero_length_segment`, reported time unchanged at **100.0 s**), and re-expressing a
+curved geometry moves the answer **1.4e-14 s**. `measure_split_divergence` reports both; its expected
+signature is unchanged by the amendment, which is itself worth noting — the amendment removed a
+verdict flip that the *signature* never showed, because `differences` compares seconds at a tolerance
+and the flip was 0.056 s on one input outside the domain.
+
+The superseded rule is kept executable as `revision9-per-segment-candidate-band`, because **a
+withdrawn estimand needs a guard just as much as a fixed defect does**. It is caught by the
+invariants and not by the corpus.
 
 ---
 
@@ -488,8 +518,8 @@ than 0.0, because zero would assert the product was accurate.
 
 ## Suite
 
-**1,081 collected: 1,058 pass and 23 skip.** 328 before S3, plus 140 for T1, 30 for T2, 112 for
-T4's corpus, **427 for the invariant layer** (404 passing, 23 skipped), **29 for the mutation
+**1,113 collected: 1,089 pass and 24 skip.** 328 before S3, plus 140 for T1, 30 for T2, 112 for
+T4's corpus, **457 for the invariant layer** (433 passing, 24 skipped), **31 for the mutation
 guard**, and 15 for T9.
 The skips are the affine law declining to assert where more than one journey exists and the selected
 one may legitimately switch — visible, rather than silently asserting something false.

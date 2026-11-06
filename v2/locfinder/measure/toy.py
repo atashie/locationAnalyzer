@@ -42,9 +42,14 @@ they are the ones an implementation gets wrong:
    bound is computed from it and never from the cap.
 
 `ATTACH_TIE_M` is a threshold, so the answer is well defined but **not continuous** in the geometry;
-§2.2 says so and no output may claim otherwise. The per-segment candidate generator is one of three
-readings §2.2 could have taken, and the cases marked `reading="per-segment minima"` are the ones a
-different choice would invalidate.
+§2.2 says so and no output may claim otherwise.
+
+The candidate universe is **exact minima per edge record, then the tie band across records** — design
+revision 9, which replaced a rule applying the band directly to every segment minimum. That earlier
+rule made the answer depend on how a polyline was *drawn*: a midpoint inserted into one straight
+edge moved 600.0349975000 s to 599.9789682540 s, FAIL to PASS. The cases marked
+`reading="exact per-edge minima"` are the ones a different choice of universe would bear on; both
+survive the amendment unchanged, which is part of the evidence that settled it.
 
 ## Why node-simple paths suffice, and for what
 
@@ -265,11 +270,48 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
                      cap_m: float) -> NearestOnGraph:
     """Design §2.2's candidate set, plus the measured nearest distance for the off-network bound.
 
-    The candidate set is: the nearest position on **each polyline segment**; those within
-    `ATTACH_TIE_M` of the global minimum; deduplicated by **(edge record, along-edge arclength
-    rounded to `ROUND_DP` metres)**; then filtered to those independently within `cap_m`.
+    The candidate set is, in this order:
 
-    **Two things in that key are load-bearing, and both were wrong in revision 6.**
+    1. the nearest position on **each polyline segment** of each edge;
+    2. **per edge record**, only those achieving that edge's **exact minimum** residual;
+    3. of the survivors, those within `ATTACH_TIE_M` of the **global** minimum across edges;
+    4. deduplicated by **occurrence** — `(edge, "v", vertex index)` or `(edge, "s", segment index,
+       parameter)`, with no rounding;
+    5. filtered to those independently within `cap_m`.
+
+    **Step 2 is design revision 9's amendment, and it is the step that makes the answer a property
+    of the road rather than of the way the road was drawn.** Until revision 9 the band in step 3 was
+    applied directly to every segment minimum, which let a vertex that changes no geometry change
+    the answer: on one one-way edge `(0,0)→(100,0)` of time/cost **1199.95** with the origin at
+    `(49.995,0)`, inserting the midpoint `(50,0)` creates a second segment whose *clamped start* sits
+    0.005 m away — inside the band — and reports **599.9789682540 s** where the undivided edge
+    reports **600.0349975000 s**. PASS against FAIL at ten minutes, with no road changed and the
+    candidate count 1→2. The data source re-densifies geometries, so that was a live exposure.
+
+    **Steps 2 and 3 are deliberately different tests, and that is the whole content of the rule.**
+    Within one record the minimum is exact, so a position a hair further along the same road is not a
+    candidate. Across records the band applies, so two roads 1 m either side of a point are both
+    candidates even though their residuals differ in the last bits — which is the case the band
+    exists for, and which can differ by 900 s.
+
+    Exact equidistance **within** one record still yields both positions, because both achieve the
+    edge minimum: on `(0,1),(200,1),(200,-1),(0,-1)` from `(0,0)` the two arms are both exactly 1 m
+    away at arclengths 0 and 402, both retained, and the answer is 0.7936507937 s under this rule and
+    under the superseded one alike. The justification §2.2 used to give for per-segment minima — that
+    they "deliver the equidistant-points-on-one-curve case rather than assuming it" — was false, and
+    measuring it is what settled the amendment. Across the whole 29-scenario invariant domain the two
+    readings **never disagree**; they differ only on a *near* tie inside the 10 mm band, where the
+    superseded rule's answer was itself a threshold artefact — a far arm at 9.9 mm reporting
+    0.8015079365 s and at 10.1 mm reporting 1000.7936507937 s, a 1000 s jump across 0.2 mm.
+
+    This does **not** make the answer subdivision-invariant in general, and no output may say it does.
+    Two residues remain, neither of which moves a verdict: subdividing a **zero-length** segment adds
+    vertices at one position, so the occurrence count changes (2→3 on `zero_length_segment`, with the
+    reported time unchanged at 100.0 s); and re-expressing a curved geometry changes the float
+    arithmetic by about **1.4e-14 s**. `measure_split_divergence` reports both rather than asserting
+    them away.
+
+    **Two things in the occurrence key are load-bearing, and both were wrong in revision 6.**
 
     *Arclength, not position.* Pass-20 F2: one one-way edge with geometry
     `(-100,0),(0,0),(0,100),(100,100),(100,0),(0,0),(0,-100)` — length 600 m, time 1,000 s — has two
@@ -296,6 +338,7 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
     for i, e in enumerate(graph.edges):
         total = e.length_m
         run = 0.0
+        per_edge: list[Attachment] = []
         for seg_index, (a, b) in enumerate(itertools.pairwise(e.geometry)):
             seg = math.hypot(b[0] - a[0], b[1] - a[1])
             d, t = _segment_nearest(px, py, a[0], a[1], b[0], b[1])
@@ -310,7 +353,7 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
                 key = (i, "v", seg_index + 1)
             else:
                 key = (i, "s", seg_index, t)
-            raw.append(Attachment(
+            per_edge.append(Attachment(
                 edge=i,
                 fraction=0.0 if total == 0.0 else along / total,
                 arclength_m=along,
@@ -319,6 +362,12 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
                 occurrence=key,
             ))
             run += seg
+        # Step 2, design revision 9: **per edge record, the exact minimum**. Exact, not banded --
+        # a band here is what let polyline subdivision move a verdict, and exactness is what keeps
+        # genuine equidistance (every position achieving the minimum survives).
+        if per_edge:
+            edge_best = min(a.residual_m for a in per_edge)
+            raw.extend(a for a in per_edge if a.residual_m == edge_best)
     if not raw:
         return NearestOnGraph(candidates=(), global_min_m=None)
 
