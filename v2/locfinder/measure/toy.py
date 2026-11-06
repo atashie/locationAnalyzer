@@ -23,48 +23,40 @@ structure: *"a program can faithfully implement each defective instruction"*, an
 from the same mistaken premise enforce the defect rather than catching it. One oracle derived from
 one reading of the design would be exactly that.
 
-## Two places where §2.2 is read, and the reading is recorded
+## What this oracle implements, and where the rule lives
 
-The first is **not** a micro-ambiguity. Pass 19's F1 established that, and the design has to settle
-it before a normative comparator can exist:
+Design **§2.2** is the normative text and this module follows it; the counterexamples that forced
+each rule are in design §13, not repeated here. Three of its decisions are worth restating because
+they are the ones an implementation gets wrong:
 
-1. **Which positions are candidates on a single geometry.** §2.2's text alternates between retaining
-   geometric *minimisers* and retaining "every attachment whose distance is within 0.01 m of the
-   minimum". Those are different sets, and the second is a **continuum**, even on one straight edge.
-   Pass 19's counterexample: a directed edge `(0,0) -> (100,0)` of time 100,000 s, origin `(0,1)`,
-   destination `(100,0)`. The nearest projection `(0,0)` is 1 m away and gives
-   `1/1.26 + 100000 = 100000.7936507940 s`. But `(0.1417744688, 0)` is 1.01 m away — inside the
-   literal tolerance band — and gives `1.01/1.26 + 0.9985822553 x 100000 = 99859.0271185140 s`. The
-   gap is **141.7665322800 s**, and at a 99,900 s threshold the two readings are FAIL and PASS.
-   There is no bound on that gap obtained by dividing the spatial tolerance by the access speed.
+1. **An attachment is an occurrence along a polyline, not a point on the map.** The candidate key is
+   structural and exact — `(edge, vertex index)` or `(edge, segment index, parameter)` — so a
+   self-crossing road's two passes through one place stay two candidates, and the two descriptions
+   of one shared vertex become one. No rounding enters it, because the time a merge discards scales
+   with the edge's weight without bound.
+2. **Candidates compete per edge record.** Two parallel records can share a canonical identity and
+   differ in exactly the weight an objective minimises, so nothing upstream of ranking may collapse
+   them.
+3. **The band is applied around the global minimum first and each cap after**, per candidate, both
+   caps inclusive. The *measured* nearest distance survives cap filtering, because `OFF_NETWORK`'s
+   bound is computed from it and never from the cap.
 
-   **Design revision 6 settled this**, choosing the reading this oracle had adopted: a candidate is
-   the nearest position on a polyline **segment**, the set is those segment positions within
-   `ATTACH_TIE_M` of the global minimum, and duplicates are removed by *(canonical directed-edge
-   identity, position rounded to `ROUND_DP` in metres)*. It was one of three readings — exact
-   per-geometry minima, per-segment minima, the whole tolerance sublevel set — and choosing it was
-   an amendment with a §13 row, not an interpretation this module was entitled to make. The cases
-   marked `reading="per-segment minima"` are the ones a different choice would have invalidated.
+`ATTACH_TIE_M` is a threshold, so the answer is well defined but **not continuous** in the geometry;
+§2.2 says so and no output may claim otherwise. The per-segment candidate generator is one of three
+readings §2.2 could have taken, and the cases marked `reading="per-segment minima"` are the ones a
+different choice would invalidate.
 
-   Related, and separately true: the 0.01 m rule **relocates** the discontinuity rather than
-   removing it. Two disconnected roads of 100 s and 1000 s with origin residuals 1 m and 1.009 m
-   give `100 + 1.009/1.26 = 100.8007936510 s`; moving the second to 1.011 m excludes it and leaves
-   `1000 + 1/1.26 = 1000.7936507940 s` — an **899.9928571430 s** jump across 2 mm, and PASS to FAIL
-   at ten minutes. Keeping every candidate makes the answer well defined once the candidate universe
-   is specified; it does not make the answer continuous in the geometry, and §2.2 may not be defended
-   as though it did.
-
-2. **Order of the tie window and the cap.** The window is taken around the global minimum **first**,
-   and the distance cap applied **after**, so each retained candidate is independently inside the
-   cap. A nearest origin candidate at 199.995 m does **not** authorise a second at 200.004 m merely
-   because it is inside the geometric tie band. Pass 19 asked for this explicitly and it is tested.
-
-## Why simple paths suffice
+## Why node-simple paths suffice, and for what
 
 Every weight here is non-negative, so a journey whose node sequence repeats a node contains a
 non-negative cycle that can be excised without changing its endpoints or its partial-edge terms. The
-excised journey is no worse. So restricting the enumeration to node-simple paths cannot miss an
-optimum, and the enumeration is finite.
+excised journey is no worse, so restricting the enumeration to node-simple paths cannot miss a
+numeric optimum, and the enumeration is finite.
+
+That argument covers the **numbers** and not the **provenance**: lexicographic order is not a
+well-order over unrestricted walks, since a zero-weight cycle can be inserted indefinitely to get a
+smaller sequence. §2.4 therefore declares the provenance route domain node-simple as well, which is
+what makes the selected route exist.
 """
 
 from __future__ import annotations
