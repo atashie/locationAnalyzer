@@ -137,8 +137,18 @@ weekday / hours unknown — into the output.
 > **second** collision nobody had noticed — a lunch stop reached at 10:29 that opens at 11:00,
 > a half-hour wait sitting in two options.
 
-Two things make this harder than it looks:
+Four things make this harder than it looks:
 
+- **Last entry is not closing time.** A zoo open until 17:00 with last entry 15:30 is shut
+  to a 16:00 arrival while still open to everyone inside. Model them separately or the
+  verdict is wrong for exactly the arrivals that matter.
+- **Open on arrival is not the same as worth stopping for.** A 16:45 arrival at a 17:00
+  close is "open" and gives you fifteen minutes of a seventy-five-minute halt. Carry
+  *usable minutes*, not just the verdict.
+- **Clocks are local to the stop, not to the traveller.** Hours belong to the venue's time
+  zone; a corridor crossing one shifts every verdict by an hour if you check against the
+  origin's clock. The same applies past midnight: the weekday has to advance with the
+  accumulated time, or a 01:00 arrival is checked against yesterday.
 - **A stop is not one thing with one schedule.** One roadside stop had *seven* facilities on
   five different schedules: pumps open 24 h, restrooms from 07:00, shops from 08:00, an
   observation tower from 11:00, and the best attraction closed Tuesday–Thursday. Model
@@ -302,9 +312,12 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 ## Tools
 
 - `itinerary_compare.py` — several named itineraries → measured legs, detour vs direct, derived
-  arrival clocks, per-facility opening-hours verdicts, and simplified geometry for the map, all
-  from one engine. Options may each carry their own `depart_h`, which is what makes comparing
-  corridors fair. `--help` for usage.
+  arrival clocks, per-facility opening-hours verdicts (with last-entry and usable minutes), and
+  simplified geometry for the map, all from one engine. Options may each carry their own
+  `depart_h`, which is what makes comparing corridors fair; stops may carry their own
+  `utc_offset`. Validates the whole spec before spending a request, and caches routing responses
+  on coordinates and costing so editing a dwell time or an opening hour costs nothing. `--help`
+  for usage.
 - `corridor_scan.py` — candidates → detour, share, arrival vs sunset, in one instrument. Use it
   to shortlist stops, then `itinerary_compare.py` to assemble options from them.
 - `research-brief.md` — the per-region brief that forces the three-state status back out.
@@ -330,6 +343,8 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 
 **Numbers**
 
+- An opening time compared against the wrong clock — the origin's rather than the stop's
+- A venue's closing time used where its last entry is the binding constraint
 - A time in a table you cannot name the source of
 - A route variant changed, and the detour column untouched
 - A detour quoted as the sum of its stops' individual detours

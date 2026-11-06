@@ -92,10 +92,12 @@ def _julian(y, m, d):
 def sunset(lat, lon, y, m, d, utc_offset, altitude=-0.833):
     """NOAA solar position. Returns local decimal hours, or None (polar day/night).
 
-    Solar parameters are evaluated once at local midnight rather than iterated to the
-    event, which costs roughly a minute or two at mid-latitudes. Far finer than the
-    uncertainty in any arrival time it is compared against -- but do not quote it as
-    exact, and note NOAA's accuracy statement describes NOAA's code, not this.
+    Solar parameters are evaluated once at the date's *UTC* midnight (not local midnight)
+    rather than iterated to the event. Measured against an iterated solution at 31 N,
+    -82.27, UTC-5 in late November that costs about 26 s on sunrise and 13 s on sunset --
+    finer than the "minute or two" this once claimed, and far finer than the uncertainty
+    in any arrival time it is compared against. Do not quote it as exact; NOAA's accuracy
+    statement describes NOAA's code, not this.
     """
     t = (_julian(y, m, d) - 2451545.0) / 36525.0
     L0 = (280.46646 + t * (36000.76983 + t * 0.0003032)) % 360.0

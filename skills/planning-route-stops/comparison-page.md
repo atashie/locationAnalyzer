@@ -234,3 +234,39 @@ Three details that make the difference between a basemap and clutter:
 Pad the projection bbox (0.45° here) *before* projecting anything, so routes and basemap share
 one `proj()`. Deriving the padded window inside the generator rather than in `basemap.py` keeps
 the basemap reusable across trips in the same region.
+
+## Re-running cheaply
+
+`itinerary_compare.py` caches routing responses keyed on coordinates plus costing, so the
+expensive part only happens when the geometry actually changes:
+
+```
+cold:  8 requests, 13.3 s
+warm:  0 requests,  6.9 s     # after editing dwell times, hours, labels or costs
+```
+
+That matters because iterating on a page is mostly *copy and dwell* edits, and re-routing
+eight itineraries to change one opening time is pure waste — it also burns a public endpoint's
+goodwill. Delete `.route-cache` when you want a genuinely fresh measurement.
+
+The spec is validated in full before the first request: unknown stop keys, malformed `HH:MM`,
+bad weekday ranges, dwell overrides for stops an option does not visit, and a malformed
+`--date` all fail immediately rather than after seven routing calls.
+
+## Projection: one scale, both axes
+
+Deriving the viewBox width from the aspect ratio and *then* subtracting an equal pixel margin
+from each axis gives them different scales — 1.29% of horizontal compression on one real bbox,
+a squashed map for no reason. Size the drawing area first, then add the margin:
+
+```python
+PADPX  = 35.0
+DRAW_H = 1000.0 - 2 * PADPX
+SCALE  = DRAW_H / h_deg            # px per degree of latitude, used for x as well
+VW     = w_deg * SCALE + 2 * PADPX
+```
+
+The residual distortion is the equirectangular approximation itself: a single
+`cos(mean latitude)` over a 6-degree span runs about 3% small at the southern edge and 4% large
+at the northern one, or 3–4 miles per 100 east–west. Fine for orientation, not for measuring
+off the map — and worth saying rather than implying the map is metrically true.

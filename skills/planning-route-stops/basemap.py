@@ -207,24 +207,42 @@ def stitch(segments, snap=5):
         ends.setdefault(key(s[0]), []).append((i, False))
         ends.setdefault(key(s[-1]), []).append((i, True))
 
+    # A cursor per endpoint, so each adjacency entry is examined at most once across the
+    # whole run. Rescanning each list from the start made the cost quadratic in the number
+    # of fragments meeting at one node -- harmless on this data (max endpoint degree 3)
+    # but a trap at a dense interchange, which is exactly where fragments pile up.
+    cursor = {k: 0 for k in ends}
+
+    def take(k):
+        lst = ends.get(k)
+        if lst is None:
+            return None
+        i = cursor[k]
+        while i < len(lst):
+            j, rev = lst[i]
+            i += 1
+            if not used[j]:
+                cursor[k] = i
+                return j, rev
+        cursor[k] = i
+        return None
+
     used, chains = [False] * len(segments), []
     for i in range(len(segments)):
         if used[i]:
             continue
         used[i] = True
         chain = list(segments[i])
-        # extend from both ends until no unused fragment shares an endpoint
+        # grow the tail, reverse so the old head is the tail, grow that, reverse back
         for _ in range(2):
             while True:
-                for j, rev in ends.get(key(chain[-1]), []):
-                    if used[j]:
-                        continue
-                    seg = segments[j]
-                    used[j] = True
-                    chain.extend(reversed(seg[:-1]) if rev else seg[1:])
+                nxt = take(key(chain[-1]))
+                if nxt is None:
                     break
-                else:
-                    break
+                j, rev = nxt
+                used[j] = True
+                seg = segments[j]
+                chain.extend(reversed(seg[:-1]) if rev else seg[1:])
             chain.reverse()
         chains.append(chain)
     return chains

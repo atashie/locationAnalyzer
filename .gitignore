@@ -106,3 +106,4 @@ cache/
 *.dll
 *.dylib
 __pycache__/
+.route-cache/
