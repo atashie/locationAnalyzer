@@ -217,7 +217,16 @@ h2.sec{font-size:12px;font-family:var(--mono);letter-spacing:.13em;
 .cols{display:grid;grid-template-columns:1fr;gap:34px}
 @media (min-width:860px){.cols{grid-template-columns:1.3fr 1fr;gap:44px}}
 
-.item{border-top:1px solid var(--line);padding:16px 0 15px}
+.item{border-top:1px solid var(--line);padding:16px 0 15px;
+  display:grid;grid-template-columns:168px 1fr;gap:16px;align-items:start}
+.item.noimg{grid-template-columns:1fr}
+.thumb{width:168px;height:112px;object-fit:cover;border-radius:7px;display:block;
+  background:var(--surface-2)}
+.item-body{min-width:0}
+@media (max-width:620px){
+  .item{grid-template-columns:1fr}
+  .thumb{width:100%;height:auto;aspect-ratio:3/2}
+}
 .item:first-of-type{border-top:1px solid var(--line-strong)}
 .item-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:5px}
 .item-name{font-size:16.5px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
@@ -323,8 +332,10 @@ footer p{margin:0 0 9px}
       times come from. Those times are free-flow estimates and don't include Thanksgiving traffic,
       so treat them as a floor. Saturday assumes leaving Gainesville at 9:30am with normal stops
       for fuel, lunch and bathrooms.</p>
-    <p>Grey lines are the interstate network, from OpenStreetMap. Every activity and hotel name
-      links to its official source.</p>
+    <p>Grey lines are the interstate network, from OpenStreetMap. Each photograph is the preview
+      image that venue publishes for its own page, and every name links back to that source. A few
+      cards have no picture because their site publishes none — Orangeburg's in particular, which
+      is a shame, since its Christmas Walk is the one free evening on this list.</p>
     <p>Prices marked <em>call first</em> couldn't be confirmed: hotel booking sites block
       automated checks, so no price here is a live quote for 28 November.</p>
   </footer>
@@ -667,6 +678,9 @@ const OPTIONS = [
   }
 ];
 
+/* each card's picture: the image that page publishes for itself */
+const PIC = {"Holiday Lights on the River, Saluda Shoals": "saluda","Wild Lights at Riverbanks Zoo": "wildlights","Fireflies Holiday Lights, Segra Park": "fireflies","Glide & Gather ice rink": "rink","Congaree National Park boardwalk": "congaree","Lighted Boat Parade & Holiday Kickoff": "boatparade","Plant Riverside Christmas Market": "plantriver","December Nights & Holiday Lights": "coastalbg","Laurel Hill Wildlife Drive": "laurelhill","Drury Plaza Pooler": "drury","Holiday Festival of Lights, James Island": "festlights","USS Yorktown, Patriots Point": "yorktown","Aquarium Aglow": "aglow","Charleston Harbor Resort": "harborresort","Sandhills Garden of Lights": "gardenlights","Weymouth Woods": "weymouth"};
+
 /* ---------------- render ---------------- */
 const $ = id => document.getElementById(id);
 let current = OPTIONS[0];
@@ -786,7 +800,10 @@ function itemHTML(it){
   const nm = it.url
     ? `<a href="${it.url}" target="_blank" rel="noopener">${it.name}</a>`
     : it.name;
-  return `<div class="item">
+  const pic = PIC[it.name];
+  return `<div class="item${pic ? '' : ' noimg'}">
+    ${pic ? `<img class="thumb" src="img/${pic}.jpg" alt="${it.name}" loading="lazy">` : ''}
+    <div class="item-body">
       <div class="item-top">
         <span class="item-name">${nm}</span>
         ${it.pill ? `<span class="pill ${it.pill[0]}">${it.pill[1]}</span>` : ''}
@@ -794,6 +811,7 @@ function itemHTML(it){
       ${it.meta ? `<p class="item-meta">${it.meta}</p>` : ''}
       <p class="item-desc">${it.desc}</p>
       ${it.note ? `<p class="item-note">${it.note}</p>` : ''}
+    </div>
   </div>`;
 }
 
