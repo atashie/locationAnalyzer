@@ -379,6 +379,9 @@ redistribute attention; whatever they do not mention gets the leftovers.**
 - `selftest.py` — 42 invariants for the measuring tools, no network, no fixtures, one second.
   Run it after touching either, and add a case whenever you fix something: every case in it is
   a defect that shipped.
+- `examples/chapel-hill-thomasville/` — a complete worked trip: the researched `spec.json`,
+  the page generator, and enough measured output to rebuild the page with no network. Read it
+  before building a new one; the spec format is easier to copy than to infer.
 - `doccheck.py` — checks this prose against this code: files and flags that are named must
   exist, spec fields promised must be read, the rule count must match, and figures quoted about
   a worked example must match its JSON. It caught the docs still claiming a basemap of "636

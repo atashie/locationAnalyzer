@@ -1,0 +1,4199 @@
+{
+ "direct": {
+  "total_s": 31314.058,
+  "miles": 539.7,
+  "costing": "auto"
+ },
+ "origin": {
+  "name": "Chapel Hill, NC",
+  "lat": 35.9132,
+  "lon": -79.0558
+ },
+ "dest": {
+  "name": "Thomasville, GA",
+  "lat": 30.8366,
+  "lon": -83.9788
+ },
+ "stops": {
+  "sob": {
+   "name": "South of the Border",
+   "where": "Dillon, SC - I-95 exit 1B",
+   "lat": 34.49851,
+   "lon": -79.30932,
+   "dwell_min": 15,
+   "cost_usd": 0,
+   "url": "https://www.sobpedro.com/attractions",
+   "hours": "grounds open; tower & arcade Mon-Thu 11:00-19:00, Reptile Lagoon closed Tue-Thu",
+   "status": "standing",
+   "kind": "roadside",
+   "facilities": [
+    {
+     "name": "Sunoco West pumps (pay at pump)",
+     "always": true,
+     "note": "open 24 h, 7 days; card at the pump before 07:00",
+     "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+     "status": "standing"
+    },
+    {
+     "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+     "always": true,
+     "note": "no hours; sunrise at Dillon is 07:00",
+     "status": "standing"
+    },
+    {
+     "name": "Pedro's Pantry + public restrooms",
+     "days": "daily",
+     "open": "07:00",
+     "close": "23:00",
+     "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+     "status": "standing"
+    },
+    {
+     "name": "Mexico Shop East",
+     "days": "Mon-Thu",
+     "open": "08:00",
+     "close": "21:00",
+     "url": "https://www.sobpedro.com/shopping",
+     "status": "standing"
+    },
+    {
+     "name": "Fort Pedro Fireworks",
+     "days": "daily",
+     "open": "09:00",
+     "close": "21:00",
+     "url": "https://www.sobpedro.com/shopping",
+     "status": "standing"
+    },
+    {
+     "name": "Sombrero Tower + arcade",
+     "days": "Mon-Thu",
+     "open": "11:00",
+     "close": "19:00",
+     "url": "https://www.sobpedro.com/attractions",
+     "status": "standing"
+    },
+    {
+     "name": "Reptile Lagoon",
+     "days": "Mon,Fri-Sun",
+     "open": "10:00",
+     "close": "19:00",
+     "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+     "status": "standing"
+    }
+   ]
+  },
+  "walterboro": {
+   "name": "Walterboro Wildlife Sanctuary",
+   "where": "Walterboro, SC - I-95 exit 53",
+   "lat": 32.89718,
+   "lon": -80.67816,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
+   "hours": "daily dawn-dusk",
+   "status": "standing",
+   "kind": "outdoors",
+   "facilities": [
+    {
+     "name": "Sanctuary boardwalks and trails",
+     "always": true,
+     "note": "daily dawn to dusk, free; sunrise 07:02",
+     "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
+     "status": "standing"
+    }
+   ]
+  },
+  "hiotts": {
+   "name": "Hiott's Pharmacy soda fountain",
+   "where": "373 E Washington St, Walterboro, SC",
+   "lat": 32.9027914,
+   "lon": -80.6632022,
+   "dwell_min": 20,
+   "cost_usd": 0,
+   "url": null,
+   "hours": "Mon-Fri 09:00-18:00 (third-party listings only)",
+   "status": "unknown",
+   "kind": "food",
+   "facilities": [
+    {
+     "name": "Soda fountain lunch counter",
+     "days": "Mon-Fri",
+     "open": "09:00",
+     "close": "18:00",
+     "note": "third-party listings only; no operator page found",
+     "status": "unknown"
+    }
+   ]
+  },
+  "pig_rh": {
+   "name": "Smokin Pig",
+   "where": "3986 Hwy 17, Richmond Hill, GA - I-95 exit 87",
+   "lat": 31.9305584,
+   "lon": -81.3286155,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "url": "https://www.smokinpigbbqjoint.com/",
+   "hours": "Tue-Sat 11:00-20:00",
+   "status": "standing",
+   "kind": "food",
+   "facilities": [
+    {
+     "name": "Smokin Pig dining room",
+     "days": "Tue-Sat",
+     "open": "11:00",
+     "close": "20:00",
+     "url": "https://www.smokinpigbbqjoint.com/",
+     "status": "standing"
+    }
+   ]
+  },
+  "mighty8": {
+   "name": "Mighty Eighth Air Force Museum",
+   "where": "Pooler, GA - I-95 exit 102",
+   "lat": 32.11566,
+   "lon": -81.23637,
+   "dwell_min": 90,
+   "cost_usd": 0,
+   "url": "https://www.mightyeighth.org/",
+   "hours": "Tue-Sat 10:00-17:00; Thanksgiving closure listed for Nov 26",
+   "status": "standing",
+   "kind": "indoors",
+   "cost_note": "admission not published on the pages fetched",
+   "facilities": [
+    {
+     "name": "Museum galleries",
+     "days": "Tue-Sat",
+     "open": "10:00",
+     "close": "17:00",
+     "url": "https://www.mightyeighth.org/",
+     "status": "standing"
+    }
+   ]
+  },
+  "mcallister": {
+   "name": "Fort McAllister State Park",
+   "where": "Richmond Hill, GA",
+   "lat": 31.88531,
+   "lon": -81.20236,
+   "dwell_min": 75,
+   "cost_usd": 35.5,
+   "url": "https://gastateparks.org/FortMcAllister",
+   "hours": "park 07:00-22:00; historic site 08:00-17:00",
+   "status": "standing",
+   "kind": "outdoors",
+   "facilities": [
+    {
+     "name": "Park grounds, trails, playground",
+     "days": "daily",
+     "open": "07:00",
+     "close": "22:00",
+     "url": "https://gastateparks.org/FortMcAllister",
+     "status": "standing"
+    },
+    {
+     "name": "Earthwork fort / historic site",
+     "days": "daily",
+     "open": "08:00",
+     "close": "17:00",
+     "url": "https://gastateparks.org/FortMcAllister",
+     "status": "standing"
+    }
+   ]
+  },
+  "lswalker": {
+   "name": "Laura S. Walker State Park",
+   "where": "near Waycross, GA",
+   "lat": 31.14105,
+   "lon": -82.21472,
+   "dwell_min": 30,
+   "cost_usd": 5,
+   "url": "https://gastateparks.org/LauraSWalker",
+   "hours": "daily 07:00-22:00",
+   "status": "standing",
+   "kind": "outdoors",
+   "facilities": [
+    {
+     "name": "Park, beach, playground, boardwalk",
+     "days": "daily",
+     "open": "07:00",
+     "close": "22:00",
+     "url": "https://gastateparks.org/LauraSWalker",
+     "status": "standing"
+    }
+   ]
+  },
+  "okefenokee": {
+   "name": "Okefenokee Swamp Park",
+   "where": "5700 Okefenokee Swamp Park Rd, Waycross, GA",
+   "lat": 31.05779,
+   "lon": -82.27247,
+   "dwell_min": 80,
+   "cost_usd": 98,
+   "url": "https://okeswamp.org/general-admission/",
+   "hours": "daily 09:00-17:00",
+   "status": "standing",
+   "kind": "ticketed",
+   "facilities": [
+    {
+     "name": "Swamp park: train, boardwalk, reptile show",
+     "days": "daily",
+     "open": "09:00",
+     "close": "17:00",
+     "url": "https://okeswamp.org/general-admission/",
+     "status": "standing"
+    }
+   ]
+  },
+  "zoo": {
+   "name": "Riverbanks Zoo & Garden",
+   "where": "Columbia, SC - I-26 at SC-378",
+   "lat": 34.00874,
+   "lon": -81.07313,
+   "dwell_min": 90,
+   "cost_usd": 105.8,
+   "kind": "ticketed",
+   "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+   "hours": "winter (2 Nov - 31 Jan) 09:00-16:00; closed Thanksgiving",
+   "cost_note": "$27.95 adult / $24.95 child online; $12 more for all four at the gate",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "Zoo and botanical garden",
+     "days": "daily",
+     "open": "09:00",
+     "close": "16:00",
+     "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+     "status": "standing"
+    }
+   ]
+  },
+  "ocmulgee": {
+   "name": "Ocmulgee Mounds National Historical Park",
+   "where": "Macon, GA",
+   "lat": 32.83723,
+   "lon": -83.60184,
+   "dwell_min": 75,
+   "cost_usd": 0,
+   "kind": "outdoors",
+   "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+   "hours": "grounds 08:00-17:00 daily; visitor centre & Earth Lodge 09:00-17:00; no entrance fee",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "Mounds and walking trails",
+     "days": "daily",
+     "open": "08:00",
+     "close": "17:00",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing"
+    },
+    {
+     "name": "Visitor centre and Earth Lodge",
+     "days": "daily",
+     "open": "09:00",
+     "close": "17:00",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing"
+    }
+   ]
+  },
+  "phinizy": {
+   "name": "Phinizy Swamp Nature Park",
+   "where": "1858 Lock and Dam Rd, Augusta, GA",
+   "lat": 33.38901,
+   "lon": -81.95979,
+   "dwell_min": 35,
+   "cost_usd": 0,
+   "kind": "outdoors",
+   "url": "https://phinizycenter.org/location-contact/",
+   "hours": "07:00-19:00 (Oct-Mar), 365 days, free",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "Boardwalks and 14 mi of trails",
+     "days": "daily",
+     "open": "07:00",
+     "close": "19:00",
+     "url": "https://phinizycenter.org/location-contact/",
+     "status": "standing"
+    }
+   ]
+  },
+  "discovery": {
+   "name": "Discovery Place Science",
+   "where": "301 N Tryon St, Charlotte, NC",
+   "lat": 35.22962,
+   "lon": -80.8412,
+   "dwell_min": 90,
+   "cost_usd": 0,
+   "kind": "indoors",
+   "url": "https://www.discoveryplace.org/science/visit",
+   "hours": "Wed 09:00-16:00",
+   "cost_note": "admission not published on the pages fetched",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "Museum galleries (fully indoor)",
+     "days": "Mon-Fri",
+     "open": "09:00",
+     "close": "16:00",
+     "url": "https://www.discoveryplace.org/science/visit",
+     "status": "standing"
+    }
+   ]
+  },
+  "weymouth": {
+   "name": "Weymouth Woods Sandhills Nature Preserve",
+   "where": "Southern Pines, NC",
+   "lat": 35.14153,
+   "lon": -79.39822,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "kind": "outdoors",
+   "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+   "hours": "November 08:00-18:00; visitor centre 08:00-17:00; free",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "7 mi of trails, picnic area",
+     "days": "daily",
+     "open": "08:00",
+     "close": "18:00",
+     "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+     "status": "standing"
+    },
+    {
+     "name": "Visitor centre + Discovery Room",
+     "days": "daily",
+     "open": "08:00",
+     "close": "16:00",
+     "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+     "status": "standing"
+    }
+   ]
+  },
+  "zooatl": {
+   "name": "Zoo Atlanta",
+   "where": "Grant Park, Atlanta, GA",
+   "lat": 33.7326,
+   "lon": -84.37104,
+   "dwell_min": 100,
+   "cost_usd": 0,
+   "kind": "ticketed",
+   "url": "https://zooatlanta.org/visit/",
+   "hours": "2 Nov - 6 Dec daily 09:00-17:00, last entry 15:30; closed Thanksgiving",
+   "cost_note": "admission not published on the pages fetched; varies by date",
+   "status": "standing",
+   "facilities": [
+    {
+     "name": "Zoo grounds",
+     "days": "daily",
+     "open": "09:00",
+     "close": "17:00",
+     "url": "https://zooatlanta.org/visit/",
+     "status": "standing",
+     "last_entry": "15:30"
+    }
+   ]
+  }
+ },
+ "options": {
+  "coastal-fewest": {
+   "label": "Coastal: fewest stops, earliest arrival",
+   "stops": [
+    "sob",
+    "pig_rh",
+    "lswalker"
+   ],
+   "legs_s": [
+    7712.258,
+    12032.115,
+    5897.226,
+    7475.72
+   ],
+   "total_s": 33117.32,
+   "miles": 561.9,
+   "detour_s": 1803.2619999999988,
+   "dwell_total_min": 90.0,
+   "cost_usd": 5.0,
+   "depart_h": 4.75,
+   "depart": "04:45",
+   "corridor": "coastal - I-95 then US-84",
+   "arrive_h": 15.4493,
+   "arrive": "15:27",
+   "days_spanned": 0,
+   "elapsed_s": 38517.32,
+   "schedule": [
+    {
+     "stop": "sob",
+     "arrive": "06:54",
+     "arrive_h": 6.8923,
+     "arrive_origin_clock": "06:54",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 15.0,
+     "leg_s": 7712.258,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sunoco West pumps (pay at pump)",
+        "verdict": "always",
+        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+        "verdict": "always",
+        "detail": "no hours; sunrise at Dillon is 07:00",
+        "usable_min": 15,
+        "url": null,
+        "status": "standing"
+       },
+       {
+        "name": "Pedro's Pantry + public restrooms",
+        "verdict": "opens",
+        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
+        "usable_min": 9,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Mexico Shop East",
+        "verdict": "shut",
+        "detail": "opens 08:00, 51 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Fort Pedro Fireworks",
+        "verdict": "shut",
+        "detail": "opens 09:00, 111 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Sombrero Tower + arcade",
+        "verdict": "shut",
+        "detail": "opens 11:00, 231 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Reptile Lagoon",
+        "verdict": "closed",
+        "detail": "closed Wed",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 4,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "pig_rh",
+     "arrive": "10:29",
+     "arrive_h": 10.4845,
+     "arrive_origin_clock": "10:29",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 45.0,
+     "leg_s": 12032.115,
+     "hours": {
+      "rollup": "opens-during",
+      "facilities": [
+       {
+        "name": "Smokin Pig dining room",
+        "verdict": "opens",
+        "detail": "opens 11:00, 31 min into the halt (14 min usable)",
+        "usable_min": 14,
+        "url": "https://www.smokinpigbbqjoint.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "lswalker",
+     "arrive": "12:52",
+     "arrive_h": 12.8727,
+     "arrive_origin_clock": "12:52",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 30.0,
+     "leg_s": 5897.226,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park, beach, playground, boardwalk",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 30,
+        "url": "https://gastateparks.org/LauraSWalker",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [
+    "pig_rh"
+   ],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.88295,
+     -79.06078
+    ],
+    [
+     35.84717,
+     -79.09067
+    ],
+    [
+     35.81634,
+     -79.08446
+    ],
+    [
+     35.79771,
+     -79.09501
+    ],
+    [
+     35.75853,
+     -79.16646
+    ],
+    [
+     35.71726,
+     -79.17891
+    ],
+    [
+     35.65278,
+     -79.176
+    ],
+    [
+     35.5827,
+     -79.19525
+    ],
+    [
+     35.51012,
+     -79.19
+    ],
+    [
+     35.50278,
+     -79.15089
+    ],
+    [
+     35.46805,
+     -79.11822
+    ],
+    [
+     35.43164,
+     -79.12304
+    ],
+    [
+     35.39116,
+     -79.10767
+    ],
+    [
+     35.3522,
+     -79.10893
+    ],
+    [
+     35.27847,
+     -79.0726
+    ],
+    [
+     35.2495,
+     -79.02506
+    ],
+    [
+     35.12342,
+     -78.94065
+    ],
+    [
+     35.10201,
+     -79.02183
+    ],
+    [
+     35.05365,
+     -79.02327
+    ],
+    [
+     35.03073,
+     -79.0373
+    ],
+    [
+     34.97093,
+     -79.03993
+    ],
+    [
+     34.96205,
+     -78.99749
+    ],
+    [
+     34.93674,
+     -78.99418
+    ],
+    [
+     34.90037,
+     -78.95871
+    ],
+    [
+     34.79168,
+     -78.99443
+    ],
+    [
+     34.69362,
+     -78.99877
+    ],
+    [
+     34.64358,
+     -79.01495
+    ],
+    [
+     34.55325,
+     -79.19496
+    ],
+    [
+     34.52643,
+     -79.27174
+    ],
+    [
+     34.49195,
+     -79.3285
+    ],
+    [
+     34.44769,
+     -79.36372
+    ],
+    [
+     34.34098,
+     -79.53666
+    ],
+    [
+     34.26828,
+     -79.70551
+    ],
+    [
+     34.26351,
+     -79.7442
+    ],
+    [
+     34.21015,
+     -79.82908
+    ],
+    [
+     34.17949,
+     -79.86313
+    ],
+    [
+     34.13889,
+     -79.88057
+    ],
+    [
+     34.05768,
+     -79.96978
+    ],
+    [
+     34.00645,
+     -80.00137
+    ],
+    [
+     33.97664,
+     -80.03832
+    ],
+    [
+     33.75451,
+     -80.18376
+    ],
+    [
+     33.69926,
+     -80.25056
+    ],
+    [
+     33.64147,
+     -80.28042
+    ],
+    [
+     33.60012,
+     -80.32846
+    ],
+    [
+     33.56601,
+     -80.39088
+    ],
+    [
+     33.49275,
+     -80.46777
+    ],
+    [
+     33.42018,
+     -80.49326
+    ],
+    [
+     33.39718,
+     -80.51315
+    ],
+    [
+     33.12665,
+     -80.63978
+    ],
+    [
+     33.04737,
+     -80.66951
+    ],
+    [
+     32.95972,
+     -80.67922
+    ],
+    [
+     32.87538,
+     -80.71827
+    ],
+    [
+     32.79207,
+     -80.77711
+    ],
+    [
+     32.69408,
+     -80.87896
+    ],
+    [
+     32.63014,
+     -80.88241
+    ],
+    [
+     32.57079,
+     -80.93886
+    ],
+    [
+     32.50406,
+     -80.97112
+    ],
+    [
+     32.47735,
+     -80.97154
+    ],
+    [
+     32.41428,
+     -81.01266
+    ],
+    [
+     32.28447,
+     -81.06879
+    ],
+    [
+     32.25663,
+     -81.10083
+    ],
+    [
+     32.25219,
+     -81.12811
+    ],
+    [
+     32.22632,
+     -81.16445
+    ],
+    [
+     32.15339,
+     -81.23722
+    ],
+    [
+     32.09043,
+     -81.23795
+    ],
+    [
+     32.00984,
+     -81.27896
+    ],
+    [
+     31.95213,
+     -81.33559
+    ],
+    [
+     31.89864,
+     -81.3236
+    ],
+    [
+     31.78996,
+     -81.37612
+    ],
+    [
+     31.65708,
+     -81.3936
+    ],
+    [
+     31.55466,
+     -81.44361
+    ],
+    [
+     31.41349,
+     -81.44447
+    ],
+    [
+     31.29501,
+     -81.48789
+    ],
+    [
+     31.27554,
+     -81.52263
+    ],
+    [
+     31.27387,
+     -81.57851
+    ],
+    [
+     31.25364,
+     -81.60562
+    ],
+    [
+     31.24068,
+     -81.64868
+    ],
+    [
+     31.22232,
+     -81.6575
+    ],
+    [
+     31.20598,
+     -81.69304
+    ],
+    [
+     31.23315,
+     -81.74871
+    ],
+    [
+     31.22707,
+     -81.81615
+    ],
+    [
+     31.16858,
+     -82.22425
+    ],
+    [
+     31.14116,
+     -82.21489
+    ],
+    [
+     31.16858,
+     -82.22425
+    ],
+    [
+     31.18251,
+     -82.25149
+    ],
+    [
+     31.20716,
+     -82.33522
+    ],
+    [
+     31.20875,
+     -82.38382
+    ],
+    [
+     31.19208,
+     -82.38427
+    ],
+    [
+     31.15853,
+     -82.426
+    ],
+    [
+     31.04072,
+     -82.7353
+    ],
+    [
+     31.00922,
+     -82.85008
+    ],
+    [
+     30.9888,
+     -82.87081
+    ],
+    [
+     30.79915,
+     -83.37072
+    ],
+    [
+     30.78492,
+     -83.62306
+    ],
+    [
+     30.79887,
+     -83.80646
+    ],
+    [
+     30.83499,
+     -83.93568
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 8401,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": false,
+   "arrives_next_day": false
+  },
+  "coastal-swamp": {
+   "label": "Coastal: one big thing, the swamp",
+   "stops": [
+    "sob",
+    "pig_rh",
+    "okefenokee"
+   ],
+   "legs_s": [
+    7712.258,
+    12032.115,
+    6220.717,
+    7576.937
+   ],
+   "total_s": 33542.028,
+   "miles": 566.2,
+   "detour_s": 2227.9699999999975,
+   "dwell_total_min": 150.0,
+   "cost_usd": 98.0,
+   "depart_h": 4.75,
+   "depart": "04:45",
+   "corridor": "coastal - I-95 then US-84",
+   "arrive_h": 16.5672,
+   "arrive": "16:34",
+   "days_spanned": 0,
+   "elapsed_s": 42542.028,
+   "schedule": [
+    {
+     "stop": "sob",
+     "arrive": "06:54",
+     "arrive_h": 6.8923,
+     "arrive_origin_clock": "06:54",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 15.0,
+     "leg_s": 7712.258,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sunoco West pumps (pay at pump)",
+        "verdict": "always",
+        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+        "verdict": "always",
+        "detail": "no hours; sunrise at Dillon is 07:00",
+        "usable_min": 15,
+        "url": null,
+        "status": "standing"
+       },
+       {
+        "name": "Pedro's Pantry + public restrooms",
+        "verdict": "opens",
+        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
+        "usable_min": 9,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Mexico Shop East",
+        "verdict": "shut",
+        "detail": "opens 08:00, 51 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Fort Pedro Fireworks",
+        "verdict": "shut",
+        "detail": "opens 09:00, 111 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Sombrero Tower + arcade",
+        "verdict": "shut",
+        "detail": "opens 11:00, 231 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Reptile Lagoon",
+        "verdict": "closed",
+        "detail": "closed Wed",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 4,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "pig_rh",
+     "arrive": "10:29",
+     "arrive_h": 10.4845,
+     "arrive_origin_clock": "10:29",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 45.0,
+     "leg_s": 12032.115,
+     "hours": {
+      "rollup": "opens-during",
+      "facilities": [
+       {
+        "name": "Smokin Pig dining room",
+        "verdict": "opens",
+        "detail": "opens 11:00, 31 min into the halt (14 min usable)",
+        "usable_min": 14,
+        "url": "https://www.smokinpigbbqjoint.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "okefenokee",
+     "arrive": "12:58",
+     "arrive_h": 12.9625,
+     "arrive_origin_clock": "12:58",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 6220.717,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Swamp park: train, boardwalk, reptile show",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 90,
+        "url": "https://okeswamp.org/general-admission/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [
+    "pig_rh"
+   ],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.88295,
+     -79.06078
+    ],
+    [
+     35.84717,
+     -79.09067
+    ],
+    [
+     35.81634,
+     -79.08446
+    ],
+    [
+     35.79771,
+     -79.09501
+    ],
+    [
+     35.75853,
+     -79.16646
+    ],
+    [
+     35.71726,
+     -79.17891
+    ],
+    [
+     35.65278,
+     -79.176
+    ],
+    [
+     35.5827,
+     -79.19525
+    ],
+    [
+     35.51012,
+     -79.19
+    ],
+    [
+     35.50278,
+     -79.15089
+    ],
+    [
+     35.46805,
+     -79.11822
+    ],
+    [
+     35.43164,
+     -79.12304
+    ],
+    [
+     35.39116,
+     -79.10767
+    ],
+    [
+     35.3522,
+     -79.10893
+    ],
+    [
+     35.27847,
+     -79.0726
+    ],
+    [
+     35.2495,
+     -79.02506
+    ],
+    [
+     35.12342,
+     -78.94065
+    ],
+    [
+     35.10201,
+     -79.02183
+    ],
+    [
+     35.05365,
+     -79.02327
+    ],
+    [
+     35.03073,
+     -79.0373
+    ],
+    [
+     34.97093,
+     -79.03993
+    ],
+    [
+     34.96205,
+     -78.99749
+    ],
+    [
+     34.93674,
+     -78.99418
+    ],
+    [
+     34.90037,
+     -78.95871
+    ],
+    [
+     34.79168,
+     -78.99443
+    ],
+    [
+     34.69362,
+     -78.99877
+    ],
+    [
+     34.64358,
+     -79.01495
+    ],
+    [
+     34.55325,
+     -79.19496
+    ],
+    [
+     34.52643,
+     -79.27174
+    ],
+    [
+     34.49195,
+     -79.3285
+    ],
+    [
+     34.44769,
+     -79.36372
+    ],
+    [
+     34.34098,
+     -79.53666
+    ],
+    [
+     34.26828,
+     -79.70551
+    ],
+    [
+     34.26351,
+     -79.7442
+    ],
+    [
+     34.21015,
+     -79.82908
+    ],
+    [
+     34.17949,
+     -79.86313
+    ],
+    [
+     34.13889,
+     -79.88057
+    ],
+    [
+     34.05768,
+     -79.96978
+    ],
+    [
+     34.00645,
+     -80.00137
+    ],
+    [
+     33.97664,
+     -80.03832
+    ],
+    [
+     33.75451,
+     -80.18376
+    ],
+    [
+     33.69926,
+     -80.25056
+    ],
+    [
+     33.64147,
+     -80.28042
+    ],
+    [
+     33.60012,
+     -80.32846
+    ],
+    [
+     33.56601,
+     -80.39088
+    ],
+    [
+     33.49417,
+     -80.46661
+    ],
+    [
+     33.12665,
+     -80.63978
+    ],
+    [
+     33.04737,
+     -80.66951
+    ],
+    [
+     32.95972,
+     -80.67922
+    ],
+    [
+     32.87538,
+     -80.71827
+    ],
+    [
+     32.79207,
+     -80.77711
+    ],
+    [
+     32.69408,
+     -80.87896
+    ],
+    [
+     32.63014,
+     -80.88241
+    ],
+    [
+     32.57079,
+     -80.93886
+    ],
+    [
+     32.50406,
+     -80.97112
+    ],
+    [
+     32.47735,
+     -80.97154
+    ],
+    [
+     32.41485,
+     -81.01237
+    ],
+    [
+     32.28416,
+     -81.06899
+    ],
+    [
+     32.25638,
+     -81.10123
+    ],
+    [
+     32.25219,
+     -81.12811
+    ],
+    [
+     32.22632,
+     -81.16445
+    ],
+    [
+     32.151,
+     -81.23895
+    ],
+    [
+     32.09144,
+     -81.23752
+    ],
+    [
+     32.00984,
+     -81.27896
+    ],
+    [
+     31.95342,
+     -81.33498
+    ],
+    [
+     31.92556,
+     -81.33084
+    ],
+    [
+     31.82798,
+     -81.49187
+    ],
+    [
+     31.82263,
+     -81.52047
+    ],
+    [
+     31.85897,
+     -81.56351
+    ],
+    [
+     31.84861,
+     -81.58956
+    ],
+    [
+     31.78559,
+     -81.61087
+    ],
+    [
+     31.66334,
+     -81.84599
+    ],
+    [
+     31.60265,
+     -81.8907
+    ],
+    [
+     31.60502,
+     -81.91895
+    ],
+    [
+     31.5908,
+     -81.95128
+    ],
+    [
+     31.49602,
+     -82.00642
+    ],
+    [
+     31.23019,
+     -82.33304
+    ],
+    [
+     31.20403,
+     -82.33446
+    ],
+    [
+     31.12988,
+     -82.26677
+    ],
+    [
+     31.05762,
+     -82.27243
+    ],
+    [
+     31.13005,
+     -82.2666
+    ],
+    [
+     31.20012,
+     -82.32668
+    ],
+    [
+     31.20875,
+     -82.38382
+    ],
+    [
+     31.19208,
+     -82.38427
+    ],
+    [
+     31.15853,
+     -82.426
+    ],
+    [
+     31.04072,
+     -82.7353
+    ],
+    [
+     31.00922,
+     -82.85008
+    ],
+    [
+     30.9888,
+     -82.87081
+    ],
+    [
+     30.79925,
+     -83.37025
+    ],
+    [
+     30.78492,
+     -83.62306
+    ],
+    [
+     30.79887,
+     -83.80646
+    ],
+    [
+     30.83499,
+     -83.93568
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9394,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": false,
+   "arrives_next_day": false
+  },
+  "coastal-outdoors": {
+   "label": "Coastal: most time on your feet",
+   "stops": [
+    "sob",
+    "walterboro",
+    "hiotts",
+    "pig_rh",
+    "okefenokee"
+   ],
+   "legs_s": [
+    7712.258,
+    8131.079,
+    211.456,
+    4572.379,
+    6220.717,
+    7576.937
+   ],
+   "total_s": 34424.828,
+   "miles": 574.3,
+   "detour_s": 3110.7700000000004,
+   "dwell_total_min": 195.0,
+   "cost_usd": 98.0,
+   "depart_h": 4.75,
+   "depart": "04:45",
+   "corridor": "coastal - I-95 then US-84",
+   "arrive_h": 17.5625,
+   "arrive": "17:34",
+   "days_spanned": 0,
+   "elapsed_s": 46124.828,
+   "schedule": [
+    {
+     "stop": "sob",
+     "arrive": "06:54",
+     "arrive_h": 6.8923,
+     "arrive_origin_clock": "06:54",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 15.0,
+     "leg_s": 7712.258,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sunoco West pumps (pay at pump)",
+        "verdict": "always",
+        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+        "verdict": "always",
+        "detail": "no hours; sunrise at Dillon is 07:00",
+        "usable_min": 15,
+        "url": null,
+        "status": "standing"
+       },
+       {
+        "name": "Pedro's Pantry + public restrooms",
+        "verdict": "opens",
+        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
+        "usable_min": 9,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Mexico Shop East",
+        "verdict": "shut",
+        "detail": "opens 08:00, 51 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Fort Pedro Fireworks",
+        "verdict": "shut",
+        "detail": "opens 09:00, 111 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Sombrero Tower + arcade",
+        "verdict": "shut",
+        "detail": "opens 11:00, 231 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Reptile Lagoon",
+        "verdict": "closed",
+        "detail": "closed Wed",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 4,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "walterboro",
+     "arrive": "09:24",
+     "arrive_h": 9.4009,
+     "arrive_origin_clock": "09:24",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 45.0,
+     "leg_s": 8131.079,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sanctuary boardwalks and trails",
+        "verdict": "always",
+        "detail": "daily dawn to dusk, free; sunrise 07:02",
+        "usable_min": 45,
+        "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "hiotts",
+     "arrive": "10:13",
+     "arrive_h": 10.2097,
+     "arrive_origin_clock": "10:13",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 20.0,
+     "leg_s": 211.456,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Soda fountain lunch counter",
+        "verdict": "open",
+        "detail": "open until 18:00",
+        "usable_min": 20,
+        "url": null,
+        "status": "unknown"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "pig_rh",
+     "arrive": "11:49",
+     "arrive_h": 11.8131,
+     "arrive_origin_clock": "11:49",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 40.0,
+     "leg_s": 4572.379,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Smokin Pig dining room",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.smokinpigbbqjoint.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "okefenokee",
+     "arrive": "14:12",
+     "arrive_h": 14.2077,
+     "arrive_origin_clock": "14:12",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 75.0,
+     "leg_s": 6220.717,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Swamp park: train, boardwalk, reptile show",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 75,
+        "url": "https://okeswamp.org/general-admission/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.88295,
+     -79.06078
+    ],
+    [
+     35.84717,
+     -79.09067
+    ],
+    [
+     35.81634,
+     -79.08446
+    ],
+    [
+     35.79771,
+     -79.09501
+    ],
+    [
+     35.75853,
+     -79.16646
+    ],
+    [
+     35.71726,
+     -79.17891
+    ],
+    [
+     35.65278,
+     -79.176
+    ],
+    [
+     35.5827,
+     -79.19525
+    ],
+    [
+     35.51012,
+     -79.19
+    ],
+    [
+     35.50278,
+     -79.15089
+    ],
+    [
+     35.46805,
+     -79.11822
+    ],
+    [
+     35.43164,
+     -79.12304
+    ],
+    [
+     35.39116,
+     -79.10767
+    ],
+    [
+     35.3522,
+     -79.10893
+    ],
+    [
+     35.27847,
+     -79.0726
+    ],
+    [
+     35.2495,
+     -79.02506
+    ],
+    [
+     35.12342,
+     -78.94065
+    ],
+    [
+     35.10201,
+     -79.02183
+    ],
+    [
+     35.05365,
+     -79.02327
+    ],
+    [
+     35.03073,
+     -79.0373
+    ],
+    [
+     34.97093,
+     -79.03993
+    ],
+    [
+     34.96205,
+     -78.99749
+    ],
+    [
+     34.93674,
+     -78.99418
+    ],
+    [
+     34.90037,
+     -78.95871
+    ],
+    [
+     34.79168,
+     -78.99443
+    ],
+    [
+     34.69362,
+     -78.99877
+    ],
+    [
+     34.64358,
+     -79.01495
+    ],
+    [
+     34.55325,
+     -79.19496
+    ],
+    [
+     34.52643,
+     -79.27174
+    ],
+    [
+     34.49195,
+     -79.3285
+    ],
+    [
+     34.44769,
+     -79.36372
+    ],
+    [
+     34.34098,
+     -79.53666
+    ],
+    [
+     34.26828,
+     -79.70551
+    ],
+    [
+     34.26351,
+     -79.7442
+    ],
+    [
+     34.21015,
+     -79.82908
+    ],
+    [
+     34.17949,
+     -79.86313
+    ],
+    [
+     34.13889,
+     -79.88057
+    ],
+    [
+     34.05768,
+     -79.96978
+    ],
+    [
+     34.00645,
+     -80.00137
+    ],
+    [
+     33.97664,
+     -80.03832
+    ],
+    [
+     33.75451,
+     -80.18376
+    ],
+    [
+     33.69926,
+     -80.25056
+    ],
+    [
+     33.64147,
+     -80.28042
+    ],
+    [
+     33.60012,
+     -80.32846
+    ],
+    [
+     33.56601,
+     -80.39088
+    ],
+    [
+     33.49417,
+     -80.46661
+    ],
+    [
+     33.12665,
+     -80.63978
+    ],
+    [
+     33.04737,
+     -80.66951
+    ],
+    [
+     32.95972,
+     -80.67922
+    ],
+    [
+     32.87937,
+     -80.71803
+    ],
+    [
+     32.90183,
+     -80.66271
+    ],
+    [
+     32.87937,
+     -80.71803
+    ],
+    [
+     32.79207,
+     -80.77711
+    ],
+    [
+     32.69408,
+     -80.87896
+    ],
+    [
+     32.63014,
+     -80.88241
+    ],
+    [
+     32.57079,
+     -80.93886
+    ],
+    [
+     32.50406,
+     -80.97112
+    ],
+    [
+     32.47735,
+     -80.97154
+    ],
+    [
+     32.41428,
+     -81.01266
+    ],
+    [
+     32.28504,
+     -81.06843
+    ],
+    [
+     32.25663,
+     -81.10083
+    ],
+    [
+     32.25219,
+     -81.12811
+    ],
+    [
+     32.22632,
+     -81.16445
+    ],
+    [
+     32.15185,
+     -81.23838
+    ],
+    [
+     32.09144,
+     -81.23752
+    ],
+    [
+     32.00984,
+     -81.27896
+    ],
+    [
+     31.95342,
+     -81.33498
+    ],
+    [
+     31.92556,
+     -81.33084
+    ],
+    [
+     31.82798,
+     -81.49187
+    ],
+    [
+     31.82263,
+     -81.52047
+    ],
+    [
+     31.85897,
+     -81.56351
+    ],
+    [
+     31.84861,
+     -81.58956
+    ],
+    [
+     31.78559,
+     -81.61087
+    ],
+    [
+     31.66334,
+     -81.84599
+    ],
+    [
+     31.60265,
+     -81.8907
+    ],
+    [
+     31.60502,
+     -81.91895
+    ],
+    [
+     31.5908,
+     -81.95128
+    ],
+    [
+     31.49602,
+     -82.00642
+    ],
+    [
+     31.23019,
+     -82.33304
+    ],
+    [
+     31.20403,
+     -82.33446
+    ],
+    [
+     31.12988,
+     -82.26677
+    ],
+    [
+     31.05762,
+     -82.27243
+    ],
+    [
+     31.13005,
+     -82.2666
+    ],
+    [
+     31.20012,
+     -82.32668
+    ],
+    [
+     31.20875,
+     -82.38382
+    ],
+    [
+     31.19208,
+     -82.38427
+    ],
+    [
+     31.15853,
+     -82.426
+    ],
+    [
+     31.04072,
+     -82.7353
+    ],
+    [
+     31.00922,
+     -82.85008
+    ],
+    [
+     30.9888,
+     -82.87081
+    ],
+    [
+     30.79925,
+     -83.37025
+    ],
+    [
+     30.78492,
+     -83.62306
+    ],
+    [
+     30.79887,
+     -83.80646
+    ],
+    [
+     30.83499,
+     -83.93568
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9583,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": false,
+   "arrives_next_day": false
+  },
+  "fallline-two-big": {
+   "label": "Fall line: zoo and mounds",
+   "stops": [
+    "zoo",
+    "ocmulgee"
+   ],
+   "legs_s": [
+    13372.109,
+    11628.397,
+    9407.483
+   ],
+   "total_s": 34407.99,
+   "miles": 588.6,
+   "detour_s": 3093.931999999997,
+   "dwell_total_min": 165.0,
+   "cost_usd": 105.8,
+   "depart_h": 5.3,
+   "depart": "05:18",
+   "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+   "arrive_h": 17.6078,
+   "arrive": "17:36",
+   "days_spanned": 0,
+   "elapsed_s": 44307.99,
+   "schedule": [
+    {
+     "stop": "zoo",
+     "arrive": "09:01",
+     "arrive_h": 9.0145,
+     "arrive_origin_clock": "09:01",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 13372.109,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Zoo and botanical garden",
+        "verdict": "open",
+        "detail": "open until 16:00",
+        "usable_min": 90,
+        "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "ocmulgee",
+     "arrive": "13:45",
+     "arrive_h": 13.7446,
+     "arrive_origin_clock": "13:45",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 75.0,
+     "leg_s": 11628.397,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Mounds and walking trails",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 75,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       },
+       {
+        "name": "Visitor centre and Earth Lodge",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 75,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07289,
+     -79.15986
+    ],
+    [
+     36.07941,
+     -79.22478
+    ],
+    [
+     36.05995,
+     -79.39889
+    ],
+    [
+     36.06946,
+     -79.48474
+    ],
+    [
+     36.05747,
+     -79.70859
+    ],
+    [
+     36.04598,
+     -79.77067
+    ],
+    [
+     36.00125,
+     -79.85993
+    ],
+    [
+     35.98138,
+     -79.88835
+    ],
+    [
+     35.94036,
+     -79.90641
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.78963,
+     -80.22843
+    ],
+    [
+     35.77004,
+     -80.32886
+    ],
+    [
+     35.72307,
+     -80.38672
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.64969,
+     -80.47162
+    ],
+    [
+     35.5819,
+     -80.5525
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45101,
+     -80.59717
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28439,
+     -80.77556
+    ],
+    [
+     35.27568,
+     -80.84452
+    ],
+    [
+     35.25845,
+     -80.84138
+    ],
+    [
+     35.20266,
+     -80.88053
+    ],
+    [
+     35.15082,
+     -80.89434
+    ],
+    [
+     35.05919,
+     -80.95719
+    ],
+    [
+     34.97894,
+     -80.98838
+    ],
+    [
+     34.93512,
+     -80.97144
+    ],
+    [
+     34.8313,
+     -81.03074
+    ],
+    [
+     34.78543,
+     -81.0389
+    ],
+    [
+     34.64264,
+     -81.02867
+    ],
+    [
+     34.45317,
+     -80.99232
+    ],
+    [
+     34.32327,
+     -81.00625
+    ],
+    [
+     34.24362,
+     -80.99988
+    ],
+    [
+     34.16199,
+     -80.96499
+    ],
+    [
+     34.09311,
+     -80.95554
+    ],
+    [
+     34.05285,
+     -80.9937
+    ],
+    [
+     34.02804,
+     -81.03744
+    ],
+    [
+     34.01489,
+     -81.03423
+    ],
+    [
+     34.00748,
+     -81.07346
+    ],
+    [
+     34.03849,
+     -81.11098
+    ],
+    [
+     33.98931,
+     -81.18911
+    ],
+    [
+     33.96902,
+     -81.2004
+    ],
+    [
+     33.88194,
+     -81.37539
+    ],
+    [
+     33.78504,
+     -81.4831
+    ],
+    [
+     33.68321,
+     -81.62339
+    ],
+    [
+     33.63778,
+     -81.7452
+    ],
+    [
+     33.62531,
+     -81.81725
+    ],
+    [
+     33.55027,
+     -81.95432
+    ],
+    [
+     33.49443,
+     -82.08514
+    ],
+    [
+     33.47269,
+     -82.08604
+    ],
+    [
+     33.42285,
+     -82.06077
+    ],
+    [
+     33.40246,
+     -82.10842
+    ],
+    [
+     33.33849,
+     -82.156
+    ],
+    [
+     33.30832,
+     -82.20003
+    ],
+    [
+     33.29039,
+     -82.28137
+    ],
+    [
+     33.24758,
+     -82.3256
+    ],
+    [
+     33.21542,
+     -82.38341
+    ],
+    [
+     33.19063,
+     -82.40045
+    ],
+    [
+     33.15685,
+     -82.45763
+    ],
+    [
+     33.13787,
+     -82.53275
+    ],
+    [
+     33.11431,
+     -82.56276
+    ],
+    [
+     33.04797,
+     -82.59937
+    ],
+    [
+     33.02556,
+     -82.63942
+    ],
+    [
+     33.01231,
+     -82.72315
+    ],
+    [
+     32.99372,
+     -82.77086
+    ],
+    [
+     33.00399,
+     -82.80412
+    ],
+    [
+     32.99293,
+     -82.84813
+    ],
+    [
+     32.97262,
+     -82.87497
+    ],
+    [
+     32.97123,
+     -82.93997
+    ],
+    [
+     32.95944,
+     -82.98001
+    ],
+    [
+     32.97814,
+     -83.0499
+    ],
+    [
+     33.04127,
+     -83.129
+    ],
+    [
+     33.03018,
+     -83.18013
+    ],
+    [
+     32.98156,
+     -83.20828
+    ],
+    [
+     32.95227,
+     -83.24482
+    ],
+    [
+     32.93773,
+     -83.28921
+    ],
+    [
+     32.90073,
+     -83.3003
+    ],
+    [
+     32.90098,
+     -83.35258
+    ],
+    [
+     32.85787,
+     -83.38192
+    ],
+    [
+     32.8481,
+     -83.42324
+    ],
+    [
+     32.8565,
+     -83.50314
+    ],
+    [
+     32.83999,
+     -83.57892
+    ],
+    [
+     32.84877,
+     -83.60229
+    ],
+    [
+     32.83848,
+     -83.60272
+    ],
+    [
+     32.84878,
+     -83.60218
+    ],
+    [
+     32.84043,
+     -83.61966
+    ],
+    [
+     32.85418,
+     -83.64088
+    ],
+    [
+     32.79932,
+     -83.66052
+    ],
+    [
+     32.74152,
+     -83.72084
+    ],
+    [
+     32.67462,
+     -83.74456
+    ],
+    [
+     32.47882,
+     -83.74251
+    ],
+    [
+     32.34524,
+     -83.76895
+    ],
+    [
+     32.23851,
+     -83.74018
+    ],
+    [
+     32.11296,
+     -83.76282
+    ],
+    [
+     32.03804,
+     -83.76391
+    ],
+    [
+     31.92874,
+     -83.74666
+    ],
+    [
+     31.80848,
+     -83.7069
+    ],
+    [
+     31.61591,
+     -83.56812
+    ],
+    [
+     31.5148,
+     -83.51568
+    ],
+    [
+     31.48469,
+     -83.51598
+    ],
+    [
+     31.46616,
+     -83.52967
+    ],
+    [
+     31.39412,
+     -83.53756
+    ],
+    [
+     31.30737,
+     -83.63766
+    ],
+    [
+     31.28766,
+     -83.6783
+    ],
+    [
+     31.26431,
+     -83.68976
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9552,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "fallline-gentler": {
+   "label": "Fall line: zoo, swamp and mounds",
+   "stops": [
+    "zoo",
+    "phinizy",
+    "ocmulgee"
+   ],
+   "legs_s": [
+    13372.109,
+    4808.753,
+    7816.187,
+    9407.483
+   ],
+   "total_s": 35404.534,
+   "miles": 594.1,
+   "detour_s": 4090.4759999999987,
+   "dwell_total_min": 185.0,
+   "cost_usd": 105.8,
+   "depart_h": 5.3,
+   "depart": "05:18",
+   "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+   "arrive_h": 18.2179,
+   "arrive": "18:13",
+   "days_spanned": 0,
+   "elapsed_s": 46504.534,
+   "schedule": [
+    {
+     "stop": "zoo",
+     "arrive": "09:01",
+     "arrive_h": 9.0145,
+     "arrive_origin_clock": "09:01",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 13372.109,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Zoo and botanical garden",
+        "verdict": "open",
+        "detail": "open until 16:00",
+        "usable_min": 90,
+        "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "phinizy",
+     "arrive": "11:51",
+     "arrive_h": 11.8502,
+     "arrive_origin_clock": "11:51",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 35.0,
+     "leg_s": 4808.753,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Boardwalks and 14 mi of trails",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 35,
+        "url": "https://phinizycenter.org/location-contact/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "ocmulgee",
+     "arrive": "14:36",
+     "arrive_h": 14.6047,
+     "arrive_origin_clock": "14:36",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 60.0,
+     "leg_s": 7816.187,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Mounds and walking trails",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 60,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       },
+       {
+        "name": "Visitor centre and Earth Lodge",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 60,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07289,
+     -79.15986
+    ],
+    [
+     36.05747,
+     -79.70859
+    ],
+    [
+     36.04598,
+     -79.77067
+    ],
+    [
+     36.00125,
+     -79.85993
+    ],
+    [
+     35.94036,
+     -79.90641
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.78963,
+     -80.22843
+    ],
+    [
+     35.77004,
+     -80.32886
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.5819,
+     -80.5525
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45101,
+     -80.59717
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28439,
+     -80.77556
+    ],
+    [
+     35.27568,
+     -80.84452
+    ],
+    [
+     35.15082,
+     -80.89434
+    ],
+    [
+     35.05919,
+     -80.95719
+    ],
+    [
+     34.97894,
+     -80.98838
+    ],
+    [
+     34.93512,
+     -80.97144
+    ],
+    [
+     34.78543,
+     -81.0389
+    ],
+    [
+     34.45317,
+     -80.99232
+    ],
+    [
+     34.24362,
+     -80.99988
+    ],
+    [
+     34.09311,
+     -80.95554
+    ],
+    [
+     34.02804,
+     -81.03744
+    ],
+    [
+     34.01489,
+     -81.03423
+    ],
+    [
+     34.00748,
+     -81.07346
+    ],
+    [
+     34.03849,
+     -81.11098
+    ],
+    [
+     33.96902,
+     -81.2004
+    ],
+    [
+     33.88194,
+     -81.37539
+    ],
+    [
+     33.68344,
+     -81.62299
+    ],
+    [
+     33.62574,
+     -81.81614
+    ],
+    [
+     33.56935,
+     -81.92462
+    ],
+    [
+     33.49883,
+     -81.93888
+    ],
+    [
+     33.465,
+     -81.92472
+    ],
+    [
+     33.4073,
+     -81.98856
+    ],
+    [
+     33.38556,
+     -81.96355
+    ],
+    [
+     33.39167,
+     -81.97483
+    ],
+    [
+     33.37276,
+     -81.97718
+    ],
+    [
+     33.37307,
+     -82.03193
+    ],
+    [
+     33.32404,
+     -82.06127
+    ],
+    [
+     33.31066,
+     -82.10736
+    ],
+    [
+     33.31801,
+     -82.1601
+    ],
+    [
+     33.29062,
+     -82.28093
+    ],
+    [
+     33.17773,
+     -82.42109
+    ],
+    [
+     33.13706,
+     -82.53389
+    ],
+    [
+     33.04797,
+     -82.59937
+    ],
+    [
+     33.02556,
+     -82.63942
+    ],
+    [
+     32.95944,
+     -82.98001
+    ],
+    [
+     32.97814,
+     -83.0499
+    ],
+    [
+     33.04127,
+     -83.129
+    ],
+    [
+     33.03018,
+     -83.18013
+    ],
+    [
+     32.98156,
+     -83.20828
+    ],
+    [
+     32.93773,
+     -83.28921
+    ],
+    [
+     32.90073,
+     -83.3003
+    ],
+    [
+     32.90098,
+     -83.35258
+    ],
+    [
+     32.85787,
+     -83.38192
+    ],
+    [
+     32.83848,
+     -83.60272
+    ],
+    [
+     32.85418,
+     -83.64088
+    ],
+    [
+     32.79932,
+     -83.66052
+    ],
+    [
+     32.74152,
+     -83.72084
+    ],
+    [
+     32.67462,
+     -83.74456
+    ],
+    [
+     32.47882,
+     -83.74251
+    ],
+    [
+     32.34524,
+     -83.76895
+    ],
+    [
+     32.23851,
+     -83.74018
+    ],
+    [
+     32.03804,
+     -83.76391
+    ],
+    [
+     31.80848,
+     -83.7069
+    ],
+    [
+     31.61591,
+     -83.56812
+    ],
+    [
+     31.48469,
+     -83.51598
+    ],
+    [
+     31.39412,
+     -83.53756
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9719,
+   "rdp_epsilon_used": 0.01024,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "fallline-indoors": {
+   "label": "Fall line: indoors in Charlotte, if it rains",
+   "stops": [
+    "discovery",
+    "ocmulgee"
+   ],
+   "legs_s": [
+    8022.089,
+    16442.228,
+    9407.483
+   ],
+   "total_s": 33871.801,
+   "miles": 586.4,
+   "detour_s": 2557.7429999999986,
+   "dwell_total_min": 150.0,
+   "cost_usd": 0.0,
+   "depart_h": 6.75,
+   "depart": "06:45",
+   "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+   "arrive_h": 18.6588,
+   "arrive": "18:40",
+   "days_spanned": 0,
+   "elapsed_s": 42871.801,
+   "schedule": [
+    {
+     "stop": "discovery",
+     "arrive": "08:59",
+     "arrive_h": 8.9784,
+     "arrive_origin_clock": "08:59",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 8022.089,
+     "hours": {
+      "rollup": "opens-during",
+      "facilities": [
+       {
+        "name": "Museum galleries (fully indoor)",
+        "verdict": "opens",
+        "detail": "opens 09:00, 1 min into the halt (89 min usable)",
+        "usable_min": 89,
+        "url": "https://www.discoveryplace.org/science/visit",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "ocmulgee",
+     "arrive": "15:03",
+     "arrive_h": 15.0456,
+     "arrive_origin_clock": "15:03",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 60.0,
+     "leg_s": 16442.228,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Mounds and walking trails",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 60,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       },
+       {
+        "name": "Visitor centre and Earth Lodge",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 60,
+        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "status": "standing"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [
+    "discovery"
+   ],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07289,
+     -79.15986
+    ],
+    [
+     36.07941,
+     -79.22478
+    ],
+    [
+     36.05995,
+     -79.39889
+    ],
+    [
+     36.06946,
+     -79.48474
+    ],
+    [
+     36.05747,
+     -79.70859
+    ],
+    [
+     36.04598,
+     -79.77067
+    ],
+    [
+     36.00125,
+     -79.85993
+    ],
+    [
+     35.98138,
+     -79.88835
+    ],
+    [
+     35.94036,
+     -79.90641
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.78963,
+     -80.22843
+    ],
+    [
+     35.77004,
+     -80.32886
+    ],
+    [
+     35.72307,
+     -80.38672
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.64969,
+     -80.47162
+    ],
+    [
+     35.5819,
+     -80.5525
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45101,
+     -80.59717
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28439,
+     -80.77556
+    ],
+    [
+     35.27568,
+     -80.84452
+    ],
+    [
+     35.2448,
+     -80.84843
+    ],
+    [
+     35.23253,
+     -80.83554
+    ],
+    [
+     35.2372,
+     -80.85656
+    ],
+    [
+     35.21873,
+     -80.87157
+    ],
+    [
+     35.15082,
+     -80.89434
+    ],
+    [
+     35.06115,
+     -80.95632
+    ],
+    [
+     34.98037,
+     -80.98805
+    ],
+    [
+     34.93512,
+     -80.97144
+    ],
+    [
+     34.8313,
+     -81.03074
+    ],
+    [
+     34.78543,
+     -81.0389
+    ],
+    [
+     34.64264,
+     -81.02867
+    ],
+    [
+     34.45317,
+     -80.99232
+    ],
+    [
+     34.32327,
+     -81.00625
+    ],
+    [
+     34.24362,
+     -80.99988
+    ],
+    [
+     34.16199,
+     -80.96499
+    ],
+    [
+     34.09366,
+     -80.95554
+    ],
+    [
+     34.07469,
+     -80.96957
+    ],
+    [
+     34.06596,
+     -81.04027
+    ],
+    [
+     34.03491,
+     -81.11693
+    ],
+    [
+     33.98896,
+     -81.18956
+    ],
+    [
+     33.96902,
+     -81.2004
+    ],
+    [
+     33.90481,
+     -81.33776
+    ],
+    [
+     33.68293,
+     -81.62393
+    ],
+    [
+     33.63778,
+     -81.7452
+    ],
+    [
+     33.62531,
+     -81.81725
+    ],
+    [
+     33.55027,
+     -81.95432
+    ],
+    [
+     33.49443,
+     -82.08514
+    ],
+    [
+     33.47269,
+     -82.08604
+    ],
+    [
+     33.42285,
+     -82.06077
+    ],
+    [
+     33.40246,
+     -82.10842
+    ],
+    [
+     33.33849,
+     -82.156
+    ],
+    [
+     33.30832,
+     -82.20003
+    ],
+    [
+     33.29039,
+     -82.28137
+    ],
+    [
+     33.24758,
+     -82.3256
+    ],
+    [
+     33.21542,
+     -82.38341
+    ],
+    [
+     33.19063,
+     -82.40045
+    ],
+    [
+     33.15685,
+     -82.45763
+    ],
+    [
+     33.13787,
+     -82.53275
+    ],
+    [
+     33.11431,
+     -82.56276
+    ],
+    [
+     33.04858,
+     -82.59881
+    ],
+    [
+     33.03066,
+     -82.62796
+    ],
+    [
+     32.99372,
+     -82.77086
+    ],
+    [
+     33.00399,
+     -82.80412
+    ],
+    [
+     32.99293,
+     -82.84813
+    ],
+    [
+     32.97262,
+     -82.87497
+    ],
+    [
+     32.97123,
+     -82.93997
+    ],
+    [
+     32.95944,
+     -82.97976
+    ],
+    [
+     32.97814,
+     -83.0499
+    ],
+    [
+     33.04127,
+     -83.129
+    ],
+    [
+     33.03018,
+     -83.18013
+    ],
+    [
+     32.98156,
+     -83.20828
+    ],
+    [
+     32.95227,
+     -83.24482
+    ],
+    [
+     32.93773,
+     -83.28921
+    ],
+    [
+     32.90073,
+     -83.3003
+    ],
+    [
+     32.90098,
+     -83.35258
+    ],
+    [
+     32.85787,
+     -83.38192
+    ],
+    [
+     32.8481,
+     -83.42324
+    ],
+    [
+     32.8565,
+     -83.50314
+    ],
+    [
+     32.83999,
+     -83.57892
+    ],
+    [
+     32.84877,
+     -83.60229
+    ],
+    [
+     32.83848,
+     -83.60272
+    ],
+    [
+     32.84878,
+     -83.60218
+    ],
+    [
+     32.84043,
+     -83.61966
+    ],
+    [
+     32.85418,
+     -83.64088
+    ],
+    [
+     32.79932,
+     -83.66052
+    ],
+    [
+     32.74152,
+     -83.72084
+    ],
+    [
+     32.67462,
+     -83.74456
+    ],
+    [
+     32.47882,
+     -83.74251
+    ],
+    [
+     32.34524,
+     -83.76895
+    ],
+    [
+     32.23851,
+     -83.74018
+    ],
+    [
+     32.11296,
+     -83.76282
+    ],
+    [
+     32.03804,
+     -83.76391
+    ],
+    [
+     31.92874,
+     -83.74666
+    ],
+    [
+     31.80848,
+     -83.7069
+    ],
+    [
+     31.61591,
+     -83.56812
+    ],
+    [
+     31.5148,
+     -83.51568
+    ],
+    [
+     31.48469,
+     -83.51598
+    ],
+    [
+     31.46616,
+     -83.52967
+    ],
+    [
+     31.39412,
+     -83.53756
+    ],
+    [
+     31.30737,
+     -83.63766
+    ],
+    [
+     31.28766,
+     -83.6783
+    ],
+    [
+     31.26431,
+     -83.68976
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9429,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "atlanta-two-cities": {
+   "label": "Atlanta: science museum and a big zoo",
+   "stops": [
+    "discovery",
+    "zooatl"
+   ],
+   "legs_s": [
+    8022.089,
+    13969.903,
+    13278.204
+   ],
+   "total_s": 35270.197,
+   "miles": 620.0,
+   "detour_s": 3956.138999999999,
+   "dwell_total_min": 180.0,
+   "cost_usd": 0.0,
+   "depart_h": 6.75,
+   "depart": "06:45",
+   "corridor": "Atlanta - I-85 the whole way, then I-75",
+   "arrive_h": 19.5473,
+   "arrive": "19:33",
+   "days_spanned": 0,
+   "elapsed_s": 46070.197,
+   "schedule": [
+    {
+     "stop": "discovery",
+     "arrive": "08:59",
+     "arrive_h": 8.9784,
+     "arrive_origin_clock": "08:59",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 80.0,
+     "leg_s": 8022.089,
+     "hours": {
+      "rollup": "opens-during",
+      "facilities": [
+       {
+        "name": "Museum galleries (fully indoor)",
+        "verdict": "opens",
+        "detail": "opens 09:00, 1 min into the halt (79 min usable)",
+        "usable_min": 79,
+        "url": "https://www.discoveryplace.org/science/visit",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "zooatl",
+     "arrive": "14:12",
+     "arrive_h": 14.1922,
+     "arrive_origin_clock": "14:12",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 100.0,
+     "leg_s": 13969.903,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Zoo grounds",
+        "verdict": "open",
+        "detail": "open until 17:00, last entry 15:30",
+        "usable_min": 100,
+        "url": "https://zooatlanta.org/visit/",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [
+    "discovery"
+   ],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07305,
+     -79.16069
+    ],
+    [
+     36.07941,
+     -79.22478
+    ],
+    [
+     36.05995,
+     -79.39889
+    ],
+    [
+     36.06946,
+     -79.48437
+    ],
+    [
+     36.05983,
+     -79.68512
+    ],
+    [
+     36.03263,
+     -79.80517
+    ],
+    [
+     35.98478,
+     -79.88494
+    ],
+    [
+     35.94078,
+     -79.90593
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.80466,
+     -80.1898
+    ],
+    [
+     35.76344,
+     -80.33771
+    ],
+    [
+     35.72213,
+     -80.38757
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.64969,
+     -80.47162
+    ],
+    [
+     35.5819,
+     -80.5525
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45101,
+     -80.59717
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28439,
+     -80.77556
+    ],
+    [
+     35.27568,
+     -80.84452
+    ],
+    [
+     35.22878,
+     -80.84084
+    ],
+    [
+     35.24397,
+     -80.84576
+    ],
+    [
+     35.26216,
+     -80.87847
+    ],
+    [
+     35.23813,
+     -80.91749
+    ],
+    [
+     35.25784,
+     -80.9972
+    ],
+    [
+     35.26555,
+     -81.13746
+    ],
+    [
+     35.2838,
+     -81.17231
+    ],
+    [
+     35.28564,
+     -81.2023
+    ],
+    [
+     35.25997,
+     -81.28555
+    ],
+    [
+     35.17306,
+     -81.42299
+    ],
+    [
+     35.11128,
+     -81.58527
+    ],
+    [
+     35.07269,
+     -81.75827
+    ],
+    [
+     35.01188,
+     -81.9093
+    ],
+    [
+     35.01236,
+     -81.97611
+    ],
+    [
+     34.98065,
+     -82.00451
+    ],
+    [
+     34.95894,
+     -82.05812
+    ],
+    [
+     34.90408,
+     -82.12332
+    ],
+    [
+     34.85336,
+     -82.27497
+    ],
+    [
+     34.80373,
+     -82.35201
+    ],
+    [
+     34.78335,
+     -82.45323
+    ],
+    [
+     34.69383,
+     -82.50518
+    ],
+    [
+     34.60854,
+     -82.63181
+    ],
+    [
+     34.52201,
+     -82.8579
+    ],
+    [
+     34.49974,
+     -82.99717
+    ],
+    [
+     34.46366,
+     -83.09073
+    ],
+    [
+     34.32588,
+     -83.36128
+    ],
+    [
+     34.23097,
+     -83.49754
+    ],
+    [
+     34.13374,
+     -83.67894
+    ],
+    [
+     34.12605,
+     -83.73959
+    ],
+    [
+     34.08689,
+     -83.84463
+    ],
+    [
+     34.05104,
+     -84.01915
+    ],
+    [
+     34.01847,
+     -84.06278
+    ],
+    [
+     33.96727,
+     -84.09682
+    ],
+    [
+     33.9052,
+     -84.23783
+    ],
+    [
+     33.84199,
+     -84.30846
+    ],
+    [
+     33.79891,
+     -84.39258
+    ],
+    [
+     33.75606,
+     -84.37863
+    ],
+    [
+     33.74438,
+     -84.38989
+    ],
+    [
+     33.7428,
+     -84.36814
+    ],
+    [
+     33.71382,
+     -84.36858
+    ],
+    [
+     33.70415,
+     -84.3496
+    ],
+    [
+     33.66731,
+     -84.34037
+    ],
+    [
+     33.6701,
+     -84.32763
+    ],
+    [
+     33.62851,
+     -84.29988
+    ],
+    [
+     33.54155,
+     -84.2697
+    ],
+    [
+     33.49587,
+     -84.22206
+    ],
+    [
+     33.44133,
+     -84.19511
+    ],
+    [
+     33.40356,
+     -84.15329
+    ],
+    [
+     33.35309,
+     -84.12517
+    ],
+    [
+     33.27696,
+     -84.10586
+    ],
+    [
+     33.14694,
+     -84.03062
+    ],
+    [
+     33.12298,
+     -84.00527
+    ],
+    [
+     33.08646,
+     -83.99558
+    ],
+    [
+     32.98393,
+     -83.8341
+    ],
+    [
+     32.90963,
+     -83.79367
+    ],
+    [
+     32.83174,
+     -83.73284
+    ],
+    [
+     32.75764,
+     -83.71102
+    ],
+    [
+     32.6738,
+     -83.74468
+    ],
+    [
+     32.47882,
+     -83.74251
+    ],
+    [
+     32.34674,
+     -83.76895
+    ],
+    [
+     32.23969,
+     -83.74015
+    ],
+    [
+     32.11098,
+     -83.76301
+    ],
+    [
+     31.92994,
+     -83.74689
+    ],
+    [
+     31.80709,
+     -83.70619
+    ],
+    [
+     31.61667,
+     -83.5686
+    ],
+    [
+     31.51322,
+     -83.51527
+    ],
+    [
+     31.39481,
+     -83.53701
+    ],
+    [
+     31.30737,
+     -83.63766
+    ],
+    [
+     31.28766,
+     -83.6783
+    ],
+    [
+     31.26431,
+     -83.68976
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9735,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  }
+ },
+ "bbox": {
+  "min_lat": 30.78492,
+  "max_lat": 36.07941,
+  "min_lon": -84.39258,
+  "max_lon": -78.94065
+ },
+ "assumptions": {
+  "depart_h": 8.0,
+  "date": "2026-11-25",
+  "utc_offset": -5.0,
+  "dwell_source": "spec stops[].dwell_min, per-option overrides"
+ }
+}

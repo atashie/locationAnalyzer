@@ -1,0 +1,30 @@
+{
+ "corridors_bare": {
+  "coastal": {
+   "detour_s": -6.941999999999098,
+   "miles": 539.7136
+  },
+  "fall_line": {
+   "detour_s": 2408.311999999998,
+   "miles": 588.11
+  },
+  "atlanta": {
+   "detour_s": 3648.1730000000025,
+   "miles": 623.6435
+  },
+  "jacksonville": {
+   "detour_s": 4091.627999999997,
+   "miles": 633.03
+  }
+ },
+ "stop_detour_by_corridor": {
+  "riverbanks_off_coastal_s": 2760,
+  "congaree_any_corridor_s": 9900,
+  "santee_off_coastal_s": 360
+ },
+ "corridor_mileage": {
+  "i95_southbound_mi": 262,
+  "i85_through_atlanta_mi": 321
+ },
+ "note": "corridor figures measured bare (no stops), forced through each corridor's cities"
+}
