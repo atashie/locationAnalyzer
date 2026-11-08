@@ -157,7 +157,22 @@ See `.env.example` for all configuration options. Key variables:
 
 ## Documentation
 
-Project documentation is maintained in the following files. Update these after major milestones and significant additions.
+**Write it down in git, never only in the session or in `~/.claude/projects/`.** Anything worth
+knowing later — a decision, a measurement, a method that failed, an environment quirk, a setup
+step — goes in a tracked file and is committed. The per-project memory store is machine-local:
+it does not survive a clone, does not reach a second machine, and cannot be reviewed in a diff.
+Treat it as a cache of what is already in git, not as the place knowledge lives.
+
+Concretely, when finishing a piece of work:
+
+- Durable lessons and decisions → `docs/engineering-notes/` (one note per idea, dated, with
+  the evidence that produced it).
+- What changed and why → the commit message. Long-form reasoning belongs there, not in chat.
+- Anything needed to **rebuild a published artifact** → committed alongside it. The spec and
+  generator for one live page once existed only in a session temp directory, one cleanup away
+  from unrecoverable.
+- Behavioural rules for a workflow → the relevant `SKILL.md`, so they load with the task, and
+  encoded in a tool or test wherever a rule alone has already failed to hold.
 
 | Document | Description |
 |----------|-------------|
@@ -166,3 +181,5 @@ Project documentation is maintained in the following files. Update these after m
 | [changelog.md](./changelog.md) | Version history and release notes |
 | [project_status.md](./project_status.md) | Current progress, completed tasks, and next steps |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Step-by-step deployment guide for Railway and Vercel |
+| [docs/engineering-notes/](./docs/engineering-notes/) | Working notes: decisions, failed methods, environment facts. Migrated out of the memory store so they travel with a clone. |
+| [skills/README.md](./skills/README.md) | Version-controlled Claude Code skills, and how to link them on a new machine |
