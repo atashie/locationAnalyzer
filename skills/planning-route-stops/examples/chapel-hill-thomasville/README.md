@@ -5,6 +5,11 @@ the day before Thanksgiving. Seven itineraries across three genuinely different 
 
 Published artifact: https://claude.ai/code/artifact/bc120a95-023a-4184-81da-b12cebebe9b9
 
+Source of that page: `github.com/atashie/locationAnalyzer`, branch `master`, at
+`skills/planning-route-stops/examples/chapel-hill-thomasville/`. The page states this in its own
+provenance footer, so the artifact URL on its own is enough to find this directory — which was
+not true of the first version, and a session on another machine stalled on exactly that.
+
 ## What is here, and why each file matters
 
 | File | Regenerable? | What it holds |

@@ -6,6 +6,29 @@ Personal Claude Code skills, version-controlled here. Everything is on `master`.
 |---|---|
 | `planning-route-stops` | Choosing where to stop along a journey. Holds provenance, recomputation and verification status in place; does not teach travel knowledge. Ships two measuring tools, a self-test, a doc checker and a complete worked trip. |
 
+## Which repository this is
+
+```bash
+git clone https://github.com/atashie/locationAnalyzer.git
+```
+
+Branch `master`, path `skills/`. **The repo is `locationAnalyzer`.** Nothing else on the
+account is, however much it looks like it:
+
+| Looks like the right place | What it actually is |
+|---|---|
+| `atashie/distanceFinder` | A separate repo holding a small Streamlit location PoC. No skills, no trips. |
+| `distanceFinder/` inside *this* repo | The same PoC, kept for history. Six files, also not the skill. |
+| `atashie/cc-skills` | A genuine Claude Code plugin repo — but it carries `html-review-comments` and nothing else. |
+
+A local checkout of this repo is usually named `distancefinder`, and the app calls itself
+Distance Finder, so the collision is easy to walk into. It has been walked into: a session on a
+second machine pulled `distanceFinder`, found a Streamlit app, reported the route work missing
+and declined to touch the published page. It was on `master` here the whole time.
+
+If you have only a published page and need its source, the page says so in its own footer —
+every page this skill generates names the repo and path that built it.
+
 ## Setting up on a new machine
 
 Claude Code only sees a skill at `~/.claude/skills/<name>`. Link that path into this checkout,

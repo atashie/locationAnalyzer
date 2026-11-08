@@ -11,6 +11,15 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 ## Repository
 
 - **GitHub:** git@github.com:atashie/locationAnalyzer.git
+- **Default branch:** `master`
+
+**The repo is `locationAnalyzer`, whatever the local folder is called.** Checkouts are usually
+named `distancefinder`, and three other things answer to that name without being this:
+`atashie/distanceFinder` is a separate repo holding an old Streamlit PoC, `distanceFinder/` in
+this tree is that same PoC kept for history, and `atashie/cc-skills` is a real skills repo that
+does not contain this project's skills. A session on a second machine pulled the wrong one and
+reported committed work as missing — if something documented here looks absent, confirm the
+remote before concluding anything is lost.
 
 ## Production URLs
 

@@ -14,6 +14,7 @@ Checks:
   * every spec field the prose promises is actually read by the tool
   * the rule count in the heading matches the numbered headings
   * figures quoted about the worked example match its JSON, where one is given
+  * a worked example's page generator names the repo that built it
   * selftest.py passes
 """
 import io
@@ -90,6 +91,23 @@ def main(example_dir=None):
                     problems.append(
                         f"worked example reports {label} = {val}; that figure appears "
                         f"nowhere in the prose (stale number likely)")
+
+        # A published page is the only copy that travels. One session was handed the live URL,
+        # rebuilt the routing and the projection from the page alone, then declined to change
+        # anything because nothing on the page said where its spec and generator lived.
+        gen_path = os.path.join(example_dir, "build_page.py")
+        if os.path.exists(gen_path):
+            gen = io.open(gen_path, encoding="utf-8").read()
+            if "<strong>Source</strong>" not in gen:
+                problems.append("build_page.py emits no Source provenance block; a page that "
+                                "does not name its own repo cannot be picked up elsewhere")
+            else:
+                if not re.search(r"github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", gen):
+                    problems.append("build_page.py has a Source block that names no "
+                                    "github.com/<owner>/<repo>")
+                if "republish" not in gen.lower():
+                    problems.append("build_page.py Source block never says to republish to the "
+                                    "same URL; publishing without it forks the artifact")
 
     rc = subprocess.run([sys.executable, os.path.join(HERE, "selftest.py")],
                         capture_output=True, text=True)

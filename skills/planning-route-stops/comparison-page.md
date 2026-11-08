@@ -278,6 +278,40 @@ The residual distortion is the equirectangular approximation itself: a single
 `cos(mean latitude)` over a 6-degree span runs about 3% small at the southern edge and 4% large
 at the northern one, or 3–4 miles per 100 east–west. Fine for orientation, not for measuring
 off the map — and worth saying rather than implying the map is metrically true.
+## The page is the only copy that travels — so name its source on it
+
+A published page outlives the session that built it, reaches machines the repo is not on, and
+gets opened by people and agents holding nothing else. Put the **repo, branch and path** into
+the page's own provenance block, beside the measurement provenance.
+
+This is not tidiness. A later session was given only the published URL and asked to change a
+route. It did the hard parts unprompted — identified the router from the page, reproduced the
+direct trip to within a minute, and recovered the map projection from the city dots to about a
+pixel. Then it stopped, and said so: with nothing on the page naming the spec and generator, it
+could not tell whether editing meant updating the source of truth or forking away from it, so
+it declined to touch the routes. Everything it wanted was committed and pushed the whole time.
+The page simply did not say where.
+
+So the provenance block carries one line more than the measurements need:
+
+```html
+<p><strong>Source</strong> &mdash; this page is generated, not written by hand. The research
+  spec, the generator and the measurements are committed in
+  <span class="n">github.com/OWNER/REPO</span> on branch <span class="n">master</span>, at
+  <span class="n">PATH/</span>. It rebuilds offline from what is committed &mdash;
+  <span class="n">python build_page.py</span> &mdash; and changes belong there, republished to
+  this same URL rather than to a new page.</p>
+```
+
+Three things earn their place in that sentence:
+
+- **The repo by name, not the project by name.** A local checkout folder, the app's own title
+  and the remote are routinely three different words, and a sibling repo may own one of them.
+  Name the one `git clone` accepts.
+- **The branch.** A reader who finds the repo and looks at the wrong branch learns nothing.
+- **Republish, don't publish.** Publishing without the existing URL creates a *second*
+  artifact, and whoever holds the old link keeps reading the old page.
+
 
 ## The checks worth running before publishing
 
@@ -298,6 +332,8 @@ for t in ("div", "ul", "li", "ol", "section", "p", "span", "svg", "g", "text"):
 assert not re.findall(r"\{[a-z_]+\}", html)
 # every verification state that should appear, does
 assert re.findall(r'class="src src-standing"', html)
+# the page names the repo that built it, or it cannot be picked up anywhere else
+assert "github.com/" in html and "republished to this same URL" in html
 ```
 
 The one that keeps paying: **count the status labels after any change to the timeline**.

@@ -20,6 +20,7 @@ note disagrees with the code, the code is right and the note needs correcting.
 
 - [`feedback-a-fixture-is-exact-only-where-you-point-it`](feedback-a-fixture-is-exact-only-where-you-point-it.md) — Four reviews defeated the same test suite by varying an axis the fixtures held constant; build the wrong implementation in the test file and name which case kills it
 - [`feedback-a-predeclared-gate-must-be-shown-reachable`](feedback-a-predeclared-gate-must-be-shown-reachable.md) — Before predeclaring a PASS/FAIL rule, compute whether the best possible observation passes it at the predeclared sample size; choose n by failure tolerance, not by the zero-event bound
+- [`feedback-a-published-page-must-name-its-source`](feedback-a-published-page-must-name-its-source.md) — A published artifact is the only copy that reaches other machines; if it does not name the repo, branch and path that built it, a later session can reproduce everything and still refuse to edit it
 - [`feedback-a-relative-invariant-cannot-see-an-absence`](feedback-a-relative-invariant-cannot-see-an-absence.md) — A relative invariant cannot see an absence, a positional truncation, or a defect only far from the origin; three reviews defeated the same layer this way, and five of my replacement checks rejected correct code
 - [`feedback-a-skill-can-subtract`](feedback-a-skill-can-subtract.md) — Writing a skill against a list of observed failures makes everything the list omits invisible - output shape, who decides - and a rule that rewards reporting failures makes fabricated failures profitable
 - [`feedback-autonomous-work-style`](feedback-autonomous-work-style.md) — Work iteratively and autonomously, launch subagents freely, pause for user feedback only when absolutely necessary; branch and commit freely but never push
@@ -46,5 +47,6 @@ note disagrees with the code, the code is right and the note needs correcting.
 ## Environment and tooling facts
 
 - [`reference-codex-runtime-quirks`](reference-codex-runtime-quirks.md) — How to invoke Codex reliably on this machine - supported models for the ChatGPT account, pass --model explicitly, put long prompts in a file, avoid big Bash heredocs
+- [`reference-repo-identity`](reference-repo-identity.md) — This work lives in atashie/locationAnalyzer on master; three other things answer to the name "distance finder" and none of them is it
 - [`reference-sibling-repos`](reference-sibling-repos.md) — Paths to sibling repos whose code the V2 rebuild may reuse (CHCCS_geospatial gridded travel times, localUpdates NL-to-spatial-SQL agent)
 

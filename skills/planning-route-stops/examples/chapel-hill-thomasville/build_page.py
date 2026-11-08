@@ -758,6 +758,13 @@ HTML = f"""<title>Three Roads South</title>
       NOAA solar position, approximate to a minute or two.</p>
     <p><strong>Standing hours, date not checked</strong> &mdash; every opening time and price, from the
       operator&rsquo;s own page except Hiott&rsquo;s Pharmacy, which is third-party only.</p>
+    <p><strong>Source</strong> &mdash; this page is generated, not written by hand. The research
+      spec, the generator and the measurements are committed in
+      <span class="n">github.com/atashie/locationAnalyzer</span> on branch
+      <span class="n">master</span>, at
+      <span class="n">skills/planning-route-stops/examples/chapel-hill-thomasville/</span>.
+      It rebuilds offline from what is committed &mdash; <span class="n">python build_page.py</span>
+      &mdash; and changes belong there, republished to this same URL rather than to a new page.</p>
   </div>
 </div>
 
