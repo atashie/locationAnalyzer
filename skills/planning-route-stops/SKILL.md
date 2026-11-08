@@ -295,6 +295,12 @@ What the page owes the reader:
 - **Suggestive copy.** "Fewest stops, earliest arrival" beats "Recommended". Describe what an
   option *is*, and let the reader conclude.
 
+**Updating a page you published before** — republish to its existing URL rather than making a
+second one, and record that URL beside the trip's inputs so a later session can find it. The
+example's README keeps its own. Everything needed to rebuild a published page must be committed
+too: the spec and the generator for one real trip lived only in a session temp directory, one
+cleanup away from being unrecoverable.
+
 ### Map mechanics
 
 **Every map carries a basemap** — political boundaries, major roads, place labels. A route drawn

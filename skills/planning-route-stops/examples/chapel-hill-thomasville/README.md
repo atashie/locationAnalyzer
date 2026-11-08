@@ -46,6 +46,17 @@ about a minute and the mirrors rate-limit, so the raw fetches are cached locally
 cp ../../basemap.py . && python basemap.py
 ```
 
+## Updating the published artifact
+
+The page is already live at the URL above. To change it, **republish to that same URL** — pass
+it as `url` to the Artifact tool. Publishing without it creates a *second* artifact rather than
+updating the first, and whoever has the old link keeps seeing the old page.
+
+The tool refuses to publish over an artifact this conversation has not read, so the sequence
+from a fresh session is: read the existing artifact by its URL, rebuild locally, then publish
+to that URL. Keep the favicon off the republish; an artifact keeps the icon it has, and a
+changed icon reads to a viewer as a different page.
+
 ## Changing the trip
 
 Everything that describes the journey lives in `spec.json`:
