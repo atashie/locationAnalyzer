@@ -105,3 +105,8 @@ cache/
 *.exe
 *.dll
 *.dylib
+
+# Claude Code local settings. Per-machine, and the remembered Bash permission
+# entries can capture whatever was typed into an approved command, including
+# credentials. .claude/settings.json (shared config) stays tracked.
+.claude/settings.local.json
