@@ -21,7 +21,10 @@ It **refuses to overwrite** an existing sheet, because a rerun would erase walke
 `--force` when you mean it. **Use `--near`**: it keeps the journeys inside one outing instead of
 scattering them over 60 km of the Triangle. The run prints the total predicted walking so the cost
 is visible before you set out (currently ~3 hours one-way over 16 rows, longest 20 minutes);
-`--max-walk-min` caps any single journey and `--per-stratum` scales the whole sheet.
+`--max-walk-min` caps any journey that **has** a finite predicted time, and `--per-stratum`
+scales the whole sheet. The three `off_network_beside_pass15min` rows have no predicted time at all,
+so they are outside that cap and outside the budget figure: adjacency bounds their distance to the
+*indexed network*, which is not a promise of a short usable walk.
 
 ## How to walk one
 
@@ -110,19 +113,31 @@ can find a real access defect but cannot establish how common one is.
 
 ## Source and licence
 
-`buildings_in_cell` is derived from **Overture Maps** building footprints, release `2026-10-21.0`,
-aggregated to counts per 100 m cell. Overture's Buildings theme in this metro draws on
-**OpenStreetMap** (ODbL 1.0), **Microsoft ML Buildings** and **Esri Community Maps** (CC BY 4.0 with
-OpenStreetMap waivers); the accepted rows here are 495,507 ODbL and 26,653 CC BY. No footprint
-geometry is reproduced in these sheets — only a count per cell — but ODbL §4.3 and CC BY both carry
-notice obligations regardless, which this section is.
+**`buildings_in_cell`** is derived from **Overture Maps** building footprints, release
+`2026-10-21.0`, aggregated to counts per 100 m cell. In this metro that theme draws on:
+
+| upstream source | rows observed | licence |
+|---|---|---|
+| OpenStreetMap | 454,012 | **ODbL 1.0** |
+| Microsoft ML Buildings | 360,755 | **ODbL 1.0** |
+| Esri Community Maps contributors | 26,653 | **CC BY 4.0** (with OpenStreetMap waivers) |
+
+An earlier version of this notice grouped Microsoft with Esri under CC BY. That was wrong, and our
+own acquisition report says so: 454,012 + 360,755 = 814,767, exactly the ODbL count it recorded
+(pass 27). No footprint geometry is reproduced in these sheets — only a count per cell, which is the
+modification made — but ODbL §4.3 and CC BY §3 carry notice obligations regardless, which this
+section is.
+
+**The travel times** are produced by our own routing over an **OpenStreetMap** extract (ODbL 1.0).
+Running our own router does not remove the source-database notice, so OSM is credited for those too.
+The grid-centre coordinates are generated from the grid spec, and `osm_link` is an ordinary
+hyperlink.
 
 - Overture attribution: <https://docs.overturemaps.org/attribution/>
 - ODbL 1.0: <https://opendatacommons.org/licenses/odbl/1-0/>
 - CC BY 4.0: <https://creativecommons.org/licenses/by/4.0/legalcode.en>
 
-Everything else in the sheet is ours or is not licensable from a third party: the grid-centre
-coordinates are generated from the grid spec, the travel times come from our own routing over an OSM
-extract, and the `osm_link` column is an ordinary hyperlink. Whether a full count *raster* is a
-Produced Work or a derivative database has not been settled here and should be before anything
-wider than these sheets is published; see `project-v2-rethink-decisions` decision 17.
+Whether the full count *raster* is a Produced Work or a derivative database is **not settled here**,
+and should be before anything wider than these sheets is published; see
+`project-v2-rethink-decisions` decision 17. Nothing above should be read as a finding that this sheet
+breaches an obligation — only that the notice now says what it is attributing and to whom.

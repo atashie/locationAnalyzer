@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-09 12:34:38",
+ "generated": "2026-11-09 13:22:53",
  "script": "v2/scripts/audit_recommendations.py",
  "purpose": "S3 plan section 0 step 0: journeys for the owner-gated walked audit",
  "metro": "triangle",
@@ -29,9 +29,11 @@
    "horizon": {
     "max_finite_s": 7199.999,
     "gap_to_horizon_s": 0.000977,
+    "gap_scale_s": 238.1,
     "cells_cut_off": 16209,
-    "corroborated": true,
-    "basis": "a cutoff that bound leaves cells just inside it; the arrays can falsify a horizon claim but cannot verify one"
+    "plausible": true,
+    "is_a_heuristic": true,
+    "basis": "the gap below a horizon that visibly bound is weak evidence the horizon is right; the arrays can falsify a horizon claim and cannot verify one, and a sparse frontier leaves a real gap, so this is not provenance"
    }
   },
   "seconds": {
@@ -110,13 +112,15 @@
  "max_walk_min": 25.0,
  "predicted_walk": {
   "rows_with_a_finite_time": 16,
+  "rows_with_no_prediction": 3,
   "total_hours_one_way": 2.98,
-  "longest_min": 20.2
+  "longest_min": 20.2,
+  "note": "the cap and this budget cover only rows with a finite predicted time; an OFF_NETWORK row has none, and adjacency to a PASS bounds its distance to the indexed network, not the length of the walk"
  },
  "blind_spot": "The layer's aggregation is cost_selected_category: the time of the journey our cost model selected, an UPPER BOUND, not the minimum over qualifying destinations. The selected destination's identity is not stored either, so this audit establishes that some qualifying destination was open and reachable, never that ours was. Narrowing, not closing, the closed-destination blind spot that E1 and E2 share; closing it needs one bounded graph load over the sampled cells, keeping the POI-to-node association.",
  "attribution": {
-  "buildings_in_cell": "Derived from Overture Maps buildings, release 2026-10-21.0, aggregated to counts per cell. No footprint geometry is reproduced. Upstream in this metro: OpenStreetMap (ODbL 1.0), Microsoft ML Buildings and Esri Community Maps (CC BY 4.0 with OpenStreetMap waivers). ODbL 4.3 and CC BY notice obligations apply to a count raster as much as to geometry; see docs/experiments/audit/README.md and project-v2-rethink-decisions decision 17.",
-  "travel_times": "our own routing over an OpenStreetMap extract (ODbL 1.0)",
+  "buildings_in_cell": "Derived from Overture Maps buildings, release 2026-10-21.0, aggregated to counts per cell. No footprint geometry is reproduced. Upstream in this metro: OpenStreetMap (454,012 rows, ODbL 1.0), Microsoft ML Buildings (360,755 rows, ODbL 1.0 -- NOT CC BY, which an earlier version of this notice said) and Esri Community Maps contributors (26,653 rows, CC BY 4.0 with OpenStreetMap waivers). ODbL 4.3 and CC BY 3 notice obligations apply to a count raster as much as to geometry; see docs/experiments/audit/README.md and project-v2-rethink-decisions decision 17.",
+  "travel_times": "our own routing over an OpenStreetMap extract (ODbL 1.0). Running our own router does not remove the source-database notice",
   "overture": "https://docs.overturemaps.org/attribution/",
   "odbl": "https://opendatacommons.org/licenses/odbl/1-0/",
   "cc_by": "https://creativecommons.org/licenses/by/4.0/legalcode.en"

@@ -8,9 +8,10 @@ minute with `np.rint`, and `locfinder/status.py` is explicit that evaluation use
 the Python side. It does **not** hold for a browser that has only the encoded raster, which is the
 artifact S3.5 ships, and the arithmetic is one-sided:
 
-    rint(s/60) <= T   <=>   s/60 < T + 0.5   <=>   s < 60T + 30
-    ceil(s/60) <= T   <=>   s <= 60T                      (exactly the float verdict)
-    floor(s/60) <= T  <=>   s < 60(T + 1)
+    rint(s/60) <= T   <=>   s <= 60T + 30   for even T   (np.rint rounds halves to EVEN)
+    rint(s/60) <= T   <=>   s <  60T + 30   for odd  T
+    ceil(s/60) <= T   <=>   s <= 60T        for T < 254    (exactly the float verdict)
+    floor(s/60) <= T  <=>   s <  60(T + 1)
 
 So a minute-only client answers a threshold **30 s more permissive** than the float surface under
 the current encoding, and 60 s more permissive under `floor`. Both err in one direction only: they
@@ -18,8 +19,12 @@ show cells as passing that do not pass. Neither can ever hide a cell that does p
 rounding a value at or below `60T` cannot carry it above `T` minutes.
 
 `ceil` is the only one of the three whose minute verdict is *identical* to the float verdict at a
-whole-minute threshold. Its cost is the displayed number: a 9 min 01 s walk displays as 10 minutes,
-an upper bound on our model's time rather than the nearest value to it. That direction matches every
+whole-minute threshold — on **finite OK cells, below the 254-minute clip**. At `T >= 254` the clip
+destroys it (300 minutes encodes to 254 and would pass `T = 254`), and `NODATA` must be masked
+rather than compared, which is why every count below is taken over `reason == OK`.
+
+Its cost is the displayed number: a 9 min 01 s walk displays as 10 minutes, an upper bound on our
+model's time rather than the nearest value to it. That direction matches every
 other conservatism in this system — `OFF_NETWORK` is unknown rather than excluded, a bounded engine
 publishes `BEYOND_HORIZON` rather than `NO_PATH` — and a region that is exactly the region we
 computed seems worth more than a number that is 30 s closer on average.
@@ -84,9 +89,13 @@ def render(rows: list[dict], args) -> str:
            "`evaluate` uses float seconds, so nothing above is wrong on the Python side. A browser "
            "holding only the encoded raster answers a *different* threshold, and the error is "
            "one-sided: it shows cells as passing that do not pass, and never hides a cell that "
-           "does. `wrong of shown` is `Pr(not actually a pass | displayed as a pass)` — the "
-           "conditional Codex pass 25 found missing from the estimand set, here for the encoding "
-           "rather than the routing.", "",
+           "does. `wrong of shown` is `Pr(not actually a pass | displayed as a pass)` — the shape "
+           "of conditional Codex pass 25 found missing from the estimand set, here for the "
+           "encoding rather than the routing. It is an **artifact-to-artifact** comparison, the "
+           "encoded raster against the float surface that produced it, and says nothing about "
+           "routing or destination validity. `of all OK` is over OK cells, not over the frame. "
+           "The browser path already built (`spikes/g3-render/worker.js:139`) does threshold the "
+           "minute byte, so this is not hypothetical.", "",
            "| rounding | T | truth | shown | wrong | missed | wrong of shown | of all OK | "
            "wrong buildings | of shown buildings |", "|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
@@ -100,16 +109,19 @@ def render(rows: list[dict], args) -> str:
             "a value at or below `60T` cannot carry it above `T` minutes, so a minute-only client "
             "can only be too generous.",
             "",
-            "**`ceil` is exact.** Its minute verdict equals the float verdict at every whole-minute "
-            "threshold (`ceil(s/60) <= T <=> s <= 60T`), so `wrong` and `missed` are both 0 by "
-            "construction, not by luck on this layer. The cost is the displayed number: it becomes "
-            "an upper bound on our model's time, overstating by up to 59 s, where `rint` is within "
-            "30 s either way.",
+            "**`ceil` is exact for a finite OK cell at a whole-minute threshold below 254.** "
+            "`ceil(s/60) <= T` is equivalent to `s <= 60T`, which is `evaluate`'s own comparison, "
+            "so `wrong` and `missed` are both 0 by construction rather than by luck on this layer. "
+            "At `T >= 254` the clip breaks it and NODATA is not a minute at all. The cost is the "
+            "displayed number: an upper bound on our model's time, overstating by less than 60 s "
+            "(a 0.1 s walk displays as 1 minute), where `rint` is within 30 s either way.",
             "",
-            "**Not yet decided.** Changing `encode_minutes` changes committed rasters and the "
-            "legacy minute codes 251-254 that are real answers in artifacts already on disk, and "
-            "whether the shipped client decides from minutes or from seconds is S3.5's question "
-            "(plan §0 step 6). This section is the measurement that decision should be made "
+            "**Not yet decided.** Changing `encode_minutes` changes committed rasters and moves "
+            "the boundaries of the legacy minute codes 251-254, which are real answers in "
+            "artifacts already on disk. The browser path already built does threshold the minute "
+            "byte, and the same loop treats NODATA as excluded -- so the export also collapses "
+            "UNKNOWN into EXCLUDED, a second and larger step-6 finding that changing the rounding "
+            "does not address. This section is the measurement the decision should be made "
             "against. `scripts/audit_recommendations.py` marks the affected rows in the walked-"
             "audit sheet (`encoding_disagrees_min`) so a walked journey is attributed to the right "
             "verdict in the meantime."]

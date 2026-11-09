@@ -42,6 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, METRO_DIR,  # noqa: E402
                      append_results, stamp)
 from locfinder import profile  # noqa: E402
+from locfinder.measure.frames import file_digest  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.status import Reason  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
@@ -196,7 +197,11 @@ def main() -> None:
     # The build parameters, so a consumer need not assume them. `Surface.validate` only checks
     # `max finite <= horizon`, so a consumer assuming a horizon *larger* than this build used would
     # pass validation and then publish a wrong lower bound for every BEYOND_HORIZON cell.
-    (LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_build.json").write_text(
+    # Digests of the arrays this run just wrote, so a consumer can tell whether the files it
+    # loaded are the ones these parameters describe. Without them the sidecar is a note about
+    # parameters and not provenance: `Surface.validate` establishes invariants, not shared origin.
+    stem = f"own_{METRO.name}_{args.category}_{args.mode}"
+    (LAYERS / f"{stem}_build.json").write_text(
         json.dumps({
             "metro": METRO.name, "category": args.category, "mode": args.mode,
             "engine": "own-graph", "aggregation": surf.aggregation,
@@ -204,6 +209,11 @@ def main() -> None:
             "max_access_m": MAX_ACCESS_M, "poi_snap_max_m": POI_SNAP_MAX_M,
             "built": stamp(), "profile": profile.profile_version(),
             "grid": profile.grid_version(GRID),
+            "arrays": {
+                "seconds": file_digest(LAYERS / f"{stem}.npy"),
+                "reason": file_digest(LAYERS / f"{stem}_reason.npy"),
+                "min_possible_s": file_digest(LAYERS / f"{stem}_min_possible_s.npy"),
+            },
         }, indent=1), encoding="utf-8")
 
     out["versions"] = {"profile": profile.profile_version(), "grid": profile.grid_version(GRID)}

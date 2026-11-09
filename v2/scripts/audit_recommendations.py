@@ -73,7 +73,7 @@ Journeys are restricted to cells containing at least one building, from the alre
 raster `own_<metro>_buildings_per_cell.npy` — a cell with no structure has no door to walk from, so
 it is unwalkable whatever its travel time says. The *individual* Overture footprints are not read.
 `data/<metro>/overture_buildings_report.json` records their admitted use as "rasterised to counts,
-never republished", and this sheet is committed to the repository; putting 30 building coordinates
+never republished", and this sheet is committed to the repository; putting a building coordinate per row
 into it would be a wider use than the one recorded, for a convenience the owner does not need. The
 owner picks a real starting point inside the cell and records it, and the centre-to-door offset the
 product must answer for is bounded in advance at `cell_m * sqrt(2) / 2`.
@@ -97,7 +97,7 @@ from locfinder.measure.frames import file_digest
 from locfinder.metros import get_metro
 from locfinder.status import (CATEGORY_COST_SELECTED, Criterion, Outcome, Reason, Surface,
                               evaluate)
-from locfinder.traveltime.speeds import max_speed_mps
+from locfinder.traveltime.speeds import access_speed_mps, max_speed_mps
 
 REPO = Path(__file__).resolve().parents[2]
 V2 = REPO / "v2"
@@ -108,20 +108,29 @@ V2 = REPO / "v2"
 #:
 #: * `Surface.validate` only checks `max finite <= horizon`, so assuming a horizon *larger* than the
 #:   build's passes silently — measured: a 60-minute layer read as 120 minutes raises nothing.
-#:   `corroborate_horizon` closes that, and the builder now writes the sidecar.
-#: * `MAX_ACCESS_M` enters the outcome-equivalence check. Rather than depend on it being exactly
-#:   right, the check is restated as the widest build it tolerates: the equivalence holds for any
-#:   `max_access_m <= min(threshold) * max_speed_mps(mode)` — 840 m for a 10-minute walk threshold,
-#:   against the 200 m this project uses, a 4.2x margin.
+#:   `corroborate_horizon` only makes that *implausible*, never impossible: it is a heuristic. The
+#:   builder now writes the sidecar, which is the actual fix, and `--horizon-min` is the escape.
+#: * `MAX_ACCESS_M` enters the exactness check for the emitted rows. Rather than depend on it being
+#:   exactly right, the check is restated as the widest build it tolerates:
+#:   `max_access_m <= min(threshold) * max_speed_mps - cell_m * sqrt(2)` — **698.6 m** for a
+#:   10-minute walk on a 100 m grid, a **3.49x** margin on the 200 m this project uses. An earlier
+#:   version of this comment said 840 m and 4.2x, which omits the cell diagonal that the whole
+#:   adjacency argument rests on (Codex pass 27).
 CUTOFF_MIN = 120.0
 MAX_ACCESS_M = 200.0
 
-#: How close the largest finite time must sit below a claimed horizon for the claim to be
-#: corroborated, when any cell was cut off by it. A cutoff that bound at all leaves cells just
-#: inside it: walking 60 s covers 84 m, well under one 100 m cell, so on this grid a bound cutoff
-#: with no cell within 60 s of it is not a surface this pipeline produces. Measured on the committed
-#: Triangle layer the gap is 0.001 s.
-HORIZON_CORROBORATION_S = 60.0
+#: A **heuristic** scale for the gap between a claimed horizon and the largest finite time, used
+#: only to catch a grossly wrong assumed horizon. It is not a proof and the first version of it
+#: was a false refusal: a flat 60 s rejected a legitimate `build_layer_surface` output whose
+#: frontier happened to fall 64.3 s short of the horizon (Codex pass 27, on a straight 11 km edge
+#: with cells at 9,990 m and 10,090 m). There is **no sound upper bound** on that gap — the frontier
+#: can be arbitrarily sparse — so the scale is derived from the largest per-cell contribution that
+#: is not network distance, `(max_access_m + cell_m) / access_speed_mps`, which is 238 s for a
+#: 100 m walk grid. A 60-minute layer read as 120 leaves a gap of 3,600 s and is still caught;
+#: pass 27's 64.3 s is not. Anything that needs certainty passes `--horizon-min` or rebuilds the
+#: sidecar.
+def horizon_gap_scale_s(mode: str, cell_m: float) -> float:
+    return (MAX_ACCESS_M + cell_m) / access_speed_mps(mode)
 
 #: Journeys are drawn from seven strata: a near-threshold pair per threshold, the cells where the
 #: product declines to answer next door to a pass, and two deep controls so a systematic offset
@@ -222,32 +231,39 @@ def read_sidecar(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def corroborate_horizon(seconds: np.ndarray, reason: np.ndarray, horizon_s: float) -> dict:
-    """Check an *assumed* horizon against the arrays, as far as they can check it.
+def corroborate_horizon(seconds: np.ndarray, reason: np.ndarray, horizon_s: float, *,
+                        mode: str, cell_m: float) -> dict:
+    """Sanity-check an *assumed* horizon against the arrays. **A heuristic, not a proof.**
 
     The arrays can **falsify** a horizon claim and cannot **verify** one: `max finite <= horizon` is
-    required, but nothing in them rules out a larger horizon than the build used. What they do rule
-    out is a horizon far above a cutoff that visibly bound — if cells were cut off, cells sit just
-    inside the cut. Returns the evidence; the caller refuses on `corroborated` being false.
+    required, but nothing in them rules out a larger horizon than the build used. The gap below the
+    horizon is weak evidence in the same direction and nothing more — a sparse frontier leaves a
+    real gap, which is why a flat 60 s threshold here rejected a legitimate build. The scale is
+    `horizon_gap_scale_s` and the result says it is a heuristic, so no caller can read `plausible`
+    as provenance.
     """
     finite = np.isfinite(seconds)
     max_finite = float(seconds[finite].max()) if finite.any() else float("nan")
     cut_off = int((reason == Reason.BEYOND_HORIZON).sum())
     gap = horizon_s - max_finite if finite.any() else float("inf")
-    corroborated = (not cut_off) or (0.0 <= gap <= HORIZON_CORROBORATION_S)
+    scale = horizon_gap_scale_s(mode, cell_m)
+    plausible = (not cut_off) or (0.0 <= gap <= scale)
     return {
         "max_finite_s": None if not finite.any() else round(max_finite, 3),
         "gap_to_horizon_s": None if not finite.any() else round(gap, 6),
+        "gap_scale_s": round(scale, 1),
         "cells_cut_off": cut_off,
-        "corroborated": bool(corroborated),
-        "basis": ("a cutoff that bound leaves cells just inside it; the arrays can falsify a "
-                  "horizon claim but cannot verify one"),
+        "plausible": bool(plausible),
+        "is_a_heuristic": True,
+        "basis": ("the gap below a horizon that visibly bound is weak evidence the horizon is "
+                  "right; the arrays can falsify a horizon claim and cannot verify one, and a "
+                  "sparse frontier leaves a real gap, so this is not provenance"),
     }
 
 
 def load_surface(
     grid: GridSpec, *, category: str, mode: str, metro: str, thresholds_s: tuple[float, ...],
-    layers: Path = LAYERS,
+    layers: Path = LAYERS, declared_horizon_s: float | None = None,
 ) -> tuple[Surface, dict]:
     """The committed layer as a validated `Surface`, with the provenance of every array.
 
@@ -274,21 +290,47 @@ def load_surface(
         horizon_s = float(sidecar["horizon_s"])
         max_access_m = float(sidecar["max_access_m"])
         build = {"origin": "sidecar", "horizon_s": horizon_s, "max_access_m": max_access_m}
+        # The sidecar binds the arrays into one build only to the extent that it records their
+        # digests; without them it is a note about parameters, not provenance.
+        recorded = sidecar.get("arrays") or {}
+        checked = {}
+        for name, path in (("seconds", sec_path), ("reason", reason_path)):
+            want = recorded.get(name)
+            if want:
+                got = file_digest(path)
+                if got != want:
+                    raise Refused(
+                        f"{path.name} does not match the digest its build sidecar recorded "
+                        f"({got[:12]}... vs {want[:12]}...), so the two were not written by the "
+                        "same run. Rebuild every array and the sidecar together: uv run python "
+                        f"spikes/s2_building_weighted_coverage.py {category} {mode}")
+                checked[name] = "digest matched"
+            else:
+                checked[name] = "no digest recorded; parameters only, not provenance"
+        build["arrays"] = checked
+    elif declared_horizon_s is not None:
+        horizon_s = float(declared_horizon_s)
+        max_access_m = MAX_ACCESS_M
+        build = {"origin": "declared by the operator", "horizon_s": horizon_s,
+                 "max_access_m": max_access_m,
+                 "note": "--horizon-min was passed; no heuristic was applied"}
     else:
         horizon_s = CUTOFF_MIN * 60.0
         max_access_m = MAX_ACCESS_M
         build = {"origin": "assumed", "horizon_s": horizon_s, "max_access_m": max_access_m,
                  "assumed_from": "the constants in spikes/s2_building_weighted_coverage.py",
-                 "horizon": corroborate_horizon(seconds, reason, horizon_s)}
-        if not build["horizon"]["corroborated"]:
+                 "horizon": corroborate_horizon(seconds, reason, horizon_s, mode=mode,
+                                                cell_m=grid.cell_m)}
+        if not build["horizon"]["plausible"]:
             raise Refused(
-                f"the assumed horizon of {horizon_s:g}s is not corroborated by "
-                f"{sec_path.name}: {build['horizon']['cells_cut_off']:,} cells were cut off by a "
-                f"horizon, yet the largest finite time is "
-                f"{build['horizon']['gap_to_horizon_s']:g}s below it. A cutoff that bound leaves "
-                f"cells just inside it, so this layer was almost certainly built to a different "
-                f"horizon and every BEYOND_HORIZON bound here would be wrong. Rebuild it, which "
-                f"now writes the build parameters beside the layer."
+                f"the assumed horizon of {horizon_s:g}s looks wrong for {sec_path.name}: "
+                f"{build['horizon']['cells_cut_off']:,} cells were cut off by a horizon, yet the "
+                f"largest finite time is {build['horizon']['gap_to_horizon_s']:g}s below it, "
+                f"against a gap scale of {build['horizon']['gap_scale_s']:g}s. **This is a "
+                f"heuristic, not a proof** -- a sparse frontier can leave a real gap. If the "
+                f"horizon really is {horizon_s:g}s, pass --horizon-min {horizon_s / 60:g} to "
+                f"declare it; otherwise rebuild, which writes the parameters and digests beside "
+                f"the layer."
             )
     prov = {
         "build": build,
@@ -314,8 +356,10 @@ def load_surface(
         if int(reason.max()) > int(Reason.BEYOND_HORIZON):
             raise Refused(
                 f"{reason_path.name} contains {Reason(int(reason.max())).name}, which this "
-                "reconstruction does not cover: it would assign a 0 bound where the real one is "
-                "+inf, and Surface.validate rejects that.\nRebuild the surface with "
+                "reconstruction does not cover. For NO_PATH the real bound is +inf and "
+                "Surface.validate rejects a 0; for a layer-wide reason the bound really is 0, but "
+                "then every cell is unknown and the layer must not be published at all (S4.4).\n"
+                "Rebuild the surface with "
                 "locfinder.traveltime.layer.build_layer_surface, which computes the real bound, and "
                 "save it beside the layer:\n  uv run python "
                 f"spikes/s2_building_weighted_coverage.py {category} {mode}"
@@ -460,6 +504,10 @@ def main() -> None:
                     help="restrict to journeys within --radius-km of this point, so the sheet is "
                          "walkable in one outing instead of scattered over the metro")
     ap.add_argument("--radius-km", type=float, default=5.0)
+    ap.add_argument("--horizon-min", type=float,
+                    help="declare the horizon the layer was built to, in minutes. Authoritative: "
+                         "it skips the plausibility heuristic, which is a heuristic and can refuse "
+                         "a legitimate build whose frontier is sparse")
     ap.add_argument("--seed", type=int, default=20261109)
     ap.add_argument("--out", type=Path,
                     help="output CSV (default: docs/experiments/audit/<metro>-<cat>-<mode>.csv)")
@@ -476,8 +524,10 @@ def main() -> None:
         raise Refused("at least one threshold is needed")
 
     t0 = time.perf_counter()
-    surf, prov = load_surface(grid, category=args.category, mode=args.mode, metro=metro.name,
-                              thresholds_s=thresholds_s)
+    surf, prov = load_surface(
+        grid, category=args.category, mode=args.mode, metro=metro.name,
+        thresholds_s=thresholds_s,
+        declared_horizon_s=None if args.horizon_min is None else args.horizon_min * 60.0)
     outcomes = {
         t_min: evaluate(
             Criterion(label=f"{args.category} within {t_min} min", mode=args.mode,
@@ -492,8 +542,12 @@ def main() -> None:
     notes: dict = {}
     if args.max_walk_min > 0:
         # The first version of this sheet asked for 6.22 hours of one-way walking across 18 rows,
-        # 3.57 of them in three "controls" of 108, 50 and 56 minutes. A cell with no finite
-        # prediction is kept: an OFF_NETWORK row beside a pass is a short walk by construction.
+        # 3.57 of them in three "controls" of 108, 50 and 56 minutes.
+        #
+        # A cell with no finite prediction is deliberately kept, and is therefore **not capped and
+        # not in the budget**: an OFF_NETWORK cell has no predicted time to cap by. Adjacency to a
+        # PASS bounds its distance to the *indexed network* and says nothing about how long the
+        # walk is -- the whole reason to walk it is that we do not know.
         cap_s = args.max_walk_min * 60.0
         eligible &= ~(np.isfinite(surf.seconds) & (surf.seconds > cap_s))
         notes["max_walk_min"] = args.max_walk_min
@@ -633,8 +687,12 @@ def main() -> None:
         "max_walk_min": args.max_walk_min,
         "predicted_walk": {
             "rows_with_a_finite_time": len(walk_min),
+            "rows_with_no_prediction": len(rows) - len(walk_min),
             "total_hours_one_way": round(sum(walk_min) / 60.0, 2),
             "longest_min": round(max(walk_min), 1) if walk_min else None,
+            "note": ("the cap and this budget cover only rows with a finite predicted time; an "
+                     "OFF_NETWORK row has none, and adjacency to a PASS bounds its distance to "
+                     "the indexed network, not the length of the walk"),
         },
         "blind_spot": (
             "The layer's aggregation is cost_selected_category: the time of the journey our cost "
@@ -648,12 +706,15 @@ def main() -> None:
             "buildings_in_cell": (
                 "Derived from Overture Maps buildings, release 2026-10-21.0, aggregated to counts "
                 "per cell. No footprint geometry is reproduced. Upstream in this metro: "
-                "OpenStreetMap (ODbL 1.0), Microsoft ML Buildings and Esri Community Maps "
-                "(CC BY 4.0 with OpenStreetMap waivers). ODbL 4.3 and CC BY notice obligations "
+                "OpenStreetMap (454,012 rows, ODbL 1.0), Microsoft ML Buildings (360,755 rows, "
+                "ODbL 1.0 -- NOT CC BY, which an earlier version of this notice said) and Esri "
+                "Community Maps contributors (26,653 rows, CC BY 4.0 with OpenStreetMap waivers). "
+                "ODbL 4.3 and CC BY 3 notice obligations "
                 "apply to a count raster as much as to geometry; see docs/experiments/audit/"
                 "README.md and project-v2-rethink-decisions decision 17."
             ),
-            "travel_times": "our own routing over an OpenStreetMap extract (ODbL 1.0)",
+            "travel_times": ("our own routing over an OpenStreetMap extract (ODbL 1.0). Running "
+                             "our own router does not remove the source-database notice"),
             "overture": "https://docs.overturemaps.org/attribution/",
             "odbl": "https://opendatacommons.org/licenses/odbl/1-0/",
             "cc_by": "https://creativecommons.org/licenses/by/4.0/legalcode.en",

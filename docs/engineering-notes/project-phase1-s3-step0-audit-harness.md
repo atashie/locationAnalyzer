@@ -121,11 +121,12 @@ raises nothing, and then every `BEYOND_HORIZON` bound is wrong by an hour. Two f
   horizon claim and cannot *verify* one, and the provenance record says so rather than implying the
   horizon was read from the data.
 
-The access-distance check was also restated. Instead of depending on `MAX_ACCESS_M` being exactly
-right, it asks for the widest build it tolerates: the equivalence holds for any
-`max_access_m <= min(threshold) * max_speed_mps`, which is **840 m** against the 200 m this project
-uses — a 4.2x margin, so being wrong about the build is harmless until it is wrong by a factor of
-four.
+The access-distance check was also restated. Instead of depending on `MAX_ACCESS_M` being
+exactly right, it asks for the widest build it tolerates. The inequality actually implemented
+includes the cell diagonal, so the tolerance is
+`min(threshold) * max_speed_mps - cell_m * sqrt(2)` = **698.6 m**, a **3.49x** margin on the 200 m
+this project uses. An earlier version of this paragraph said 840 m and 4.2x, which is the figure you
+get by forgetting the diagonal that the whole adjacency argument rests on (pass 27).
 
 **The reconstruction is now transitional.** `s2_building_weighted_coverage.py` saves
 `own_<metro>_<cat>_<mode>_min_possible_s.npy` beside the layer, and the harness prefers it when
@@ -183,22 +184,32 @@ and keeps the whole run at 0.07 s. See [[project-v2-rethink-decisions]] for deci
 
 ## What the strata measure, and the limit to read them with
 
+The sheet as it now stands, 19 journeys and **2.98 hours of one-way walking, longest 20
+minutes**:
+
 | stratum | cells | with a building | drawn |
 |---|---|---|---|
 | `band10min_pass` | 6,009 | 4,353 | 3 |
 | `band10min_fail` | 6,466 | 4,696 | 3 |
 | `band15min_pass` | 7,428 | 5,207 | 3 |
 | `band15min_fail` | 7,504 | 5,097 | 3 |
-| `off_network_beside_ok` | 24,468 | **633** | 3 |
+| `off_network_beside_pass15min` | **1,081** | **77** | 3 |
 | `deep_pass_control` | 5,732 | 4,363 | 3 |
-| `deep_fail_control` | 112,744 | 51,362 | 3 |
+| `deep_fail_control` | 148,424 | 11,963 | **1** |
 
-`off_network_beside_ok` is the stratum with real diagnostic value — the product refuses to answer
-next door to a cell that passes, and the layer cannot distinguish "the 200 m access rule is too
-strict" from "the graph is missing a path people use" — and it is also the thinnest: **633 walkable
-cells of 24,468**. Three draws from it are a thin sample of a thin population, so agreement there is
-encouraging and not evidence. Within 3 km of Chapel Hill the stratum is **empty**, which is the
-expected shape for a dense area and means a `--near` sheet has 18 journeys, not 21.
+(The pre-repair version of this table read `off_network_beside_ok` 24,468 / 633 with three deep FAIL
+controls drawn from 112,744 / 51,362, for 21 journeys and 6.22 hours. It survived the first round of
+corrections in the prose above and was caught by pass 27 — a reminder that a table is as much a
+claim as a sentence.)
+
+`off_network_beside_pass15min` is the stratum with real diagnostic value — the product refuses to
+answer next door to a cell that passes, and the layer cannot distinguish "the 200 m access rule is
+too strict" from "the graph is missing a path people use" — and it is also the thinnest: **77
+walkable cells of 1,081**. Three draws from it are a thin sample of a thin population, so agreement
+there is encouraging and not evidence. Within 3 km of Chapel Hill the stratum is **empty**, the
+expected shape for a dense area, and a `--near` sheet then has 16 journeys.
+
+The three drawn rows do now neighbour passing cells, at 164.3 s, 582.6 s and 850.5 s (pass 27).
 
 The by-reason building counts reproduce S2.4's recorded figures exactly (`spotcheck-engines.md`
 line 1158 onward: 499,009 of 512,633 buildings `OK`, 97.3423%), which is a useful consistency check
@@ -284,6 +295,20 @@ publishing centroids, and a count raster carries ODbL §4.3 and CC BY notice obl
 Attribution is now in both the sheet's README and its `.meta.json`. Whether a full count raster
 is a Produced Work or a derivative database is **not settled** and should be before anything
 wider is published.
+
+**Pass 27 then found that one of these repairs was itself a false refusal.** The horizon
+plausibility check rejected a *legitimate* `build_layer_surface` output: on a straight 11 km edge
+with cells at 9,990 m and 10,090 m, the largest finite time falls **64.3 s** below a true 7,200 s
+horizon, and my flat 60 s threshold called that an inconsistent build. The justification — "walking
+60 s covers 84 m, under one cell" — was the same shape of error as the original: a plausible
+sentence standing in for a bound that does not exist. There is **no sound upper bound** on the gap
+between a horizon and the largest finite time, because the frontier can be arbitrarily sparse. So
+the check is now explicitly a **heuristic**, its scale is derived
+(`(max_access_m + cell_m) / access_speed_mps` = 238 s for a 100 m walk grid, which admits pass 27's
+64.3 s and still catches a 60-minute layer read as 120), the provenance record carries
+`is_a_heuristic: true`, and `--horizon-min` declares the horizon outright when certainty is needed.
+And "only the build sidecar can bind the files into one build" was true of no implementation until
+the builder started recording the arrays' digests, which it now does and the consumer checks.
 
 **Next:** plan §0 step 1, the cheap correctness debts. Non-finite coordinates are now rejected at
 `cell_for_lonlat`, which is one entry point of several. Codex pass 26's own recommendation is to

@@ -33,7 +33,7 @@ import pytest
 from locfinder.grid import GridSpec
 from locfinder.status import (CATEGORY_COST_SELECTED, Criterion, Outcome, Reason, Surface,
                               evaluate)
-from locfinder.traveltime.speeds import max_speed_mps
+from locfinder.traveltime.speeds import access_speed_mps, max_speed_mps
 
 _PATH = Path(__file__).resolve().parents[1] / "scripts" / "audit_recommendations.py"
 _SPEC = importlib.util.spec_from_file_location("audit_recommendations", _PATH)
@@ -94,8 +94,9 @@ def test_it_reconstructs_the_bound_for_a_layer_that_stops_at_beyond_horizon(tmp_
 
 
 def test_it_refuses_to_reconstruct_a_bound_when_a_cell_proves_no_path(tmp_path):
-    """The refusal the whole shortcut rests on. Reconstructed with a bound of 0, a NO_PATH cell
-    would read as UNKNOWN — a proven failure turned into an absence."""
+    """The refusal fires. It is a fail-fast rather than a correctness barrier — see
+    `test_the_no_path_refusal_is_a_fail_fast_not_a_correctness_barrier` for why the claim this
+    docstring used to make, that the cell would otherwise read as UNKNOWN, is false."""
     codes = [0] * 10 + [1] * 9 + [3] + [2] * 10      # one NO_PATH
     seconds, reason = _arrays(codes)
     layers = _write(tmp_path, seconds, reason)
@@ -286,13 +287,15 @@ def test_it_refuses_an_assumed_horizon_the_arrays_contradict(tmp_path):
     the build's passes silently and every BEYOND_HORIZON bound is then wrong. A cutoff that bound
     leaves cells just inside it, which is what makes the contradiction visible."""
     seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
-    with pytest.raises(audit.Refused, match="not corroborated"):
+    with pytest.raises(audit.Refused, match="looks wrong"):
         _load(_write(tmp_path, seconds, reason))
 
     # Saturated, the same layer is accepted: the refusal is about the gap, not about the shape.
     surf, prov = _load(_write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10)))
-    assert prov["build"]["horizon"]["corroborated"] is True
+    assert prov["build"]["horizon"]["plausible"] is True
     assert prov["build"]["horizon"]["gap_to_horizon_s"] == pytest.approx(0.001, abs=1e-3)
+    # And it is labelled for what it is, so no reader mistakes it for provenance.
+    assert prov["build"]["horizon"]["is_a_heuristic"] is True
 
 
 def test_a_layer_with_nothing_cut_off_needs_no_corroboration(tmp_path):
@@ -301,7 +304,68 @@ def test_a_layer_with_nothing_cut_off_needs_no_corroboration(tmp_path):
     seconds, reason = _arrays([0] * 20 + [1] * 10, seconds_for_ok=500.0, saturate=False)
     _, prov = _load(_write(tmp_path, seconds, reason))
     assert prov["build"]["horizon"]["cells_cut_off"] == 0
-    assert prov["build"]["horizon"]["corroborated"] is True
+    assert prov["build"]["horizon"]["plausible"] is True
+
+
+def test_the_horizon_heuristic_admits_a_sparse_frontier(tmp_path):
+    """The regression test for pass 27's false refusal, which is the defect this guard introduced.
+
+    A real `build_layer_surface` output — a straight 11 km bidirectional edge, destination at its
+    start, cells centred 9,990 m and 10,090 m along it — returns `[7135.714, inf]` with reasons
+    `[OK, BEYOND_HORIZON]` against a **true** 7,200 s horizon. The largest finite time is 64.3 s
+    short of it, and the original flat 60 s threshold called that an inconsistent build.
+
+    There is no sound upper bound on that gap: the frontier can be arbitrarily sparse. So the check
+    is a heuristic with a derived scale, and this pins the case it must not reject.
+    """
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, saturate=False)
+    seconds = seconds.copy()
+    seconds[0, 0] = 7135.714285714286          # pass 27's measured frontier value
+    _, prov = _load(_write(tmp_path, seconds, reason))
+
+    gap = prov["build"]["horizon"]["gap_to_horizon_s"]
+    assert gap == pytest.approx(64.2857, abs=0.001)
+    assert gap > 60.0, "the gap must still exceed the threshold that wrongly refused it"
+    assert gap <= prov["build"]["horizon"]["gap_scale_s"]
+    assert prov["build"]["horizon"]["plausible"] is True
+
+    # The scale is derived, not chosen, and it still catches the error it exists for: a 60-minute
+    # layer read as 120 leaves a gap of ~3,600 s.
+    assert prov["build"]["horizon"]["gap_scale_s"] == pytest.approx(
+        (audit.MAX_ACCESS_M + 100.0) / access_speed_mps("walk"), abs=0.1)
+    half, half_reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=3500.0,
+                                saturate=False)
+    with pytest.raises(audit.Refused, match="looks wrong"):
+        _load(_write(tmp_path, half, half_reason))
+
+
+def test_a_declared_horizon_skips_the_heuristic_entirely(tmp_path):
+    """Because a heuristic must be escapable: the operator can assert the horizon outright."""
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
+    layers = _write(tmp_path, seconds, reason)
+    with pytest.raises(audit.Refused, match="looks wrong"):
+        _load(layers)
+    surf, prov = audit.load_surface(_grid(), category="grocery", mode="walk", metro="triangle",
+                                   thresholds_s=THRESHOLDS_S, layers=layers,
+                                   declared_horizon_s=HORIZON_S)
+    assert prov["build"]["origin"] == "declared by the operator"
+    assert surf.horizon_s == HORIZON_S
+
+
+def test_a_sidecar_digest_that_does_not_match_is_refused(tmp_path):
+    """The sidecar binds the arrays into one build only to the extent it records their digests."""
+    layers = _write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10))
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 7200.0, "max_access_m": 200.0, "arrays": {"seconds": "%s"}}' % ("0" * 64),
+        encoding="utf-8")
+    with pytest.raises(audit.Refused, match="does not match the digest"):
+        _load(layers)
+
+    # With no digests recorded it loads, and says what the sidecar did and did not establish.
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 7200.0, "max_access_m": 200.0}', encoding="utf-8")
+    _, prov = _load(layers)
+    assert "not provenance" in prov["build"]["arrays"]["seconds"]
 
 
 def test_it_refuses_a_build_whose_access_distance_breaks_the_adjacency_bound(tmp_path):

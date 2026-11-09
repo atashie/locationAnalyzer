@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from locfinder.grid import GridSpec, NODATA, encode_minutes
+from locfinder.grid import MAX_MINUTES, NODATA, GridSpec, encode_minutes
 
 
 def test_grid_from_bbox_covers_bbox_with_whole_cells():
@@ -223,3 +223,32 @@ def test_cell_for_xy_bounds_survive_an_awkward_origin_and_cell_size():
     assert tiny.cell_for_xy(float(np.nextafter(tiny.x_max, -np.inf)), tiny.y_max) == (
         0, tiny.ncols - 1)
     assert tiny.cell_for_xy(tiny.x_max, tiny.y_max) is None
+
+
+def test_encode_minutes_threshold_crossing_depends_on_parity():
+    """`np.rint` rounds halves to EVEN, so the minute threshold a client sees is not a single
+    inequality. Pinned because it was stated wrongly once (Codex pass 27) and the correct form is
+    easy to re-derive wrongly: at exactly `60T + 30` the encoded minute is `T` for even `T` and
+    `T + 1` for odd `T`.
+
+    The consequence either way is that an encoded-minute client answers a threshold up to 30 s more
+    permissive than `evaluate` does; see `docs/experiments/s3-encoding.md`.
+    """
+    for t_min in (10, 12, 14):          # even: the tie lands ON the threshold and passes
+        assert encode_minutes(np.array([60.0 * t_min + 30.0]))[0] == t_min
+    for t_min in (11, 15, 25):          # odd: the tie rounds up and fails
+        assert encode_minutes(np.array([60.0 * t_min + 30.0]))[0] == t_min + 1
+    # Just inside the tie always passes, just outside always fails, whatever the parity.
+    for t_min in (10, 11, 15):
+        assert encode_minutes(np.array([60.0 * t_min + 29.0]))[0] == t_min
+        assert encode_minutes(np.array([60.0 * t_min + 31.0]))[0] == t_min + 1
+
+
+def test_encode_minutes_clips_so_a_capped_cell_can_pass_a_threshold_it_fails():
+    """The clip at 254 is why "ceil would make the encoded verdict exact" needs `T < 254`: a
+    300-minute journey encodes to 254 either way and would pass a 254-minute threshold."""
+    assert encode_minutes(np.array([300.0 * 60.0]))[0] == MAX_MINUTES
+    assert encode_minutes(np.array([254.0 * 60.0]))[0] == MAX_MINUTES
+    # And NODATA is not a minute at all, so it must be masked rather than compared.
+    assert encode_minutes(np.array([np.inf]))[0] == NODATA
+    assert NODATA > MAX_MINUTES, "NODATA must not be comparable as a minute value"
