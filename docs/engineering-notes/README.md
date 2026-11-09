@@ -32,6 +32,7 @@ note disagrees with the code, the code is right and the note needs correcting.
 - [`feedback-maps-need-a-basemap`](feedback-maps-need-a-basemap.md) — Every map this user is shown must carry a basemap - roads, political boundaries, place labels - because geometry floating on blank ground cannot be sanity-checked
 - [`feedback-match-statistical-machinery-to-the-design`](feedback-match-statistical-machinery-to-the-design.md) — Clustering corrections belong to clustered sampling designs, not to spatially correlated populations sampled independently; check an adjustment's assumptions against how the sample is actually drawn
 - [`feedback-provenance-is-not-correctness`](feedback-provenance-is-not-correctness.md) — A figure can carry a perfect provenance label and still be arithmetically wrong - labelling discipline feels like verification and is not, so assert the values themselves
+- [`feedback-verify-the-shape-of-the-risk`](feedback-verify-the-shape-of-the-risk.md) — A check that cannot fail the way the change can fail proves nothing: ast.parse against a missing-import risk, and a guard built from a loose substring match that skipped silently
 
 ## Project state and decisions
 

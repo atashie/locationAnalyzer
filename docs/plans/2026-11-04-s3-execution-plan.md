@@ -97,7 +97,13 @@ the truth, rather than whether it agrees with itself. It runs in parallel with e
 **A destination that is closed, fenced off or unusable on arrival is a failed recommendation, not a
 discarded row.** E1 and E2 cannot see that failure at all: both sides share the destination list.
 
-### Step 0 — the audit harness (half a day, mine)
+### Step 0 — the audit harness (half a day, mine) — **DONE** `0a4a24b`..`c081920`
+
+Delivered: `GridSpec.cell_for_xy` / `cell_for_lonlat`, `v2/scripts/audit_recommendations.py`, the owner's
+instructions in `docs/experiments/audit/README.md`, and two sheets — a metro-wide draw and the
+local **Chapel Hill** sheet that is the one to walk (16 journeys, 3.01 h one-way, longest 22 min).
+Codex passes 26-29 found 14 defects across it, several in the repairs for earlier ones; see
+`docs/engineering-notes/project-phase1-s3-step0-audit-harness.md`.
 
 What the owner needs in order to walk anything is a list of journeys worth walking and a sheet to
 record them on. Three pieces, and the reconnaissance for all three is done:
@@ -155,7 +161,7 @@ destination actually used, date, and outcome.
 
 | # | work | box | risk retired |
 |---|---|---|---|
-| 1 | **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
+| 1 | **DONE** `ed8bb6b`. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
 | 2 | **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
 | 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
