@@ -12,7 +12,12 @@ named examples now pass."*
 
 So this module is the instrument, not another case. It says three things:
 
-1. **what an admissible input is** — `ToyEdge` and `ToyGraph` enforce it; `SCENARIOS` enumerates the
+1. **what an admissible input is** — `ToyEdge` and `ToyGraph` enforce it, now including the
+   **numerical** domain design §12 item 3 found missing: coordinate magnitude, a floor on segment
+   length below which the projection's squaring underflows, and finiteness of the *formed*
+   `cost_base + penalty` term rather than of the two fields separately. `toy.require_query_point`
+   applies the same bounds to query coordinates, which were not validated at all. `SCENARIOS`
+   enumerates the
    shapes that have ever mattered;
 2. **what must be true of every admissible input** — `INVARIANTS`, each a predicate on one
    evaluation;

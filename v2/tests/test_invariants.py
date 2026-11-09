@@ -805,3 +805,121 @@ def test_a_seconds_tolerance_compares_verdicts_rather_than_a_neighbourhood():
     assert not differences({"objective1_s": a}, {"objective1_s": b})
     # and a pair that genuinely straddles ten minutes is still a difference
     assert differences({"objective1_s": 599.9999999999}, {"objective1_s": 600.0000000001})
+
+
+# --------------------------------------------------------------------------------------------
+# The admissible **numerical** domain, design §12 item 3: "finite constructor fields are not a
+# domain". Each of these three was reproduced against the committed oracle before the bounds were
+# written, and each produced a wrong answer rather than an error.
+# --------------------------------------------------------------------------------------------
+
+def test_the_numerical_domain_rejects_a_segment_whose_square_underflows():
+    """A `(0,0) -> (1e-200,0)` segment has a finite, nonzero length whose **square** underflows to
+    zero. `_segment_nearest` then took its zero-length branch, attached the destination at the
+    segment start, and reported 7.936507936507936e-201 s where the endpoint-to-endpoint 1,000 s is
+    required — PASS against FAIL on a graph with one edge."""
+    with pytest.raises(ValueError, match="between zero and the smallest admissible"):
+        toy.ToyEdge(0, 1, ((0.0, 0.0), (1e-200, 0.0)), time_s=1000.0, cost_base=1000.0,
+                    osmid=(1,), oneway=True)
+
+    # Exactly zero stays admissible: §2.2's zero-span traversals are a declared case with their own
+    # convention, not a degenerate accident, so the bound must not swallow them.
+    toy.ToyEdge(0, 1, ((0.0, 0.0), (0.0, 0.0)), time_s=1.0, cost_base=1.0, osmid=(1,))
+    # And the bound is a floor on segments, not on edges: a long edge containing a tiny segment is
+    # just as wrong, so the check runs per segment.
+    with pytest.raises(ValueError, match="between zero and the smallest admissible"):
+        toy.ToyEdge(0, 1, ((0.0, 0.0), (1e-200, 0.0), (100.0, 0.0)), time_s=1.0, cost_base=1.0,
+                    osmid=(1,))
+
+
+def test_the_numerical_domain_bounds_the_formed_cost_term_not_just_the_fields():
+    """`cost_base = 1e308` with `penalty = 1e308` passes a per-field finite check and sums to
+    `inf`. §2.4 freezes `f * (cost_base + penalty)` as **one term**, so that sum is the quantity the
+    arithmetic handles: at a zero-span traversal it reached `0 * inf` and raised from an empty
+    `min()` instead of returning the zero §2.4 promises."""
+    with pytest.raises(ValueError, match=r"cost_base \+ penalty must be finite"):
+        toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=1.0, cost_base=1e308, penalty=1e308,
+                    osmid=(1,))
+    # Each field alone is fine, which is exactly why a per-field check was not a domain.
+    toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=1.0, cost_base=1e308, osmid=(1,))
+    toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=1.0, cost_base=0.0, penalty=1e308,
+                osmid=(1,))
+
+
+def test_the_numerical_domain_bounds_coordinate_magnitude():
+    """The same squaring that underflows at 1e-200 overflows at the top, so the domain is bounded
+    both ways. 1e7 m contains any UTM easting or northing."""
+    toy.ToyEdge(0, 1, ((0.0, 0.0), (toy.COORD_ABS_MAX, 0.0)), time_s=1.0, cost_base=1.0,
+                osmid=(1,))
+    with pytest.raises(ValueError, match="outside the admissible domain"):
+        toy.ToyEdge(0, 1, ((0.0, 0.0), (toy.COORD_ABS_MAX * 2, 0.0)), time_s=1.0, cost_base=1.0,
+                    osmid=(1,))
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_a_non_finite_query_coordinate_is_rejected_at_every_public_entry(bad):
+    """The one that mattered most: query coordinates were not validated at all, so a NaN origin
+    returned zero candidates and no objective — **indistinguishable from a genuine absence of any
+    route**. An absence that was really a malformed input is the error class this stage exists to
+    prevent, and it is the same defect as `GridSpec.cell_for_lonlat` returning `None` for a NaN.
+    """
+    g = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=60.0,
+                                        cost_base=60.0, osmid=(1,), oneway=True),))
+    for call in (
+        lambda: toy.evaluate(g, (bad, 0.0), [(100.0, 0.0)]),
+        lambda: toy.journeys(g, (bad, 0.0), [(100.0, 0.0)]),
+        lambda: toy.nearest_on_graph(g, (bad, 0.0), cap_m=toy.MAX_ACCESS_M),
+        lambda: toy.attachments(g, (bad, 0.0), cap_m=toy.POI_SNAP_MAX_M),
+        lambda: toy.evaluate(g, (0.0, 0.0), [(bad, 0.0)]),
+        lambda: toy.journeys(g, (0.0, 0.0), [(bad, 0.0)]),
+    ):
+        with pytest.raises(ValueError, match="must be finite"):
+            call()
+
+
+def test_a_bad_destination_is_named_by_its_index():
+    """Because the first version surfaced it as "the query point" from whichever inner call reached
+    it first, which does not say which of a list of destinations is wrong."""
+    g = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=60.0,
+                                        cost_base=60.0, osmid=(1,), oneway=True),))
+    with pytest.raises(ValueError, match="destination 1 must be finite"):
+        toy.evaluate(g, (0.0, 0.0), [(100.0, 0.0), (float("nan"), 0.0)])
+
+
+def test_an_out_of_domain_query_coordinate_is_rejected_too():
+    g = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=60.0,
+                                        cost_base=60.0, osmid=(1,), oneway=True),))
+    with pytest.raises(ValueError, match="outside the admissible domain"):
+        toy.evaluate(g, (toy.COORD_ABS_MAX * 2, 0.0), [(100.0, 0.0)])
+
+
+def test_the_ranking_does_not_select_a_unique_traversal():
+    """Design §2.4's weakened uniqueness promise, revision 11 (§12 item 2, pass-22).
+
+    A canonical directed-edge identity is `(start, end, geometry key, orientation, osmid, length)`
+    and carries **no arclength interval**, so every partial traversal of one edge shares one
+    identity. On a zero-weight edge they also share time 0 and cost 0, so they tie on all six keys —
+    including the cost key revision 11 added. Three journeys, one rank key.
+
+    This is pinned because the design now *relies* on it being true: §2.4 promises a unique reported
+    answer and a unique route identity and explicitly not a unique traversal, and T10 owes its own
+    reconstruction rule as a consequence. If a future change made these keys distinguish the three,
+    the promise could be strengthened again — and this test is how anyone would notice.
+    """
+    edge = toy.ToyEdge(0, 1, ((0.0, 0.0), (500.0, 0.0)), time_s=0.0, cost_base=0.0,
+                       osmid=(1,), oneway=True)
+    graph = toy.ToyGraph(edges=(edge,))
+    spans = (((25.0, 0.0), (75.0, 0.0)),        # 50 m
+             ((25.0, 0.0), (475.0, 0.0)),       # 450 m
+             ((425.0, 0.0), (475.0, 0.0)))      # 50 m again, at the far end
+
+    keys = set()
+    for origin, dest in spans:
+        js = toy.journeys(graph, origin, [dest])
+        assert js, "each span must produce a journey for the tie to mean anything"
+        keys.update(j.rank_key for j in js)
+    assert len(keys) == 1, f"the keys distinguish the traversals after all: {keys}"
+
+    # And the identity itself is what lacks the interval, which is the reason rather than the symptom.
+    identity = toy.directed_identity(edge, forward=True)
+    assert 25.0 not in identity and 475.0 not in identity, "identity gained an arclength field"

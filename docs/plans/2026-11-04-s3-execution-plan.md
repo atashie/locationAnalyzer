@@ -700,6 +700,15 @@ damage; it cannot — a slow interior path survives while a fast path through ou
 denominator. A real bound needs a larger-extract comparison, which is named as the way to get one and
 is not attempted here.
 
+**It owes a reconstruction specification, and cannot report boundary touch without one.** Design
+§2.4's ranking was weakened in revision 11: it selects a unique reported answer and a unique route
+*identity*, but a directed-edge identity carries no arclength interval, so it does **not** select a
+unique traversal. Measured on the committed oracle, a 500 m zero-weight edge's traversals 25→75,
+25→475 and 425→475 produce one identical six-key rank — and touch a boundary band over 0% and 100%
+of their length. So T10 must state, for itself, which traversal of a selected route it measures and
+how ties among traversals are broken. Until it does, the boundary-touch share is not a function of
+the inputs and must not be reported as one.
+
 ### T11 — the report
 
 **Depends on:** T8, **T9 and T10** — the report may not be issued without E3's outcome and the

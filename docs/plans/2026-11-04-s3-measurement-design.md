@@ -493,8 +493,32 @@ selected set to be recorded by identity. So the ranking continues, after the fou
 > 5. the smallest **destination `id`**, lexicographically;
 > 6. the smallest sequence of canonical directed-edge identities, compared element-wise.
 
-With those the recorded provenance is a function of the inputs, which is what §12's manifest claim
-requires.
+With those the recorded **destination and route identity** are functions of the inputs, which is
+what §12's manifest claim requires of them.
+
+**The weaker promise, replacing revision 8's.** Earlier revisions said "the recorded provenance is a
+function of the inputs" without qualification. That is more than the keys deliver, and §12 item 3
+(pass-22) found where: node simplicity makes the route *set* finite, but a canonical directed-edge
+identity is `(start node, end node, geometry key, orientation, osmid, length)` and contains **no
+arclength interval**, so every partial traversal of one edge shares one identity. On a zero-weight
+edge every partial traversal also shares time 0 and cost 0. Executed on the committed oracle: a
+500 m zero-weight edge with the direct traversals 25→75, 25→475 and 425→475 — lengths 50 m, 450 m
+and 50 m — produce the *identical* six-key rank, cost term included. Three different journeys, one
+key.
+
+So, normatively: **the ranking selects a unique reported answer and a unique route identity; it does
+not select a unique traversal.** Any quantity that reads the *geometry* of the selected route rather
+than its identity is therefore not determined by §2.4, and must carry its own reconstruction rule.
+
+The one such quantity in this design is **T10's boundary-touch share**, which is exactly where
+pass-22 found it: the three traversals above touch a declared boundary band over 0% and 100% of their
+length, so T10's reported figure swings the whole way on a choice §2.4 leaves open. Two repairs were
+available — put traversal intervals and a tie convention into the key, or weaken the promise and give
+T10 its own specification. **The second is adopted**, because the intervals are not part of any
+reported number and adding them to the universal key would make every identity comparison carry a
+field that only one diagnostic reads. T10 owes that specification; until it has one its boundary-touch
+figure is **not reproducible** and must not be reported as though it were. T10 is already a *warning
+diagnostic and not a bound*, so this narrows an output that was never load-bearing.
 
 **The lift from edge keys to a whole journey, stated because revision 6 left it implicit.** The four
 edge keys order *alternatives at one step*; they do not by themselves order two complete journeys.
@@ -502,13 +526,29 @@ Pass-20 F9 asked for the lift, and it is:
 
 > Among journeys tied on the objective's selection weight: smallest **travel time**, then smallest
 > **destination `id`**, then the smallest **sequence of canonical directed-edge identities**,
-> compared element-wise.
+> compared element-wise, then the smallest **cost**.
 
 Destination identity comes **before** the route sequence, because the destination is what the
 product's answer is about and the route is how it got there. Element-wise comparison is the normative
 one: comparing identity tuples as *text* gives a different order — node pairs `(2,3)` and `(10,11)`
 order `2 < 10` structurally and `'10' < '2'` as strings — and an implementation that stringified them
 selected the wrong route.
+
+**The cost key is revision 11's addition** (§12 item 4, pass-22), and it closes the lift rather than
+extending it. The oracle has ordered by `(time, destination id, route, cost)` since pass-21 F6; the
+normative prose stopped at the route sequence, so a conforming reader could select either of two
+records that share an identity, tie on time, and carry cost 1 and cost 2. Such a pair is not exotic:
+item 1 above says in terms that identity **excludes** time and cost by construction, precisely so
+that nothing upstream of ranking may collapse two records differing in the quantity an objective
+minimises. For objective 1, which selects on time, the *reported* cost of the selected journey was
+therefore undetermined by the prose while being determined in code. It is last because it is a
+reported quantity rather than a selection weight at this point in the order — it discriminates only
+after time, destination and route have failed to.
+
+**What the six keys now make unique, and what they do not.** They determine every number this design
+reports, the selected destination by identity, and the selected route as a *sequence of directed-edge
+identities*. They do **not** determine the traversal, because a directed-edge identity carries no
+arclength interval — see the amendment below.
 
 ### 2.5 Bounds: metric, strictness, soundness
 

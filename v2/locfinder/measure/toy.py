@@ -89,6 +89,51 @@ POI_SNAP_MAX_M = 300.0
 #: Design §2.4: "Rounding precision is 2 dp on metres everywhere, stated once."
 ROUND_DP = 2
 
+# ----------------------------------------------------------------------- the admissible domain
+#
+# Design §12 item 3: **finite constructor fields are not a domain.** Three defects followed from
+# having none, each reproduced before this was written:
+#
+# * a `(0,0) -> (1e-200,0)` segment has a finite, nonzero length whose **square underflows to
+#   zero**, so `_segment_nearest` took its zero-length branch, attached the destination at the
+#   segment start and reported 7.936507936507936e-201 s where the endpoint-to-endpoint 1,000 s is
+#   required -- PASS against FAIL;
+# * `cost_base = 1e308` with `penalty = 1e308` passes a per-field finite check, sums to `inf`,
+#   reaches `0 * inf` at a zero-span traversal and raises from an empty `min()` instead of
+#   returning the zero §2.4 promises;
+# * query coordinates were not validated at all, so a NaN origin produced zero candidates and no
+#   objective -- **indistinguishable from a genuine absence of any route**, which is the error
+#   class this whole stage exists to prevent.
+#
+# The bounds are derived from where the arithmetic stops being exact, not chosen for roundness.
+# `_segment_nearest` squares a segment's extent, so the smallest admissible length is set well
+# clear of where that square underflows (a double's smallest normal is ~2.2e-308, so the squaring
+# limit is ~1.5e-154); a micrometre leaves 148 orders of magnitude of headroom and is far below
+# anything a metre-based road network contains. The coordinate bound keeps the same square clear of
+# overflow with equal margin, and 1e7 m comfortably contains any UTM easting or northing.
+#
+# A segment of length **exactly** zero stays admissible: §2.2's zero-span traversals are a declared
+# case with their own convention, not a degenerate accident.
+COORD_ABS_MAX = 1e7
+MIN_SEGMENT_M = 1e-6
+
+
+def require_query_point(point, what: str) -> tuple[float, float]:
+    """Check a **query** coordinate -- an origin or a destination -- against the domain.
+
+    Separate from the edge check because a query point is the one input that arrives from outside
+    the measurement: an unvalidated NaN here does not raise, it returns *no journey*, and no caller
+    can tell that from a place with no route to a grocery. An absence that was really a malformed
+    input is the one failure this oracle must never produce silently.
+    """
+    x, y = point
+    if not (math.isfinite(x) and math.isfinite(y)):
+        raise ValueError(f"{what} must be finite, got ({x!r}, {y!r})")
+    if abs(x) > COORD_ABS_MAX or abs(y) > COORD_ABS_MAX:
+        raise ValueError(
+            f"{what} ({x!r}, {y!r}) is outside the admissible domain |coord| <= {COORD_ABS_MAX:g}")
+    return (float(x), float(y))
+
 
 # ----------------------------------------------------------------------------- geometry
 
@@ -143,12 +188,34 @@ class ToyEdge:
         for x, y in self.geometry:
             if not (math.isfinite(x) and math.isfinite(y)):
                 raise ValueError(f"edge coordinates must be finite, got ({x!r}, {y!r})")
+            if abs(x) > COORD_ABS_MAX or abs(y) > COORD_ABS_MAX:
+                raise ValueError(
+                    f"edge coordinate ({x!r}, {y!r}) is outside the admissible domain "
+                    f"|coord| <= {COORD_ABS_MAX:g}")
+        # Every segment is either exactly degenerate or long enough that squaring its extent stays
+        # exact. A length between the two is the 1e-200 case: nonzero, so the geometry claims a
+        # direction, but with a squared length of zero, so the projection silently loses it.
+        for (ax, ay), (bx, by) in zip(self.geometry, self.geometry[1:]):
+            length = math.hypot(bx - ax, by - ay)
+            if 0.0 < length < MIN_SEGMENT_M:
+                raise ValueError(
+                    f"segment ({ax!r}, {ay!r}) -> ({bx!r}, {by!r}) has length {length!r}, between "
+                    f"zero and the smallest admissible {MIN_SEGMENT_M:g} m. Its square underflows, "
+                    "so the projection would treat a segment with a direction as degenerate.")
         for name, value in (("time_s", self.time_s), ("cost_base", self.cost_base),
                             ("penalty", self.penalty)):
             if not math.isfinite(value):
                 raise ValueError(f"{name} must be finite, got {value!r}")
             if value < 0:
                 raise ValueError(f"{name} must be non-negative, got {value!r}")
+        # The **formed** term, not just the given fields. §2.4 freezes `f * (cost_base + penalty)`
+        # as one term, so that sum is what the arithmetic actually handles: two finite fields whose
+        # sum overflows reach `0 * inf` at a zero-span traversal and raise from an empty `min()`
+        # rather than returning the promised zero.
+        if not math.isfinite(self.cost_base + self.penalty):
+            raise ValueError(
+                f"cost_base + penalty must be finite, got {self.cost_base!r} + {self.penalty!r}. "
+                "§2.4 freezes that sum as one term, so it is the quantity the domain bounds.")
 
     @property
     def total_cost(self) -> float:
@@ -342,7 +409,10 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
     are **200.004 m and 199.996 m**, and keeping the first then dropping it at the 200 m cap returned
     **zero** candidates where one is attached.
     """
-    px, py = point
+    # The query point enters the domain here, which covers `attachments` too since it
+    # delegates. §12 item 3: unvalidated, a NaN origin returns no candidates rather than
+    # raising, and no caller can distinguish that from a point with no road near it.
+    px, py = require_query_point(point, "the query point")
     raw: list[Attachment] = []
     for i, e in enumerate(graph.edges):
         total = e.length_m
@@ -445,7 +515,19 @@ class Journey:
     @property
     def rank_key(self) -> tuple:
         """Design §2.4's ranking, lifted to a whole journey: smallest travel time, then smallest
-        **destination id**, then the smallest route-identity sequence compared element-wise.
+        **destination id**, then the smallest route-identity sequence compared element-wise, then
+        the smallest **cost**.
+
+        The cost key was implemented from pass-21 F6 and became **normative in revision 11** (§12
+        item 4): identity excludes time and cost by construction, so two records can share an
+        identity, tie on time, and carry different costs — and the prose, which stopped at the route
+        sequence, left the *reported* cost of the selected journey undetermined while this code
+        determined it.
+
+        These six keys do not select a unique **traversal**: an identity carries no arclength
+        interval, so on a zero-weight edge the 50 m, 450 m and 50 m traversals of
+        `test_the_ranking_does_not_select_a_unique_traversal` share one key. §2.4 now promises a
+        unique reported answer and route identity, and T10 owes its own reconstruction rule.
 
         Pass-20 F9 found two defects in the first version, which keyed on
         `tuple(repr(r) for r in route)`:
@@ -604,6 +686,9 @@ def journeys(graph: ToyGraph, origin: tuple[float, float],
     share no unit with that engine's generalised cost. It does not repeal §2.2 for ours, whose cost
     is already in seconds — `access.py` adds 120 s per restricted edge to it.
     """
+    origin = require_query_point(origin, "the origin")
+    destinations = [require_query_point(d, f"destination {i}")
+                    for i, d in enumerate(destinations)]
     ids = ([str(i) for i in range(len(destinations))] if destination_ids is None
            else [str(d) for d in destination_ids])
     if len(ids) != len(destinations):
@@ -699,6 +784,10 @@ def evaluate(graph: ToyGraph, origin: tuple[float, float],
     is presented in and genuinely equal costs compare equal. An epsilon is still *not* introduced —
     §2.4 declares no cost tolerance, and inventing one here would be this module making a rule.
     """
+    # Also here, at the outermost entry, so the message names which input is wrong. Without it a
+    # bad destination surfaces as "the query point" from whichever inner call reached it first.
+    origin = require_query_point(origin, "the origin")
+    destinations = [require_query_point(d, f"destination {i}") for i, d in enumerate(destinations)]
     nearest = nearest_on_graph(graph, origin, cap_m=MAX_ACCESS_M)
     eligible = tuple(i for i, d in enumerate(destinations)
                      if attachments(graph, d, cap_m=POI_SNAP_MAX_M))
