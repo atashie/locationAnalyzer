@@ -1,0 +1,98 @@
+{
+ "generated": "2026-11-09 12:10:00",
+ "script": "v2/scripts/audit_recommendations.py",
+ "purpose": "S3 plan section 0 step 0: journeys for the owner-gated walked audit",
+ "metro": "triangle",
+ "category": "grocery",
+ "mode": "walk",
+ "thresholds_min": [
+  10,
+  15
+ ],
+ "seed": 20261109,
+ "per_stratum": 3,
+ "journeys": 21,
+ "grid": {
+  "cell_m": 100.0,
+  "nrows": 514,
+  "ncols": 643,
+  "crs": "EPSG:32617",
+  "version": "grid-v0+7ab61db26b3cc98e"
+ },
+ "profile_version": "speeds-v0+9893b1b0168ff19a",
+ "layer": {
+  "seconds": {
+   "path": "v2/data/layers/own_triangle_grocery_walk.npy",
+   "sha256": "0a92398d8ffdc67844ce74368330525afd208ab6f16febd4f21b9e5264353c01"
+  },
+  "reason": {
+   "path": "v2/data/layers/own_triangle_grocery_walk_reason.npy",
+   "sha256": "977418efc127c6ecf79253e204e45e443b147652a1d20ebd64eb74e29eeca647"
+  },
+  "horizon_s": 7200.0,
+  "reason_max": 2,
+  "reason_max_name": "BEYOND_HORIZON",
+  "min_possible_s": {
+   "origin": "reconstructed",
+   "rule": "seconds where OK, horizon_s where BEYOND_HORIZON, 0 where OFF_NETWORK",
+   "off_network_bound_equivalence": {
+    "real_bound_max_s": 142.857,
+    "max_access_m": 200.0,
+    "max_speed_mps": 1.4,
+    "smallest_threshold_s": 600.0
+   }
+  }
+ },
+ "selection": {
+  "strata": {
+   "band10min_pass": {
+    "in_stratum": 6009,
+    "eligible": 4353,
+    "drawn": 3
+   },
+   "band10min_fail": {
+    "in_stratum": 6466,
+    "eligible": 4696,
+    "drawn": 3
+   },
+   "band15min_pass": {
+    "in_stratum": 7428,
+    "eligible": 5207,
+    "drawn": 3
+   },
+   "band15min_fail": {
+    "in_stratum": 7504,
+    "eligible": 5097,
+    "drawn": 3
+   },
+   "off_network_beside_ok": {
+    "in_stratum": 24468,
+    "eligible": 633,
+    "drawn": 3
+   },
+   "deep_pass_control": {
+    "in_stratum": 5732,
+    "eligible": 4363,
+    "drawn": 3
+   },
+   "deep_fail_control": {
+    "in_stratum": 112744,
+    "eligible": 51362,
+    "drawn": 3
+   }
+  },
+  "buildings": {
+   "path": "v2\\data\\layers\\own_triangle_buildings_per_cell.npy",
+   "sha256": "7c149634c1959461a17c8b918012a7b915a53c5606084566c3758a7027feb14d",
+   "min_buildings": 1,
+   "licence_use": "count raster only; individual footprints are not read or republished"
+  }
+ },
+ "door_offset_max_m": 70.71,
+ "band_s": 90.0,
+ "deep_pass_s": 300.0,
+ "deep_fail_s": 1800.0,
+ "blind_spot": "The committed layer is an aggregate over destinations and does not store which destination it chose, so this audit can establish that some destination was open and reachable, not that the product's destination was. Narrowing, not closing, the closed-destination blind spot that E1 and E2 share.",
+ "reproducibility": "v2/data/ is gitignored, so the input rasters named above do not travel with a clone: this sheet is reproducible only on a machine that holds them. Rebuild with `uv run python spikes/s2_building_weighted_coverage.py grocery walk`, which needs data/triangle/roads.graphml (670 MB). The sha256s identify the inputs on a machine that has them.",
+ "elapsed_s": 0.07
+}

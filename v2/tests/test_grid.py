@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from locfinder.grid import GridSpec, NODATA, encode_minutes
 
@@ -96,3 +97,109 @@ def test_the_envelope_is_padded_outward_not_inward():
     padded = g.envelope_wgs84()
     assert padded[0] < tight[0] and padded[1] < tight[1]
     assert padded[2] > tight[2] and padded[3] > tight[3]
+
+
+# --------------------------------------------------------------------------------------------
+# cell_for_xy / cell_for_lonlat: the reverse mapping, added for S3 step 0's walked-journey audit.
+# A grid with no footprint test cannot answer "which published cell applies to this address", and
+# the audit's whole purpose is to compare a published cell against a journey walked from a door
+# inside it.
+# --------------------------------------------------------------------------------------------
+
+def _small() -> GridSpec:
+    """A hand-built grid, so the expected answers are arithmetic rather than projection output."""
+    return GridSpec("EPSG:32617", 450000.0, 4000000.0, 100.0, 10, 8)
+
+
+def test_cell_for_xy_maps_the_four_corners():
+    g = _small()
+    # Only the north-west corner is inside: the bounds are closed on the north and west edges.
+    assert g.cell_for_xy(g.x_min, g.y_max) == (0, 0)
+    assert g.cell_for_xy(g.x_max, g.y_max) is None
+    assert g.cell_for_xy(g.x_min, g.y_min) is None
+    assert g.cell_for_xy(g.x_max, g.y_min) is None
+    # A hair inside each of the other three is the corresponding corner cell, so the exclusions
+    # above are the half-open convention and not a missing column or row.
+    e = 1e-6
+    assert g.cell_for_xy(g.x_max - e, g.y_max) == (0, g.ncols - 1)
+    assert g.cell_for_xy(g.x_min, g.y_min + e) == (g.nrows - 1, 0)
+    assert g.cell_for_xy(g.x_max - e, g.y_min + e) == (g.nrows - 1, g.ncols - 1)
+
+
+def test_cell_for_xy_bounds_are_half_open_in_both_directions():
+    g = _small()
+    # x increases eastward with the column index: a boundary belongs to the cell east of it.
+    assert g.cell_for_xy(450100.0, 3999950.0) == (0, 1)
+    assert g.cell_for_xy(450099.999, 3999950.0) == (0, 0)
+    # y decreases southward as the row index increases: a boundary belongs to the cell south of
+    # it, which is the direction a sign error would invert.
+    assert g.cell_for_xy(450050.0, 3999900.0) == (1, 0)
+    assert g.cell_for_xy(450050.0, 3999900.001) == (0, 0)
+
+
+def test_cell_for_xy_returns_none_outside_and_never_clamps():
+    """Clamping would manufacture a verdict for a place the layer does not cover."""
+    g = _small()
+    mid_x, mid_y = g.x_min + 500.0, g.y_max - 400.0
+    outside = [
+        (g.x_min - 0.001, mid_y), (g.x_max, mid_y), (g.x_max + 10_000.0, mid_y),
+        (mid_x, g.y_max + 0.001), (mid_x, g.y_min), (mid_x, g.y_min - 10_000.0),
+        (g.x_min - 1.0, g.y_max + 1.0),
+    ]
+    for x, y in outside:
+        assert g.cell_for_xy(x, y) is None, f"({x}, {y}) was placed in a cell"
+
+
+def test_cell_for_lonlat_recovers_every_cell_from_its_own_centre():
+    """The round trip against `cell_centers_lonlat`, exhaustively on a small grid."""
+    g = GridSpec.from_bbox_wgs84(west=-79.0, south=36.0, east=-78.99, north=36.01, cell_m=100)
+    lons, lats = g.cell_centers_lonlat()
+    assert g.nrows * g.ncols > 50, "the grid shrank; this test is no longer exhaustive enough"
+    for row in range(g.nrows):
+        for col in range(g.ncols):
+            got = g.cell_for_lonlat(float(lons[row, col]), float(lats[row, col]))
+            assert got == (row, col), f"centre of {(row, col)} came back as {got}"
+
+
+def test_cell_for_lonlat_recovers_sampled_cells_of_the_real_triangle_grid():
+    """And on the grid the published layers actually use, where the projection is not the
+    identity and a row/column transposition would survive a square test grid."""
+    from locfinder.metros import TRIANGLE
+
+    g = TRIANGLE.grid()
+    assert g.nrows != g.ncols, "a transposition would be invisible on a square grid"
+    lons, lats = g.cell_centers_lonlat()
+    rng = np.random.default_rng(20261109)
+    rows = rng.integers(0, g.nrows, 300)
+    cols = rng.integers(0, g.ncols, 300)
+    for row, col in zip(rows.tolist(), cols.tolist()):
+        got = g.cell_for_lonlat(float(lons[row, col]), float(lats[row, col]))
+        assert got == (row, col), f"centre of {(row, col)} came back as {got}"
+
+
+def test_cell_for_xy_rejects_a_non_finite_coordinate():
+    """NaN is not a point outside the footprint - it is not a point. Returning `None` would
+    launder a malformed input into an ordinary negative answer, which is the same defect as the
+    NaN origin that manufactures an authoritative `NO_PATH` (plan 0, step 1)."""
+    g = _small()
+    for bad in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError, match="non-finite"):
+            g.cell_for_xy(bad, 4000000.0)
+        with pytest.raises(ValueError, match="non-finite"):
+            g.cell_for_xy(450000.0, bad)
+        with pytest.raises(ValueError, match="non-finite"):
+            g.cell_for_lonlat(bad, 36.0)
+        with pytest.raises(ValueError, match="non-finite"):
+            g.cell_for_lonlat(-79.0, bad)
+
+
+def test_cell_for_lonlat_rejects_a_coordinate_that_does_not_project():
+    """pyproj returns `inf` for a latitude past the pole, which would otherwise read as a
+    well-formed point that happens to lie outside the grid."""
+    g = _small()
+    for lat in (95.0, 91.0, -95.0):
+        with pytest.raises(ValueError, match="does not project"):
+            g.cell_for_lonlat(-79.0, lat)
+    # A longitude outside [-180, 180] does project, to somewhere far away, so it is merely
+    # outside. Declaring the admissible input domain is plan 0 step 1's job, not this method's.
+    assert g.cell_for_lonlat(500.0, 36.0) is None

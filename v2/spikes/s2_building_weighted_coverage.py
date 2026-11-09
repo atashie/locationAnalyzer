@@ -185,6 +185,13 @@ def main() -> None:
     # The rebuild costs two minutes; a follow-up asking a different question of the same surface
     # should not have to pay it again, and should not be tempted to re-derive reasons from seconds.
     np.save(LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_reason.npy", surf.reason)
+    # And the lower bound, which was not saved before. Without it a follow-up cannot rebuild a
+    # `status.Surface` at all, and `scripts/audit_recommendations.py` has to reconstruct one under
+    # an assertion that only holds while this metro's reason array stops at BEYOND_HORIZON. The
+    # bound is what turns a missing value into a *known* failure, so re-deriving it by guesswork is
+    # exactly the error the reasons exist to prevent.
+    np.save(LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_min_possible_s.npy",
+            surf.min_possible_s)
     np.save(LAYERS / f"own_{METRO.name}_buildings_per_cell.npy", counts)
 
     out["versions"] = {"profile": profile.profile_version(), "grid": profile.grid_version(GRID)}

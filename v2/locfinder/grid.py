@@ -70,6 +70,54 @@ class GridSpec:
         lons, lats = to_wgs.transform(xs, ys)
         return np.asarray(lons), np.asarray(lats)
 
+    def cell_for_xy(self, x: float, y: float) -> tuple[int, int] | None:
+        """`(row, col)` of the cell containing a projected coordinate, or `None` if outside.
+
+        The inverse of `cell_centers_xy`, and the mapping a query needs: a household gives a
+        point, and the product must say which cell's published answer applies to it. Until S3 step
+        0 this class went centre-outward only, and the one place that needed the reverse
+        (`spikes/s2_building_weighted_coverage.py:69`) inlined the arithmetic.
+
+        **Half-open bounds, closed on the north and west edges.** Cell `(row, col)` covers
+        `x` in `[x_min + col*cell_m, x_min + (col+1)*cell_m)` and
+        `y` in `(y_max - (row+1)*cell_m, y_max - row*cell_m]`. So `(x_min, y_max)` is cell
+        `(0, 0)`, while a point exactly on `x_max` or on `y_min` belongs to a cell one past the
+        edge and is therefore **outside**. The property that matters is that every point belongs to
+        at most one cell; which side of a measure-zero boundary it falls on is a convention, and
+        this one is chosen to match `rasterio_profile`'s origin-at-north-west transform.
+
+        **Outside returns `None`, and never clamps to an edge cell.** Clamping would manufacture a
+        verdict for a place the layer does not cover: the household would be handed the travel time
+        of whatever cell we happen to hold nearest, with nothing in the answer marking the
+        substitution. An absent answer is recoverable; a confident wrong one is not.
+
+        A **non-finite** coordinate raises rather than returning `None`. NaN is not a point outside
+        the footprint — it is not a point — and reporting "outside" for it would launder a
+        malformed input into an ordinary negative answer.
+        """
+        if not (math.isfinite(x) and math.isfinite(y)):
+            raise ValueError(f"non-finite projected coordinate ({x!r}, {y!r})")
+        col = math.floor((x - self.x_min) / self.cell_m)
+        row = math.floor((self.y_max - y) / self.cell_m)
+        if 0 <= row < self.nrows and 0 <= col < self.ncols:
+            return row, col
+        return None
+
+    def cell_for_lonlat(self, lon: float, lat: float) -> tuple[int, int] | None:
+        """`(row, col)` for a WGS84 coordinate, or `None` if outside. See `cell_for_xy`.
+
+        A coordinate that does not project into this CRS at all raises, for the same reason a NaN
+        does: pyproj returns `inf` for an unprojectable point, and `inf` would otherwise read as a
+        well-formed point that happens to lie outside the grid.
+        """
+        if not (math.isfinite(lon) and math.isfinite(lat)):
+            raise ValueError(f"non-finite coordinate ({lon!r}, {lat!r})")
+        to_proj = Transformer.from_crs("EPSG:4326", self.crs, always_xy=True)
+        x, y = to_proj.transform(lon, lat)
+        if not (math.isfinite(x) and math.isfinite(y)):
+            raise ValueError(f"({lon!r}, {lat!r}) does not project into {self.crs}")
+        return self.cell_for_xy(x, y)
+
     #: Points per side when reprojecting the rectangle's boundary. A projected rectangle's edges
     #: are curves in geographic coordinates, so its geographic extremes need not be at its corners.
     ENVELOPE_SAMPLES = 256

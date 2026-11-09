@@ -40,7 +40,8 @@ note disagrees with the code, the code is right and the note needs correcting.
 - [`project-phase1-s0-complete`](project-phase1-s0-complete.md) — Phase 1 stage S0 (the layer contract) is done and committed as 90074e6 - what it decided, the two measured findings, and what S1 picks up
 - [`project-phase1-s1-complete`](project-phase1-s1-complete.md) — Phase 1 stage S1 (the expansion primitive) after Codex pass 9 - roots are partial edges, walk agrees at the median with heavy tails, drive carries a +50 s bias that is not the adapter
 - [`project-phase1-s2-progress`](project-phase1-s2-progress.md) — Phase 1 stage S2 COMPLETE - all five tasks done, Codex passes 10-12 absorbed; the headline measurements and the over-correction pattern
-- [`project-phase1-s3-design`](project-phase1-s3-design.md) — S3 design is revision 10 - revision 9 was reverted after an hour and the candidate universe is now a DECLARED CONVENTION; T0 measures prevalence on the real graph before any further rule choice; T3 refused four times, nothing sampled
+- [`project-phase1-s3-design`](project-phase1-s3-design.md) — S3 design is revision 10 and the execution plan is revision 11 - the entry point is now plan §0, the risk-ordered next steps after Codex pass 25 judged the effort aimed at the wrong axis
+- [`project-phase1-s3-step0-audit-harness`](project-phase1-s3-step0-audit-harness.md) — S3 plan §0 step 0 is done - GridSpec had no coordinate-to-cell mapping at all, Surface.min_possible_s is not stored and its reconstruction is only valid under two tested guards, and the near-threshold bands had to be split by the side of the threshold
 - [`project-v2-rethink-decisions`](project-v2-rethink-decisions.md) — Decisions and status for the ground-up rethink (V2) of the Distance Finder / location-finder product, kicked off 2026-11-03
 
 ## Environment and tooling facts
