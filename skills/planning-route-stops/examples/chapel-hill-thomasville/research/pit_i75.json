@@ -1,0 +1,622 @@
+[
+ {
+  "key": "noahs_ark_sanctuary",
+  "name": "Noah's Ark Animal Sanctuary",
+  "where": "712 LG Griffin Rd, Locust Grove, GA 30248 - I-75 exit 212 (~4 mi, verify)",
+  "lat": 33.30649,
+  "lon": -84.12757,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://noahs-ark.org/",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": 50,
+  "cost_note": "$15 adult, $10 child; +2.6% card surcharge",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Habitats (winter hours Nov 1-Mar 31)",
+    "days": "Tue-Sun",
+    "open": "10:00",
+    "close": "15:30",
+    "last_entry": "15:00",
+    "url": "https://noahs-ark.org/",
+    "status": "standing"
+   },
+   {
+    "name": "Playground",
+    "days": "Tue-Sun",
+    "close": "15:45",
+    "url": "https://noahs-ark.org/",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Walk-through animal rescue habitats plus playground; last ticket 15:00",
+  "segment_hours": 6.5
+ },
+ {
+  "key": "alexander_park_mcdonough",
+  "name": "Alexander Park",
+  "where": "Atlanta St, McDonough, GA 30253 - I-75 exit 218 (~2 mi, verify)",
+  "lat": 33.45451,
+  "lon": -84.15248,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://exploregeorgia.org/mcdonough/outdoors-nature/parks/alexander-park-mcdonough",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "09:00",
+    "close": "21:00",
+    "url": "https://exploregeorgia.org/mcdonough/outdoors-nature/parks/alexander-park-mcdonough",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Playground, paved walking track, public restrooms",
+  "segment_hours": 6.5
+ },
+ {
+  "key": "southern_belle_farm",
+  "name": "Southern Belle Farm",
+  "where": "1658 Turner Church Rd, McDonough, GA 30252 - I-75 exit 218 area",
+  "lat": 33.4746,
+  "lon": -84.1356,
+  "coord_source": "OSM/Nominatim street centroid (approximate)",
+  "url": "https://www.southernbellefarm.com/",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": null,
+  "cost_note": "2025 activity tickets $18.95-24.95 pp; 2026 unpublished",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Farm (fall season ended Nov 15 in 2025; Christmas dates unpublished)",
+    "note": "likely closed between seasons on Nov 25",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "In season: kids play area, jumping pillow, corn maze",
+  "segment_hours": 6.5
+ },
+ {
+  "key": "high_falls_sp",
+  "name": "High Falls State Park",
+  "where": "76 High Falls Park Dr, Jackson, GA 30233 - I-75 exit 198 (1.8 mi east)",
+  "lat": 33.17831,
+  "lon": -84.01594,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://gastateparks.org/HighFalls",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 10,
+  "cost_note": "$10/vehicle ParkPass (2026 rate)",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park grounds",
+    "days": "daily",
+    "open": "07:00",
+    "close": "22:00",
+    "url": "https://gastateparks.org/HighFalls",
+    "status": "standing"
+   },
+   {
+    "name": "Park office",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://gastateparks.org/HighFalls",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "135 ft cascade; Historic Trail 0.5 mi easy with falls overlook; Falls View 1.5 mi strenuous; day-use playground. Lake lowered Nov 1 2026-Jan 31 2027",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "rest_area_monroe_sb179",
+  "name": "I-75 SB Rest Area #22 (Monroe Co, MP 179)",
+  "where": "I-75 southbound MP 179, Monroe County, GA",
+  "lat": 32.97232,
+  "lon": -83.82822,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://dot.ga.gov/GDOT/Pages/restareaswelcomecenters.aspx",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Restrooms",
+    "always": true,
+    "note": "24 h; custodians 07:00-23:00; no playground listed",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms and lawn only",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "ocmulgee_mounds",
+  "name": "Ocmulgee Mounds National Historical Park",
+  "where": "1207 Emery Hwy, Macon, GA 31217 - via I-16 just east of I-75 exit 165 (~2 mi, verify)",
+  "lat": 32.83723,
+  "lon": -83.60184,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 0,
+  "cost_note": "free, no pass required",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Grounds and trails",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+    "status": "standing"
+   },
+   {
+    "name": "Visitor Center and Earth Lodge",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "0.5 mi Main Path to Great Temple Mound (stair climb) via walk-in Earth Lodge; 8 mi of short trails; out by 17:00; closed only Thanksgiving Day/Xmas/New Year",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "amerson_river_park",
+  "name": "Amerson River Park",
+  "where": "Riverside Dr area, Macon, GA - near I-75 exits 167/169 (~1 mi, verify)",
+  "lat": 32.87689,
+  "lon": -83.65178,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://amerson.maconbibb.us/park-rules/",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park (Nov-Feb)",
+    "days": "daily",
+    "open": "07:00",
+    "close": "18:00",
+    "url": "https://amerson.maconbibb.us/park-rules/",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Riverside playground with restrooms, Ocmulgee Heritage Trail",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "lane_southern_orchards",
+  "name": "Lane Southern Orchards",
+  "where": "50 Lane Rd, Fort Valley, GA 31030 - I-75 exit 142 (~5 mi west)",
+  "lat": 32.55516,
+  "lon": -83.82642,
+  "coord_source": "Google Maps pin via worldofplaygrounds.com",
+  "url": "https://www.lanesouthernorchards.com/",
+  "kind": "food",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "free entry; food/ice cream extra",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Market, cafe, playground",
+    "days": "daily",
+    "open": "09:00",
+    "close": "18:00",
+    "url": "https://www.lanesouthernorchards.com/",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Farm-themed playground with real tractors; directories conflict on hours (9-5, 9-7)",
+  "segment_hours": 7.5
+ },
+ {
+  "key": "rozar_park_perry",
+  "name": "Rozar Park",
+  "where": "1060 Keith Dr, Perry, GA 31069 - I-75 exits 135/136 (~2-3 mi, verify)",
+  "lat": 32.46308,
+  "lon": -83.70466,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "06:00",
+    "note": "closes at sunset (~17:35)",
+    "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Destination playground (2019), walking trail around two ponds; restrooms not stated",
+  "segment_hours": 7.5
+ },
+ {
+  "key": "museum_of_aviation",
+  "name": "Museum of Aviation",
+  "where": "1942 Heritage Blvd, Robins AFB, GA 31098 - I-75 exit 144 via Russell Pkwy (~8-9 mi, verify)",
+  "lat": 32.59186,
+  "lon": -83.58687,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://museumofaviation.org/visit/hours-guidelines/",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": 0,
+  "cost_note": "free admission and parking",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Museum",
+    "days": "Mon-Sat",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://museumofaviation.org/visit/hours-guidelines/",
+    "status": "standing"
+   },
+   {
+    "name": "Outdoor aircraft",
+    "note": "access not stated",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Hangars plus outdoor aircraft; no climbing on aircraft; closed only on Thanksgiving Day",
+  "segment_hours": 7.5
+ },
+ {
+  "key": "rest_area_dooly_sb118",
+  "name": "I-75 SB Rest Area #14 (Dooly Co, MP 118)",
+  "where": "I-75 southbound MP 118, Dooly County, GA",
+  "lat": 32.20937,
+  "lon": -83.74743,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://dot.ga.gov/GDOT/Pages/restareaswelcomecenters.aspx",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Restrooms",
+    "always": true,
+    "note": "24 h; no playground listed",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms and lawn only",
+  "segment_hours": 7.75
+ },
+ {
+  "key": "ellis_bros_pecans",
+  "name": "Ellis Bros. Pecans",
+  "where": "1315 Tippettville Rd, Vienna, GA - I-75 exit 109 (~1 mi)",
+  "lat": 32.09564,
+  "lon": -83.74827,
+  "coord_source": "OSM/Nominatim address",
+  "url": "https://exploregeorgia.org/vienna/agritourism/farms-ranches/ellis-brothers-pecans",
+  "kind": "food",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "free entry",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Store",
+    "days": "daily",
+    "open": "08:00",
+    "close": "19:00",
+    "note": "some sources say 20:00; 'including holidays' per SWGA Living 2025",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Snack and restroom stop; no play area found",
+  "segment_hours": 8.0
+ },
+ {
+  "key": "titan_missile_cordele",
+  "name": "Titan I Missile",
+  "where": "1815 E 16th Ave, Cordele, GA - I-75 exit 101 (0.1 mi west)",
+  "lat": 31.9608,
+  "lon": -83.75275,
+  "coord_source": "OSM/Nominatim (matches Waymarking)",
+  "url": "https://www.waymarking.com/waymarks/WM1HV3_Titan_I",
+  "kind": "icon",
+  "suggested_dwell_min": 10,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Missile display",
+    "always": true,
+    "note": "outdoor, in a commercial lot",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "~100 ft ICBM; quick photo stop",
+  "segment_hours": 8.0
+ },
+ {
+  "key": "georgia_veterans_sp",
+  "name": "Georgia Veterans State Park",
+  "where": "2459 US-280 W, Cordele, GA 31015 - I-75 exit 101 (~10 mi west)",
+  "lat": 31.95887,
+  "lon": -83.90346,
+  "coord_source": "OSM/Nominatim park centroid",
+  "url": "https://www.lakeblackshearresort.com/ga-veterans-park/military-museum/",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 10,
+  "cost_note": "$10/vehicle ParkPass",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "07:00",
+    "close": "22:00",
+    "url": "https://exploregeorgia.org/cordele/history-heritage/history-heritage-museums/georgia-veterans-state-park-resort",
+    "status": "standing"
+   },
+   {
+    "name": "Military museum",
+    "note": "hours unpublished; call 229-276-2371",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Walkable outdoor B-29A, jets, helicopter, tanks, artillery (possibly fenced); playground and trails per visitor review",
+  "segment_hours": 8.0
+ },
+ {
+  "key": "big_peanut_ashburn",
+  "name": "World's Largest Peanut",
+  "where": "315 Whittle Circle / Sylvia Dr, Ashburn, GA 31714 - I-75 exit 82 (~0.5 mi)",
+  "lat": 31.70637,
+  "lon": -83.63533,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.roadsideamerica.com/story/2071",
+  "kind": "icon",
+  "suggested_dwell_min": 10,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Peanut monument",
+    "always": true,
+    "note": "rebuilt 2023; reach via unmarked road",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Giant steel peanut with LED crown; photo stop",
+  "segment_hours": 8.25
+ },
+ {
+  "key": "rest_area_turner_sb76",
+  "name": "I-75 SB Rest Area #9 (Turner Co, MP 76.3)",
+  "where": "I-75 southbound MP 76.3, Turner County, GA",
+  "lat": 31.63463,
+  "lon": -83.58458,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://dot.ga.gov/GDOT/Pages/restareaswelcomecenters.aspx",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Restrooms",
+    "always": true,
+    "note": "24 h; no playground listed; undated resurfacing-closure report",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms and lawn only",
+  "segment_hours": 8.25
+ },
+ {
+  "key": "ga_museum_agriculture",
+  "name": "ABAC Georgia Museum of Agriculture & Historic Village",
+  "where": "1392 Whiddon Mill Rd, Tifton, GA - just off I-75 (exit not verified)",
+  "lat": 31.46536,
+  "lon": -83.53514,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://gma.abac.edu/visitor-information-hours.html",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": 36,
+  "cost_note": "weekday: $10 adult, $8 age 4-15",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Historic Village, exhibit hall, gallery",
+    "days": "Wed-Fri",
+    "open": "09:00",
+    "close": "15:00",
+    "url": "https://gma.abac.edu/visitor-information-hours.html",
+    "status": "standing"
+   },
+   {
+    "name": "Country Store",
+    "days": "Tue-Sat",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://gma.abac.edu/visitor-information-hours.html",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Outdoor 1890s village to roam; steam train Saturdays only; 15:00 close likely too early",
+  "segment_hours": 8.5
+ },
+ {
+  "key": "fulwood_park_tifton",
+  "name": "Fulwood Park",
+  "where": "893 Tift Ave (or 817 Prince Ave), Tifton, GA 31794 - ~1.5-2 mi east of I-75 (verify)",
+  "lat": 31.46038,
+  "lon": -83.50327,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://exploregeorgia.org/tifton/outdoors-nature/trails-tours/fulwood-park",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "08:00",
+    "close": "20:00",
+    "url": "https://exploregeorgia.org/tifton/outdoors-nature/trails-tours/fulwood-park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Two renovated playgrounds (2024, 2025; one aimed at age 8+), 0.5 mi paved trail, renovated restrooms",
+  "segment_hours": 8.5
+ },
+ {
+  "key": "main_street_park_moultrie",
+  "name": "Main Street Park",
+  "where": "1220 S Main St, Moultrie, GA 31768 - off US-319 (~1-2 mi, verify)",
+  "lat": 31.16358,
+  "lon": -83.79008,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://exploregeorgia.org/moultrie/outdoors-nature/parks/main-street-park",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park",
+    "note": "hours unpublished",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Shaded playground, quarter-mile trail, restrooms in shelter",
+  "segment_hours": 9.0
+ },
+ {
+  "key": "tom_white_linear_park",
+  "name": "Tom White Linear Park",
+  "where": "10 Lower Meigs Rd, Moultrie, GA 31768 - US-319 corridor",
+  "lat": 31.14671,
+  "lon": -83.7992,
+  "coord_source": "OSM/Nominatim street centroid (approximate)",
+  "url": "https://www.exploregeorgia.org/moultrie/outdoors-nature/hiking/tom-white-linear-park",
+  "kind": "outdoors",
+  "suggested_dwell_min": 25,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Rail-trail",
+    "days": "daily",
+    "open": "06:00",
+    "close": "21:00",
+    "url": "https://www.exploregeorgia.org/moultrie/outdoors-nature/hiking/tom-white-linear-park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "7.2 mi rail-trail; short out-and-back run or scooter; no restrooms mentioned",
+  "segment_hours": 9.0
+ },
+ {
+  "key": "cherokee_lake_park",
+  "name": "Cherokee Lake Park",
+  "where": "330 (city) / 420 (Explore GA) Covington Ave, Thomasville, GA 31792",
+  "lat": 30.83825,
+  "lon": -83.95985,
+  "coord_source": "OSM/Nominatim (lake centroid)",
+  "url": "https://thomasville.org/parks-and-recreation",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "06:00",
+    "close": "21:00",
+    "note": "Explore GA also says dawn to dusk",
+    "url": "https://www.exploregeorgia.org/thomasville/outdoors-nature/trails-tours/cherokee-lake-park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "1 mi paved lighted lake loop with bridges/piers, modern playground, restrooms",
+  "segment_hours": 9.5
+ },
+ {
+  "key": "big_oak_thomasville",
+  "name": "The Big Oak",
+  "where": "124 E Monroe St (Crawford & Monroe), Thomasville, GA 31792",
+  "lat": 30.84111,
+  "lon": -83.98169,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://exploregeorgia.org/thomasville/general/historic-sites-trails-tours/the-big-oak-and-big-oak-cam",
+  "kind": "icon",
+  "suggested_dwell_min": 10,
+  "cost_usd": 0,
+  "cost_note": "free, free parking",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Tree and Poe Park",
+    "always": true,
+    "note": "Big Oak Cam photo by phone",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Live oak from c.1680 with 165 ft limb span; short stop",
+  "segment_hours": 9.5
+ },
+ {
+  "key": "paradise_park_thomasville",
+  "name": "Paradise Park",
+  "where": "501 S Dawson St (or 403 S Broad St), Thomasville, GA",
+  "lat": 30.83273,
+  "lon": -83.97402,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://thomasville.org/paradise-park",
+  "kind": "playground",
+  "suggested_dwell_min": 20,
+  "cost_usd": 0,
+  "cost_note": "free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park",
+    "note": "hours unpublished; Phase II (playground, restrooms) construction starting late 2026, finish fall 2027",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Quarter-mile oval walk; existing playground may be fenced for construction; no restrooms",
+  "segment_hours": 9.5
+ }
+]

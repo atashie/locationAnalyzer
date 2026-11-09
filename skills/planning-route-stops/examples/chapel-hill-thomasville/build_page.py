@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the comparison page from measured.json. Every number comes from the
 measurement, never retyped -- rule 3 enforced by construction."""
-import json, math, io, os, itertools
+import json, math, io, os, itertools, datetime
 
 NL = chr(10)
 D = os.path.dirname(os.path.abspath(__file__))
@@ -9,10 +9,10 @@ M = json.load(open(f"{D}/measured.json", encoding="utf-8"))
 OUT = os.path.join(D, "route-options.html")      # next to the inputs it was built from
 
 opts, stops, bbox, direct = M["options"], M["stops"], M["bbox"], M["direct"]
-ORDER = ["coastal-fewest", "coastal-swamp", "coastal-outdoors",
-         "fallline-two-big", "fallline-gentler", "fallline-indoors",
-         "atlanta-two-cities"]
-assert set(ORDER) == set(opts), set(ORDER) ^ set(opts)
+# Spec order is page order: options are grouped by corridor in spec.json. A literal list
+# here had to be edited in step with the spec and silently dropped anything it missed.
+ORDER = list(opts)
+SPEC = json.load(open(f"{D}/spec.json", encoding="utf-8"))
 
 GROUPS = []
 for k in ORDER:
@@ -23,6 +23,8 @@ for k in ORDER:
 CORR_SHORT = {"coastal - I-95 then US-84": "Coastal",
               "fall line - I-77, I-20, Fall Line Fwy, I-75": "Fall line",
               "Atlanta - I-85 the whole way, then I-75": "Atlanta"}
+CORR_KEY = {c: {"Coastal": "coastal", "Fall line": "fall", "Atlanta": "atl"}[v]
+            for c, v in CORR_SHORT.items()}
 
 BM = json.load(open(f"{D}/basemap.json", encoding="utf-8"))
 
@@ -136,33 +138,42 @@ santee_cost = mins(EXP["stop_detour_by_corridor"]["santee_off_coastal_s"])
 i95_mi = EXP["corridor_mileage"]["i95_southbound_mi"]
 i85_mi = EXP["corridor_mileage"]["i85_through_atlanta_mi"]
 
-# figures quoted in the fall-line and collision copy, all read off the measurement
-fl_open_leg = hm_short(opts["fallline-two-big"]["legs_s"][0])
-fl_mid_leg = hm_short(opts["fallline-two-big"]["legs_s"][1])
-gentler_extra = mins(opts["fallline-gentler"]["detour_s"] - opts["fallline-two-big"]["detour_s"])
-_g = opts["fallline-gentler"]["legs_s"]
-gentler_split = f"{hm_short(_g[1])} and {hm_short(_g[2])}"
-pig_arr = min(sc["arrive"] for k in ORDER for sc in opts[k]["schedule"] if sc["stop"] == "pig_rh")
 BUDGET_S = 3600                       # the traveller's rough figure, stated as "about an hour"
 under = sum(1 for k in ORDER if opts[k]["detour_s"] <= BUDGET_S)
 over = len(ORDER) - under
-NUMWORD = {0:"no", 1:"one", 2:"two", 3:"three", 4:"four", 5:"five", 6:"six", 7:"seven"}
-# how far past sunset the Atlanta option lands, and the departure that would open the
-# lunch stop on arrival rather than 30 minutes later
-_atl = opts["atlanta-two-cities"]
-atl_late_h = _atl["arrive_h"] - (int(_atl["sunset"][:2]) + int(_atl["sunset"][3:]) / 60)
-atl_late = f"{atl_late_h:.0f} hours" if atl_late_h >= 1.5 else f"{atl_late_h*60:.0f} minutes"
-_fw = opts["coastal-fewest"]
-_before_pig = 0.0
-for i, sc in enumerate(_fw["schedule"]):
-    _before_pig += _fw["legs_s"][i] / 3600.0
-    if sc["stop"] == "pig_rh":
-        break
-    _before_pig += sc["dwell_min"] / 60.0
-pig_fix_depart = f"{int(11.0 - _before_pig):02d}:{int(round((11.0 - _before_pig) % 1 * 60)):02d}"
-walt_arr = next(sc["arrive"] for k in ORDER for sc in opts[k]["schedule"]
-                if sc["stop"] == "walterboro")
-disc_arr = min(sc["arrive"] for k in ORDER for sc in opts[k]["schedule"] if sc["stop"] == "discovery")
+NUMWORD = {0:"no", 1:"one", 2:"two", 3:"three", 4:"four", 5:"five", 6:"six", 7:"seven",
+           8:"eight", 9:"nine", 10:"ten", 11:"eleven", 12:"twelve"}
+N_OPT = NUMWORD[len(ORDER)]               # "seven" was a literal in four sentences
+# Days from build to the trip. This was the literal "19", true on the day it was written
+# and stale two days later; derive it from the travel date the measurement used.
+TRIP_DATE = datetime.date.fromisoformat(M["assumptions"]["date"])
+days_away = (TRIP_DATE - datetime.date.today()).days
+
+# Every option since the 2026-11-08 redesign is one big active stop near lunch, a lunch
+# stop that is a short LIST of places rather than one restaurant, and pit stops either
+# side. Each stop declares its role in the spec; prose below is computed from roles and
+# from the measured schedule, never written against a named option.
+ROLE_TAG = {"pit": "pit stop", "excursion": "the big active stop", "lunch": "lunch &middot; pick one"}
+def role(sk):
+    return stops[sk].get("role", "pit")
+def first(k, r):
+    return next((sc for sc in opts[k]["schedule"] if role(sc["stop"]) == r), None)
+def sun_h(v):
+    return int(v["sunset"][:2]) + int(v["sunset"][3:]) / 60
+def unpriced(k):
+    # an unpublished price is not a free one: carry it into the totals as "+"
+    return any((stops[s].get("cost_unpublished") or stops[s].get("cost_usd") is None)
+               and role(s) != "lunch" for s in opts[k]["stops"])
+def money_opt(k):
+    c, up = opts[k]["cost_usd"], unpriced(k)
+    if up:
+        return f"${int(round(c))}+" if c else "n/p"
+    return f"${int(round(c))}" if c else "free"
+used = list(dict.fromkeys(s for k in ORDER for s in opts[k]["stops"]))
+earliest_k = min(ORDER, key=lambda k: opts[k]["depart_h"])
+OPEN_V = ("open", "always", "opens")
+def short(k):
+    return opts[k]["label"].split(": ", 1)[1]
 
 def poly(pts):
     return "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in (proj(a, b) for a, b in pts))
@@ -196,8 +207,10 @@ def city_tag(c):
 base_cities = NL.join(city_tag(c) for c in BM["cities"])
 
 map_paths = NL.join(
-    f'      <path class="route c{i}" data-opt="{k}" d="{path_of(G[k])}" />'
-    for i, k in enumerate(ORDER))
+    # Colour by corridor, not by position: "c0..c6" by index silently recoloured every
+    # route after the first insertion into ORDER.
+    f'      <path class="route k-{CORR_KEY[opts[k]["corridor"]]}" data-opt="{k}" d="{path_of(G[k])}" />'
+    for k in ORDER)
 
 marker_groups = []
 for k in ORDER:
@@ -221,7 +234,7 @@ def switch_btn(k):
         f'        <button class="opt" role="radio" aria-checked="false" data-opt="{k}" id="btn-{k}">',
         f'          <span class="opt-name">{v["label"].split(": ", 1)[1]}</span>',
         f'          <span class="opt-meta"><span class="n">{v["depart"]}</span>&ndash;<span class="n">{v["arrive"]}</span>{late}'
-        f' &middot; <span class="n">{money(v["cost_usd"])}</span>'
+        f' &middot; <span class="n">{money_opt(k)}</span>'
         f' &middot; <span class="n">{len(v["stops"])}</span> stops</span>',
         '        </button>'])
 
@@ -247,7 +260,7 @@ for c, ks in GROUPS:
             f'          <td class="n">{hm_short(max(v["legs_s"]))}</td>',
             f'          <td class="n">{len(v["stops"])}</td>',
             f'          <td class="n">{hm(v["elapsed_s"])}</td>',
-            f'          <td class="n">{money(v["cost_usd"])}</td>',
+            f'          <td class="n">{money_opt(k)}</td>',
             f'          <td class="n">{v["arrive"]}'
             + ('<span class="late">after dark</span>' if v.get("after_sunset") else '') + '</td>',
             '        </tr>']))
@@ -280,7 +293,11 @@ def timeline(k):
         h = sch["hours"]
         nm = f'<a href="{s["url"]}">{s["name"]}</a>' if s.get("url") else s["name"]
         cost = s.get("cost_usd") or 0
-        chip = f'<span class="chip cost n">{money(cost)} for four</span>' if cost else ""
+        chip = (f'<span class="chip role r-{role(sch["stop"])}">{ROLE_TAG[role(sch["stop"])]}</span>'
+                + (f'<span class="chip cost n">{money(cost)} to get in</span>' if cost else "")
+                + ('<span class="chip">price not published</span>'
+                   if (s.get("cost_unpublished") or s.get("cost_usd") is None)
+                   and role(sch["stop"]) != "lunch" else ""))
         note = f'<p class="cost-note">{s["cost_note"]}</p>' if s.get("cost_note") else ""
         warn = ROLL[h["rollup"]]
         items.append(NL.join([
@@ -291,7 +308,7 @@ def timeline(k):
             f'            <p class="halt-where">{s["where"]}</p>',
             (f'            <p class="warn-row w-{h["rollup"]}">{warn}</p>' if warn else ""),
             '            <ul class="facs">', facility_rows(h), '            </ul>',
-            (f'            <p class="chips">{chip}</p>' if chip else ""), note,
+            f'            <p class="chips">{chip}</p>', note,
             '          </div>', '        </li>']))
         if i + 1 < len(v["legs_s"]):
             items.append(f'        <li class="leg"><span class="n drive">{hm_short(v["legs_s"][i+1])}</span>'
@@ -317,7 +334,8 @@ def rhythm(k):
         segs.append(("drive", t, leg)); t += leg
         if i < len(v["schedule"]):
             dw = v["schedule"][i]["dwell_min"] * 60.0
-            segs.append(("halt", t, dw)); t += dw
+            kind = "halt big" if role(v["schedule"][i]["stop"]) == "excursion" else "halt"
+            segs.append((kind, t, dw)); t += dw
     span = max_elapsed + (max(o["depart_h"] for o in opts.values()) - earliest) * 3600.0
     bars = []
     if lead > 0:
@@ -336,13 +354,82 @@ def rhythm(k):
         '        </div>'])
 rhythms = NL.join(rhythm(k) for k in ORDER)
 
-sob = next(sc for sc in opts["coastal-fewest"]["schedule"] if sc["stop"] == "sob")
-pantry_wait = int(round((7.0 - sob["arrive_h"]) * 60))
-best_coastal = min((opts[k] for k in ORDER if opts[k]["corridor"].startswith("coastal")),
-                   key=lambda v: v["detour_s"])
-fl = opts["fallline-two-big"]
-gap = (fl["arrive_h"] - best_coastal["arrive_h"]) * 60
-atl = opts["atlanta-two-cities"]
+
+# ---- computed prose ---------------------------------------------------------------
+def li(x):
+    return f"        <li>{x}</li>"
+
+def build_line(k):
+    # In schedule order: some options eat before the big stop, some after.
+    v = opts[k]
+    bits = [f"leaves <span class=\"n\">{v['depart']}</span>"]
+    for sc in v["schedule"]:
+        st, r = stops[sc["stop"]], role(sc["stop"])
+        if r == "excursion":
+            f0 = sc["hours"]["facilities"][0]
+            bits.append(f"<strong>{st['name']}</strong> at <span class=\"n\">{sc['arrive']}</span> for "
+                        f"{int(sc['dwell_min'])} min ({f0['detail']})")
+        elif r == "lunch":
+            nm = st["name"][0].lower() + st["name"][1:]
+            bits.append(f"{nm} at <span class=\"n\">{sc['arrive']}</span>")
+    late = ", after sunset" if v.get("after_sunset") else ""
+    bits.append(f"in at <span class=\"n\">{v['arrive']}</span>{late}")
+    return li(f"<strong>{v['label']}</strong> &mdash; " + "; ".join(bits) + ".")
+build_list = NL.join(build_line(k) for k in ORDER)
+
+def lunch_line(sk):
+    st = stops[sk]
+    facs = st.get("facilities", [])
+    dest = [f["name"] for f in facs if f.get("destination")]
+    uses = []
+    for k in ORDER:
+        for sc in opts[k]["schedule"]:
+            if sc["stop"] == sk:
+                n_open = sum(1 for f in sc["hours"]["facilities"] if f["verdict"] in OPEN_V)
+                uses.append(f"{n_open} of {len(facs)} open at <span class=\"n\">{sc['arrive']}</span> "
+                            f"on <em>{short(k)}</em>")
+    d = (f" A destination in its own right: {', '.join(dest)}." if dest else "")
+    return li(f"<strong>{st['name']}</strong>, {st['where']}: {len(facs)} places, "
+              + "; ".join(uses) + "." + d)
+lunch_stops = [s for s in used if role(s) == "lunch"]
+lunch_list = NL.join(lunch_line(s) for s in lunch_stops)
+
+coll = []
+for k in ORDER:
+    for sc in opts[k]["schedule"]:
+        st, h = stops[sc["stop"]], sc["hours"]
+        if role(sc["stop"]) == "lunch":
+            n_open = sum(1 for f in h["facilities"] if f["verdict"] in OPEN_V)
+            if n_open < 2:
+                coll.append(li(f"<strong>{st['name']}</strong> on <em>{short(k)}</em>: only "
+                               f"{n_open} of {len(h['facilities'])} places open at {sc['arrive']}."))
+            continue
+        f0 = h["facilities"][0]
+        short_halt = (f0.get("usable_min") is not None
+                      and f0["usable_min"] < sc["dwell_min"] - 5)
+        if h["rollup"] != "open-on-arrival" or f0["verdict"] not in ("open", "always") or short_halt:
+            coll.append(li(f"<strong>{st['name']}</strong> at <span class=\"n\">{sc['arrive']}</span> "
+                           f"on <em>{short(k)}</em>: {f0['name']} &mdash; {f0['detail']}."))
+coll_html = (f"      <ul>{NL}{NL.join(coll)}{NL}      </ul>" if coll else
+             "      <p>None. Every stop&rsquo;s main facility is open on arrival and stays open "
+             "for the whole halt, and every lunch stop has at least two places open.</p>")
+
+considered = NL.join(
+    li((f'<a href="{c["url"]}">{c["name"]}</a>' if c.get("url") else f"<strong>{c['name']}</strong>")
+       + f" &mdash; {c['reason']}") for c in SPEC.get("considered", []))
+
+confirmed = [stops[s]["name"] for s in used if stops[s].get("status") == "confirmed"]
+third_party = [stops[s]["name"] for s in used if stops[s].get("status") == "unknown"]
+call_rows, seen_phone = [], set()
+for s_ in used:                      # one row per number: a stop can appear in two roles
+    st = stops[s_]
+    if st.get("phone") and st["phone"] not in seen_phone:
+        seen_phone.add(st["phone"])
+        call_rows.append(li(f"<strong>{st['name']} {st['phone']}</strong>"
+                            + (f" &mdash; {st['ask']}" if st.get("ask") else "")))
+calls = NL.join(call_rows)
+def names(xs):
+    return ", ".join(xs[:-1]) + (" and " if len(xs) > 1 else "") + xs[-1] if xs else "none"
 
 HTML = f"""<title>Three Roads South</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
@@ -429,9 +516,9 @@ HTML = f"""<title>Three Roads South</title>
   .base-cities .maj text{{font-weight:600;font-size:24px}}
   .route{{fill:none;stroke:var(--ghost);stroke-width:4;stroke-linejoin:round;stroke-linecap:round;
     opacity:.45;transition:stroke-width .15s,opacity .15s}}
-  .route.c0,.route.c1,.route.c2{{stroke:var(--c-coastal)}}
-  .route.c3,.route.c4,.route.c5{{stroke:var(--c-fall)}}
-  .route.c6{{stroke:var(--c-atl)}}
+  .route.k-coastal{{stroke:var(--c-coastal)}}
+  .route.k-fall{{stroke:var(--c-fall)}}
+  .route.k-atl{{stroke:var(--c-atl)}}
   .route.sel{{stroke-width:9;opacity:1}}
   .markers .mk circle{{fill:var(--ink);stroke:var(--panel);stroke-width:3}}
   .markers .mk text{{fill:var(--panel);font-family:"Spline Sans Mono",monospace;font-size:15px;font-weight:600;text-anchor:middle}}
@@ -489,6 +576,9 @@ HTML = f"""<title>Three Roads South</title>
   .rhy-bar .seg{{position:absolute;top:0;bottom:0;display:block}}
   .rhy-bar .seg.drive{{background:var(--ghost)}}
   .rhy-bar .seg.halt{{background:var(--accent)}}
+  .rhy-bar .seg.big{{background:var(--warn)}}
+  .chip.role{{color:var(--ink);background:transparent}}
+  .chip.r-excursion{{border-color:var(--warn);color:var(--warn)}}
   .rhy-bar .seg.later{{background:repeating-linear-gradient(135deg,transparent,transparent 3px,var(--line) 3px,var(--line) 6px)}}
   .rhy.sel .rhy-bar .seg.drive{{background:var(--accent-dim)}}
   .rhy-end{{font-size:.82rem;color:var(--ink)}}
@@ -530,9 +620,10 @@ HTML = f"""<title>Three Roads South</title>
       <span class="n">{hm(direct['total_s'])}</span> over <span class="n">{direct['miles']:.0f}</span> miles.
       There are three genuinely different ways to make it &mdash; the coast, the fall line, and
       straight down I&#8209;85 through Atlanta &mdash; diverging by as much as
-      <span class="n">{cross_mi:.0f}</span> miles. Seven options, each measured end to end on the same
-      engine, each leaving at the hour that corridor actually wants. Which trade is worth it is yours
-      to call.</p>
+      <span class="n">{cross_mi:.0f}</span> miles. {N_OPT.capitalize()} options, each measured end to end on the same
+      engine, each built around <strong>one substantial active stop near lunchtime</strong> with
+      short run-around stops either side, and each leaving at the hour its big stop wants. Which trade
+      is worth it is yours to call.</p>
   </header>
 
   <div class="switch" role="radiogroup" aria-label="Choose an itinerary">
@@ -568,7 +659,7 @@ HTML = f"""<title>Three Roads South</title>
         <span><i style="background:var(--c-fall)"></i>Fall line</span>
         <span><i style="background:var(--c-atl)"></i>Atlanta</span>
       </p>
-      <p class="maplegend">All seven routes drawn; the selected one lifted, its stops numbered. The
+      <p class="maplegend">All {N_OPT} routes drawn; the selected one lifted, its stops numbered. The
         corridors sit up to <span class="n">{cross_mi:.0f}</span> miles apart, so here the map really
         does compare them &mdash; unlike the variants within one corridor, which differ by a few miles
         at most.</p>
@@ -587,7 +678,7 @@ HTML = f"""<title>Three Roads South</title>
   </div>
 
   <section class="note">
-    <h2>All seven, side by side</h2>
+    <h2>All {N_OPT}, side by side</h2>
     <div class="scroll">
       <table>
         <thead><tr>
@@ -601,16 +692,17 @@ HTML = f"""<title>Three Roads South</title>
       </table>
     </div>
     <p>&ldquo;Added&rdquo; is against the <span class="n">{hm(direct['total_s'])}</span> direct drive,
-      each option routed as one multi-point request. &ldquo;n/p&rdquo; means the operator publishes no
-      price. You mentioned roughly an hour of extra driving: {NUMWORD[under]} options sit under it and {NUMWORD[over]} run
+      each option routed as one multi-point request. Admissions exclude meals. &ldquo;n/p&rdquo; means
+      the operator publishes no price, and &ldquo;+&rdquo; means at least one stop&rsquo;s price is
+      unpublished. You mentioned roughly an hour of extra driving: {NUMWORD[under]} options sit under it and {NUMWORD[over]} run
       over, which is a price rather than a disqualification.</p>
   </section>
 
   <section class="note">
     <h2>How each day is carved up</h2>
-    <p>Grey is driving, green is stopped, hatched is time you are still at home because that option
-      starts later. All seven on one axis, anchored to the earliest departure
-      (<span class="n">{opts['coastal-fewest']['depart']}</span>).</p>
+    <p>Grey is driving, green is a short stop, amber is the big active stop, hatched is time you are
+      still at home because that option starts later. All {N_OPT} on one axis, anchored to the
+      earliest departure (<span class="n">{opts[earliest_k]['depart']}</span>).</p>
     <div class="rhys">
 {rhythms}
     </div>
@@ -618,129 +710,76 @@ HTML = f"""<title>Three Roads South</title>
 
   <div class="cols">
     <section class="note">
+      <h2>How every option is built</h2>
+      <p>Each option has the same shape: a short stop or two to let the boys out, <strong>one
+        substantial active stop</strong> timed for its opening or for lunch, lunch from a short list
+        of nearby places, and a short stop in the afternoon. The departure is set by the big stop, not
+        by the clock, so the options leave anywhere from
+        <span class="n">{opts[earliest_k]['depart']}</span> to
+        <span class="n">{opts[max(ORDER, key=lambda k: opts[k]['depart_h'])]['depart']}</span>.</p>
+      <ul>
+{build_list}
+      </ul>
+    </section>
+
+    <section class="note">
+      <h2>Lunch is a list, not a place</h2>
+      <p>Lunch stops name a town and an exit, with several places within a few minutes of each
+        other &mdash; a sit-down, a counter and a grab-and-go &mdash; each checked against its own
+        hours at the computed arrival. Pick on the day.</p>
+      <ul>
+{lunch_list}
+      </ul>
+    </section>
+
+    <section class="note">
+      <h2>Where arrival and opening hours collide</h2>
+      <p>Every stop&rsquo;s facilities are checked against the computed arrival, in code. These are
+        the ones where the main thing is not simply open for the whole halt:</p>
+{coll_html}
+      <p>Everything shuts for Thanksgiving itself &mdash; Thursday the 26th, not your Wednesday.</p>
+    </section>
+
+    <section class="note">
       <h2>The corridors, measured bare</h2>
       <p>With no stops at all, forced through each corridor&rsquo;s defining cities:
         <strong>coastal <span class="n">{hm(direct['total_s'])}</span></strong> &mdash; it <em>is</em>
         the direct route; <strong>fall line <span class="n">+{bare_fall}</span></strong> via Columbia
         and Macon; <strong>Atlanta <span class="n">+{bare_atl}</span></strong> down I&#8209;85.
         Jacksonville and I&#8209;10 cost <span class="n">+{bare_jax}</span> and were dropped.</p>
-      <p>A stop&rsquo;s detour depends entirely on which corridor you are on, which is why the earlier
-        shortlist was misleading. Riverbanks Zoo is <span class="n">+{zoo_off_coastal}</span> off the coastal line
-        and essentially free on the fall line. Congaree National Park is a dead-end spur either way:
-        adding it measured <span class="n">+{congaree_cost}</span>, so it is out on measurement rather than
-        assertion.</p>
+      <p>A stop&rsquo;s detour depends on which corridor you are on. Riverbanks Zoo is
+        <span class="n">+{zoo_off_coastal}</span> off the coastal line and essentially free on the fall
+        line. Congaree National Park is a dead-end spur either way: adding it measured
+        <span class="n">+{congaree_cost}</span>.</p>
     </section>
 
     <section class="note">
-      <h2>The corridor decides your departure</h2>
-      <p>The coastal corridor <em>rewards</em> leaving at
-        <span class="n">{opts['coastal-fewest']['depart']}</span>: its first stop is a 24&#8209;hour
-        fuel station beside hours-free outdoor kitsch, so the boys sleep through the dark and nothing
-        is missed.</p>
-      <p>The other two <em>punish</em> it. Their first good stops are ticketed attractions opening at
-        09:00, so an early start just means waiting in a car park. Those options leave at
-        <span class="n">{fl['depart']}</span> and <span class="n">{atl['depart']}</span> instead
-        &mdash; and every minute of that later start lands on the far end, after sunset.</p>
-      <p>Net effect: <em>{fl['label'].split(': ',1)[1]}</em> costs the same driving as
-        <em>{best_coastal['label'].split(': ',1)[1]}</em> to within a few minutes, but gets in
-        <span class="n">{int(gap//60)}h{int(gap%60):02d}</span> later and about
-        <span class="n">${int(round(fl['cost_usd']-best_coastal['cost_usd']))}</span> more.</p>
-    </section>
-
-    <section class="note">
-      <h2>What the fall line buys you</h2>
-      <p><a href="https://www.riverbanks.org/plan-your-visit/visitor-information">Riverbanks Zoo &amp;
-        Garden</a> in Columbia is a serious zoo with a botanical garden across the river, open
-        09:00&ndash;16:00 in winter. <a href="https://www.nps.gov/ocmu/planyourvisit/hours.htm">Ocmulgee
-        Mounds</a> outside Macon is a National Historical Park with earthen mounds the boys can climb
-        and a reconstructed earth lodge you walk into &mdash; and it is <strong>free</strong>.</p>
-      <p>The cost is rhythm. <em>Zoo and mounds</em> has a <span class="n">{fl_open_leg}</span> opening
-        leg and a <span class="n">{fl_mid_leg}</span> middle one. Adding
-        <a href="https://phinizycenter.org/location-contact/">Phinizy Swamp</a> at Augusta &mdash; free,
-        boardwalks, open 07:00&ndash;19:00 &mdash; breaks that {fl_mid_leg} into {gentler_split} for
-        <span class="n">+{gentler_extra}</span> of driving.</p>
-    </section>
-
-    <section class="note">
-      <h2>South of the Border at {sob['arrive']}</h2>
-      <p>Every coastal option starts here and almost nothing is open. What you can actually do, from
-        the operator&rsquo;s own pages:</p>
+      <h2>Considered and left out</h2>
       <ul>
-        <li><strong>Fuel</strong> &mdash; the <a href="https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc">Sunoco West pumps run 24 hours</a>, card at the pump before 07:00.</li>
-        <li><strong>Restrooms from 07:00</strong>, inside Pedro&rsquo;s Pantry &mdash; {pantry_wait} minutes
-          into your halt. The sun comes up at 07:00 too.</li>
-        <li><strong>The kitsch, which has no hours.</strong> A 200&#8209;foot concrete sombrero and a
-          fibreglass Pedro the size of a house, floodlit, free, entirely yours at first light.</li>
+{considered}
       </ul>
-      <p>You miss <a href="https://www.sobpedro.com/shopping">the shops</a> (08:00), the
-        <a href="https://www.sobpedro.com/attractions">Sombrero Tower</a> (11:00), and the
-        <a href="https://www.sobpedro.com/attractions/reptile-lagoon">Reptile Lagoon</a> is shut
-        Tuesday to Thursday regardless. <a href="https://www.sobpedro.com/dining">No food opens before
-        11:00</a> either &mdash; pack breakfast.</p>
-    </section>
-
-    <section class="note">
-      <h2>The Atlanta option, honestly</h2>
-      <p>It is here because you asked for the alternatives, and because
-        <a href="https://zooatlanta.org/visit/">Zoo Atlanta</a> plus
-        <a href="https://www.discoveryplace.org/science/visit">Discovery Place Science</a> is arguably
-        the strongest pair of attractions on any corridor for these ages.</p>
-      <p>But it is <span class="n">+{int(round(atl['detour_s']/60))} min</span> of free-flow driving,
-        it gets in at <span class="n">{atl['arrive']}</span> &mdash; {atl_late} after sundown &mdash; and
-        it threads {i85_mi} miles of I&#8209;85 straight through Atlanta on the Wednesday before
-        Thanksgiving. Of the seven, this is the one where a free-flow number is least worth believing.
-        Neither operator publishes a price, so its admissions cell is blank rather than zero.</p>
-    </section>
-
-    <section class="note">
-      <h2>Where arrival and opening hours collide</h2>
-      <p>Every stop lists its facilities with the derived arrival checked against published hours,
-        computed rather than eyeballed. Three collisions:</p>
-      <ul>
-        <li><strong>Smokin Pig opens 11:00</strong>; two coastal options reach it at {pig_arr}, so you
-          wait for lunch. Leaving at {pig_fix_depart} instead would put you there as it opens.</li>
-        <li><strong>Discovery Place opens 09:00</strong> and the Charlotte options reach it at {disc_arr}
-          &mdash; one minute of margin on a free-flow estimate, so call it arriving with the doors.</li>
-        <li><strong>Hiott&rsquo;s opens 09:00</strong> and you reach Walterboro at {walt_arr}, but those hours
-          are third-party. It is the one stop here whose hours nobody publishes.</li>
-      </ul>
-      <p>Everything shuts for Thanksgiving itself &mdash; Thursday the 26th, not your Wednesday.
-        Riverbanks, Ocmulgee and Zoo Atlanta all say so explicitly.</p>
     </section>
 
     <section class="note">
       <h2>Why there is no traffic layer</h2>
-      <p>You asked for one and I have not drawn it, for two reasons worth stating rather than
-        papering over. First, there is no keyless traffic source these tools can reach, and an
-        artifact page cannot call one at view time even if there were. Second, and more
-        fundamentally: <strong>this trip is 19 days away</strong>. Live traffic is a fact about now,
-        not about the 25th &mdash; any layer drawn today would be decoration.</p>
-      <p>What is real is the pattern. Every drive time here is <strong>free-flow</strong>; the engine
-        has no traffic model, so treat each as a floor. The coastal options put {i95_mi} miles of
-        southbound I&#8209;95 through the Carolinas on one of the heaviest travel days of the
-        American year; the Atlanta option threads {i85_mi} miles of I&#8209;85 through Atlanta on the same
-        day. The fall line is plausibly the quietest of the three &mdash; which is precisely the
-        thing these numbers cannot show you, and the reason the 04:45 start is worth as much as any
-        route choice.</p>
+      <p>There is no keyless traffic source these tools can reach, an artifact page cannot call one
+        at view time, and <strong>this trip is {days_away} days away</strong> as this page is built:
+        live traffic is a fact about now, not about the 25th.</p>
+      <p>Every drive time here is <strong>free-flow</strong>; treat each as a floor. The coastal
+        options put {i95_mi} miles of southbound I&#8209;95 through the Carolinas on one of the
+        heaviest travel days of the year, and the Atlanta options run I&#8209;85 into metro Atlanta on
+        the same day. The fall line is plausibly the quietest of the three &mdash; which is exactly
+        what these numbers cannot show.</p>
     </section>
   </div>
 
   <section class="note">
-    <h2>No stop here is confirmed for the 25th</h2>
-    <p>Every opening time on this page is a published routine I did not check against the date. The
-      calls worth making: <strong>Okefenokee Swamp Park 912-283-0583</strong> (train and reptile-show
-      times are published nowhere), <strong>Hiott&rsquo;s Pharmacy 843-549-7222</strong> (no operator
-      page exists at all), <strong>Smokin Pig 912-756-7850</strong>, <strong>South of the Border
-      843-774-2411</strong> (are the restrooms open at 07:00?), and <strong>Discovery Place
-      704-286-8302</strong> or Zoo Atlanta for the prices neither publishes.</p>
+    <h2>What is checked against the 25th, and the calls worth making</h2>
+    <p>Checked against the operator for that date: {names(confirmed)}. Every other opening time is a
+      published routine not checked against the date. Third-party hours only:
+      {names(third_party)}.</p>
     <ul>
-      <li>Admission for Discovery Place and Zoo Atlanta is not on the pages I fetched, so both those
-        options understate cost.</li>
-      <li>Riverbanks is <span class="n">$105.80</span> online for your four and about
-        <span class="n">$12</span> more at the gate &mdash; buy ahead.</li>
-      <li>Santee NWR&rsquo;s Fort Watson mound is only <span class="n">+{santee_cost}</span> off the coastal
-        line, but the refuge closes some trails 1 Nov&ndash;1 Mar and all trails in deer season.
-        Headquarters: 803-478-2217. Left out for that reason.</li>
+{calls}
     </ul>
   </section>
 
@@ -751,13 +790,16 @@ HTML = f"""<title>Three Roads South</title>
       option routed as a single multi-point request.</p>
     <p><strong>Derived</strong> &mdash; clock times and door-to-door, from each option&rsquo;s own
       departure plus measured legs plus the stop durations shown. Admissions are published per-person
-      prices for two adults and children aged 6 and 9; meals are not costed.</p>
+      prices for two adults and children aged 6 and 9, with each stop&rsquo;s own assumption in its cost
+      note; meals are not costed.</p>
     <p><strong>Computed</strong> &mdash; every facility&rsquo;s open/shut verdict, from the derived
       arrival against the published hours and the weekday.</p>
-    <p><strong>Calculated</strong> &mdash; sunset {opts['coastal-fewest']['sunset']} at Thomasville:
+    <p><strong>Calculated</strong> &mdash; sunset {opts[earliest_k]['sunset']} at Thomasville:
       NOAA solar position, approximate to a minute or two.</p>
-    <p><strong>Standing hours, date not checked</strong> &mdash; every opening time and price, from the
-      operator&rsquo;s own page except Hiott&rsquo;s Pharmacy, which is third-party only.</p>
+    <p><strong>Confirmed for the date</strong> &mdash; {names(confirmed)}: hours and prices read from
+      the operator for 25 November.</p>
+    <p><strong>Standing hours, date not checked</strong> &mdash; every other opening time and price,
+      from the operator&rsquo;s own page except {names(third_party)}, which are third-party only.</p>
     <p><strong>Source</strong> &mdash; this page is generated, not written by hand. The research
       spec, the generator and the measurements are committed in
       <span class="n">github.com/atashie/locationAnalyzer</span> on branch

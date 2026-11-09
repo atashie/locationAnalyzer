@@ -1,0 +1,165 @@
+{
+ "sob": {
+  "name": "South of the Border",
+  "where": "Dillon, SC - I-95 exit 1B",
+  "lat": 34.49851,
+  "lon": -79.30932,
+  "dwell_min": 15,
+  "cost_usd": 0,
+  "url": "https://www.sobpedro.com/attractions",
+  "hours": "grounds open; tower & arcade Mon-Thu 11:00-19:00, Reptile Lagoon closed Tue-Thu",
+  "status": "standing",
+  "kind": "roadside",
+  "facilities": [
+   {
+    "name": "Sunoco West pumps (pay at pump)",
+    "always": true,
+    "note": "open 24 h, 7 days; card at the pump before 07:00",
+    "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+    "status": "standing"
+   },
+   {
+    "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+    "always": true,
+    "note": "no hours; sunrise at Dillon is 07:00",
+    "status": "standing"
+   },
+   {
+    "name": "Pedro's Pantry + public restrooms",
+    "days": "daily",
+    "open": "07:00",
+    "close": "23:00",
+    "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+    "status": "standing"
+   },
+   {
+    "name": "Mexico Shop East",
+    "days": "Mon-Thu",
+    "open": "08:00",
+    "close": "21:00",
+    "url": "https://www.sobpedro.com/shopping",
+    "status": "standing"
+   },
+   {
+    "name": "Fort Pedro Fireworks",
+    "days": "daily",
+    "open": "09:00",
+    "close": "21:00",
+    "url": "https://www.sobpedro.com/shopping",
+    "status": "standing"
+   },
+   {
+    "name": "Sombrero Tower + arcade",
+    "days": "Mon-Thu",
+    "open": "11:00",
+    "close": "19:00",
+    "url": "https://www.sobpedro.com/attractions",
+    "status": "standing"
+   },
+   {
+    "name": "Reptile Lagoon",
+    "days": "Mon,Fri-Sun",
+    "open": "10:00",
+    "close": "19:00",
+    "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+    "status": "standing"
+   }
+  ]
+ },
+ "amonkey": {
+  "name": "Adrenaline Monkey",
+  "where": "4950 Centre Pointe Dr, North Charleston, SC - I-26 exit 213, across from Tanger Outlets",
+  "lat": 32.8757911,
+  "lon": -80.0222273,
+  "dwell_min": 120,
+  "cost_usd": 59.98,
+  "cost_note": "2-hour passes for the boys at $29.99 each (price shown for the 25th); adults watch free on a $0 observer pass, or play for $29.99 each. Grip socks are required and extra, price not published",
+  "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+  "status": "confirmed",
+  "kind": "indoors",
+  "facilities": [
+   {
+    "name": "Indoor ninja courses, climbing walls, slides, maze - timed entry slots",
+    "days": "Wed",
+    "open": "10:00",
+    "close": "18:00",
+    "url": "https://ecom.roller.app/adrenalinemonkeycharleston/venuecheckout/en-us/product/1004050?date=2026-11-25",
+    "status": "confirmed"
+   }
+  ]
+ },
+ "treetop": {
+  "name": "Treetop Quest Dunwoody",
+  "where": "Brook Run Park, 2341 Peeler Rd, Dunwoody, GA - I-285 exit 30",
+  "lat": 33.93372,
+  "lon": -84.30239,
+  "dwell_min": 150,
+  "cost_usd": 142,
+  "cost_note": "one adult and the 9-year-old on the main course ($64 + $49), the 6-year-old on Chick Pea ($29), the other adult supervising on the ground for free. Prices from the booking system for the 25th, before tax and fees",
+  "url": "https://www.treetopquest.com/dunwoody/",
+  "status": "confirmed",
+  "kind": "ticketed",
+  "facilities": [
+   {
+    "name": "Main aerial courses and zip-lines, ages 7+",
+    "days": "Wed",
+    "open": "11:00",
+    "close": "17:30",
+    "last_entry": "15:30",
+    "url": "https://www.treetopquest.com/event/dunwoody-open-11-25-26/",
+    "status": "confirmed"
+   },
+   {
+    "name": "Chick Pea course, ages 4-6 (adults may not climb)",
+    "days": "Wed",
+    "open": "11:00",
+    "close": "17:30",
+    "last_entry": "15:30",
+    "url": "https://go.theflybook.com/book/244/ListView/0",
+    "status": "confirmed"
+   }
+  ]
+ },
+ "scwelcome": {
+  "name": "South Carolina Welcome Center (I-85 southbound)",
+  "where": "I-85 near Blacksburg, SC, just over the state line",
+  "lat": 35.1491302,
+  "lon": -81.4952007,
+  "dwell_min": 20,
+  "cost_usd": 0,
+  "url": "https://scprt.com/tourism/welcome-center-program",
+  "status": "unknown",
+  "kind": "roadside",
+  "facilities": [
+   {
+    "name": "Restrooms and vending",
+    "always": true,
+    "note": "listed as open 24 h on a user-submitted page only; a state bid notice mentions a rebuild",
+    "url": "https://www.waymarking.com/waymarks/WMTJ1P_South_Carolina_Welcome_Center_Blacksburg_SC",
+    "status": "unknown"
+   }
+  ]
+ },
+ "pig_rh": {
+  "name": "Smokin Pig",
+  "where": "3986 Hwy 17, Richmond Hill, GA - I-95 exit 87",
+  "lat": 31.9305584,
+  "lon": -81.3286155,
+  "dwell_min": 45,
+  "cost_usd": 0,
+  "url": "https://www.smokinpigbbqjoint.com/",
+  "hours": "Tue-Sat 11:00-20:00",
+  "status": "standing",
+  "kind": "food",
+  "facilities": [
+   {
+    "name": "Smokin Pig dining room",
+    "days": "Tue-Sat",
+    "open": "11:00",
+    "close": "20:00",
+    "url": "https://www.smokinpigbbqjoint.com/",
+    "status": "standing"
+   }
+  ]
+ }
+}

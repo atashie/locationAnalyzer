@@ -75,65 +75,196 @@
           "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
           "status": "standing"
         }
-      ]
+      ],
+      "role": "pit",
+      "phone": "843-774-2411",
+      "ask": "are the Pantry restrooms open from 07:00?"
     },
-    "walterboro": {
-      "name": "Walterboro Wildlife Sanctuary",
-      "where": "Walterboro, SC - I-95 exit 53",
-      "lat": 32.89718,
-      "lon": -80.67816,
-      "dwell_min": 45,
-      "cost_usd": 0,
-      "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
-      "hours": "daily dawn-dusk",
-      "status": "standing",
-      "kind": "outdoors",
+    "amonkey": {
+      "name": "Adrenaline Monkey",
+      "where": "4950 Centre Pointe Dr, North Charleston, SC - I-26 exit 213, across from Tanger Outlets",
+      "lat": 32.8757911,
+      "lon": -80.0222273,
+      "dwell_min": 120,
+      "cost_usd": 59.98,
+      "cost_note": "2-hour passes for the boys at $29.99 each (price shown for the 25th); adults watch free on a $0 observer pass, or play for $29.99 each. Grip socks are required and extra, price not published",
+      "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+      "status": "confirmed",
+      "kind": "indoors",
       "facilities": [
         {
-          "name": "Sanctuary boardwalks and trails",
-          "always": true,
-          "note": "daily dawn to dusk, free; sunrise 07:02",
-          "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
-          "status": "standing"
+          "name": "Indoor ninja courses, climbing walls, slides, maze - timed entry slots",
+          "days": "Wed",
+          "open": "10:00",
+          "close": "18:00",
+          "url": "https://ecom.roller.app/adrenalinemonkeycharleston/venuecheckout/en-us/product/1004050?date=2026-11-25",
+          "status": "confirmed"
         }
-      ]
+      ],
+      "role": "excursion",
+      "phone": "843-278-5256",
+      "ask": "closing time on the 25th, grip-sock price, whether a holiday camp shares the floor"
     },
-    "hiotts": {
-      "name": "Hiott's Pharmacy soda fountain",
-      "where": "373 E Washington St, Walterboro, SC",
-      "lat": 32.9027914,
-      "lon": -80.6632022,
+    "treetop": {
+      "name": "Treetop Quest Dunwoody",
+      "where": "Brook Run Park, 2341 Peeler Rd, Dunwoody, GA - I-285 exit 30",
+      "lat": 33.93372,
+      "lon": -84.30239,
+      "dwell_min": 150,
+      "cost_usd": 142,
+      "cost_note": "one adult and the 9-year-old on the main course ($64 + $49), the 6-year-old on Chick Pea ($29), the other adult supervising on the ground for free. Prices from the booking system for the 25th, before tax and fees",
+      "url": "https://www.treetopquest.com/dunwoody/",
+      "status": "confirmed",
+      "kind": "ticketed",
+      "facilities": [
+        {
+          "name": "Main aerial courses and zip-lines, ages 7+",
+          "days": "Wed",
+          "open": "11:00",
+          "close": "17:30",
+          "last_entry": "15:30",
+          "url": "https://www.treetopquest.com/event/dunwoody-open-11-25-26/",
+          "status": "confirmed"
+        },
+        {
+          "name": "Chick Pea course, ages 4-6 (adults may not climb)",
+          "days": "Wed",
+          "open": "11:00",
+          "close": "17:30",
+          "last_entry": "15:30",
+          "url": "https://go.theflybook.com/book/244/ListView/0",
+          "status": "confirmed"
+        }
+      ],
+      "role": "excursion",
+      "phone": "770-365-0356",
+      "ask": "does a late start still get the full 2.5 h session?"
+    },
+    "scwelcome": {
+      "name": "South Carolina Welcome Center (I-85 southbound)",
+      "where": "I-85 near Blacksburg, SC, just over the state line",
+      "lat": 35.1491302,
+      "lon": -81.4952007,
       "dwell_min": 20,
       "cost_usd": 0,
-      "url": null,
-      "hours": "Mon-Fri 09:00-18:00 (third-party listings only)",
+      "url": "https://scprt.com/tourism/welcome-center-program",
       "status": "unknown",
-      "kind": "food",
+      "kind": "roadside",
       "facilities": [
         {
-          "name": "Soda fountain lunch counter",
-          "days": "Mon-Fri",
-          "open": "09:00",
-          "close": "18:00",
-          "note": "third-party listings only; no operator page found",
+          "name": "Restrooms and vending",
+          "always": true,
+          "note": "listed as open 24 h on a user-submitted page only; a state bid notice mentions a rebuild",
+          "url": "https://www.waymarking.com/waymarks/WMTJ1P_South_Carolina_Welcome_Center_Blacksburg_SC",
           "status": "unknown"
         }
-      ]
+      ],
+      "role": "pit",
+      "phone": "864-839-6742",
+      "ask": "is the rebuild under way; are restrooms open before 09:00?"
     },
-    "pig_rh": {
-      "name": "Smokin Pig",
-      "where": "3986 Hwy 17, Richmond Hill, GA - I-95 exit 87",
-      "lat": 31.9305584,
-      "lon": -81.3286155,
-      "dwell_min": 45,
+    "santee_mound": {
+      "name": "Santee Indian Mound / Fort Watson (Santee NWR)",
+      "where": "2125 Fort Watson Rd, Summerton, SC - I-95 exit 102, 1.3 mi",
+      "lat": 33.5324779,
+      "lon": -80.4317841,
+      "dwell_min": 35,
       "cost_usd": 0,
-      "url": "https://www.smokinpigbbqjoint.com/",
-      "hours": "Tue-Sat 11:00-20:00",
+      "cost_note": "No entrance fee listed",
+      "url": "https://www.fws.gov/refuge/santee/visit-us",
       "status": "standing",
-      "kind": "food",
+      "kind": "outdoors",
+      "role": "pit",
       "facilities": [
         {
-          "name": "Smokin Pig dining room",
+          "name": "Bluff Unit vehicle gate (Oct-Feb)",
+          "url": "https://www.fws.gov/refuge/santee/visit-us",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "17:00"
+        },
+        {
+          "name": "Visitor Center",
+          "url": "https://www.fws.gov/refuge/santee/visit-us",
+          "status": "standing",
+          "days": "Tue-Fri",
+          "open": "08:00",
+          "close": "16:00"
+        }
+      ],
+      "phone": "803-478-2217",
+      "ask": "can the mound stairs be climbed, which trails are open on the 25th?"
+    },
+    "fort_mcallister": {
+      "name": "Fort McAllister State Park",
+      "where": "3894 Fort McAllister Rd, Richmond Hill, GA 31324 - I-95 exit 90 (GA-144 east ~10 mi)",
+      "lat": 31.8908,
+      "lon": -81.1961,
+      "dwell_min": 120,
+      "cost_usd": 40.5,
+      "cost_note": "$10 ParkPass plus fort admission $9.75 per adult and $5.50 per child; whether fort admission covers parking is not stated",
+      "url": "https://gastateparks.org/FortMcAllister",
+      "status": "standing",
+      "kind": "outdoors",
+      "role": "excursion",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://gastateparks.org/FortMcAllister",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "22:00"
+        },
+        {
+          "name": "Historic fort and museum",
+          "url": "https://gastateparks.org/FortMcAllister",
+          "status": "standing",
+          "days": "daily",
+          "open": "08:00",
+          "close": "17:00"
+        }
+      ],
+      "phone": "912-727-2339"
+    },
+    "lunch_richmond_hill": {
+      "name": "Lunch in Richmond Hill",
+      "where": "Richmond Hill, GA - I-95 exit 87, on the way back from the fort",
+      "lat": 31.9265,
+      "lon": -81.2945,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "http://www.rhbubbasbistro.com",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Bubba's Bistro",
+          "url": "http://www.rhbubbasbistro.com",
+          "status": "standing",
+          "days": "Tue-Thu",
+          "open": "11:00",
+          "close": "20:00"
+        },
+        {
+          "name": "Parker's Kitchen (US-17 at Ford Ave)",
+          "url": "https://bryancountynews.com/news/new-parkers-kitchen-location-open-on-hwy-17",
+          "status": "standing",
+          "days": "Mon-Fri",
+          "open": "04:00",
+          "close": "19:00"
+        },
+        {
+          "name": "Kroger Richmond Hill (picnic supplies)",
+          "url": "https://www.kroger.com/stores/search",
+          "status": "unknown",
+          "note": "hours not checked"
+        },
+        {
+          "name": "Smokin Pig (BBQ, one option among several)",
           "days": "Tue-Sat",
           "open": "11:00",
           "close": "20:00",
@@ -142,349 +273,1214 @@
         }
       ]
     },
-    "mighty8": {
-      "name": "Mighty Eighth Air Force Museum",
-      "where": "Pooler, GA - I-95 exit 102",
-      "lat": 32.11566,
-      "lon": -81.23637,
-      "dwell_min": 90,
+    "jesup_trains": {
+      "name": "Wayne County Railfan Platform / Train Triangle",
+      "where": "101 E Cherry St, Jesup, GA - on US-84/US-301 downtown, ~0.2 mi",
+      "lat": 31.605059,
+      "lon": -81.882572,
+      "dwell_min": 20,
       "cost_usd": 0,
-      "url": "https://www.mightyeighth.org/",
-      "hours": "Tue-Sat 10:00-17:00; Thanksgiving closure listed for Nov 26",
+      "cost_note": "Free, free parking",
+      "url": "https://exploregeorgia.org/jesup/general/historic-sites-trails-tours/wayne-county-railfan-platformtrain-triangle",
       "status": "standing",
-      "kind": "indoors",
-      "cost_note": "admission not published on the pages fetched",
+      "kind": "icon",
+      "role": "pit",
       "facilities": [
         {
-          "name": "Museum galleries",
-          "days": "Tue-Sat",
-          "open": "10:00",
-          "close": "17:00",
-          "url": "https://www.mightyeighth.org/",
-          "status": "standing"
+          "name": "Railfan platforms & caboose park",
+          "status": "standing",
+          "note": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+          "always": true
         }
       ]
     },
-    "mcallister": {
-      "name": "Fort McAllister State Park",
-      "where": "Richmond Hill, GA",
-      "lat": 31.88531,
-      "lon": -81.20236,
-      "dwell_min": 75,
-      "cost_usd": 35.5,
-      "url": "https://gastateparks.org/FortMcAllister",
-      "hours": "park 07:00-22:00; historic site 08:00-17:00",
+    "oatland": {
+      "name": "Oatland Island Wildlife Center",
+      "where": "711 Sandtown Rd, Savannah, GA 31410 - SPUR: I-95 exit 99, I-16 E, US-80 E (~15 mi)",
+      "lat": 32.0515,
+      "lon": -81.0212,
+      "dwell_min": 105,
+      "cost_usd": 24,
+      "cost_note": "Adults $7, ages 4-17 $5 = $24.",
+      "url": "https://oatland.sccpss.com/visit/admissions-hours",
       "status": "standing",
       "kind": "outdoors",
+      "role": "excursion",
       "facilities": [
         {
-          "name": "Park grounds, trails, playground",
+          "name": "Center",
+          "url": "https://oatland.sccpss.com/visit/admissions-hours",
+          "status": "standing",
+          "days": "daily",
+          "open": "10:00",
+          "close": "16:30",
+          "last_entry": "15:30"
+        }
+      ],
+      "phone": "912-395-1212",
+      "ask": "any closure on the 25th (published list names only Thanksgiving and the day after)"
+    },
+    "lunch_savannah_east": {
+      "name": "Lunch on the east side of Savannah",
+      "where": "US-80 / Islands Expressway, a few minutes from Oatland Island",
+      "lat": 32.0444,
+      "lon": -81.0064,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://www.wileyschampionshipbbq.com/",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Wiley's Championship BBQ",
+          "url": "https://www.wileyschampionshipbbq.com/",
+          "status": "standing",
+          "days": "daily",
+          "open": "11:00",
+          "close": "20:00"
+        },
+        {
+          "name": "Sandfly BBQ",
+          "url": "https://www.sandflybbq.com/",
+          "status": "standing",
+          "days": "Wed",
+          "open": "11:00",
+          "close": "20:00"
+        },
+        {
+          "name": "Leopold's Ice Cream (Broughton St)",
+          "url": "https://www.leopoldsicecream.com/",
+          "status": "standing",
+          "days": "Sun-Thu",
+          "open": "12:00",
+          "close": "21:00",
+          "destination": true
+        }
+      ]
+    },
+    "laura_walker": {
+      "name": "Laura S. Walker State Park",
+      "where": "5653 Laura Walker Rd, Waycross, GA 31503 - off US-84/US-82 at Waycross, GA-177 ~9 mi SE",
+      "lat": 31.1411,
+      "lon": -82.2147,
+      "dwell_min": 30,
+      "cost_usd": 10,
+      "cost_note": "GA ParkPass $10 per vehicle.",
+      "url": "https://gastateparks.org/LauraSWalker",
+      "status": "standing",
+      "kind": "outdoors",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://gastateparks.org/LauraSWalker",
+          "status": "standing",
           "days": "daily",
           "open": "07:00",
+          "close": "22:00"
+        }
+      ]
+    },
+    "walterboro": {
+      "name": "Walterboro Wildlife Sanctuary (Great Swamp Sanctuary)",
+      "where": "Detreville St, Walterboro, SC 29488 - I-95 exit 53 or 57, ~3 min",
+      "lat": 32.8984,
+      "lon": -80.6802,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "Free.",
+      "url": "https://walterborosc.org/node/80",
+      "status": "standing",
+      "kind": "outdoors",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Sanctuary trails and boardwalks (from dawn) (to sunset)",
+          "url": "https://walterborosc.org/node/80",
+          "status": "standing",
+          "note": "dawn to dusk",
+          "days": "daily",
+          "open": "07:00",
+          "close": "17:30"
+        }
+      ],
+      "phone": "843-538-4353",
+      "ask": "boardwalk status after storm repairs"
+    },
+    "lunch_tanger": {
+      "name": "Lunch at Adrenaline Monkey or across at Tanger Outlets",
+      "where": "Centre Pointe Dr / Tanger Outlet Blvd, North Charleston",
+      "lat": 32.8757911,
+      "lon": -80.0222273,
+      "dwell_min": 40,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Mellow Mushroom, 4855 Tanger Outlet Blvd",
+          "days": "Mon-Thu",
+          "open": "11:00",
           "close": "22:00",
-          "url": "https://gastateparks.org/FortMcAllister",
+          "url": "https://www.mellowmushroom.com/locations/sc/north-charleston/4855-tanger-outlet-blvd/",
           "status": "standing"
         },
         {
-          "name": "Earthwork fort / historic site",
-          "days": "daily",
-          "open": "08:00",
-          "close": "17:00",
-          "url": "https://gastateparks.org/FortMcAllister",
-          "status": "standing"
+          "name": "Adrenaline Monkey on-site pizza",
+          "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+          "status": "unknown",
+          "note": "pizza is sold on site; food hours not published"
+        },
+        {
+          "name": "Chick-fil-A, next to Adrenaline Monkey",
+          "url": "https://www.chick-fil-a.com/locations",
+          "status": "unknown",
+          "note": "store page not found; chain closed Sundays, Wednesday normally open"
         }
       ]
     },
-    "lswalker": {
-      "name": "Laura S. Walker State Park",
-      "where": "near Waycross, GA",
-      "lat": 31.14105,
-      "lon": -82.21472,
-      "dwell_min": 30,
-      "cost_usd": 5,
-      "url": "https://gastateparks.org/LauraSWalker",
-      "hours": "daily 07:00-22:00",
+    "fortmill_welcome": {
+      "name": "SC Welcome Center I-77 SB (Fort Mill)",
+      "where": "I-77 SB MM 89 between exits 88 and 90, Fort Mill, SC",
+      "lat": 35.08001,
+      "lon": -80.94317,
+      "dwell_min": 15,
+      "cost_usd": 0,
+      "cost_note": "Free",
+      "url": "https://scprt.com/tourism/welcome-center-program",
+      "status": "standing",
+      "kind": "roadside",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Rest area restrooms",
+          "status": "unknown",
+          "note": "SCPRT general '24/7/365' statement, not site-specific",
+          "always": true
+        },
+        {
+          "name": "Staffed welcome center",
+          "url": "https://scprt.com/tourism/welcome-center-program",
+          "status": "standing",
+          "days": "daily",
+          "open": "09:00",
+          "close": "17:00"
+        }
+      ],
+      "phone": "803-548-2880",
+      "ask": "are restrooms open before 09:00?"
+    },
+    "hitchcock": {
+      "name": "Hitchcock Woods",
+      "where": "Entrances incl. South Boundary Ave SW and 263 Rubins Cottage Ln (off Dibble Rd), Aiken, SC - I-20 exit 18 (SC-19) ~8 mi south",
+      "lat": 33.544396,
+      "lon": -81.743354,
+      "dwell_min": 105,
+      "cost_usd": 0,
+      "cost_note": "Free.",
+      "url": "https://www.hitchcockwoods.org/plan-your-visit/hours-entrances-and-parking/",
       "status": "standing",
       "kind": "outdoors",
+      "role": "excursion",
       "facilities": [
         {
-          "name": "Park, beach, playground, boardwalk",
+          "name": "Woods (from dawn) (to sunset)",
+          "url": "https://www.hitchcockwoods.org/plan-your-visit/hours-entrances-and-parking/",
+          "status": "standing",
           "days": "daily",
           "open": "07:00",
-          "close": "22:00",
-          "url": "https://gastateparks.org/LauraSWalker",
-          "status": "standing"
+          "close": "17:30"
         }
-      ]
+      ],
+      "phone": "803-642-0528",
+      "ask": "best family entrance and parking; no restrooms or water in the woods"
     },
-    "okefenokee": {
-      "name": "Okefenokee Swamp Park",
-      "where": "5700 Okefenokee Swamp Park Rd, Waycross, GA",
-      "lat": 31.05779,
-      "lon": -82.27247,
-      "dwell_min": 80,
-      "cost_usd": 98,
-      "url": "https://okeswamp.org/general-admission/",
-      "hours": "daily 09:00-17:00",
+    "lunch_aiken": {
+      "name": "Lunch in downtown Aiken",
+      "where": "Laurens St, Aiken, SC - five minutes from Hitchcock Woods",
+      "lat": 33.560298,
+      "lon": -81.722651,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://lankysonlaurens.com/",
       "status": "standing",
-      "kind": "ticketed",
+      "kind": "food",
+      "role": "lunch",
       "facilities": [
         {
-          "name": "Swamp park: train, boardwalk, reptile show",
-          "days": "daily",
-          "open": "09:00",
-          "close": "17:00",
-          "url": "https://okeswamp.org/general-admission/",
-          "status": "standing"
-        }
-      ]
-    },
-    "zoo": {
-      "name": "Riverbanks Zoo & Garden",
-      "where": "Columbia, SC - I-26 at SC-378",
-      "lat": 34.00874,
-      "lon": -81.07313,
-      "dwell_min": 90,
-      "cost_usd": 105.8,
-      "kind": "ticketed",
-      "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
-      "hours": "winter (2 Nov - 31 Jan) 09:00-16:00; closed Thanksgiving",
-      "cost_note": "$27.95 adult / $24.95 child online; $12 more for all four at the gate",
-      "status": "standing",
-      "facilities": [
+          "name": "Lanky's on Laurens (Toast lists Electric Eats at same address - unresolved)",
+          "url": "https://lankysonlaurens.com/",
+          "status": "standing",
+          "days": "Mon-Sat",
+          "open": "11:00",
+          "close": "22:00"
+        },
         {
-          "name": "Zoo and botanical garden",
-          "days": "daily",
-          "open": "09:00",
-          "close": "16:00",
-          "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
-          "status": "standing"
+          "name": "New Moon Cafe",
+          "url": "https://www.newmoondowntown.com/location/new-moon-cafe-aiken/",
+          "status": "standing",
+          "days": "Mon-Fri",
+          "open": "07:00",
+          "close": "16:00"
+        },
+        {
+          "name": "Food Lion (Richland Ave W)",
+          "status": "unknown",
+          "note": "hours not checked",
+          "url": "https://stores.foodlion.com/sc/aiken/1520-richland-ave-west"
         }
       ]
     },
     "ocmulgee": {
       "name": "Ocmulgee Mounds National Historical Park",
-      "where": "Macon, GA",
-      "lat": 32.83723,
-      "lon": -83.60184,
-      "dwell_min": 75,
+      "where": "1207 Emery Hwy, Macon, GA 31217 - I-16 exit 2 (Coliseum Dr / US-80), ~1 mi",
+      "lat": 32.837227,
+      "lon": -83.601844,
+      "dwell_min": 45,
       "cost_usd": 0,
-      "kind": "outdoors",
+      "cost_note": "Free, no entrance pass.",
       "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-      "hours": "grounds 08:00-17:00 daily; visitor centre & Earth Lodge 09:00-17:00; no entrance fee",
       "status": "standing",
+      "kind": "outdoors",
+      "role": "pit",
       "facilities": [
         {
-          "name": "Mounds and walking trails",
+          "name": "Grounds & trails",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing",
           "days": "daily",
           "open": "08:00",
-          "close": "17:00",
-          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-          "status": "standing"
+          "close": "17:00"
         },
         {
-          "name": "Visitor centre and Earth Lodge",
+          "name": "Visitor Center & Earth Lodge",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing",
           "days": "daily",
           "open": "09:00",
-          "close": "17:00",
-          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-          "status": "standing"
+          "close": "17:00"
+        }
+      ],
+      "phone": "478-752-8257"
+    },
+    "riverbanks": {
+      "name": "Riverbanks Zoo & Garden",
+      "where": "500 Wildlife Pkwy, Columbia, SC 29210 - I-126 exit 1 (Greystone Blvd), ~1 mi",
+      "lat": 34.008742,
+      "lon": -81.073129,
+      "dwell_min": 165,
+      "cost_usd": 108.8,
+      "cost_note": "Online: adults (13-61) $27.95 x2, children (2-12) $24.95 x2, parking $3 = $108.80 + tax; window prices $3/ticket and $3 parking higher. Rides extra on a cashless Explore More Card ($1=1 EC): Sky-High Safari ropes climb 9 EC (min 48 in without parent), Tiny Trailblazers 5 EC (max 48 in), train/carousel 3 EC. No outside food.",
+      "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+      "status": "standing",
+      "kind": "ticketed",
+      "role": "excursion",
+      "facilities": [
+        {
+          "name": "Zoo & Garden gates (winter hours Nov 2 - Jan 31)",
+          "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+          "status": "standing",
+          "days": "daily",
+          "open": "09:00",
+          "close": "16:00"
+        },
+        {
+          "name": "Sky-High Safari ropes climb",
+          "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+          "status": "standing",
+          "days": "daily",
+          "open": "10:00",
+          "close": "15:30"
+        },
+        {
+          "name": "Tiny Trailblazers climb",
+          "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+          "status": "standing",
+          "days": "daily",
+          "open": "09:30",
+          "close": "15:30"
+        },
+        {
+          "name": "Saluda Skyride / Kangaroo Walkabout",
+          "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+          "status": "standing",
+          "days": "daily",
+          "open": "09:30",
+          "close": "16:00"
+        }
+      ],
+      "phone": "803-779-8717",
+      "ask": "does the Sky-High Safari ropes climb run on the 25th; winter dining hours"
+    },
+    "lunch_columbia": {
+      "name": "Lunch at the zoo or nearby in Columbia",
+      "where": "Riverbanks Zoo and Broad River Rd, Columbia, SC - I-26 exits 106-110",
+      "lat": 34.036175,
+      "lon": -81.089227,
+      "dwell_min": 40,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://www.lizardsthicket.com/locations/",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Lizard's Thicket (Broad River Rd / Dutch Square)",
+          "url": "https://www.lizardsthicket.com/locations/",
+          "status": "standing",
+          "days": "daily",
+          "open": "06:00",
+          "close": "21:00",
+          "destination": true
+        },
+        {
+          "name": "Rush's (Broad River Rd)",
+          "url": "https://www.rushs.com/locations",
+          "status": "standing",
+          "days": "daily",
+          "open": "10:00",
+          "close": "22:00"
+        },
+        {
+          "name": "Riverbanks Zoo on-site dining (Tuskers, Wild Burger)",
+          "status": "unknown",
+          "note": "hours not published",
+          "url": "https://riverbanks.org/plan-your-visit/visitor-information"
         }
       ]
     },
     "phinizy": {
-      "name": "Phinizy Swamp Nature Park",
-      "where": "1858 Lock and Dam Rd, Augusta, GA",
-      "lat": 33.38901,
-      "lon": -81.95979,
-      "dwell_min": 35,
+      "name": "Phinizy Swamp Nature Park (Phinizy Center for Water Sciences)",
+      "where": "1858 Lock and Dam Rd, Augusta, GA 30906 - I-20 exit 196A to I-520, exit 10 (Doug Barnard Pkwy), ~1.5 mi",
+      "lat": 33.384692,
+      "lon": -81.968561,
+      "dwell_min": 40,
       "cost_usd": 0,
-      "kind": "outdoors",
+      "cost_note": "Free; free parking.",
       "url": "https://phinizycenter.org/location-contact/",
-      "hours": "07:00-19:00 (Oct-Mar), 365 days, free",
       "status": "standing",
+      "kind": "outdoors",
+      "role": "pit",
       "facilities": [
         {
-          "name": "Boardwalks and 14 mi of trails",
+          "name": "Trails & boardwalks (Oct-Mar)",
+          "url": "https://phinizycenter.org/location-contact/",
+          "status": "standing",
           "days": "daily",
           "open": "07:00",
-          "close": "19:00",
-          "url": "https://phinizycenter.org/location-contact/",
-          "status": "standing"
+          "close": "19:00"
         }
-      ]
+      ],
+      "phone": "706-828-2109"
     },
-    "discovery": {
-      "name": "Discovery Place Science",
-      "where": "301 N Tryon St, Charlotte, NC",
-      "lat": 35.22962,
-      "lon": -80.8412,
-      "dwell_min": 90,
-      "cost_usd": 0,
-      "kind": "indoors",
-      "url": "https://www.discoveryplace.org/science/visit",
-      "hours": "Wed 09:00-16:00",
-      "cost_note": "admission not published on the pages fetched",
+    "sesqui": {
+      "name": "Sesquicentennial State Park (Sesqui)",
+      "where": "9564 Two Notch Rd, Columbia, SC 29223 - I-20 exit 74 (US-1 Two Notch Rd), ~3 mi NE",
+      "lat": 34.088059,
+      "lon": -80.905332,
+      "dwell_min": 35,
+      "cost_usd": 19.0,
+      "cost_note": "$6 adults x2 + $3.50 children 6-15 x2 = $19. Kayak $10/h, pedal boat $15/h (seasonal - could not determine if offered in late Nov).",
+      "url": "https://southcarolinaparks.com/sesqui",
       "status": "standing",
-      "facilities": [
-        {
-          "name": "Museum galleries (fully indoor)",
-          "days": "Mon-Fri",
-          "open": "09:00",
-          "close": "16:00",
-          "url": "https://www.discoveryplace.org/science/visit",
-          "status": "standing"
-        }
-      ]
-    },
-    "weymouth": {
-      "name": "Weymouth Woods Sandhills Nature Preserve",
-      "where": "Southern Pines, NC",
-      "lat": 35.14153,
-      "lon": -79.39822,
-      "dwell_min": 30,
-      "cost_usd": 0,
       "kind": "outdoors",
-      "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-      "hours": "November 08:00-18:00; visitor centre 08:00-17:00; free",
-      "status": "standing",
+      "role": "pit",
       "facilities": [
         {
-          "name": "7 mi of trails, picnic area",
+          "name": "Park gates (to sunset)",
+          "url": "https://southcarolinaparks.com/sesqui",
+          "status": "standing",
           "days": "daily",
           "open": "08:00",
-          "close": "18:00",
-          "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-          "status": "standing"
+          "close": "17:30"
         },
         {
-          "name": "Visitor centre + Discovery Room",
+          "name": "Park office",
+          "url": "https://southcarolinaparks.com/sesqui",
+          "status": "standing",
           "days": "daily",
-          "open": "08:00",
-          "close": "16:00",
-          "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-          "status": "standing"
+          "open": "09:00",
+          "close": "17:00"
+        }
+      ],
+      "phone": "803-788-2706"
+    },
+    "lunch_macon": {
+      "name": "Lunch in Macon, by the mounds",
+      "where": "Emery Hwy / downtown Macon - I-16 exit 2, by the Ocmulgee Mounds entrance",
+      "lat": 32.8490029,
+      "lon": -83.624701,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://nu-wayweiners.com/macon-nu-way-weiners-locations",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Nu-Way Weiners Baconsfield",
+          "url": "https://nu-wayweiners.com/macon-nu-way-weiners-locations",
+          "status": "standing",
+          "days": "Mon-Thu",
+          "open": "06:30",
+          "close": "21:00",
+          "destination": true
+        },
+        {
+          "name": "H&H Restaurant",
+          "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/hh-restaurant",
+          "status": "standing",
+          "days": "Tue-Sat",
+          "open": "07:00",
+          "close": "15:00",
+          "destination": true
+        },
+        {
+          "name": "The Rookery",
+          "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/the-rookery",
+          "status": "standing",
+          "days": "Sun-Thu",
+          "open": "11:00",
+          "close": "22:00"
         }
       ]
     },
-    "zooatl": {
-      "name": "Zoo Atlanta",
-      "where": "Grant Park, Atlanta, GA",
-      "lat": 33.7326,
-      "lon": -84.37104,
+    "ocmulgee_big": {
+      "name": "Ocmulgee Mounds National Historical Park",
+      "where": "1207 Emery Hwy, Macon, GA 31217 - I-16 exit 2 (Coliseum Dr / US-80), ~1 mi",
+      "lat": 32.837227,
+      "lon": -83.601844,
       "dwell_min": 100,
       "cost_usd": 0,
-      "kind": "ticketed",
-      "url": "https://zooatlanta.org/visit/",
-      "hours": "2 Nov - 6 Dec daily 09:00-17:00, last entry 15:30; closed Thanksgiving",
-      "cost_note": "admission not published on the pages fetched; varies by date",
+      "cost_note": "Free, no entrance pass.",
+      "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
       "status": "standing",
+      "kind": "outdoors",
+      "role": "excursion",
       "facilities": [
         {
-          "name": "Zoo grounds",
+          "name": "Grounds & trails",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing",
+          "days": "daily",
+          "open": "08:00",
+          "close": "17:00"
+        },
+        {
+          "name": "Visitor Center & Earth Lodge",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing",
           "days": "daily",
           "open": "09:00",
-          "close": "17:00",
-          "url": "https://zooatlanta.org/visit/",
+          "close": "17:00"
+        }
+      ],
+      "phone": "478-752-8257"
+    },
+    "peanut": {
+      "name": "World's Largest Peanut",
+      "where": "315 Whittle Circle / Sylvia Dr, Ashburn, GA 31714 - I-75 exit 82 (~0.5 mi)",
+      "lat": 31.70637,
+      "lon": -83.63533,
+      "dwell_min": 10,
+      "cost_usd": 0,
+      "cost_note": "free",
+      "url": "https://www.roadsideamerica.com/story/2071",
+      "status": "standing",
+      "kind": "icon",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Peanut monument",
           "status": "standing",
-          "last_entry": "15:30"
+          "note": "rebuilt 2023; reach via unmarked road",
+          "always": true
+        }
+      ]
+    },
+    "rozar": {
+      "name": "Rozar Park",
+      "where": "1060 Keith Dr, Perry, GA 31069 - I-75 exits 135/136 (~2-3 mi, verify)",
+      "lat": 32.46308,
+      "lon": -83.70466,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "free",
+      "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park (to sunset)",
+          "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+          "status": "standing",
+          "note": "closes at sunset (~17:35)",
+          "days": "daily",
+          "open": "06:00",
+          "close": "17:30"
+        }
+      ]
+    },
+    "lane_orchards": {
+      "name": "Lane Southern Orchards",
+      "where": "50 Lane Rd, Fort Valley, GA 31030 - I-75 exit 142 (~5 mi west)",
+      "lat": 32.55516,
+      "lon": -83.82642,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "free entry; food/ice cream extra",
+      "url": "https://www.lanesouthernorchards.com/",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Market, cafe, playground",
+          "url": "https://www.lanesouthernorchards.com/",
+          "status": "standing",
+          "days": "daily",
+          "open": "09:00",
+          "close": "18:00"
+        }
+      ],
+      "phone": "800-277-3224",
+      "ask": "holiday-week hours"
+    },
+    "high_falls": {
+      "name": "High Falls State Park",
+      "where": "76 High Falls Park Dr, Jackson, GA 30233 - I-75 exit 198 (1.8 mi east)",
+      "lat": 33.17831,
+      "lon": -84.01594,
+      "dwell_min": 40,
+      "cost_usd": 10,
+      "cost_note": "$10/vehicle ParkPass (2026 rate)",
+      "url": "https://gastateparks.org/HighFalls",
+      "status": "standing",
+      "kind": "outdoors",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park grounds",
+          "url": "https://gastateparks.org/HighFalls",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "22:00"
+        }
+      ],
+      "phone": "478-993-3053",
+      "ask": "does the lake drawdown change the falls?"
+    },
+    "cherokee_lake": {
+      "name": "Cherokee Lake Park",
+      "where": "330 (city) / 420 (Explore GA) Covington Ave, Thomasville, GA 31792",
+      "lat": 30.83825,
+      "lon": -83.95985,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "free",
+      "url": "https://thomasville.org/parks-and-recreation",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://www.exploregeorgia.org/thomasville/outdoors-nature/trails-tours/cherokee-lake-park",
+          "status": "standing",
+          "note": "Explore GA also says dawn to dusk",
+          "days": "daily",
+          "open": "06:00",
+          "close": "21:00"
+        }
+      ]
+    },
+    "cleveland_park": {
+      "name": "Cleveland Park",
+      "where": "Spartanburg, SC - via I-585 spur from I-85",
+      "lat": 34.96542,
+      "lon": -81.95029,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "Free",
+      "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park (Nov 1-Feb 28)",
+          "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "19:00"
+        }
+      ]
+    },
+    "amerson": {
+      "name": "Amerson River Park",
+      "where": "Amerson Park Dr off Riverside Dr, Macon, GA - I-75 exit 167/169 area, ~1.5 mi (measure)",
+      "lat": 32.876893,
+      "lon": -83.651783,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "Free (no fee found).",
+      "url": "https://amerson.maconbibb.us/park-rules/",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park, playground and river trail (Nov-Feb)",
+          "days": "daily",
+          "open": "07:00",
+          "close": "18:00",
+          "url": "https://amerson.maconbibb.us/park-rules/",
+          "status": "standing"
+        }
+      ],
+      "phone": "478-803-0484"
+    },
+    "jf_gregory": {
+      "name": "J.F. Gregory Park",
+      "where": "521 Cedar St, Richmond Hill, GA 31324 - I-95 exit 87 (US-17 / Ford Ave), ~3 mi",
+      "lat": 31.9541,
+      "lon": -81.2979,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "cost_note": "Free.",
+      "url": "https://exploregeorgia.org/richmond-hill/outdoors-nature/parks/jf-gregory-park",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://exploregeorgia.org/richmond-hill/outdoors-nature/parks/jf-gregory-park",
+          "status": "standing",
+          "days": "daily",
+          "open": "08:00",
+          "close": "22:00"
+        }
+      ]
+    },
+    "lunch_dunwoody": {
+      "name": "Lunch in Dunwoody",
+      "where": "around Brook Run Park, Dunwoody, GA",
+      "lat": 33.949,
+      "lon": -84.3335,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://www.villageburger.com/",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Village Burger Dunwoody",
+          "url": "https://www.villageburger.com/",
+          "status": "standing",
+          "days": "Sun-Thu",
+          "open": "11:00",
+          "close": "20:00"
+        },
+        {
+          "name": "Kroger Chamblee Dunwoody Rd",
+          "status": "standing",
+          "note": "OSM tag only",
+          "days": "daily",
+          "open": "06:00",
+          "close": "23:00",
+          "url": "https://www.kroger.com/stores/search"
+        },
+        {
+          "name": "Walmart Neighborhood Market Winters Chapel",
+          "status": "standing",
+          "note": "OSM tag only",
+          "days": "daily",
+          "open": "06:00",
+          "close": "23:59",
+          "url": "https://www.walmart.com/store-finder"
+        }
+      ]
+    },
+    "unity_park": {
+      "name": "Unity Park",
+      "where": "320 S Hudson St, Greenville, SC - I-385 exit 42 (via I-385 from I-85)",
+      "lat": 34.85198,
+      "lon": -82.41221,
+      "dwell_min": 35,
+      "cost_usd": 0,
+      "cost_note": "Free",
+      "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+      "status": "standing",
+      "kind": "playground",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+          "status": "standing",
+          "days": "daily",
+          "open": "05:00",
+          "close": "23:00"
+        },
+        {
+          "name": "Playgrounds (from dawn) (to sunset)",
+          "url": "https://kiddingaroundgreenville.com/?p=92615",
+          "status": "standing",
+          "note": "dawn to dusk",
+          "days": "daily",
+          "open": "07:00",
+          "close": "17:30"
+        }
+      ]
+    },
+    "stone_mountain": {
+      "name": "Stone Mountain Park: Walk-Up Trail to the summit",
+      "where": "1000 Robert E Lee Blvd, Stone Mountain, GA 30083 - I-285 exit 39B (US-78 E), roughly 7 mi (approx.)",
+      "lat": 33.80839,
+      "lon": -84.14344,
+      "dwell_min": 135,
+      "cost_usd": 25,
+      "cost_note": "Parking pass $25/day required (adventure-outpost page). Walk-Up Trail free with parking = $25. Weekday Historic Ticket $25 pp incl. round-trip Skyride (+$100) if offered that day. Stone Mountain Christmas $39.99 adult/$36.99 child (=$153.96) runs from 14:00. Zip course $39.99+ pp, age 10+.",
+      "url": "https://stonemountainpark.com/",
+      "status": "confirmed",
+      "kind": "outdoors",
+      "role": "excursion",
+      "facilities": [
+        {
+          "name": "Walk-Up Trail / hiking trails",
+          "url": "https://stonemountainpark.com/calendar/2025-01-20",
+          "status": "standing",
+          "note": "from a Jan 2025 calendar page; 2026 not checked",
+          "days": "daily",
+          "open": "05:00",
+          "close": "23:00"
+        },
+        {
+          "name": "Summit Skyride",
+          "url": "https://stonemountainpark.com/calendar/2026-11-25",
+          "status": "confirmed",
+          "days": "Wed",
+          "open": "10:00",
+          "close": "15:00"
+        },
+        {
+          "name": "Adventure Outpost (zip course, kayaks)",
+          "url": "https://stonemountainpark.com/calendar/2026-11-25",
+          "status": "confirmed",
+          "days": "Wed",
+          "open": "12:00",
+          "close": "17:30"
+        }
+      ],
+      "phone": "770-465-3235",
+      "ask": "is the weekday Historic ticket (Skyride) sold on the 25th?"
+    },
+    "lunch_stone_mountain": {
+      "name": "Lunch in Stone Mountain Village",
+      "where": "Main St, Stone Mountain, GA - about a mile from the park's West Gate",
+      "lat": 33.80824,
+      "lon": -84.17051,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://www.cherokeerosebbqbar.com/",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "Cherokee Rose BBQ Bar & Kitchen",
+          "url": "https://www.cherokeerosebbqbar.com/",
+          "status": "standing",
+          "days": "Wed",
+          "open": "11:30",
+          "close": "16:00"
+        },
+        {
+          "name": "Stoned Pizza Kitchen",
+          "url": "https://stonedpizzakitchen.com/",
+          "status": "standing",
+          "days": "Mon-Thu",
+          "open": "11:00",
+          "close": "22:00"
+        },
+        {
+          "name": "Pi-Bytes",
+          "url": "https://pi-bytes.com/",
+          "status": "standing",
+          "days": "Mon-Thu",
+          "open": "11:00",
+          "close": "18:00"
+        },
+        {
+          "name": "Kroger north of Stone Mountain Park",
+          "status": "standing",
+          "note": "OSM tag only",
+          "days": "daily",
+          "open": "06:00",
+          "close": "23:00",
+          "url": "https://www.kroger.com/stores/search"
+        }
+      ]
+    },
+    "crowders": {
+      "name": "Crowders Mountain State Park (Sparrow Springs)",
+      "where": "522 Park Office Ln, Kings Mountain, NC - I-85 exit 8/10A",
+      "lat": 35.21355,
+      "lon": -81.29317,
+      "dwell_min": 40,
+      "cost_usd": 0,
+      "cost_note": "day use is free (NC State Parks)",
+      "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+      "status": "confirmed",
+      "kind": "outdoors",
+      "role": "pit",
+      "facilities": [
+        {
+          "name": "Park gates (November)",
+          "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+          "status": "confirmed",
+          "days": "daily",
+          "open": "08:00",
+          "close": "18:00"
+        },
+        {
+          "name": "Visitor center",
+          "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+          "status": "confirmed",
+          "days": "daily",
+          "open": "09:00",
+          "close": "17:00"
+        }
+      ],
+      "phone": "980-460-8042"
+    },
+    "tugaloo": {
+      "name": "Tugaloo State Park",
+      "where": "1763 Tugaloo State Park Rd, Lavonia, GA 30553 - I-85 exit 173 (GA-17), roughly 6 mi north (approx.)",
+      "lat": 34.4991,
+      "lon": -83.0781,
+      "dwell_min": 105,
+      "cost_usd": 10,
+      "cost_note": "Georgia ParkPass $10/vehicle/day from 1 Jan 2026 (https://gastateparks.org/ParkPass); same pass valid at other GA state parks that day. Mini-golf extra (fee not published).",
+      "url": "https://gastateparks.org/Tugaloo",
+      "status": "standing",
+      "kind": "outdoors",
+      "role": "excursion",
+      "facilities": [
+        {
+          "name": "Park",
+          "url": "https://gastateparks.org/Tugaloo",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "22:00"
+        },
+        {
+          "name": "Office",
+          "url": "https://gastateparks.org/Tugaloo",
+          "status": "standing",
+          "days": "daily",
+          "open": "08:00",
+          "close": "17:00"
+        },
+        {
+          "name": "Miniature golf",
+          "status": "unknown",
+          "note": "fee required; hours not published"
+        }
+      ],
+      "phone": "706-356-4362",
+      "ask": "mini-golf hours"
+    },
+    "lunch_lavonia": {
+      "name": "Lunch in Lavonia",
+      "where": "Lavonia, GA - I-85 exit 173, on the way back from the park",
+      "lat": 34.43635,
+      "lon": -83.10685,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "cost_note": "meals not costed",
+      "url": "https://exploregeorgia.org/lavonia/food-drink/casual-full-service/211-main-street-restaurant",
+      "status": "standing",
+      "kind": "food",
+      "role": "lunch",
+      "facilities": [
+        {
+          "name": "211 Main Street Restaurant & Bakery",
+          "url": "https://exploregeorgia.org/lavonia/food-drink/casual-full-service/211-main-street-restaurant",
+          "status": "standing",
+          "days": "Mon-Thu",
+          "open": "10:00",
+          "close": "15:00",
+          "destination": true
+        },
+        {
+          "name": "Chick-fil-A Lavonia",
+          "url": "https://www.chick-fil-a.com/locations/ga/lavonia",
+          "status": "standing",
+          "days": "Mon-Sat",
+          "open": "06:00",
+          "close": "22:00"
+        },
+        {
+          "name": "Food Lion Lavonia (ex-Dill's Food City)",
+          "url": "https://theshelbyreport.com/2026/10/13/food-lion-grows-greenville-market-with-dills-food-city-bi-lo-acquisitions/",
+          "status": "standing",
+          "days": "daily",
+          "open": "07:00",
+          "close": "23:00"
+        },
+        {
+          "name": "Bella Bella Mozzarella",
+          "status": "unknown",
+          "note": "Directory (Jul 2026) shows 11:00-21:00; not verified with operator",
+          "url": "https://exploregeorgia.org/lavonia"
         }
       ]
     }
   },
   "options": {
-    "coastal-fewest": {
-      "label": "Coastal: fewest stops, earliest arrival",
+    "coastal-fort": {
+      "label": "Coastal: an earthwork fort and its trails",
       "corridor": "coastal - I-95 then US-84",
-      "depart_h": 4.75,
+      "depart_h": 5.25,
       "stops": [
         "sob",
-        "pig_rh",
-        "lswalker"
-      ]
-    },
-    "coastal-swamp": {
-      "label": "Coastal: one big thing, the swamp",
-      "corridor": "coastal - I-95 then US-84",
-      "depart_h": 4.75,
-      "stops": [
-        "sob",
-        "pig_rh",
-        "okefenokee"
+        "santee_mound",
+        "lunch_richmond_hill",
+        "fort_mcallister",
+        "jesup_trains"
       ],
       "dwell_min": {
-        "okefenokee": 90
+        "santee_mound": 25,
+        "lunch_richmond_hill": 40,
+        "fort_mcallister": 105
       }
     },
-    "coastal-outdoors": {
-      "label": "Coastal: most time on your feet",
+    "coastal-animals": {
+      "label": "Coastal: a two-mile wildlife walk in Savannah",
       "corridor": "coastal - I-95 then US-84",
-      "depart_h": 4.75,
+      "depart_h": 5.25,
       "stops": [
         "sob",
         "walterboro",
-        "hiotts",
-        "pig_rh",
-        "okefenokee"
+        "oatland",
+        "lunch_savannah_east",
+        "laura_walker"
       ],
       "dwell_min": {
-        "pig_rh": 40,
-        "okefenokee": 75
+        "walterboro": 25,
+        "oatland": 100,
+        "lunch_savannah_east": 40
       }
     },
-    "fallline-two-big": {
-      "label": "Fall line: zoo and mounds",
-      "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-      "depart_h": 5.3,
+    "coastal-ninja": {
+      "label": "Coastal: indoor ninja park in Charleston, rain or shine",
+      "corridor": "coastal - I-95 then US-84",
+      "depart_h": 5.15,
       "stops": [
-        "zoo",
+        "sob",
+        "amonkey",
+        "lunch_tanger",
+        "jesup_trains"
+      ]
+    },
+    "fallline-woods": {
+      "label": "Fall line: free woods trails in Aiken",
+      "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+      "depart_h": 5.0,
+      "stops": [
+        "fortmill_welcome",
+        "hitchcock",
+        "lunch_aiken",
         "ocmulgee"
       ],
       "dwell_min": {
-        "zoo": 90,
-        "ocmulgee": 75
+        "hitchcock": 100,
+        "lunch_aiken": 40,
+        "ocmulgee": 40
       }
     },
-    "fallline-gentler": {
-      "label": "Fall line: zoo, swamp and mounds",
+    "fallline-zoo": {
+      "label": "Fall line: zoo with a ropes course",
       "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-      "depart_h": 5.3,
+      "depart_h": 5.5,
       "stops": [
-        "zoo",
+        "fortmill_welcome",
+        "riverbanks",
+        "lunch_columbia",
         "phinizy",
-        "ocmulgee"
+        "amerson"
       ],
       "dwell_min": {
-        "zoo": 90,
-        "phinizy": 35,
-        "ocmulgee": 60
+        "riverbanks": 150,
+        "phinizy": 25,
+        "amerson": 25
       }
     },
-    "fallline-indoors": {
-      "label": "Fall line: indoors in Charlotte, if it rains",
+    "fallline-mounds": {
+      "label": "Fall line: climb the mounds, lunch at Nu-Way",
       "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-      "depart_h": 6.75,
+      "depart_h": 5.0,
       "stops": [
-        "discovery",
-        "ocmulgee"
+        "fortmill_welcome",
+        "phinizy",
+        "lunch_macon",
+        "ocmulgee_big"
       ],
       "dwell_min": {
-        "discovery": 90,
-        "ocmulgee": 60
+        "phinizy": 35,
+        "lunch_macon": 40,
+        "ocmulgee_big": 90
       }
     },
-    "atlanta-two-cities": {
-      "label": "Atlanta: science museum and a big zoo",
+    "atlanta-treetops": {
+      "label": "Atlanta: treetop ropes course in Dunwoody",
       "corridor": "Atlanta - I-85 the whole way, then I-75",
-      "depart_h": 6.75,
+      "depart_h": 5.0,
       "stops": [
-        "discovery",
-        "zooatl"
+        "cleveland_park",
+        "lunch_dunwoody",
+        "treetop",
+        "lane_orchards"
       ],
       "dwell_min": {
-        "discovery": 80,
-        "zooatl": 100
+        "cleveland_park": 25,
+        "lunch_dunwoody": 40,
+        "lane_orchards": 30
+      }
+    },
+    "atlanta-summit": {
+      "label": "Atlanta: hike up Stone Mountain",
+      "corridor": "Atlanta - I-85 the whole way, then I-75",
+      "depart_h": 5.0,
+      "stops": [
+        "cleveland_park",
+        "lunch_stone_mountain",
+        "stone_mountain",
+        "rozar"
+      ],
+      "dwell_min": {
+        "cleveland_park": 25,
+        "lunch_stone_mountain": 40,
+        "stone_mountain": 120,
+        "rozar": 25
+      }
+    },
+    "atlanta-lake": {
+      "label": "Atlanta: a state park on Lake Hartwell",
+      "corridor": "Atlanta - I-85 the whole way, then I-75",
+      "depart_h": 5.3,
+      "stops": [
+        "crowders",
+        "tugaloo",
+        "lunch_lavonia",
+        "high_falls",
+        "peanut"
+      ],
+      "dwell_min": {
+        "crowders": 30,
+        "tugaloo": 90,
+        "lunch_lavonia": 40,
+        "high_falls": 30
       }
     }
-  }
+  },
+  "considered": [
+    {
+      "name": "Flying Rabbit Adventures, Greenville SC",
+      "url": "https://flyingrabbitadventures.com",
+      "reason": "closed Monday to Thursday except for groups of 15 or more; the Dunwoody ropes park is Treetop Quest"
+    },
+    {
+      "name": "Okefenokee Swamp Park, Waycross",
+      "url": "https://okeswamp.org/general-admission/",
+      "reason": "observation tower closed for maintenance, $98, and reached at 7 hours in, too late for a lunch stop"
+    },
+    {
+      "name": "U.S. National Whitewater Center, Charlotte",
+      "url": "https://whitewater.org/buy/",
+      "reason": "reached about 2 hours in, before most activities open at 10:00; $329 with all-access passes, and the 6-year-old may be under the 45 lb minimum"
+    },
+    {
+      "name": "Urban Air trampoline parks, Columbia / Augusta / Macon",
+      "url": "https://www.urbanair.com/",
+      "reason": "open only from 15:00 or 16:00 on Wednesdays"
+    },
+    {
+      "name": "Fort Pulaski National Monument, Savannah",
+      "url": "https://www.nps.gov/fopu/learn/news/23nr21.htm",
+      "reason": "closed early on the Wednesday before Thanksgiving in 2023; 2026 hours not published"
+    },
+    {
+      "name": "Tybee Island Light Station",
+      "url": "https://www.tybeelighthouse.org/visitor-general-info",
+      "reason": "178 steps the boys would love, but a long spur east of Savannah"
+    },
+    {
+      "name": "Hunting Island State Park lighthouse",
+      "url": "https://southcarolinaparks.com/hunting-island/lighthouse",
+      "reason": "a 45-mile spur from I-95"
+    },
+    {
+      "name": "Congaree National Park",
+      "url": "https://www.nps.gov/cong/",
+      "reason": "a dead-end spur that measured +2h45 from either corridor"
+    },
+    {
+      "name": "Southern Forest World, Waycross",
+      "url": "https://southernforestworld.org",
+      "reason": "climb-inside model pine and fire tower, but it closes at 14:00, before the afternoon reaches it"
+    },
+    {
+      "name": "Georgia Museum of Agriculture, Tifton",
+      "url": "https://gma.abac.edu/visitor-information-hours.html",
+      "reason": "historic village closes at 15:00 on weekdays"
+    },
+    {
+      "name": "Grand Bay WMA boardwalk and tower, Valdosta",
+      "url": "https://georgiawildlife.com/grand-bay-wma",
+      "reason": "closed until further notice (posted 8 Oct 2026)"
+    },
+    {
+      "name": "Zoo Atlanta",
+      "url": "https://zooatlanta.org/visit/",
+      "reason": "inside I-285 off the corridor, and mostly walking rather than climbing"
+    },
+    {
+      "name": "Treetop Quest Gwinnett, Buford",
+      "url": "https://www.treetopquest.com/",
+      "reason": "open the same hours on the 25th; kept as the backup if Dunwoody is full"
+    },
+    {
+      "name": "Sesquicentennial and Saluda Shoals parks, Columbia",
+      "url": "https://southcarolinaparks.com/sesqui",
+      "reason": "good playgrounds and lake loops, but Columbia comes about 3.5 hours in, too early for lunch; Sesqui is used as a short stop instead"
+    },
+    {
+      "name": "The Peachoid, Gaffney",
+      "url": "https://www.roadsideamerica.com/tip/1168",
+      "reason": "the lot at its base is chained off; it can be seen from I-85 but there is nowhere confirmed to stop"
+    },
+    {
+      "name": "Charles Towne Landing, Charleston",
+      "url": "https://southcarolinaparks.com/charles-towne-landing",
+      "reason": "part of the Animal Forest is closed on weekdays for construction and the replica ship is away"
+    }
+  ]
 }

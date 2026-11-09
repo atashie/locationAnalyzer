@@ -1,0 +1,630 @@
+[
+ {
+  "key": "clark_park_fayetteville",
+  "name": "J. Bayard Clark Park & Nature Center",
+  "where": "631 Sherman Dr, Fayetteville, NC - via I-295 then ~3-4 mi S on Ramsey St/US-401 (exit unverified)",
+  "lat": 35.0875966,
+  "lon": -78.8681551,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.fayettevillenc.gov/Parks-and-Recreation/Parks-Trails/J.-Bayard-Clark-Park-Nature-Center",
+  "kind": "outdoors",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Nature Center free; no park entry fee listed",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park grounds/playground",
+    "days": "daily",
+    "open": "08:00",
+    "url": "https://www.fayettevillenc.gov/Parks-and-Recreation/Parks-Trails/J.-Bayard-Clark-Park-Nature-Center",
+    "status": "standing",
+    "note": "closes at dusk"
+   },
+   {
+    "name": "Nature Center (Nov-Feb)",
+    "days": "Mon-Fri",
+    "open": "10:00",
+    "close": "16:00",
+    "url": "https://www.fayettevillenc.gov/Parks-and-Recreation/Parks-Trails/J.-Bayard-Clark-Park-Nature-Center",
+    "status": "standing"
+   },
+   {
+    "name": "Cape Fear River Trail",
+    "days": "daily",
+    "open": "08:00",
+    "url": "https://www.fayettevillenc.gov/Parks-and-Recreation/Parks-Trails/Cape-Fear-River-Trail",
+    "status": "standing",
+    "note": "closes at dusk"
+   }
+  ],
+  "kid_notes": "Playground, outdoor learning area, restrooms, paved river trail 7+ mi one way; opens 08:00 so too early for most Fayetteville arrivals",
+  "segment_hours": 1.5
+ },
+ {
+  "key": "luther_britt_park",
+  "name": "Luther Britt Park",
+  "where": "671 Branch St, Lumberton, NC - ~2 mi from I-95 exit 22 (unverified)",
+  "lat": 34.6288403,
+  "lon": -79.0290303,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.lumberton-nc.com/luther-britt-park/",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": null,
+  "cost_note": "No fee listed",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park/playground/trails",
+    "days": "daily",
+    "url": "https://www.lumberton-nc.com/luther-britt-park/",
+    "status": "unknown",
+    "note": "Hours not published"
+   }
+  ],
+  "kid_notes": "Playgrounds, 1.5 mi loop trail, 0.25 mi StoryWalk, accessible restrooms",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "south_of_the_border",
+  "name": "South of the Border",
+  "where": "I-95 & US-301/501, Hamer, SC - I-95 exit 1 (NC numbering), <0.5 mi",
+  "lat": 34.4985092,
+  "lon": -79.3093174,
+  "coord_source": "OSM/Nominatim",
+  "url": "http://sobpedro.com/attractions",
+  "kind": "icon",
+  "suggested_dwell_min": 25,
+  "cost_usd": null,
+  "cost_note": "Tower/Lagoon prices not published; icons free to view",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Pedro sign & roadside statues",
+    "always": true,
+    "note": "outdoor icons",
+    "status": "standing"
+   },
+   {
+    "name": "Sombrero Tower & Arcade",
+    "days": "Mon-Thu",
+    "open": "11:00",
+    "close": "19:00",
+    "url": "http://sobpedro.com/attractions",
+    "status": "standing"
+   },
+   {
+    "name": "Sombrero Tower & Arcade",
+    "days": "Fri-Sun",
+    "open": "10:00",
+    "close": "20:00",
+    "url": "http://sobpedro.com/attractions",
+    "status": "standing"
+   },
+   {
+    "name": "Reptile Lagoon",
+    "days": "Mon",
+    "open": "10:00",
+    "close": "19:00",
+    "url": "http://sobpedro.com/attractions",
+    "status": "standing"
+   },
+   {
+    "name": "Reptile Lagoon",
+    "days": "Fri-Sun",
+    "open": "10:00",
+    "close": "20:00",
+    "url": "http://sobpedro.com/attractions",
+    "status": "standing",
+    "note": "closed Tue-Thu, so closed Wed 25 Nov"
+   },
+   {
+    "name": "Fuel / restrooms",
+    "days": "daily",
+    "url": "http://sobpedro.com/",
+    "status": "unknown",
+    "note": "24h pumps and 07:00 restrooms not on operator site"
+   }
+  ],
+  "kid_notes": "Quirky roadside icons to run around; tower not open until 11:00 on Wed",
+  "segment_hours": 2.5
+ },
+ {
+  "key": "sc_welcome_center_dillon",
+  "name": "SC Welcome Center - Dillon (I-95 SB)",
+  "where": "I-95 southbound mainline ~mile 195, Hamer, SC",
+  "lat": 34.468481,
+  "lon": -79.347824,
+  "coord_source": "Campendium listing",
+  "url": "https://discoversouthcarolina.com/welcome-centers",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Welcome Center building",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://discoversouthcarolina.com/welcome-centers",
+    "status": "confirmed",
+    "note": "Closed only Thanksgiving, Dec 24-25, Jan 1"
+   },
+   {
+    "name": "Rest area restrooms",
+    "always": true,
+    "note": "State says rest-area facilities 24/7/365",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms, picnic area, grass to run on; no play area listed",
+  "segment_hours": 2.5
+ },
+ {
+  "key": "bucees_florence",
+  "name": "Buc-ee's Florence",
+  "where": "3390 N Williston Rd, Florence, SC - I-95 exit 170, adjacent",
+  "lat": 34.2716936,
+  "lon": -79.7023722,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.wbtv.com/2022/05/16/grand-opening-day-buc-ees-opens-first-sc-location-florence-monday",
+  "kind": "roadside",
+  "suggested_dwell_min": 20,
+  "cost_usd": 0,
+  "cost_note": "Free to enter",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Store/restrooms/fuel",
+    "always": true,
+    "note": "24/7 per news reports",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Lit, 24 h, restrooms; indoor only, no play area",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "timrod_park_florence",
+  "name": "Timrod Park",
+  "where": "400 Timrod Park Dr, Florence, SC - ~4-5 mi from I-95 via I-20 spur (exit 160A)",
+  "lat": 34.1855014,
+  "lon": -79.7716811,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.cityofflorencesc.gov/parks-recreation-sports-tourism/athletics-sports-tourism/athletic-facilities/timrod-park",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": null,
+  "cost_note": "No fee listed",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park/playground",
+    "days": "daily",
+    "url": "https://www.cityofflorencesc.gov/parks-recreation-sports-tourism/athletics-sports-tourism/athletic-facilities/timrod-park",
+    "status": "unknown",
+    "note": "Hours not published (third-party dog-area hours vary)"
+   }
+  ],
+  "kid_notes": "18 acres, playground, nature trails, fitness area",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "jc_britton_park_manning",
+  "name": "J.C. Britton Park",
+  "where": "3057 Raccoon Rd, Manning, SC - I-95 exit 119, ~0.5 mi",
+  "lat": 33.691336,
+  "lon": -80.242986,
+  "coord_source": "US Census geocoder",
+  "url": "https://www.clarendoncountysc.gov/recreation-and-culture/parks-recreation/",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": null,
+  "cost_note": "No fee listed",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park/playgrounds/path",
+    "days": "daily",
+    "url": "https://www.sctrails.net/trails/trail/j-c-britton-park",
+    "status": "unknown",
+    "note": "Dawn to dusk per sctrails.net only; county page gives no hours"
+   }
+  ],
+  "kid_notes": "2 playgrounds, 0.5 mi concrete loop path; restrooms per third party only",
+  "segment_hours": 3.5
+ },
+ {
+  "key": "santee_nwr_fort_watson",
+  "name": "Santee NWR Bluff Unit - Santee Indian Mound/Fort Watson & Wright's Bluff trail",
+  "where": "2125 Fort Watson Rd, Summerton, SC - I-95 exit 102, 1.3 mi",
+  "lat": 33.5324779,
+  "lon": -80.4317841,
+  "coord_source": "OSM/Nominatim (visitor center); mound 33.53896,-80.43783 per Wikipedia",
+  "url": "https://www.fws.gov/refuge/santee/visit-us",
+  "kind": "outdoors",
+  "suggested_dwell_min": 35,
+  "cost_usd": 0,
+  "cost_note": "No entrance fee listed",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Bluff Unit vehicle gate (Oct-Feb)",
+    "days": "daily",
+    "open": "07:00",
+    "close": "17:00",
+    "url": "https://www.fws.gov/refuge/santee/visit-us",
+    "status": "standing"
+   },
+   {
+    "name": "Visitor Center",
+    "days": "Tue-Fri",
+    "open": "08:00",
+    "close": "16:00",
+    "url": "https://www.fws.gov/refuge/santee/visit-us",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Stairs up a ~30 ft mound to a lake-view platform; 1 mi nature trail. Bluff deer hunt is 24-25 Oct 2026, not 25 Nov. Nov-Mar waterfowl closures apply to some areas.",
+  "segment_hours": 3.8
+ },
+ {
+  "key": "sc_welcome_center_santee",
+  "name": "SC Welcome Center - Santee (I-95 SB)",
+  "where": "I-95 southbound mile 99, near Santee, SC",
+  "lat": 33.4960026,
+  "lon": -80.4635547,
+  "coord_source": "OSM unnamed rest_area way 478551019 (one of two nearby; verify)",
+  "url": "https://discoversouthcarolina.com/welcome-centers",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Welcome Center building",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://discoversouthcarolina.com/welcome-centers",
+    "status": "confirmed",
+    "note": "Closed only Thanksgiving, Dec 24-25, Jan 1"
+   },
+   {
+    "name": "Restrooms",
+    "always": true,
+    "note": "24 h per interstaterestareas.com and state",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms, picnic tables, pet area; no play area listed",
+  "segment_hours": 4.0
+ },
+ {
+  "key": "santee_state_park",
+  "name": "Santee State Park",
+  "where": "251 State Park Rd, Santee, SC - I-95 exit 98, ~3-4 mi",
+  "lat": 33.5214094,
+  "lon": -80.4910797,
+  "coord_source": "OSM/Nominatim (park centroid)",
+  "url": "https://southcarolinaparks.com/santee",
+  "kind": "outdoors",
+  "suggested_dwell_min": 35,
+  "cost_usd": 8,
+  "cost_note": "$3 x2 adults + $1 x2 kids 6-15",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "06:00",
+    "url": "https://southcarolinaparks.com/santee",
+    "status": "standing",
+    "note": "closes at dark"
+   },
+   {
+    "name": "Office",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://southcarolinaparks.com/santee",
+    "status": "standing",
+    "note": "may vary in winter"
+   }
+  ],
+  "kid_notes": "10+ mi trails; third parties report 3 playgrounds and two 1 mi nature trails (Limestone, Oak Pinolly)",
+  "segment_hours": 4.0
+ },
+ {
+  "key": "walterboro_wildlife_sanctuary",
+  "name": "Walterboro Wildlife Sanctuary",
+  "where": "Detreville St, Walterboro, SC - I-95 exit 57 or 53, ~2.5-3 mi",
+  "lat": 32.8983782,
+  "lon": -80.680249,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://walterborosc.org/node/80",
+  "kind": "outdoors",
+  "suggested_dwell_min": 35,
+  "cost_usd": 0,
+  "cost_note": "Free admission (city)",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Sanctuary trails/boardwalks",
+    "days": "daily",
+    "url": "https://walterborosc.org/node/80",
+    "status": "standing",
+    "note": "Dawn to dusk (sunrise ~07:00, sunset ~17:30)"
+   }
+  ],
+  "kid_notes": "Boardwalks, bridges, beaver and duck ponds, trails; 2024 new boardwalk section; restrooms not stated",
+  "segment_hours": 4.5
+ },
+ {
+  "key": "hiotts_pharmacy",
+  "name": "Hiott's Pharmacy soda fountain",
+  "where": "373 E Washington St, Walterboro, SC - ~3.5 mi from I-95 exit 57",
+  "lat": 32.9027914,
+  "lon": -80.6632022,
+  "coord_source": "OSM/Nominatim address",
+  "url": "https://fodors.fodors.com/world/north-america/usa/south-carolina/charleston/restaurants/reviews/hiotts-pharmacy-4741695",
+  "kind": "food",
+  "suggested_dwell_min": 20,
+  "cost_usd": null,
+  "cost_note": "Pay per item",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Pharmacy",
+    "days": "Mon-Fri",
+    "open": "09:00",
+    "close": "18:00",
+    "url": "https://insiderx.com/pharmacy-near-me/hiotts/sc/walterboro/373-e-washington-st/1013972108",
+    "status": "unknown",
+    "note": "Third-party only; Sat 09:00-13:00"
+   },
+   {
+    "name": "Soda fountain",
+    "days": "Mon-Fri",
+    "url": "https://fodors.fodors.com/world/north-america/usa/south-carolina/charleston/restaurants/reviews/hiotts-pharmacy-4741695",
+    "status": "unknown",
+    "note": "Fountain hours not published"
+   }
+  ],
+  "kid_notes": "Sit-down float/treat, not active; pair with sanctuary",
+  "segment_hours": 4.5
+ },
+ {
+  "key": "ga_visitor_center_port_wentworth",
+  "name": "Georgia Visitor Information Center - Port Wentworth",
+  "where": "I-95 southbound mile 111, Port Wentworth, GA",
+  "lat": 32.2168947,
+  "lon": -81.1751122,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.exploregeorgia.org/port-wentworth/visitors-services/services/georgia-visitor-information-center-port-wentworth-savannah",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Visitor center",
+    "days": "daily",
+    "open": "08:30",
+    "close": "17:30",
+    "url": "https://www.exploregeorgia.org/port-wentworth/visitors-services/services/georgia-visitor-information-center-port-wentworth-savannah",
+    "status": "confirmed",
+    "note": "Closed Thanksgiving Day, Dec 24-25 only"
+   },
+   {
+    "name": "Restrooms",
+    "always": true,
+    "note": "24 h per Explore Georgia; older guide said 07:00-23:00",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Restrooms, leg-stretch at the state line; no play area listed",
+  "segment_hours": 5.1
+ },
+ {
+  "key": "jesup_railfan_platform",
+  "name": "Wayne County Railfan Platform / Train Triangle",
+  "where": "101 E Cherry St, Jesup, GA - on US-84/US-301 downtown, ~0.2 mi",
+  "lat": 31.605059,
+  "lon": -81.882572,
+  "coord_source": "OSM/Nominatim address",
+  "url": "https://exploregeorgia.org/jesup/general/historic-sites-trails-tours/wayne-county-railfan-platformtrain-triangle",
+  "kind": "icon",
+  "suggested_dwell_min": 20,
+  "cost_usd": 0,
+  "cost_note": "Free, free parking",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Railfan platforms & caboose park",
+    "always": true,
+    "note": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Watch Amtrak/CSX/NS trains, second platform by ACL caboose, geocache; restrooms not listed",
+  "segment_hours": 6.2
+ },
+ {
+  "key": "southern_forest_world",
+  "name": "Southern Forest World",
+  "where": "1440 N Augusta Ave, Waycross, GA - ~2 mi off US-84",
+  "lat": 31.234749,
+  "lon": -82.383212,
+  "coord_source": "US Census geocoder",
+  "url": "https://southernforestworld.org",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": 18,
+  "cost_note": "Adults $5; child price $3-4 depending on source; fire tower climb extra fee unpublished",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Museum, tree, playground",
+    "days": "Tue-Fri",
+    "open": "09:00",
+    "close": "14:00",
+    "url": "https://southernforestworld.org",
+    "status": "standing",
+    "note": "Sat 10:00-15:00; closed major holidays"
+   },
+   {
+    "name": "Fire tower climb",
+    "days": "Tue-Fri",
+    "url": "https://www.theblacksheartimes.com/article/10569,sfw-reopens-fire-tower-tue",
+    "status": "unknown",
+    "note": "Reopened Mar 2026; hours and fee not published"
+   }
+  ],
+  "kid_notes": "Climb spiral stair inside 38 ft model pine, outdoor playground, logging locomotive, climbable fire tower; closes 14:00",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "laura_s_walker_sp",
+  "name": "Laura S. Walker State Park",
+  "where": "5653 Laura Walker Rd, Waycross, GA - ~9-10 mi SE of Waycross off US-84",
+  "lat": 31.142024,
+  "lon": -82.211983,
+  "coord_source": "US Census geocoder",
+  "url": "https://gastateparks.org/LauraSWalker",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 10,
+  "cost_note": "$10 ParkPass per vehicle from Jan 2026",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "07:00",
+    "close": "22:00",
+    "url": "https://gastateparks.org/LauraSWalker",
+    "status": "standing"
+   },
+   {
+    "name": "Office",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://gastateparks.org/LauraSWalker",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Playground, 4 mi trails, lake; farther than 10 min off route",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "okefenokee_swamp_park",
+  "name": "Okefenokee Swamp Park",
+  "where": "5700 Okefenokee Swamp Park Rd, Waycross, GA - ~8 mi S of Waycross",
+  "lat": 31.0577855,
+  "lon": -82.2724668,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://okeswamp.org",
+  "kind": "ticketed",
+  "suggested_dwell_min": 75,
+  "cost_usd": 78,
+  "cost_note": "Explore Georgia: $20 adults, $19 ages 3-11; not on operator page",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://okeswamp.org",
+    "status": "standing",
+    "note": "last entry not published; old archive lists Thanksgiving Day closure only"
+   }
+  ],
+  "kid_notes": "Boardwalk, 90 ft observation tower, train ride, gator/snake shows; long for a pit stop",
+  "segment_hours": 7.0
+ },
+ {
+  "key": "homerville_clinch_rec_park",
+  "name": "Homerville-Clinch County Recreation Park",
+  "where": "1229 Pearson Hwy, Homerville, GA - ~1 mi off US-84",
+  "lat": 31.0452717,
+  "lon": -82.7615263,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.exploregeorgia.org/homerville/outdoors-nature/parks/homerville-clinch-county-recreation-park",
+  "kind": "playground",
+  "suggested_dwell_min": 20,
+  "cost_usd": null,
+  "cost_note": "No fee listed",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Playground/courts",
+    "days": "daily",
+    "url": "https://www.exploregeorgia.org/homerville/outdoors-nature/parks/homerville-clinch-county-recreation-park",
+    "status": "unknown",
+    "note": "Hours not published"
+   }
+  ],
+  "kid_notes": "Playground, basketball/tennis courts; restrooms unknown",
+  "segment_hours": 7.5
+ },
+ {
+  "key": "drexel_park_valdosta",
+  "name": "Drexel Park",
+  "where": "1401 N Patterson St, Valdosta, GA - ~1.5 mi N of US-84",
+  "lat": 30.8471089,
+  "lon": -83.2848398,
+  "coord_source": "OSM/Nominatim",
+  "url": "https://www.vlpra.com/198/Drexel-Park",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": null,
+  "cost_note": "No fee listed",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Playground/park",
+    "days": "daily",
+    "url": "https://www.vlpra.com/198/Drexel-Park",
+    "status": "unknown",
+    "note": "Hours not published; 2021 repair closure, current status unverified"
+   }
+  ],
+  "kid_notes": "Large play structure with bridges, monkey bars, slides; creek bridge; on Azalea City Trail",
+  "segment_hours": 8.0
+ },
+ {
+  "key": "grand_bay_wma_boardwalk",
+  "name": "Grand Bay WMA boardwalk & lookout tower",
+  "where": "4641-4649 Knights Academy Rd, Valdosta, GA - ~10 mi N of Valdosta via US-221",
+  "lat": 30.93334,
+  "lon": -83.1879,
+  "coord_source": "GA DNR page GPS",
+  "url": "https://georgiawildlife.com/grand-bay-wma",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": null,
+  "cost_note": "GA Lands Pass or hunting/fishing licence required; price not on page",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Boardwalk & tower",
+    "days": "daily",
+    "open": "06:00",
+    "close": "20:00",
+    "url": "https://georgiawildlife.com/grand-bay-wma",
+    "status": "unknown",
+    "note": "CLOSED until further notice (posted 10/8/26)"
+   }
+  ],
+  "kid_notes": "0.5 mi boardwalk to 54 ft tower, but currently closed",
+  "segment_hours": 8.0
+ }
+]

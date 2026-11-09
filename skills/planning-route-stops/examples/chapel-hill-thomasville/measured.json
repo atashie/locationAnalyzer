@@ -80,65 +80,196 @@
      "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
      "status": "standing"
     }
-   ]
+   ],
+   "role": "pit",
+   "phone": "843-774-2411",
+   "ask": "are the Pantry restrooms open from 07:00?"
   },
-  "walterboro": {
-   "name": "Walterboro Wildlife Sanctuary",
-   "where": "Walterboro, SC - I-95 exit 53",
-   "lat": 32.89718,
-   "lon": -80.67816,
-   "dwell_min": 45,
-   "cost_usd": 0,
-   "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
-   "hours": "daily dawn-dusk",
-   "status": "standing",
-   "kind": "outdoors",
+  "amonkey": {
+   "name": "Adrenaline Monkey",
+   "where": "4950 Centre Pointe Dr, North Charleston, SC - I-26 exit 213, across from Tanger Outlets",
+   "lat": 32.8757911,
+   "lon": -80.0222273,
+   "dwell_min": 120,
+   "cost_usd": 59.98,
+   "cost_note": "2-hour passes for the boys at $29.99 each (price shown for the 25th); adults watch free on a $0 observer pass, or play for $29.99 each. Grip socks are required and extra, price not published",
+   "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+   "status": "confirmed",
+   "kind": "indoors",
    "facilities": [
     {
-     "name": "Sanctuary boardwalks and trails",
-     "always": true,
-     "note": "daily dawn to dusk, free; sunrise 07:02",
-     "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
-     "status": "standing"
+     "name": "Indoor ninja courses, climbing walls, slides, maze - timed entry slots",
+     "days": "Wed",
+     "open": "10:00",
+     "close": "18:00",
+     "url": "https://ecom.roller.app/adrenalinemonkeycharleston/venuecheckout/en-us/product/1004050?date=2026-11-25",
+     "status": "confirmed"
     }
-   ]
+   ],
+   "role": "excursion",
+   "phone": "843-278-5256",
+   "ask": "closing time on the 25th, grip-sock price, whether a holiday camp shares the floor"
   },
-  "hiotts": {
-   "name": "Hiott's Pharmacy soda fountain",
-   "where": "373 E Washington St, Walterboro, SC",
-   "lat": 32.9027914,
-   "lon": -80.6632022,
+  "treetop": {
+   "name": "Treetop Quest Dunwoody",
+   "where": "Brook Run Park, 2341 Peeler Rd, Dunwoody, GA - I-285 exit 30",
+   "lat": 33.93372,
+   "lon": -84.30239,
+   "dwell_min": 150,
+   "cost_usd": 142,
+   "cost_note": "one adult and the 9-year-old on the main course ($64 + $49), the 6-year-old on Chick Pea ($29), the other adult supervising on the ground for free. Prices from the booking system for the 25th, before tax and fees",
+   "url": "https://www.treetopquest.com/dunwoody/",
+   "status": "confirmed",
+   "kind": "ticketed",
+   "facilities": [
+    {
+     "name": "Main aerial courses and zip-lines, ages 7+",
+     "days": "Wed",
+     "open": "11:00",
+     "close": "17:30",
+     "last_entry": "15:30",
+     "url": "https://www.treetopquest.com/event/dunwoody-open-11-25-26/",
+     "status": "confirmed"
+    },
+    {
+     "name": "Chick Pea course, ages 4-6 (adults may not climb)",
+     "days": "Wed",
+     "open": "11:00",
+     "close": "17:30",
+     "last_entry": "15:30",
+     "url": "https://go.theflybook.com/book/244/ListView/0",
+     "status": "confirmed"
+    }
+   ],
+   "role": "excursion",
+   "phone": "770-365-0356",
+   "ask": "does a late start still get the full 2.5 h session?"
+  },
+  "scwelcome": {
+   "name": "South Carolina Welcome Center (I-85 southbound)",
+   "where": "I-85 near Blacksburg, SC, just over the state line",
+   "lat": 35.1491302,
+   "lon": -81.4952007,
    "dwell_min": 20,
    "cost_usd": 0,
-   "url": null,
-   "hours": "Mon-Fri 09:00-18:00 (third-party listings only)",
+   "url": "https://scprt.com/tourism/welcome-center-program",
    "status": "unknown",
-   "kind": "food",
+   "kind": "roadside",
    "facilities": [
     {
-     "name": "Soda fountain lunch counter",
-     "days": "Mon-Fri",
-     "open": "09:00",
-     "close": "18:00",
-     "note": "third-party listings only; no operator page found",
+     "name": "Restrooms and vending",
+     "always": true,
+     "note": "listed as open 24 h on a user-submitted page only; a state bid notice mentions a rebuild",
+     "url": "https://www.waymarking.com/waymarks/WMTJ1P_South_Carolina_Welcome_Center_Blacksburg_SC",
      "status": "unknown"
     }
-   ]
+   ],
+   "role": "pit",
+   "phone": "864-839-6742",
+   "ask": "is the rebuild under way; are restrooms open before 09:00?"
   },
-  "pig_rh": {
-   "name": "Smokin Pig",
-   "where": "3986 Hwy 17, Richmond Hill, GA - I-95 exit 87",
-   "lat": 31.9305584,
-   "lon": -81.3286155,
-   "dwell_min": 45,
+  "santee_mound": {
+   "name": "Santee Indian Mound / Fort Watson (Santee NWR)",
+   "where": "2125 Fort Watson Rd, Summerton, SC - I-95 exit 102, 1.3 mi",
+   "lat": 33.5324779,
+   "lon": -80.4317841,
+   "dwell_min": 35,
    "cost_usd": 0,
-   "url": "https://www.smokinpigbbqjoint.com/",
-   "hours": "Tue-Sat 11:00-20:00",
+   "cost_note": "No entrance fee listed",
+   "url": "https://www.fws.gov/refuge/santee/visit-us",
    "status": "standing",
-   "kind": "food",
+   "kind": "outdoors",
+   "role": "pit",
    "facilities": [
     {
-     "name": "Smokin Pig dining room",
+     "name": "Bluff Unit vehicle gate (Oct-Feb)",
+     "url": "https://www.fws.gov/refuge/santee/visit-us",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "17:00"
+    },
+    {
+     "name": "Visitor Center",
+     "url": "https://www.fws.gov/refuge/santee/visit-us",
+     "status": "standing",
+     "days": "Tue-Fri",
+     "open": "08:00",
+     "close": "16:00"
+    }
+   ],
+   "phone": "803-478-2217",
+   "ask": "can the mound stairs be climbed, which trails are open on the 25th?"
+  },
+  "fort_mcallister": {
+   "name": "Fort McAllister State Park",
+   "where": "3894 Fort McAllister Rd, Richmond Hill, GA 31324 - I-95 exit 90 (GA-144 east ~10 mi)",
+   "lat": 31.8908,
+   "lon": -81.1961,
+   "dwell_min": 120,
+   "cost_usd": 40.5,
+   "cost_note": "$10 ParkPass plus fort admission $9.75 per adult and $5.50 per child; whether fort admission covers parking is not stated",
+   "url": "https://gastateparks.org/FortMcAllister",
+   "status": "standing",
+   "kind": "outdoors",
+   "role": "excursion",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://gastateparks.org/FortMcAllister",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "22:00"
+    },
+    {
+     "name": "Historic fort and museum",
+     "url": "https://gastateparks.org/FortMcAllister",
+     "status": "standing",
+     "days": "daily",
+     "open": "08:00",
+     "close": "17:00"
+    }
+   ],
+   "phone": "912-727-2339"
+  },
+  "lunch_richmond_hill": {
+   "name": "Lunch in Richmond Hill",
+   "where": "Richmond Hill, GA - I-95 exit 87, on the way back from the fort",
+   "lat": 31.9265,
+   "lon": -81.2945,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "http://www.rhbubbasbistro.com",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Bubba's Bistro",
+     "url": "http://www.rhbubbasbistro.com",
+     "status": "standing",
+     "days": "Tue-Thu",
+     "open": "11:00",
+     "close": "20:00"
+    },
+    {
+     "name": "Parker's Kitchen (US-17 at Ford Ave)",
+     "url": "https://bryancountynews.com/news/new-parkers-kitchen-location-open-on-hwy-17",
+     "status": "standing",
+     "days": "Mon-Fri",
+     "open": "04:00",
+     "close": "19:00"
+    },
+    {
+     "name": "Kroger Richmond Hill (picnic supplies)",
+     "url": "https://www.kroger.com/stores/search",
+     "status": "unknown",
+     "note": "hours not checked"
+    },
+    {
+     "name": "Smokin Pig (BBQ, one option among several)",
      "days": "Tue-Sat",
      "open": "11:00",
      "close": "20:00",
@@ -147,288 +278,1023 @@
     }
    ]
   },
-  "mighty8": {
-   "name": "Mighty Eighth Air Force Museum",
-   "where": "Pooler, GA - I-95 exit 102",
-   "lat": 32.11566,
-   "lon": -81.23637,
-   "dwell_min": 90,
+  "jesup_trains": {
+   "name": "Wayne County Railfan Platform / Train Triangle",
+   "where": "101 E Cherry St, Jesup, GA - on US-84/US-301 downtown, ~0.2 mi",
+   "lat": 31.605059,
+   "lon": -81.882572,
+   "dwell_min": 20,
    "cost_usd": 0,
-   "url": "https://www.mightyeighth.org/",
-   "hours": "Tue-Sat 10:00-17:00; Thanksgiving closure listed for Nov 26",
+   "cost_note": "Free, free parking",
+   "url": "https://exploregeorgia.org/jesup/general/historic-sites-trails-tours/wayne-county-railfan-platformtrain-triangle",
    "status": "standing",
-   "kind": "indoors",
-   "cost_note": "admission not published on the pages fetched",
+   "kind": "icon",
+   "role": "pit",
    "facilities": [
     {
-     "name": "Museum galleries",
-     "days": "Tue-Sat",
-     "open": "10:00",
-     "close": "17:00",
-     "url": "https://www.mightyeighth.org/",
-     "status": "standing"
+     "name": "Railfan platforms & caboose park",
+     "status": "standing",
+     "note": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+     "always": true
     }
    ]
   },
-  "mcallister": {
-   "name": "Fort McAllister State Park",
-   "where": "Richmond Hill, GA",
-   "lat": 31.88531,
-   "lon": -81.20236,
-   "dwell_min": 75,
-   "cost_usd": 35.5,
-   "url": "https://gastateparks.org/FortMcAllister",
-   "hours": "park 07:00-22:00; historic site 08:00-17:00",
+  "oatland": {
+   "name": "Oatland Island Wildlife Center",
+   "where": "711 Sandtown Rd, Savannah, GA 31410 - SPUR: I-95 exit 99, I-16 E, US-80 E (~15 mi)",
+   "lat": 32.0515,
+   "lon": -81.0212,
+   "dwell_min": 105,
+   "cost_usd": 24,
+   "cost_note": "Adults $7, ages 4-17 $5 = $24.",
+   "url": "https://oatland.sccpss.com/visit/admissions-hours",
    "status": "standing",
    "kind": "outdoors",
+   "role": "excursion",
    "facilities": [
     {
-     "name": "Park grounds, trails, playground",
+     "name": "Center",
+     "url": "https://oatland.sccpss.com/visit/admissions-hours",
+     "status": "standing",
+     "days": "daily",
+     "open": "10:00",
+     "close": "16:30",
+     "last_entry": "15:30"
+    }
+   ],
+   "phone": "912-395-1212",
+   "ask": "any closure on the 25th (published list names only Thanksgiving and the day after)"
+  },
+  "lunch_savannah_east": {
+   "name": "Lunch on the east side of Savannah",
+   "where": "US-80 / Islands Expressway, a few minutes from Oatland Island",
+   "lat": 32.0444,
+   "lon": -81.0064,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://www.wileyschampionshipbbq.com/",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Wiley's Championship BBQ",
+     "url": "https://www.wileyschampionshipbbq.com/",
+     "status": "standing",
+     "days": "daily",
+     "open": "11:00",
+     "close": "20:00"
+    },
+    {
+     "name": "Sandfly BBQ",
+     "url": "https://www.sandflybbq.com/",
+     "status": "standing",
+     "days": "Wed",
+     "open": "11:00",
+     "close": "20:00"
+    },
+    {
+     "name": "Leopold's Ice Cream (Broughton St)",
+     "url": "https://www.leopoldsicecream.com/",
+     "status": "standing",
+     "days": "Sun-Thu",
+     "open": "12:00",
+     "close": "21:00",
+     "destination": true
+    }
+   ]
+  },
+  "laura_walker": {
+   "name": "Laura S. Walker State Park",
+   "where": "5653 Laura Walker Rd, Waycross, GA 31503 - off US-84/US-82 at Waycross, GA-177 ~9 mi SE",
+   "lat": 31.1411,
+   "lon": -82.2147,
+   "dwell_min": 30,
+   "cost_usd": 10,
+   "cost_note": "GA ParkPass $10 per vehicle.",
+   "url": "https://gastateparks.org/LauraSWalker",
+   "status": "standing",
+   "kind": "outdoors",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://gastateparks.org/LauraSWalker",
+     "status": "standing",
      "days": "daily",
      "open": "07:00",
+     "close": "22:00"
+    }
+   ]
+  },
+  "walterboro": {
+   "name": "Walterboro Wildlife Sanctuary (Great Swamp Sanctuary)",
+   "where": "Detreville St, Walterboro, SC 29488 - I-95 exit 53 or 57, ~3 min",
+   "lat": 32.8984,
+   "lon": -80.6802,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "Free.",
+   "url": "https://walterborosc.org/node/80",
+   "status": "standing",
+   "kind": "outdoors",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Sanctuary trails and boardwalks (from dawn) (to sunset)",
+     "url": "https://walterborosc.org/node/80",
+     "status": "standing",
+     "note": "dawn to dusk",
+     "days": "daily",
+     "open": "07:00",
+     "close": "17:30"
+    }
+   ],
+   "phone": "843-538-4353",
+   "ask": "boardwalk status after storm repairs"
+  },
+  "lunch_tanger": {
+   "name": "Lunch at Adrenaline Monkey or across at Tanger Outlets",
+   "where": "Centre Pointe Dr / Tanger Outlet Blvd, North Charleston",
+   "lat": 32.8757911,
+   "lon": -80.0222273,
+   "dwell_min": 40,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Mellow Mushroom, 4855 Tanger Outlet Blvd",
+     "days": "Mon-Thu",
+     "open": "11:00",
      "close": "22:00",
-     "url": "https://gastateparks.org/FortMcAllister",
+     "url": "https://www.mellowmushroom.com/locations/sc/north-charleston/4855-tanger-outlet-blvd/",
      "status": "standing"
     },
     {
-     "name": "Earthwork fort / historic site",
-     "days": "daily",
-     "open": "08:00",
-     "close": "17:00",
-     "url": "https://gastateparks.org/FortMcAllister",
-     "status": "standing"
+     "name": "Adrenaline Monkey on-site pizza",
+     "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+     "status": "unknown",
+     "note": "pizza is sold on site; food hours not published"
+    },
+    {
+     "name": "Chick-fil-A, next to Adrenaline Monkey",
+     "url": "https://www.chick-fil-a.com/locations",
+     "status": "unknown",
+     "note": "store page not found; chain closed Sundays, Wednesday normally open"
     }
    ]
   },
-  "lswalker": {
-   "name": "Laura S. Walker State Park",
-   "where": "near Waycross, GA",
-   "lat": 31.14105,
-   "lon": -82.21472,
-   "dwell_min": 30,
-   "cost_usd": 5,
-   "url": "https://gastateparks.org/LauraSWalker",
-   "hours": "daily 07:00-22:00",
+  "fortmill_welcome": {
+   "name": "SC Welcome Center I-77 SB (Fort Mill)",
+   "where": "I-77 SB MM 89 between exits 88 and 90, Fort Mill, SC",
+   "lat": 35.08001,
+   "lon": -80.94317,
+   "dwell_min": 15,
+   "cost_usd": 0,
+   "cost_note": "Free",
+   "url": "https://scprt.com/tourism/welcome-center-program",
+   "status": "standing",
+   "kind": "roadside",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Rest area restrooms",
+     "status": "unknown",
+     "note": "SCPRT general '24/7/365' statement, not site-specific",
+     "always": true
+    },
+    {
+     "name": "Staffed welcome center",
+     "url": "https://scprt.com/tourism/welcome-center-program",
+     "status": "standing",
+     "days": "daily",
+     "open": "09:00",
+     "close": "17:00"
+    }
+   ],
+   "phone": "803-548-2880",
+   "ask": "are restrooms open before 09:00?"
+  },
+  "hitchcock": {
+   "name": "Hitchcock Woods",
+   "where": "Entrances incl. South Boundary Ave SW and 263 Rubins Cottage Ln (off Dibble Rd), Aiken, SC - I-20 exit 18 (SC-19) ~8 mi south",
+   "lat": 33.544396,
+   "lon": -81.743354,
+   "dwell_min": 105,
+   "cost_usd": 0,
+   "cost_note": "Free.",
+   "url": "https://www.hitchcockwoods.org/plan-your-visit/hours-entrances-and-parking/",
    "status": "standing",
    "kind": "outdoors",
+   "role": "excursion",
    "facilities": [
     {
-     "name": "Park, beach, playground, boardwalk",
+     "name": "Woods (from dawn) (to sunset)",
+     "url": "https://www.hitchcockwoods.org/plan-your-visit/hours-entrances-and-parking/",
+     "status": "standing",
      "days": "daily",
      "open": "07:00",
-     "close": "22:00",
-     "url": "https://gastateparks.org/LauraSWalker",
-     "status": "standing"
+     "close": "17:30"
     }
-   ]
+   ],
+   "phone": "803-642-0528",
+   "ask": "best family entrance and parking; no restrooms or water in the woods"
   },
-  "okefenokee": {
-   "name": "Okefenokee Swamp Park",
-   "where": "5700 Okefenokee Swamp Park Rd, Waycross, GA",
-   "lat": 31.05779,
-   "lon": -82.27247,
-   "dwell_min": 80,
-   "cost_usd": 98,
-   "url": "https://okeswamp.org/general-admission/",
-   "hours": "daily 09:00-17:00",
+  "lunch_aiken": {
+   "name": "Lunch in downtown Aiken",
+   "where": "Laurens St, Aiken, SC - five minutes from Hitchcock Woods",
+   "lat": 33.560298,
+   "lon": -81.722651,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://lankysonlaurens.com/",
    "status": "standing",
-   "kind": "ticketed",
+   "kind": "food",
+   "role": "lunch",
    "facilities": [
     {
-     "name": "Swamp park: train, boardwalk, reptile show",
-     "days": "daily",
-     "open": "09:00",
-     "close": "17:00",
-     "url": "https://okeswamp.org/general-admission/",
-     "status": "standing"
-    }
-   ]
-  },
-  "zoo": {
-   "name": "Riverbanks Zoo & Garden",
-   "where": "Columbia, SC - I-26 at SC-378",
-   "lat": 34.00874,
-   "lon": -81.07313,
-   "dwell_min": 90,
-   "cost_usd": 105.8,
-   "kind": "ticketed",
-   "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
-   "hours": "winter (2 Nov - 31 Jan) 09:00-16:00; closed Thanksgiving",
-   "cost_note": "$27.95 adult / $24.95 child online; $12 more for all four at the gate",
-   "status": "standing",
-   "facilities": [
+     "name": "Lanky's on Laurens (Toast lists Electric Eats at same address - unresolved)",
+     "url": "https://lankysonlaurens.com/",
+     "status": "standing",
+     "days": "Mon-Sat",
+     "open": "11:00",
+     "close": "22:00"
+    },
     {
-     "name": "Zoo and botanical garden",
-     "days": "daily",
-     "open": "09:00",
-     "close": "16:00",
-     "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
-     "status": "standing"
+     "name": "New Moon Cafe",
+     "url": "https://www.newmoondowntown.com/location/new-moon-cafe-aiken/",
+     "status": "standing",
+     "days": "Mon-Fri",
+     "open": "07:00",
+     "close": "16:00"
+    },
+    {
+     "name": "Food Lion (Richland Ave W)",
+     "status": "unknown",
+     "note": "hours not checked",
+     "url": "https://stores.foodlion.com/sc/aiken/1520-richland-ave-west"
     }
    ]
   },
   "ocmulgee": {
    "name": "Ocmulgee Mounds National Historical Park",
-   "where": "Macon, GA",
-   "lat": 32.83723,
-   "lon": -83.60184,
-   "dwell_min": 75,
+   "where": "1207 Emery Hwy, Macon, GA 31217 - I-16 exit 2 (Coliseum Dr / US-80), ~1 mi",
+   "lat": 32.837227,
+   "lon": -83.601844,
+   "dwell_min": 45,
    "cost_usd": 0,
-   "kind": "outdoors",
+   "cost_note": "Free, no entrance pass.",
    "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-   "hours": "grounds 08:00-17:00 daily; visitor centre & Earth Lodge 09:00-17:00; no entrance fee",
    "status": "standing",
+   "kind": "outdoors",
+   "role": "pit",
    "facilities": [
     {
-     "name": "Mounds and walking trails",
+     "name": "Grounds & trails",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing",
      "days": "daily",
      "open": "08:00",
-     "close": "17:00",
-     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-     "status": "standing"
+     "close": "17:00"
     },
     {
-     "name": "Visitor centre and Earth Lodge",
+     "name": "Visitor Center & Earth Lodge",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing",
      "days": "daily",
      "open": "09:00",
-     "close": "17:00",
-     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-     "status": "standing"
+     "close": "17:00"
+    }
+   ],
+   "phone": "478-752-8257"
+  },
+  "riverbanks": {
+   "name": "Riverbanks Zoo & Garden",
+   "where": "500 Wildlife Pkwy, Columbia, SC 29210 - I-126 exit 1 (Greystone Blvd), ~1 mi",
+   "lat": 34.008742,
+   "lon": -81.073129,
+   "dwell_min": 165,
+   "cost_usd": 108.8,
+   "cost_note": "Online: adults (13-61) $27.95 x2, children (2-12) $24.95 x2, parking $3 = $108.80 + tax; window prices $3/ticket and $3 parking higher. Rides extra on a cashless Explore More Card ($1=1 EC): Sky-High Safari ropes climb 9 EC (min 48 in without parent), Tiny Trailblazers 5 EC (max 48 in), train/carousel 3 EC. No outside food.",
+   "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+   "status": "standing",
+   "kind": "ticketed",
+   "role": "excursion",
+   "facilities": [
+    {
+     "name": "Zoo & Garden gates (winter hours Nov 2 - Jan 31)",
+     "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+     "status": "standing",
+     "days": "daily",
+     "open": "09:00",
+     "close": "16:00"
+    },
+    {
+     "name": "Sky-High Safari ropes climb",
+     "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+     "status": "standing",
+     "days": "daily",
+     "open": "10:00",
+     "close": "15:30"
+    },
+    {
+     "name": "Tiny Trailblazers climb",
+     "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+     "status": "standing",
+     "days": "daily",
+     "open": "09:30",
+     "close": "15:30"
+    },
+    {
+     "name": "Saluda Skyride / Kangaroo Walkabout",
+     "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+     "status": "standing",
+     "days": "daily",
+     "open": "09:30",
+     "close": "16:00"
+    }
+   ],
+   "phone": "803-779-8717",
+   "ask": "does the Sky-High Safari ropes climb run on the 25th; winter dining hours"
+  },
+  "lunch_columbia": {
+   "name": "Lunch at the zoo or nearby in Columbia",
+   "where": "Riverbanks Zoo and Broad River Rd, Columbia, SC - I-26 exits 106-110",
+   "lat": 34.036175,
+   "lon": -81.089227,
+   "dwell_min": 40,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://www.lizardsthicket.com/locations/",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Lizard's Thicket (Broad River Rd / Dutch Square)",
+     "url": "https://www.lizardsthicket.com/locations/",
+     "status": "standing",
+     "days": "daily",
+     "open": "06:00",
+     "close": "21:00",
+     "destination": true
+    },
+    {
+     "name": "Rush's (Broad River Rd)",
+     "url": "https://www.rushs.com/locations",
+     "status": "standing",
+     "days": "daily",
+     "open": "10:00",
+     "close": "22:00"
+    },
+    {
+     "name": "Riverbanks Zoo on-site dining (Tuskers, Wild Burger)",
+     "status": "unknown",
+     "note": "hours not published",
+     "url": "https://riverbanks.org/plan-your-visit/visitor-information"
     }
    ]
   },
   "phinizy": {
-   "name": "Phinizy Swamp Nature Park",
-   "where": "1858 Lock and Dam Rd, Augusta, GA",
-   "lat": 33.38901,
-   "lon": -81.95979,
-   "dwell_min": 35,
+   "name": "Phinizy Swamp Nature Park (Phinizy Center for Water Sciences)",
+   "where": "1858 Lock and Dam Rd, Augusta, GA 30906 - I-20 exit 196A to I-520, exit 10 (Doug Barnard Pkwy), ~1.5 mi",
+   "lat": 33.384692,
+   "lon": -81.968561,
+   "dwell_min": 40,
    "cost_usd": 0,
-   "kind": "outdoors",
+   "cost_note": "Free; free parking.",
    "url": "https://phinizycenter.org/location-contact/",
-   "hours": "07:00-19:00 (Oct-Mar), 365 days, free",
    "status": "standing",
+   "kind": "outdoors",
+   "role": "pit",
    "facilities": [
     {
-     "name": "Boardwalks and 14 mi of trails",
+     "name": "Trails & boardwalks (Oct-Mar)",
+     "url": "https://phinizycenter.org/location-contact/",
+     "status": "standing",
      "days": "daily",
      "open": "07:00",
-     "close": "19:00",
-     "url": "https://phinizycenter.org/location-contact/",
-     "status": "standing"
+     "close": "19:00"
     }
-   ]
+   ],
+   "phone": "706-828-2109"
   },
-  "discovery": {
-   "name": "Discovery Place Science",
-   "where": "301 N Tryon St, Charlotte, NC",
-   "lat": 35.22962,
-   "lon": -80.8412,
-   "dwell_min": 90,
-   "cost_usd": 0,
-   "kind": "indoors",
-   "url": "https://www.discoveryplace.org/science/visit",
-   "hours": "Wed 09:00-16:00",
-   "cost_note": "admission not published on the pages fetched",
+  "sesqui": {
+   "name": "Sesquicentennial State Park (Sesqui)",
+   "where": "9564 Two Notch Rd, Columbia, SC 29223 - I-20 exit 74 (US-1 Two Notch Rd), ~3 mi NE",
+   "lat": 34.088059,
+   "lon": -80.905332,
+   "dwell_min": 35,
+   "cost_usd": 19.0,
+   "cost_note": "$6 adults x2 + $3.50 children 6-15 x2 = $19. Kayak $10/h, pedal boat $15/h (seasonal - could not determine if offered in late Nov).",
+   "url": "https://southcarolinaparks.com/sesqui",
    "status": "standing",
-   "facilities": [
-    {
-     "name": "Museum galleries (fully indoor)",
-     "days": "Mon-Fri",
-     "open": "09:00",
-     "close": "16:00",
-     "url": "https://www.discoveryplace.org/science/visit",
-     "status": "standing"
-    }
-   ]
-  },
-  "weymouth": {
-   "name": "Weymouth Woods Sandhills Nature Preserve",
-   "where": "Southern Pines, NC",
-   "lat": 35.14153,
-   "lon": -79.39822,
-   "dwell_min": 30,
-   "cost_usd": 0,
    "kind": "outdoors",
-   "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-   "hours": "November 08:00-18:00; visitor centre 08:00-17:00; free",
-   "status": "standing",
+   "role": "pit",
    "facilities": [
     {
-     "name": "7 mi of trails, picnic area",
+     "name": "Park gates (to sunset)",
+     "url": "https://southcarolinaparks.com/sesqui",
+     "status": "standing",
      "days": "daily",
      "open": "08:00",
-     "close": "18:00",
-     "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-     "status": "standing"
+     "close": "17:30"
     },
     {
-     "name": "Visitor centre + Discovery Room",
+     "name": "Park office",
+     "url": "https://southcarolinaparks.com/sesqui",
+     "status": "standing",
      "days": "daily",
-     "open": "08:00",
-     "close": "16:00",
-     "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
-     "status": "standing"
+     "open": "09:00",
+     "close": "17:00"
+    }
+   ],
+   "phone": "803-788-2706"
+  },
+  "lunch_macon": {
+   "name": "Lunch in Macon, by the mounds",
+   "where": "Emery Hwy / downtown Macon - I-16 exit 2, by the Ocmulgee Mounds entrance",
+   "lat": 32.8490029,
+   "lon": -83.624701,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://nu-wayweiners.com/macon-nu-way-weiners-locations",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Nu-Way Weiners Baconsfield",
+     "url": "https://nu-wayweiners.com/macon-nu-way-weiners-locations",
+     "status": "standing",
+     "days": "Mon-Thu",
+     "open": "06:30",
+     "close": "21:00",
+     "destination": true
+    },
+    {
+     "name": "H&H Restaurant",
+     "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/hh-restaurant",
+     "status": "standing",
+     "days": "Tue-Sat",
+     "open": "07:00",
+     "close": "15:00",
+     "destination": true
+    },
+    {
+     "name": "The Rookery",
+     "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/the-rookery",
+     "status": "standing",
+     "days": "Sun-Thu",
+     "open": "11:00",
+     "close": "22:00"
     }
    ]
   },
-  "zooatl": {
-   "name": "Zoo Atlanta",
-   "where": "Grant Park, Atlanta, GA",
-   "lat": 33.7326,
-   "lon": -84.37104,
+  "ocmulgee_big": {
+   "name": "Ocmulgee Mounds National Historical Park",
+   "where": "1207 Emery Hwy, Macon, GA 31217 - I-16 exit 2 (Coliseum Dr / US-80), ~1 mi",
+   "lat": 32.837227,
+   "lon": -83.601844,
    "dwell_min": 100,
    "cost_usd": 0,
-   "kind": "ticketed",
-   "url": "https://zooatlanta.org/visit/",
-   "hours": "2 Nov - 6 Dec daily 09:00-17:00, last entry 15:30; closed Thanksgiving",
-   "cost_note": "admission not published on the pages fetched; varies by date",
+   "cost_note": "Free, no entrance pass.",
+   "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
    "status": "standing",
+   "kind": "outdoors",
+   "role": "excursion",
    "facilities": [
     {
-     "name": "Zoo grounds",
+     "name": "Grounds & trails",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing",
+     "days": "daily",
+     "open": "08:00",
+     "close": "17:00"
+    },
+    {
+     "name": "Visitor Center & Earth Lodge",
+     "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+     "status": "standing",
      "days": "daily",
      "open": "09:00",
-     "close": "17:00",
-     "url": "https://zooatlanta.org/visit/",
+     "close": "17:00"
+    }
+   ],
+   "phone": "478-752-8257"
+  },
+  "peanut": {
+   "name": "World's Largest Peanut",
+   "where": "315 Whittle Circle / Sylvia Dr, Ashburn, GA 31714 - I-75 exit 82 (~0.5 mi)",
+   "lat": 31.70637,
+   "lon": -83.63533,
+   "dwell_min": 10,
+   "cost_usd": 0,
+   "cost_note": "free",
+   "url": "https://www.roadsideamerica.com/story/2071",
+   "status": "standing",
+   "kind": "icon",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Peanut monument",
      "status": "standing",
-     "last_entry": "15:30"
+     "note": "rebuilt 2023; reach via unmarked road",
+     "always": true
+    }
+   ]
+  },
+  "rozar": {
+   "name": "Rozar Park",
+   "where": "1060 Keith Dr, Perry, GA 31069 - I-75 exits 135/136 (~2-3 mi, verify)",
+   "lat": 32.46308,
+   "lon": -83.70466,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "free",
+   "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park (to sunset)",
+     "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+     "status": "standing",
+     "note": "closes at sunset (~17:35)",
+     "days": "daily",
+     "open": "06:00",
+     "close": "17:30"
+    }
+   ]
+  },
+  "lane_orchards": {
+   "name": "Lane Southern Orchards",
+   "where": "50 Lane Rd, Fort Valley, GA 31030 - I-75 exit 142 (~5 mi west)",
+   "lat": 32.55516,
+   "lon": -83.82642,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "free entry; food/ice cream extra",
+   "url": "https://www.lanesouthernorchards.com/",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Market, cafe, playground",
+     "url": "https://www.lanesouthernorchards.com/",
+     "status": "standing",
+     "days": "daily",
+     "open": "09:00",
+     "close": "18:00"
+    }
+   ],
+   "phone": "800-277-3224",
+   "ask": "holiday-week hours"
+  },
+  "high_falls": {
+   "name": "High Falls State Park",
+   "where": "76 High Falls Park Dr, Jackson, GA 30233 - I-75 exit 198 (1.8 mi east)",
+   "lat": 33.17831,
+   "lon": -84.01594,
+   "dwell_min": 40,
+   "cost_usd": 10,
+   "cost_note": "$10/vehicle ParkPass (2026 rate)",
+   "url": "https://gastateparks.org/HighFalls",
+   "status": "standing",
+   "kind": "outdoors",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park grounds",
+     "url": "https://gastateparks.org/HighFalls",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "22:00"
+    }
+   ],
+   "phone": "478-993-3053",
+   "ask": "does the lake drawdown change the falls?"
+  },
+  "cherokee_lake": {
+   "name": "Cherokee Lake Park",
+   "where": "330 (city) / 420 (Explore GA) Covington Ave, Thomasville, GA 31792",
+   "lat": 30.83825,
+   "lon": -83.95985,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "free",
+   "url": "https://thomasville.org/parks-and-recreation",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://www.exploregeorgia.org/thomasville/outdoors-nature/trails-tours/cherokee-lake-park",
+     "status": "standing",
+     "note": "Explore GA also says dawn to dusk",
+     "days": "daily",
+     "open": "06:00",
+     "close": "21:00"
+    }
+   ]
+  },
+  "cleveland_park": {
+   "name": "Cleveland Park",
+   "where": "Spartanburg, SC - via I-585 spur from I-85",
+   "lat": 34.96542,
+   "lon": -81.95029,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "Free",
+   "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park (Nov 1-Feb 28)",
+     "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "19:00"
+    }
+   ]
+  },
+  "amerson": {
+   "name": "Amerson River Park",
+   "where": "Amerson Park Dr off Riverside Dr, Macon, GA - I-75 exit 167/169 area, ~1.5 mi (measure)",
+   "lat": 32.876893,
+   "lon": -83.651783,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "Free (no fee found).",
+   "url": "https://amerson.maconbibb.us/park-rules/",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park, playground and river trail (Nov-Feb)",
+     "days": "daily",
+     "open": "07:00",
+     "close": "18:00",
+     "url": "https://amerson.maconbibb.us/park-rules/",
+     "status": "standing"
+    }
+   ],
+   "phone": "478-803-0484"
+  },
+  "jf_gregory": {
+   "name": "J.F. Gregory Park",
+   "where": "521 Cedar St, Richmond Hill, GA 31324 - I-95 exit 87 (US-17 / Ford Ave), ~3 mi",
+   "lat": 31.9541,
+   "lon": -81.2979,
+   "dwell_min": 30,
+   "cost_usd": 0,
+   "cost_note": "Free.",
+   "url": "https://exploregeorgia.org/richmond-hill/outdoors-nature/parks/jf-gregory-park",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://exploregeorgia.org/richmond-hill/outdoors-nature/parks/jf-gregory-park",
+     "status": "standing",
+     "days": "daily",
+     "open": "08:00",
+     "close": "22:00"
+    }
+   ]
+  },
+  "lunch_dunwoody": {
+   "name": "Lunch in Dunwoody",
+   "where": "around Brook Run Park, Dunwoody, GA",
+   "lat": 33.949,
+   "lon": -84.3335,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://www.villageburger.com/",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Village Burger Dunwoody",
+     "url": "https://www.villageburger.com/",
+     "status": "standing",
+     "days": "Sun-Thu",
+     "open": "11:00",
+     "close": "20:00"
+    },
+    {
+     "name": "Kroger Chamblee Dunwoody Rd",
+     "status": "standing",
+     "note": "OSM tag only",
+     "days": "daily",
+     "open": "06:00",
+     "close": "23:00",
+     "url": "https://www.kroger.com/stores/search"
+    },
+    {
+     "name": "Walmart Neighborhood Market Winters Chapel",
+     "status": "standing",
+     "note": "OSM tag only",
+     "days": "daily",
+     "open": "06:00",
+     "close": "23:59",
+     "url": "https://www.walmart.com/store-finder"
+    }
+   ]
+  },
+  "unity_park": {
+   "name": "Unity Park",
+   "where": "320 S Hudson St, Greenville, SC - I-385 exit 42 (via I-385 from I-85)",
+   "lat": 34.85198,
+   "lon": -82.41221,
+   "dwell_min": 35,
+   "cost_usd": 0,
+   "cost_note": "Free",
+   "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+   "status": "standing",
+   "kind": "playground",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+     "status": "standing",
+     "days": "daily",
+     "open": "05:00",
+     "close": "23:00"
+    },
+    {
+     "name": "Playgrounds (from dawn) (to sunset)",
+     "url": "https://kiddingaroundgreenville.com/?p=92615",
+     "status": "standing",
+     "note": "dawn to dusk",
+     "days": "daily",
+     "open": "07:00",
+     "close": "17:30"
+    }
+   ]
+  },
+  "stone_mountain": {
+   "name": "Stone Mountain Park: Walk-Up Trail to the summit",
+   "where": "1000 Robert E Lee Blvd, Stone Mountain, GA 30083 - I-285 exit 39B (US-78 E), roughly 7 mi (approx.)",
+   "lat": 33.80839,
+   "lon": -84.14344,
+   "dwell_min": 135,
+   "cost_usd": 25,
+   "cost_note": "Parking pass $25/day required (adventure-outpost page). Walk-Up Trail free with parking = $25. Weekday Historic Ticket $25 pp incl. round-trip Skyride (+$100) if offered that day. Stone Mountain Christmas $39.99 adult/$36.99 child (=$153.96) runs from 14:00. Zip course $39.99+ pp, age 10+.",
+   "url": "https://stonemountainpark.com/",
+   "status": "confirmed",
+   "kind": "outdoors",
+   "role": "excursion",
+   "facilities": [
+    {
+     "name": "Walk-Up Trail / hiking trails",
+     "url": "https://stonemountainpark.com/calendar/2025-01-20",
+     "status": "standing",
+     "note": "from a Jan 2025 calendar page; 2026 not checked",
+     "days": "daily",
+     "open": "05:00",
+     "close": "23:00"
+    },
+    {
+     "name": "Summit Skyride",
+     "url": "https://stonemountainpark.com/calendar/2026-11-25",
+     "status": "confirmed",
+     "days": "Wed",
+     "open": "10:00",
+     "close": "15:00"
+    },
+    {
+     "name": "Adventure Outpost (zip course, kayaks)",
+     "url": "https://stonemountainpark.com/calendar/2026-11-25",
+     "status": "confirmed",
+     "days": "Wed",
+     "open": "12:00",
+     "close": "17:30"
+    }
+   ],
+   "phone": "770-465-3235",
+   "ask": "is the weekday Historic ticket (Skyride) sold on the 25th?"
+  },
+  "lunch_stone_mountain": {
+   "name": "Lunch in Stone Mountain Village",
+   "where": "Main St, Stone Mountain, GA - about a mile from the park's West Gate",
+   "lat": 33.80824,
+   "lon": -84.17051,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://www.cherokeerosebbqbar.com/",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "Cherokee Rose BBQ Bar & Kitchen",
+     "url": "https://www.cherokeerosebbqbar.com/",
+     "status": "standing",
+     "days": "Wed",
+     "open": "11:30",
+     "close": "16:00"
+    },
+    {
+     "name": "Stoned Pizza Kitchen",
+     "url": "https://stonedpizzakitchen.com/",
+     "status": "standing",
+     "days": "Mon-Thu",
+     "open": "11:00",
+     "close": "22:00"
+    },
+    {
+     "name": "Pi-Bytes",
+     "url": "https://pi-bytes.com/",
+     "status": "standing",
+     "days": "Mon-Thu",
+     "open": "11:00",
+     "close": "18:00"
+    },
+    {
+     "name": "Kroger north of Stone Mountain Park",
+     "status": "standing",
+     "note": "OSM tag only",
+     "days": "daily",
+     "open": "06:00",
+     "close": "23:00",
+     "url": "https://www.kroger.com/stores/search"
+    }
+   ]
+  },
+  "crowders": {
+   "name": "Crowders Mountain State Park (Sparrow Springs)",
+   "where": "522 Park Office Ln, Kings Mountain, NC - I-85 exit 8/10A",
+   "lat": 35.21355,
+   "lon": -81.29317,
+   "dwell_min": 40,
+   "cost_usd": 0,
+   "cost_note": "day use is free (NC State Parks)",
+   "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+   "status": "confirmed",
+   "kind": "outdoors",
+   "role": "pit",
+   "facilities": [
+    {
+     "name": "Park gates (November)",
+     "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+     "status": "confirmed",
+     "days": "daily",
+     "open": "08:00",
+     "close": "18:00"
+    },
+    {
+     "name": "Visitor center",
+     "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+     "status": "confirmed",
+     "days": "daily",
+     "open": "09:00",
+     "close": "17:00"
+    }
+   ],
+   "phone": "980-460-8042"
+  },
+  "tugaloo": {
+   "name": "Tugaloo State Park",
+   "where": "1763 Tugaloo State Park Rd, Lavonia, GA 30553 - I-85 exit 173 (GA-17), roughly 6 mi north (approx.)",
+   "lat": 34.4991,
+   "lon": -83.0781,
+   "dwell_min": 105,
+   "cost_usd": 10,
+   "cost_note": "Georgia ParkPass $10/vehicle/day from 1 Jan 2026 (https://gastateparks.org/ParkPass); same pass valid at other GA state parks that day. Mini-golf extra (fee not published).",
+   "url": "https://gastateparks.org/Tugaloo",
+   "status": "standing",
+   "kind": "outdoors",
+   "role": "excursion",
+   "facilities": [
+    {
+     "name": "Park",
+     "url": "https://gastateparks.org/Tugaloo",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "22:00"
+    },
+    {
+     "name": "Office",
+     "url": "https://gastateparks.org/Tugaloo",
+     "status": "standing",
+     "days": "daily",
+     "open": "08:00",
+     "close": "17:00"
+    },
+    {
+     "name": "Miniature golf",
+     "status": "unknown",
+     "note": "fee required; hours not published"
+    }
+   ],
+   "phone": "706-356-4362",
+   "ask": "mini-golf hours"
+  },
+  "lunch_lavonia": {
+   "name": "Lunch in Lavonia",
+   "where": "Lavonia, GA - I-85 exit 173, on the way back from the park",
+   "lat": 34.43635,
+   "lon": -83.10685,
+   "dwell_min": 45,
+   "cost_usd": 0,
+   "cost_note": "meals not costed",
+   "url": "https://exploregeorgia.org/lavonia/food-drink/casual-full-service/211-main-street-restaurant",
+   "status": "standing",
+   "kind": "food",
+   "role": "lunch",
+   "facilities": [
+    {
+     "name": "211 Main Street Restaurant & Bakery",
+     "url": "https://exploregeorgia.org/lavonia/food-drink/casual-full-service/211-main-street-restaurant",
+     "status": "standing",
+     "days": "Mon-Thu",
+     "open": "10:00",
+     "close": "15:00",
+     "destination": true
+    },
+    {
+     "name": "Chick-fil-A Lavonia",
+     "url": "https://www.chick-fil-a.com/locations/ga/lavonia",
+     "status": "standing",
+     "days": "Mon-Sat",
+     "open": "06:00",
+     "close": "22:00"
+    },
+    {
+     "name": "Food Lion Lavonia (ex-Dill's Food City)",
+     "url": "https://theshelbyreport.com/2026/10/13/food-lion-grows-greenville-market-with-dills-food-city-bi-lo-acquisitions/",
+     "status": "standing",
+     "days": "daily",
+     "open": "07:00",
+     "close": "23:00"
+    },
+    {
+     "name": "Bella Bella Mozzarella",
+     "status": "unknown",
+     "note": "Directory (Jul 2026) shows 11:00-21:00; not verified with operator",
+     "url": "https://exploregeorgia.org/lavonia"
     }
    ]
   }
  },
  "options": {
-  "coastal-fewest": {
-   "label": "Coastal: fewest stops, earliest arrival",
+  "coastal-fort": {
+   "label": "Coastal: an earthwork fort and its trails",
    "stops": [
     "sob",
-    "pig_rh",
-    "lswalker"
+    "santee_mound",
+    "lunch_richmond_hill",
+    "fort_mcallister",
+    "jesup_trains"
    ],
    "legs_s": [
     7712.258,
-    12032.115,
-    5897.226,
-    7475.72
+    5480.518,
+    7179.208,
+    869.388,
+    3977.696,
+    9105.352
    ],
-   "total_s": 33117.32,
-   "miles": 561.9,
-   "detour_s": 1803.2619999999988,
-   "dwell_total_min": 90.0,
-   "cost_usd": 5.0,
-   "depart_h": 4.75,
-   "depart": "04:45",
+   "total_s": 34324.423,
+   "miles": 562.0,
+   "detour_s": 3010.3650000000016,
+   "dwell_total_min": 205.0,
+   "cost_usd": 40.5,
+   "depart_h": 5.25,
+   "depart": "05:15",
    "corridor": "coastal - I-95 then US-84",
-   "arrive_h": 15.4493,
-   "arrive": "15:27",
+   "arrive_h": 18.2012,
+   "arrive": "18:12",
    "days_spanned": 0,
-   "elapsed_s": 38517.32,
+   "elapsed_s": 46624.423,
    "schedule": [
     {
      "stop": "sob",
-     "arrive": "06:54",
-     "arrive_h": 6.8923,
-     "arrive_origin_clock": "06:54",
+     "arrive": "07:24",
+     "arrive_h": 7.3923,
+     "arrive_origin_clock": "07:24",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
@@ -455,16 +1321,16 @@
        },
        {
         "name": "Pedro's Pantry + public restrooms",
-        "verdict": "opens",
-        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
-        "usable_min": 9,
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 15,
         "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
         "status": "standing"
        },
        {
         "name": "Mexico Shop East",
         "verdict": "shut",
-        "detail": "opens 08:00, 51 min after you leave",
+        "detail": "opens 08:00, 21 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/shopping",
         "status": "standing"
@@ -472,7 +1338,7 @@
        {
         "name": "Fort Pedro Fireworks",
         "verdict": "shut",
-        "detail": "opens 09:00, 111 min after you leave",
+        "detail": "opens 09:00, 81 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/shopping",
         "status": "standing"
@@ -480,7 +1346,7 @@
        {
         "name": "Sombrero Tower + arcade",
         "verdict": "shut",
-        "detail": "opens 11:00, 231 min after you leave",
+        "detail": "opens 11:00, 201 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/attractions",
         "status": "standing"
@@ -500,51 +1366,145 @@
      }
     },
     {
-     "stop": "pig_rh",
-     "arrive": "10:29",
-     "arrive_h": 10.4845,
-     "arrive_origin_clock": "10:29",
+     "stop": "santee_mound",
+     "arrive": "09:10",
+     "arrive_h": 9.1647,
+     "arrive_origin_clock": "09:10",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 45.0,
-     "leg_s": 12032.115,
+     "dwell_min": 25.0,
+     "leg_s": 5480.518,
      "hours": {
-      "rollup": "opens-during",
+      "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Smokin Pig dining room",
-        "verdict": "opens",
-        "detail": "opens 11:00, 31 min into the halt (14 min usable)",
-        "usable_min": 14,
-        "url": "https://www.smokinpigbbqjoint.com/",
+        "name": "Bluff Unit vehicle gate (Oct-Feb)",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 25,
+        "url": "https://www.fws.gov/refuge/santee/visit-us",
+        "status": "standing"
+       },
+       {
+        "name": "Visitor Center",
+        "verdict": "open",
+        "detail": "open until 16:00",
+        "usable_min": 25,
+        "url": "https://www.fws.gov/refuge/santee/visit-us",
         "status": "standing"
        }
       ],
-      "usable": 1,
+      "usable": 2,
       "missed": 0,
       "unknown": 0
      }
     },
     {
-     "stop": "lswalker",
-     "arrive": "12:52",
-     "arrive_h": 12.8727,
-     "arrive_origin_clock": "12:52",
+     "stop": "lunch_richmond_hill",
+     "arrive": "11:35",
+     "arrive_h": 11.5756,
+     "arrive_origin_clock": "11:35",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 30.0,
-     "leg_s": 5897.226,
+     "dwell_min": 40.0,
+     "leg_s": 7179.208,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Park, beach, playground, boardwalk",
+        "name": "Bubba's Bistro",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "http://www.rhbubbasbistro.com",
+        "status": "standing"
+       },
+       {
+        "name": "Parker's Kitchen (US-17 at Ford Ave)",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 40,
+        "url": "https://bryancountynews.com/news/new-parkers-kitchen-location-open-on-hwy-17",
+        "status": "standing"
+       },
+       {
+        "name": "Kroger Richmond Hill (picnic supplies)",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://www.kroger.com/stores/search",
+        "status": "unknown"
+       },
+       {
+        "name": "Smokin Pig (BBQ, one option among several)",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.smokinpigbbqjoint.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 1
+     }
+    },
+    {
+     "stop": "fort_mcallister",
+     "arrive": "12:29",
+     "arrive_h": 12.4837,
+     "arrive_origin_clock": "12:29",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 105.0,
+     "leg_s": 869.388,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park",
         "verdict": "open",
         "detail": "open until 22:00",
-        "usable_min": 30,
-        "url": "https://gastateparks.org/LauraSWalker",
+        "usable_min": 105,
+        "url": "https://gastateparks.org/FortMcAllister",
+        "status": "standing"
+       },
+       {
+        "name": "Historic fort and museum",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 105,
+        "url": "https://gastateparks.org/FortMcAllister",
+        "status": "standing"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "jesup_trains",
+     "arrive": "15:20",
+     "arrive_h": 15.3386,
+     "arrive_origin_clock": "15:20",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 20.0,
+     "leg_s": 3977.696,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Railfan platforms & caboose park",
+        "verdict": "always",
+        "detail": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+        "usable_min": 20,
+        "url": null,
         "status": "standing"
        }
       ],
@@ -555,9 +1515,7 @@
     }
    ],
    "shut_on_arrival": [],
-   "opens_during_halt": [
-    "pig_rh"
-   ],
+   "opens_during_halt": [],
    "geometry": [
     [
      35.9132,
@@ -828,6 +1786,654 @@
      -81.27896
     ],
     [
+     31.96057,
+     -81.32987
+    ],
+    [
+     31.90176,
+     -81.26213
+    ],
+    [
+     31.89,
+     -81.26195
+    ],
+    [
+     31.8802,
+     -81.24186
+    ],
+    [
+     31.88875,
+     -81.1968
+    ],
+    [
+     31.8802,
+     -81.24186
+    ],
+    [
+     31.89,
+     -81.26181
+    ],
+    [
+     31.90149,
+     -81.26173
+    ],
+    [
+     31.95001,
+     -81.31239
+    ],
+    [
+     31.87969,
+     -81.39534
+    ],
+    [
+     31.86923,
+     -81.43263
+    ],
+    [
+     31.82814,
+     -81.49139
+    ],
+    [
+     31.82263,
+     -81.52047
+    ],
+    [
+     31.85897,
+     -81.56351
+    ],
+    [
+     31.84869,
+     -81.58941
+    ],
+    [
+     31.78583,
+     -81.61057
+    ],
+    [
+     31.66334,
+     -81.84599
+    ],
+    [
+     31.60498,
+     -81.88266
+    ],
+    [
+     31.60496,
+     -81.91923
+    ],
+    [
+     31.59119,
+     -81.95081
+    ],
+    [
+     31.49602,
+     -82.00642
+    ],
+    [
+     31.1607,
+     -82.42164
+    ],
+    [
+     31.04072,
+     -82.7353
+    ],
+    [
+     31.00922,
+     -82.85008
+    ],
+    [
+     30.9888,
+     -82.87081
+    ],
+    [
+     30.80715,
+     -83.34045
+    ],
+    [
+     30.78443,
+     -83.54369
+    ],
+    [
+     30.7849,
+     -83.62271
+    ],
+    [
+     30.79887,
+     -83.80646
+    ],
+    [
+     30.83499,
+     -83.93568
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9445,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "coastal-animals": {
+   "label": "Coastal: a two-mile wildlife walk in Savannah",
+   "stops": [
+    "sob",
+    "walterboro",
+    "oatland",
+    "lunch_savannah_east",
+    "laura_walker"
+   ],
+   "legs_s": [
+    7712.258,
+    8208.752,
+    4868.821,
+    408.665,
+    7848.72,
+    7473.708
+   ],
+   "total_s": 36520.927,
+   "miles": 588.7,
+   "detour_s": 5206.869000000002,
+   "dwell_total_min": 210.0,
+   "cost_usd": 34.0,
+   "depart_h": 5.25,
+   "depart": "05:15",
+   "corridor": "coastal - I-95 then US-84",
+   "arrive_h": 18.8947,
+   "arrive": "18:54",
+   "days_spanned": 0,
+   "elapsed_s": 49120.927,
+   "schedule": [
+    {
+     "stop": "sob",
+     "arrive": "07:24",
+     "arrive_h": 7.3923,
+     "arrive_origin_clock": "07:24",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 15.0,
+     "leg_s": 7712.258,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sunoco West pumps (pay at pump)",
+        "verdict": "always",
+        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+        "verdict": "always",
+        "detail": "no hours; sunrise at Dillon is 07:00",
+        "usable_min": 15,
+        "url": null,
+        "status": "standing"
+       },
+       {
+        "name": "Pedro's Pantry + public restrooms",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Mexico Shop East",
+        "verdict": "shut",
+        "detail": "opens 08:00, 21 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Fort Pedro Fireworks",
+        "verdict": "shut",
+        "detail": "opens 09:00, 81 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Sombrero Tower + arcade",
+        "verdict": "shut",
+        "detail": "opens 11:00, 201 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Reptile Lagoon",
+        "verdict": "closed",
+        "detail": "closed Wed",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 4,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "walterboro",
+     "arrive": "09:55",
+     "arrive_h": 9.9225,
+     "arrive_origin_clock": "09:55",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 25.0,
+     "leg_s": 8208.752,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sanctuary trails and boardwalks (from dawn) (to sunset)",
+        "verdict": "open",
+        "detail": "open until 17:30",
+        "usable_min": 25,
+        "url": "https://walterborosc.org/node/80",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "oatland",
+     "arrive": "11:41",
+     "arrive_h": 11.6916,
+     "arrive_origin_clock": "11:41",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 100.0,
+     "leg_s": 4868.821,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Center",
+        "verdict": "open",
+        "detail": "open until 16:30, last entry 15:30",
+        "usable_min": 100,
+        "url": "https://oatland.sccpss.com/visit/admissions-hours",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "lunch_savannah_east",
+     "arrive": "13:28",
+     "arrive_h": 13.4718,
+     "arrive_origin_clock": "13:28",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 40.0,
+     "leg_s": 408.665,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Wiley's Championship BBQ",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.wileyschampionshipbbq.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Sandfly BBQ",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.sandflybbq.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Leopold's Ice Cream (Broughton St)",
+        "verdict": "open",
+        "detail": "open until 21:00",
+        "usable_min": 40,
+        "url": "https://www.leopoldsicecream.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "laura_walker",
+     "arrive": "16:19",
+     "arrive_h": 16.3187,
+     "arrive_origin_clock": "16:19",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 30.0,
+     "leg_s": 7848.72,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 30,
+        "url": "https://gastateparks.org/LauraSWalker",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.88295,
+     -79.06078
+    ],
+    [
+     35.84717,
+     -79.09067
+    ],
+    [
+     35.81634,
+     -79.08446
+    ],
+    [
+     35.79771,
+     -79.09501
+    ],
+    [
+     35.75853,
+     -79.16646
+    ],
+    [
+     35.71726,
+     -79.17891
+    ],
+    [
+     35.65278,
+     -79.176
+    ],
+    [
+     35.5827,
+     -79.19525
+    ],
+    [
+     35.51012,
+     -79.19
+    ],
+    [
+     35.50278,
+     -79.15089
+    ],
+    [
+     35.46805,
+     -79.11822
+    ],
+    [
+     35.43164,
+     -79.12304
+    ],
+    [
+     35.39116,
+     -79.10767
+    ],
+    [
+     35.3522,
+     -79.10893
+    ],
+    [
+     35.27847,
+     -79.0726
+    ],
+    [
+     35.2495,
+     -79.02506
+    ],
+    [
+     35.12342,
+     -78.94065
+    ],
+    [
+     35.10201,
+     -79.02183
+    ],
+    [
+     35.05365,
+     -79.02327
+    ],
+    [
+     35.03073,
+     -79.0373
+    ],
+    [
+     34.97093,
+     -79.03993
+    ],
+    [
+     34.96205,
+     -78.99749
+    ],
+    [
+     34.93674,
+     -78.99418
+    ],
+    [
+     34.90037,
+     -78.95871
+    ],
+    [
+     34.79168,
+     -78.99443
+    ],
+    [
+     34.69362,
+     -78.99877
+    ],
+    [
+     34.64358,
+     -79.01495
+    ],
+    [
+     34.55325,
+     -79.19496
+    ],
+    [
+     34.52643,
+     -79.27174
+    ],
+    [
+     34.49195,
+     -79.3285
+    ],
+    [
+     34.44769,
+     -79.36372
+    ],
+    [
+     34.34098,
+     -79.53666
+    ],
+    [
+     34.26828,
+     -79.70551
+    ],
+    [
+     34.26351,
+     -79.7442
+    ],
+    [
+     34.21015,
+     -79.82908
+    ],
+    [
+     34.17949,
+     -79.86313
+    ],
+    [
+     34.13889,
+     -79.88057
+    ],
+    [
+     34.05768,
+     -79.96978
+    ],
+    [
+     34.00645,
+     -80.00137
+    ],
+    [
+     33.97664,
+     -80.03832
+    ],
+    [
+     33.75451,
+     -80.18376
+    ],
+    [
+     33.69926,
+     -80.25056
+    ],
+    [
+     33.64147,
+     -80.28042
+    ],
+    [
+     33.60012,
+     -80.32846
+    ],
+    [
+     33.56601,
+     -80.39088
+    ],
+    [
+     33.49275,
+     -80.46777
+    ],
+    [
+     33.04843,
+     -80.66916
+    ],
+    [
+     32.96132,
+     -80.67875
+    ],
+    [
+     32.87937,
+     -80.71803
+    ],
+    [
+     32.89061,
+     -80.68473
+    ],
+    [
+     32.89936,
+     -80.681
+    ],
+    [
+     32.87937,
+     -80.71803
+    ],
+    [
+     32.79207,
+     -80.77711
+    ],
+    [
+     32.69408,
+     -80.87896
+    ],
+    [
+     32.63014,
+     -80.88241
+    ],
+    [
+     32.5714,
+     -80.93852
+    ],
+    [
+     32.5044,
+     -80.971
+    ],
+    [
+     32.47735,
+     -80.97154
+    ],
+    [
+     32.27362,
+     -81.08236
+    ],
+    [
+     32.21086,
+     -81.07196
+    ],
+    [
+     32.18075,
+     -81.07888
+    ],
+    [
+     32.13847,
+     -81.05238
+    ],
+    [
+     32.08084,
+     -81.10784
+    ],
+    [
+     32.06409,
+     -81.03359
+    ],
+    [
+     32.04409,
+     -81.00446
+    ],
+    [
+     32.06378,
+     -81.03281
+    ],
+    [
+     32.08234,
+     -81.09653
+    ],
+    [
+     32.06739,
+     -81.11428
+    ],
+    [
+     32.07628,
+     -81.24613
+    ],
+    [
+     32.00984,
+     -81.27896
+    ],
+    [
      31.95213,
      -81.33559
     ],
@@ -892,8 +2498,8 @@
      -82.22425
     ],
     [
-     31.14116,
-     -82.21489
+     31.1412,
+     -82.21486
     ],
     [
      31.16858,
@@ -952,43 +2558,45 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 8401,
+   "geometry_raw_points": 9363,
    "rdp_epsilon_used": 0.0064,
    "sunset": "17:35",
-   "after_sunset": false,
+   "after_sunset": true,
    "arrives_next_day": false
   },
-  "coastal-swamp": {
-   "label": "Coastal: one big thing, the swamp",
+  "coastal-ninja": {
+   "label": "Coastal: indoor ninja park in Charleston, rain or shine",
    "stops": [
     "sob",
-    "pig_rh",
-    "okefenokee"
+    "amonkey",
+    "lunch_tanger",
+    "jesup_trains"
    ],
    "legs_s": [
     7712.258,
-    12032.115,
-    6220.717,
-    7576.937
+    8863.419,
+    0.0,
+    10305.681,
+    9105.352
    ],
-   "total_s": 33542.028,
-   "miles": 566.2,
-   "detour_s": 2227.9699999999975,
-   "dwell_total_min": 150.0,
-   "cost_usd": 98.0,
-   "depart_h": 4.75,
-   "depart": "04:45",
+   "total_s": 35986.712,
+   "miles": 597.6,
+   "detour_s": 4672.653999999999,
+   "dwell_total_min": 195.0,
+   "cost_usd": 59.98,
+   "depart_h": 5.15,
+   "depart": "05:09",
    "corridor": "coastal - I-95 then US-84",
-   "arrive_h": 16.5672,
-   "arrive": "16:34",
+   "arrive_h": 18.3963,
+   "arrive": "18:24",
    "days_spanned": 0,
-   "elapsed_s": 42542.028,
+   "elapsed_s": 47686.712,
    "schedule": [
     {
      "stop": "sob",
-     "arrive": "06:54",
-     "arrive_h": 6.8923,
-     "arrive_origin_clock": "06:54",
+     "arrive": "07:18",
+     "arrive_h": 7.2923,
+     "arrive_origin_clock": "07:18",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
@@ -1015,16 +2623,16 @@
        },
        {
         "name": "Pedro's Pantry + public restrooms",
-        "verdict": "opens",
-        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
-        "usable_min": 9,
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 15,
         "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
         "status": "standing"
        },
        {
         "name": "Mexico Shop East",
         "verdict": "shut",
-        "detail": "opens 08:00, 51 min after you leave",
+        "detail": "opens 08:00, 27 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/shopping",
         "status": "standing"
@@ -1032,7 +2640,7 @@
        {
         "name": "Fort Pedro Fireworks",
         "verdict": "shut",
-        "detail": "opens 09:00, 111 min after you leave",
+        "detail": "opens 09:00, 87 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/shopping",
         "status": "standing"
@@ -1040,7 +2648,7 @@
        {
         "name": "Sombrero Tower + arcade",
         "verdict": "shut",
-        "detail": "opens 11:00, 231 min after you leave",
+        "detail": "opens 11:00, 207 min after you leave",
         "usable_min": 0,
         "url": "https://www.sobpedro.com/attractions",
         "status": "standing"
@@ -1060,25 +2668,25 @@
      }
     },
     {
-     "stop": "pig_rh",
-     "arrive": "10:29",
-     "arrive_h": 10.4845,
-     "arrive_origin_clock": "10:29",
+     "stop": "amonkey",
+     "arrive": "10:00",
+     "arrive_h": 10.0044,
+     "arrive_origin_clock": "10:00",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 45.0,
-     "leg_s": 12032.115,
+     "dwell_min": 120.0,
+     "leg_s": 8863.419,
      "hours": {
-      "rollup": "opens-during",
+      "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Smokin Pig dining room",
-        "verdict": "opens",
-        "detail": "opens 11:00, 31 min into the halt (14 min usable)",
-        "usable_min": 14,
-        "url": "https://www.smokinpigbbqjoint.com/",
-        "status": "standing"
+        "name": "Indoor ninja courses, climbing walls, slides, maze - timed entry slots",
+        "verdict": "open",
+        "detail": "open until 18:00",
+        "usable_min": 120,
+        "url": "https://ecom.roller.app/adrenalinemonkeycharleston/venuecheckout/en-us/product/1004050?date=2026-11-25",
+        "status": "confirmed"
        }
       ],
       "usable": 1,
@@ -1087,24 +2695,67 @@
      }
     },
     {
-     "stop": "okefenokee",
-     "arrive": "12:58",
-     "arrive_h": 12.9625,
-     "arrive_origin_clock": "12:58",
+     "stop": "lunch_tanger",
+     "arrive": "12:00",
+     "arrive_h": 12.0044,
+     "arrive_origin_clock": "12:00",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 90.0,
-     "leg_s": 6220.717,
+     "dwell_min": 40.0,
+     "leg_s": 0.0,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Swamp park: train, boardwalk, reptile show",
+        "name": "Mellow Mushroom, 4855 Tanger Outlet Blvd",
         "verdict": "open",
-        "detail": "open until 17:00",
-        "usable_min": 90,
-        "url": "https://okeswamp.org/general-admission/",
+        "detail": "open until 22:00",
+        "usable_min": 40,
+        "url": "https://www.mellowmushroom.com/locations/sc/north-charleston/4855-tanger-outlet-blvd/",
+        "status": "standing"
+       },
+       {
+        "name": "Adrenaline Monkey on-site pizza",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://chs.adrenalinemonkeyfun.com/drop-ins",
+        "status": "unknown"
+       },
+       {
+        "name": "Chick-fil-A, next to Adrenaline Monkey",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://www.chick-fil-a.com/locations",
+        "status": "unknown"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 2
+     }
+    },
+    {
+     "stop": "jesup_trains",
+     "arrive": "15:32",
+     "arrive_h": 15.5337,
+     "arrive_origin_clock": "15:32",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 20.0,
+     "leg_s": 10305.681,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Railfan platforms & caboose park",
+        "verdict": "always",
+        "detail": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+        "usable_min": 20,
+        "url": null,
         "status": "standing"
        }
       ],
@@ -1115,9 +2766,7 @@
     }
    ],
    "shut_on_arrival": [],
-   "opens_during_halt": [
-    "pig_rh"
-   ],
+   "opens_during_halt": [],
    "geometry": [
     [
      35.9132,
@@ -1260,8 +2909,8 @@
      -79.7442
     ],
     [
-     34.21015,
-     -79.82908
+     34.2094,
+     -79.82998
     ],
     [
      34.17949,
@@ -1304,36 +2953,100 @@
      -80.39088
     ],
     [
-     33.49417,
-     -80.46661
+     33.49345,
+     -80.46721
     ],
     [
-     33.12665,
-     -80.63978
+     33.42018,
+     -80.49326
     ],
     [
-     33.04737,
-     -80.66951
+     33.31833,
+     -80.55047
     ],
     [
-     32.95972,
-     -80.67922
+     33.1561,
+     -80.34878
     ],
     [
-     32.87538,
-     -80.71827
+     33.08223,
+     -80.20799
     ],
     [
-     32.79207,
-     -80.77711
+     32.98586,
+     -80.08072
     ],
     [
-     32.69408,
-     -80.87896
+     32.87338,
+     -80.0133
     ],
     [
-     32.63014,
-     -80.88241
+     32.86901,
+     -80.02801
+    ],
+    [
+     32.84515,
+     -80.01781
+    ],
+    [
+     32.80932,
+     -80.03688
+    ],
+    [
+     32.79159,
+     -80.03276
+    ],
+    [
+     32.80343,
+     -80.12005
+    ],
+    [
+     32.78158,
+     -80.15186
+    ],
+    [
+     32.78357,
+     -80.20927
+    ],
+    [
+     32.75493,
+     -80.33346
+    ],
+    [
+     32.76274,
+     -80.4399
+    ],
+    [
+     32.77402,
+     -80.46253
+    ],
+    [
+     32.7362,
+     -80.59045
+    ],
+    [
+     32.66349,
+     -80.65473
+    ],
+    [
+     32.64358,
+     -80.70777
+    ],
+    [
+     32.60046,
+     -80.76226
+    ],
+    [
+     32.60265,
+     -80.80007
+    ],
+    [
+     32.64084,
+     -80.85131
+    ],
+    [
+     32.63099,
+     -80.88316
     ],
     [
      32.57079,
@@ -1352,8 +3065,8 @@
      -81.01237
     ],
     [
-     32.28416,
-     -81.06899
+     32.2838,
+     -81.06925
     ],
     [
      32.25638,
@@ -1400,68 +3113,36 @@
      -81.56351
     ],
     [
-     31.84861,
-     -81.58956
+     31.84791,
+     -81.5907
     ],
     [
-     31.78559,
-     -81.61087
+     31.78583,
+     -81.61057
     ],
     [
      31.66334,
      -81.84599
     ],
     [
-     31.60265,
-     -81.8907
+     31.60498,
+     -81.88266
     ],
     [
-     31.60502,
-     -81.91895
+     31.60496,
+     -81.91923
     ],
     [
-     31.5908,
-     -81.95128
+     31.59119,
+     -81.95081
     ],
     [
      31.49602,
      -82.00642
     ],
     [
-     31.23019,
-     -82.33304
-    ],
-    [
-     31.20403,
-     -82.33446
-    ],
-    [
-     31.12988,
-     -82.26677
-    ],
-    [
-     31.05762,
-     -82.27243
-    ],
-    [
-     31.13005,
-     -82.2666
-    ],
-    [
-     31.20012,
-     -82.32668
-    ],
-    [
-     31.20875,
-     -82.38382
-    ],
-    [
-     31.19208,
-     -82.38427
-    ],
-    [
-     31.15853,
-     -82.426
+     31.15919,
+     -82.4245
     ],
     [
      31.04072,
@@ -1476,8 +3157,8 @@
      -82.87081
     ],
     [
-     30.79925,
-     -83.37025
+     30.79915,
+     -83.37072
     ],
     [
      30.78492,
@@ -1496,164 +3177,95 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 9394,
+   "geometry_raw_points": 9872,
    "rdp_epsilon_used": 0.0064,
    "sunset": "17:35",
-   "after_sunset": false,
+   "after_sunset": true,
    "arrives_next_day": false
   },
-  "coastal-outdoors": {
-   "label": "Coastal: most time on your feet",
+  "fallline-woods": {
+   "label": "Fall line: free woods trails in Aiken",
    "stops": [
-    "sob",
-    "walterboro",
-    "hiotts",
-    "pig_rh",
-    "okefenokee"
+    "fortmill_welcome",
+    "hitchcock",
+    "lunch_aiken",
+    "ocmulgee"
    ],
    "legs_s": [
-    7712.258,
-    8131.079,
-    211.456,
-    4572.379,
-    6220.717,
-    7576.937
+    8645.623,
+    7983.875,
+    675.194,
+    8848.09,
+    9407.483
    ],
-   "total_s": 34424.828,
-   "miles": 574.3,
-   "detour_s": 3110.7700000000004,
+   "total_s": 35560.267,
+   "miles": 593.5,
+   "detour_s": 4246.208999999999,
    "dwell_total_min": 195.0,
-   "cost_usd": 98.0,
-   "depart_h": 4.75,
-   "depart": "04:45",
-   "corridor": "coastal - I-95 then US-84",
-   "arrive_h": 17.5625,
-   "arrive": "17:34",
+   "cost_usd": 0.0,
+   "depart_h": 5.0,
+   "depart": "05:00",
+   "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+   "arrive_h": 18.1279,
+   "arrive": "18:08",
    "days_spanned": 0,
-   "elapsed_s": 46124.828,
+   "elapsed_s": 47260.267,
    "schedule": [
     {
-     "stop": "sob",
-     "arrive": "06:54",
-     "arrive_h": 6.8923,
-     "arrive_origin_clock": "06:54",
+     "stop": "fortmill_welcome",
+     "arrive": "07:24",
+     "arrive_h": 7.4016,
+     "arrive_origin_clock": "07:24",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
      "dwell_min": 15.0,
-     "leg_s": 7712.258,
+     "leg_s": 8645.623,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Sunoco West pumps (pay at pump)",
+        "name": "Rest area restrooms",
         "verdict": "always",
-        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "detail": "SCPRT general '24/7/365' statement, not site-specific",
         "usable_min": 15,
-        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
-        "status": "standing"
-       },
-       {
-        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
-        "verdict": "always",
-        "detail": "no hours; sunrise at Dillon is 07:00",
-        "usable_min": 15,
-        "url": null,
-        "status": "standing"
-       },
-       {
-        "name": "Pedro's Pantry + public restrooms",
-        "verdict": "opens",
-        "detail": "opens 07:00, 6 min into the halt (9 min usable)",
-        "usable_min": 9,
-        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
-        "status": "standing"
-       },
-       {
-        "name": "Mexico Shop East",
-        "verdict": "shut",
-        "detail": "opens 08:00, 51 min after you leave",
-        "usable_min": 0,
-        "url": "https://www.sobpedro.com/shopping",
-        "status": "standing"
-       },
-       {
-        "name": "Fort Pedro Fireworks",
-        "verdict": "shut",
-        "detail": "opens 09:00, 111 min after you leave",
-        "usable_min": 0,
-        "url": "https://www.sobpedro.com/shopping",
-        "status": "standing"
-       },
-       {
-        "name": "Sombrero Tower + arcade",
-        "verdict": "shut",
-        "detail": "opens 11:00, 231 min after you leave",
-        "usable_min": 0,
-        "url": "https://www.sobpedro.com/attractions",
-        "status": "standing"
-       },
-       {
-        "name": "Reptile Lagoon",
-        "verdict": "closed",
-        "detail": "closed Wed",
-        "usable_min": 0,
-        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
-        "status": "standing"
-       }
-      ],
-      "usable": 3,
-      "missed": 4,
-      "unknown": 0
-     }
-    },
-    {
-     "stop": "walterboro",
-     "arrive": "09:24",
-     "arrive_h": 9.4009,
-     "arrive_origin_clock": "09:24",
-     "utc_offset": -5.0,
-     "day_offset": 0,
-     "weekday_checked": true,
-     "dwell_min": 45.0,
-     "leg_s": 8131.079,
-     "hours": {
-      "rollup": "open-on-arrival",
-      "facilities": [
-       {
-        "name": "Sanctuary boardwalks and trails",
-        "verdict": "always",
-        "detail": "daily dawn to dusk, free; sunrise 07:02",
-        "usable_min": 45,
-        "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
-        "status": "standing"
-       }
-      ],
-      "usable": 1,
-      "missed": 0,
-      "unknown": 0
-     }
-    },
-    {
-     "stop": "hiotts",
-     "arrive": "10:13",
-     "arrive_h": 10.2097,
-     "arrive_origin_clock": "10:13",
-     "utc_offset": -5.0,
-     "day_offset": 0,
-     "weekday_checked": true,
-     "dwell_min": 20.0,
-     "leg_s": 211.456,
-     "hours": {
-      "rollup": "open-on-arrival",
-      "facilities": [
-       {
-        "name": "Soda fountain lunch counter",
-        "verdict": "open",
-        "detail": "open until 18:00",
-        "usable_min": 20,
         "url": null,
         "status": "unknown"
+       },
+       {
+        "name": "Staffed welcome center",
+        "verdict": "shut",
+        "detail": "opens 09:00, 81 min after you leave",
+        "usable_min": 0,
+        "url": "https://scprt.com/tourism/welcome-center-program",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 1,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "hitchcock",
+     "arrive": "09:52",
+     "arrive_h": 9.8693,
+     "arrive_origin_clock": "09:52",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 100.0,
+     "leg_s": 7983.875,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Woods (from dawn) (to sunset)",
+        "verdict": "open",
+        "detail": "open until 17:30",
+        "usable_min": 100,
+        "url": "https://www.hitchcockwoods.org/plan-your-visit/hours-entrances-and-parking/",
+        "status": "standing"
        }
       ],
       "usable": 1,
@@ -1662,531 +3274,74 @@
      }
     },
     {
-     "stop": "pig_rh",
-     "arrive": "11:49",
-     "arrive_h": 11.8131,
-     "arrive_origin_clock": "11:49",
+     "stop": "lunch_aiken",
+     "arrive": "11:43",
+     "arrive_h": 11.7235,
+     "arrive_origin_clock": "11:43",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
      "dwell_min": 40.0,
-     "leg_s": 4572.379,
+     "leg_s": 675.194,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Smokin Pig dining room",
+        "name": "Lanky's on Laurens (Toast lists Electric Eats at same address - unresolved)",
         "verdict": "open",
-        "detail": "open until 20:00",
+        "detail": "open until 22:00",
         "usable_min": 40,
-        "url": "https://www.smokinpigbbqjoint.com/",
+        "url": "https://lankysonlaurens.com/",
         "status": "standing"
-       }
-      ],
-      "usable": 1,
-      "missed": 0,
-      "unknown": 0
-     }
-    },
-    {
-     "stop": "okefenokee",
-     "arrive": "14:12",
-     "arrive_h": 14.2077,
-     "arrive_origin_clock": "14:12",
-     "utc_offset": -5.0,
-     "day_offset": 0,
-     "weekday_checked": true,
-     "dwell_min": 75.0,
-     "leg_s": 6220.717,
-     "hours": {
-      "rollup": "open-on-arrival",
-      "facilities": [
+       },
        {
-        "name": "Swamp park: train, boardwalk, reptile show",
-        "verdict": "open",
-        "detail": "open until 17:00",
-        "usable_min": 75,
-        "url": "https://okeswamp.org/general-admission/",
-        "status": "standing"
-       }
-      ],
-      "usable": 1,
-      "missed": 0,
-      "unknown": 0
-     }
-    }
-   ],
-   "shut_on_arrival": [],
-   "opens_during_halt": [],
-   "geometry": [
-    [
-     35.9132,
-     -79.05581
-    ],
-    [
-     35.88295,
-     -79.06078
-    ],
-    [
-     35.84717,
-     -79.09067
-    ],
-    [
-     35.81634,
-     -79.08446
-    ],
-    [
-     35.79771,
-     -79.09501
-    ],
-    [
-     35.75853,
-     -79.16646
-    ],
-    [
-     35.71726,
-     -79.17891
-    ],
-    [
-     35.65278,
-     -79.176
-    ],
-    [
-     35.5827,
-     -79.19525
-    ],
-    [
-     35.51012,
-     -79.19
-    ],
-    [
-     35.50278,
-     -79.15089
-    ],
-    [
-     35.46805,
-     -79.11822
-    ],
-    [
-     35.43164,
-     -79.12304
-    ],
-    [
-     35.39116,
-     -79.10767
-    ],
-    [
-     35.3522,
-     -79.10893
-    ],
-    [
-     35.27847,
-     -79.0726
-    ],
-    [
-     35.2495,
-     -79.02506
-    ],
-    [
-     35.12342,
-     -78.94065
-    ],
-    [
-     35.10201,
-     -79.02183
-    ],
-    [
-     35.05365,
-     -79.02327
-    ],
-    [
-     35.03073,
-     -79.0373
-    ],
-    [
-     34.97093,
-     -79.03993
-    ],
-    [
-     34.96205,
-     -78.99749
-    ],
-    [
-     34.93674,
-     -78.99418
-    ],
-    [
-     34.90037,
-     -78.95871
-    ],
-    [
-     34.79168,
-     -78.99443
-    ],
-    [
-     34.69362,
-     -78.99877
-    ],
-    [
-     34.64358,
-     -79.01495
-    ],
-    [
-     34.55325,
-     -79.19496
-    ],
-    [
-     34.52643,
-     -79.27174
-    ],
-    [
-     34.49195,
-     -79.3285
-    ],
-    [
-     34.44769,
-     -79.36372
-    ],
-    [
-     34.34098,
-     -79.53666
-    ],
-    [
-     34.26828,
-     -79.70551
-    ],
-    [
-     34.26351,
-     -79.7442
-    ],
-    [
-     34.21015,
-     -79.82908
-    ],
-    [
-     34.17949,
-     -79.86313
-    ],
-    [
-     34.13889,
-     -79.88057
-    ],
-    [
-     34.05768,
-     -79.96978
-    ],
-    [
-     34.00645,
-     -80.00137
-    ],
-    [
-     33.97664,
-     -80.03832
-    ],
-    [
-     33.75451,
-     -80.18376
-    ],
-    [
-     33.69926,
-     -80.25056
-    ],
-    [
-     33.64147,
-     -80.28042
-    ],
-    [
-     33.60012,
-     -80.32846
-    ],
-    [
-     33.56601,
-     -80.39088
-    ],
-    [
-     33.49417,
-     -80.46661
-    ],
-    [
-     33.12665,
-     -80.63978
-    ],
-    [
-     33.04737,
-     -80.66951
-    ],
-    [
-     32.95972,
-     -80.67922
-    ],
-    [
-     32.87937,
-     -80.71803
-    ],
-    [
-     32.90183,
-     -80.66271
-    ],
-    [
-     32.87937,
-     -80.71803
-    ],
-    [
-     32.79207,
-     -80.77711
-    ],
-    [
-     32.69408,
-     -80.87896
-    ],
-    [
-     32.63014,
-     -80.88241
-    ],
-    [
-     32.57079,
-     -80.93886
-    ],
-    [
-     32.50406,
-     -80.97112
-    ],
-    [
-     32.47735,
-     -80.97154
-    ],
-    [
-     32.41428,
-     -81.01266
-    ],
-    [
-     32.28504,
-     -81.06843
-    ],
-    [
-     32.25663,
-     -81.10083
-    ],
-    [
-     32.25219,
-     -81.12811
-    ],
-    [
-     32.22632,
-     -81.16445
-    ],
-    [
-     32.15185,
-     -81.23838
-    ],
-    [
-     32.09144,
-     -81.23752
-    ],
-    [
-     32.00984,
-     -81.27896
-    ],
-    [
-     31.95342,
-     -81.33498
-    ],
-    [
-     31.92556,
-     -81.33084
-    ],
-    [
-     31.82798,
-     -81.49187
-    ],
-    [
-     31.82263,
-     -81.52047
-    ],
-    [
-     31.85897,
-     -81.56351
-    ],
-    [
-     31.84861,
-     -81.58956
-    ],
-    [
-     31.78559,
-     -81.61087
-    ],
-    [
-     31.66334,
-     -81.84599
-    ],
-    [
-     31.60265,
-     -81.8907
-    ],
-    [
-     31.60502,
-     -81.91895
-    ],
-    [
-     31.5908,
-     -81.95128
-    ],
-    [
-     31.49602,
-     -82.00642
-    ],
-    [
-     31.23019,
-     -82.33304
-    ],
-    [
-     31.20403,
-     -82.33446
-    ],
-    [
-     31.12988,
-     -82.26677
-    ],
-    [
-     31.05762,
-     -82.27243
-    ],
-    [
-     31.13005,
-     -82.2666
-    ],
-    [
-     31.20012,
-     -82.32668
-    ],
-    [
-     31.20875,
-     -82.38382
-    ],
-    [
-     31.19208,
-     -82.38427
-    ],
-    [
-     31.15853,
-     -82.426
-    ],
-    [
-     31.04072,
-     -82.7353
-    ],
-    [
-     31.00922,
-     -82.85008
-    ],
-    [
-     30.9888,
-     -82.87081
-    ],
-    [
-     30.79925,
-     -83.37025
-    ],
-    [
-     30.78492,
-     -83.62306
-    ],
-    [
-     30.79887,
-     -83.80646
-    ],
-    [
-     30.83499,
-     -83.93568
-    ],
-    [
-     30.83666,
-     -83.97885
-    ]
-   ],
-   "geometry_raw_points": 9583,
-   "rdp_epsilon_used": 0.0064,
-   "sunset": "17:35",
-   "after_sunset": false,
-   "arrives_next_day": false
-  },
-  "fallline-two-big": {
-   "label": "Fall line: zoo and mounds",
-   "stops": [
-    "zoo",
-    "ocmulgee"
-   ],
-   "legs_s": [
-    13372.109,
-    11628.397,
-    9407.483
-   ],
-   "total_s": 34407.99,
-   "miles": 588.6,
-   "detour_s": 3093.931999999997,
-   "dwell_total_min": 165.0,
-   "cost_usd": 105.8,
-   "depart_h": 5.3,
-   "depart": "05:18",
-   "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-   "arrive_h": 17.6078,
-   "arrive": "17:36",
-   "days_spanned": 0,
-   "elapsed_s": 44307.99,
-   "schedule": [
-    {
-     "stop": "zoo",
-     "arrive": "09:01",
-     "arrive_h": 9.0145,
-     "arrive_origin_clock": "09:01",
-     "utc_offset": -5.0,
-     "day_offset": 0,
-     "weekday_checked": true,
-     "dwell_min": 90.0,
-     "leg_s": 13372.109,
-     "hours": {
-      "rollup": "open-on-arrival",
-      "facilities": [
-       {
-        "name": "Zoo and botanical garden",
+        "name": "New Moon Cafe",
         "verdict": "open",
         "detail": "open until 16:00",
-        "usable_min": 90,
-        "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+        "usable_min": 40,
+        "url": "https://www.newmoondowntown.com/location/new-moon-cafe-aiken/",
         "status": "standing"
+       },
+       {
+        "name": "Food Lion (Richland Ave W)",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://stores.foodlion.com/sc/aiken/1520-richland-ave-west",
+        "status": "unknown"
        }
       ],
-      "usable": 1,
+      "usable": 2,
       "missed": 0,
-      "unknown": 0
+      "unknown": 1
      }
     },
     {
      "stop": "ocmulgee",
-     "arrive": "13:45",
-     "arrive_h": 13.7446,
-     "arrive_origin_clock": "13:45",
+     "arrive": "14:51",
+     "arrive_h": 14.848,
+     "arrive_origin_clock": "14:51",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 75.0,
-     "leg_s": 11628.397,
+     "dwell_min": 40.0,
+     "leg_s": 8848.09,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Mounds and walking trails",
+        "name": "Grounds & trails",
         "verdict": "open",
         "detail": "open until 17:00",
-        "usable_min": 75,
+        "usable_min": 40,
         "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
         "status": "standing"
        },
        {
-        "name": "Visitor centre and Earth Lodge",
+        "name": "Visitor Center & Earth Lodge",
         "verdict": "open",
         "detail": "open until 17:00",
-        "usable_min": 75,
+        "usable_min": 40,
         "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
         "status": "standing"
        }
@@ -2217,18 +3372,6 @@
      -79.15986
     ],
     [
-     36.07941,
-     -79.22478
-    ],
-    [
-     36.05995,
-     -79.39889
-    ],
-    [
-     36.06946,
-     -79.48474
-    ],
-    [
      36.05747,
      -79.70859
     ],
@@ -2239,10 +3382,6 @@
     [
      36.00125,
      -79.85993
-    ],
-    [
-     35.98138,
-     -79.88835
     ],
     [
      35.94036,
@@ -2265,16 +3404,8 @@
      -80.32886
     ],
     [
-     35.72307,
-     -80.38672
-    ],
-    [
      35.68145,
      -80.40957
-    ],
-    [
-     35.64969,
-     -80.47162
     ],
     [
      35.5819,
@@ -2309,200 +3440,120 @@
      -80.84452
     ],
     [
-     35.25845,
-     -80.84138
-    ],
-    [
-     35.20266,
-     -80.88053
-    ],
-    [
-     35.15082,
-     -80.89434
-    ],
-    [
-     35.05919,
-     -80.95719
-    ],
-    [
-     34.97894,
-     -80.98838
+     34.98037,
+     -80.98805
     ],
     [
      34.93512,
      -80.97144
     ],
     [
-     34.8313,
-     -81.03074
-    ],
-    [
      34.78543,
      -81.0389
-    ],
-    [
-     34.64264,
-     -81.02867
     ],
     [
      34.45317,
      -80.99232
     ],
     [
-     34.32327,
-     -81.00625
-    ],
-    [
      34.24362,
      -80.99988
     ],
     [
-     34.16199,
-     -80.96499
-    ],
-    [
-     34.09311,
+     34.09366,
      -80.95554
     ],
     [
-     34.05285,
-     -80.9937
+     34.07469,
+     -80.96957
     ],
     [
-     34.02804,
-     -81.03744
-    ],
-    [
-     34.01489,
-     -81.03423
-    ],
-    [
-     34.00748,
-     -81.07346
-    ],
-    [
-     34.03849,
-     -81.11098
-    ],
-    [
-     33.98931,
-     -81.18911
+     34.03467,
+     -81.11744
     ],
     [
      33.96902,
      -81.2004
     ],
     [
-     33.88194,
-     -81.37539
+     33.88146,
+     -81.37609
     ],
     [
-     33.78504,
-     -81.4831
+     33.71381,
+     -81.57895
     ],
     [
-     33.68321,
-     -81.62339
+     33.66733,
+     -81.67403
     ],
     [
-     33.63778,
-     -81.7452
+     33.61977,
+     -81.67856
     ],
     [
-     33.62531,
-     -81.81725
+     33.53219,
+     -81.72599
     ],
     [
-     33.55027,
-     -81.95432
+     33.53966,
+     -81.7441
     ],
     [
-     33.49443,
-     -82.08514
+     33.53322,
+     -81.72442
     ],
     [
-     33.47269,
-     -82.08604
+     33.56583,
+     -81.73499
     ],
     [
-     33.42285,
-     -82.06077
+     33.55318,
+     -81.81542
     ],
     [
-     33.40246,
-     -82.10842
+     33.51175,
+     -81.86749
     ],
     [
-     33.33849,
-     -82.156
+     33.48554,
+     -81.93724
     ],
     [
-     33.30832,
-     -82.20003
+     33.45617,
+     -81.92951
     ],
     [
-     33.29039,
-     -82.28137
+     33.40727,
+     -81.98449
     ],
     [
-     33.24758,
-     -82.3256
+     33.41786,
+     -82.083
     ],
     [
-     33.21542,
-     -82.38341
+     33.30913,
+     -82.19847
     ],
     [
-     33.19063,
-     -82.40045
+     33.29062,
+     -82.28093
     ],
     [
-     33.15685,
-     -82.45763
+     33.17773,
+     -82.42109
     ],
     [
-     33.13787,
-     -82.53275
+     33.13759,
+     -82.53317
     ],
     [
-     33.11431,
-     -82.56276
-    ],
-    [
-     33.04797,
-     -82.59937
-    ],
-    [
-     33.02556,
-     -82.63942
-    ],
-    [
-     33.01231,
-     -82.72315
-    ],
-    [
-     32.99372,
-     -82.77086
-    ],
-    [
-     33.00399,
-     -82.80412
-    ],
-    [
-     32.99293,
-     -82.84813
-    ],
-    [
-     32.97262,
-     -82.87497
-    ],
-    [
-     32.97123,
-     -82.93997
+     33.03066,
+     -82.62796
     ],
     [
      32.95944,
-     -82.98001
+     -82.97976
     ],
     [
      32.97814,
@@ -2521,10 +3572,6 @@
      -83.20828
     ],
     [
-     32.95227,
-     -83.24482
-    ],
-    [
      32.93773,
      -83.28921
     ],
@@ -2541,32 +3588,8 @@
      -83.38192
     ],
     [
-     32.8481,
-     -83.42324
-    ],
-    [
-     32.8565,
-     -83.50314
-    ],
-    [
-     32.83999,
-     -83.57892
-    ],
-    [
-     32.84877,
-     -83.60229
-    ],
-    [
      32.83848,
      -83.60272
-    ],
-    [
-     32.84878,
-     -83.60218
-    ],
-    [
-     32.84043,
-     -83.61966
     ],
     [
      32.85418,
@@ -2597,16 +3620,8 @@
      -83.74018
     ],
     [
-     32.11296,
-     -83.76282
-    ],
-    [
      32.03804,
      -83.76391
-    ],
-    [
-     31.92874,
-     -83.74666
     ],
     [
      31.80848,
@@ -2617,32 +3632,12 @@
      -83.56812
     ],
     [
-     31.5148,
-     -83.51568
-    ],
-    [
      31.48469,
      -83.51598
     ],
     [
-     31.46616,
-     -83.52967
-    ],
-    [
      31.39412,
      -83.53756
-    ],
-    [
-     31.30737,
-     -83.63766
-    ],
-    [
-     31.28766,
-     -83.6783
-    ],
-    [
-     31.26431,
-     -83.68976
     ],
     [
      31.20839,
@@ -2669,83 +3664,189 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 9552,
-   "rdp_epsilon_used": 0.0064,
+   "geometry_raw_points": 10149,
+   "rdp_epsilon_used": 0.01024,
    "sunset": "17:35",
    "after_sunset": true,
    "arrives_next_day": false
   },
-  "fallline-gentler": {
-   "label": "Fall line: zoo, swamp and mounds",
+  "fallline-zoo": {
+   "label": "Fall line: zoo with a ropes course",
    "stops": [
-    "zoo",
+    "fortmill_welcome",
+    "riverbanks",
+    "lunch_columbia",
     "phinizy",
-    "ocmulgee"
+    "amerson"
    ],
    "legs_s": [
-    13372.109,
-    4808.753,
-    7816.187,
-    9407.483
+    8645.623,
+    4842.224,
+    562.445,
+    4325.653,
+    8070.458,
+    9289.665
    ],
-   "total_s": 35404.534,
-   "miles": 594.1,
-   "detour_s": 4090.4759999999987,
-   "dwell_total_min": 185.0,
-   "cost_usd": 105.8,
-   "depart_h": 5.3,
-   "depart": "05:18",
+   "total_s": 35736.069,
+   "miles": 597.6,
+   "detour_s": 4422.011000000002,
+   "dwell_total_min": 255.0,
+   "cost_usd": 108.8,
+   "depart_h": 5.5,
+   "depart": "05:30",
    "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-   "arrive_h": 18.2179,
-   "arrive": "18:13",
+   "arrive_h": 19.6767,
+   "arrive": "19:41",
    "days_spanned": 0,
-   "elapsed_s": 46504.534,
+   "elapsed_s": 51036.069,
    "schedule": [
     {
-     "stop": "zoo",
-     "arrive": "09:01",
-     "arrive_h": 9.0145,
-     "arrive_origin_clock": "09:01",
+     "stop": "fortmill_welcome",
+     "arrive": "07:54",
+     "arrive_h": 7.9016,
+     "arrive_origin_clock": "07:54",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 90.0,
-     "leg_s": 13372.109,
+     "dwell_min": 15.0,
+     "leg_s": 8645.623,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Zoo and botanical garden",
-        "verdict": "open",
-        "detail": "open until 16:00",
-        "usable_min": 90,
-        "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+        "name": "Rest area restrooms",
+        "verdict": "always",
+        "detail": "SCPRT general '24/7/365' statement, not site-specific",
+        "usable_min": 15,
+        "url": null,
+        "status": "unknown"
+       },
+       {
+        "name": "Staffed welcome center",
+        "verdict": "shut",
+        "detail": "opens 09:00, 51 min after you leave",
+        "usable_min": 0,
+        "url": "https://scprt.com/tourism/welcome-center-program",
         "status": "standing"
        }
       ],
       "usable": 1,
+      "missed": 1,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "riverbanks",
+     "arrive": "09:30",
+     "arrive_h": 9.4966,
+     "arrive_origin_clock": "09:30",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 150.0,
+     "leg_s": 4842.224,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Zoo & Garden gates (winter hours Nov 2 - Jan 31)",
+        "verdict": "open",
+        "detail": "open until 16:00",
+        "usable_min": 150,
+        "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+        "status": "standing"
+       },
+       {
+        "name": "Sky-High Safari ropes climb",
+        "verdict": "opens",
+        "detail": "opens 10:00, 30 min into the halt (120 min usable)",
+        "usable_min": 120,
+        "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Tiny Trailblazers climb",
+        "verdict": "opens",
+        "detail": "opens 09:30, 0 min into the halt (150 min usable)",
+        "usable_min": 150,
+        "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Saluda Skyride / Kangaroo Walkabout",
+        "verdict": "opens",
+        "detail": "opens 09:30, 0 min into the halt (150 min usable)",
+        "usable_min": 150,
+        "url": "https://www.riverbanks.org/plan-your-visit/rides-and-attractions",
+        "status": "standing"
+       }
+      ],
+      "usable": 4,
       "missed": 0,
       "unknown": 0
      }
     },
     {
-     "stop": "phinizy",
-     "arrive": "11:51",
-     "arrive_h": 11.8502,
-     "arrive_origin_clock": "11:51",
+     "stop": "lunch_columbia",
+     "arrive": "12:09",
+     "arrive_h": 12.1529,
+     "arrive_origin_clock": "12:09",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 35.0,
-     "leg_s": 4808.753,
+     "dwell_min": 40.0,
+     "leg_s": 562.445,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Boardwalks and 14 mi of trails",
+        "name": "Lizard's Thicket (Broad River Rd / Dutch Square)",
+        "verdict": "open",
+        "detail": "open until 21:00",
+        "usable_min": 40,
+        "url": "https://www.lizardsthicket.com/locations/",
+        "status": "standing"
+       },
+       {
+        "name": "Rush's (Broad River Rd)",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 40,
+        "url": "https://www.rushs.com/locations",
+        "status": "standing"
+       },
+       {
+        "name": "Riverbanks Zoo on-site dining (Tuskers, Wild Burger)",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://riverbanks.org/plan-your-visit/visitor-information",
+        "status": "unknown"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 1
+     }
+    },
+    {
+     "stop": "phinizy",
+     "arrive": "14:01",
+     "arrive_h": 14.0211,
+     "arrive_origin_clock": "14:01",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 25.0,
+     "leg_s": 4325.653,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Trails & boardwalks (Oct-Mar)",
         "verdict": "open",
         "detail": "open until 19:00",
-        "usable_min": 35,
+        "usable_min": 25,
         "url": "https://phinizycenter.org/location-contact/",
         "status": "standing"
        }
@@ -2756,36 +3857,28 @@
      }
     },
     {
-     "stop": "ocmulgee",
-     "arrive": "14:36",
-     "arrive_h": 14.6047,
-     "arrive_origin_clock": "14:36",
+     "stop": "amerson",
+     "arrive": "16:41",
+     "arrive_h": 16.6796,
+     "arrive_origin_clock": "16:41",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 60.0,
-     "leg_s": 7816.187,
+     "dwell_min": 25.0,
+     "leg_s": 8070.458,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Mounds and walking trails",
+        "name": "Park, playground and river trail (Nov-Feb)",
         "verdict": "open",
-        "detail": "open until 17:00",
-        "usable_min": 60,
-        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
-        "status": "standing"
-       },
-       {
-        "name": "Visitor centre and Earth Lodge",
-        "verdict": "open",
-        "detail": "open until 17:00",
-        "usable_min": 60,
-        "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+        "detail": "open until 18:00",
+        "usable_min": 25,
+        "url": "https://amerson.maconbibb.us/park-rules/",
         "status": "standing"
        }
       ],
-      "usable": 2,
+      "usable": 1,
       "missed": 0,
       "unknown": 0
      }
@@ -2923,16 +4016,20 @@
      -81.07346
     ],
     [
-     34.03849,
-     -81.11098
+     34.0393,
+     -81.09343
+    ],
+    [
+     34.03467,
+     -81.11744
     ],
     [
      33.96902,
      -81.2004
     ],
     [
-     33.88194,
-     -81.37539
+     33.88146,
+     -81.37609
     ],
     [
      33.68344,
@@ -2957,14 +4054,6 @@
     [
      33.4073,
      -81.98856
-    ],
-    [
-     33.38556,
-     -81.96355
-    ],
-    [
-     33.39167,
-     -81.97483
     ],
     [
      33.37276,
@@ -3015,8 +4104,8 @@
      -83.0499
     ],
     [
-     33.04127,
-     -83.129
+     33.04139,
+     -83.12826
     ],
     [
      33.03018,
@@ -3039,28 +4128,32 @@
      -83.35258
     ],
     [
-     32.85787,
-     -83.38192
+     32.85641,
+     -83.38657
     ],
     [
-     32.83848,
-     -83.60272
+     32.84043,
+     -83.61966
     ],
     [
-     32.85418,
-     -83.64088
+     32.87681,
+     -83.66545
     ],
     [
-     32.79932,
-     -83.66052
+     32.85577,
+     -83.64075
     ],
     [
-     32.74152,
-     -83.72084
+     32.80158,
+     -83.65936
     ],
     [
-     32.67462,
-     -83.74456
+     32.74226,
+     -83.72036
+    ],
+    [
+     32.6738,
+     -83.74468
     ],
     [
      32.47882,
@@ -3075,8 +4168,8 @@
      -83.74018
     ],
     [
-     32.03804,
-     -83.76391
+     32.03743,
+     -83.76384
     ],
     [
      31.80848,
@@ -3087,8 +4180,8 @@
      -83.56812
     ],
     [
-     31.48469,
-     -83.51598
+     31.48538,
+     -83.51587
     ],
     [
      31.39412,
@@ -3119,55 +4212,94 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 9719,
+   "geometry_raw_points": 9907,
    "rdp_epsilon_used": 0.01024,
    "sunset": "17:35",
    "after_sunset": true,
    "arrives_next_day": false
   },
-  "fallline-indoors": {
-   "label": "Fall line: indoors in Charlotte, if it rains",
+  "fallline-mounds": {
+   "label": "Fall line: climb the mounds, lunch at Nu-Way",
    "stops": [
-    "discovery",
-    "ocmulgee"
+    "fortmill_welcome",
+    "phinizy",
+    "lunch_macon",
+    "ocmulgee_big"
    ],
    "legs_s": [
-    8022.089,
-    16442.228,
+    8645.623,
+    8594.116,
+    7573.057,
+    428.647,
     9407.483
    ],
-   "total_s": 33871.801,
-   "miles": 586.4,
-   "detour_s": 2557.7429999999986,
-   "dwell_total_min": 150.0,
+   "total_s": 34648.927,
+   "miles": 591.8,
+   "detour_s": 3334.8690000000024,
+   "dwell_total_min": 180.0,
    "cost_usd": 0.0,
-   "depart_h": 6.75,
-   "depart": "06:45",
+   "depart_h": 5.0,
+   "depart": "05:00",
    "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
-   "arrive_h": 18.6588,
-   "arrive": "18:40",
+   "arrive_h": 17.6247,
+   "arrive": "17:37",
    "days_spanned": 0,
-   "elapsed_s": 42871.801,
+   "elapsed_s": 45448.927,
    "schedule": [
     {
-     "stop": "discovery",
-     "arrive": "08:59",
-     "arrive_h": 8.9784,
-     "arrive_origin_clock": "08:59",
+     "stop": "fortmill_welcome",
+     "arrive": "07:24",
+     "arrive_h": 7.4016,
+     "arrive_origin_clock": "07:24",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 90.0,
-     "leg_s": 8022.089,
+     "dwell_min": 15.0,
+     "leg_s": 8645.623,
      "hours": {
-      "rollup": "opens-during",
+      "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Museum galleries (fully indoor)",
-        "verdict": "opens",
-        "detail": "opens 09:00, 1 min into the halt (89 min usable)",
-        "usable_min": 89,
-        "url": "https://www.discoveryplace.org/science/visit",
+        "name": "Rest area restrooms",
+        "verdict": "always",
+        "detail": "SCPRT general '24/7/365' statement, not site-specific",
+        "usable_min": 15,
+        "url": null,
+        "status": "unknown"
+       },
+       {
+        "name": "Staffed welcome center",
+        "verdict": "shut",
+        "detail": "opens 09:00, 81 min after you leave",
+        "usable_min": 0,
+        "url": "https://scprt.com/tourism/welcome-center-program",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 1,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "phinizy",
+     "arrive": "10:02",
+     "arrive_h": 10.0388,
+     "arrive_origin_clock": "10:02",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 35.0,
+     "leg_s": 8594.116,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Trails & boardwalks (Oct-Mar)",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 35,
+        "url": "https://phinizycenter.org/location-contact/",
         "status": "standing"
        }
       ],
@@ -3177,31 +4309,74 @@
      }
     },
     {
-     "stop": "ocmulgee",
-     "arrive": "15:03",
-     "arrive_h": 15.0456,
-     "arrive_origin_clock": "15:03",
+     "stop": "lunch_macon",
+     "arrive": "12:44",
+     "arrive_h": 12.7258,
+     "arrive_origin_clock": "12:44",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 60.0,
-     "leg_s": 16442.228,
+     "dwell_min": 40.0,
+     "leg_s": 7573.057,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Mounds and walking trails",
+        "name": "Nu-Way Weiners Baconsfield",
+        "verdict": "open",
+        "detail": "open until 21:00",
+        "usable_min": 40,
+        "url": "https://nu-wayweiners.com/macon-nu-way-weiners-locations",
+        "status": "standing"
+       },
+       {
+        "name": "H&H Restaurant",
+        "verdict": "open",
+        "detail": "open until 15:00",
+        "usable_min": 40,
+        "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/hh-restaurant",
+        "status": "standing"
+       },
+       {
+        "name": "The Rookery",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 40,
+        "url": "https://exploregeorgia.org/macon/food-drink/casual-full-service/the-rookery",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "ocmulgee_big",
+     "arrive": "13:31",
+     "arrive_h": 13.5115,
+     "arrive_origin_clock": "13:31",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 428.647,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Grounds & trails",
         "verdict": "open",
         "detail": "open until 17:00",
-        "usable_min": 60,
+        "usable_min": 90,
         "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
         "status": "standing"
        },
        {
-        "name": "Visitor centre and Earth Lodge",
+        "name": "Visitor Center & Earth Lodge",
         "verdict": "open",
         "detail": "open until 17:00",
-        "usable_min": 60,
+        "usable_min": 90,
         "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
         "status": "standing"
        }
@@ -3213,9 +4388,7 @@
     }
    ],
    "shut_on_arrival": [],
-   "opens_during_halt": [
-    "discovery"
-   ],
+   "opens_during_halt": [],
    "geometry": [
     [
      35.9132,
@@ -3326,24 +4499,16 @@
      -80.84452
     ],
     [
-     35.2448,
-     -80.84843
+     35.24581,
+     -80.84703
     ],
     [
-     35.23253,
-     -80.83554
+     35.20266,
+     -80.88053
     ],
     [
-     35.2372,
-     -80.85656
-    ],
-    [
-     35.21873,
-     -80.87157
-    ],
-    [
-     35.15082,
-     -80.89434
+     35.15016,
+     -80.89471
     ],
     [
      35.06115,
@@ -3414,68 +4579,84 @@
      -81.33776
     ],
     [
-     33.68293,
-     -81.62393
+     33.68321,
+     -81.62339
     ],
     [
      33.63778,
      -81.7452
     ],
     [
-     33.62531,
-     -81.81725
+     33.62574,
+     -81.81614
     ],
     [
-     33.55027,
-     -81.95432
+     33.56935,
+     -81.92462
     ],
     [
-     33.49443,
-     -82.08514
+     33.52914,
+     -81.92417
     ],
     [
-     33.47269,
-     -82.08604
+     33.49883,
+     -81.93888
     ],
     [
-     33.42285,
-     -82.06077
+     33.465,
+     -81.92472
     ],
     [
-     33.40246,
-     -82.10842
+     33.43593,
+     -81.94477
     ],
     [
-     33.33849,
-     -82.156
+     33.4073,
+     -81.98856
     ],
     [
-     33.30832,
-     -82.20003
+     33.38457,
+     -81.96856
     ],
     [
-     33.29039,
-     -82.28137
+     33.39167,
+     -81.97483
     ],
     [
-     33.24758,
-     -82.3256
+     33.37281,
+     -81.97711
     ],
     [
-     33.21542,
-     -82.38341
+     33.37307,
+     -82.03193
     ],
     [
-     33.19063,
-     -82.40045
+     33.32404,
+     -82.06127
     ],
     [
-     33.15685,
-     -82.45763
+     33.31066,
+     -82.10736
     ],
     [
-     33.13787,
-     -82.53275
+     33.31801,
+     -82.1601
+    ],
+    [
+     33.29062,
+     -82.28093
+    ],
+    [
+     33.17773,
+     -82.42109
+    ],
+    [
+     33.15547,
+     -82.46071
+    ],
+    [
+     33.13706,
+     -82.53389
     ],
     [
      33.11431,
@@ -3562,8 +4743,12 @@
      -83.57892
     ],
     [
-     32.84877,
-     -83.60229
+     32.84889,
+     -83.62459
+    ],
+    [
+     32.84861,
+     -83.60228
     ],
     [
      32.83848,
@@ -3678,55 +4863,59 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 9429,
+   "geometry_raw_points": 9435,
    "rdp_epsilon_used": 0.0064,
    "sunset": "17:35",
    "after_sunset": true,
    "arrives_next_day": false
   },
-  "atlanta-two-cities": {
-   "label": "Atlanta: science museum and a big zoo",
+  "atlanta-treetops": {
+   "label": "Atlanta: treetop ropes course in Dunwoody",
    "stops": [
-    "discovery",
-    "zooatl"
+    "cleveland_park",
+    "lunch_dunwoody",
+    "treetop",
+    "lane_orchards"
    ],
    "legs_s": [
-    8022.089,
-    13969.903,
-    13278.204
+    11916.815,
+    9454.454,
+    469.554,
+    6938.965,
+    8097.39
    ],
-   "total_s": 35270.197,
-   "miles": 620.0,
-   "detour_s": 3956.138999999999,
-   "dwell_total_min": 180.0,
-   "cost_usd": 0.0,
-   "depart_h": 6.75,
-   "depart": "06:45",
+   "total_s": 36877.18,
+   "miles": 637.6,
+   "detour_s": 5563.121999999999,
+   "dwell_total_min": 245.0,
+   "cost_usd": 142.0,
+   "depart_h": 5.0,
+   "depart": "05:00",
    "corridor": "Atlanta - I-85 the whole way, then I-75",
-   "arrive_h": 19.5473,
-   "arrive": "19:33",
+   "arrive_h": 19.327,
+   "arrive": "19:20",
    "days_spanned": 0,
-   "elapsed_s": 46070.197,
+   "elapsed_s": 51577.18,
    "schedule": [
     {
-     "stop": "discovery",
-     "arrive": "08:59",
-     "arrive_h": 8.9784,
-     "arrive_origin_clock": "08:59",
+     "stop": "cleveland_park",
+     "arrive": "08:19",
+     "arrive_h": 8.3102,
+     "arrive_origin_clock": "08:19",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 80.0,
-     "leg_s": 8022.089,
+     "dwell_min": 25.0,
+     "leg_s": 11916.815,
      "hours": {
-      "rollup": "opens-during",
+      "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Museum galleries (fully indoor)",
-        "verdict": "opens",
-        "detail": "opens 09:00, 1 min into the halt (79 min usable)",
-        "usable_min": 79,
-        "url": "https://www.discoveryplace.org/science/visit",
+        "name": "Park (Nov 1-Feb 28)",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 25,
+        "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
         "status": "standing"
        }
       ],
@@ -3736,24 +4925,102 @@
      }
     },
     {
-     "stop": "zooatl",
-     "arrive": "14:12",
-     "arrive_h": 14.1922,
-     "arrive_origin_clock": "14:12",
+     "stop": "lunch_dunwoody",
+     "arrive": "11:21",
+     "arrive_h": 11.3531,
+     "arrive_origin_clock": "11:21",
      "utc_offset": -5.0,
      "day_offset": 0,
      "weekday_checked": true,
-     "dwell_min": 100.0,
-     "leg_s": 13969.903,
+     "dwell_min": 40.0,
+     "leg_s": 9454.454,
      "hours": {
       "rollup": "open-on-arrival",
       "facilities": [
        {
-        "name": "Zoo grounds",
+        "name": "Village Burger Dunwoody",
         "verdict": "open",
-        "detail": "open until 17:00, last entry 15:30",
-        "usable_min": 100,
-        "url": "https://zooatlanta.org/visit/",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.villageburger.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Kroger Chamblee Dunwoody Rd",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 40,
+        "url": "https://www.kroger.com/stores/search",
+        "status": "standing"
+       },
+       {
+        "name": "Walmart Neighborhood Market Winters Chapel",
+        "verdict": "open",
+        "detail": "open until 23:59",
+        "usable_min": 40,
+        "url": "https://www.walmart.com/store-finder",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "treetop",
+     "arrive": "12:09",
+     "arrive_h": 12.1502,
+     "arrive_origin_clock": "12:09",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 150.0,
+     "leg_s": 469.554,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Main aerial courses and zip-lines, ages 7+",
+        "verdict": "open",
+        "detail": "open until 17:30, last entry 15:30",
+        "usable_min": 150,
+        "url": "https://www.treetopquest.com/event/dunwoody-open-11-25-26/",
+        "status": "confirmed"
+       },
+       {
+        "name": "Chick Pea course, ages 4-6 (adults may not climb)",
+        "verdict": "open",
+        "detail": "open until 17:30, last entry 15:30",
+        "usable_min": 150,
+        "url": "https://go.theflybook.com/book/244/ListView/0",
+        "status": "confirmed"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "lane_orchards",
+     "arrive": "16:35",
+     "arrive_h": 16.5777,
+     "arrive_origin_clock": "16:35",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 30.0,
+     "leg_s": 6938.965,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Market, cafe, playground",
+        "verdict": "open",
+        "detail": "open until 18:00",
+        "usable_min": 30,
+        "url": "https://www.lanesouthernorchards.com/",
         "status": "standing"
        }
       ],
@@ -3764,9 +5031,626 @@
     }
    ],
    "shut_on_arrival": [],
-   "opens_during_halt": [
-    "discovery"
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07305,
+     -79.16069
+    ],
+    [
+     36.07937,
+     -79.22556
+    ],
+    [
+     36.05994,
+     -79.39982
+    ],
+    [
+     36.06945,
+     -79.48512
+    ],
+    [
+     36.05982,
+     -79.68538
+    ],
+    [
+     36.04598,
+     -79.77067
+    ],
+    [
+     35.98478,
+     -79.88494
+    ],
+    [
+     35.94078,
+     -79.90593
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.80466,
+     -80.1898
+    ],
+    [
+     35.76344,
+     -80.33771
+    ],
+    [
+     35.72213,
+     -80.38757
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.64969,
+     -80.47162
+    ],
+    [
+     35.58232,
+     -80.55214
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45221,
+     -80.59609
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28365,
+     -80.77689
+    ],
+    [
+     35.26804,
+     -80.87097
+    ],
+    [
+     35.2381,
+     -80.91601
+    ],
+    [
+     35.25784,
+     -80.9972
+    ],
+    [
+     35.26601,
+     -81.14024
+    ],
+    [
+     35.28595,
+     -81.19652
+    ],
+    [
+     35.26027,
+     -81.28483
+    ],
+    [
+     35.17236,
+     -81.42464
+    ],
+    [
+     35.11103,
+     -81.58605
+    ],
+    [
+     35.07223,
+     -81.75957
+    ],
+    [
+     34.98972,
+     -81.96488
+    ],
+    [
+     34.98396,
+     -81.9733
+    ],
+    [
+     34.96422,
+     -81.95141
+    ],
+    [
+     34.98466,
+     -81.97266
+    ],
+    [
+     34.96035,
+     -82.05515
+    ],
+    [
+     34.90388,
+     -82.12377
+    ],
+    [
+     34.85336,
+     -82.27497
+    ],
+    [
+     34.80373,
+     -82.35201
+    ],
+    [
+     34.78407,
+     -82.45186
+    ],
+    [
+     34.76919,
+     -82.46937
+    ],
+    [
+     34.69383,
+     -82.50518
+    ],
+    [
+     34.60854,
+     -82.63181
+    ],
+    [
+     34.52201,
+     -82.8579
+    ],
+    [
+     34.49974,
+     -82.99717
+    ],
+    [
+     34.46366,
+     -83.09073
+    ],
+    [
+     34.32588,
+     -83.36128
+    ],
+    [
+     34.23097,
+     -83.49754
+    ],
+    [
+     34.13374,
+     -83.67894
+    ],
+    [
+     34.12605,
+     -83.73959
+    ],
+    [
+     34.09976,
+     -83.79688
+    ],
+    [
+     34.0572,
+     -83.96614
+    ],
+    [
+     34.05191,
+     -84.01718
+    ],
+    [
+     34.01908,
+     -84.06221
+    ],
+    [
+     33.96698,
+     -84.09725
+    ],
+    [
+     33.89372,
+     -84.25752
+    ],
+    [
+     33.95007,
+     -84.33641
+    ],
+    [
+     33.92935,
+     -84.31381
+    ],
+    [
+     33.93583,
+     -84.29404
+    ],
+    [
+     33.9195,
+     -84.29704
+    ],
+    [
+     33.88157,
+     -84.24998
+    ],
+    [
+     33.82243,
+     -84.25263
+    ],
+    [
+     33.76895,
+     -84.23271
+    ],
+    [
+     33.72883,
+     -84.23193
+    ],
+    [
+     33.70029,
+     -84.25423
+    ],
+    [
+     33.69788,
+     -84.28174
+    ],
+    [
+     33.67351,
+     -84.32842
+    ],
+    [
+     33.59053,
+     -84.28229
+    ],
+    [
+     33.54187,
+     -84.26989
+    ],
+    [
+     33.49587,
+     -84.22206
+    ],
+    [
+     33.44133,
+     -84.19511
+    ],
+    [
+     33.40356,
+     -84.15329
+    ],
+    [
+     33.35309,
+     -84.12517
+    ],
+    [
+     33.27696,
+     -84.10586
+    ],
+    [
+     33.14694,
+     -84.03062
+    ],
+    [
+     33.12298,
+     -84.00527
+    ],
+    [
+     33.08591,
+     -83.9952
+    ],
+    [
+     32.98393,
+     -83.8341
+    ],
+    [
+     32.9085,
+     -83.79291
+    ],
+    [
+     32.85587,
+     -83.74395
+    ],
+    [
+     32.77291,
+     -83.71118
+    ],
+    [
+     32.67462,
+     -83.74456
+    ],
+    [
+     32.54659,
+     -83.74544
+    ],
+    [
+     32.55518,
+     -83.82863
+    ],
+    [
+     32.54218,
+     -83.74416
+    ],
+    [
+     32.47659,
+     -83.74276
+    ],
+    [
+     32.38049,
+     -83.76829
+    ],
+    [
+     32.29597,
+     -83.76078
+    ],
+    [
+     32.23969,
+     -83.74015
+    ],
+    [
+     32.11296,
+     -83.76282
+    ],
+    [
+     32.03529,
+     -83.76358
+    ],
+    [
+     31.92874,
+     -83.74666
+    ],
+    [
+     31.80801,
+     -83.70668
+    ],
+    [
+     31.61667,
+     -83.5686
+    ],
+    [
+     31.51322,
+     -83.51527
+    ],
+    [
+     31.39481,
+     -83.53701
+    ],
+    [
+     31.30737,
+     -83.63766
+    ],
+    [
+     31.28766,
+     -83.6783
+    ],
+    [
+     31.26431,
+     -83.68976
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
    ],
+   "geometry_raw_points": 9961,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "atlanta-summit": {
+   "label": "Atlanta: hike up Stone Mountain",
+   "stops": [
+    "cleveland_park",
+    "lunch_stone_mountain",
+    "stone_mountain",
+    "rozar"
+   ],
+   "legs_s": [
+    11916.815,
+    9602.181,
+    345.317,
+    6910.836,
+    7758.59
+   ],
+   "total_s": 36533.742,
+   "miles": 636.6,
+   "detour_s": 5219.6839999999975,
+   "dwell_total_min": 210.0,
+   "cost_usd": 25.0,
+   "depart_h": 5.0,
+   "depart": "05:00",
+   "corridor": "Atlanta - I-85 the whole way, then I-75",
+   "arrive_h": 18.6483,
+   "arrive": "18:39",
+   "days_spanned": 0,
+   "elapsed_s": 49133.742,
+   "schedule": [
+    {
+     "stop": "cleveland_park",
+     "arrive": "08:19",
+     "arrive_h": 8.3102,
+     "arrive_origin_clock": "08:19",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 25.0,
+     "leg_s": 11916.815,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park (Nov 1-Feb 28)",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 25,
+        "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "lunch_stone_mountain",
+     "arrive": "11:24",
+     "arrive_h": 11.3942,
+     "arrive_origin_clock": "11:24",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 40.0,
+     "leg_s": 9602.181,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Cherokee Rose BBQ Bar & Kitchen",
+        "verdict": "opens",
+        "detail": "opens 11:30, 6 min into the halt (34 min usable)",
+        "usable_min": 34,
+        "url": "https://www.cherokeerosebbqbar.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Stoned Pizza Kitchen",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 40,
+        "url": "https://stonedpizzakitchen.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Pi-Bytes",
+        "verdict": "open",
+        "detail": "open until 18:00",
+        "usable_min": 40,
+        "url": "https://pi-bytes.com/",
+        "status": "standing"
+       },
+       {
+        "name": "Kroger north of Stone Mountain Park",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 40,
+        "url": "https://www.kroger.com/stores/search",
+        "status": "standing"
+       }
+      ],
+      "usable": 4,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "stone_mountain",
+     "arrive": "12:09",
+     "arrive_h": 12.1568,
+     "arrive_origin_clock": "12:09",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 120.0,
+     "leg_s": 345.317,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Walk-Up Trail / hiking trails",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 120,
+        "url": "https://stonemountainpark.com/calendar/2025-01-20",
+        "status": "standing"
+       },
+       {
+        "name": "Summit Skyride",
+        "verdict": "open",
+        "detail": "open until 15:00",
+        "usable_min": 120,
+        "url": "https://stonemountainpark.com/calendar/2026-11-25",
+        "status": "confirmed"
+       },
+       {
+        "name": "Adventure Outpost (zip course, kayaks)",
+        "verdict": "open",
+        "detail": "open until 17:30",
+        "usable_min": 120,
+        "url": "https://stonemountainpark.com/calendar/2026-11-25",
+        "status": "confirmed"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "rozar",
+     "arrive": "16:05",
+     "arrive_h": 16.0764,
+     "arrive_origin_clock": "16:05",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 25.0,
+     "leg_s": 6910.836,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park (to sunset)",
+        "verdict": "open",
+        "detail": "open until 17:30",
+        "usable_min": 25,
+        "url": "https://www.perry-ga.gov/leisure-services/parks/rozar-park",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
    "geometry": [
     [
      35.9132,
@@ -3841,8 +5725,8 @@
      -80.47162
     ],
     [
-     35.5819,
-     -80.5525
+     35.58232,
+     -80.55214
     ],
     [
      35.54104,
@@ -3853,8 +5737,8 @@
      -80.56277
     ],
     [
-     35.45101,
-     -80.59717
+     35.45221,
+     -80.59609
     ],
     [
      35.436,
@@ -3865,28 +5749,16 @@
      -80.69564
     ],
     [
-     35.28439,
-     -80.77556
+     35.28397,
+     -80.77619
     ],
     [
-     35.27568,
-     -80.84452
+     35.26804,
+     -80.87097
     ],
     [
-     35.22878,
-     -80.84084
-    ],
-    [
-     35.24397,
-     -80.84576
-    ],
-    [
-     35.26216,
-     -80.87847
-    ],
-    [
-     35.23813,
-     -80.91749
+     35.23809,
+     -80.91657
     ],
     [
      35.25784,
@@ -3897,16 +5769,716 @@
      -81.13746
     ],
     [
-     35.2838,
-     -81.17231
+     35.2839,
+     -81.17263
     ],
     [
-     35.28564,
-     -81.2023
+     35.28527,
+     -81.20399
     ],
     [
-     35.25997,
-     -81.28555
+     35.25962,
+     -81.28626
+    ],
+    [
+     35.17236,
+     -81.42464
+    ],
+    [
+     35.11103,
+     -81.58605
+    ],
+    [
+     35.07269,
+     -81.75827
+    ],
+    [
+     35.01274,
+     -81.91274
+    ],
+    [
+     34.98439,
+     -81.97323
+    ],
+    [
+     34.96422,
+     -81.95141
+    ],
+    [
+     34.98466,
+     -81.97266
+    ],
+    [
+     34.96017,
+     -82.05563
+    ],
+    [
+     34.90388,
+     -82.12377
+    ],
+    [
+     34.85336,
+     -82.27497
+    ],
+    [
+     34.80373,
+     -82.35201
+    ],
+    [
+     34.78335,
+     -82.45323
+    ],
+    [
+     34.69302,
+     -82.50609
+    ],
+    [
+     34.58199,
+     -82.68628
+    ],
+    [
+     34.54839,
+     -82.80433
+    ],
+    [
+     34.51682,
+     -82.87448
+    ],
+    [
+     34.49974,
+     -82.99717
+    ],
+    [
+     34.46366,
+     -83.09073
+    ],
+    [
+     34.32588,
+     -83.36128
+    ],
+    [
+     34.23097,
+     -83.49754
+    ],
+    [
+     34.19246,
+     -83.58329
+    ],
+    [
+     34.13852,
+     -83.66885
+    ],
+    [
+     34.12593,
+     -83.74004
+    ],
+    [
+     34.08689,
+     -83.84463
+    ],
+    [
+     34.05191,
+     -84.01718
+    ],
+    [
+     34.01908,
+     -84.06221
+    ],
+    [
+     33.96727,
+     -84.09682
+    ],
+    [
+     33.89326,
+     -84.25763
+    ],
+    [
+     33.85369,
+     -84.24648
+    ],
+    [
+     33.81338,
+     -84.25364
+    ],
+    [
+     33.83491,
+     -84.19751
+    ],
+    [
+     33.82613,
+     -84.1751
+    ],
+    [
+     33.80823,
+     -84.17062
+    ],
+    [
+     33.80859,
+     -84.1369
+    ],
+    [
+     33.82521,
+     -84.15353
+    ],
+    [
+     33.82086,
+     -84.16865
+    ],
+    [
+     33.8351,
+     -84.19706
+    ],
+    [
+     33.81818,
+     -84.25097
+    ],
+    [
+     33.76895,
+     -84.23271
+    ],
+    [
+     33.72778,
+     -84.23241
+    ],
+    [
+     33.70029,
+     -84.25423
+    ],
+    [
+     33.69788,
+     -84.28174
+    ],
+    [
+     33.67425,
+     -84.32828
+    ],
+    [
+     33.59053,
+     -84.28229
+    ],
+    [
+     33.54203,
+     -84.26998
+    ],
+    [
+     33.49587,
+     -84.22206
+    ],
+    [
+     33.44133,
+     -84.19511
+    ],
+    [
+     33.40356,
+     -84.15329
+    ],
+    [
+     33.35309,
+     -84.12517
+    ],
+    [
+     33.27696,
+     -84.10586
+    ],
+    [
+     33.14694,
+     -84.03062
+    ],
+    [
+     33.12298,
+     -84.00527
+    ],
+    [
+     33.08591,
+     -83.9952
+    ],
+    [
+     32.98393,
+     -83.8341
+    ],
+    [
+     32.9085,
+     -83.79291
+    ],
+    [
+     32.85587,
+     -83.74395
+    ],
+    [
+     32.77291,
+     -83.71118
+    ],
+    [
+     32.6738,
+     -83.74468
+    ],
+    [
+     32.4935,
+     -83.74352
+    ],
+    [
+     32.48507,
+     -83.71535
+    ],
+    [
+     32.46294,
+     -83.70546
+    ],
+    [
+     32.45472,
+     -83.70806
+    ],
+    [
+     32.45896,
+     -83.73393
+    ],
+    [
+     32.4468,
+     -83.75528
+    ],
+    [
+     32.38333,
+     -83.76817
+    ],
+    [
+     32.29597,
+     -83.76078
+    ],
+    [
+     32.23969,
+     -83.74015
+    ],
+    [
+     32.11296,
+     -83.76282
+    ],
+    [
+     32.03529,
+     -83.76358
+    ],
+    [
+     31.92874,
+     -83.74666
+    ],
+    [
+     31.80801,
+     -83.70668
+    ],
+    [
+     31.61667,
+     -83.5686
+    ],
+    [
+     31.51288,
+     -83.51524
+    ],
+    [
+     31.39481,
+     -83.53701
+    ],
+    [
+     31.30737,
+     -83.63766
+    ],
+    [
+     31.28766,
+     -83.6783
+    ],
+    [
+     31.26431,
+     -83.68976
+    ],
+    [
+     31.20839,
+     -83.77885
+    ],
+    [
+     31.18863,
+     -83.76196
+    ],
+    [
+     31.13335,
+     -83.77112
+    ],
+    [
+     31.02735,
+     -83.86145
+    ],
+    [
+     30.87984,
+     -83.93184
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9974,
+   "rdp_epsilon_used": 0.0064,
+   "sunset": "17:35",
+   "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "atlanta-lake": {
+   "label": "Atlanta: a state park on Lake Hartwell",
+   "stops": [
+    "crowders",
+    "tugaloo",
+    "lunch_lavonia",
+    "high_falls",
+    "peanut"
+   ],
+   "legs_s": [
+    9839.149,
+    7937.632,
+    848.629,
+    7799.095,
+    6180.728,
+    4700.538
+   ],
+   "total_s": 37305.773,
+   "miles": 634.7,
+   "detour_s": 5991.715,
+   "dwell_total_min": 200.0,
+   "cost_usd": 20.0,
+   "depart_h": 5.3,
+   "depart": "05:18",
+   "corridor": "Atlanta - I-85 the whole way, then I-75",
+   "arrive_h": 18.996,
+   "arrive": "19:00",
+   "days_spanned": 0,
+   "elapsed_s": 49305.773,
+   "schedule": [
+    {
+     "stop": "crowders",
+     "arrive": "08:02",
+     "arrive_h": 8.0331,
+     "arrive_origin_clock": "08:02",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 30.0,
+     "leg_s": 9839.149,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park gates (November)",
+        "verdict": "open",
+        "detail": "open until 18:00",
+        "usable_min": 30,
+        "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+        "status": "confirmed"
+       },
+       {
+        "name": "Visitor center",
+        "verdict": "shut",
+        "detail": "opens 09:00, 28 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+        "status": "confirmed"
+       }
+      ],
+      "usable": 1,
+      "missed": 1,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "tugaloo",
+     "arrive": "10:44",
+     "arrive_h": 10.738,
+     "arrive_origin_clock": "10:44",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 90.0,
+     "leg_s": 7937.632,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 90,
+        "url": "https://gastateparks.org/Tugaloo",
+        "status": "standing"
+       },
+       {
+        "name": "Office",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 90,
+        "url": "https://gastateparks.org/Tugaloo",
+        "status": "standing"
+       },
+       {
+        "name": "Miniature golf",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": null,
+        "status": "unknown"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 1
+     }
+    },
+    {
+     "stop": "lunch_lavonia",
+     "arrive": "12:28",
+     "arrive_h": 12.4737,
+     "arrive_origin_clock": "12:28",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 40.0,
+     "leg_s": 848.629,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "211 Main Street Restaurant & Bakery",
+        "verdict": "open",
+        "detail": "open until 15:00",
+        "usable_min": 40,
+        "url": "https://exploregeorgia.org/lavonia/food-drink/casual-full-service/211-main-street-restaurant",
+        "status": "standing"
+       },
+       {
+        "name": "Chick-fil-A Lavonia",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 40,
+        "url": "https://www.chick-fil-a.com/locations/ga/lavonia",
+        "status": "standing"
+       },
+       {
+        "name": "Food Lion Lavonia (ex-Dill's Food City)",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 40,
+        "url": "https://theshelbyreport.com/2026/10/13/food-lion-grows-greenville-market-with-dills-food-city-bi-lo-acquisitions/",
+        "status": "standing"
+       },
+       {
+        "name": "Bella Bella Mozzarella",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://exploregeorgia.org/lavonia",
+        "status": "unknown"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 1
+     }
+    },
+    {
+     "stop": "high_falls",
+     "arrive": "15:18",
+     "arrive_h": 15.3068,
+     "arrive_origin_clock": "15:18",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 30.0,
+     "leg_s": 7799.095,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Park grounds",
+        "verdict": "open",
+        "detail": "open until 22:00",
+        "usable_min": 30,
+        "url": "https://gastateparks.org/HighFalls",
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "peanut",
+     "arrive": "17:31",
+     "arrive_h": 17.5237,
+     "arrive_origin_clock": "17:31",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 10.0,
+     "leg_s": 6180.728,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Peanut monument",
+        "verdict": "always",
+        "detail": "rebuilt 2023; reach via unmarked road",
+        "usable_min": 10,
+        "url": null,
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.96247,
+     -79.05772
+    ],
+    [
+     36.03228,
+     -79.09104
+    ],
+    [
+     36.07305,
+     -79.16069
+    ],
+    [
+     36.07941,
+     -79.22478
+    ],
+    [
+     36.05995,
+     -79.39889
+    ],
+    [
+     36.06946,
+     -79.48437
+    ],
+    [
+     36.05983,
+     -79.68512
+    ],
+    [
+     36.03263,
+     -79.80517
+    ],
+    [
+     35.98478,
+     -79.88494
+    ],
+    [
+     35.94078,
+     -79.90593
+    ],
+    [
+     35.87099,
+     -80.01298
+    ],
+    [
+     35.85173,
+     -80.11457
+    ],
+    [
+     35.80466,
+     -80.1898
+    ],
+    [
+     35.76344,
+     -80.33771
+    ],
+    [
+     35.72213,
+     -80.38757
+    ],
+    [
+     35.68145,
+     -80.40957
+    ],
+    [
+     35.64969,
+     -80.47162
+    ],
+    [
+     35.58232,
+     -80.55214
+    ],
+    [
+     35.54104,
+     -80.57349
+    ],
+    [
+     35.50064,
+     -80.56277
+    ],
+    [
+     35.45221,
+     -80.59609
+    ],
+    [
+     35.436,
+     -80.6563
+    ],
+    [
+     35.40551,
+     -80.69564
+    ],
+    [
+     35.28397,
+     -80.77619
+    ],
+    [
+     35.26804,
+     -80.87097
+    ],
+    [
+     35.23809,
+     -80.91657
+    ],
+    [
+     35.25784,
+     -80.9972
+    ],
+    [
+     35.26555,
+     -81.13746
+    ],
+    [
+     35.2839,
+     -81.17263
+    ],
+    [
+     35.28537,
+     -81.2036
+    ],
+    [
+     35.24888,
+     -81.28693
+    ],
+    [
+     35.21133,
+     -81.28944
+    ],
+    [
+     35.23317,
+     -81.29434
+    ],
+    [
+     35.24658,
+     -81.28452
+    ],
+    [
+     35.25154,
+     -81.30006
     ],
     [
      35.17306,
@@ -3957,100 +6529,116 @@
      -82.50518
     ],
     [
-     34.60854,
-     -82.63181
+     34.60838,
+     -82.63213
     ],
     [
-     34.52201,
-     -82.8579
+     34.51682,
+     -82.87448
     ],
     [
-     34.49974,
-     -82.99717
+     34.49925,
+     -82.99879
     ],
     [
-     34.46366,
-     -83.09073
+     34.4486,
+     -83.09987
     ],
     [
-     34.32588,
-     -83.36128
+     34.5041,
+     -83.10124
+    ],
+    [
+     34.49899,
+     -83.07833
+    ],
+    [
+     34.50326,
+     -83.10293
+    ],
+    [
+     34.47931,
+     -83.09418
+    ],
+    [
+     34.4361,
+     -83.10662
+    ],
+    [
+     34.44811,
+     -83.12527
+    ],
+    [
+     34.41784,
+     -83.17027
+    ],
+    [
+     34.36449,
+     -83.29103
+    ],
+    [
+     34.29497,
+     -83.41329
     ],
     [
      34.23097,
      -83.49754
     ],
     [
-     34.13374,
-     -83.67894
+     34.19246,
+     -83.58329
     ],
     [
-     34.12605,
-     -83.73959
+     34.13852,
+     -83.66885
+    ],
+    [
+     34.12593,
+     -83.74004
     ],
     [
      34.08689,
      -83.84463
     ],
     [
-     34.05104,
-     -84.01915
+     34.05191,
+     -84.01718
     ],
     [
-     34.01847,
-     -84.06278
+     34.01908,
+     -84.06221
     ],
     [
      33.96727,
      -84.09682
     ],
     [
-     33.9052,
-     -84.23783
+     33.89326,
+     -84.25763
     ],
     [
-     33.84199,
-     -84.30846
+     33.72944,
+     -84.23172
     ],
     [
-     33.79891,
-     -84.39258
+     33.70029,
+     -84.25423
     ],
     [
-     33.75606,
-     -84.37863
+     33.69788,
+     -84.28174
     ],
     [
-     33.74438,
-     -84.38989
+     33.67351,
+     -84.32842
     ],
     [
-     33.7428,
-     -84.36814
+     33.59053,
+     -84.28229
     ],
     [
-     33.71382,
-     -84.36858
-    ],
-    [
-     33.70415,
-     -84.3496
-    ],
-    [
-     33.66731,
-     -84.34037
-    ],
-    [
-     33.6701,
-     -84.32763
-    ],
-    [
-     33.62851,
-     -84.29988
-    ],
-    [
-     33.54155,
-     -84.2697
+     33.54203,
+     -84.26998
     ],
     [
      33.49587,
@@ -4073,68 +6661,84 @@
      -84.10586
     ],
     [
-     33.14694,
-     -84.03062
+     33.1658,
+     -84.04143
+    ],
+    [
+     33.17921,
+     -84.01762
+    ],
+    [
+     33.16562,
+     -84.04139
     ],
     [
      33.12298,
      -84.00527
     ],
     [
-     33.08646,
-     -83.99558
+     33.08591,
+     -83.9952
     ],
     [
      32.98393,
      -83.8341
     ],
     [
-     32.90963,
-     -83.79367
+     32.9085,
+     -83.79291
     ],
     [
-     32.83174,
-     -83.73284
+     32.85587,
+     -83.74395
     ],
     [
-     32.75764,
-     -83.71102
+     32.77291,
+     -83.71118
     ],
     [
      32.6738,
      -83.74468
     ],
     [
-     32.47882,
-     -83.74251
+     32.47816,
+     -83.74257
     ],
     [
-     32.34674,
-     -83.76895
+     32.38333,
+     -83.76817
+    ],
+    [
+     32.29597,
+     -83.76078
     ],
     [
      32.23969,
      -83.74015
     ],
     [
-     32.11098,
-     -83.76301
+     32.11296,
+     -83.76282
     ],
     [
-     31.92994,
-     -83.74689
+     32.03529,
+     -83.76358
     ],
     [
-     31.80709,
-     -83.70619
+     31.92874,
+     -83.74666
+    ],
+    [
+     31.80801,
+     -83.70668
     ],
     [
      31.61667,
      -83.5686
     ],
     [
-     31.51322,
-     -83.51527
+     31.51288,
+     -83.51524
     ],
     [
      31.39481,
@@ -4177,7 +6781,7 @@
      -83.97885
     ]
    ],
-   "geometry_raw_points": 9735,
+   "geometry_raw_points": 9946,
    "rdp_epsilon_used": 0.0064,
    "sunset": "17:35",
    "after_sunset": true,
@@ -4185,9 +6789,9 @@
   }
  },
  "bbox": {
-  "min_lat": 30.78492,
+  "min_lat": 30.78443,
   "max_lat": 36.07941,
-  "min_lon": -84.39258,
+  "min_lon": -84.33641,
   "max_lon": -78.94065
  },
  "assumptions": {

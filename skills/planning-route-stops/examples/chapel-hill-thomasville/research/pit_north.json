@@ -1,0 +1,699 @@
+[
+ {
+  "key": "burlington_city_park",
+  "name": "Burlington City Park",
+  "where": "S. Church St, Burlington, NC - I-85/40 exit 143",
+  "lat": 36.08464,
+  "lon": -79.45324,
+  "coord_source": "OSM Nominatim (City Park parking)",
+  "url": "https://www.visitalamance.com/listing/burlington-city-park/119/",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": null,
+  "cost_note": "Park free; ride prices not published",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Playground",
+    "note": "Listed as closed for renovations (undated)",
+    "always": false,
+    "status": "unknown"
+   },
+   {
+    "name": "Amusements (train, carousel)",
+    "days": "Tue-Sat",
+    "open": "10:00",
+    "close": "20:00",
+    "url": "https://www.visitalamance.com/listing/burlington-city-park/119/",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Train, carousel, greenway; playground may still be under renovation; amusements likely seasonal",
+  "segment_hours": 0.5
+ },
+ {
+  "key": "gateway_gardens_gso",
+  "name": "Gateway Gardens (Michel Family Children's Garden)",
+  "where": "2800 E. Gate City Blvd, Greensboro, NC - I-40 exit 224 (off I-85 S path)",
+  "lat": 36.0567,
+  "lon": -79.74907,
+  "coord_source": "OSM Nominatim",
+  "url": "https://greensborobeautiful.org/gardens/gateway/",
+  "kind": "outdoors",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Garden incl. children's garden (Nov-Dec)",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://greensborobeautiful.org/gardens/gateway/",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Maze, plant tunnel, alphabet arbor, apple sculpture, book stage; restrooms on map",
+  "segment_hours": 1.0
+ },
+ {
+  "key": "creekside_park_archdale",
+  "name": "Creekside Park",
+  "where": "Archdale, NC - I-85 exit 111",
+  "lat": 35.89446,
+  "lon": -79.93616,
+  "coord_source": "OSM Nominatim",
+  "url": "https://www.archdale-nc.gov/164/Creekside-Park",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": 0,
+  "cost_note": "No fee mentioned",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park and playgrounds",
+    "note": "Hours not published on city page",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Two playgrounds, ~3 mi asphalt trails/greenway; restrooms not stated",
+  "segment_hours": 1.0
+ },
+ {
+  "key": "big_chair_thomasville",
+  "name": "The Big Chair + Thomasville Depot Visitors Center",
+  "where": "W Main St at NC-109 / 44 W Main St, Thomasville, NC - I-85 exit 103",
+  "lat": 35.88291,
+  "lon": -80.08203,
+  "coord_source": "OSM Nominatim",
+  "url": "https://jarrod-dunbar.squarespace.com/about-us",
+  "kind": "icon",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Big Chair (outdoor)",
+    "always": true,
+    "note": "Downtown by railroad tracks",
+    "status": "standing"
+   },
+   {
+    "name": "Visitors Center (depot, restrooms)",
+    "days": "Mon-Fri",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://jarrod-dunbar.squarespace.com/about-us",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "30-ft chair photo, trains passing; tie-in to Thomasville GA; depot restrooms during staffed hours",
+  "segment_hours": 1.0
+ },
+ {
+  "key": "davidson_rest_area_i85_sb",
+  "name": "Davidson County I-85 Southbound Rest Area",
+  "where": "I-85 SB approx MM 100, near Thomasville, NC",
+  "lat": 35.84346,
+  "lon": -80.12959,
+  "coord_source": "OSM Overpass (highway=rest_area)",
+  "url": "https://ncdot.gov:443/news/press-releases/Pages/2022/2022-01-27-davidson-county-rest-area-maintenance.aspx",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Rest area",
+    "note": "Hours/amenities not verified",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Restroom/stretch stop only; no playground found",
+  "segment_hours": 1.0
+ },
+ {
+  "key": "nc_transportation_museum",
+  "name": "NC Transportation Museum",
+  "where": "1 Samuel Spencer Dr, Spencer, NC - I-85 exit 79",
+  "lat": 35.68726,
+  "lon": -80.434,
+  "coord_source": "OSM Nominatim",
+  "url": "https://www.nctransportationmuseum.org/",
+  "kind": "ticketed",
+  "suggested_dwell_min": 40,
+  "cost_usd": 36,
+  "cost_note": "Adult $10, child 3-12 $8, plus NC sales tax; no regular train rides until Dec 26",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Museum site (Nov 10-Dec 9 schedule)",
+    "days": "Tue-Thu",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://www.nctransportationmuseum.org/",
+    "status": "confirmed"
+   }
+  ],
+  "kid_notes": "Walk the rail yard and roundhouse among locomotives; closed Thu 26 Nov",
+  "segment_hours": 1.5
+ },
+ {
+  "key": "dan_nicholas_park",
+  "name": "Dan Nicholas Park",
+  "where": "6800 Bringle Ferry Rd, Salisbury, NC - I-85 exit 79 (~4.4 mi straight-line)",
+  "lat": 35.63827,
+  "lon": -80.3512,
+  "coord_source": "OSM Nominatim",
+  "url": "https://www.rowancountync.gov/186/Attractions",
+  "kind": "outdoors",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Park entry free; attraction fees not checked",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Park (per Visit Rowan)",
+    "days": "daily",
+    "open": "08:00",
+    "close": "21:00",
+    "url": "https://visitrowancountync.com/blog/post/guide-dan-nicholas-park/",
+    "status": "standing"
+   },
+   {
+    "name": "Attractions/train",
+    "note": "Nov-Feb hours not listed; train closed until further notice",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Lake, trails; seasonal attractions likely shut; conflicting 09:00-17:00 listing",
+  "segment_hours": 1.5
+ },
+ {
+  "key": "village_park_kannapolis",
+  "name": "Village Park",
+  "where": "700 West C St, Kannapolis, NC - I-85 exit 60",
+  "lat": 35.50388,
+  "lon": -80.63284,
+  "coord_source": "OSM Nominatim",
+  "url": "https://kannapolisnc.gov/Portals/0/Kannapolis/Departments/Parks%20and%20Rec/Documents/Village%20Park%20Brochure.pdf",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Park free; attractions $1.50/person/ride when running",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park and playground",
+    "days": "daily",
+    "note": "dawn to dusk",
+    "url": "https://kannapolisnc.gov/Portals/0/Kannapolis/Departments/Parks%20and%20Rec/Documents/Village%20Park%20Brochure.pdf",
+    "status": "standing"
+   },
+   {
+    "name": "Train/carousel/splash pad",
+    "note": "Weekends only in fall; Christmas season varies",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Playground and greenway; rides unlikely on a Wednesday",
+  "segment_hours": 1.5
+ },
+ {
+  "key": "frank_liske_park",
+  "name": "Frank Liske Park",
+  "where": "4001 Stough Rd, Concord, NC - I-85 exit 49/54 (~5 mi straight-line)",
+  "lat": 35.36119,
+  "lon": -80.61925,
+  "coord_source": "OSM Nominatim",
+  "url": "https://www.cabarruscounty.us/Parks/Frank-Liske-Park",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "No entry fee listed",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Park (Nov-Feb)",
+    "days": "daily",
+    "open": "08:00",
+    "close": "17:00",
+    "url": "https://www.cabarruscounty.us/Parks/Frank-Liske-Park",
+    "status": "confirmed"
+   }
+  ],
+  "kid_notes": "Playgrounds, walking/fitness/nature trails; closed only on Thanksgiving Day itself; restrooms not stated",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "whitewater_center",
+  "name": "US National Whitewater Center (trails)",
+  "where": "5000 Whitewater Center Pkwy, Charlotte, NC - near I-485 exit 12/14 (I-85 exit 29 unverified)",
+  "lat": 35.29196,
+  "lon": -80.98468,
+  "coord_source": "OSM Nominatim",
+  "url": "https://whitewater.org/plan-your-visit/faqs",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 13,
+  "cost_note": "Trail access free; parking $13/vehicle; no outside food",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Parkway & Channel Loop trails",
+    "always": true,
+    "note": "Per FAQ open at all times; other trails weather-dependent",
+    "status": "unknown"
+   },
+   {
+    "name": "Guest Services (snapshot day)",
+    "note": "09:00-20:30 seen on one day only",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "40+ mi trails, watch the whitewater channel; opening time unpublished",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "lineberger_park_gastonia",
+  "name": "Lineberger Park",
+  "where": "632 E Garrison Blvd, Gastonia, NC - I-85 exit 19/20",
+  "lat": 35.25472,
+  "lon": -81.17178,
+  "coord_source": "OSM Overpass (leisure=park 'Lineburger Park')",
+  "url": "https://www.gastonianc.gov/Lineberger-Park",
+  "kind": "playground",
+  "suggested_dwell_min": 25,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park/playground",
+    "days": "daily",
+    "note": "dawn to dusk",
+    "url": "https://www.gastonianc.gov/Lineberger-Park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Playground (east side), restroom building east side, greenway trailhead; mini train closed indefinitely",
+  "segment_hours": 2.5
+ },
+ {
+  "key": "crowders_mountain_sp",
+  "name": "Crowders Mountain State Park (Sparrow Springs)",
+  "where": "522 Park Office Ln, Kings Mountain, NC - I-85 exit 8/10A",
+  "lat": 35.21355,
+  "lon": -81.29317,
+  "coord_source": "OSM Overpass (visitor centre)",
+  "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": null,
+  "cost_note": "No fee shown on page",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Park gates (November)",
+    "days": "daily",
+    "open": "08:00",
+    "close": "18:00",
+    "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+    "status": "confirmed"
+   },
+   {
+    "name": "Visitor center",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://www.ncparks.gov/state-parks/crowders-mountain-state-park",
+    "status": "confirmed"
+   }
+  ],
+  "kid_notes": "Trail network (20 mi at this access); short kid-loop lengths not retrieved; closed only Christmas",
+  "segment_hours": 2.5
+ },
+ {
+  "key": "sc_welcome_blacksburg",
+  "name": "SC Welcome Center I-85 SB (Blacksburg)",
+  "where": "I-85 SB MM ~103, 0.5 mi past exit 102, Blacksburg, SC",
+  "lat": 35.14913,
+  "lon": -81.4952,
+  "coord_source": "OSM Overpass node 'I-85 South Carolina Welcome Center'",
+  "url": "https://scprt.com/tourism/welcome-center-program",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Staffed welcome center",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://scprt.com/tourism/welcome-center-program",
+    "status": "standing"
+   },
+   {
+    "name": "Rest area restrooms",
+    "always": true,
+    "note": "SCPRT general statement '24/7/365'; rebuild bid May 2025 with temporary restrooms then demolition - current phase unknown",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Restroom/stretch; no playground found; closed only Thanksgiving Day (building)",
+  "segment_hours": 2.5
+ },
+ {
+  "key": "peachoid_gaffney",
+  "name": "Peachoid water tower",
+  "where": "Peachoid Rd frontage road, Gaffney, SC - I-85 exit 90/92",
+  "lat": 35.09531,
+  "lon": -81.68592,
+  "coord_source": "OSM Nominatim (man_made=water_tower)",
+  "url": "https://www.roadsideamerica.com/tip/1168",
+  "kind": "icon",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "View from frontage road/gate",
+    "always": true,
+    "note": "Base lot chained/private per Apr 2024 report; walk-up photo at gate",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Giant peach photo; no restrooms confirmed; parking spot not confirmed",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "cowpens_battlefield",
+  "name": "Cowpens National Battlefield",
+  "where": "4001 Chesnee Hwy, Gaffney, SC - I-85 exit 92 (~10 mi) or exit 83 (~8 mi)",
+  "lat": 35.13136,
+  "lon": -81.80796,
+  "coord_source": "OSM Nominatim",
+  "url": "https://www.nps.gov/cowp/planyourvisit/hours.htm",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": null,
+  "cost_note": "Fee not checked",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Grounds",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://www.nps.gov/cowp/planyourvisit/hours.htm",
+    "status": "confirmed"
+   },
+   {
+    "name": "Visitor center",
+    "days": "Wed-Sun",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://www.nps.gov/cowp/planyourvisit/hours.htm",
+    "status": "confirmed"
+   },
+   {
+    "name": "Auto loop / picnic area",
+    "days": "daily",
+    "close": "16:30",
+    "url": "https://www.nps.gov/cowp/planyourvisit/hours.htm",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "1-mile battlefield trail from visitor center; restrooms there; >10 min off interstate",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "cleveland_park_spartanburg",
+  "name": "Cleveland Park",
+  "where": "Spartanburg, SC - via I-585 spur from I-85",
+  "lat": 34.96542,
+  "lon": -81.95029,
+  "coord_source": "OSM Nominatim",
+  "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park (Nov 1-Feb 28)",
+    "days": "daily",
+    "open": "07:00",
+    "close": "19:00",
+    "url": "https://spartanburg.macaronikid.com/directory/67e06bc4871294196325f640/cleveland-park",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "'Great Adventure' older-kid zone, Tot Lot, pond, trails, fitness gear; hours third-party only",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "unity_park_greenville",
+  "name": "Unity Park",
+  "where": "320 S Hudson St, Greenville, SC - I-385 exit 42 (via I-385 from I-85)",
+  "lat": 34.85198,
+  "lon": -82.41221,
+  "coord_source": "OSM Nominatim",
+  "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+  "kind": "playground",
+  "suggested_dwell_min": 40,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "05:00",
+    "close": "23:00",
+    "url": "https://content.civicplus.com/api/assets/adf8ab7a-c657-49f9-85d0-400d1b534515?scope=all",
+    "status": "standing"
+   },
+   {
+    "name": "Playgrounds",
+    "days": "daily",
+    "note": "dawn to dusk",
+    "url": "https://kiddingaroundgreenville.com/?p=92615",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Turf hills with slides, natural climbing area, tot playground, 2.53 mi loop trails; splash pad closed in Nov; restrooms on site map",
+  "segment_hours": 3.5
+ },
+ {
+  "key": "falls_park_mice_on_main",
+  "name": "Falls Park on the Reedy + Mice on Main",
+  "where": "601 S Main St (falls) / NOMA Square 220 N Main St, Greenville, SC - I-385 exit 42",
+  "lat": 34.8453,
+  "lon": -82.401,
+  "coord_source": "OSM Nominatim (Falls Park)",
+  "url": "https://www.visitgreenvillesc.com/mice-on-main/",
+  "kind": "icon",
+  "suggested_dwell_min": 40,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Falls Park",
+    "note": "Official hours not retrievable; aggregators say 24h / 07:00-21:00 / 06:00-23:59",
+    "status": "unknown"
+   },
+   {
+    "name": "Mice on Main hunt (outdoor sculptures)",
+    "always": true,
+    "note": "9 bronze mice along Main St",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Waterfall, Liberty Bridge, scavenger hunt; city visitor center temporarily closed",
+  "segment_hours": 3.5
+ },
+ {
+  "key": "metalmorphosis_charlotte",
+  "name": "METALmorphosis (giant rotating head)",
+  "where": "Arco Corporate Dr, Whitehall, Charlotte, NC - I-485 exit 3 / I-77 exit 1 area",
+  "lat": 35.15081,
+  "lon": -80.94804,
+  "coord_source": "OSM Nominatim (amenity=fountain)",
+  "url": "https://www.roadsideamerica.com/tip/22038",
+  "kind": "icon",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "unknown",
+  "facilities": [
+   {
+    "name": "Sculpture/fountain",
+    "note": "Hours and working status unconfirmed; private office park",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Mirrored head that spins in segments when working",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "sc_welcome_fortmill",
+  "name": "SC Welcome Center I-77 SB (Fort Mill)",
+  "where": "I-77 SB MM 89 between exits 88 and 90, Fort Mill, SC",
+  "lat": 35.08001,
+  "lon": -80.94317,
+  "coord_source": "OSM Overpass (highway=rest_area)",
+  "url": "https://scprt.com/tourism/welcome-center-program",
+  "kind": "roadside",
+  "suggested_dwell_min": 15,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Staffed welcome center",
+    "days": "daily",
+    "open": "09:00",
+    "close": "17:00",
+    "url": "https://scprt.com/tourism/welcome-center-program",
+    "status": "standing"
+   },
+   {
+    "name": "Rest area restrooms",
+    "always": true,
+    "note": "SCPRT general '24/7/365' statement, not site-specific",
+    "status": "unknown"
+   }
+  ],
+  "kid_notes": "Restroom/stretch; no playground found",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "asc_greenway_lake_haigler",
+  "name": "Anne Springs Close Greenway - Lake Haigler entrance",
+  "where": "2573 Lake Haigler Dr, Fort Mill, SC - I-77 exit 85",
+  "lat": 35.03338,
+  "lon": -80.94301,
+  "coord_source": "OSM Overpass (Lake Haigler water body)",
+  "url": "https://www.ascgreenway.org/visit/hours-fees/",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 50,
+  "cost_note": "Adult $17, youth 3-12 $8",
+  "status": "confirmed",
+  "facilities": [
+   {
+    "name": "Trails/entrances",
+    "days": "daily",
+    "open": "07:00",
+    "note": "until sunset (~17:30)",
+    "url": "https://www.ascgreenway.org/visit/hours-fees/",
+    "status": "confirmed"
+   },
+   {
+    "name": "Greenway Gateway guest services",
+    "days": "Mon-Sat",
+    "open": "08:30",
+    "close": "17:30",
+    "url": "https://www.ascgreenway.org/visit/hours-fees/",
+    "status": "confirmed"
+   },
+   {
+    "name": "Children's Farm",
+    "days": "Tue-Sun",
+    "open": "09:00",
+    "close": "15:00",
+    "last_entry": "14:30",
+    "url": "https://www.ascgreenway.org/visit/hours-fees/",
+    "status": "confirmed"
+   }
+  ],
+  "kid_notes": "Schroering Forest Playground, restrooms, lakeside trails at Lake Haigler; closed Thanksgiving Day",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "glencairn_garden_rockhill",
+  "name": "Glencairn Garden",
+  "where": "725 Crest St, Rock Hill, SC - I-77 exit 77/79",
+  "lat": 34.93383,
+  "lon": -81.02043,
+  "coord_source": "OSM Nominatim",
+  "url": "https://visitrockhillsc.com/glencairn-garden/",
+  "kind": "outdoors",
+  "suggested_dwell_min": 20,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Garden",
+    "days": "daily",
+    "note": "dawn to dusk",
+    "url": "https://visitrockhillsc.com/glencairn-garden/",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "11 acres of lawns and paths to run; low-key in November; restrooms not stated",
+  "segment_hours": 2.0
+ },
+ {
+  "key": "chester_state_park",
+  "name": "Chester State Park",
+  "where": "788 State Park Dr, Chester, SC - via SC-9 from I-77 exit 65 (well over 10 min)",
+  "lat": 34.67671,
+  "lon": -81.23998,
+  "coord_source": "OSM Nominatim",
+  "url": "https://southcarolinaparks.com/chester",
+  "kind": "outdoors",
+  "suggested_dwell_min": 40,
+  "cost_usd": 8,
+  "cost_note": "$3 adult, $1 child 6-15",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "09:00",
+    "note": "to sunset",
+    "url": "https://southcarolinaparks.com/chester",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "1.3 mi lakeside Caney Fork trail; holiday closures not listed",
+  "segment_hours": 3.0
+ },
+ {
+  "key": "finlay_park_columbia",
+  "name": "Finlay Park",
+  "where": "Downtown Columbia, SC (near I-126 terminus; well off I-77)",
+  "lat": 34.00665,
+  "lon": -81.0408,
+  "coord_source": "OSM Overpass (leisure=park)",
+  "url": "https://www.abccolumbia.com/?p=2820941",
+  "kind": "playground",
+  "suggested_dwell_min": 30,
+  "cost_usd": 0,
+  "cost_note": "Free",
+  "status": "standing",
+  "facilities": [
+   {
+    "name": "Park",
+    "days": "daily",
+    "open": "06:00",
+    "close": "21:00",
+    "url": "https://www.abccolumbia.com/?p=2820941",
+    "status": "standing"
+   }
+  ],
+  "kid_notes": "Reopened Nov 2025; custom hillside playground plus sensory play area; official site 403",
+  "segment_hours": 3.5
+ }
+]
