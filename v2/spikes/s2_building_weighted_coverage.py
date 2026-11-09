@@ -42,12 +42,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, METRO_DIR,  # noqa: E402
                      append_results, stamp)
 from locfinder import profile  # noqa: E402
+from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.measure.frames import file_digest  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.status import Reason  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
-from locfinder.traveltime.layer import build_layer_surface  # noqa: E402
+from locfinder.traveltime.layer import build_layer_surface, write_layer  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import add_travel_times, symmetrise  # noqa: E402
 
@@ -185,6 +186,19 @@ def main() -> None:
 
     # The rebuild costs two minutes; a follow-up asking a different question of the same surface
     # should not have to pay it again, and should not be tempted to re-derive reasons from seconds.
+    #
+    # **Seconds are saved too, and that is not cosmetic.** This script used to save reasons and
+    # bounds and then record the digest of whatever seconds file already happened to be on disk,
+    # which made the sidecar *certify a stale build*: Codex pass 28 ran this `main()` with existing
+    # seconds of 590 and newly computed seconds of 610 and an unchanged OK mask, and the consumer
+    # reported every digest matching while returning PASS at ten minutes where the new build says
+    # FAIL. A hash of a file you did not write establishes nothing.
+    # float32, matching every existing seconds artifact and both G1 builders. That storage is the
+    # canonical representation: 600.00001 s becomes 600.0 on disk, so the minute raster is encoded
+    # from the stored array below rather than from the in-memory float64, and the two agree by
+    # construction. Widening to float64 would be a format change with its own costs, not a fix.
+    np.save(LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}.npy",
+            surf.seconds.astype(np.float32))
     np.save(LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_reason.npy", surf.reason)
     # And the lower bound, which was not saved before. Without it a follow-up cannot rebuild a
     # `status.Surface` at all, and `scripts/audit_recommendations.py` has to reconstruct one under
@@ -201,6 +215,16 @@ def main() -> None:
     # loaded are the ones these parameters describe. Without them the sidecar is a note about
     # parameters and not provenance: `Surface.validate` establishes invariants, not shared origin.
     stem = f"own_{METRO.name}_{args.category}_{args.mode}"
+    # Encode the minute raster from the array that was just **written**, not from the in-memory
+    # float64: the .npy is float32, so 600.00001 s is stored as 600.0, and a raster encoded from
+    # the float64 would disagree with one re-encoded from disk (pass 28). Making the raster a
+    # function of the stored seconds is what lets `scripts/reencode_minute_rasters.py` reproduce it.
+    stored_seconds = np.load(LAYERS / f"{stem}.npy").astype(np.float64)
+    write_layer(LAYERS / f"{stem}.tif", encode_minutes(stored_seconds), GRID, tags={
+        "engine": "own-graph", "mode": args.mode, "category": args.category,
+        "direction": "arrival", "profile": profile.profile_version(),
+        "grid": profile.grid_version(GRID), "built_at": stamp(),
+    })
     (LAYERS / f"{stem}_build.json").write_text(
         json.dumps({
             "metro": METRO.name, "category": args.category, "mode": args.mode,

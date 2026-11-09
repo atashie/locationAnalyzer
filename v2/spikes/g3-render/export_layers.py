@@ -138,6 +138,16 @@ def reproject_to_grid(src_path: Path) -> tuple[np.ndarray, dict]:
     dst_transform = from_bounds(*BOUNDS_WGS84, NCOLS, NROWS)
     dst = np.full((NROWS, NCOLS), NODATA, dtype=np.uint8)
     with rasterio.open(src_path) as src:
+        # Refuse a source whose encoding is not the one this exporter claims. It used to read any
+        # raster and stamp the manifest `ceil-v1` regardless, so an old round-to-nearest layer --
+        # where 610 s is the byte 10 and passes a ten-minute threshold -- was relabelled as the
+        # repaired encoding and became invisible (pass 28). An untagged raster predates the stamp.
+        found = src.tags().get("encoding")
+        if found != ENCODING:
+            raise SystemExit(
+                f"{src_path.name} carries encoding={found or 'none (predates the stamp: rint)'!s}, "
+                f"but this exporter labels its output {ENCODING}. Re-encode the rasters first:\n"
+                "  uv run python scripts/reencode_minute_rasters.py --write")
         src_arr = src.read(1)
         src_nodata_frac = float((src_arr == NODATA).mean())
         reproject(
@@ -194,6 +204,9 @@ def derive_padding_layer(base_arr: np.ndarray, base_entry: dict, index: int) -> 
     scale = 1.25 + 0.25 * index  # 1.25, 1.50, 1.75, ... per padding slot
     out = base_arr.copy()
     finite = out != NODATA
+    # `rint` here scales an existing minute field to pad the layer count; it is not an encoding of
+    # seconds, and the entry it produces is marked derived. Pass 28's point stands all the same: a
+    # derived layer must not inherit the global encoding label, so `build_layer_entry` marks it.
     scaled = np.clip(np.rint(out[finite].astype(np.float64) * scale), 0, 254)
     out[finite] = scaled.astype(np.uint8)
     derived_id = f"derived_{base_entry['id']}_x{scale:.2f}".replace(".", "p")
@@ -238,6 +251,24 @@ def main() -> int:
             "need at least 3. Run make_fixtures.py for a fully synthetic fixture set instead.",
             file=sys.stderr,
         )
+        return 1
+
+    # Check every source's encoding BEFORE clearing the fixtures directory or writing anything.
+    # Refusing mid-loop emptied the directory, wrote some fixtures and then stopped, leaving a
+    # mixed set behind the old manifest -- a worse state than either refusing or succeeding.
+    stale = []
+    for layer in selected:
+        with rasterio.open(layer.path) as src:
+            found = src.tags().get("encoding")
+        if found != ENCODING:
+            stale.append(f"{layer.path.name}: {found or 'none (predates the stamp: rint)'}")
+    if stale:
+        print(f"ERROR: {len(stale)} source raster(s) are not {ENCODING}, so this export would "
+              "label them as something they are not:", file=sys.stderr)
+        for line in stale:
+            print(f"  {line}", file=sys.stderr)
+        print("Re-encode them first:  uv run python scripts/reencode_minute_rasters.py --write",
+              file=sys.stderr)
         return 1
 
     clean_fixtures_dir()

@@ -71,9 +71,19 @@ def write_layer(path, arr: np.ndarray, grid: GridSpec, *, tags: dict) -> None:
     `rint` to `ceil`, the two differ by up to 30 s at every threshold, and the rasters are otherwise
     byte-compatible. A caller that forgot the tag would produce an artifact indistinguishable from
     the old rule, so it is not the caller's to forget.
+
+    It is also not the caller's to **override**, which the first version of this allowed: the stamp
+    was merged as `{"encoding": ENCODING, **tags}`, so a caller passing its own `encoding` key won
+    (pass 28). A tag that a caller can quietly replace is not a guarantee. A conflicting value now
+    raises rather than being dropped, because a caller passing one is either confused or doing
+    something this function should know about.
     """
+    if "encoding" in tags and tags["encoding"] != ENCODING:
+        raise ValueError(
+            f"caller passed encoding={tags['encoding']!r}; this writer only produces {ENCODING!r}. "
+            "Encode with grid.encode_minutes, or write the raster yourself and own the claim.")
     profile = grid.rasterio_profile()
-    stamped = {"encoding": ENCODING, **tags}
+    stamped = {**tags, "encoding": ENCODING}
     with rasterio.open(path, "w", **profile) as dst:
         dst.write(arr, 1)
         dst.update_tags(**{k: str(v) for k, v in stamped.items()})

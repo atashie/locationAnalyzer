@@ -101,12 +101,20 @@ def main() -> None:
 
     base = layer_path("own", args.category, args.mode, "")
     np.save(base.with_suffix(".npy"), secs.astype(np.float32))
-    arr = encode_minutes(secs)
-    with rasterio.open(base.with_suffix(".tif"), "w", **GRID.rasterio_profile()) as dst:
-        dst.write(arr, 1)
-        dst.update_tags(engine="own-csgraph-transposed", category=args.category, mode=args.mode, direction="arrival",
-                        profile="locfinder.speeds v0 (no intersection penalties, no turn restrictions)",
-                        built_at=stamp(), **{k: (f"{v:.2f}" if isinstance(v, float) else str(v)) for k, v in timings.items()})
+    # Through `write_layer`, not `rasterio.open` directly: this bypassed the writer and so wrote
+    # an **unstamped** raster, which made "an artifact with no encoding tag is the old rint rule"
+    # false for anything this script produced after the encoding changed (pass 28).
+    #
+    # And encoded from the array just written, not from the in-memory float64: the .npy is float32,
+    # so 600.00001 s is stored as 600.0 and the two encodings disagree at a threshold. Making the
+    # raster a function of the stored seconds is what lets it be re-encoded later.
+    arr = encode_minutes(np.load(base.with_suffix(".npy")).astype(np.float64))
+    write_layer(base.with_suffix(".tif"), arr, GRID, tags=dict(
+        engine="own-csgraph-transposed", category=args.category, mode=args.mode,
+        direction="arrival",
+        profile="locfinder.speeds v0 (no intersection penalties, no turn restrictions)",
+        built_at=stamp(),
+        **{k: (f"{v:.2f}" if isinstance(v, float) else str(v)) for k, v in timings.items()}))
     total = sum(v for v in timings.values() if isinstance(v, float))
     text = (f"### Own-graph layer: {args.category} / {args.mode} ({stamp()})\n"
             f"- graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges ({timings['graph_source']}; {comp.summary}); "

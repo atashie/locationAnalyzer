@@ -282,15 +282,18 @@ def test_it_reads_the_build_parameters_from_a_sidecar_instead_of_assuming_them(t
     assert (surf.min_possible_s[reason == Reason.BEYOND_HORIZON] == 3600.0).all()
 
 
-def test_it_refuses_an_assumed_horizon_the_arrays_contradict(tmp_path):
+def test_an_implausible_assumed_horizon_warns_and_does_not_refuse(tmp_path, capsys):
     """`Surface.validate` only checks `max finite <= horizon`, so assuming a horizon *larger* than
-    the build's passes silently and every BEYOND_HORIZON bound is then wrong. A cutoff that bound
-    leaves cells just inside it, which is what makes the contradiction visible."""
+    the build's passes silently and every BEYOND_HORIZON bound is then wrong. The gap below the
+    horizon is a hint about that — and **only** a hint, which is the whole history of this check:
+    it refused at a flat 60 s, then at a "derived" 238 s, and pass 28 built legitimate
+    `build_layer_surface` output exceeding both. It now reports and carries on."""
     seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
-    with pytest.raises(audit.Refused, match="looks wrong"):
-        _load(_write(tmp_path, seconds, reason))
+    _, prov = _load(_write(tmp_path, seconds, reason))
+    assert prov["build"]["horizon"]["plausible"] is False
+    assert "may be wrong" in capsys.readouterr().out
 
-    # Saturated, the same layer is accepted: the refusal is about the gap, not about the shape.
+    # Saturated, the same layer looks plausible: the hint is about the gap, not the shape.
     surf, prov = _load(_write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10)))
     assert prov["build"]["horizon"]["plausible"] is True
     assert prov["build"]["horizon"]["gap_to_horizon_s"] == pytest.approx(0.001, abs=1e-3)
@@ -307,49 +310,68 @@ def test_a_layer_with_nothing_cut_off_needs_no_corroboration(tmp_path):
     assert prov["build"]["horizon"]["plausible"] is True
 
 
-def test_the_horizon_heuristic_admits_a_sparse_frontier(tmp_path):
-    """The regression test for pass 27's false refusal, which is the defect this guard introduced.
+def test_no_horizon_gap_is_ever_a_refusal(tmp_path, capsys):
+    """Two legitimate `build_layer_surface` outputs that successive versions of this check rejected.
 
-    A real `build_layer_surface` output — a straight 11 km bidirectional edge, destination at its
-    start, cells centred 9,990 m and 10,090 m along it — returns `[7135.714, inf]` with reasons
-    `[OK, BEYOND_HORIZON]` against a **true** 7,200 s horizon. The largest finite time is 64.3 s
-    short of it, and the original flat 60 s threshold called that an inconsistent build.
+    Pass 27: a straight 11 km edge with cells at 9,990 m and 10,090 m returns `[7135.714, inf]`
+    against a **true** 7,200 s horizon — a 64.3 s gap, which the original flat 60 s threshold called
+    an inconsistent build.
 
-    There is no sound upper bound on that gap: the frontier can be arbitrarily sparse. So the check
-    is a heuristic with a derived scale, and this pins the case it must not reject.
+    Pass 28: two parallel 100 m roads 100 m apart, joined by a 12.1 km detour outside the grid,
+    returns `[35.714, inf]` against the same true horizon — a **7,164 s** gap, which the "derived"
+    238 s scale also rejected. Neighbouring cells can snap to roads separated by an arbitrarily long
+    network journey, so there is no bound here to derive and the formula only ever supplied a
+    dimensional scale.
+
+    Both load. Only a sidecar or `--horizon-min` can settle a horizon.
     """
-    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, saturate=False)
-    seconds = seconds.copy()
-    seconds[0, 0] = 7135.714285714286          # pass 27's measured frontier value
-    _, prov = _load(_write(tmp_path, seconds, reason))
+    for frontier_s, note in ((7135.714285714286, "pass 27's 64.3 s gap"),
+                             (35.714285714285715, "pass 28's 7,164 s gap")):
+        seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, saturate=False)
+        seconds = seconds.copy()
+        seconds[:, :] = np.where(reason == Reason.OK, frontier_s, np.inf)
+        surf, prov = _load(_write(tmp_path, seconds.astype(np.float32), reason))
+        assert surf.horizon_s == HORIZON_S, note
+        gap = prov["build"]["horizon"]["gap_to_horizon_s"]
+        assert gap == pytest.approx(HORIZON_S - frontier_s, abs=0.01), note
+    # The second one is past the scale and still loads, with a warning rather than a refusal.
+    assert prov["build"]["horizon"]["plausible"] is False
+    assert gap > prov["build"]["horizon"]["gap_scale_s"]
+    assert "may be wrong" in capsys.readouterr().out
 
-    gap = prov["build"]["horizon"]["gap_to_horizon_s"]
-    assert gap == pytest.approx(64.2857, abs=0.001)
-    assert gap > 60.0, "the gap must still exceed the threshold that wrongly refused it"
-    assert gap <= prov["build"]["horizon"]["gap_scale_s"]
-    assert prov["build"]["horizon"]["plausible"] is True
-
-    # The scale is derived, not chosen, and it still catches the error it exists for: a 60-minute
-    # layer read as 120 leaves a gap of ~3,600 s.
+    # The scale is still derived rather than chosen, which is worth pinning even though it now
+    # decides only whether to print.
     assert prov["build"]["horizon"]["gap_scale_s"] == pytest.approx(
         (audit.MAX_ACCESS_M + 100.0) / access_speed_mps("walk"), abs=0.1)
-    half, half_reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=3500.0,
-                                saturate=False)
-    with pytest.raises(audit.Refused, match="looks wrong"):
-        _load(_write(tmp_path, half, half_reason))
 
 
-def test_a_declared_horizon_skips_the_heuristic_entirely(tmp_path):
-    """Because a heuristic must be escapable: the operator can assert the horizon outright."""
+def test_a_declared_horizon_is_recorded_as_a_declaration(tmp_path):
+    """`--horizon-min` is what settles a horizon in the absence of a sidecar, and the provenance
+    says it was a declaration rather than evidence."""
     seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
     layers = _write(tmp_path, seconds, reason)
-    with pytest.raises(audit.Refused, match="looks wrong"):
-        _load(layers)
     surf, prov = audit.load_surface(_grid(), category="grocery", mode="walk", metro="triangle",
-                                   thresholds_s=THRESHOLDS_S, layers=layers,
-                                   declared_horizon_s=HORIZON_S)
+                                    thresholds_s=THRESHOLDS_S, layers=layers,
+                                    declared_horizon_s=HORIZON_S)
     assert prov["build"]["origin"] == "declared by the operator"
     assert surf.horizon_s == HORIZON_S
+    assert "horizon" not in prov["build"], "no heuristic should run when the horizon is declared"
+
+
+def test_a_declaration_that_contradicts_the_sidecar_is_refused(tmp_path):
+    """The sidecar is evidence and the flag is an assertion, so the sidecar wins — but silently
+    ignoring the flag, which is what it did, let `--horizon-min` look authoritative while doing
+    nothing (pass 28)."""
+    layers = _write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10))
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 7200.0, "max_access_m": 200.0}', encoding="utf-8")
+    with pytest.raises(audit.Refused, match="the build sidecar records"):
+        audit.load_surface(_grid(), category="grocery", mode="walk", metro="triangle",
+                           thresholds_s=THRESHOLDS_S, layers=layers,
+                           declared_horizon_s=3600.0)
+    # Agreeing is fine.
+    audit.load_surface(_grid(), category="grocery", mode="walk", metro="triangle",
+                       thresholds_s=THRESHOLDS_S, layers=layers, declared_horizon_s=7200.0)
 
 
 def test_a_sidecar_digest_that_does_not_match_is_refused(tmp_path):

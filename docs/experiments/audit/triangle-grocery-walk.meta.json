@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-09 13:36:29",
+ "generated": "2026-11-09 14:47:13",
  "script": "v2/scripts/audit_recommendations.py",
  "purpose": "S3 plan section 0 step 0: journeys for the owner-gated walked audit",
  "metro": "triangle",
@@ -127,5 +127,5 @@
  },
  "seconds_precision": "The stored seconds are float32. A model value of 600.00001 s is stored as 600.0 and so passes a 600 s threshold the model fails. This audit evaluates the stored artifact, which is what the product ships, not the model's float64 answer.",
  "reproducibility": "v2/data/ is gitignored, so the input rasters named above do not travel with a clone: this sheet is reproducible only on a machine that holds them. Rebuild with `uv run python spikes/s2_building_weighted_coverage.py grocery walk`, which needs data/triangle/roads.graphml (670 MB). The sha256s identify the inputs on a machine that has them.",
- "elapsed_s": 0.08
+ "elapsed_s": 0.07
 }

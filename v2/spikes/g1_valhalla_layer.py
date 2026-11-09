@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import (ACCEPTED_PLACES, CONTROLLED_COSTING_OPTIONS, GRID, LAYERS, VALHALLA, VALHALLA_COSTING,  # noqa: E402
                      append_results, stamp)
 from locfinder.grid import encode_minutes  # noqa: E402
+from locfinder.traveltime.layer import write_layer  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 
 MAX_MIN = 60
@@ -159,11 +160,13 @@ def main() -> None:
     suffix = "_controlled" if args.controlled else ""
     base = LAYERS / f"valhalla_{args.category}_{args.mode}{suffix}"
     np.save(base.with_suffix(".npy"), secs.astype(np.float32))
-    arr = encode_minutes(secs)
-    with rasterio.open(base.with_suffix(".tif"), "w", **GRID.rasterio_profile()) as dst:
-        dst.write(arr, 1)
-        dst.update_tags(engine="valhalla", method=method, category=args.category, mode=args.mode, costing=costing,
-                        controlled=str(args.controlled), direction="arrival", max_min=str(MAX_MIN), built_s=f"{dt:.1f}", built_at=stamp())
+    # Through `write_layer` so the raster carries its encoding, and encoded from the float32 array
+    # just written so it can be re-encoded from disk and match (pass 28).
+    arr = encode_minutes(np.load(base.with_suffix(".npy")).astype(np.float64))
+    write_layer(base.with_suffix(".tif"), arr, GRID, tags=dict(
+        engine="valhalla", method=method, category=args.category, mode=args.mode, costing=costing,
+        controlled=str(args.controlled), direction="arrival", max_min=str(MAX_MIN),
+        built_s=f"{dt:.1f}", built_at=stamp()))
     reach = float(np.isfinite(secs).mean())
     text = (f"### Valhalla reference layer: {args.category} / {args.mode}{suffix} ({stamp()})\n"
             f"- destinations: {len(points)} Overture places (release 2026-10-21.0, accepted artifact)\n"

@@ -290,11 +290,26 @@ def load_surface(
         horizon_s = float(sidecar["horizon_s"])
         max_access_m = float(sidecar["max_access_m"])
         build = {"origin": "sidecar", "horizon_s": horizon_s, "max_access_m": max_access_m}
+        # The sidecar is evidence and the flag is an assertion, so the sidecar wins -- but it must
+        # not win *silently*, which is what `--horizon-min` being "authoritative" claimed while
+        # being quietly ignored here (pass 28). A disagreement is somebody's mistake either way.
+        if declared_horizon_s is not None and float(declared_horizon_s) != horizon_s:
+            raise Refused(
+                f"--horizon-min says {float(declared_horizon_s) / 60:g} min but the build sidecar "
+                f"records {horizon_s / 60:g} min. The sidecar was written by the build and wins, "
+                "so drop the flag -- or if the sidecar is wrong, rebuild the layer rather than "
+                "overriding it from the command line.")
         # The sidecar binds the arrays into one build only to the extent that it records their
         # digests; without them it is a note about parameters, not provenance.
         recorded = sidecar.get("arrays") or {}
         checked = {}
-        for name, path in (("seconds", sec_path), ("reason", reason_path)):
+        # All three, not two: the builder records a `min_possible_s` digest and the consumer used to
+        # ignore it, so replacing a stored 150 s OFF_NETWORK bound with 1,000 s loaded cleanly and
+        # turned a ten-minute UNKNOWN into a FAIL (pass 28). A digest nobody checks is decoration.
+        for name, path in (("seconds", sec_path), ("reason", reason_path),
+                           ("min_possible_s", bound_path)):
+            if not path.exists():
+                continue
             want = recorded.get(name)
             if want:
                 got = file_digest(path)
@@ -322,16 +337,19 @@ def load_surface(
                  "horizon": corroborate_horizon(seconds, reason, horizon_s, mode=mode,
                                                 cell_m=grid.cell_m)}
         if not build["horizon"]["plausible"]:
-            raise Refused(
-                f"the assumed horizon of {horizon_s:g}s looks wrong for {sec_path.name}: "
-                f"{build['horizon']['cells_cut_off']:,} cells were cut off by a horizon, yet the "
-                f"largest finite time is {build['horizon']['gap_to_horizon_s']:g}s below it, "
-                f"against a gap scale of {build['horizon']['gap_scale_s']:g}s. **This is a "
-                f"heuristic, not a proof** -- a sparse frontier can leave a real gap. If the "
-                f"horizon really is {horizon_s:g}s, pass --horizon-min {horizon_s / 60:g} to "
-                f"declare it; otherwise rebuild, which writes the parameters and digests beside "
-                f"the layer."
-            )
+            # A **warning**, not a refusal. The scale is dimensional, not a bound: pass 28 built a
+            # legitimate two-road graph joined by a 12.1 km detour whose frontier sits 7,164 s
+            # below a true 7,200 s horizon, because neighbouring cells can snap to roads separated
+            # by an arbitrarily long network journey. Refusing on it rejected correct output -- the
+            # same defect twice, at 60 s and then at a "derived" 238 s. Only the sidecar or
+            # `--horizon-min` can settle a horizon; this can raise an eyebrow, so that is all it
+            # does now.
+            print(f"  WARNING: the assumed horizon of {horizon_s:g}s may be wrong for "
+                  f"{sec_path.name}: {build['horizon']['cells_cut_off']:,} cells were cut off, yet "
+                  f"the largest finite time is {build['horizon']['gap_to_horizon_s']:g}s below it "
+                  f"(scale {build['horizon']['gap_scale_s']:g}s). A sparse frontier can leave a "
+                  f"real gap, so this is a hint and not a finding. Rebuild to write a sidecar, or "
+                  f"pass --horizon-min {horizon_s / 60:g} to declare the horizon.", flush=True)
     prov = {
         "build": build,
         "seconds": {"path": _rel(sec_path), "sha256": file_digest(sec_path)},
@@ -505,9 +523,9 @@ def main() -> None:
                          "walkable in one outing instead of scattered over the metro")
     ap.add_argument("--radius-km", type=float, default=5.0)
     ap.add_argument("--horizon-min", type=float,
-                    help="declare the horizon the layer was built to, in minutes. Authoritative: "
-                         "it skips the plausibility heuristic, which is a heuristic and can refuse "
-                         "a legitimate build whose frontier is sparse")
+                    help="declare the horizon the layer was built to, in minutes. Used when the "
+                         "layer carries no build sidecar; if it carries one that disagrees, the "
+                         "sidecar wins and the run refuses rather than ignoring the flag")
     ap.add_argument("--seed", type=int, default=20261109)
     ap.add_argument("--out", type=Path,
                     help="output CSV (default: docs/experiments/audit/<metro>-<cat>-<mode>.csv)")
@@ -663,7 +681,10 @@ def main() -> None:
             for t_min in thresholds_min:
                 rec[f"outcome_{t_min}min"] = Outcome(int(outcomes[t_min][row, col])).name
                 # What a client deciding from the encoded whole minute would say. `encode_minutes`
-                # rounds to nearest, so `minute <= t` holds whenever `seconds < 60t + 30`: the
+                # rounds up as of 2026-11-09, so `minute <= t` holds exactly when
+                # `seconds <= 60t` and this column is blank on every row. It is kept because a
+                # non-blank value would mean the two verdicts had diverged again. Before the
+                # change it rounded to nearest, so `minute <= t` held when `seconds < 60t + 30`: the
                 # encoded artifact answers a threshold 30 s more permissive than the float surface,
                 # in that direction only. Measured over the Triangle, 8.15% of the cells a
                 # minute-only client shows as passing 10 minutes do not pass it. Which verdict the

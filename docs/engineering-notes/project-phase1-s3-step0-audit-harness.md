@@ -113,13 +113,17 @@ raises nothing, and then every `BEYOND_HORIZON` bound is wrong by an hour. Two f
 * The builder now writes `own_<metro>_<cat>_<mode>_build.json` (horizon, access distance, snap
   radius, aggregation, profile and grid versions) and the harness prefers it. Provenance belongs to
   the artifact, not to a constant in whatever reads it.
-* Where there is no sidecar, the assumed horizon is **corroborated against the arrays**:
-  `corroborate_horizon` requires that, if any cell was cut off, the largest finite time sits within
-  60 s below the claimed horizon. A cutoff that bound leaves cells just inside it — walking 60 s
-  covers 84 m, under one cell — so a bound cutoff with no cell near it is not a surface this
-  pipeline produces. On the committed layer the gap is **0.001 s**. The arrays can *falsify* a
-  horizon claim and cannot *verify* one, and the provenance record says so rather than implying the
-  horizon was read from the data.
+* Where there is no sidecar, the assumed horizon gets a **plausibility warning and nothing
+  more** — and the history of that line is the lesson. It began as a refusal when the largest
+  finite time sat more than 60 s below the claimed horizon, justified by "walking 60 s covers 84 m,
+  under one cell". Pass 27 rejected that with a legitimate layer whose frontier fell 64.3 s short.
+  I replaced it with a *derived* scale, `(max_access_m + cell_m) / access_speed_mps` = 238 s, and
+  pass 28 rejected that too: two parallel roads 100 m apart joined by a 12.1 km detour leave a
+  **7,164 s** gap, because neighbouring cells can snap to roads separated by an arbitrarily long
+  network journey. **There is no bound here to derive.** The check now prints a warning, records
+  `is_a_heuristic: true`, and refuses nothing; only the sidecar or `--horizon-min` settles a
+  horizon. Twice I replaced an arbitrary threshold with a better-argued threshold when the defect
+  was having a threshold at all.
 
 The access-distance check was also restated. Instead of depending on `MAX_ACCESS_M` being
 exactly right, it asks for the widest build it tolerates. The inequality actually implemented

@@ -104,6 +104,10 @@ def main() -> None:
         "bounds_wgs84": BOUNDS,
         "nodata": NODATA,
         "units": "minutes",
+        # Explicitly NOT the real encoding: these minutes are generated directly, never encoded
+        # from seconds, so a consumer that validates `encoding` should reject them rather than
+        # treat them as routing output (pass 28).
+        "encoding": "synthetic-minutes-v0",
         "source": f"synthetic, generated {date.today().isoformat()}",
         "layers": [],
         # Extra keys beyond the contract, so the page can label the data honestly.

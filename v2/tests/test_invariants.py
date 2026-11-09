@@ -25,6 +25,7 @@ import math
 
 import pytest
 
+from locfinder.grid import encode_minutes
 from locfinder.measure import toy
 from locfinder.measure.invariants import (
     ANSWER_PRESERVING,
@@ -346,9 +347,19 @@ def test_subdivision_moves_this_answer_and_that_is_a_declared_consequence():
     this sensitivity back **knowingly**, as the price of a simpler convention whose consequences are
     stated. Which convention is right is a prevalence question on the real graph, unmeasured.
 
-    Pass-26's qualification, which keeps this honest in the other direction: **both values round to
-    the same whole minute**, so this is a comparator-verdict flip and not necessarily a flip in what
-    the product ships.
+    Pass-26's qualification was that **both values round to the same whole minute**, so the flip
+    was a comparator-verdict flip and not necessarily a flip in what the product ships.
+
+    **That qualification died with the encoding change on 2026-11-09, and the honest reading is now
+    the harsher one.** `encode_minutes` rounds up, so 600.0349975 s encodes to 11 and 599.9789683 s
+    to 10: the convention sensitivity reaches the shipped region. Revision 10 took this sensitivity
+    back *knowingly* as the price of a simpler convention, and the price just went up -- it is no
+    longer absorbed by rounding. Which convention is right remains a prevalence question on the real
+    graph, and it is now a more urgent one.
+
+    The old assertion also used Python's `round` rather than `encode_minutes`, so it was testing a
+    reimplementation of the encoder and would have kept passing after the encoder changed. It calls
+    the real one now (pass 28).
     """
     def at(geometry):
         graph = toy.ToyGraph(edges=(toy.ToyEdge(0, 1, geometry, time_s=1199.95, cost_base=1199.95,
@@ -363,8 +374,10 @@ def test_subdivision_moves_this_answer_and_that_is_a_declared_consequence():
     assert split.objective1_s == pytest.approx(599.9789682539683, rel=0, abs=1e-9)
     # the exact comparator verdict flips ...
     assert (drawn.objective1_s <= 600.0) != (split.objective1_s <= 600.0)
-    # ... and the whole-minute encoding does not
-    assert round(drawn.objective1_s / 60.0) == round(split.objective1_s / 60.0) == 10
+    # ... and under `ceil` the shipped whole-minute encoding flips with it, where `rint` hid it.
+    enc = encode_minutes([drawn.objective1_s, split.objective1_s])
+    assert list(enc) == [11, 10], f"the encoded minutes moved: {list(enc)}"
+    assert (enc[0] <= 10) != (enc[1] <= 10), "a minute-only client no longer hides the flip"
 
 
 def test_revision_9_discarded_a_genuine_geometric_tie():
