@@ -8,7 +8,7 @@ import time
 import numpy as np
 import rasterio
 
-from ..grid import GridSpec, encode_minutes
+from ..grid import ENCODING, GridSpec, encode_minutes
 from .arrival import arrival_seconds, arrival_seconds_two_weight
 from .snap import EdgeIndex, cell_arrival_with_provenance, cell_seconds_from_arrival
 
@@ -65,11 +65,18 @@ def build_layer(G, csr, index, grid: GridSpec, *, dest_idx, mode: str, cutoff_mi
 
 def write_layer(path, arr: np.ndarray, grid: GridSpec, *, tags: dict) -> None:
     """Write a uint8 minutes GeoTIFF with provenance tags (engine, mode, category,
-    direction=arrival, profile, grid version, built_at)."""
+    direction=arrival, profile, grid version, built_at).
+
+    `encoding` is stamped here rather than left to the caller: the rounding rule changed from
+    `rint` to `ceil`, the two differ by up to 30 s at every threshold, and the rasters are otherwise
+    byte-compatible. A caller that forgot the tag would produce an artifact indistinguishable from
+    the old rule, so it is not the caller's to forget.
+    """
     profile = grid.rasterio_profile()
+    stamped = {"encoding": ENCODING, **tags}
     with rasterio.open(path, "w", **profile) as dst:
         dst.write(arr, 1)
-        dst.update_tags(**{k: str(v) for k, v in tags.items()})
+        dst.update_tags(**{k: str(v) for k, v in stamped.items()})
 
 
 def build_layer_surface(

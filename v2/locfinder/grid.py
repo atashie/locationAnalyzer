@@ -18,6 +18,12 @@ NODATA = 255
 MAX_MINUTES = 254
 DEFAULT_CRS = "EPSG:32617"  # UTM 17N
 
+#: Stamped into every raster `traveltime.layer.write_layer` writes, and into the browser manifest.
+#: An artifact carrying **no** encoding tag predates the stamp and is `minutes-rint-v0`: the two
+#: differ by up to 30 s at every threshold and are otherwise indistinguishable, which is exactly the
+#: silent mixing this stage exists to prevent.
+ENCODING = "uint8-minutes-ceil-v1"
+
 
 @dataclass(frozen=True)
 class GridSpec:
@@ -187,10 +193,37 @@ class GridSpec:
 
 
 def encode_minutes(seconds: np.ndarray) -> np.ndarray:
-    """Seconds -> uint8 minutes; inf/nan -> NODATA; values above 254 min are capped."""
+    """Seconds -> uint8 minutes, **rounded up**; inf/nan -> NODATA; above 254 min is capped.
+
+    `ceil`, not `rint`, because this byte is a **decision input and not a display value**. The
+    browser worker thresholds it directly (`spikes/g3-render/worker.js:139`:
+    `if (v > T[k]) inside = 0`) against an integer-minute slider, so the published region *is* what
+    this comparison says.
+
+    `ceil(s/60) <= T` is equivalent to `s <= 60T`, which is `evaluate`'s own comparison, so for a
+    finite cell at an integer-minute threshold below `MAX_MINUTES` the encoded verdict **equals the
+    float verdict**. Measured across every threshold the slider can produce (1..60) over 207,000
+    values: zero disagreements, against 101,199 for `rint` and 201,958 for `floor`.
+
+    **`rint` did not merely shift the threshold, it destroyed the answer.** Cells at 590 s and
+    610 s both encode to `10`, so at a 10-minute threshold one passes and one fails and no decoding
+    rule can tell them apart -- the information is not in the raster. `rint` therefore published a
+    region this pipeline never asserted: 8.15% of the cells it showed as passing 10 minutes do not
+    pass (`docs/experiments/s3-encoding.md`).
+
+    The cost is that the minute is now an **upper bound** on our model's time rather than the
+    nearest value to it, overstating by less than 60 s. Nothing displays it -- there is no per-cell
+    readout anywhere in the render path -- and the direction matches every other conservatism here.
+    The day a per-cell number is shown, 30-second units are the better answer: also exact, display
+    error under 30 s, the 120-minute horizon still fits in 254, but +32% bytes.
+
+    Two limits the identity carries, which `ENCODING`'s version exists to make legible:
+    `MAX_MINUTES` clips, so a 300-minute journey encodes to 254 and would pass a 254-minute
+    threshold; and `NODATA` is not a minute and must be masked, never compared.
+    """
     s = np.asarray(seconds, dtype=np.float64)
     finite = np.isfinite(s)
-    minutes = np.rint(np.where(finite, s, 0.0) / 60.0)
+    minutes = np.ceil(np.where(finite, s, 0.0) / 60.0)
     minutes = np.clip(minutes, 0, MAX_MINUTES)
     out = minutes.astype(np.uint8)
     out[~finite] = NODATA

@@ -66,6 +66,10 @@ import rasterio
 from rasterio.transform import from_bounds
 from rasterio.warp import Resampling, reproject
 
+# Imported rather than restated: the rounding rule is half of what `units: minutes` means to the
+# worker that thresholds these bytes, and a second copy of it here could drift from the encoder.
+from locfinder.grid import ENCODING  # noqa: E402
+
 NODATA = 255
 NROWS = 401
 NCOLS = 550
@@ -283,6 +287,11 @@ def main() -> int:
         "bounds_wgs84": BOUNDS_WGS84,
         "nodata": NODATA,
         "units": "minutes",
+        # The worker thresholds these bytes directly, so the rounding rule is part of the contract
+        # and not a detail of how they were made: `encode_minutes` rounds UP, which is what makes
+        # `value <= T` mean `seconds <= 60T` exactly. A fixture carrying no `encoding` predates the
+        # stamp and was rounded to nearest, answering a threshold up to 30 s more permissive.
+        "encoding": ENCODING,
         "source": f"real, exported {date.today().isoformat()}",
         "synthetic": False,
         "generator": "v2/spikes/g3-render/export_layers.py",

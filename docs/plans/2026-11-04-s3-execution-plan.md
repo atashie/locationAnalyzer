@@ -161,6 +161,20 @@ destination actually used, date, and outcome.
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
 | 5 | **S3.1 — the matched 100 m / 200 m grid comparison** | 1/2 day after T3 | the grid decision S3 exists to make, never yet run |
 | 6 | **S3.5 — the browser path end to end**: writer, export, decode, lookup, card combination; whole-minute edges, UNKNOWN against FAIL, horizon equality, legacy codes 251-254, mismatched grids, outside-footprint; plus compressed size and phone decode latency per candidate | 1-2 days + a phone | errors in the answer actually shown, which Python-side fidelity cannot detect |
+
+> **Two of step 6's questions were answered early, by reading the code rather than waiting for the
+> stage.** The "whole-minute edges" item turned out to be a live defect, not a risk: the render
+> worker thresholds the minute byte directly (`spikes/g3-render/worker.js:139`), and under
+> round-to-nearest 8.15% of the cells it showed as passing a 10-minute threshold did not pass.
+> `encode_minutes` now rounds up, which makes the encoded verdict identical to `evaluate`'s over
+> every threshold the UI can produce, and an `encoding` version is stamped into every raster and the
+> browser manifest — see `docs/engineering-notes/project-phase1-s3-encoding-threshold-crossing.md`.
+>
+> The "UNKNOWN against FAIL" item is **also already failing** and is not fixed: the same loop does
+> `if (v === nodata) inside = 0`, and `NODATA` is one code for `OFF_NETWORK` and `BEYOND_HORIZON`
+> alike, so the export collapses UNKNOWN into EXCLUDED and the three-outcome algebra S0 built the
+> `Reason` enum for does not reach the browser. That is the larger of the two and it still belongs
+> to step 6.
 | 7 | **Grocery and geocoding truth audit** — destination validity, resolution, coverage | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
 | 8 | **The one-page decision report**, then a bounded household release | 1/2 day + sessions | misunderstanding and overgeneralisation |
 

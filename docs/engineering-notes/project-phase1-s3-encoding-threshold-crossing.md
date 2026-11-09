@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-encoding-threshold-crossing
-description: "Rounding seconds to whole minutes moves every threshold up to 30 s more permissive, in one direction only - 8.15% of the cells a minute-only client shows as passing 10 minutes do not pass, and ceil makes the encoded verdict exactly the float verdict for a finite OK cell below the 254-minute clip; the browser path we already built does threshold minute bytes"
+description: "DECIDED 2026-11-09: encode_minutes rounds up. rint did not shift the threshold, it destroyed the verdict - cells at 590 s and 610 s both encoded to 10, so 8.15% of what the browser showed as passing 10 minutes did not pass. ceil is exact over every threshold the UI can produce, costs 0.1% of a raster, and nothing displays the minute"
 metadata:
   node_type: memory
   type: project
@@ -89,14 +89,44 @@ straight-line fiction cannot be used to exclude a household. A region that is ex
 computed looks worth more than a number that is 30 s closer on average, but that is a product
 judgement, not a measurement.
 
-## Not decided, and why it is not mine to decide
+## Decided 2026-11-09: `ceil`
 
-Changing `grid.encode_minutes` changes committed rasters and interacts with the legacy minute codes
-251–254, which are real answers in artifacts already on disk (pass-7 H1). And **whether the shipped
-client decides eligibility from minutes or from seconds has never been settled** — it is plan §0
-step 6 (S3.5, the browser path end to end, "whole-minute edges" explicitly listed). If the client
-decides from float seconds the encoding is display-only and none of this is an error; if it decides
-from minutes, every published region is inflated.
+The owner took the decision after the exposition below. What was done:
+
+- `grid.encode_minutes` rounds up; `ENCODING = "uint8-minutes-ceil-v1"` is a module constant.
+- **`traveltime.layer.write_layer` stamps `encoding` itself**, not the caller, and
+  `spikes/g3-render/export_layers.py` puts it in the browser manifest. This was the real risk of the
+  change rather than the rounding: nothing anywhere carried an encoding version, so a `rint` raster
+  and a `ceil` raster were byte-different and otherwise indistinguishable, and mixing them silently
+  is the error class this stage exists to prevent. An artifact with no `encoding` tag is `rint`.
+- All eight minute rasters were re-encoded from their stored float seconds by
+  `v2/scripts/reencode_minute_rasters.py` — committed, because `v2/data/` is gitignored and the only
+  other way to rebuild them was the 670 MB graph. Max shift 1 minute on every raster, as `ceil`
+  against `rint` must be; 128,358 of the Triangle's 330,502 cells moved.
+- The browser fixtures were re-exported, and the audit sheet reissued: `encoding_disagrees_min` is
+  blank on all 19 rows, where 3 disagreed before. Each walked journey now tests one claim.
+
+**Why it was clear-cut, once the consumers were read rather than assumed.** The encoded minute is a
+decision input and not a display value: the worker thresholds it against an integer-minute slider
+(`min="1" max="60" step="1"`) and **no per-cell number is displayed anywhere** — no hover, no popup,
+no `queryRendered`. So the one cost of `ceil`, that the minute becomes an upper bound rather than the
+nearest value, is a cost against a feature that does not exist. Measured over 207,000 values across
+all 60 thresholds the slider can produce: `ceil` disagrees with the float verdict **0** times,
+`rint` 101,199, `floor` 201,958. GeoTIFF size changed by −0.1%.
+
+**The option held in reserve:** `ceil` at 30-second units — same `uint8` width, exact at whole *and*
+half-minute thresholds, display error under 30 s, and the 120-minute horizon still fits (240 of
+254) — but **+32% GeoTIFF, +35% gzip**, and every consumer must learn the unit changed. It becomes
+the right answer the day a per-cell number is displayed.
+
+## The reasoning as it stood before the decision
+
+Changing `grid.encode_minutes` changes committed rasters and moves the boundaries of the legacy
+minute codes 251–254, which are real answers in artifacts already on disk (pass-7 H1) — it does not
+reinterpret them, which was that finding's actual concern. Whether the shipped client decides
+eligibility from minutes or from seconds was listed as open at plan §0 step 6; reading the code
+settled it, which is the part worth remembering. The answer was in
+`spikes/g3-render/worker.js:139` the whole time.
 
 **It is not a straw man: the browser path we have already built decides from minutes.**
 `v2/spikes/g3-render/worker.js:139` reads the minute byte and does `if (v > T[k]) inside = 0`, so the

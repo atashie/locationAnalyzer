@@ -30,14 +30,20 @@ def test_cell_centers_wgs84_round_trip():
     assert lats.min() > 35.998 and lats.max() < 36.012
 
 
-def test_encode_minutes_rounds_caps_and_marks_nodata():
+def test_encode_minutes_rounds_up_caps_and_marks_nodata():
+    """`ceil`, not `rint`: 61 s is 2 minutes, because the byte is a decision input and
+    `ceil(s/60) <= T` has to mean `s <= 60T`. See `encode_minutes`'s docstring."""
     seconds = np.array([0.0, 59.0, 61.0, 254 * 60.0, 300 * 60.0, np.inf, np.nan])
     out = encode_minutes(seconds)
     assert out.dtype == np.uint8
-    assert list(out[:4]) == [0, 1, 1, 254]
+    assert list(out[:4]) == [0, 1, 2, 254]
     assert out[4] == 254          # capped, still "reachable"
     assert out[5] == NODATA       # unreachable
     assert out[6] == NODATA       # missing
+    # Exactly zero stays zero; anything positive is at least one minute, which is the upper-bound
+    # reading of the value and the reason it is safe to threshold.
+    assert encode_minutes(np.array([0.0]))[0] == 0
+    assert encode_minutes(np.array([0.1]))[0] == 1
 
 
 def test_rasterio_profile_matches_grid():
@@ -225,28 +231,38 @@ def test_cell_for_xy_bounds_survive_an_awkward_origin_and_cell_size():
     assert tiny.cell_for_xy(tiny.x_max, tiny.y_max) is None
 
 
-def test_encode_minutes_threshold_crossing_depends_on_parity():
-    """`np.rint` rounds halves to EVEN, so the minute threshold a client sees is not a single
-    inequality. Pinned because it was stated wrongly once (Codex pass 27) and the correct form is
-    easy to re-derive wrongly: at exactly `60T + 30` the encoded minute is `T` for even `T` and
-    `T + 1` for odd `T`.
+def test_the_encoded_minute_reproduces_the_float_verdict_at_every_ui_threshold():
+    """The property the switch to `ceil` buys, over the whole domain the UI can produce.
 
-    The consequence either way is that an encoded-minute client answers a threshold up to 30 s more
-    permissive than `evaluate` does; see `docs/experiments/s3-encoding.md`.
+    The browser thresholds the minute byte directly against an integer-minute slider
+    (`min="1" max="60" step="1"`), so `encode_minutes(s) <= T` must agree with `s <= 60T` for every
+    one of those thresholds or the published region is not the region we computed. `rint` disagreed
+    101,199 times over this sample and `floor` 201,958; the point of `ceil` is that it is exact by
+    construction, so this is a regression test rather than a measurement.
     """
-    for t_min in (10, 12, 14):          # even: the tie lands ON the threshold and passes
-        assert encode_minutes(np.array([60.0 * t_min + 30.0]))[0] == t_min
-    for t_min in (11, 15, 25):          # odd: the tie rounds up and fails
-        assert encode_minutes(np.array([60.0 * t_min + 30.0]))[0] == t_min + 1
-    # Just inside the tie always passes, just outside always fails, whatever the parity.
-    for t_min in (10, 11, 15):
-        assert encode_minutes(np.array([60.0 * t_min + 29.0]))[0] == t_min
-        assert encode_minutes(np.array([60.0 * t_min + 31.0]))[0] == t_min + 1
+    rng = np.random.default_rng(7)
+    seconds = np.concatenate([rng.uniform(0.0, 3700.0, 50_000),
+                              np.arange(0.0, 3700.0, 0.5)])   # every half-second boundary too
+    enc = encode_minutes(seconds)
+    for t_min in range(1, 61):
+        assert np.array_equal(enc <= t_min, seconds <= 60.0 * t_min), \
+            f"the encoded verdict differs from the float verdict at {t_min} min"
+
+
+def test_the_encoded_minute_cannot_be_reproduced_under_rint():
+    """Why this was a correctness fix and not a calibration one: `rint` gives cells at 590 s and
+    610 s the same code, so at a 10-minute threshold no decoding rule can separate a pass from a
+    fail. The information is not in the raster. `ceil` keeps them apart."""
+    assert np.rint(590.0 / 60.0) == np.rint(610.0 / 60.0) == 10
+    assert list(encode_minutes(np.array([590.0, 610.0]))) == [10, 11]
+    assert (590.0 <= 600.0) and not (610.0 <= 600.0)
 
 
 def test_encode_minutes_clips_so_a_capped_cell_can_pass_a_threshold_it_fails():
-    """The clip at 254 is why "ceil would make the encoded verdict exact" needs `T < 254`: a
-    300-minute journey encodes to 254 either way and would pass a 254-minute threshold."""
+    """The clip at 254 is the one place the exactness above does not hold, which is why the claim
+    is stated for thresholds below `MAX_MINUTES`: a 300-minute journey encodes to 254 and would
+    pass a 254-minute threshold it fails by three quarters of an hour. The UI's slider stops at 60,
+    so nothing reaches it today."""
     assert encode_minutes(np.array([300.0 * 60.0]))[0] == MAX_MINUTES
     assert encode_minutes(np.array([254.0 * 60.0]))[0] == MAX_MINUTES
     # And NODATA is not a minute at all, so it must be masked rather than compared.

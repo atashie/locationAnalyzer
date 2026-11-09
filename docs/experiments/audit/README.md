@@ -91,7 +91,7 @@ local closure, entrance or graph defect explains one control just as well.
 The bands are split by the verdict computed from **float seconds**. That is not necessarily the
 verdict the shipped page will show: see below.
 
-## Three limits to know before you read the results
+## Two limits and one closed question
 
 **We cannot tell you which destination we routed you to, and our number is an upper bound.** The
 layer's aggregation is `cost_selected_category` — the travel time of the journey our *cost* model
@@ -99,11 +99,13 @@ picked, which is an upper bound on the time, not the minimum over qualifying des
 identity of that destination is not stored. Recovering it needs one bounded graph load over the
 sampled cells; that is the decisive version of this audit and it is not what this sheet is.
 
-**The encoded minute can disagree with the printed verdict.** Rounding seconds to whole minutes
-makes every threshold 30 s more permissive, so a client reading only the encoded raster would pass
-some cells this sheet prints as FAIL. The `encoding_disagrees_min` column names the thresholds where
-that happens for each row — three of the current rows — and `../s3-encoding.md` has the measurement.
-Whether the shipped page decides from minutes or from seconds is still open.
+**The encoded minute now agrees with the printed verdict, and did not before.** Until
+2026-11-09 the encoding rounded to nearest, which made every threshold up to 30 s more permissive:
+a client reading only the encoded raster passed some cells this sheet prints as FAIL, and three of
+these nineteen rows were affected. `encode_minutes` now rounds up, which makes `minute <= T` mean
+`seconds <= 60T` exactly, and `encoding_disagrees_min` is blank on every row — so each walk tests
+one claim rather than two. `../s3-encoding.md` has the measurement and the decision. If that column
+is ever non-blank again, the row is testing two things at once and should be read accordingly.
 
 **The journeys only cover cells with at least one building,** because a cell with no structure has
 no door to walk from. "Contains a recorded building" is a filter, not proof of a usable starting

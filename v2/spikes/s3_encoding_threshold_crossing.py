@@ -2,11 +2,14 @@
 
 Run from `v2/`:  `uv run python spikes/s3_encoding_threshold_crossing.py grocery walk`
 
-This is a decision, not a diagnostic. `grid.encode_minutes` rounds seconds to the nearest whole
-minute with `np.rint`, and `locfinder/status.py` is explicit that evaluation uses the float seconds
-"never the uint8 encoding, so rounding cannot move a threshold" (Codex pass-3 H6). That holds for
-the Python side. It does **not** hold for a browser that has only the encoded raster, which is the
-artifact S3.5 ships, and the arithmetic is one-sided:
+This was a decision and it has been taken: **`encode_minutes` rounds up as of 2026-11-09**
+(`ENCODING = "uint8-minutes-ceil-v1"`). This script is the evidence it was taken on, kept runnable
+so the claim can be re-checked against any layer.
+
+`locfinder/status.py` is explicit that evaluation uses the float seconds "never the uint8 encoding,
+so rounding cannot move a threshold" (Codex pass-3 H6). That holds for the Python side. It does
+**not** hold for a browser that has only the encoded raster, which is the artifact S3.5 ships, and
+which thresholds the byte directly (`spikes/g3-render/worker.js:139`). The arithmetic is one-sided:
 
     rint(s/60) <= T   <=>   s <= 60T + 30   for even T   (np.rint rounds halves to EVEN)
     rint(s/60) <= T   <=>   s <  60T + 30   for odd  T
@@ -46,7 +49,7 @@ from locfinder.grid import MAX_MINUTES  # noqa: E402
 from locfinder.status import Reason  # noqa: E402
 
 THRESHOLDS_MIN = (10, 15, 25, 45)
-ROUNDINGS = {"rint (shipped)": np.rint, "ceil": np.ceil, "floor": np.floor}
+ROUNDINGS = {"rint (was shipped)": np.rint, "ceil (shipped)": np.ceil, "floor": np.floor}
 
 
 def main() -> None:
@@ -116,15 +119,19 @@ def render(rows: list[dict], args) -> str:
             "displayed number: an upper bound on our model's time, overstating by less than 60 s "
             "(a 0.1 s walk displays as 1 minute), where `rint` is within 30 s either way.",
             "",
-            "**Not yet decided.** Changing `encode_minutes` changes committed rasters and moves "
-            "the boundaries of the legacy minute codes 251-254, which are real answers in "
-            "artifacts already on disk. The browser path already built does threshold the minute "
-            "byte, and the same loop treats NODATA as excluded -- so the export also collapses "
-            "UNKNOWN into EXCLUDED, a second and larger step-6 finding that changing the rounding "
-            "does not address. This section is the measurement the decision should be made "
-            "against. `scripts/audit_recommendations.py` marks the affected rows in the walked-"
-            "audit sheet (`encoding_disagrees_min`) so a walked journey is attributed to the right "
-            "verdict in the meantime."]
+            "**Decided 2026-11-09: `ceil`.** The `rint` row is kept as the comparison the "
+            "decision was made against, not as a live option. Every minute raster was re-encoded "
+            "from its stored seconds (`scripts/reencode_minute_rasters.py`, max shift 1 minute on "
+            "all eight) and every raster and the browser manifest now carry "
+            "`encoding=uint8-minutes-ceil-v1`, so a stale artifact is recognisable rather than "
+            "merely byte-different. The walked-audit sheet's `encoding_disagrees_min` column is "
+            "now blank on every row, where three of nineteen disagreed before.",
+            "",
+            "**What this does not fix.** The same worker loop treats NODATA as excluded, so the "
+            "export still collapses UNKNOWN into EXCLUDED -- NODATA is one code for OFF_NETWORK "
+            "and BEYOND_HORIZON alike, and the three-outcome algebra S0 built the Reason enum for "
+            "does not survive to the browser. That is the larger of the two step-6 findings and "
+            "the rounding has nothing to do with it."]
     return "\n".join(out)
 
 
