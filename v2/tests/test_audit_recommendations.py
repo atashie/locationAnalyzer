@@ -38,10 +38,19 @@ def _grid() -> GridSpec:
     return GridSpec("EPSG:32617", 450000.0, 4000000.0, 100.0, 6, 5)
 
 
-def _arrays(reason_codes: list[int], *, seconds_for_ok: float = 500.0):
-    """A seconds/reason pair that is internally consistent: finite exactly where the reason is OK."""
+def _arrays(reason_codes: list[int], *, seconds_for_ok: float = 500.0, saturate: bool = True):
+    """A seconds/reason pair that is internally consistent: finite exactly where the reason is OK.
+
+    `saturate` puts one OK cell a millisecond under the horizon, which is what a real cut-off layer
+    looks like (the committed one's largest finite time is 0.001 s below 7200) and what
+    `corroborate_horizon` requires of any layer with cells the horizon cut off. Pass `False` to
+    build the layer that assumption would be wrong about.
+    """
     reason = np.array(reason_codes, dtype=np.int8).reshape(5, 6)
     seconds = np.where(reason == Reason.OK, seconds_for_ok, np.inf)
+    if saturate and (reason == Reason.OK).any():
+        first = np.argwhere(reason == Reason.OK)[0]
+        seconds[first[0], first[1]] = HORIZON_S - 0.001
     return seconds.astype(np.float32), reason
 
 
@@ -201,3 +210,56 @@ def test_the_near_threshold_bands_are_split_by_the_side_of_the_threshold():
     # threshold and belong to neither half.
     assert not passing[:, 0].any() and not failing[:, 0].any()
     assert not passing[:, 5].any() and not failing[:, 5].any()
+
+
+def test_it_reads_the_build_parameters_from_a_sidecar_instead_of_assuming_them(tmp_path):
+    """A consumer asserting someone else's build parameters is the error shape this stage exists to
+    catch, so the builder records them and they win when present."""
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
+    layers = _write(tmp_path, seconds, reason)
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 3600.0, "max_access_m": 200.0}', encoding="utf-8")
+
+    surf, prov = _load(layers)
+    assert prov["build"]["origin"] == "sidecar"
+    assert surf.horizon_s == 3600.0
+    # and the bound follows the sidecar's horizon, not the script's constant
+    assert (surf.min_possible_s[reason == Reason.BEYOND_HORIZON] == 3600.0).all()
+
+
+def test_it_refuses_an_assumed_horizon_the_arrays_contradict(tmp_path):
+    """`Surface.validate` only checks `max finite <= horizon`, so assuming a horizon *larger* than
+    the build's passes silently and every BEYOND_HORIZON bound is then wrong. A cutoff that bound
+    leaves cells just inside it, which is what makes the contradiction visible."""
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10, seconds_for_ok=500.0, saturate=False)
+    with pytest.raises(audit.Refused, match="not corroborated"):
+        _load(_write(tmp_path, seconds, reason))
+
+    # Saturated, the same layer is accepted: the refusal is about the gap, not about the shape.
+    surf, prov = _load(_write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10)))
+    assert prov["build"]["horizon"]["corroborated"] is True
+    assert prov["build"]["horizon"]["gap_to_horizon_s"] == pytest.approx(0.001, abs=1e-3)
+
+
+def test_a_layer_with_nothing_cut_off_needs_no_corroboration(tmp_path):
+    """Nothing can be inferred about a horizon that never bound, and nothing needs to be: with no
+    BEYOND_HORIZON cell the bound is never read from it."""
+    seconds, reason = _arrays([0] * 20 + [1] * 10, seconds_for_ok=500.0, saturate=False)
+    _, prov = _load(_write(tmp_path, seconds, reason))
+    assert prov["build"]["horizon"]["cells_cut_off"] == 0
+    assert prov["build"]["horizon"]["corroborated"] is True
+
+
+def test_it_refuses_a_build_whose_access_distance_breaks_the_equivalence(tmp_path):
+    """The equivalence is stated as the widest build it tolerates - `min(threshold) * max_speed`,
+    840 m for a 10-minute walk - so being slightly wrong about the build is harmless and being
+    wrong by a factor of five is caught."""
+    layers = _write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10))
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 7200.0, "max_access_m": 1000.0}', encoding="utf-8")
+    with pytest.raises(audit.Refused, match="tolerates max_access_m up to 840m"):
+        _load(layers)
+
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        '{"horizon_s": 7200.0, "max_access_m": 800.0}', encoding="utf-8")
+    _load(layers)          # inside the envelope, accepted

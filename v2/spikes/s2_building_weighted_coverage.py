@@ -193,6 +193,18 @@ def main() -> None:
     np.save(LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_min_possible_s.npy",
             surf.min_possible_s)
     np.save(LAYERS / f"own_{METRO.name}_buildings_per_cell.npy", counts)
+    # The build parameters, so a consumer need not assume them. `Surface.validate` only checks
+    # `max finite <= horizon`, so a consumer assuming a horizon *larger* than this build used would
+    # pass validation and then publish a wrong lower bound for every BEYOND_HORIZON cell.
+    (LAYERS / f"own_{METRO.name}_{args.category}_{args.mode}_build.json").write_text(
+        json.dumps({
+            "metro": METRO.name, "category": args.category, "mode": args.mode,
+            "engine": "own-graph", "aggregation": surf.aggregation,
+            "horizon_s": surf.horizon_s, "cutoff_min": CUTOFF_MIN,
+            "max_access_m": MAX_ACCESS_M, "poi_snap_max_m": POI_SNAP_MAX_M,
+            "built": stamp(), "profile": profile.profile_version(),
+            "grid": profile.grid_version(GRID),
+        }, indent=1), encoding="utf-8")
 
     out["versions"] = {"profile": profile.profile_version(), "grid": profile.grid_version(GRID)}
     append_results("spotcheck-engines.md", render(out, args))

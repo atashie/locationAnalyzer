@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-step0-audit-harness
-description: "S3 plan section 0 step 0 is done - GridSpec had no coordinate-to-cell mapping at all, Surface.min_possible_s is not stored and its reconstruction is only valid under two tested guards, and the near-threshold bands had to be split by the side of the threshold"
+description: "S3 plan section 0 step 0 is done - GridSpec had no coordinate-to-cell mapping at all, Surface.min_possible_s and the build parameters are not stored so the harness needs three tested guards, and the near-threshold bands had to be split by the side of the threshold"
 metadata:
   node_type: memory
   type: project
@@ -17,10 +17,10 @@ world, and only the owner can walk one. See [[project-phase1-s3-design]] for the
 rather than reasoned about.
 
 **Built.** `GridSpec.cell_for_xy` / `cell_for_lonlat` (`v2/locfinder/grid.py`), 7 tests in
-`v2/tests/test_grid.py`, `v2/scripts/audit_recommendations.py`, 8 tests in
+`v2/tests/test_grid.py`, `v2/scripts/audit_recommendations.py`, 12 tests in
 `v2/tests/test_audit_recommendations.py`, the owner's instructions in
 `docs/experiments/audit/README.md`, and the first sheet — 21 journeys, built in **0.07 s with no
-graph load**. Suite: 1,106 passed, 24 skipped (was 1,091).
+graph load**. Suite: 1,110 passed, 24 skipped (was 1,091).
 
 ## The grid had no reverse mapping, and one spike had inlined it
 
@@ -45,7 +45,7 @@ Five mutants were checked against the new tests and all five were caught: clampi
 `None`, measuring the row from the south edge, returning `(col, row)`, closing the east and south
 edges, and returning `None` for a non-finite coordinate.
 
-## `min_possible_s` is not stored, and reconstructing it needs two guards
+## `min_possible_s` is not stored, and reconstructing it needs three guards
 
 `status.Surface` needs three arrays. `seconds` and `reason` are on disk; **`min_possible_s` was
 never saved**. Building it properly means loading the 670 MB `roads.graphml` — minutes per run,
@@ -53,7 +53,7 @@ which would make the owner's loop slow enough to skip.
 
 It is reconstructible for *this* artifact as *seconds where `OK`, the horizon where
 `BEYOND_HORIZON`, `0` where `OFF_NETWORK`*. That is a property of the artifact, not of the format,
-so the script **refuses** rather than guessing unless both of these hold:
+so the script **refuses** rather than guessing unless these hold:
 
 1. **`reason.max() <= Reason.BEYOND_HORIZON`.** A `NO_PATH` cell reconstructed with a bound of `0`
    reads as `UNKNOWN` — a *proven* failure turned into an absence, the one error class this stage
@@ -76,10 +76,34 @@ separate runs 43 minutes apart. It requires a finite time exactly where the reas
 reason array from a different build is rejected rather than silently mislabelling cells — but the
 message had to be rewritten to say so, instead of surfacing a bare `ValueError`.
 
+**A third guard, found by asking what else the script assumes about someone else's build.**
+`CUTOFF_MIN` and `MAX_ACCESS_M` were constants in the *consumer*, copied from the spike that built
+the layer. `Surface.validate` only checks `max finite <= horizon`, so **assuming a horizon larger
+than the build used passes validation silently** — measured: a 60-minute layer read as 120 minutes
+raises nothing, and then every `BEYOND_HORIZON` bound is wrong by an hour. Two fixes:
+
+* The builder now writes `own_<metro>_<cat>_<mode>_build.json` (horizon, access distance, snap
+  radius, aggregation, profile and grid versions) and the harness prefers it. Provenance belongs to
+  the artifact, not to a constant in whatever reads it.
+* Where there is no sidecar, the assumed horizon is **corroborated against the arrays**:
+  `corroborate_horizon` requires that, if any cell was cut off, the largest finite time sits within
+  60 s below the claimed horizon. A cutoff that bound leaves cells just inside it — walking 60 s
+  covers 84 m, under one cell — so a bound cutoff with no cell near it is not a surface this
+  pipeline produces. On the committed layer the gap is **0.001 s**. The arrays can *falsify* a
+  horizon claim and cannot *verify* one, and the provenance record says so rather than implying the
+  horizon was read from the data.
+
+The access-distance check was also restated. Instead of depending on `MAX_ACCESS_M` being exactly
+right, it asks for the widest build it tolerates: the equivalence holds for any
+`max_access_m <= min(threshold) * max_speed_mps`, which is **840 m** against the 200 m this project
+uses — a 4.2x margin, so being wrong about the build is harmless until it is wrong by a factor of
+four.
+
 **The reconstruction is now transitional.** `s2_building_weighted_coverage.py` saves
 `own_<metro>_<cat>_<mode>_min_possible_s.npy` beside the layer, and the harness prefers it when
-present — in which case neither guard is needed and a `NO_PATH` layer loads correctly. Today's sheet
-still says `"origin": "reconstructed"` because the layer predates that change.
+present — in which case neither of the first two guards is needed and a `NO_PATH` layer loads
+correctly. Today's sheet still says `"origin": "reconstructed"` and `"build": "assumed"` because the
+layer predates both changes.
 
 ## A symmetric near-threshold band is the wrong stratum
 
@@ -140,6 +164,15 @@ does not close it. Closing it needs `build_layer_surface` to emit the chosen des
 which it does not do today. Recorded in the script's docstring, in the sheet's `.meta.json`
 `blind_spot` field, and in the owner's README, because this is the kind of limitation that is obvious
 while writing the code and invisible three weeks later when someone reads the results.
+
+## The encoding moves the threshold, which is a separate finding
+
+Codex pass 26 noticed that three of the 21 emitted rows carry a float verdict of FAIL beside an
+encoded minute that would read as PASS. Chased down, it is structural and it is S3's own decision —
+see [[project-phase1-s3-encoding-threshold-crossing]] and
+`docs/experiments/s3-encoding.md`. The sheet now carries an `encoding_disagrees_min` column naming
+the thresholds where the two verdicts differ, so a walked journey is attributed to the right verdict
+rather than to whichever one the reader assumes.
 
 ## Two traps and one gap, all found by running it
 

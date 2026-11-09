@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-09 12:10:00",
+ "generated": "2026-11-09 12:18:45",
  "script": "v2/scripts/audit_recommendations.py",
  "purpose": "S3 plan section 0 step 0: journeys for the owner-gated walked audit",
  "metro": "triangle",
@@ -21,6 +21,19 @@
  },
  "profile_version": "speeds-v0+9893b1b0168ff19a",
  "layer": {
+  "build": {
+   "origin": "assumed",
+   "horizon_s": 7200.0,
+   "max_access_m": 200.0,
+   "assumed_from": "the constants in spikes/s2_building_weighted_coverage.py",
+   "horizon": {
+    "max_finite_s": 7199.999,
+    "gap_to_horizon_s": 0.000977,
+    "cells_cut_off": 16209,
+    "corroborated": true,
+    "basis": "a cutoff that bound leaves cells just inside it; the arrays can falsify a horizon claim but cannot verify one"
+   }
+  },
   "seconds": {
    "path": "v2/data/layers/own_triangle_grocery_walk.npy",
    "sha256": "0a92398d8ffdc67844ce74368330525afd208ab6f16febd4f21b9e5264353c01"
@@ -29,7 +42,6 @@
    "path": "v2/data/layers/own_triangle_grocery_walk_reason.npy",
    "sha256": "977418efc127c6ecf79253e204e45e443b147652a1d20ebd64eb74e29eeca647"
   },
-  "horizon_s": 7200.0,
   "reason_max": 2,
   "reason_max_name": "BEYOND_HORIZON",
   "min_possible_s": {
@@ -38,6 +50,7 @@
    "off_network_bound_equivalence": {
     "real_bound_max_s": 142.857,
     "max_access_m": 200.0,
+    "max_access_m_tolerated": 840.0,
     "max_speed_mps": 1.4,
     "smallest_threshold_s": 600.0
    }

@@ -85,12 +85,26 @@ from locfinder.traveltime.speeds import max_speed_mps
 REPO = Path(__file__).resolve().parents[2]
 V2 = REPO / "v2"
 
-#: The horizon and access rule the committed layers were built to. These are not free parameters:
-#: they must match the build, because `Surface.validate` compares the stored seconds against the
-#: horizon and the second assertion above compares the access bound against the thresholds.
-#: `spikes/s2_building_weighted_coverage.py` and `spikes/s0_status_on_real_layer.py` both use these.
+#: The horizon and access rule the committed layers were built to, used only when the layer carries
+#: no sidecar of its own. Both are **assumptions about someone else's build**, which is the shape of
+#: error this stage exists to catch, so neither is trusted silently:
+#:
+#: * `Surface.validate` only checks `max finite <= horizon`, so assuming a horizon *larger* than the
+#:   build's passes silently — measured: a 60-minute layer read as 120 minutes raises nothing.
+#:   `corroborate_horizon` closes that, and the builder now writes the sidecar.
+#: * `MAX_ACCESS_M` enters the outcome-equivalence check. Rather than depend on it being exactly
+#:   right, the check is restated as the widest build it tolerates: the equivalence holds for any
+#:   `max_access_m <= min(threshold) * max_speed_mps(mode)` — 840 m for a 10-minute walk threshold,
+#:   against the 200 m this project uses, a 4.2x margin.
 CUTOFF_MIN = 120.0
 MAX_ACCESS_M = 200.0
+
+#: How close the largest finite time must sit below a claimed horizon for the claim to be
+#: corroborated, when any cell was cut off by it. A cutoff that bound at all leaves cells just
+#: inside it: walking 60 s covers 84 m, well under one 100 m cell, so on this grid a bound cutoff
+#: with no cell within 60 s of it is not a surface this pipeline produces. Measured on the committed
+#: Triangle layer the gap is 0.001 s.
+HORIZON_CORROBORATION_S = 60.0
 
 #: Journeys are drawn from seven strata: a near-threshold pair per threshold, the cells where the
 #: product declines to answer next door to a pass, and two deep controls so a systematic offset
@@ -146,6 +160,36 @@ def _rel(p: Path) -> str:
         return str(p)
 
 
+def read_sidecar(path: Path) -> dict | None:
+    """Build parameters recorded beside the layer, if the build that wrote it recorded them."""
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def corroborate_horizon(seconds: np.ndarray, reason: np.ndarray, horizon_s: float) -> dict:
+    """Check an *assumed* horizon against the arrays, as far as they can check it.
+
+    The arrays can **falsify** a horizon claim and cannot **verify** one: `max finite <= horizon` is
+    required, but nothing in them rules out a larger horizon than the build used. What they do rule
+    out is a horizon far above a cutoff that visibly bound — if cells were cut off, cells sit just
+    inside the cut. Returns the evidence; the caller refuses on `corroborated` being false.
+    """
+    finite = np.isfinite(seconds)
+    max_finite = float(seconds[finite].max()) if finite.any() else float("nan")
+    cut_off = int((reason == Reason.BEYOND_HORIZON).sum())
+    gap = horizon_s - max_finite if finite.any() else float("inf")
+    corroborated = (not cut_off) or (0.0 <= gap <= HORIZON_CORROBORATION_S)
+    return {
+        "max_finite_s": None if not finite.any() else round(max_finite, 3),
+        "gap_to_horizon_s": None if not finite.any() else round(gap, 6),
+        "cells_cut_off": cut_off,
+        "corroborated": bool(corroborated),
+        "basis": ("a cutoff that bound leaves cells just inside it; the arrays can falsify a "
+                  "horizon claim but cannot verify one"),
+    }
+
+
 def load_surface(
     grid: GridSpec, *, category: str, mode: str, metro: str, thresholds_s: tuple[float, ...],
     layers: Path = LAYERS,
@@ -170,11 +214,31 @@ def load_surface(
     if reason.shape != seconds.shape:
         raise Refused(f"{reason_path.name} is {reason.shape}, seconds are {seconds.shape}")
 
-    horizon_s = CUTOFF_MIN * 60.0
+    sidecar = read_sidecar(layer_path("own", category, mode, "_build.json", metro, layers))
+    if sidecar:
+        horizon_s = float(sidecar["horizon_s"])
+        max_access_m = float(sidecar["max_access_m"])
+        build = {"origin": "sidecar", "horizon_s": horizon_s, "max_access_m": max_access_m}
+    else:
+        horizon_s = CUTOFF_MIN * 60.0
+        max_access_m = MAX_ACCESS_M
+        build = {"origin": "assumed", "horizon_s": horizon_s, "max_access_m": max_access_m,
+                 "assumed_from": "the constants in spikes/s2_building_weighted_coverage.py",
+                 "horizon": corroborate_horizon(seconds, reason, horizon_s)}
+        if not build["horizon"]["corroborated"]:
+            raise Refused(
+                f"the assumed horizon of {horizon_s:g}s is not corroborated by "
+                f"{sec_path.name}: {build['horizon']['cells_cut_off']:,} cells were cut off by a "
+                f"horizon, yet the largest finite time is "
+                f"{build['horizon']['gap_to_horizon_s']:g}s below it. A cutoff that bound leaves "
+                f"cells just inside it, so this layer was almost certainly built to a different "
+                f"horizon and every BEYOND_HORIZON bound here would be wrong. Rebuild it, which "
+                f"now writes the build parameters beside the layer."
+            )
     prov = {
+        "build": build,
         "seconds": {"path": _rel(sec_path), "sha256": file_digest(sec_path)},
         "reason": {"path": _rel(reason_path), "sha256": file_digest(reason_path)},
-        "horizon_s": horizon_s,
         "reason_max": int(reason.max()),
         "reason_max_name": Reason(int(reason.max())).name,
     }
@@ -202,13 +266,19 @@ def load_surface(
             )
         # Assertion 2: the weak OFF_NETWORK bound of 0 is outcome-identical to the real one only
         # while the real one cannot exceed the smallest threshold.
-        weakest = MAX_ACCESS_M / max_speed_mps(mode)
-        if weakest > min(thresholds_s):
+        # Stated as the widest build this tolerates, rather than as a check on one assumed
+        # access distance: the equivalence holds for any `max_access_m` up to
+        # `min(threshold) * max_speed_mps`, so being wrong about the build's exact value is
+        # harmless while it stays inside that envelope.
+        access_limit_m = min(thresholds_s) * max_speed_mps(mode)
+        weakest = max_access_m / max_speed_mps(mode)
+        if max_access_m > access_limit_m:
             raise Refused(
-                f"the reconstructed OFF_NETWORK bound (0) is not outcome-equivalent here: the real "
-                f"bound reaches {weakest:.1f}s ({MAX_ACCESS_M:g}m at {max_speed_mps(mode):g}m/s) "
-                f"and the smallest threshold is {min(thresholds_s):.0f}s, so some cells the "
-                "pipeline proves FAIL would be reported UNKNOWN. Rebuild with the real bound."
+                f"the reconstructed OFF_NETWORK bound (0) is not outcome-equivalent here: at "
+                f"{max_access_m:g}m of access the real bound reaches {weakest:.1f}s, past the "
+                f"smallest threshold of {min(thresholds_s):.0f}s, so some cells the pipeline "
+                f"proves FAIL would be reported UNKNOWN. This reconstruction tolerates "
+                f"max_access_m up to {access_limit_m:.0f}m. Rebuild with the real bound."
             )
         min_possible = np.where(reason == Reason.OK, seconds, 0.0)
         min_possible = np.where(reason == Reason.BEYOND_HORIZON, horizon_s, min_possible)
@@ -216,8 +286,9 @@ def load_surface(
             "origin": "reconstructed",
             "rule": "seconds where OK, horizon_s where BEYOND_HORIZON, 0 where OFF_NETWORK",
             "off_network_bound_equivalence": {
-                "real_bound_max_s": round(MAX_ACCESS_M / max_speed_mps(mode), 3),
-                "max_access_m": MAX_ACCESS_M,
+                "real_bound_max_s": round(weakest, 3),
+                "max_access_m": max_access_m,
+                "max_access_m_tolerated": round(access_limit_m, 1),
                 "max_speed_mps": max_speed_mps(mode),
                 "smallest_threshold_s": min(thresholds_s),
             },
@@ -405,8 +476,20 @@ def main() -> None:
                 "reason": Reason(int(surf.reason[row, col])).name,
                 "encoded_minutes": "" if enc == NODATA else enc,
             }
+            disagrees = []
             for t_min in thresholds_min:
                 rec[f"outcome_{t_min}min"] = Outcome(int(outcomes[t_min][row, col])).name
+                # What a client deciding from the encoded whole minute would say. `encode_minutes`
+                # rounds to nearest, so `minute <= t` holds whenever `seconds < 60t + 30`: the
+                # encoded artifact answers a threshold 30 s more permissive than the float surface,
+                # in that direction only. Measured over the Triangle, 8.15% of the cells a
+                # minute-only client shows as passing 10 minutes do not pass it. Which verdict the
+                # product actually shows is S3.5's decision (plan §0 step 6), so the sheet names
+                # the rows where the two differ instead of quietly picking one.
+                if enc != NODATA and (enc <= t_min) != (Outcome(int(outcomes[t_min][row, col]))
+                                                        is Outcome.PASS):
+                    disagrees.append(str(t_min))
+            rec["encoding_disagrees_min"] = " ".join(disagrees)
             rec.update({c: "" for c in OWNER_COLUMNS})
             rows.append(rec)
 

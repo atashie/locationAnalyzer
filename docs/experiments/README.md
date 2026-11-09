@@ -17,6 +17,9 @@ machine on the dates given; they are not research estimates.
 | G5a early interaction comparison | g5a-interaction.md | prototypes + protocol built on real G4 regions; needs household sessions |
 | Independent engine spot check | spotcheck-engines.md | ours vs Valhalla vs OSRM on 12 real journeys; Google leg needs a key |
 | Phase 0 decisions | phase0-decisions.md | revision 2, corrected against Codex pass 4 |
+| S3 instrument build | s3-instrument-build.md | measurement apparatus for S3 |
+| S3 whole-minute encoding at a threshold | s3-encoding.md | measured — `rint` shows 8.15% of its 10-minute passes wrongly to a minute-only client; `ceil` is exact. Decision pending at plan §0 step 6 |
+| Walked-journey audit sheets | audit/ | 21 journeys emitted for grocery/walk; owner columns blank, see audit/README.md |
 
 ## Notes for Phase 1
 
