@@ -7,14 +7,24 @@ every test we own. Walking a journey is the only check that consults the world. 
 do it, which is why this is the first item in the S3 plan's section 0 and why the sheet is built to
 be cheap to fill in.
 
-One file per metro, category and mode, with a `.meta.json` beside it recording exactly which layer
-the answers came from and how much walking the sheet asks for.
+## Walk this one
+
+**`triangle-grocery-walk-chapelhill.csv`** — 16 journeys inside 5 km of Franklin Street and
+Carrboro, **3.01 hours of one-way walking**, longest 22 minutes. This is the sheet to fill in.
+
+`triangle-grocery-walk.csv` beside it is the unrestricted metro-wide draw, kept because its stratum
+counts are the metro-wide populations the local sheet is sampled from. Its 19 journeys are scattered
+over about 50 km and it is not meant to be walked as one outing.
+
+Each sheet has a `.meta.json` recording exactly which layer the answers came from, which rounding
+the minutes use, and how much walking it asks for.
 
 Regenerate with, from `v2/`:
 
 ```
-uv run python scripts/audit_recommendations.py grocery walk
-uv run python scripts/audit_recommendations.py grocery walk --near -79.0558 35.9132 --radius-km 3
+uv run python scripts/audit_recommendations.py grocery walk --near -79.0656 35.9117 --radius-km 5 \
+  --out ../docs/experiments/audit/triangle-grocery-walk-chapelhill.csv
+uv run python scripts/audit_recommendations.py grocery walk      # the metro-wide draw
 ```
 
 It **refuses to overwrite** an existing sheet, because a rerun would erase walked results; pass
@@ -87,6 +97,21 @@ afterwards.
 
 A control that disagrees is a signal to stop and look, not proof of a systematic error — a single
 local closure, entrance or graph defect explains one control just as well.
+
+**The Chapel Hill sheet has no `off_network_beside_pass15min` row, and that is a finding rather
+than a gap.** There are 77 such walkable cells in the whole metro and **none within 5 km of
+Franklin Street** — the town is well enough connected that almost no inhabited cell sits more than
+200 m from a road *and* next to a 15-minute pass. The run prints where the nearest one is. Two are
+worth a deliberate trip if you are ever passing, because they are the sharpest form of the question:
+
+| where | distance from Chapel Hill | its nearest answering neighbour |
+|---|---|---|
+| `35.94727, -78.99930` (cell 235,185) | 7.2 km | 13.3 min from a grocery |
+| `35.84145, -79.08831` (cell 354,107) | 8.1 km | **3.7 min** from a grocery |
+
+The second is the one to pick: we decline to answer for a cell whose neighbour is a four-minute walk
+from a shop. Either the 200 m access rule is too strict there or the graph is missing a path, and
+standing in it for ten minutes would say which.
 
 The bands are split by the verdict computed from **float seconds**. That is not necessarily the
 verdict the shipped page will show: see below.

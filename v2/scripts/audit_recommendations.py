@@ -540,6 +540,7 @@ def main() -> None:
 
     eligible = np.ones(surf.shape, dtype=bool)
     notes: dict = {}
+    distance_km = None
     if args.max_walk_min > 0:
         # The first version of this sheet asked for 6.22 hours of one-way walking across 18 rows,
         # 3.57 of them in three "controls" of 108, 50 and 56 minutes.
@@ -567,6 +568,11 @@ def main() -> None:
     else:
         counts = np.zeros(surf.shape, dtype=np.int64)
 
+    # Before the --near mask, so an emptied stratum can report its nearest member under the same
+    # building and walk-cap filters. Reconstructing this as `eligible | ~within` was wrong: outside
+    # the radius that expression is true whatever the other filters say, and it reported a cell with
+    # no building in it as the nearest walkable one.
+    eligible_without_near = eligible.copy()
     if args.near:
         lon, lat = args.near
         try:
@@ -580,12 +586,14 @@ def main() -> None:
         xs, ys = grid.cell_centers_xy()
         from pyproj import Transformer
         x0, y0 = Transformer.from_crs("EPSG:4326", grid.crs, always_xy=True).transform(lon, lat)
-        within = np.hypot(xs - x0, ys - y0) <= args.radius_km * 1000.0
+        distance_km = np.hypot(xs - x0, ys - y0) / 1000.0
+        within = distance_km <= args.radius_km
         eligible &= within
         notes["near"] = {"lon": lon, "lat": lat, "cell": list(here),
                          "radius_km": args.radius_km, "cells_within": int(within.sum())}
 
     lons, lats = grid.cell_centers_lonlat()
+    lons_all, lats_all = lons, lats
     minutes = encode_minutes(surf.seconds)
     # The reconstructed OFF_NETWORK bound is exact only for a cell adjacent to an OK cell, so the
     # adjacency is re-checked per emitted row rather than inferred from the stratum it came from.
@@ -602,6 +610,22 @@ def main() -> None:
         picked = rng.choice(flat, size=take, replace=False) if take else np.empty(0, dtype=int)
         census[name] = {"in_stratum": int(pool.sum()), "eligible": int(flat.size),
                         "drawn": int(take)}
+        # A stratum emptied by `--near` is not the same as a stratum that does not exist, and the
+        # difference decides what the owner should do about it. `off_network_beside_pass15min` has
+        # 77 walkable cells in the whole metro and none within 5 km of Chapel Hill, which is a fact
+        # about a well-connected town rather than a missing question -- but the owner can only act
+        # on it if told where the nearest one is.
+        if take == 0 and distance_km is not None:
+            reachable = pool & eligible_without_near
+            if reachable.any():
+                k = int(np.argmin(np.where(reachable, distance_km, np.inf)))
+                row, col = divmod(k, grid.ncols)
+                census[name]["nearest_outside_radius"] = {
+                    "km": round(float(distance_km[row, col]), 1),
+                    "cell": [row, col],
+                    "lat": round(float(lats_all[row, col]), 5),
+                    "lon": round(float(lons_all[row, col]), 5),
+                }
         for n, flat_idx in enumerate(sorted(picked.tolist()), start=1):
             row, col = divmod(int(flat_idx), grid.ncols)
             lon, lat = float(lons[row, col]), float(lats[row, col])
@@ -741,8 +765,12 @@ def main() -> None:
     print(f"min_possible_s     : {prov['min_possible_s']['origin']} "
           f"(reason max {prov['reason_max_name']})")
     for name, c in census.items():
-        print(f"  {name:<24} {c['in_stratum']:>7,} cells  {c['eligible']:>7,} eligible  "
+        print(f"  {name:<28} {c['in_stratum']:>7,} cells  {c['eligible']:>7,} eligible  "
               f"{c['drawn']:>2} drawn")
+        n = c.get("nearest_outside_radius")
+        if n:
+            print(f"  {'':<28} none in radius; nearest is {n['km']} km away at "
+                  f"{n['lat']},{n['lon']} (cell {n['cell'][0]},{n['cell'][1]})")
     if walk_min:
         print(f"predicted one-way walking: {sum(walk_min) / 60.0:.2f} h over "
               f"{len(walk_min)} rows with a finite time, longest {max(walk_min):.0f} min")
