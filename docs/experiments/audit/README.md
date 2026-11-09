@@ -30,11 +30,19 @@ uv run python scripts/audit_recommendations.py grocery walk      # the metro-wid
 It **refuses to overwrite** an existing sheet, because a rerun would erase walked results; pass
 `--force` when you mean it. **Use `--near`**: it keeps the journeys inside one outing instead of
 scattering them over 60 km of the Triangle. The run prints the total predicted walking so the cost
-is visible before you set out (currently ~3 hours one-way over 16 rows, longest 20 minutes);
-`--max-walk-min` caps any journey that **has** a finite predicted time, and `--per-stratum`
-scales the whole sheet. The three `off_network_beside_pass15min` rows have no predicted time at all,
-so they are outside that cap and outside the budget figure: adjacency bounds their distance to the
-*indexed network*, which is not a promise of a short usable walk.
+is visible before you set out, and `--max-walk-min` / `--per-stratum` scale it.
+
+The two sheets, kept straight because an earlier version of this file mixed their figures:
+
+| sheet | journeys | with a predicted time | one-way walking | longest |
+|---|---|---|---|---|
+| `…-chapelhill.csv` — **walk this** | 16 | 16 | **3.01 h** | 22 min |
+| `…-walk.csv` — metro-wide reference | 19 | 16 | 2.98 h | 20 min |
+
+The metro-wide sheet's other three rows are `off_network_beside_pass15min` and have **no predicted
+time at all**, so they sit outside both the `--max-walk-min` cap and the walking total: adjacency
+bounds their distance to the *indexed network*, which is not a promise of a short usable walk. The
+Chapel Hill sheet has none of them — see below.
 
 ## How to walk one
 
@@ -98,20 +106,24 @@ afterwards.
 A control that disagrees is a signal to stop and look, not proof of a systematic error — a single
 local closure, entrance or graph defect explains one control just as well.
 
-**The Chapel Hill sheet has no `off_network_beside_pass15min` row, and that is a finding rather
-than a gap.** There are 77 such walkable cells in the whole metro and **none within 5 km of
-Franklin Street** — the town is well enough connected that almost no inhabited cell sits more than
-200 m from a road *and* next to a 15-minute pass. The run prints where the nearest one is. Two are
-worth a deliberate trip if you are ever passing, because they are the sharpest form of the question:
+**The Chapel Hill sheet has no `off_network_beside_pass15min` row.** There are 77 such cells in
+the whole metro and **none within 5 km of Franklin Street** under these filters — at least one
+recorded building, off-network, and 8-adjacent to a cell passing fifteen minutes. That is an
+*absence under those filters*, which is weaker than a statement about the town's connectivity: the
+building raster, the 200 m access rule and the adjacency requirement each exclude cells, and a cell
+with no recorded building is invisible to it whether or not anyone lives there. The run prints where
+the nearest one is. Two are worth a deliberate trip if you are ever passing:
 
 | where | distance from Chapel Hill | its nearest answering neighbour |
 |---|---|---|
 | `35.94727, -78.99930` (cell 235,185) | 7.2 km | 13.3 min from a grocery |
 | `35.84145, -79.08831` (cell 354,107) | 8.1 km | **3.7 min** from a grocery |
 
-The second is the one to pick: we decline to answer for a cell whose neighbour is a four-minute walk
-from a shop. Either the 200 m access rule is too strict there or the graph is missing a path, and
-standing in it for ten minutes would say which.
+The second is the one to pick: we decline to answer for a cell whose neighbour is a four-minute
+walk from a shop. Either the 200 m access rule is too strict there or the graph is missing a path
+people use. Going there would probably show which — a usable footway we do not have is visible on
+the ground, and so is genuinely trackless land — but one visit to one cell settles that cell, not
+the rule.
 
 The bands are split by the verdict computed from **float seconds**. That is not necessarily the
 verdict the shipped page will show: see below.

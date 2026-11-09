@@ -29,7 +29,7 @@ from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
-from locfinder.traveltime.layer import build_layer_seconds  # noqa: E402
+from locfinder.traveltime.layer import build_layer_seconds, write_layer  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmetrise  # noqa: E402
 

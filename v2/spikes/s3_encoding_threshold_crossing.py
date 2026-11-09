@@ -83,7 +83,7 @@ def main() -> None:
 
     print(render(rows, args))
     append_results("s3-encoding.md", render(rows, args))
-    print(f"\nappended to docs/experiments/s3-encoding.md")
+    print("\nappended to docs/experiments/s3-encoding.md")
 
 
 def render(rows: list[dict], args) -> str:

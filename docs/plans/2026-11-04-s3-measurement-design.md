@@ -306,10 +306,13 @@ So the sensitivities below are **stated consequences**, not defects awaiting rep
 - **Segment subdivision can move a verdict.** On one one-way edge `(0,0)→(100,0)` of time/cost
   **1199.95** with the origin at `(49.995,0)`, inserting the midpoint `(50,0)` creates a segment whose
   clamped start sits 0.005 m away, inside the band, giving **599.9789682540 s** where the undivided
-  edge gives **600.0349975000 s**. That flips an exact ten-minute **comparator** verdict; both values
-  round to the **same whole minute**, so it is not necessarily a flip in what the product ships.
-  Revision 9 removed this case and was reverted for other reasons, so revision 10 carries it
-  knowingly.
+  edge gives **600.0349975000 s**. That flips an exact ten-minute **comparator** verdict, and since
+  2026-11-09 it flips the **encoded minute** too — 11 against 10 under the shipped `ceil` encoder,
+  where `rint` put both at 10. What the earlier qualification got right is still worth keeping in a
+  weaker form: this is the sensitivity of **this convention**, and production snapping projects onto
+  the whole edge geometry (`snap.py:142`), which an inserted vertex does not change, so the
+  prevalence and impact in production are unmeasured. Revision 9 removed this case and was reverted
+  for other reasons, so revision 10 carries it knowingly.
 - **A degree-two record split does *not* move it.** The one-record-with-midpoint and two-record forms
   of the same road agree under this convention. That was revision 9's defect, not this one's.
 - **The band is a threshold.** Two roads at residuals 1 m and 1.009 m give 100.8007936510 s; at 1 m

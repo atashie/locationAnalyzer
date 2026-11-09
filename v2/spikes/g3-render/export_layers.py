@@ -205,8 +205,12 @@ def derive_padding_layer(base_arr: np.ndarray, base_entry: dict, index: int) -> 
     out = base_arr.copy()
     finite = out != NODATA
     # `rint` here scales an existing minute field to pad the layer count; it is not an encoding of
-    # seconds, and the entry it produces is marked derived. Pass 28's point stands all the same: a
-    # derived layer must not inherit the global encoding label, so `build_layer_entry` marks it.
+    # seconds. The entry it produces carries `derived: true` and `derived_from`, and **nothing
+    # else** -- it does not carry an encoding of its own, so under the manifest's global
+    # `ceil-v1` label a padded layer is mislabelled. Pass 29 caught the previous version of this
+    # comment claiming `build_layer_entry` marks the encoding, which it does not. Padding is
+    # unreachable today (six real layers are found, the target is six) and the honest fix if it
+    # ever triggers is a per-layer encoding field, not a comment.
     scaled = np.clip(np.rint(out[finite].astype(np.float64) * scale), 0, 254)
     out[finite] = scaled.astype(np.uint8)
     derived_id = f"derived_{base_entry['id']}_x{scale:.2f}".replace(".", "p")

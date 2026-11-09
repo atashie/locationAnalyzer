@@ -298,8 +298,11 @@ def nearest_on_graph(graph: ToyGraph, point: tuple[float, float], *,
       comparator threshold, candidate count 1→2. Revision 9 was adopted to remove this and **did**
       remove it on this input; revision 10 reinstates it deliberately, because revision 9's way of
       removing it discarded genuine geometric ties and introduced a record-segmentation dependence
-      instead. Note both values round to the **same whole minute**, so this is a comparator-verdict
-      flip and not necessarily an encoded-map flip.
+      instead. They encode to **11 and 10** under the shipped `ceil` encoder, so the encoded map
+      flips with the comparator; the claim that both round to the same whole minute was true of
+      `rint` and died with it. The sensitivity is this convention's, not a measured property of
+      production: `_snap_network` projects onto the whole edge geometry, which an inserted vertex
+      does not change.
     * **The band is a threshold, so the answer is not continuous.** Two roads at residuals 1 m and
       1.009 m give 100.8007936510 s; at 1 m and 1.011 m, 1000.7936507940 s. An **899.99 s** jump
       across 2 mm.

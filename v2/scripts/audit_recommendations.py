@@ -308,9 +308,23 @@ def load_surface(
         # turned a ten-minute UNKNOWN into a FAIL (pass 28). A digest nobody checks is decoration.
         for name, path in (("seconds", sec_path), ("reason", reason_path),
                            ("min_possible_s", bound_path)):
+            want = recorded.get(name)
+            if want and not path.exists():
+                # A recorded digest for a file that is gone used to be skipped by an existence
+                # check placed before the digest lookup, and the loader then fell through to the
+                # *reconstruction* with nothing in the provenance to say so. Pass 29 deleted a
+                # certified bound file and watched an OFF_NETWORK cell's real 1,000 s bound become
+                # 0, flipping FAIL to UNKNOWN at ten minutes. The build says this array exists; if
+                # it does not, the artifact set is incomplete and silently substituting a weaker
+                # bound is the downgrade this stage exists to refuse.
+                raise Refused(
+                    f"the build sidecar records a digest for {path.name} but the file is missing. "
+                    "The build wrote a real lower bound and this would silently substitute a "
+                    "weaker reconstructed one. Restore the file, rebuild, or -- if you deliberately "
+                    "carried only part of the layer to this machine -- remove the sidecar and "
+                    "accept the reconstruction with its guards.")
             if not path.exists():
                 continue
-            want = recorded.get(name)
             if want:
                 got = file_digest(path)
                 if got != want:

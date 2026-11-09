@@ -151,7 +151,10 @@ Two selection defects, both verified by Codex pass 26, both from never asking wh
   bands could reveal) rather than an absolute time, a `--max-walk-min` cap (default 25) applies
   to every stratum, the deep FAIL control is drawn **once** rather than three times because it
   is the longest journey on the sheet and buys the least per hour, and the run prints the total.
-  Now: **2.98 hours over 16 rows, longest 20 minutes.**
+  The **metro-wide** sheet is now 19 journeys, **2.98 hours over the 16 with a predicted time**,
+  longest 20 minutes. (The local Chapel Hill sheet is a different draw: 16 journeys, all with a
+  predicted time, 3.01 hours, longest 22 minutes. Pass 29 caught this note and the owner README
+  mixing the two sets of figures.)
 - **`off_network_beside_ok` dilated `reason == OK`, not PASS.** So "unknown next door to a
   pass" actually meant "unknown next door to any cell with a finite time": 24,468 cells, 633
   with a building, and the three drawn had nearest answering neighbours at **3,615 s, 4,783 s
@@ -188,8 +191,9 @@ and keeps the whole run at 0.07 s. See [[project-v2-rethink-decisions]] for deci
 
 ## What the strata measure, and the limit to read them with
 
-The sheet as it now stands, 19 journeys and **2.98 hours of one-way walking, longest 20
-minutes**:
+The **metro-wide** sheet as it now stands — 19 journeys, **2.98 hours of one-way walking over
+the 16 with a predicted time**, longest 20 minutes. The stratum populations below are metro-wide and
+are what the local Chapel Hill draw samples from:
 
 | stratum | cells | with a building | drawn |
 |---|---|---|---|

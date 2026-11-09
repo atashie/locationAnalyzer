@@ -610,8 +610,10 @@ def test_subdivision_is_not_required_to_preserve_the_answer_and_is_measured_inst
     Two entries today. `zero_length_segment` perturbs provenance only — its midpoint becomes a third
     vertex at the same position, with the reported time unchanged. `subdivision_sensitive` moves the
     **answer**, 600.0349975000001 s to 599.9789682539683 s, which flips an exact ten-minute
-    comparator verdict while rounding to the same whole minute. That one is the input revision 9 was
-    adopted to fix and revision 10 knowingly took back; see `nearest_on_graph`.
+    comparator verdict — and, since the encoder started rounding up, flips the encoded minute with
+    it (11 against 10). That one is the input revision 9 was adopted to fix and revision 10
+    knowingly took back; see `nearest_on_graph`. Production snapping does not exhibit it, because it
+    projects onto the whole edge geometry.
     """
     assert "split_segments" in NOT_PRESERVING
     divergences = dict(measure_split_divergence())

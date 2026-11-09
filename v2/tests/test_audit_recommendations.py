@@ -24,6 +24,7 @@ What is actually true, and what these now test:
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 from pathlib import Path
 
@@ -31,6 +32,7 @@ import numpy as np
 import pytest
 
 from locfinder.grid import GridSpec
+from locfinder.measure.frames import file_digest
 from locfinder.status import (CATEGORY_COST_SELECTED, Criterion, Outcome, Reason, Surface,
                               evaluate)
 from locfinder.traveltime.speeds import access_speed_mps, max_speed_mps
@@ -51,10 +53,10 @@ def _grid() -> GridSpec:
 def _arrays(reason_codes: list[int], *, seconds_for_ok: float = 500.0, saturate: bool = True):
     """A seconds/reason pair that is internally consistent: finite exactly where the reason is OK.
 
-    `saturate` puts one OK cell a millisecond under the horizon, which is what a real cut-off layer
-    looks like (the committed one's largest finite time is 0.001 s below 7200) and what
-    `corroborate_horizon` requires of any layer with cells the horizon cut off. Pass `False` to
-    build the layer that assumption would be wrong about.
+    `saturate` puts one OK cell a millisecond under the horizon, which is what the committed layer
+    looks like (its largest finite time is 0.001 s below 7200). `corroborate_horizon` no longer
+    *requires* that of anything — it only warns when the gap is large — so `saturate=False` builds
+    the layer that trips the warning rather than a refusal.
     """
     reason = np.array(reason_codes, dtype=np.int8).reshape(5, 6)
     seconds = np.where(reason == Reason.OK, seconds_for_ok, np.inf)
@@ -491,3 +493,43 @@ def test_the_deep_controls_keep_a_margin_and_stay_inside_the_walk_cap():
     assert pass_ctl[1, 1] and not pass_ctl[3, 1]
     assert audit.STRATUM_DRAW_CAP["deep_fail_control"] == 1, \
         "the longest stratum on the sheet should not be drawn three times"
+
+
+def test_a_recorded_digest_whose_file_is_missing_is_refused(tmp_path):
+    """Pass 29 deleted a certified bound file and watched the loader silently reconstruct it.
+
+    The existence check sat *before* the digest lookup, so a sidecar that recorded a
+    `min_possible_s` digest for a file since deleted was skipped, `build["arrays"]` said nothing
+    about it, and an OFF_NETWORK cell's real 1,000 s bound became 0 — turning FAIL into UNKNOWN at
+    ten minutes. Substituting a weaker input for one the build says exists is the downgrade this
+    stage exists to refuse.
+    """
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10)
+    bound = np.where(reason == Reason.OK, seconds, 0.0).astype(np.float64)
+    bound = np.where(reason == Reason.BEYOND_HORIZON, HORIZON_S, bound)
+    layers = _write(tmp_path, seconds, reason, bound)
+    digests = {n: file_digest(layers / f"own_triangle_grocery_walk{suffix}.npy")
+               for n, suffix in (("seconds", ""), ("reason", "_reason"),
+                                 ("min_possible_s", "_min_possible_s"))}
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        json.dumps({"horizon_s": HORIZON_S, "max_access_m": 200.0, "arrays": digests}),
+        encoding="utf-8")
+
+    # All three present: loads, and says the bound came from disk rather than a reconstruction.
+    _, prov = _load(layers)
+    assert prov["min_possible_s"]["origin"] == "stored"
+    assert prov["build"]["arrays"]["min_possible_s"] == "digest matched"
+
+    # Delete the certified bound and it refuses instead of quietly reconstructing.
+    (layers / "own_triangle_grocery_walk_min_possible_s.npy").unlink()
+    with pytest.raises(audit.Refused, match="records a digest for .* but the file is missing"):
+        _load(layers)
+
+    # A legacy sidecar that records no bound digest still reconstructs, which is the case the
+    # refusal must not catch.
+    (layers / "own_triangle_grocery_walk_build.json").write_text(
+        json.dumps({"horizon_s": HORIZON_S, "max_access_m": 200.0,
+                    "arrays": {k: v for k, v in digests.items() if k != "min_possible_s"}}),
+        encoding="utf-8")
+    _, prov = _load(layers)
+    assert prov["min_possible_s"]["origin"] == "reconstructed"

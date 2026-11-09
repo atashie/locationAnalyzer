@@ -589,9 +589,12 @@ SCALE_LAW = (
 #:
 #: * `zero_length_segment` — occurrence count 2→3, reported time unchanged at 100.0 s.
 #: * `subdivision_sensitive` — **600.0349975000001 s → 599.9789682539683 s**, which flips an exact
-#:   ten-minute comparator verdict. Both values round to the same whole minute, so it is not
-#:   necessarily an encoded-map flip. Revision 9 removed this and was reverted for other reasons;
-#:   see `nearest_on_graph`.
+#:   ten-minute comparator verdict. They encode to **11 and 10** under the shipped `ceil` encoder,
+#:   so the encoded map flips too — an earlier version of this note said they round to the same
+#:   whole minute, which was true of `rint` and is not true now. The sensitivity is the **toy**
+#:   convention's, though: production snapping projects onto the whole edge geometry and is
+#:   invariant to an inserted vertex, so its prevalence in production is unmeasured. Revision 9
+#:   removed this and was reverted for other reasons; see `nearest_on_graph`.
 #:
 #: A change in this signature is information, in both directions.
 SUBDIVISION_DIVERGES_ON = {"zero_length_segment", "subdivision_sensitive"}
