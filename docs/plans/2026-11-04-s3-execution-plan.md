@@ -1,6 +1,11 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
+**Revision 11, 2026-11-09.** Adds **§0, the risk-ordered next steps**, after Codex pass 25
+judged the effort disproportionate and aimed at the wrong axis. §0 is now the entry point to
+this plan; T0 keeps its design and moves to position 3. No estimand, allocation, threshold,
+uncertainty convention or selection policy changes, so no design amendment is required.
+
 **Revision 10, 2026-11-06.** Implements **design revision 10**, which is the operative document —
 where this plan and that design differ, the design wins and this plan is wrong.
 
@@ -68,6 +73,93 @@ to add is a defect", which is untenable — fixture values and implementation re
 additions. The rule is: **this plan may not change an estimand, an allocation, an acceptance
 threshold, an uncertainty convention, or the adaptation and selection policy.** Those require a
 design amendment with a §13 row.
+
+---
+
+## 0. What to do next, ordered by product risk retired
+
+**Added 2026-11-09, revision 11, after Codex pass 25** (`docs/research/32-`). Pass 25 reviewed the
+whole effort for fitness against the intended goal and judged it *disproportionate and elaborating
+the wrong axis*: eleven adversarial passes and roughly 11,000 lines of apparatus had gone into the
+instrument while the grid and encoding decisions S3 exists to make were unstarted, and the estimand
+carrying nearly all the rigour (E1) compares our pipeline to **our own engine**. It also found that
+**E1b measures the wrong conditional** and that a closed grocery passes E1 and E2.
+
+Its instruction was to order the work by **product risk retired, not by defect severity**. This
+section is that order, and it supersedes "T0 is the next task" as the entry point — T0 stays, at
+position 3. Every item is time boxed; an expired box is **reported, not silently extended**.
+
+### Running first, and only the owner can do it: audit real recommendations against walked journeys
+
+Pass 25 ranks this first by risk retired. It is the only item that tests whether the product tells
+the truth, rather than whether it agrees with itself. It runs in parallel with everything below.
+
+**A destination that is closed, fenced off or unusable on arrival is a failed recommendation, not a
+discarded row.** E1 and E2 cannot see that failure at all: both sides share the destination list.
+
+### Step 0 — the audit harness (half a day, mine)
+
+What the owner needs in order to walk anything is a list of journeys worth walking and a sheet to
+record them on. Three pieces, and the reconnaissance for all three is done:
+
+- **`v2/locfinder/grid.py`: add `cell_for_xy` / `cell_for_lonlat`.** There is **no coordinate-to-cell
+  helper anywhere in `locfinder/`** — `GridSpec` goes the other way only
+  (`cell_centers_xy`, `cell_centers_lonlat`). Half-open bounds; a coordinate outside the footprint
+  returns `None` rather than clamping to an edge cell, because clamping would manufacture a verdict
+  for a place the layer does not cover. Tests in `v2/tests/test_grid.py`: the four corners, both
+  boundary directions, outside-footprint, and a round trip against `cell_centers_lonlat`.
+- **`v2/scripts/audit_recommendations.py`: select journeys and write the sheet.**
+- **The layer loads without the graph.** `METRO.grid()` returns the `GridSpec` with no graph load,
+  and `data/layers/own_triangle_grocery_walk.npy` (514 x 643 float32, min 1.1046500205993652, max
+  `inf`) plus `..._reason.npy` (int8) are on disk. `status.Surface` also needs `min_possible_s`,
+  which is **not** stored — but the real reason array contains **only 0, 1, 2**
+  (`OK`, `OFF_NETWORK`, `BEYOND_HORIZON`; no `NO_PATH`, as S0 found), and `evaluate` reads
+  `horizon_s` directly for `BEYOND_HORIZON` and fails `NO_PATH` unconditionally. So a **sound**
+  bound is reconstructible: the seconds where `OK`, `0` where `OFF_NETWORK`.
+
+  > **The harness must assert `reason.max() <= Reason.BEYOND_HORIZON` and refuse otherwise**,
+  > falling back to `traveltime.layer.build_layer_surface`. Without that assert, a layer that did
+  > contain `NO_PATH` would be silently read as `UNKNOWN` — turning a proven failure into an
+  > absence, which is the one error class this whole stage exists to prevent. The reconstruction is
+  > a property of *this* artifact, not of the format.
+
+  The payoff is that the harness runs in about a second instead of loading the 670 MB
+  `roads.graphml`, so the owner's loop is fast.
+
+**Which journeys it selects.** Cells within **+/- 90 s of the 10- and 15-minute thresholds**, where a
+wrong answer changes a decision; `OFF_NETWORK` cells **adjacent to `OK` cells**, where the product
+says "unknown" next door to a pass; and deep-interior PASS plus deep-exterior FAIL controls, so a
+systematic offset is visible rather than inferred.
+
+**What each row records.** The query coordinate; its cell; the **centroid-to-door offset in metres**
+— up to about 70 m on a 100 m cell, which is error the audit must *record*, because the product
+answers for a cell and the owner walks from a door; the float seconds; the reason name; PASS / FAIL /
+UNKNOWN at both thresholds; the **encoded whole minute**; and blank columns for walked time,
+destination actually used, date, and outcome.
+
+### Steps 1 to 8
+
+| # | work | box | risk retired |
+|---|---|---|---|
+| 1 | **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
+| 2 | **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
+| 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
+| 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
+| 5 | **S3.1 — the matched 100 m / 200 m grid comparison** | 1/2 day after T3 | the grid decision S3 exists to make, never yet run |
+| 6 | **S3.5 — the browser path end to end**: writer, export, decode, lookup, card combination; whole-minute edges, UNKNOWN against FAIL, horizon equality, legacy codes 251-254, mismatched grids, outside-footprint; plus compressed size and phone decode latency per candidate | 1-2 days + a phone | errors in the answer actually shown, which Python-side fidelity cannot detect |
+| 7 | **Grocery and geocoding truth audit** — destination validity, resolution, coverage | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
+| 8 | **The one-page decision report**, then a bounded household release | 1/2 day + sessions | misunderstanding and overgeneralisation |
+
+**Step 2 changes what gets reported**, so it is an owner decision: it will be drafted as an additive
+§13 amendment and flagged, not adopted silently.
+
+### Cut, on pass 25's recommendation
+
+Further general-purpose mutation or invariant expansion; portable bitwise comparator equivalence;
+unique reconstruction beyond what an output actually consumes; certifying every future mode before
+this narrow release. Existing tests and the historical mutants stay — including
+`revision9-per-record-exact-minimum`, because a withdrawn estimand needs a guard as much as a fixed
+defect does. **The rule going forward: no more apparatus without a named product risk.**
 
 ---
 
