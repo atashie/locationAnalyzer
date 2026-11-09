@@ -94,14 +94,28 @@ class GridSpec:
         A **non-finite** coordinate raises rather than returning `None`. NaN is not a point outside
         the footprint — it is not a point — and reporting "outside" for it would launder a
         malformed input into an ordinary negative answer.
+
+        **Interior boundaries are exact only to the grid's own precision.** `(x - x_min) / cell_m`
+        is floating-point, so a grid whose cell is tiny next to its origin — `x_min = 450000.1`
+        with `cell_m = 0.1` — can place a point exactly on an interior edge in the cell below it.
+        The metro grids are 100 m or 200 m cells on origins that are multiples of the cell size at
+        UTM magnitudes, where the division has about four orders of magnitude of margin, so this
+        does not arise; a grid outside that regime needs exact edge arithmetic rather than an
+        epsilon.
         """
         if not (math.isfinite(x) and math.isfinite(y)):
             raise ValueError(f"non-finite projected coordinate ({x!r}, {y!r})")
-        col = math.floor((x - self.x_min) / self.cell_m)
-        row = math.floor((self.y_max - y) / self.cell_m)
-        if 0 <= row < self.nrows and 0 <= col < self.ncols:
-            return row, col
-        return None
+        # The footprint decides membership, and the index is derived only afterwards. Testing the
+        # derived index instead lets rounding in `(x - x_min) / cell_m` contradict the declared
+        # bounds in both directions, which Codex pass 26 exhibited: with `x_min=450000.1` and
+        # `cell_m=123.4`, `x_max` itself divided into column `ncols - 1` and so read as *inside*,
+        # while a value one ulp below `x_max` on another grid divided into `ncols` and read as
+        # outside. Comparing the coordinate first and clamping the index second cannot do either.
+        if not (self.x_min <= x < self.x_max and self.y_min < y <= self.y_max):
+            return None
+        col = min(math.floor((x - self.x_min) / self.cell_m), self.ncols - 1)
+        row = min(math.floor((self.y_max - y) / self.cell_m), self.nrows - 1)
+        return row, col
 
     def cell_for_lonlat(self, lon: float, lat: float) -> tuple[int, int] | None:
         """`(row, col)` for a WGS84 coordinate, or `None` if outside. See `cell_for_xy`.

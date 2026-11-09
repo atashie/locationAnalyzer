@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-step0-audit-harness
-description: "S3 plan section 0 step 0 is done - GridSpec had no coordinate-to-cell mapping at all, Surface.min_possible_s and the build parameters are not stored so the harness needs three tested guards, and the near-threshold bands had to be split by the side of the threshold"
+description: "S3 plan section 0 step 0, after Codex pass 26 corrected it - the reconstructed OFF_NETWORK bound is sound and LOSSY not exact (200 m is the floor of those access distances, not the ceiling), the first sheet asked for 6.22 hours of walking including a 108-minute *control*, and the unknown-beside-a-pass stratum was dilating OK instead of PASS"
 metadata:
   node_type: memory
   type: project
@@ -17,10 +17,16 @@ world, and only the owner can walk one. See [[project-phase1-s3-design]] for the
 rather than reasoned about.
 
 **Built.** `GridSpec.cell_for_xy` / `cell_for_lonlat` (`v2/locfinder/grid.py`), 7 tests in
-`v2/tests/test_grid.py`, `v2/scripts/audit_recommendations.py`, 12 tests in
+`v2/tests/test_grid.py`, `v2/scripts/audit_recommendations.py`, 16 tests in
 `v2/tests/test_audit_recommendations.py`, the owner's instructions in
-`docs/experiments/audit/README.md`, and the first sheet — 21 journeys, built in **0.07 s with no
-graph load**. Suite: 1,110 passed, 24 skipped (was 1,091).
+`docs/experiments/audit/README.md`, and the sheet — 19 journeys, built in **0.08 s with no
+graph load**. Suite: 1,115 passed, 24 skipped (was 1,091).
+
+**Read the correction section at the end first.** Codex pass 26 found six verified defects in
+the first version of this work, including that its central claim was *inverted*, and the
+sections below have been rewritten against the corrected version. The pattern is worth more
+than the details: every one of the six came from reasoning about the pipeline instead of
+reading it, and the one I was most confident about was the one I had a passing test for.
 
 ## The grid had no reverse mapping, and one spike had inlined it
 
@@ -55,21 +61,43 @@ It is reconstructible for *this* artifact as *seconds where `OK`, the horizon wh
 `BEYOND_HORIZON`, `0` where `OFF_NETWORK`*. That is a property of the artifact, not of the format,
 so the script **refuses** rather than guessing unless these hold:
 
-1. **`reason.max() <= Reason.BEYOND_HORIZON`.** A `NO_PATH` cell reconstructed with a bound of `0`
-   reads as `UNKNOWN` — a *proven* failure turned into an absence, the one error class this stage
-   exists to prevent. Measured: the Triangle grocery/walk reason array holds only `{0, 1, 2}`.
-2. **`max_access_m / max_speed_mps(mode) <= min(threshold)`.** This is what makes the weak
-   `OFF_NETWORK` bound not merely *sound* but **outcome-identical**. The real bound is
-   `access_m / max_speed_mps` (`traveltime/snap.py:291`), at most `200 / 1.4 = 142.9 s` walking, and
-   `evaluate` converts a bound into a known failure only when it *strictly exceeds* the threshold —
-   so at 600 s and 900 s, `0` and the real bound agree on every cell.
+1. **`reason.max() <= Reason.BEYOND_HORIZON`** — a **fail-fast, not a correctness barrier.**
+   The first version of this note said a `NO_PATH` cell would otherwise "silently read as
+   `UNKNOWN`, turning a proven failure into an absence". **That is false twice over:**
+   `Surface.validate` rejects a `NO_PATH` cell whose bound is not `+inf` (`status.py:325`), and
+   `evaluate` fails `NO_PATH` unconditionally whatever its bound (`status.py:380`) — the one
+   reason in the enum whose verdict never consults the bound. The guard earns its place by
+   failing where the cause is readable, and that is all. Measured: the Triangle grocery/walk
+   reason array holds only `{0, 1, 2}`.
+2. **The adjacency bound**, `(max_access_m + cell_m * sqrt(2)) / max_speed_mps <= min(threshold)`.
 
-Guard 2's claim is **tested, not argued**: `test_the_weak_off_network_bound_gives_the_same_answers`
-builds both bounds with access distances spread over the whole admissible range and asserts
-`evaluate` agrees at 600 s and 900 s — *and disagrees at 60 s*, so the refusal is protecting
-something real rather than decorating an impossible branch. An assertion that has never been seen to
-fire has not been shown to protect anything; that was pass-19 F5, a guard in a scratch directory
-that protected one invocation on one afternoon.
+**The `0` bound is sound and lossy, not exact, and the first version of this note had the
+direction of the access rule backwards.** A cell is `OFF_NETWORK` precisely *because*
+`snapped.access_m > max_access_m` (`traveltime/snap.py:265`), so **200 m is the floor of those
+distances, not the ceiling** and the real bound `access_m / max_speed_mps` is always *above*
+143 s with no upper limit at all. Codex pass 26 built a two-node graph with origins 201 m, 1 km
+and 2 km off-network and measured real bounds of 143.6 s, 714.3 s and 1,428.6 s: at a 600 s
+threshold the real surface says UNKNOWN, FAIL, FAIL where the reconstruction says UNKNOWN three
+times, and both refusals accepted it.
+
+What is true is one-sided and worth stating precisely: `0` never *exceeds* the real bound, so
+the reconstruction can report `UNKNOWN` where the pipeline proves `FAIL` but **can never
+manufacture an exclusion**. It loses information and never invents it, which is the right
+direction for a product that must not wrongly rule a household out.
+
+Exactness comes from the **selection**, not the format: every emitted `OFF_NETWORK` row is
+adjacent to an `OK` cell, whose own access is at most `max_access_m`, so the emitted cell's
+access is at most `max_access_m + cell_m * sqrt(2)` = 341.4 m — a bound of 243.9 s, well inside
+600 s. That is now the condition checked, and the adjacency is re-asserted per emitted row
+instead of being inferred from the stratum.
+
+**The test that "proved" the old claim passed vacuously**, and that is the part to remember. It
+generated access distances uniformly in `[0, 200]` m — the domain in which a cell is *not*
+`OFF_NETWORK` at all — so it asserted agreement over inputs that cannot occur. A fixture is
+exact only where you point it ([[feedback-a-fixture-is-exact-only-where-you-point-it]]), and a
+passing test over the wrong domain is worse than no test: it ended an inquiry. The replacements
+draw from `(200, 3000]` m and assert soundness, demonstrate the loss on that surface, and test
+the adjacency bound separately.
 
 **`Surface.validate()` is also the cross-check between the two files**, which were written by
 separate runs 43 minutes apart. It requires a finite time exactly where the reason is `OK`, so a
@@ -104,6 +132,28 @@ four.
 present — in which case neither of the first two guards is needed and a `NO_PATH` layer loads
 correctly. Today's sheet still says `"origin": "reconstructed"` and `"build": "assumed"` because the
 layer predates both changes.
+
+## The first sheet was not walkable, and the diagnostic stratum was not diagnostic
+
+Two selection defects, both verified by Codex pass 26, both from never asking what the numbers
+*cost*:
+
+- **The 18 rows with a finite prediction totalled 6.22 hours of one-way walking, and three
+  "deep FAIL controls" were 3.57 of them — 108, 50 and 56 minutes each.** `DEEP_FAIL_S = 1800`
+  asked for cells *at least* 30 minutes from a grocery, and the predicted seconds **are** the
+  walking time. Nothing in the script or the sheet mentioned the budget. Controls are now
+  defined by their **margin** past the threshold (5 minutes, already 10–20x any offset the
+  bands could reveal) rather than an absolute time, a `--max-walk-min` cap (default 25) applies
+  to every stratum, the deep FAIL control is drawn **once** rather than three times because it
+  is the longest journey on the sheet and buys the least per hour, and the run prints the total.
+  Now: **2.98 hours over 16 rows, longest 20 minutes.**
+- **`off_network_beside_ok` dilated `reason == OK`, not PASS.** So "unknown next door to a
+  pass" actually meant "unknown next door to any cell with a finite time": 24,468 cells, 633
+  with a building, and the three drawn had nearest answering neighbours at **3,615 s, 4,783 s
+  and 4,293 s** — an hour from a grocery, not beside a pass in any sense. Dilating the PASS mask
+  gives 1,081 cells, **77** with a building. The stratum is now `off_network_beside_pass15min`,
+  far smaller and the right cells. A few draws from 77 can find a real access defect; they
+  cannot establish how common one is, and the README says so.
 
 ## A symmetric near-threshold band is the wrong stratum
 
@@ -157,9 +207,13 @@ up as one.
 
 ## The blind spot step 0 cannot close
 
-**The sheet cannot say which grocery the product routed to.** The layer stores the minimum over every
-qualifying destination and not the argmin, so a walk establishes that *some* destination was open and
-reachable, never that *ours* was. That narrows the closed-destination blind spot E1 and E2 share; it
+**The sheet cannot say which grocery the product routed to, and our number is an upper bound.**
+The aggregation is `CATEGORY_COST_SELECTED` — *the travel time of the journey our cost model
+selected* (`status.py:210`), **not** the minimum over qualifying destinations, which the first
+version of this note, the script docstring, the owner README and the commit message all claimed.
+The repo already had a note about exactly this confusion — [[project-h2-upper-bound-trap]] —
+and I walked into it anyway. The argmin is not stored either, so a walk establishes that *some*
+qualifying destination was open and reachable, never that *ours* was. That narrows the closed-destination blind spot E1 and E2 share; it
 does not close it. Closing it needs `build_layer_surface` to emit the chosen destination per cell,
 which it does not do today. Recorded in the script's docstring, in the sheet's `.meta.json`
 `blind_spot` field, and in the owner's README, because this is the kind of limitation that is obvious
@@ -173,6 +227,30 @@ see [[project-phase1-s3-encoding-threshold-crossing]] and
 `docs/experiments/s3-encoding.md`. The sheet now carries an `encoding_disagrees_min` column naming
 the thresholds where the two verdicts differ, so a walked journey is attributed to the right verdict
 rather than to whichever one the reader assumes.
+
+## What pass 26 corrected, as a list
+
+Kept together because the pattern matters more than any single item. All six were **verified
+against the code or by construction**, not suspected:
+
+| claim I made | status |
+|---|---|
+| the real `OFF_NETWORK` bound is at most `200/1.4` | **false** — 200 m is the floor of those distances |
+| the two guards establish whole-surface outcome equivalence | **false** — sound and lossy, exact only on the emitted subset |
+| the test covers the admissible `OFF_NETWORK` range | **false** — it covered `[0, 200]`, where cells are not off-network |
+| without the `NO_PATH` guard a proven failure reads as an absence | **false** — `validate` rejects it and `evaluate` fails it regardless |
+| `validate` rejects files from different builds | **overstated** — it establishes invariants, not shared provenance |
+| the layer holds the minimum time over destinations | **overstated** — it is the cost-selected journey, an upper bound |
+| one disagreeing control shows a systematic error | **overstated** — a local closure or graph defect explains one just as well |
+| the seven strata totals, and S2.4's by-reason figures | **confirmed** by independent recomputation |
+| all five grid mutants are caught | **confirmed**, and it is a bounded check, not boundary coverage |
+
+Three of the five "false" rows were things I had written a *passing test* for. The common cause
+is that I reasoned about `snap.py` and `status.py` from their docstrings instead of reading the
+comparisons, and then wrote tests that encoded the same misreading — so the tests confirmed the
+belief rather than the behaviour. The repair that generalises: when a claim is about a
+*boundary* (`>` vs `<`, floor vs ceiling, which side is excluded), read the line, and build the
+fixture from the domain the code actually admits.
 
 ## Two traps and one gap, all found by running it
 
@@ -193,5 +271,21 @@ rather than to whichever one the reader assumes.
 **The sheet refuses to overwrite itself** without `--force`. It is meant to be filled in by hand, so
 a rerun erasing walked results is a data-loss bug waiting to happen, not a convenience.
 
+Also corrected: `cell_for_xy` tested the *derived index* against the grid's bounds instead of
+the coordinate, which let floating-point rounding contradict the declared footprint in both
+directions — with `x_min = 450000.1` and `cell_m = 123.4`, `x_max` itself divided into column
+`ncols - 1` and so read as inside, while a value one ulp below `x_max` on another grid divided
+into `ncols` and read as outside. The footprint now decides membership and the index is derived
+and clamped afterwards, which cannot do either.
+
+And a licence gap: the sheet republishes `buildings_in_cell` with no notice. Declining to put
+individual footprints in it was a project-use restriction, not evidence the licences forbid
+publishing centroids, and a count raster carries ODbL §4.3 and CC BY notice obligations anyway.
+Attribution is now in both the sheet's README and its `.meta.json`. Whether a full count raster
+is a Produced Work or a derivative database is **not settled** and should be before anything
+wider is published.
+
 **Next:** plan §0 step 1, the cheap correctness debts. Non-finite coordinates are now rejected at
-`cell_for_lonlat`, which is one entry point of several.
+`cell_for_lonlat`, which is one entry point of several. Codex pass 26's own recommendation is to
+let the owner start walking a short local sheet while steps 1 and 2 proceed, and **not** to
+expand this harness further — that would repeat pass 25's mistake.

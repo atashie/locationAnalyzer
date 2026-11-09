@@ -203,3 +203,23 @@ def test_cell_for_lonlat_rejects_a_coordinate_that_does_not_project():
     # A longitude outside [-180, 180] does project, to somewhere far away, so it is merely
     # outside. Declaring the admissible input domain is plan 0 step 1's job, not this method's.
     assert g.cell_for_lonlat(500.0, 36.0) is None
+
+
+def test_cell_for_xy_bounds_survive_an_awkward_origin_and_cell_size():
+    """Codex pass 26: testing the *derived index* instead of the coordinate lets rounding in
+    `(x - x_min) / cell_m` contradict the declared bounds in both directions."""
+    g = GridSpec("EPSG:32617", 450000.1, 4000000.0, 123.4, 643, 5)
+    y = g.y_max - 1.0
+    # x_max is outside by the half-open rule, and used to divide into column ncols - 1.
+    assert g.cell_for_xy(g.x_max, y) is None
+    # One ulp inside is the last column, and used to divide into ncols and read as outside.
+    assert g.cell_for_xy(float(np.nextafter(g.x_max, -np.inf)), y) == (0, g.ncols - 1)
+    # Same in the other axis.
+    assert g.cell_for_xy(g.x_min, g.y_min) is None
+    assert g.cell_for_xy(g.x_min, float(np.nextafter(g.y_min, np.inf))) == (g.nrows - 1, 0)
+
+    # A cell far smaller than its origin's magnitude, where the division has no margin at all.
+    tiny = GridSpec("EPSG:32617", 0.1, 4000000.0, 0.3, 643, 2)
+    assert tiny.cell_for_xy(float(np.nextafter(tiny.x_max, -np.inf)), tiny.y_max) == (
+        0, tiny.ncols - 1)
+    assert tiny.cell_for_xy(tiny.x_max, tiny.y_max) is None

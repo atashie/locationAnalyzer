@@ -11,44 +11,61 @@ consults the world. A walked journey does, and only the owner can walk one. This
 is to make that cheap: a short list of journeys where being wrong would change a decision, and a
 sheet with the product's answer already filled in and the owner's columns blank.
 
-**What it does not know, which is the finding to carry forward.** The committed layer is an
-aggregate — the minimum over every qualifying destination — and the identity of the destination it
-chose is not stored. So the sheet cannot say "we routed you to this grocery"; it can only ask which
-one the owner actually used. The audit can therefore establish that *some* destination was open and
-reachable, not that *the product's* destination was. Recovering the chosen destination needs the
-graph and a per-cell argmin, which `build_layer_surface` does not emit today. Until it does, the
-closed-destination blind spot is narrowed by this audit, not closed.
+**What it does not know, which is the finding to carry forward.** The committed layer's
+aggregation is `CATEGORY_COST_SELECTED` — **the travel time of the journey our cost model selected,
+which is an upper bound, not the minimum time over qualifying destinations** (`status.py:210`; the
+trap is recorded in `docs/engineering-notes/project-h2-upper-bound-trap.md` and this file walked
+into it). The identity of the selected destination is not stored either. So the sheet cannot say
+"we routed you to this grocery"; it can only ask which one the owner used. The audit therefore
+establishes that *some* qualifying destination was open and reachable, never that *ours* was.
+Recovering the selected destination needs one bounded graph load over the sampled cells, keeping the
+POI-to-node association — the builder deduplicates destination nodes, so a node id alone can be
+ambiguous. That is the decisive version of this audit, and it is not what step 0 built.
 
 ## The lower bound is reconstructed, and that is only safe under an assertion
 
-`status.Surface` needs three arrays and only two are on disk: `seconds` and `reason` were saved by
-`spikes/s2_building_weighted_coverage.py`, `min_possible_s` was not. Loading it properly means
-rebuilding from the 670 MB `roads.graphml`, which costs minutes and would make the owner's loop slow
-enough to skip.
+`status.Surface` needs three arrays and only two are on disk: `seconds` and `reason`,
+`min_possible_s` was not saved. Loading it properly means rebuilding from the 670 MB
+`roads.graphml`, which costs minutes and would make the owner's loop slow enough to skip.
 
-It can be reconstructed for **this** artifact because its reason array contains only `OK`,
-`OFF_NETWORK` and `BEYOND_HORIZON`:
+A caveat on all of it: **the stored seconds are float32**, and casting them to float64 here recovers
+nothing. A model value of 600.00001 s is stored as 600.0 and so passes a 600 s threshold that the
+model fails. This audit evaluates the *stored artifact*, which is the thing the product ships, and
+that is the right object to audit — but it is not the model's own answer to the last bit.
 
-* `OK` -> the reported seconds, which is exact, and the bound is unused there anyway;
-* `BEYOND_HORIZON` -> the horizon, which `Surface.validate` requires exactly and which `evaluate`
-  reads from `horizon_s` rather than from the array;
-* `OFF_NETWORK` -> `0`, a sound but weak bound.
+The reconstruction is *seconds* where `OK`, *the horizon* where `BEYOND_HORIZON` (which
+`Surface.validate` requires exactly and which `evaluate` reads from `horizon_s` anyway), and **`0`
+where `OFF_NETWORK`**.
 
-**That is a property of this artifact, not of the format**, so two things are asserted before any
-row is written and the script refuses rather than guesses if either fails.
+**The `0` is sound but lossy, and an earlier version of this file claimed it was exact. It is not.**
+A cell is `OFF_NETWORK` precisely *because* `snapped.access_m > max_access_m`
+(`traveltime/snap.py:265`), so **200 m is the floor of the OFF_NETWORK access distances, not their
+ceiling** — the real bound `access_m / max_speed_mps` is therefore always *above* 143 s and has no
+upper limit at all. Codex pass 26 built a two-node graph with origins 201 m, 1 km and 2 km
+off-network and measured real bounds of 143.6 s, 714.3 s and 1,428.6 s; at a 600 s threshold the
+real surface says UNKNOWN, FAIL, FAIL where the reconstruction says UNKNOWN three times.
 
-1. `reason.max() <= Reason.BEYOND_HORIZON`. Without this, a layer containing `NO_PATH` would be
-   reconstructed with a bound of `0` and read as `UNKNOWN` — turning a *proven* failure into an
-   absence, which is the single error class this stage exists to prevent.
-2. `max_access_m / max_speed_mps(mode) <= min(threshold)`. This is what makes the weak `OFF_NETWORK`
-   bound not merely sound but **outcome-identical** to the real one here. The real bound is
-   `access_m / max_speed_mps` (`traveltime/snap.py:291`), at most `200 / 1.4 = 142.9 s` for walking;
-   `evaluate` turns a bound into a known failure only when it strictly exceeds the threshold, and
-   143 s never exceeds 600 s. At a threshold below that bound the reconstruction would report
-   `UNKNOWN` where the pipeline reports `FAIL`, so the script refuses there.
+What the reconstruction guarantees over the whole surface is therefore one-sided: `0` never exceeds
+the real bound, so it **can never manufacture an exclusion**. The error is only ever `UNKNOWN` where
+the pipeline would say `FAIL` — it loses information and never invents it. For a product that must
+not wrongly rule a household out, that is the right direction, and it is all that is claimed.
+
+**For the rows this script emits it is exact**, by a bound the selection supplies rather than the
+format: every emitted `OFF_NETWORK` row is adjacent to an `OK` cell, whose own access is at most
+`max_access_m`, so the emitted cell's centre lies within `cell_m * sqrt(2)` of that cell's centre
+and its own access is at most `max_access_m + cell_m * sqrt(2)` — 341.4 m here, a bound of 243.9 s,
+well under the 600 s threshold. That is the condition the script checks, and it re-asserts the
+adjacency on every emitted row rather than trusting the stratum definition to have held.
+
+The other refusal is `reason.max() <= Reason.BEYOND_HORIZON`. **It is a fail-fast with a legible
+message, not a correctness barrier** — an earlier version of this file claimed a `NO_PATH` cell
+would "silently read as `UNKNOWN`", and that is false twice over: `Surface.validate` rejects a
+`NO_PATH` cell whose bound is not `+inf` (`status.py:325`), and `evaluate` fails `NO_PATH`
+unconditionally regardless of its bound (`status.py:380`). The guard earns its place by failing
+where the cause is readable instead of as an invariant error three frames later.
 
 When a layer is rebuilt with `min_possible_s` saved beside it, that file is preferred and neither
-assertion is needed. The builder now writes it.
+refusal applies. The builder now writes it.
 
 ## The sheet uses no footprint geometry
 
@@ -116,19 +133,57 @@ HORIZON_CORROBORATION_S = 60.0
 #: separates the two error costs: a displayed PASS that fails when walked is the one a household is
 #: harmed by, and it is the numerator of the conditional pass 25 found missing.
 BAND_S = 90.0
-DEEP_PASS_S = 300.0
-DEEP_FAIL_S = 1800.0
+
+#: Controls are defined by their **margin** past a threshold, not by an absolute time. The first
+#: version asked for cells at least 1,800 s out and drew three journeys of 108, 50 and 56 minutes
+#: one way — 3.57 hours of the sheet's 6.22, to confirm that a place an hour and three quarters from
+#: a grocery is indeed more than fifteen minutes from one. A margin of five minutes past a
+#: fifteen-minute threshold is already ten to twenty times any offset the bands could plausibly
+#: reveal, and it is walkable.
+CONTROL_MARGIN_S = 300.0
+
+#: Per-stratum caps on the draw, applied under `--per-stratum`. The deep FAIL control is the
+#: lowest-information stratum per hour walked: it is the longest journey on the sheet by
+#: construction, and a thirty-second systematic offset would leave it comfortably failing either
+#: way. One is enough to notice a gross error; three is three times the walking for the same claim.
+STRATUM_DRAW_CAP = {"deep_fail_control": 1}
+
+#: No row may ask for a walk longer than this. The predicted seconds *are* the walking time, which
+#: the first version of this script did not account for anywhere.
+DEFAULT_MAX_WALK_MIN = 25.0
 
 #: Columns the owner fills in while walking. Blank in every emitted row.
+#:
+#: There is no single `agrees` column, and the first version's was a mistake: it conflated
+#: destination validity, route validity, time error, which threshold was being tested, and the
+#: strength of the available evidence. Four counterexamples, all of which a lone `agrees` records
+#: identically (Codex pass 26):
+#:
+#: * the product picked a closed shop at 8 minutes; the owner walks 9 minutes to a different open
+#:   one and records agreement — the stale destination goes undetected;
+#: * the product says PASS; the owner walks 18 minutes to a *preferred* supermarket, ignoring a
+#:   qualifying shop at 8 minutes, and records disagreement — which refutes nothing;
+#: * the product says FAIL; one 18-minute walk does not establish that *every* qualifying grocery
+#:   exceeds fifteen minutes;
+#: * the product says UNKNOWN, which is an admission; no walk confirms or refutes it.
+#:
+#: So the observations are recorded separately and the finding is derived. The asymmetry is the
+#: point: the product's claim is **existential** — "some qualifying destination within T" — so a
+#: qualifying walk inside T is a **witness** that settles the cell, while a slow walk is evidence
+#: about one destination and never a proof of universal absence.
 OWNER_COLUMNS = [
     "walked_date",
     "start_lon",
     "start_lat",
     "door_offset_m",
-    "walked_seconds",
     "destination_used",
-    "destination_open",
-    "agrees",
+    "destination_qualifies",     # yes / no  - is it a grocery by our own category rule?
+    "destination_open",          # yes / no  - open, in business and usable on arrival
+    "route_usable",              # yes / no  - no locked gate, fence, missing crossing
+    "walked_seconds",
+    "witness_within_10min",      # yes / no / untested - a qualifying walk inside 10 min
+    "witness_within_15min",
+    "unresolved",                # what this walk could not settle
     "notes",
 ]
 
@@ -253,50 +308,63 @@ def load_surface(
             "sha256": file_digest(bound_path),
         }
     else:
-        # Assertion 1: the reconstruction is only sound while no cell claims a proven absence of
-        # any path. A NO_PATH cell reconstructed with a bound of 0 reads as UNKNOWN.
+        # Refusal 1, a fail-fast rather than a correctness barrier: `Surface.validate` would reject
+        # a NO_PATH cell carrying a 0 bound and `evaluate` fails NO_PATH whatever its bound, so
+        # nothing is silently wrong without this -- it just fails somewhere less legible.
         if int(reason.max()) > int(Reason.BEYOND_HORIZON):
             raise Refused(
-                f"{reason_path.name} contains {Reason(int(reason.max())).name}, so min_possible_s "
-                "cannot be reconstructed: a NO_PATH cell would silently read as UNKNOWN, turning a "
-                "proven failure into an absence.\nRebuild the surface with "
+                f"{reason_path.name} contains {Reason(int(reason.max())).name}, which this "
+                "reconstruction does not cover: it would assign a 0 bound where the real one is "
+                "+inf, and Surface.validate rejects that.\nRebuild the surface with "
                 "locfinder.traveltime.layer.build_layer_surface, which computes the real bound, and "
                 "save it beside the layer:\n  uv run python "
                 f"spikes/s2_building_weighted_coverage.py {category} {mode}"
             )
-        # Assertion 2: the weak OFF_NETWORK bound of 0 is outcome-identical to the real one only
-        # while the real one cannot exceed the smallest threshold.
-        # Stated as the widest build this tolerates, rather than as a check on one assumed
-        # access distance: the equivalence holds for any `max_access_m` up to
-        # `min(threshold) * max_speed_mps`, so being wrong about the build's exact value is
-        # harmless while it stays inside that envelope.
-        access_limit_m = min(thresholds_s) * max_speed_mps(mode)
-        weakest = max_access_m / max_speed_mps(mode)
-        if max_access_m > access_limit_m:
+        # Refusal 2. The 0 bound is sound everywhere and lossy where the real bound exceeds the
+        # threshold -- it can only turn a FAIL into an UNKNOWN, never produce an exclusion. What
+        # makes it *exact* is a property of the selection, not of the surface: an OFF_NETWORK cell
+        # adjacent to an OK cell has access at most `max_access_m + cell_m * sqrt(2)`, because the
+        # OK neighbour's own access is at most `max_access_m` and the two centres are at most one
+        # cell diagonal apart. Only such cells are emitted, and `main` re-asserts the adjacency per
+        # row. 200 m is the FLOOR of the OFF_NETWORK distances (`snap.py:265`), so a check against
+        # `max_access_m` alone -- which this script used to make -- bounds nothing.
+        adjacent_access_m = max_access_m + grid.cell_m * math.sqrt(2.0)
+        adjacent_bound_s = adjacent_access_m / max_speed_mps(mode)
+        if adjacent_bound_s > min(thresholds_s):
             raise Refused(
-                f"the reconstructed OFF_NETWORK bound (0) is not outcome-equivalent here: at "
-                f"{max_access_m:g}m of access the real bound reaches {weakest:.1f}s, past the "
-                f"smallest threshold of {min(thresholds_s):.0f}s, so some cells the pipeline "
-                f"proves FAIL would be reported UNKNOWN. This reconstruction tolerates "
-                f"max_access_m up to {access_limit_m:.0f}m. Rebuild with the real bound."
+                f"the reconstructed OFF_NETWORK bound (0) is not exact even for cells adjacent to "
+                f"an OK cell: their access reaches {adjacent_access_m:.1f}m "
+                f"({max_access_m:g}m + one {grid.cell_m:g}m diagonal), a real bound of "
+                f"{adjacent_bound_s:.1f}s, past the smallest threshold of "
+                f"{min(thresholds_s):.0f}s. Such a cell would be reported UNKNOWN where the "
+                "pipeline proves FAIL. Rebuild with the real bound, or raise the threshold."
             )
         min_possible = np.where(reason == Reason.OK, seconds, 0.0)
         min_possible = np.where(reason == Reason.BEYOND_HORIZON, horizon_s, min_possible)
         prov["min_possible_s"] = {
             "origin": "reconstructed",
             "rule": "seconds where OK, horizon_s where BEYOND_HORIZON, 0 where OFF_NETWORK",
-            "off_network_bound_equivalence": {
-                "real_bound_max_s": round(weakest, 3),
-                "max_access_m": max_access_m,
-                "max_access_m_tolerated": round(access_limit_m, 1),
-                "max_speed_mps": max_speed_mps(mode),
+            "soundness": ("0 never exceeds the real bound, so the reconstruction can only report "
+                          "UNKNOWN where the pipeline proves FAIL; it can never manufacture an "
+                          "exclusion. It is NOT outcome-identical over the surface: OFF_NETWORK "
+                          "access is >= max_access_m, so the real bound is unbounded above"),
+            "exact_for_emitted_rows": {
+                "why": ("only OFF_NETWORK cells adjacent to an OK cell are emitted, and adjacency "
+                        "bounds their access by max_access_m + one cell diagonal"),
+                "adjacent_access_max_m": round(adjacent_access_m, 1),
+                "adjacent_bound_max_s": round(adjacent_bound_s, 1),
                 "smallest_threshold_s": min(thresholds_s),
+                "max_access_m": max_access_m,
+                "max_speed_mps": max_speed_mps(mode),
             },
         }
 
-    # `validate` is also the cross-check between the two files, which were written by separate runs
-    # 43 minutes apart: it requires a finite time exactly where the reason is OK, so a reason array
-    # belonging to a different build would be rejected here rather than silently mislabel cells.
+    # `validate` is a partial cross-check between the two files, which were written by separate
+    # runs 43 minutes apart. It requires a finite time exactly where the reason is OK, which catches
+    # the common mismatch -- but it establishes particular invariants, NOT shared provenance: two
+    # builds with the same OK mask and different times both pass, as does swapping OFF_NETWORK for
+    # BEYOND_HORIZON among the infinite cells, and a matching shape does not establish a matching
+    # grid origin. Only the build sidecar can bind the files into one build.
     surf = Surface(
         mode=mode,
         engine="own-graph",
@@ -311,9 +379,9 @@ def load_surface(
         surf = surf.validate()
     except ValueError as e:
         raise Refused(
-            f"{sec_path.name} and {reason_path.name} do not describe one surface: {e}. "
-            f"They were written by separate runs, so a rebuild of one without the other leaves "
-            f"them inconsistent. Rebuild both: uv run python "
+            f"{sec_path.name} and {reason_path.name} violate a Surface invariant together: {e}. "
+            f"They were written by separate runs, so rebuilding one without the other leaves them "
+            f"inconsistent. Rebuild every array and the sidecar in one run: uv run python "
             f"spikes/s2_building_weighted_coverage.py {category} {mode}"
         ) from e
     return surf, prov
@@ -322,11 +390,12 @@ def load_surface(
 def strata(
     surf: Surface, outcomes: dict[int, np.ndarray], *, thresholds_min: tuple[int, ...]
 ) -> dict[str, np.ndarray]:
-    """The five candidate pools, as boolean masks over the grid."""
+    """The seven candidate pools, as boolean masks over the grid."""
     seconds, reason = surf.seconds, surf.reason
     ok = reason == Reason.OK
     off = reason == Reason.OFF_NETWORK
     neighbourhood = np.ones((3, 3), dtype=bool)
+    tightest, loosest = min(thresholds_min), max(thresholds_min)
 
     out: dict[str, np.ndarray] = {}
     for t_min in thresholds_min:
@@ -339,20 +408,33 @@ def strata(
         out[f"band{t_min}min_pass"] = band & (seconds <= t)
         out[f"band{t_min}min_fail"] = band & (seconds > t)
 
-    # The product says "unknown" immediately next door to a pass. Either the access rule is too
-    # strict or the graph is missing a path people use; the two look identical from the layer.
-    out["off_network_beside_ok"] = off & ndimage.binary_dilation(ok, structure=neighbourhood)
+    # The product declines to answer immediately next door to a cell that **passes**. Either the
+    # access rule is too strict or the graph is missing a path people use; the two look identical
+    # from the layer, and a walk can separate them.
+    #
+    # This dilated `ok` rather than PASS until Codex pass 26: 24,468 cells qualified, 633 of them
+    # with a building, and the three drawn had nearest answering neighbours at 3,615 s, 4,783 s and
+    # 4,293 s -- an hour from a grocery, not beside a pass at all. Dilating the PASS mask at the
+    # loosest threshold gives 1,081 cells, 77 with a building. Far fewer, and the right ones.
+    passing = outcomes[loosest] == Outcome.PASS
+    out[f"off_network_beside_pass{loosest}min"] = off & ndimage.binary_dilation(
+        passing, structure=neighbourhood)
 
-    # Controls, for a systematic offset to be visible rather than inferred. `binary_erosion`
-    # keeps only cells whose whole 3x3 neighbourhood agrees, so a control is not a near-boundary
-    # cell that happens to be deep in seconds.
-    tightest, loosest = min(thresholds_min), max(thresholds_min)
+    # Controls, so a systematic offset shows up as a shifted control rather than being inferred
+    # from the bands. `binary_erosion` keeps only cells whose whole 3x3 neighbourhood agrees, so a
+    # control is not a near-boundary cell that happens to be deep in seconds.
+    #
+    # The margin is what makes a control a control, and it is bounded on both sides: at least
+    # CONTROL_MARGIN_S clear of the threshold, so no plausible offset could move it, and no further
+    # than the walk cap, because the predicted seconds are the time the owner must spend.
     pass_everywhere = ndimage.binary_erosion(
         outcomes[tightest] == Outcome.PASS, structure=neighbourhood, border_value=0)
     fail_everywhere = ndimage.binary_erosion(
         outcomes[loosest] == Outcome.FAIL, structure=neighbourhood, border_value=0)
-    out["deep_pass_control"] = ok & (seconds <= DEEP_PASS_S) & pass_everywhere
-    out["deep_fail_control"] = ok & (seconds >= DEEP_FAIL_S) & fail_everywhere
+    out["deep_pass_control"] = (
+        ok & (seconds <= tightest * 60.0 - CONTROL_MARGIN_S) & pass_everywhere)
+    out["deep_fail_control"] = (
+        ok & (seconds >= loosest * 60.0 + CONTROL_MARGIN_S) & fail_everywhere)
     return out
 
 
@@ -367,6 +449,10 @@ def main() -> None:
                          "journeys, the scale pass 25 suggested for 3-6 household person-hours)")
     ap.add_argument("--min-buildings", type=int, default=1,
                     help="skip cells with fewer buildings; 0 disables the filter (default: 1)")
+    ap.add_argument("--max-walk-min", type=float, default=DEFAULT_MAX_WALK_MIN,
+                    help=f"skip journeys whose predicted one-way time exceeds this, because the "
+                         f"predicted seconds are the time the owner must spend (default: "
+                         f"{DEFAULT_MAX_WALK_MIN:g}). 0 removes the cap")
     # Two floats rather than one "LON,LAT" string: every longitude here starts with a minus sign,
     # and argparse reads `--near -79.05,35.91` as an unknown option. It accepts a bare negative
     # *number*, so `--near -79.05 35.91` -- the form anyone would type -- works.
@@ -404,6 +490,13 @@ def main() -> None:
 
     eligible = np.ones(surf.shape, dtype=bool)
     notes: dict = {}
+    if args.max_walk_min > 0:
+        # The first version of this sheet asked for 6.22 hours of one-way walking across 18 rows,
+        # 3.57 of them in three "controls" of 108, 50 and 56 minutes. A cell with no finite
+        # prediction is kept: an OFF_NETWORK row beside a pass is a short walk by construction.
+        cap_s = args.max_walk_min * 60.0
+        eligible &= ~(np.isfinite(surf.seconds) & (surf.seconds > cap_s))
+        notes["max_walk_min"] = args.max_walk_min
     if args.min_buildings > 0:
         bpath = V2 / "data" / "layers" / f"own_{metro.name}_buildings_per_cell.npy"
         if not bpath.exists():
@@ -440,6 +533,9 @@ def main() -> None:
 
     lons, lats = grid.cell_centers_lonlat()
     minutes = encode_minutes(surf.seconds)
+    # The reconstructed OFF_NETWORK bound is exact only for a cell adjacent to an OK cell, so the
+    # adjacency is re-checked per emitted row rather than inferred from the stratum it came from.
+    beside_ok = ndimage.binary_dilation(surf.reason == Reason.OK, structure=np.ones((3, 3), bool))
     rng = np.random.default_rng(args.seed)
     door_bound_m = grid.cell_m * math.sqrt(2.0) / 2.0
 
@@ -448,7 +544,7 @@ def main() -> None:
     for name, pool in pools.items():
         available = pool & eligible
         flat = np.flatnonzero(available)
-        take = min(args.per_stratum, flat.size)
+        take = min(args.per_stratum, STRATUM_DRAW_CAP.get(name, args.per_stratum), flat.size)
         picked = rng.choice(flat, size=take, replace=False) if take else np.empty(0, dtype=int)
         census[name] = {"in_stratum": int(pool.sum()), "eligible": int(flat.size),
                         "drawn": int(take)}
@@ -462,6 +558,15 @@ def main() -> None:
                 raise Refused(f"cell ({row}, {col}) centre round-tripped to {back}")
             sec = float(surf.seconds[row, col])
             enc = int(minutes[row, col])
+            if (surf.reason[row, col] == Reason.OFF_NETWORK
+                    and prov["min_possible_s"]["origin"] == "reconstructed"
+                    and not beside_ok[row, col]):
+                raise Refused(
+                    f"cell ({row}, {col}) is OFF_NETWORK and not adjacent to any OK cell, so its "
+                    "reconstructed bound of 0 is not exact: the pipeline might prove FAIL where "
+                    "this sheet would print UNKNOWN. Only adjacency bounds the access distance "
+                    "(200 m is its floor, not its ceiling)."
+                )
             rec = {
                 "journey_id": f"{name}-{n:02d}",
                 "stratum": name,
@@ -505,6 +610,7 @@ def main() -> None:
         w.writeheader()
         w.writerows(rows)
 
+    walk_min = [float(r["seconds"]) / 60.0 for r in rows if r["seconds"]]
     meta = {
         "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
         "script": "v2/scripts/audit_recommendations.py",
@@ -523,13 +629,39 @@ def main() -> None:
         "selection": {"strata": census, **notes},
         "door_offset_max_m": round(door_bound_m, 2),
         "band_s": BAND_S,
-        "deep_pass_s": DEEP_PASS_S,
-        "deep_fail_s": DEEP_FAIL_S,
+        "control_margin_s": CONTROL_MARGIN_S,
+        "max_walk_min": args.max_walk_min,
+        "predicted_walk": {
+            "rows_with_a_finite_time": len(walk_min),
+            "total_hours_one_way": round(sum(walk_min) / 60.0, 2),
+            "longest_min": round(max(walk_min), 1) if walk_min else None,
+        },
         "blind_spot": (
-            "The committed layer is an aggregate over destinations and does not store which "
-            "destination it chose, so this audit can establish that some destination was open and "
-            "reachable, not that the product's destination was. Narrowing, not closing, the "
-            "closed-destination blind spot that E1 and E2 share."
+            "The layer's aggregation is cost_selected_category: the time of the journey our cost "
+            "model selected, an UPPER BOUND, not the minimum over qualifying destinations. The "
+            "selected destination's identity is not stored either, so this audit establishes that "
+            "some qualifying destination was open and reachable, never that ours was. Narrowing, "
+            "not closing, the closed-destination blind spot that E1 and E2 share; closing it needs "
+            "one bounded graph load over the sampled cells, keeping the POI-to-node association."
+        ),
+        "attribution": {
+            "buildings_in_cell": (
+                "Derived from Overture Maps buildings, release 2026-10-21.0, aggregated to counts "
+                "per cell. No footprint geometry is reproduced. Upstream in this metro: "
+                "OpenStreetMap (ODbL 1.0), Microsoft ML Buildings and Esri Community Maps "
+                "(CC BY 4.0 with OpenStreetMap waivers). ODbL 4.3 and CC BY notice obligations "
+                "apply to a count raster as much as to geometry; see docs/experiments/audit/"
+                "README.md and project-v2-rethink-decisions decision 17."
+            ),
+            "travel_times": "our own routing over an OpenStreetMap extract (ODbL 1.0)",
+            "overture": "https://docs.overturemaps.org/attribution/",
+            "odbl": "https://opendatacommons.org/licenses/odbl/1-0/",
+            "cc_by": "https://creativecommons.org/licenses/by/4.0/legalcode.en",
+        },
+        "seconds_precision": (
+            "The stored seconds are float32. A model value of 600.00001 s is stored as 600.0 and "
+            "so passes a 600 s threshold the model fails. This audit evaluates the stored "
+            "artifact, which is what the product ships, not the model's float64 answer."
         ),
         "reproducibility": (
             f"v2/data/ is gitignored, so the input rasters named above do not travel with a "
@@ -550,6 +682,9 @@ def main() -> None:
     for name, c in census.items():
         print(f"  {name:<24} {c['in_stratum']:>7,} cells  {c['eligible']:>7,} eligible  "
               f"{c['drawn']:>2} drawn")
+    if walk_min:
+        print(f"predicted one-way walking: {sum(walk_min) / 60.0:.2f} h over "
+              f"{len(walk_min)} rows with a finite time, longest {max(walk_min):.0f} min")
     print(f"built in {meta['elapsed_s']}s without loading the road graph")
 
 

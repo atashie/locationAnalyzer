@@ -7,14 +7,24 @@ script asserts that. An assertion that has never been seen to fire has not been 
 anything — pass-19 F5 found exactly that, a guard living in a scratch directory that protected one
 invocation on one afternoon — so each refusal is exercised here against a fabricated layer.
 
-The substantive test is `test_the_weak_off_network_bound_gives_the_same_answers...`: it checks the
-claim that the weak `OFF_NETWORK` bound of 0 is not merely *sound* but *outcome-identical* to the
-bound the pipeline really computes, at the thresholds this audit uses, and that it stops being so
-below that bound.
+The substantive tests are the two about the `OFF_NETWORK` bound. The first version of them was
+**wrong, and passed vacuously**: it generated access distances uniformly in `[0, 200]` m and
+concluded that the reconstruction was outcome-identical to the real bound. But a cell is
+`OFF_NETWORK` precisely *because* `snapped.access_m > max_access_m` (`traveltime/snap.py:265`), so
+`[0, 200]` is the domain in which a cell is **not** `OFF_NETWORK` at all. 200 m is the floor of
+those distances, not the ceiling, and the real bound has no upper limit.
+
+What is actually true, and what these now test:
+
+* over any surface the reconstruction is **sound and lossy** — `0` never exceeds the real bound, so
+  it can report `UNKNOWN` where the pipeline proves `FAIL` but can never manufacture an exclusion;
+* for the cells the audit **emits** it is exact, because every one is adjacent to an `OK` cell and
+  adjacency bounds the access distance by `max_access_m + cell_m * sqrt(2)`.
 """
 from __future__ import annotations
 
 import importlib.util
+import math
 from pathlib import Path
 
 import numpy as np
@@ -98,57 +108,93 @@ def test_it_refuses_to_reconstruct_a_bound_when_a_cell_proves_no_path(tmp_path):
     _load(_write(tmp_path, *_arrays(codes)))
 
 
-def test_it_refuses_when_the_weak_off_network_bound_could_change_an_answer(tmp_path):
-    """A threshold below the largest real access bound makes 0 a *different* answer, not just a
-    weaker one, so the script refuses rather than reporting UNKNOWN where the pipeline proves
-    FAIL."""
+def test_it_refuses_when_even_the_adjacency_bound_exceeds_the_threshold(tmp_path):
+    """Below 244 s, adjacency stops making the reconstruction exact and the script refuses rather
+    than printing UNKNOWN where the pipeline proves FAIL."""
     layers = _write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10))
-    real_bound_max = audit.MAX_ACCESS_M / max_speed_mps("walk")
-    assert 100.0 < real_bound_max < 600.0, "the arithmetic this test depends on has moved"
+    adjacency_bound = (audit.MAX_ACCESS_M + 100.0 * math.sqrt(2.0)) / max_speed_mps("walk")
+    assert 200.0 < adjacency_bound < 600.0, "the arithmetic this test depends on has moved"
 
-    with pytest.raises(audit.Refused, match="outcome-equivalent"):
-        _load(layers, thresholds_s=(100.0,))
+    with pytest.raises(audit.Refused, match="not exact even for cells adjacent"):
+        _load(layers, thresholds_s=(200.0,))
     _load(layers, thresholds_s=(600.0,))      # and it is accepted above the bound
 
 
-def test_the_weak_off_network_bound_gives_the_same_answers_as_the_real_one(tmp_path):
-    """The claim that licenses the reconstruction, tested directly rather than argued.
+def _outcomes(seconds, reason, bound, t_s):
+    surf = Surface(mode="walk", engine="own-graph", target="grocery",
+                   aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S,
+                   seconds=np.asarray(seconds, dtype=np.float64), reason=reason,
+                   min_possible_s=np.asarray(bound, dtype=np.float64)).validate()
+    crit = Criterion(label="x", mode="walk", target="grocery", kind="category", threshold_s=t_s)
+    return evaluate(crit, surf)
 
-    The pipeline's real bound is `access_m / max_speed_mps` (`traveltime/snap.py:291`), at most
-    `200 / 1.4 = 142.9 s` walking. `evaluate` turns a bound into a known failure only when it
-    strictly exceeds the threshold, so at 600 s and 900 s the real bound and 0 agree on every cell.
-    """
-    rng = np.random.default_rng(20261109)
-    codes = [0] * 10 + [1] * 10 + [2] * 10
-    seconds, reason = _arrays(codes)
+
+def _bounds(seconds, reason, access_m):
+    """The real reconstruction pair for a given set of off-network access distances."""
     off = reason == Reason.OFF_NETWORK
-    # The real bound, with access distances spread over the whole admissible range.
-    access_m = np.where(off, rng.uniform(0.0, audit.MAX_ACCESS_M, size=reason.shape), 0.0)
     real = np.where(off, access_m / max_speed_mps("walk"), 0.0)
     real = np.where(reason == Reason.OK, seconds, real)
     real = np.where(reason == Reason.BEYOND_HORIZON, HORIZON_S, real)
     weak = np.where(reason == Reason.OK, seconds, 0.0)
     weak = np.where(reason == Reason.BEYOND_HORIZON, HORIZON_S, weak)
+    return real, weak
 
-    def surface(bound):
-        return Surface(mode="walk", engine="own-graph", target="grocery",
-                       aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S,
-                       seconds=seconds.astype(np.float64), reason=reason,
-                       min_possible_s=bound.astype(np.float64)).validate()
 
-    def outcomes(bound, t_s):
-        crit = Criterion(label="x", mode="walk", target="grocery", kind="category", threshold_s=t_s)
-        return evaluate(crit, surface(bound))
+def test_the_reconstructed_off_network_bound_is_sound_but_lossy():
+    """Over a surface, `0` can only lose a FAIL - it can never produce an exclusion.
+
+    The access distances here come from the domain a cell is actually `OFF_NETWORK` in: *above*
+    `max_access_m`, with no upper limit. Codex pass 26 measured real bounds of 143.6 s, 714.3 s and
+    1,428.6 s for origins 201 m, 1 km and 2 km off-network, so at a 600 s threshold the real surface
+    says UNKNOWN, FAIL, FAIL where the reconstruction says UNKNOWN three times.
+    """
+    codes = [0] * 10 + [1] * 10 + [2] * 10
+    seconds, reason = _arrays(codes)
+    off = reason == Reason.OFF_NETWORK
+    # 201 m, 1 km, 2 km and beyond - all genuinely off-network, none of them bounded by 200 m.
+    far = np.linspace(201.0, 3000.0, int(off.sum()))
+    access_m = np.zeros(reason.shape)
+    access_m[off] = far
+
+    real, weak = _bounds(seconds, reason, access_m)
+    assert (weak <= real).all(), "the reconstruction must never exceed the real bound"
 
     for t_s in THRESHOLDS_S:
-        assert np.array_equal(outcomes(real, t_s), outcomes(weak, t_s)), \
-            f"the bounds disagree at {t_s}s, so the reconstruction is not outcome-identical"
-        assert (outcomes(weak, t_s)[off] == Outcome.UNKNOWN).all()
+        r, w = _outcomes(seconds, reason, real, t_s), _outcomes(seconds, reason, weak, t_s)
+        # Sound: nothing the reconstruction calls FAIL is anything else in truth.
+        assert not ((w == Outcome.FAIL) & (r != Outcome.FAIL)).any(), \
+            "the reconstruction manufactured an exclusion"
+        # Lossy, and demonstrably so on this surface rather than merely in principle.
+        lost = (r == Outcome.FAIL) & (w == Outcome.UNKNOWN)
+        assert lost.any(), f"no FAIL was lost at {t_s}s; the test no longer exercises the defect"
+        assert (w[off] == Outcome.UNKNOWN).all()
 
-    # Below the real bound they genuinely differ, which is what the refusal above protects.
-    tight = 60.0
-    assert not np.array_equal(outcomes(real, tight), outcomes(weak, tight))
-    assert (outcomes(real, tight)[off] == Outcome.FAIL).any()
+
+def test_the_reconstruction_is_exact_for_a_cell_adjacent_to_an_ok_cell():
+    """Which is the only claim the emitted sheet needs, and the one the script checks.
+
+    An `OFF_NETWORK` cell next to an `OK` cell inherits a bound: the neighbour's own access is at
+    most `max_access_m`, and the two centres are at most one cell diagonal apart, so this cell's
+    access is at most `max_access_m + cell_m * sqrt(2)` = 341.4 m, a real bound of 243.9 s.
+    """
+    cell_m = 100.0
+    limit_m = audit.MAX_ACCESS_M + cell_m * math.sqrt(2.0)
+    assert limit_m == pytest.approx(341.42, abs=0.01)
+    assert limit_m / max_speed_mps("walk") == pytest.approx(243.9, abs=0.1)
+    assert limit_m / max_speed_mps("walk") < min(THRESHOLDS_S)
+
+    codes = [0] * 10 + [1] * 10 + [2] * 10
+    seconds, reason = _arrays(codes)
+    off = reason == Reason.OFF_NETWORK
+    access_m = np.zeros(reason.shape)
+    # Every admissible distance for an adjacent cell: just off-network, up to the adjacency bound.
+    access_m[off] = np.linspace(audit.MAX_ACCESS_M + 0.01, limit_m, int(off.sum()))
+
+    real, weak = _bounds(seconds, reason, access_m)
+    for t_s in THRESHOLDS_S:
+        assert np.array_equal(_outcomes(seconds, reason, real, t_s),
+                              _outcomes(seconds, reason, weak, t_s)), \
+            f"adjacency does not make the reconstruction exact at {t_s}s"
 
 
 def test_it_prefers_a_stored_bound_to_the_reconstruction(tmp_path):
@@ -167,15 +213,23 @@ def test_it_prefers_a_stored_bound_to_the_reconstruction(tmp_path):
     assert (evaluate(crit, surf)[reason == Reason.NO_PATH] == Outcome.FAIL).all()
 
 
-def test_it_refuses_a_seconds_and_reason_pair_from_different_builds(tmp_path):
-    """The two files were written by separate runs 43 minutes apart. `Surface.validate` requires a
-    finite time exactly where the reason is OK, so an inconsistent pair is caught rather than
-    silently mislabelling cells — but the message has to say so."""
+def test_it_refuses_a_seconds_and_reason_pair_that_violate_an_invariant(tmp_path):
+    """`Surface.validate` requires a finite time exactly where the reason is OK, which catches the
+    common mismatch. It establishes **invariants, not shared provenance** — two builds with the same
+    OK mask and different times both pass — so the message says that rather than claiming the files
+    were proven to come from one build."""
     seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10)
     reason = reason.copy()
-    reason[0, 0] = Reason.OFF_NETWORK          # a finite time now carries a non-OK reason
-    with pytest.raises(audit.Refused, match="do not describe one surface"):
+    reason[1, 0] = Reason.OFF_NETWORK          # a finite time now carries a non-OK reason
+    with pytest.raises(audit.Refused, match="violate a Surface invariant"):
         _load(_write(tmp_path, seconds, reason))
+
+    # And the limit of it: swapping two infinite cells' reasons passes validation untouched, so
+    # nothing here should be read as a provenance check.
+    seconds, reason = _arrays([0] * 10 + [1] * 10 + [2] * 10)
+    swapped = reason.copy()
+    swapped[reason == Reason.OFF_NETWORK] = Reason.BEYOND_HORIZON
+    _load(_write(tmp_path, seconds, swapped))
 
 
 def test_it_refuses_a_layer_whose_shape_is_not_the_grid(tmp_path):
@@ -250,16 +304,104 @@ def test_a_layer_with_nothing_cut_off_needs_no_corroboration(tmp_path):
     assert prov["build"]["horizon"]["corroborated"] is True
 
 
-def test_it_refuses_a_build_whose_access_distance_breaks_the_equivalence(tmp_path):
-    """The equivalence is stated as the widest build it tolerates - `min(threshold) * max_speed`,
-    840 m for a 10-minute walk - so being slightly wrong about the build is harmless and being
-    wrong by a factor of five is caught."""
+def test_it_refuses_a_build_whose_access_distance_breaks_the_adjacency_bound(tmp_path):
+    """A build with a 1 km access rule puts even an adjacent cell past 600 s, so the exactness the
+    emitted rows rely on is gone and the sidecar is what reveals it."""
     layers = _write(tmp_path, *_arrays([0] * 10 + [1] * 10 + [2] * 10))
     (layers / "own_triangle_grocery_walk_build.json").write_text(
         '{"horizon_s": 7200.0, "max_access_m": 1000.0}', encoding="utf-8")
-    with pytest.raises(audit.Refused, match="tolerates max_access_m up to 840m"):
+    with pytest.raises(audit.Refused, match="not exact even for cells adjacent"):
         _load(layers)
 
     (layers / "own_triangle_grocery_walk_build.json").write_text(
-        '{"horizon_s": 7200.0, "max_access_m": 800.0}', encoding="utf-8")
-    _load(layers)          # inside the envelope, accepted
+        '{"horizon_s": 7200.0, "max_access_m": 600.0}', encoding="utf-8")
+    _load(layers)          # 600 + 141 m is 530 s, still inside 600 s
+
+
+def test_the_no_path_refusal_is_a_fail_fast_not_a_correctness_barrier():
+    """The claim this script used to make - that without the refusal a NO_PATH cell would silently
+    read as UNKNOWN - is false twice over, and the correction is worth pinning.
+
+    `Surface.validate` rejects a NO_PATH cell whose bound is not `+inf` (`status.py:325`), and
+    `evaluate` fails NO_PATH unconditionally whatever its bound (`status.py:380`). So the refusal
+    buys a legible message at the point of cause, not correctness.
+    """
+    seconds, reason = _arrays([0] * 10 + [1] * 9 + [3] + [2] * 10)
+    wrong_bound = np.where(reason == Reason.OK, seconds, 0.0).astype(np.float64)
+    wrong_bound = np.where(reason == Reason.BEYOND_HORIZON, HORIZON_S, wrong_bound)
+    surf = Surface(mode="walk", engine="own-graph", target="grocery",
+                   aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S,
+                   seconds=seconds.astype(np.float64), reason=reason, min_possible_s=wrong_bound)
+
+    # 1. validate refuses it outright.
+    with pytest.raises(ValueError, match="NO_PATH cells must carry"):
+        surf.validate()
+
+    # 2. and even unvalidated, evaluate still fails the cell: the bound is not consulted for
+    #    NO_PATH, so the "silent UNKNOWN" could not have happened.
+    crit = Criterion(label="x", mode="walk", target="grocery", kind="category", threshold_s=600.0)
+    assert (evaluate(crit, surf)[reason == Reason.NO_PATH] == Outcome.FAIL).all()
+
+
+def test_the_off_network_stratum_sits_beside_a_pass_not_beside_any_answer():
+    """It dilated `reason == OK` until Codex pass 26: 24,468 cells qualified and the three drawn
+    had nearest answering neighbours an hour from a grocery. "Unknown beside a pass" has to dilate
+    the PASS mask."""
+    # Row 1 is OFF_NETWORK throughout. Row 0 passes on the left and fails far to the right.
+    seconds = np.array([
+        [300.0, 300.0, np.inf, 4000.0, 4000.0, 4000.0],
+        [np.inf] * 6,
+        [300.0, 300.0, np.inf, 4000.0, 4000.0, 4000.0],
+        [np.inf] * 6,
+        [np.inf] * 6,
+    ])
+    reason = np.where(np.isfinite(seconds), np.int8(Reason.OK),
+                      np.int8(Reason.OFF_NETWORK)).astype(np.int8)
+    bound = np.where(reason == Reason.OK, seconds, 0.0)
+    surf = Surface(mode="walk", engine="own-graph", target="grocery",
+                   aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S, seconds=seconds,
+                   reason=reason, min_possible_s=bound).validate()
+    crit = Criterion(label="x", mode="walk", target="grocery", kind="category", threshold_s=900.0)
+    pools = audit.strata(surf, {15: evaluate(crit, surf)}, thresholds_min=(15,))
+
+    beside = pools["off_network_beside_pass15min"]
+    assert beside.any()
+    # Column 0-1 off-network cells are beside a 300 s pass; columns 4-5 are beside 4,000 s fails.
+    assert beside[1, 0] and beside[1, 1]
+    assert not beside[1, 5], "an off-network cell beside a FAIL was selected as beside a pass"
+    assert not beside[4, 5], "a cell with no answering neighbour at all was selected"
+    # And it is strictly inside what dilating OK would have given.
+    from scipy import ndimage
+    beside_any = ((reason == Reason.OFF_NETWORK)
+                  & ndimage.binary_dilation(reason == Reason.OK, structure=np.ones((3, 3), bool)))
+    assert beside_any.sum() > beside.sum(), "dilating PASS should be strictly tighter than OK"
+    assert (beside & ~beside_any).sum() == 0
+
+
+def test_the_deep_controls_keep_a_margin_and_stay_inside_the_walk_cap():
+    """A control is defined by its margin past the threshold, not by an absolute time. The first
+    version asked for >= 1,800 s and drew walks of 108, 50 and 56 minutes."""
+    t = 900.0
+    # `binary_erosion` keeps only cells whose whole 3x3 neighbourhood agrees, so each control needs
+    # a region three rows deep before any cell of it can qualify at all.
+    secs = np.full((7, 6), t + audit.CONTROL_MARGIN_S + 60.0)   # 1,260 s: fails with margin
+    secs[0:3, :] = 100.0                                        # passes with margin
+    secs[5, 3] = t + 10.0                                       # fails, but with no margin
+    reason = np.zeros((7, 6), dtype=np.int8)
+    surf = Surface(mode="walk", engine="own-graph", target="grocery",
+                   aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S, seconds=secs,
+                   reason=reason, min_possible_s=secs.copy()).validate()
+    crit = Criterion(label="x", mode="walk", target="grocery", kind="category", threshold_s=t)
+    pools = audit.strata(surf, {15: evaluate(crit, surf)}, thresholds_min=(15,))
+
+    fail_ctl = pools["deep_fail_control"]
+    assert fail_ctl.any()
+    assert (secs[fail_ctl] >= t + audit.CONTROL_MARGIN_S).all()
+    assert not fail_ctl[5, 3], "a cell 10 s past the threshold is not a control"
+    assert fail_ctl[5, 1], "the interior of the failing region should qualify"
+    # The deep PASS control needs the margin on the other side.
+    pass_ctl = pools["deep_pass_control"]
+    assert pass_ctl.any() and (secs[pass_ctl] <= t - audit.CONTROL_MARGIN_S).all()
+    assert pass_ctl[1, 1] and not pass_ctl[3, 1]
+    assert audit.STRATUM_DRAW_CAP["deep_fail_control"] == 1, \
+        "the longest stratum on the sheet should not be drawn three times"

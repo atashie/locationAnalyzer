@@ -139,11 +139,19 @@ helper anywhere in `locfinder/`** — `GridSpec` goes centre-outward only — so
 `cell_for_lonlat` must be written. And `status.Surface` needs `min_possible_s`, which is **not
 stored** beside the layer; but the real reason array holds **only 0, 1, 2** (`OK`, `OFF_NETWORK`,
 `BEYOND_HORIZON` — no `NO_PATH`, as S0 found), and `evaluate` reads `horizon_s` directly for
-`BEYOND_HORIZON`, so a sound bound is reconstructible as *seconds where OK, 0 where OFF_NETWORK*.
-That lets the harness skip the 670 MB `roads.graphml` and run in about a second — **provided it
-asserts `reason.max() <= Reason.BEYOND_HORIZON` and refuses otherwise.** Without that assert a layer
-that did contain `NO_PATH` would read as `UNKNOWN`, turning a proven failure into an absence. The
-reconstruction is a property of *this artifact*, not of the format.
+`BEYOND_HORIZON`, so a **sound** bound is reconstructible as *seconds where OK, the horizon where
+BEYOND_HORIZON, 0 where OFF_NETWORK*. That lets the harness skip the 670 MB `roads.graphml` and run
+in about a second.
+
+> **Corrected after Codex pass 26 built it.** Two claims written here before the work were wrong.
+> The `NO_PATH` assertion is a **fail-fast, not a correctness barrier**: `Surface.validate` rejects
+> a `NO_PATH` cell whose bound is not `+inf` and `evaluate` fails `NO_PATH` unconditionally, so
+> nothing would have been *silently* misread. And the `0` for `OFF_NETWORK` is **sound but lossy,
+> not exact**: a cell is `OFF_NETWORK` because `access_m > max_access_m`, so 200 m is the *floor* of
+> those distances and the real bound is unbounded above. The reconstruction can report `UNKNOWN`
+> where the pipeline proves `FAIL` — losing information, never manufacturing an exclusion — and is
+> exact only for cells **adjacent to an `OK` cell**, which is all the harness emits. See
+> [[project-phase1-s3-step0-audit-harness]].
 
 **T0 keeps its design and moves to position 3**: pass 26's staged
 prevalence-and-impact pilot on the real Triangle graph (all data already on disk), **time boxed to

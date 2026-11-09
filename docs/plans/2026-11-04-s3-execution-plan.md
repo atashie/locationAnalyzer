@@ -117,19 +117,33 @@ record them on. Three pieces, and the reconnaissance for all three is done:
   `horizon_s` directly for `BEYOND_HORIZON` and fails `NO_PATH` unconditionally. So a **sound**
   bound is reconstructible: the seconds where `OK`, `0` where `OFF_NETWORK`.
 
-  > **The harness must assert `reason.max() <= Reason.BEYOND_HORIZON` and refuse otherwise**,
-  > falling back to `traveltime.layer.build_layer_surface`. Without that assert, a layer that did
-  > contain `NO_PATH` would be silently read as `UNKNOWN` — turning a proven failure into an
-  > absence, which is the one error class this whole stage exists to prevent. The reconstruction is
-  > a property of *this* artifact, not of the format.
+  > **Corrected by Codex pass 26, 2026-11-09.** Two things here were wrong. The `NO_PATH`
+  > assertion is a **fail-fast, not a correctness barrier**: `Surface.validate` rejects a
+  > `NO_PATH` cell whose bound is not `+inf` and `evaluate` fails `NO_PATH` unconditionally, so
+  > nothing would have been *silently* read as `UNKNOWN`. And the `0` bound for `OFF_NETWORK` is
+  > **sound but lossy, not exact** — a cell is `OFF_NETWORK` because `access_m > max_access_m`,
+  > so 200 m is the *floor* of those distances and the real bound has no upper limit. It can
+  > therefore report `UNKNOWN` where the pipeline proves `FAIL`, which loses information but can
+  > never manufacture an exclusion. Exactness holds only for cells **adjacent to an `OK` cell**,
+  > whose access is bounded by `max_access_m + cell_m * sqrt(2)` = 341.4 m = 243.9 s; only those
+  > are emitted, and the adjacency is asserted per row. See
+  > `docs/engineering-notes/project-phase1-s3-step0-audit-harness.md`.
 
   The payoff is that the harness runs in about a second instead of loading the 670 MB
   `roads.graphml`, so the owner's loop is fast.
 
-**Which journeys it selects.** Cells within **+/- 90 s of the 10- and 15-minute thresholds**, where a
-wrong answer changes a decision; `OFF_NETWORK` cells **adjacent to `OK` cells**, where the product
-says "unknown" next door to a pass; and deep-interior PASS plus deep-exterior FAIL controls, so a
-systematic offset is visible rather than inferred.
+**Which journeys it selects.** Cells within **+/- 90 s of the 10- and 15-minute thresholds**,
+split by the side of each threshold so both halves of the decision are tested; `OFF_NETWORK`
+cells **adjacent to a PASS**; and deep PASS and deep FAIL controls defined by a **5-minute
+margin**, so a systematic offset is visible rather than inferred.
+
+> **Corrected by pass 26.** "Adjacent to `OK` cells" as written here was implemented literally
+> and is not the same question: it selected cells whose nearest answering neighbour was an hour
+> from a grocery. It must be adjacent to a **PASS** — 1,081 cells, 77 with a building, against
+> 24,468 and 633. And "deep-exterior FAIL" by absolute time asked the owner for a 108-minute
+> walk to confirm that somewhere an hour and three quarters from a grocery is more than fifteen
+> minutes from one; the whole first sheet came to 6.22 hours of one-way walking. **The predicted
+> seconds are the walking time** — time box every sheet by it.
 
 **What each row records.** The query coordinate; its cell; the **centroid-to-door offset in metres**
 — up to about 70 m on a 100 m cell, which is error the audit must *record*, because the product
