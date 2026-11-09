@@ -1,0 +1,9 @@
+# raw upstream fetches: large, regenerable by basemap.py
+states_raw.json
+motorways_raw.json
+
+# cached routing responses, keyed on request
+.route-cache/
+
+# generated output
+route-options.html

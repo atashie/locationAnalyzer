@@ -1,0 +1,490 @@
+{
+  "origin": {
+    "name": "Chapel Hill, NC",
+    "lat": 35.9132,
+    "lon": -79.0558
+  },
+  "dest": {
+    "name": "Thomasville, GA",
+    "lat": 30.8366,
+    "lon": -83.9788
+  },
+  "stops": {
+    "sob": {
+      "name": "South of the Border",
+      "where": "Dillon, SC - I-95 exit 1B",
+      "lat": 34.49851,
+      "lon": -79.30932,
+      "dwell_min": 15,
+      "cost_usd": 0,
+      "url": "https://www.sobpedro.com/attractions",
+      "hours": "grounds open; tower & arcade Mon-Thu 11:00-19:00, Reptile Lagoon closed Tue-Thu",
+      "status": "standing",
+      "kind": "roadside",
+      "facilities": [
+        {
+          "name": "Sunoco West pumps (pay at pump)",
+          "always": true,
+          "note": "open 24 h, 7 days; card at the pump before 07:00",
+          "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+          "status": "standing"
+        },
+        {
+          "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+          "always": true,
+          "note": "no hours; sunrise at Dillon is 07:00",
+          "status": "standing"
+        },
+        {
+          "name": "Pedro's Pantry + public restrooms",
+          "days": "daily",
+          "open": "07:00",
+          "close": "23:00",
+          "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+          "status": "standing"
+        },
+        {
+          "name": "Mexico Shop East",
+          "days": "Mon-Thu",
+          "open": "08:00",
+          "close": "21:00",
+          "url": "https://www.sobpedro.com/shopping",
+          "status": "standing"
+        },
+        {
+          "name": "Fort Pedro Fireworks",
+          "days": "daily",
+          "open": "09:00",
+          "close": "21:00",
+          "url": "https://www.sobpedro.com/shopping",
+          "status": "standing"
+        },
+        {
+          "name": "Sombrero Tower + arcade",
+          "days": "Mon-Thu",
+          "open": "11:00",
+          "close": "19:00",
+          "url": "https://www.sobpedro.com/attractions",
+          "status": "standing"
+        },
+        {
+          "name": "Reptile Lagoon",
+          "days": "Mon,Fri-Sun",
+          "open": "10:00",
+          "close": "19:00",
+          "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+          "status": "standing"
+        }
+      ]
+    },
+    "walterboro": {
+      "name": "Walterboro Wildlife Sanctuary",
+      "where": "Walterboro, SC - I-95 exit 53",
+      "lat": 32.89718,
+      "lon": -80.67816,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
+      "hours": "daily dawn-dusk",
+      "status": "standing",
+      "kind": "outdoors",
+      "facilities": [
+        {
+          "name": "Sanctuary boardwalks and trails",
+          "always": true,
+          "note": "daily dawn to dusk, free; sunrise 07:02",
+          "url": "https://www.walterborosc.org/walterboro-wildlife-sanctuary-0",
+          "status": "standing"
+        }
+      ]
+    },
+    "hiotts": {
+      "name": "Hiott's Pharmacy soda fountain",
+      "where": "373 E Washington St, Walterboro, SC",
+      "lat": 32.9027914,
+      "lon": -80.6632022,
+      "dwell_min": 20,
+      "cost_usd": 0,
+      "url": null,
+      "hours": "Mon-Fri 09:00-18:00 (third-party listings only)",
+      "status": "unknown",
+      "kind": "food",
+      "facilities": [
+        {
+          "name": "Soda fountain lunch counter",
+          "days": "Mon-Fri",
+          "open": "09:00",
+          "close": "18:00",
+          "note": "third-party listings only; no operator page found",
+          "status": "unknown"
+        }
+      ]
+    },
+    "pig_rh": {
+      "name": "Smokin Pig",
+      "where": "3986 Hwy 17, Richmond Hill, GA - I-95 exit 87",
+      "lat": 31.9305584,
+      "lon": -81.3286155,
+      "dwell_min": 45,
+      "cost_usd": 0,
+      "url": "https://www.smokinpigbbqjoint.com/",
+      "hours": "Tue-Sat 11:00-20:00",
+      "status": "standing",
+      "kind": "food",
+      "facilities": [
+        {
+          "name": "Smokin Pig dining room",
+          "days": "Tue-Sat",
+          "open": "11:00",
+          "close": "20:00",
+          "url": "https://www.smokinpigbbqjoint.com/",
+          "status": "standing"
+        }
+      ]
+    },
+    "mighty8": {
+      "name": "Mighty Eighth Air Force Museum",
+      "where": "Pooler, GA - I-95 exit 102",
+      "lat": 32.11566,
+      "lon": -81.23637,
+      "dwell_min": 90,
+      "cost_usd": 0,
+      "url": "https://www.mightyeighth.org/",
+      "hours": "Tue-Sat 10:00-17:00; Thanksgiving closure listed for Nov 26",
+      "status": "standing",
+      "kind": "indoors",
+      "cost_note": "admission not published on the pages fetched",
+      "facilities": [
+        {
+          "name": "Museum galleries",
+          "days": "Tue-Sat",
+          "open": "10:00",
+          "close": "17:00",
+          "url": "https://www.mightyeighth.org/",
+          "status": "standing"
+        }
+      ]
+    },
+    "mcallister": {
+      "name": "Fort McAllister State Park",
+      "where": "Richmond Hill, GA",
+      "lat": 31.88531,
+      "lon": -81.20236,
+      "dwell_min": 75,
+      "cost_usd": 35.5,
+      "url": "https://gastateparks.org/FortMcAllister",
+      "hours": "park 07:00-22:00; historic site 08:00-17:00",
+      "status": "standing",
+      "kind": "outdoors",
+      "facilities": [
+        {
+          "name": "Park grounds, trails, playground",
+          "days": "daily",
+          "open": "07:00",
+          "close": "22:00",
+          "url": "https://gastateparks.org/FortMcAllister",
+          "status": "standing"
+        },
+        {
+          "name": "Earthwork fort / historic site",
+          "days": "daily",
+          "open": "08:00",
+          "close": "17:00",
+          "url": "https://gastateparks.org/FortMcAllister",
+          "status": "standing"
+        }
+      ]
+    },
+    "lswalker": {
+      "name": "Laura S. Walker State Park",
+      "where": "near Waycross, GA",
+      "lat": 31.14105,
+      "lon": -82.21472,
+      "dwell_min": 30,
+      "cost_usd": 5,
+      "url": "https://gastateparks.org/LauraSWalker",
+      "hours": "daily 07:00-22:00",
+      "status": "standing",
+      "kind": "outdoors",
+      "facilities": [
+        {
+          "name": "Park, beach, playground, boardwalk",
+          "days": "daily",
+          "open": "07:00",
+          "close": "22:00",
+          "url": "https://gastateparks.org/LauraSWalker",
+          "status": "standing"
+        }
+      ]
+    },
+    "okefenokee": {
+      "name": "Okefenokee Swamp Park",
+      "where": "5700 Okefenokee Swamp Park Rd, Waycross, GA",
+      "lat": 31.05779,
+      "lon": -82.27247,
+      "dwell_min": 80,
+      "cost_usd": 98,
+      "url": "https://okeswamp.org/general-admission/",
+      "hours": "daily 09:00-17:00",
+      "status": "standing",
+      "kind": "ticketed",
+      "facilities": [
+        {
+          "name": "Swamp park: train, boardwalk, reptile show",
+          "days": "daily",
+          "open": "09:00",
+          "close": "17:00",
+          "url": "https://okeswamp.org/general-admission/",
+          "status": "standing"
+        }
+      ]
+    },
+    "zoo": {
+      "name": "Riverbanks Zoo & Garden",
+      "where": "Columbia, SC - I-26 at SC-378",
+      "lat": 34.00874,
+      "lon": -81.07313,
+      "dwell_min": 90,
+      "cost_usd": 105.8,
+      "kind": "ticketed",
+      "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+      "hours": "winter (2 Nov - 31 Jan) 09:00-16:00; closed Thanksgiving",
+      "cost_note": "$27.95 adult / $24.95 child online; $12 more for all four at the gate",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "Zoo and botanical garden",
+          "days": "daily",
+          "open": "09:00",
+          "close": "16:00",
+          "url": "https://www.riverbanks.org/plan-your-visit/visitor-information",
+          "status": "standing"
+        }
+      ]
+    },
+    "ocmulgee": {
+      "name": "Ocmulgee Mounds National Historical Park",
+      "where": "Macon, GA",
+      "lat": 32.83723,
+      "lon": -83.60184,
+      "dwell_min": 75,
+      "cost_usd": 0,
+      "kind": "outdoors",
+      "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+      "hours": "grounds 08:00-17:00 daily; visitor centre & Earth Lodge 09:00-17:00; no entrance fee",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "Mounds and walking trails",
+          "days": "daily",
+          "open": "08:00",
+          "close": "17:00",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing"
+        },
+        {
+          "name": "Visitor centre and Earth Lodge",
+          "days": "daily",
+          "open": "09:00",
+          "close": "17:00",
+          "url": "https://www.nps.gov/ocmu/planyourvisit/hours.htm",
+          "status": "standing"
+        }
+      ]
+    },
+    "phinizy": {
+      "name": "Phinizy Swamp Nature Park",
+      "where": "1858 Lock and Dam Rd, Augusta, GA",
+      "lat": 33.38901,
+      "lon": -81.95979,
+      "dwell_min": 35,
+      "cost_usd": 0,
+      "kind": "outdoors",
+      "url": "https://phinizycenter.org/location-contact/",
+      "hours": "07:00-19:00 (Oct-Mar), 365 days, free",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "Boardwalks and 14 mi of trails",
+          "days": "daily",
+          "open": "07:00",
+          "close": "19:00",
+          "url": "https://phinizycenter.org/location-contact/",
+          "status": "standing"
+        }
+      ]
+    },
+    "discovery": {
+      "name": "Discovery Place Science",
+      "where": "301 N Tryon St, Charlotte, NC",
+      "lat": 35.22962,
+      "lon": -80.8412,
+      "dwell_min": 90,
+      "cost_usd": 0,
+      "kind": "indoors",
+      "url": "https://www.discoveryplace.org/science/visit",
+      "hours": "Wed 09:00-16:00",
+      "cost_note": "admission not published on the pages fetched",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "Museum galleries (fully indoor)",
+          "days": "Mon-Fri",
+          "open": "09:00",
+          "close": "16:00",
+          "url": "https://www.discoveryplace.org/science/visit",
+          "status": "standing"
+        }
+      ]
+    },
+    "weymouth": {
+      "name": "Weymouth Woods Sandhills Nature Preserve",
+      "where": "Southern Pines, NC",
+      "lat": 35.14153,
+      "lon": -79.39822,
+      "dwell_min": 30,
+      "cost_usd": 0,
+      "kind": "outdoors",
+      "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+      "hours": "November 08:00-18:00; visitor centre 08:00-17:00; free",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "7 mi of trails, picnic area",
+          "days": "daily",
+          "open": "08:00",
+          "close": "18:00",
+          "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+          "status": "standing"
+        },
+        {
+          "name": "Visitor centre + Discovery Room",
+          "days": "daily",
+          "open": "08:00",
+          "close": "16:00",
+          "url": "https://www.ncparks.gov/state-parks/weymouth-woods-sandhills-nature-preserve",
+          "status": "standing"
+        }
+      ]
+    },
+    "zooatl": {
+      "name": "Zoo Atlanta",
+      "where": "Grant Park, Atlanta, GA",
+      "lat": 33.7326,
+      "lon": -84.37104,
+      "dwell_min": 100,
+      "cost_usd": 0,
+      "kind": "ticketed",
+      "url": "https://zooatlanta.org/visit/",
+      "hours": "2 Nov - 6 Dec daily 09:00-17:00, last entry 15:30; closed Thanksgiving",
+      "cost_note": "admission not published on the pages fetched; varies by date",
+      "status": "standing",
+      "facilities": [
+        {
+          "name": "Zoo grounds",
+          "days": "daily",
+          "open": "09:00",
+          "close": "17:00",
+          "url": "https://zooatlanta.org/visit/",
+          "status": "standing",
+          "last_entry": "15:30"
+        }
+      ]
+    }
+  },
+  "options": {
+    "coastal-fewest": {
+      "label": "Coastal: fewest stops, earliest arrival",
+      "corridor": "coastal - I-95 then US-84",
+      "depart_h": 4.75,
+      "stops": [
+        "sob",
+        "pig_rh",
+        "lswalker"
+      ]
+    },
+    "coastal-swamp": {
+      "label": "Coastal: one big thing, the swamp",
+      "corridor": "coastal - I-95 then US-84",
+      "depart_h": 4.75,
+      "stops": [
+        "sob",
+        "pig_rh",
+        "okefenokee"
+      ],
+      "dwell_min": {
+        "okefenokee": 90
+      }
+    },
+    "coastal-outdoors": {
+      "label": "Coastal: most time on your feet",
+      "corridor": "coastal - I-95 then US-84",
+      "depart_h": 4.75,
+      "stops": [
+        "sob",
+        "walterboro",
+        "hiotts",
+        "pig_rh",
+        "okefenokee"
+      ],
+      "dwell_min": {
+        "pig_rh": 40,
+        "okefenokee": 75
+      }
+    },
+    "fallline-two-big": {
+      "label": "Fall line: zoo and mounds",
+      "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+      "depart_h": 5.3,
+      "stops": [
+        "zoo",
+        "ocmulgee"
+      ],
+      "dwell_min": {
+        "zoo": 90,
+        "ocmulgee": 75
+      }
+    },
+    "fallline-gentler": {
+      "label": "Fall line: zoo, swamp and mounds",
+      "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+      "depart_h": 5.3,
+      "stops": [
+        "zoo",
+        "phinizy",
+        "ocmulgee"
+      ],
+      "dwell_min": {
+        "zoo": 90,
+        "phinizy": 35,
+        "ocmulgee": 60
+      }
+    },
+    "fallline-indoors": {
+      "label": "Fall line: indoors in Charlotte, if it rains",
+      "corridor": "fall line - I-77, I-20, Fall Line Fwy, I-75",
+      "depart_h": 6.75,
+      "stops": [
+        "discovery",
+        "ocmulgee"
+      ],
+      "dwell_min": {
+        "discovery": 90,
+        "ocmulgee": 60
+      }
+    },
+    "atlanta-two-cities": {
+      "label": "Atlanta: science museum and a big zoo",
+      "corridor": "Atlanta - I-85 the whole way, then I-75",
+      "depart_h": 6.75,
+      "stops": [
+        "discovery",
+        "zooatl"
+      ],
+      "dwell_min": {
+        "discovery": 80,
+        "zooatl": 100
+      }
+    }
+  }
+}

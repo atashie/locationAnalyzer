@@ -105,6 +105,8 @@ cache/
 *.exe
 *.dll
 *.dylib
+__pycache__/
+.route-cache/
 
 # Claude Code local settings. Per-machine, and the remembered Bash permission
 # entries can capture whatever was typed into an approved command, including
