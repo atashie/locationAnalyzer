@@ -162,7 +162,7 @@ destination actually used, date, and outcome.
 | # | work | box | risk retired |
 |---|---|---|---|
 | 1 | **DONE** `ed8bb6b`, except §12 item 1, which was never in its scope — see the note below. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
-| 2 | **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
+| 2 | **DRAFTED, awaiting the owner** — design revision 12, §3's E1c subsection and §13's row. **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
 | 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
 | 5 | **S3.1 — the matched 100 m / 200 m grid comparison** | 1/2 day after T3 | the grid decision S3 exists to make, never yet run |
@@ -186,6 +186,17 @@ destination actually used, date, and outcome.
 
 **Step 2 changes what gets reported**, so it is an owner decision: it will be drafted as an additive
 §13 amendment and flagged, not adopted silently.
+
+> **The draft exists and is not in force.** Design revision 12 adds **E1c**,
+> `Pr(comparator = FAIL | product = PASS)`, as a reported measure with no threshold and no
+> acceptance role. The decision asked of the owner is whether to adopt it, and separately whether it
+> should ever gate — with one measured fact making that second question concrete: E1c's denominator
+> is the *claimed* subset, about **37 observations** on frame C at *T* = 10 rather than the 417 the
+> design's old example implied, so `tolerated_failures` reports a 1.0% gate **unreachable** at
+> §4's allocation and reaching it would need **8.2×** the sampling. Phases B-E of the step — a Codex
+> pass on the draft, then `stats.py`, tests, and wiring into T6 and T11 — are deliberately **not**
+> begun until the draft is accepted, because a statistics error is cheap to fix in prose and
+> expensive once it is wired into the report.
 
 > **Step 1 closed three of §12's four items, not four.** Its row lists non-finite query coordinates,
 > the numerical domain, the cost discriminator and the uniqueness promise — §12 items 2, 3 and 4,

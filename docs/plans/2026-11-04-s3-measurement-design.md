@@ -2,6 +2,25 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 12, 2026-11-09 — DRAFT, awaiting an owner decision; not in force.** Adds **E1c**, the
+conditional false-inclusion rate `Pr(comparator = FAIL | product = PASS)`, as a **reported and
+explicitly non-gating** measure beside E1a and E1b, which are unchanged. Plan §0 step 2. Nothing
+about E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule or the selection policy
+changes, and E1c cannot cause a layer to fail.
+
+The reason it is not gated is **measured, not preferred**: E1c's denominator is the *claimed* subset,
+and at §4's *n* = 500 that is about **37 observations** on frame C at *T* = 10, not the 417 the
+paragraph below suggests — 417 is the *answered* share, PASS and FAIL together. `tolerated_failures`
+returns **-1** at all four published claim denominators, which is §4's own unreachable-gate
+condition. See §3's E1c subsection.
+
+**Revision 11, 2026-11-09.** Plan §0 step 1: §12 amendment items 2, 3 and 4 — the uniqueness
+promise, the admissible numerical domain, and the final cost discriminator lifted into normative
+§2.4 — plus rejection of non-finite query coordinates at every public entry. `ed8bb6b`, `f8b123f`.
+**§12 item 1, the geometry arithmetic, was not in it and is still open**; T3 remains gated on it.
+This row is written late: revision 11's changes went into the body without a header block or a §13
+row, which is why the body referred to "revision 11" while both of those stopped at 10.
+
 **Revision 10, 2026-11-06.** **Revision 9 is reverted after one hour.** §2.2's candidate universe
 returns to per-segment minima plus the tie band across records, now **declared as a convention** —
 a function of the supplied geometry, not a property of the road — with its sensitivities listed
@@ -782,9 +801,113 @@ against 0.9452% at 500. A conditional rate may be added **only** as a separately
 its own formula, threshold and allocation. "Reporting the denominator" is presentation and repairs
 nothing.
 
+> **Revision 12 adds such a measure, E1c, and satisfies two of those three requirements rather than
+> three.** It has its own name and its own formula. It has **no threshold and no allocation**, and
+> the measurement below is the reason: a 1.0% gate is unreachable at the denominator §4's allocation
+> produces, and an allocation that would reach it is 8.2× the current one. Rather than invent a
+> threshold that the data cannot support or quietly drop the requirement, revision 12 **narrows it**:
+> a conditional rate may be added with its own name and formula alone **provided it carries no
+> acceptance role**, and a conditional rate that gates anything still requires all three. E1c is of
+> the first kind. The 417 figure in this paragraph is also corrected below — it is the *answered*
+> denominator, not the *claimed* one.
+
 Estimated **separately on each frame**: frame B as a share of structures, frame C as a share of
 ground area. Same engine both sides, so a difference is ours to fix — construction testing, not a
 validity claim.
+
+### E1c — the conditional rate a user is exposed to (reported, never gated)
+
+**Added in revision 12, as a draft for the owner.** Plan §0 step 2, whose stated purpose is "the
+quantity a user is actually harmed by".
+
+> **E1c conditional false inclusion** `= Pr(comparator = FAIL | product = PASS)`, per mode *m*,
+> published threshold *T* and frame — **of the claims the product made, the share that are wrong**.
+> On frame B that is a share of claimed structures; on frame C a share of claimed ground area.
+
+**Why E1b alone is not enough, in one sentence.** E1b divides by the whole frame, so every
+observation where the product declined to claim makes the reported rate smaller, and a user is
+exposed to the error only where the product *did* claim.
+
+**It also stops one specific concealment.** §4 records that an all-`UNKNOWN` product produces zero
+E1a and zero E1b events and **passes both construction thresholds** at 0.5974%. E1c's denominator
+*vanishes* in that case rather than its numerator, so it reports **undefined** instead of excellent.
+It does not reverse the degenerate — §4 is right that only an acceptance rule could — but it is the
+first reported number that declines to hide it.
+
+**The denominator is random and fully observed, which is the opposite of E1b's situation.** The
+product's verdict is known at every sampled point, so the claim count *m* carries no missingness.
+Unresolved comparator verdicts therefore inflate the **numerator only**: `u` never enters the
+denominator, and the reported identification range is `[k/m, (k+u)/m]`. Treating `u` as denominator
+uncertainty would be the natural mistake to make here and is wrong.
+
+**The claim denominator is far smaller than the 417 figure implies, and this is measured.** 417 is
+500 × (1 − 0.166722) — the **answered** share of frame C at *T* = 10, PASS *and* FAIL. E1c conditions
+on PASS alone. Measured 2026-11-09 from the saved arrays `own_triangle_grocery_walk.npy`,
+`..._reason.npy` and `own_triangle_buildings_per_cell.npy`, whose 330,502 cells and 512,633 buildings
+match this section's frame sizes exactly:
+
+| *T* | frame C PASS cells | share of area | frame B PASS buildings | share of structures | *m* at *n*=500, C | B |
+|---|---|---|---|---|---|---|
+| 10 | 24,245 | **7.3358%** | 80,051 | **15.6157%** | **36.7** | **78.1** |
+| 15 | 47,495 | 14.3706% | 163,850 | 31.9624% | 71.9 | 159.8 |
+| 25 | 93,562 | 28.3091% | 298,705 | 58.2688% | — | — |
+| 45 | 161,664 | 48.9147% | 424,886 | 82.8831% | — | — |
+
+**So a 1.0% gate on E1c is unreachable under §4's allocation, and the test §4 chose that allocation
+by says so.** `tolerated_failures(m, 0.01)` — the failure-tolerance test of §4, by §6's method —
+returns **-1** at all four published claim denominators: the unreachable-gate condition pass-15 H2
+found shipped undetected in revision 2, and which that function exists to report. With **zero** observed errors the 95% Clopper-Pearson bound is **7.7775%** (C,
+*T*=10), 4.0754% (C, 15), 3.7679% (B, 10) and 1.8549% (B, 15). Reaching 1.0% needs *m* ≥ **299**,
+which at the measured PASS shares is *n* ≈ **4,076** on the binding frame and threshold — **8.2×**
+§4's allocation.
+
+**E1c therefore carries no acceptance verdict, and three consequences are stated rather than left to
+inference:**
+
+1. it **cannot cause a layer to fail**, and §8's rule is untouched;
+2. no output may present it as a bar that was met — it has no bar;
+3. its precision is **inherited, not chosen**. E1c has no allocation of its own, so whatever *m* the
+   E1 draw happens to yield is what it gets, and at *T* = 10 on frame C that is a bound of roughly
+   8% at best. **A wide interval honestly reported is the deliverable here**, not a defect to be
+   tuned away.
+
+Raising E1c to a gate is a further owner decision with the sample-size consequence above, and needs
+its own §13 row.
+
+**The interval method differs by frame, and the binomial bound is valid on only one of them.**
+Frame B is SRS without replacement (§4), so *conditional on the observed m* the numerator is binomial
+and Clopper-Pearson on `(k, m)` is a valid conditional bound — conservative in exactly the way §6
+already notes for the full-frame bounds. **Frame C is two-stage** (§6: SRS of cells, then one uniform
+point per cell), so the conditional rate is a **ratio of two estimated quantities** and
+Clopper-Pearson does not apply to it; frame C's interval is a percentile bootstrap resampling
+**whole cells** as the primary unit (T1's `percentile_bootstrap`). Reusing the binomial bound on
+frame C would produce a number that looks right and is not — it is the one error in this subsection
+most likely to survive review, so it is named here.
+
+**A zero denominator reports undefined.** *m* = 0 yields neither 0.0 nor a bound, and any output
+consuming E1c must render undefined **distinctly from a small rate**. This is the all-`UNKNOWN` case
+above, and collapsing it to zero would restore precisely the concealment E1c was added to end.
+
+**Multiplicity binds harder, not the same.** §8 already states that the sixteen bounds are not
+simultaneous 95% bounds and that no output may present them so. E1c adds a further bound per mode,
+threshold and frame. The warning is unchanged in kind and stronger in degree.
+
+**Only the inclusion direction is conditioned, and the asymmetry is measured rather than argued.**
+The dilution argument is symmetric in *form*, so a measurement has to decide it. Conditioning on
+product PASS shrinks the denominator by **13.6×** at the binding case (frame C, *T* = 10);
+conditioning on product FAIL shrinks it by **1.3×**, because a sound lower bound on the FAIL share
+there is 75.2540% of area and 83.6710% of structures. E1a's full-frame form is therefore already
+close to its own conditional, and E1b's is not. A conditional false-exclusion rate is **not added**
+on that evidence; if the FAIL share falls materially in a future layer, the argument for adding one
+returns.
+
+**What E1c cannot see — and the report must use these words, not a softer paraphrase.** The product
+and the comparator read the **same destination list**. A grocery that has closed, is fenced off, or
+was never there produces *agreement* between the two sides and a wrong answer from both. Neither E1b
+nor E1c can detect it, and no conditioning on the product's own verdict ever could. E1c measures
+**"of the homes we recommend, the share our own comparator judges wrong"** — not **"the share that
+would disappoint on arrival."** The second quantity is measured only by plan §0's walked-journey
+audit, and by nothing else in this design.
 
 ### E2 — engine disagreement (descriptive)
 
@@ -1259,6 +1382,38 @@ Collected here because they were found as defects and must not be lost again.
 ---
 
 ## 13. Change log
+
+### Revision 12 — 2026-11-09 — DRAFT, awaiting an owner decision
+
+**Adds §3's E1c**, `Pr(comparator = FAIL | product = PASS)`, as a reported and explicitly non-gating
+measure. **Additive**: E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule and the
+selection policy are unchanged, and E1c cannot fail a layer.
+
+| what | why |
+|---|---|
+| E1c added, per mode, threshold and frame | E1b's denominator is the whole frame, so declining to answer improves the reported rate; a user is exposed only where a claim was made. Plan §0 step 2 |
+| **no threshold, no allocation** | measured, not preferred: `tolerated_failures(m, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs *m* ≥ 299, i.e. *n* ≈ 4,076, **8.2×** §4's allocation |
+| §3's "may be added only ... with its own formula, threshold and allocation" **narrowed** | E1c meets two of the three. Rather than invent an unsupportable threshold or drop the requirement silently, a conditional rate with **no acceptance role** now needs name and formula only; one that gates still needs all three |
+| the 417 figure corrected in place | 417 is the **answered** denominator (PASS and FAIL). The **claimed** denominator is ≈ **37** on frame C at *T* = 10 — a 13.6× shrink, measured from the saved arrays |
+| frame C's interval is a **cell bootstrap**, not Clopper-Pearson | frame C is two-stage, so the conditional rate is a ratio of two estimated quantities; the binomial bound is valid on frame B only. Named explicitly as this amendment's likeliest surviving error |
+| `u` inflates the **numerator only** | the product's verdict is known everywhere, so the claim denominator has no missingness — the opposite of E1b's situation |
+| *m* = 0 reports **undefined**, distinctly from a small rate | an all-`UNKNOWN` product passes E1a and E1b at 0.5974% (§5). E1c's denominator vanishes instead, so it declines to hide that; collapsing undefined to 0.0 would restore the concealment |
+| **no** conditional false-exclusion rate | the asymmetry is measured: conditioning shrinks the PASS denominator 13.6× and the FAIL denominator 1.3×, so E1a is already close to its own conditional |
+| the shared-destination blind spot stated in the report's own words | both sides read one destination list, so a closed or absent grocery yields agreement and two wrong answers. Only §0's walked audit sees it |
+
+### Revision 11 — 2026-11-09
+
+Plan §0 step 1, recorded late — the body carried "revision 11" while the header and this log stopped
+at revision 10, which is itself the kind of silence pass 30 found in the plan's step-1 row.
+
+| what | why |
+|---|---|
+| §12 item 2, the uniqueness promise, weakened to an **enumerated four** — total time, total cost, destination identity, route identity — with the exclusions named, and T10 given its own reconstruction rule | "they determine every number this design reports" was false twice over; the network/connector decomposition is **measured** to vary at 1.0 against 0.9968253968355556 by input order under tied keys. `f8b123f` |
+| §12 item 3, the **admissible numerical domain**, declared, and extended after pass 30 to the graph aggregate and to conversion-before-comparison | per-field finiteness is not a domain: `abs(numpy.int64(-2**63))` passed the magnitude bound, and an admissible per-edge cost still overflowed a journey total |
+| §12 item 4, the **final cost discriminator**, lifted into normative §2.4 | it repaired pass-21 F6 in code only; the normative lift ended at the route sequence |
+| non-finite query coordinates rejected at every public entry | a NaN origin manufactured an authoritative `NO_PATH` |
+| §2.4's four-edge-key totality claim corrected; the short-segment rejection message made honest about where the arithmetic actually fails | identity excludes time and cost, so "identical in every quantity this design reports" was self-contradictory; and `5e-7 ** 2` does not underflow, so the floor is a declared edge with margin, under which the domain is **not closed under subdivision** |
+| **§12 item 1, the geometry arithmetic, NOT closed** | never in step 1's scope. Pass 30 added two witnesses *inside* the declared domain — a dot product cancelling to exactly 0.0, and a subtraction rounding a projection onto an endpoint. Needs exact binary-rational arithmetic in the projection: a revision-12-or-later change. **T3 stays gated on it** |
 
 ### Revision 10, reverting revision 9 — 2026-11-06
 
