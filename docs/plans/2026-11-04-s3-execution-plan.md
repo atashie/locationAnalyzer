@@ -161,7 +161,7 @@ destination actually used, date, and outcome.
 
 | # | work | box | risk retired |
 |---|---|---|---|
-| 1 | **DONE** `ed8bb6b`. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
+| 1 | **DONE** `ed8bb6b`, except §12 item 1, which was never in its scope — see the note below. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
 | 2 | **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
 | 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
@@ -186,6 +186,14 @@ destination actually used, date, and outcome.
 
 **Step 2 changes what gets reported**, so it is an owner decision: it will be drafted as an additive
 §13 amendment and flagged, not adopted silently.
+
+> **Step 1 closed three of §12's four items, not four.** Its row lists non-finite query coordinates,
+> the numerical domain, the cost discriminator and the uniqueness promise — §12 items 2, 3 and 4,
+> plus the query-coordinate half of 3. **§12 item 1, the geometry arithmetic, was never in it**, and
+> this row's silence about it is why revision 11 read as though step 1 finished the amendment. It is
+> still open, Codex pass 30 found two further witnesses inside the declared numerical domain, and
+> **T3 remains gated on it**. It needs exact binary-rational arithmetic in the projection — a
+> revision-12 design change, not a cheap debt.
 
 ### Cut, on pass 25's recommendation
 
@@ -426,18 +434,18 @@ record's "Not yet built":
    made the answer depend on record segmentation. §2.2 now **declares** per-segment minima plus the
    band as a convention, provisionally, with its sensitivities listed. **T0 below is what settles
    it.**
-1. **The geometry arithmetic.** Revision 8 froze `f × (cost_base + penalty)` as one term and left the
-   *fraction* unfrozen. `sum` against left accumulation of one three-segment edge's lengths gives
+1. **The geometry arithmetic — the one still open, and what T3 is gated on.** Revision 8 froze
+   `f × (cost_base + penalty)` as one term and left the *fraction* unfrozen. `sum` against left accumulation of one three-segment edge's lengths gives
    0.16666666666666669 against 0.16666666666666666 as the first-vertex fraction, which loses or wins
    a cost argmin and reports **1,000 s or 1 s**. Needs: segment-length summation, prefix arclength,
    the projection parameter, the traversal fraction, the same-edge interval formula, and the
    zero-total-length convention.
-2. **What uniqueness §2.4 promises.** Node simplicity makes the route set finite, not a
-   reconstruction unique: three direct partial journeys over one zero-weight self-crossing edge tie
+2. **What uniqueness §2.4 promises — SETTLED, revision 11.** Node simplicity makes the route set
+   finite, not a reconstruction unique: three direct partial journeys over one zero-weight self-crossing edge tie
    on every declared field at lengths 50, 450 and 50 m, flipping T10's boundary-touch between **0%
    and 100%**. Either traversal intervals and a tie convention enter the key, or §2.4 states the
    weaker promise and T10 gets its own reconstruction spec.
-3. **The admissible numerical domain.** Finite fields are not a domain: a `(0,0)→(1e-200,0)` segment
+3. **The admissible numerical domain — SETTLED, revision 11** (extended after pass 30). Finite fields are not a domain: a `(0,0)→(1e-200,0)` segment
    underflows to degenerate and reports 7.94e-201 s where 1,000 s is required; `1e308` base plus
    `1e308` penalty validates, totals to `inf`, reaches `0*inf` and raises from `min()`. Query
    coordinates are unvalidated.

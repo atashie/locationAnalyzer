@@ -906,20 +906,90 @@ def test_the_ranking_does_not_select_a_unique_traversal():
     reconstruction rule as a consequence. If a future change made these keys distinguish the three,
     the promise could be strengthened again — and this test is how anyone would notice.
     """
-    edge = toy.ToyEdge(0, 1, ((0.0, 0.0), (500.0, 0.0)), time_s=0.0, cost_base=0.0,
-                       osmid=(1,), oneway=True)
+    # Codex pass 30's witness, which replaces a weaker one of mine. Mine used three *different*
+    # origin/destination pairs on a straight edge, so it showed that three separate queries share a
+    # key — not that one query has an ambiguous answer. This geometry self-crosses, so a **single**
+    # query has three tied traversals and the ambiguity is in one answer.
+    edge = toy.ToyEdge(0, 1, ((0, 0), (100, 0), (100, 100), (0, 100), (0, 0), (100, 0)),
+                       time_s=0.0, cost_base=0.0, osmid=(1,), oneway=True)
     graph = toy.ToyGraph(edges=(edge,))
-    spans = (((25.0, 0.0), (75.0, 0.0)),        # 50 m
-             ((25.0, 0.0), (475.0, 0.0)),       # 450 m
-             ((425.0, 0.0), (475.0, 0.0)))      # 50 m again, at the far end
 
-    keys = set()
-    for origin, dest in spans:
-        js = toy.journeys(graph, origin, [dest])
-        assert js, "each span must produce a journey for the tie to mean anything"
-        keys.update(j.rank_key for j in js)
-    assert len(keys) == 1, f"the keys distinguish the traversals after all: {keys}"
+    js = toy.journeys(graph, (25.0, 0.0), [(75.0, 0.0)])
+    assert len(js) == 3, f"expected three tied traversals of one query, got {len(js)}"
+    assert len({j.rank_key for j in js}) == 1, "the keys distinguish the traversals after all"
 
-    # And the identity itself is what lacks the interval, which is the reason rather than the symptom.
+    # The identity is what lacks the interval, which is the cause rather than the symptom: it has a
+    # fixed six-field shape and none of those fields is an arclength or a pair of them.
     identity = toy.directed_identity(edge, forward=True)
-    assert 25.0 not in identity and 475.0 not in identity, "identity gained an arclength field"
+    assert len(identity) == 6, f"identity shape changed to {len(identity)} fields; re-check this"
+    start, end, geom_key, orientation, osmid, length = identity
+    assert (start, end) == (0, 1) and orientation in (0, 1) and osmid == (1,)
+    assert isinstance(length, float), "length is the whole edge, not a traversed extent"
+    assert isinstance(geom_key, tuple), "the geometry key is the whole geometry, not an interval"
+
+
+def test_the_domain_bounds_the_graph_aggregate_not_only_each_edge():
+    """Bounding each edge's formed cost term still let a journey *total* overflow: one edge with
+    `time_s = 1e308` and the origin on the destination made `evaluate` raise
+    `OverflowError: intermediate overflow in fsum` where the correct optimum is **zero** (Codex
+    pass 30). Per-field finiteness cannot give that guarantee; only the sum can."""
+    with pytest.raises(ValueError, match="total time_s"):
+        toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (1000.0, 0.0)), time_s=1e308,
+                                        cost_base=1.0, osmid=(1,)),))
+    with pytest.raises(ValueError, match="total cost"):
+        toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (1000.0, 0.0)), time_s=1.0,
+                                        cost_base=1e308, osmid=(1,)),))
+    # The bound is on the aggregate, so several edges that are each comfortable can still fail it.
+    halves = tuple(toy.ToyEdge(i, i + 1, ((100.0 * i, 0.0), (100.0 * (i + 1), 0.0)),
+                               time_s=6e307, cost_base=1.0, osmid=(i + 1,)) for i in range(2))
+    with pytest.raises(ValueError, match="total time_s"):
+        toy.ToyGraph(edges=halves)
+    # And an ordinary graph is unaffected.
+    toy.ToyGraph(edges=(toy.ToyEdge(0, 1, ((0.0, 0.0), (100.0, 0.0)), time_s=60.0, cost_base=60.0,
+                                    osmid=(1,)),))
+
+
+def test_a_foreign_numeric_type_cannot_decide_the_domain_check():
+    """`abs(numpy.int64(-2**63))` overflows to itself and stays negative, so it passed
+    `> COORD_ABS_MAX` and the point reached the geometry as -9.2e18 (Codex pass 30). The domain is
+    stated in binary64, so the conversion has to happen **before** the comparison, not after."""
+    numpy = pytest.importorskip("numpy")
+    worst = numpy.int64(-(2 ** 63))
+    with numpy.errstate(over="ignore"):      # the overflow IS the premise, so do not warn on it
+        assert abs(worst) < 0, "numpy no longer overflows here; this test's premise is gone"
+
+    with pytest.raises(ValueError, match="outside the admissible domain"):
+        toy.require_query_point((worst, numpy.int64(0)), "the origin")
+    with pytest.raises(ValueError, match="outside the admissible domain"):
+        toy.ToyEdge(0, 1, ((worst, 0), (100.0, 0.0)), time_s=1.0, cost_base=1.0, osmid=(1,))
+
+    # An in-range numpy scalar is still accepted, converted to the declared representation.
+    assert toy.require_query_point((numpy.float64(5.0), numpy.int32(7)), "p") == (5.0, 7.0)
+    assert all(isinstance(v, float) for v in toy.require_query_point((numpy.int32(1), 2), "p"))
+
+
+def test_the_ranking_does_not_determine_the_reported_decomposition():
+    """The companion to the traversal ambiguity, and the reason §2.4's promise had to be enumerated
+    rather than summarised as "every number this design reports".
+
+    Two records sharing an `osmid`, one straight and one imperceptibly curved, carry weights chosen
+    so that both winners tie on **every** rank key and report the same total. Reordering the records
+    changes the reported **network** seconds — 1.0 against 0.9968253968355556 — because the
+    connector/network split depends on which record won, and the keys do not choose between them
+    (Codex pass 30).
+    """
+    straight = toy.ToyEdge(0, 1, ((0, 0), (50, 0), (100, 0)), time_s=2.0, cost_base=2.0,
+                           osmid=(7,))
+    curved = toy.ToyEdge(0, 1, ((0, 0), (50, 0.004), (100, 0)), time_s=1.9936507809117465,
+                         cost_base=1.9936507809117465, osmid=(7,))
+
+    winners = []
+    for order in ((straight, curved), (curved, straight)):
+        js = toy.journeys(toy.ToyGraph(edges=order), (25.0, 0.0), [(75.0, 0.0)])
+        winners.append(min(js, key=lambda j: j.rank_key))
+
+    assert len({w.rank_key for w in winners}) == 1, "the keys do separate them; promise can be raised"
+    assert winners[0].time_s == winners[1].time_s == 1.0, "the total is determined, as promised"
+    assert winners[0].network_s != winners[1].network_s, "the decomposition is determined after all"
+    assert winners[0].network_s == 1.0
+    assert winners[1].network_s == pytest.approx(0.9968253968355556, abs=1e-15)

@@ -479,9 +479,15 @@ So, normatively:
 > then the smallest normalised `osmid` tuple; then the smallest rounded length; then the smallest
 > canonical geometry key. The same rule applies in projection, attachment and reconstruction.
 
-The fourth key makes the order total **over directed edges**: alternatives agreeing on all four are
-identical in every quantity this design reports, so the choice among them cannot change a result,
-and any of them may be named as the selected edge provided the choice is deterministic.
+The fourth key makes the order total **over directed edges**: alternatives agreeing on all four
+have the same identity, so no *identity-derived* quantity can distinguish them, and any of them may
+be named as the selected edge provided the choice is deterministic.
+
+**Not "identical in every quantity this design reports", which is what revision 5 through 10 said.**
+Identity deliberately excludes time and cost (item 1 above), so two records can agree on all four
+edge keys and still carry different weights — that is the whole reason the journey lift below needs
+its own time and cost keys. Pass 30 named this contradiction; the correction is to say what the four
+keys actually settle, which is identity, not weight.
 
 **It is not total over the selected *destination*, and revision 5 said it was.** Pass-19: two
 distinct Overture ids at identical coordinates, reached at identical cost and time by the identical
@@ -510,13 +516,20 @@ So, normatively: **the ranking selects a unique reported answer and a unique rou
 not select a unique traversal.** Any quantity that reads the *geometry* of the selected route rather
 than its identity is therefore not determined by §2.4, and must carry its own reconstruction rule.
 
-The one such quantity in this design is **T10's boundary-touch share**, which is exactly where
-pass-22 found it: the three traversals above touch a declared boundary band over 0% and 100% of their
-length, so T10's reported figure swings the whole way on a choice §2.4 leaves open. Two repairs were
-available — put traversal intervals and a tie convention into the key, or weaken the promise and give
-T10 its own specification. **The second is adopted**, because the intervals are not part of any
-reported number and adding them to the universal key would make every identity comparison carry a
-field that only one diagnostic reads. T10 owes that specification; until it has one its boundary-touch
+The clearest such quantity is **T10's boundary-touch share**, which is where pass-22 found it:
+the tied traversals touch a declared boundary band over 0% and 100% of their length, so T10's
+reported figure swings the whole way on a choice §2.4 leaves open. Two repairs were available — put
+traversal intervals and a tie convention into the key, or weaken the promise and give T10 its own
+specification. **The second is adopted**, because adding intervals to the universal key would make
+every identity comparison carry a field that only the reconstruction-consuming outputs read.
+
+Revision 11 justified that choice by saying "the intervals are not part of any reported number",
+which pass 30 showed is **literally false**: an interval is exactly what apportions a partial edge's
+time and cost, and those are reported. The defensible claim, and the one the choice actually rests
+on, is narrower — **the interval ambiguity that survives the ranking cannot change the four
+quantities above**, because any two traversals the keys fail to separate have already been shown
+equal on total time and total cost by the first two keys. What it can change is the decomposition
+and T10's diagnostic, which is why both now carry their own requirement. T10 owes that specification; until it has one its boundary-touch
 figure is **not reproducible** and must not be reported as though it were. T10 is already a *warning
 diagnostic and not a bound*, so this narrows an output that was never load-bearing.
 
@@ -545,10 +558,26 @@ therefore undetermined by the prose while being determined in code. It is last b
 reported quantity rather than a selection weight at this point in the order — it discriminates only
 after time, destination and route have failed to.
 
-**What the six keys now make unique, and what they do not.** They determine every number this design
-reports, the selected destination by identity, and the selected route as a *sequence of directed-edge
-identities*. They do **not** determine the traversal, because a directed-edge identity carries no
-arclength interval — see the amendment below.
+**What the six keys make unique, enumerated rather than summarised.** Revision 11 first wrote
+"they determine every number this design reports", and pass 30 refuted it in two ways at once, so
+the guarantee is now a list. The keys determine exactly:
+
+> 1. the selected journey's **total time**;
+> 2. its **total cost**;
+> 3. the selected **destination** by identity;
+> 4. the selected **route identity** — the sequence of canonical directed-edge identities.
+
+They do **not** determine the **traversal** (an identity carries no arclength interval — see the
+amendment below), nor the selected **edge record** among weight alternatives, nor the attachment
+occurrence, nor the **network/connector decomposition** of a total that is itself determined.
+
+That last one is measured, not conjectured. Two records sharing an `osmid`, one straight
+`(0,0),(50,0),(100,0)` at weight 2 and one imperceptibly curved `(0,0),(50,0.004),(100,0)` at
+1.9936507809117465, with origin `(25,0)` and destination `(75,0)`, tie on **every** key and both
+report a total of 1.0 — while the reported *network* seconds are **1.0 or 0.9968253968355556**
+depending on which record the caller listed first. Any output that consumes the decomposition rather
+than the total must therefore persist the reconstruction that was actually chosen, or record
+sufficient statistics for it; it cannot re-derive it from the keys.
 
 ### 2.5 Bounds: metric, strictness, soundness
 
@@ -1372,7 +1401,8 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
 
 **Deferred to revision 9 — four rules, none an owner decision, an allocation or a threshold.**
 
-1. **§2.4's geometry arithmetic.** Freezing `f × (cost_base + penalty)` as one term froze the
+1. **§2.4's geometry arithmetic — STILL OPEN after revision 11.** Freezing
+   `f × (cost_base + penalty)` as one term froze the
    multiplication and left the **fraction** unfrozen. Segment-length summation, prefix arclength, the
    projection parameter, the traversal fraction, the same-edge interval formula and the
    zero-total-length convention all decide the exact cost argmin before any `fsum` sees a term. On one
@@ -1387,20 +1417,44 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
    summation this section already requires for journey totals down into the geometry both settles the
    rule and keeps the reason the existing rule has. Pass 22's suggestion of left accumulation is the
    less accurate option and is not adopted.
-2. **§2.4's uniqueness promise.** Node simplicity makes the route set finite; it does not make a
+
+   **Codex pass 30 added two witnesses, and they show the gap is wider than summation order.** Both
+   lie *inside* revision 11's declared numerical domain, so the domain does not close this item:
+
+   * **Cancellation in the dot product.** On the segment `(0,0)→(1e-6,1e-6)` with weights 1e11 and
+     origin `(122.09, -122.08999999999999)`, the two terms of `(px-ax)*dx + (py-ay)*dy` cancel to
+     **exactly 0.0** in binary64 where the exact value is 1.4210854715202003e-20 — a projection
+     parameter of 0 instead of 7.105427357601002e-9, **0 s of network travel against 710.542736 s**,
+     and a total of 137.03 s PASS against 847.58 s FAIL. `fsum` of the already-rounded products
+     still returns zero, so the summation rule alone cannot reach this.
+   * **Subtraction near the coordinate bound, with no short segment at all.** On `(-1e7,0)→(1e7,0)`
+     with weights 1e19 and the origin at `nextafter(1e7, 0)` — 1.86e-9 m before the endpoint — the
+     subtraction rounds the projection onto the endpoint, producing an empty route and 1.48e-9 s
+     where the geometric network time is 931.32 s.
+
+   So revision 11's bounds prevent the demonstrated *underflow* and *overflow* and do **not**
+   establish projection accuracy; its claim that they were "derived from where the arithmetic stops
+   being exact" was too broad and is withdrawn. Closing this needs an exact binary-rational fallback
+   for the cancellation-sensitive projection terms — a revision-12 change, and what **T3 remains
+   gated on**.
+2. **§2.4's uniqueness promise — SETTLED in revision 11**, as the weaker promise plus T10's own
+   reconstruction rule. Node simplicity makes the route set finite; it does not make a
    reconstruction unique. On a zero-weight self-crossing edge, direct partial journeys over
    arclengths 25→75, 25→475 and 425→475 — lengths 50, 450 and 50 m — tie on time, cost, destination
    and the one-element identity sequence. That flips T10's reported boundary touch between **0% and
    100%** for one selected route. Either traversal intervals and a tie convention enter the key, or
    §2.4 states the weaker promise and T10 gets its own reconstruction specification.
-3. **The admissible numerical domain.** Finite constructor fields are not a domain. A
+3. **The admissible numerical domain — SETTLED in revision 11**, and extended after pass 30 to
+   the graph aggregate and to conversion-before-comparison. Finite constructor fields are not a
+   domain. A
    `(0,0)→(1e-200,0)` segment underflows to degenerate and attaches the destination at its start,
    reporting 7.936507936507936e-201 s where the endpoint-to-endpoint 1,000 s is required — PASS
    against FAIL. A `1e308` base cost with a `1e308` penalty validates, totals to `inf`, reaches
    `0*inf` and raises from an empty `min()` rather than returning its promised zero. Query
    coordinates are not validated at all.
-4. **§2.4's final discriminator.** The oracle orders journeys by `(time, destination_id, route,
-   cost)`, which repaired pass-21 F6 in code; the normative lift still ends at the route sequence. A
+4. **§2.4's final discriminator — SETTLED in revision 11**, lifted into the normative prose. The
+   oracle orders journeys by `(time, destination_id, route, cost)`, which repaired pass-21 F6 in
+   code; the normative lift used to end at the route sequence. A
    conforming reader of the prose may therefore report a different selected cost on two
    same-identity equal-time records of cost 1 and 2. Implemented, not amended.
 

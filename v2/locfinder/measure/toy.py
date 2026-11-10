@@ -126,13 +126,21 @@ def require_query_point(point, what: str) -> tuple[float, float]:
     can tell that from a place with no route to a grocery. An absence that was really a malformed
     input is the one failure this oracle must never produce silently.
     """
-    x, y = point
+    # **Convert first, then check.** Checking the caller's object and converting afterwards let a
+    # foreign numeric type decide the comparison: `abs(numpy.int64(-2**63))` overflows to itself,
+    # stays negative, and passes `> COORD_ABS_MAX`, so the point was accepted and reached the
+    # geometry as -9.223372036854776e18 (Codex pass 30). The domain is stated in binary64, so
+    # binary64 is what must be tested -- and `float()` raises on anything it cannot represent.
+    try:
+        x, y = (float(point[0]), float(point[1]))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{what} is not a pair of binary64 coordinates: {point!r}") from exc
     if not (math.isfinite(x) and math.isfinite(y)):
         raise ValueError(f"{what} must be finite, got ({x!r}, {y!r})")
     if abs(x) > COORD_ABS_MAX or abs(y) > COORD_ABS_MAX:
         raise ValueError(
             f"{what} ({x!r}, {y!r}) is outside the admissible domain |coord| <= {COORD_ABS_MAX:g}")
-    return (float(x), float(y))
+    return (x, y)
 
 
 # ----------------------------------------------------------------------------- geometry
@@ -185,23 +193,40 @@ class ToyEdge:
         # `fsum` and the geometry arithmetic are all well defined on finite values and none of them
         # is on NaN, so a non-finite input is rejected here rather than producing a silently
         # unordered result later.
-        for x, y in self.geometry:
+        for vx, vy in self.geometry:
+            # Same order as `require_query_point`, and for the same reason: the comparison must be
+            # made in the declared representation, not in whatever type the caller supplied.
+            try:
+                x, y = float(vx), float(vy)
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(
+                    f"edge coordinate is not a binary64 pair: ({vx!r}, {vy!r})") from exc
             if not (math.isfinite(x) and math.isfinite(y)):
                 raise ValueError(f"edge coordinates must be finite, got ({x!r}, {y!r})")
             if abs(x) > COORD_ABS_MAX or abs(y) > COORD_ABS_MAX:
                 raise ValueError(
                     f"edge coordinate ({x!r}, {y!r}) is outside the admissible domain "
                     f"|coord| <= {COORD_ABS_MAX:g}")
-        # Every segment is either exactly degenerate or long enough that squaring its extent stays
-        # exact. A length between the two is the 1e-200 case: nonzero, so the geometry claims a
-        # direction, but with a squared length of zero, so the projection silently loses it.
+        # Every segment is either exactly degenerate or at least `MIN_SEGMENT_M` long.
+        #
+        # The message used to say such a segment's square underflows. That is true at 1e-200, the
+        # case this was written for, and **false just below the floor** -- `5e-7 ** 2` is perfectly
+        # representable (pass 30). The floor is a declared domain edge with margin, not the exact
+        # point where the arithmetic fails, and it should not claim to be.
+        #
+        # It also has a consequence worth stating rather than discovering: subdividing an admissible
+        # `MIN_SEGMENT_M` segment at its midpoint produces two inadmissible halves. The domain is
+        # therefore **not closed under subdivision** at its own boundary. That is a real limitation
+        # of choosing a floor at all, and it is accepted here because the alternative -- exact
+        # arithmetic throughout the geometry -- is design §12 item 1, still open.
         for (ax, ay), (bx, by) in zip(self.geometry, self.geometry[1:]):
             length = math.hypot(bx - ax, by - ay)
             if 0.0 < length < MIN_SEGMENT_M:
                 raise ValueError(
                     f"segment ({ax!r}, {ay!r}) -> ({bx!r}, {by!r}) has length {length!r}, between "
-                    f"zero and the smallest admissible {MIN_SEGMENT_M:g} m. Its square underflows, "
-                    "so the projection would treat a segment with a direction as degenerate.")
+                    f"zero and the smallest admissible {MIN_SEGMENT_M:g} m. Lengths in that gap are "
+                    "outside the declared domain; a segment with a direction must be long enough "
+                    "for the projection to keep it.")
         for name, value in (("time_s", self.time_s), ("cost_base", self.cost_base),
                             ("penalty", self.penalty)):
             if not math.isfinite(value):
@@ -283,6 +308,31 @@ class ToyGraph:
                 prev = coords.setdefault(node, xy)
                 if prev != xy:
                     raise ValueError(f"node {node} has two coordinates: {prev} and {xy}")
+        # **The aggregate is part of the domain too.** Bounding each edge's formed cost term still
+        # let a journey total overflow: one edge with `time_s = 1e308` and the origin on the
+        # destination made `evaluate` raise `OverflowError: intermediate overflow in fsum` where the
+        # correct optimum is **zero** (Codex pass 30). Per-field finiteness cannot give this
+        # guarantee -- only the sum can.
+        #
+        # The factor of two covers the worst case the enumeration actually builds: an out-and-back
+        # journey traverses an edge in both directions, so a route's terms can reach twice the
+        # graph's total. The connector pair adds at most `2 * 300 / 1.26` seconds, which is
+        # negligible against the headroom this leaves but is included rather than waved away.
+        max_connectors = 2.0 * POI_SNAP_MAX_M / ACCESS_SPEED_MPS
+        for name, terms in (("time_s", [e.time_s for e in self.edges]),
+                            ("cost", [e.cost_base + e.penalty for e in self.edges])):
+            try:
+                total = math.fsum(terms + terms + [max_connectors])
+            except OverflowError as exc:
+                raise ValueError(
+                    f"the graph's total {name} overflows binary64. Every edge is individually "
+                    "finite, which is not enough: a journey total is a sum, and one that overflows "
+                    "raises from the summation instead of reporting an answer.") from exc
+            if not math.isfinite(total):
+                raise ValueError(
+                    f"the graph's total {name} is {total!r}. A journey may traverse an edge in both "
+                    "directions, so the admissible aggregate is twice the graph total plus the "
+                    "connector pair, and it must be finite.")
 
     @property
     def nodes(self) -> tuple[int, ...]:
