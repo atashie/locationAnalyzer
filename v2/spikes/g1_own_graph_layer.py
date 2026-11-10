@@ -23,8 +23,9 @@ import rasterio
 import shapely
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, ROADS_XML, append_results,  # noqa: E402
-                     layer_path, stamp)
+from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, ROADS_XML, append_results,  # noqa: E402
+                     graph_cache_complaint, layer_path, read_graph_cache_manifest, stamp,
+                     write_graph_cache_manifest)
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
@@ -37,18 +38,30 @@ POI_SNAP_MAX_M = 300.0  # drop POIs farther than this from any node (Codex pass 
 
 
 def load_graph(timings: dict):
+    """The road graph, re-parsed from the XML whenever the cache cannot answer for today's tags.
+
+    This is the ONLY place that writes the cache. It used to return the cache whenever the file
+    existed, which made adding a tag to `EXTRA_WAY_TAGS` a no-op until somebody deleted 670 MB by
+    hand -- and nothing anywhere said so. The manifest beside the cache is what makes reuse a
+    checked claim; see `_common.graph_cache_complaint`.
+    """
     t = time.perf_counter()
-    if GRAPH_CACHE.exists():
+    stale = graph_cache_complaint(read_graph_cache_manifest())
+    if GRAPH_CACHE.exists() and stale is None:
         G = ox.load_graphml(GRAPH_CACHE)
         timings["load_graph_s"] = time.perf_counter() - t
         timings["graph_source"] = "graphml cache"
         return G
+    if GRAPH_CACHE.exists():
+        print(f"re-parsing {ROADS_XML.name}: cached graph is stale ({stale})")
+        timings["cache_rejected"] = stale
     ox.settings.useful_tags_way = sorted(set(ox.settings.useful_tags_way) | set(EXTRA_WAY_TAGS))
     G = ox.graph_from_xml(ROADS_XML, simplify=True, retain_all=True)
     timings["load_graph_s"] = time.perf_counter() - t
     timings["graph_source"] = f"{ROADS_XML.name} (xml)"
     t = time.perf_counter()
     ox.save_graphml(G, GRAPH_CACHE)
+    write_graph_cache_manifest()
     timings["save_graphml_s"] = time.perf_counter() - t
     return G
 

@@ -35,7 +35,7 @@ import osmnx as ox
 V2 = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(V2))
 sys.path.insert(1, str(V2 / "spikes"))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, load_roads_graph  # noqa: E402
 
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
@@ -85,7 +85,7 @@ def unnamed(data) -> bool:
 
 
 def surface(drop: set, only_unnamed: bool = False) -> tuple[np.ndarray, dict]:
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     G = ox.project_graph(G, to_crs=GRID.crs)
     removed = 0
     if drop:

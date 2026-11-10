@@ -38,7 +38,8 @@ import numpy as np
 import osmnx as ox
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID, METRO, append_results, layer_path, stamp  # noqa: E402
+from _common import (ACCEPTED_PLACES, GRID, METRO, append_results, layer_path,  # noqa: E402
+                     load_roads_graph, stamp)
 from locfinder import profile, status as st  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.status import Criterion, Outcome, Reason, Surface  # noqa: E402
@@ -67,7 +68,7 @@ def main() -> None:
     out: dict = {"metro": METRO.name, "category": args.category, "mode": args.mode}
 
     t = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     print(f"graph loaded in {time.perf_counter() - t:.1f}s: {G.number_of_nodes()} nodes", flush=True)
 
     t = time.perf_counter()

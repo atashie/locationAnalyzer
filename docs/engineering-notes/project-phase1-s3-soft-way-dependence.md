@@ -198,12 +198,29 @@ was right.
 ## The decision, and what it is not
 
 1. **Raise `RESTRICTED_PENALTY_S["walk"]` from 120 s.** At 600 s it fixes the walked cell for
-   1.10% of 15-minute PASS buildings. This is the cheapest option, it needs no new data, and it
-   uses a mechanism already in production. **Recommended.**
+   1.10% of 15-minute PASS buildings. The cheapest option, no new data, a mechanism already in
+   production. **Priced, and not taken.**
 2. **Add `surface` to `EXTRA_WAY_TAGS` and re-extract**, so unpaved ways can be penalised on their
-   own evidence rather than by class. The layer needs rebuilding anyway.
+   own evidence rather than by class. The layer needs rebuilding anyway. **Taken.**
 3. **Keep 120 s and disclose.** Defensible only with the walked evidence stated: we know of at
    least one cell whose PASS depends on a private track and is wrong by about eleven minutes.
+   **Taken.**
+
+**The owner decided 3 and 2 on 2026-11-10, and declined 1 for a reason worth keeping.** One walked
+journey prices the candidates but does not identify the right one. The penalty is an exchange rate
+— how much detour a household is assumed to accept rather than walk down a private way — and that
+is a behavioural quantity nothing in this project has measured. Setting it from a single observation
+would be calibrating to an anecdote, and it would do so in the direction that makes the product
+look more careful while resting on no more evidence than the number it replaced. So the gap is
+carried: monitored against every further walked journey, with the signed error on restricted-route
+journeys as the statistic to accumulate, and flagged to households when estimates are delivered.
+**Do not quote the 600 s row as a plan.** Marking the cells whose route depends on a restricted way
+is a candidate for step 8 and needs no new data — `access_restricted` is already on the edges and
+the per-cell destination is now recovered.
+
+Option 2 grew by one tag in the doing. `vehicle` is read by `access.classify_access` for drive and
+bike and was never extracted, so that branch has never fired on any layer we have built. See
+[[project-phase1-s3-extract-tag-gap]].
 
 **Not available as stated:** revision 1 claimed a penalised track "would lose to any paved
 alternative". That is false for any finite penalty — Codex's counterexample selects a 100 s track

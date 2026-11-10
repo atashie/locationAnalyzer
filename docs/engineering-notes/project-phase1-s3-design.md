@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-design
-description: "S3 state after plan §0 steps 0, 1 and 2, plus the first WALKED finding: a published 13.5-minute PASS routes down an access=private track whose 120 s penalty is too small to stop it, and raising it to 600 s costs 1.10% of 15-minute PASS buildings - an OPEN OWNER DECISION. The stored walk raster is also stale by the ab01ffa symmetrise fix (7,246 cells) and needs a sequenced rebuild. E1c adopted as reported-never-gated; geometry arithmetic still gates T3. Codex passes 25-34"
+description: "S3 state after plan §0 steps 0, 1 and 2, plus the first WALKED finding: a published 13.5-minute PASS routes down an access=private track whose 120 s penalty is too small to stop it. OWNER DECIDED 2026-11-10: the penalty stays at 120 s and the gap is monitored and disclosed, because nothing here establishes what the number should be; `surface` and `vehicle` are added to EXTRA_WAY_TAGS instead and the extract rebuilt. The stored walk raster is also stale by the ab01ffa symmetrise fix (7,246 cells) and needs a sequenced rebuild. E1c adopted as reported-never-gated; geometry arithmetic still gates T3. Codex passes 25-34"
 metadata:
   node_type: memory
   type: project
@@ -30,7 +30,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **next**; 1 day, all data on disk |
 
-## THE OPEN OWNER DECISION, which is where to resume
+## THE WALKED FINDING, and the owner's decision on it
 
 The owner walked `band15min_pass-03` and found **~25 min against a published 13.5**. The cause is
 established end to end: the 305 m approach is OSM way **1254722641**, tagged **`access=private`**;
@@ -50,11 +50,33 @@ edges):
 | restricted removed | 29.8 min, FAIL | 0.81% |
 | **observed** | **~25 min** | |
 
-**Recommended: raise `RESTRICTED_PENALTY_S["walk"]` from 120 s to 600 s.** Needs no new data, uses
-production machinery, UNKNOWN moves only 73,750 → 73,968. **Not yet made — it is the owner's.**
-Second, cheap and independent: add **`surface`** to `EXTRA_WAY_TAGS` and re-extract, since the tag
-that would judge a way's usability was never pulled from the PBF. See
-[[project-phase1-s3-soft-way-dependence]].
+**OWNER DECISION, 2026-11-10: the penalty stays at 120 s.** Not because 600 s is wrong, but
+because nothing here establishes what the number should be. The table prices four candidates
+against one walked journey; it does not measure which one is right. A metro-wide parameter set from
+a single observation is calibration to an anecdote, and the exchange rate it would set
+— how much detour a household is assumed to accept rather than use a private way — is a
+behavioural quantity this project has not measured at all. So the gap is **carried, monitored and
+disclosed** rather than papered over:
+
+- **Monitor.** Every further walked journey is checked against it. The one number to watch is the
+  signed error on journeys whose route uses a restricted edge; one observation at +11.5 min is not
+  a rate, and a second and third will say whether 120 s is systematically too small or whether this
+  cell is unusual. `scripts/explain_journey.py` already names the restricted edges on a route.
+- **Flag when delivering estimates.** An estimate whose route depends on a restricted way is less
+  trustworthy than one that does not, and the surface knows which cells those are. Marking them is
+  a candidate for the step 8 report and the bounded household release — not built, and it needs
+  no new data when it is: `access_restricted` is already on the edges and the per-cell destination
+  is now recovered.
+- **Do not quote the 600 s row as a plan.** It is a priced option, nothing more.
+
+**Done instead, 2026-11-10: `surface` and `vehicle` added to `EXTRA_WAY_TAGS`, and the extract
+rebuilt.** The reason the first two rounds of measurement asked the wrong question is that highway
+class was the only evidence the extracted graph held. `surface` is the tag that would judge paving;
+`vehicle` is a **defect** — `access.classify_access` consults it for drive and bike, and it was
+never extracted, so that branch could not fire (102 ways carry it in the Triangle extract, 92 of
+them `vehicle=no`). Both are now checked by
+`v2/tests/test_graph_cache_manifest.py::test_every_tag_the_access_rules_consult_is_one_extraction_keeps`.
+See [[project-phase1-s3-soft-way-dependence]] and [[project-phase1-s3-extract-tag-gap]].
 
 One thing in that table is **unexplained**: removing restricted edges loses *fewer* 15-minute PASSes
 than penalising them at 600 s, which is backwards for a limit case. Recorded as an unverified

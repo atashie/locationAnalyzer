@@ -36,7 +36,7 @@ import osmnx as ox
 V2 = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(V2))
 sys.path.insert(1, str(V2 / "spikes"))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, load_roads_graph  # noqa: E402
 
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime import access as access_mod  # noqa: E402
@@ -70,7 +70,7 @@ def surface(penalty_s: float, drop_restricted: bool) -> tuple[np.ndarray, dict]:
     original = access_mod.RESTRICTED_PENALTY_S[MODE]
     access_mod.RESTRICTED_PENALTY_S[MODE] = penalty_s
     try:
-        G = ox.load_graphml(GRAPH_CACHE)
+        G = load_roads_graph()
         G = ox.project_graph(G, to_crs=GRID.crs)
         G = add_travel_times(G, mode=MODE)
         restricted = sum(1 for _u, _v, d in G.edges(data=True) if d.get("access_restricted"))

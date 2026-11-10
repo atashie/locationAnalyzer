@@ -39,8 +39,8 @@ import osmnx as ox
 from scipy import ndimage
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, LAYERS, METRO, METRO_DIR,  # noqa: E402
-                     append_results, stamp)
+from _common import (ACCEPTED_PLACES, GRID, LAYERS, METRO, METRO_DIR,  # noqa: E402
+                     append_results, load_roads_graph, stamp)
 from locfinder import profile  # noqa: E402
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.measure.frames import file_digest  # noqa: E402
@@ -91,7 +91,7 @@ def main() -> None:
     print(f"buildings binned in {time.perf_counter() - t:.1f}s: {bstats}", flush=True)
 
     t = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     G = ox.project_graph(G, to_crs=GRID.crs)
     G = add_travel_times(G, mode=args.mode)
     if args.mode == "walk":

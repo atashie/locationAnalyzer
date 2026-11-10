@@ -37,7 +37,7 @@ from scipy.sparse.csgraph import dijkstra
 V2 = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(V2))
 sys.path.insert(1, str(V2 / "spikes"))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, load_roads_graph  # noqa: E402
 
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.arrival import arrival_seconds  # noqa: E402
@@ -52,6 +52,19 @@ HORIZON_S = 120.0 * 60.0
 MODE = "walk"
 CATEGORY = "grocery"
 NO_PREDECESSOR = -9999
+
+
+def sel_cost(data) -> float:
+    """What path selection minimises, for one parallel edge.
+
+    `csr.graph_to_cost_time_csr` keeps the **cost**-minimal parallel edge and carries that edge's
+    own time, so a report that picks the *fastest* parallel edge can describe an edge the route
+    did not use. This tool picked by `travel_time` in every parallel-edge report for two
+    revisions. `cost` falls back to `travel_time` exactly as the CSR builder does, so an
+    unpenalised graph is unaffected.
+    """
+    t = float(data.get("travel_time", math.inf))
+    return float(data.get("cost", t))
 
 
 def classes_of(data) -> set:
@@ -95,7 +108,7 @@ def main() -> int:
     print(f"10 min: {row['outcome_10min']}   15 min: {row['outcome_15min']}")
 
     t = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     G = ox.project_graph(G, to_crs=GRID.crs)
     if drop:
         doomed = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True)
@@ -136,10 +149,10 @@ def main() -> int:
         d = shapely.distance(pt, geom)
         s_osm, e_osm = rev[eidx.start_idx[gi]], rev[eidx.end_idx[gi]]
         data = min(G.get_edge_data(s_osm, e_osm, default={0: {}}).values(),
-                   key=lambda dd: dd.get("travel_time", math.inf)) or {}
+                   key=sel_cost) or {}
         if not data:
             data = min(G.get_edge_data(e_osm, s_osm, default={0: {}}).values(),
-                       key=lambda dd: dd.get("travel_time", math.inf)) or {}
+                       key=sel_cost) or {}
         cand.append((d, gi, edge_name(data)))
     cand.sort()
     # Print the count before the list, and say when the list is cut. The first version printed the
@@ -182,9 +195,9 @@ def main() -> int:
     access_m = float(snapped.access_m[0])
     s_osm, e_osm = rev[eidx.start_idx[gi]], rev[eidx.end_idx[gi]]
     matched = min(G.get_edge_data(s_osm, e_osm, default={0: {}}).values(),
-                  key=lambda dd: dd.get("travel_time", math.inf)) or \
+                  key=sel_cost) or \
         min(G.get_edge_data(e_osm, s_osm, default={0: {}}).values(),
-            key=lambda dd: dd.get("travel_time", math.inf))
+            key=sel_cost)
     frac = float(shapely.line_locate_point(eidx.geoms[gi], pt, normalized=True))
 
     print(f"\n--- what we snapped to ---")
@@ -225,13 +238,11 @@ def main() -> int:
         u, v = rev[node], rev[p]
         best = None
         for data in (G.get_edge_data(u, v) or {}).values():
-            if best is None or data.get("travel_time", math.inf) < best.get("travel_time",
-                                                                            math.inf):
+            if best is None or sel_cost(data) < sel_cost(best):
                 best = data
         if best is None:
             for data in (G.get_edge_data(v, u) or {}).values():
-                if best is None or data.get("travel_time", math.inf) < best.get("travel_time",
-                                                                                math.inf):
+                if best is None or sel_cost(data) < sel_cost(best):
                     best = data
         length = float(best.get("length", 0.0)) if best else 0.0
         secs = float(best.get("travel_time", 0.0)) if best else 0.0

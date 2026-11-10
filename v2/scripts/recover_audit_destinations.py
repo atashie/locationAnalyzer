@@ -41,7 +41,7 @@ from pyproj import Transformer
 V2 = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(V2))
 sys.path.insert(1, str(V2 / "spikes"))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, load_roads_graph  # noqa: E402
 
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.arrival import arrival_seconds, arrival_with_selected_destination  # noqa: E402
@@ -110,7 +110,7 @@ def main() -> int:
 
     # ---- rebuild the published configuration -------------------------------------------------
     t = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     print(f"graph loaded in {time.perf_counter() - t:.1f}s: {G.number_of_nodes():,} nodes",
           flush=True)
     t = time.perf_counter()

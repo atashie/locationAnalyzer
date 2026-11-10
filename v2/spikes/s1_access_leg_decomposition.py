@@ -43,7 +43,7 @@ import osmnx as ox
 import shapely
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import GRAPH_CACHE, GRID, LAYERS, append_results, stamp  # noqa: E402
+from _common import GRAPH_CACHE, GRID, LAYERS, append_results, load_roads_graph, stamp  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
@@ -82,7 +82,7 @@ def main() -> None:
     cache = GRAPH_CACHE if GRAPH_CACHE.exists() else GRAPH_CACHE.with_name("slice-roads.graphml")
     if not cache.exists():
         raise SystemExit(f"no cached graph at {GRAPH_CACHE} or {cache}")
-    G = ox.load_graphml(cache)
+    G = load_roads_graph(cache)
     G = ox.project_graph(G, to_crs=GRID.crs)
     G = add_travel_times(G, mode=args.mode)
     if args.mode == "walk":

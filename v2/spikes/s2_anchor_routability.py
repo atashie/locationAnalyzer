@@ -33,7 +33,8 @@ import shapely
 from pyproj import Transformer
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import GRAPH_CACHE, GRID, METRO, METRO_DIR, ROUTING_PBF, append_results, stamp  # noqa: E402
+from _common import (GRAPH_CACHE, GRID, METRO, METRO_DIR, ROUTING_PBF,  # noqa: E402
+                     append_results, load_roads_graph, stamp)
 from locfinder.places.anchor import (CoreReachability, DEFAULT_MAX_NUDGE_M,  # noqa: E402
                                      SEPARATING_BARRIERS, fix_anchor, node_coordinates)
 from locfinder.traveltime.components import component_report, largest_component  # noqa: E402
@@ -73,7 +74,7 @@ def main() -> None:
 
     t = time.perf_counter()
     cache = GRAPH_CACHE if GRAPH_CACHE.exists() else GRAPH_CACHE.with_name("slice-roads.graphml")
-    G = ox.project_graph(ox.load_graphml(cache), to_crs=GRID.crs)
+    G = ox.project_graph(load_roads_graph(cache), to_crs=GRID.crs)
     G = add_travel_times(G, mode=args.mode)
     if args.mode == "walk":
         G = symmetrise(G)

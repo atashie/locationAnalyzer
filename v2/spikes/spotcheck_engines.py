@@ -39,7 +39,8 @@ import httpx
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import DATA, GRAPH_CACHE, GRID, METRO, VALHALLA, append_results, stamp  # noqa: E402
+from _common import (DATA, GRAPH_CACHE, GRID, METRO, VALHALLA, append_results,  # noqa: E402
+                     load_roads_graph, stamp)
 from locfinder.traveltime.arrival import arrival_seconds_two_weight  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
@@ -89,7 +90,7 @@ def ours_point_to_point(mode: str, pairs) -> dict:
         print(f"  (no graph cache at {GRAPH_CACHE}; skipping our own engine)")
         return {}
     t0 = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     ox.settings.useful_tags_way = sorted(set(ox.settings.useful_tags_way) | set(EXTRA_WAY_TAGS))
     G = ox.project_graph(G, to_crs=GRID.crs)
     G = add_travel_times(G, mode=mode)

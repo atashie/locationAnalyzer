@@ -51,7 +51,22 @@ WALK_EXCLUDE = {"motorway", "motorway_link", "trunk", "trunk_link", "constructio
 ACCESS_SPEED_FACTOR = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 
 # Extra OSM way tags osmnx must keep for these rules (set before parsing the XML).
-EXTRA_WAY_TAGS = ["foot", "bicycle", "motor_vehicle", "motorcar", "oneway:bicycle", "sidewalk"]
+#
+# `surface` is retained even though no rule reads it yet. The owner walked an audited journey and
+# found 25 minutes against a published 13.5; two rounds of measurement then asked which *highway
+# classes* to delete, because class was the only evidence the extracted graph held. It is the wrong
+# evidence -- `track` says nothing about whether a way is paved or passable -- and the tag that
+# would say was never pulled out of the PBF. A tag the graph does not carry cannot be honoured by
+# any rule, so extraction comes first and a decision about unpaved ways second. 166,067 way tags
+# in the Triangle extract carry it. See
+# docs/engineering-notes/project-phase1-s3-soft-way-dependence.md.
+# `vehicle` is a straight defect fix, found by writing the invariant down as a test rather than by
+# looking for it: `access._MODE_TAG_ORDER` consults it for the drive and bike modes -- it is the
+# middle tier of OSM's `access` < `vehicle` < `motor_vehicle` < `motorcar` hierarchy -- and it was
+# never extracted, so that branch could not fire. 102 ways in the Triangle extract carry it, 92 of
+# them `vehicle=no`. The walk layer is unaffected: walk consults `foot` alone.
+EXTRA_WAY_TAGS = ["foot", "bicycle", "motor_vehicle", "motorcar", "oneway:bicycle", "sidewalk",
+                  "surface", "vehicle"]
 
 
 def _values(data, key: str) -> list[str]:

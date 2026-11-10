@@ -35,7 +35,7 @@ import osmnx as ox
 import shapely
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID, append_results, stamp  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, append_results, load_roads_graph, stamp  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.access import RESTRICTED_PENALTY_S, classify_access  # noqa: E402
 from locfinder.traveltime.arrival import arrival_seconds, arrival_seconds_two_weight  # noqa: E402
@@ -49,7 +49,7 @@ EPS = 1e-6
 
 def build(mode: str, penalty: float | None = None):
     ox.settings.useful_tags_way = sorted(set(ox.settings.useful_tags_way) | set(EXTRA_WAY_TAGS))
-    G = ox.project_graph(ox.load_graphml(GRAPH_CACHE), to_crs=GRID.crs)
+    G = ox.project_graph(load_roads_graph(), to_crs=GRID.crs)
     G = add_travel_times(G, mode=mode)
     if penalty is not None:
         for _, _, d in G.edges(data=True):

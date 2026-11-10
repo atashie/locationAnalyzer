@@ -34,7 +34,7 @@ import shapely
 V2 = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(V2))
 sys.path.insert(1, str(V2 / "spikes"))
-from _common import ACCEPTED_PLACES, GRAPH_CACHE, GRID  # noqa: E402
+from _common import ACCEPTED_PLACES, GRID, load_roads_graph  # noqa: E402
 
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.arrival import arrival_seconds, arrival_with_selected_destination  # noqa: E402
@@ -64,7 +64,7 @@ def classes(data) -> set:
 
 def prepare(drop: set):
     """The published preparation, optionally without some highway classes."""
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     G = ox.project_graph(G, to_crs=GRID.crs)
     if drop:
         doomed = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True)

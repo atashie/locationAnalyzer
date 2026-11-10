@@ -77,8 +77,8 @@ import scipy.sparse as sp
 from scipy.sparse.csgraph import dijkstra
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, METRO, METRO_DIR,  # noqa: E402
-                     append_results, stamp)
+from _common import (ACCEPTED_PLACES, GRID, METRO, METRO_DIR, append_results,  # noqa: E402
+                     load_roads_graph, stamp)
 from locfinder import profile  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.access import RESTRICTED, classify_access  # noqa: E402
@@ -104,7 +104,7 @@ def main() -> None:
     out: dict = {"metro": METRO.name, "category": args.category, "mode": args.mode}
 
     t = time.perf_counter()
-    G = ox.load_graphml(GRAPH_CACHE)
+    G = load_roads_graph()
     G = ox.project_graph(G, to_crs=GRID.crs)
     G = add_travel_times(G, mode=args.mode)
     if args.mode == "walk":
