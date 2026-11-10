@@ -46,12 +46,36 @@ MUTATIONS = {
     ),
 }
 
-original = TARGET.read_text(encoding="utf-8")
-digest = hashlib.sha256(original.encode("utf-8")).hexdigest()
+# Read and write BYTES. `read_text`/`write_text` translate newlines, so the pair rewrites an
+# LF file to CRLF on Windows -- and hashing the *decoded* text on both sides, as this script
+# first did, compares translated to translated and reports "byte-identical" however much the
+# bytes changed. A restore check has to hash what is actually on disk.
+original = TARGET.read_bytes().decode("utf-8")
+digest = hashlib.sha256(TARGET.read_bytes()).hexdigest()
+
+LF = chr(10)
+CRLF = chr(13) + chr(10)
+
+
+def loc(anchor: str) -> str:
+    """Match the file's own line ending.
+
+    The anchors below are written with plain newlines. Now that the file is read as bytes
+    and decoded without translation, a multi-line anchor would never match on a CRLF
+    checkout -- and an inapplicable mutation reports as surviving, which is indistinguishable
+    from a test that cannot see it.
+    """
+    if CRLF in original:
+        return anchor.replace(LF, CRLF)
+    return anchor
+
+
 
 # the confidence check sits between the ordering guard and the zero-claim branch
 conf_old = "    _check_confidence(confidence)\n\n    if claims == 0:"
-assert original.count(conf_old) == 1, "cannot locate the confidence check"
+assert original.count(loc(conf_old)) == 1, "cannot locate the confidence check"
+# Not pre-localised: the application loop calls loc() on every anchor, and applying it
+# twice would turn each CRLF into CR CR LF.
 MUTATIONS["remove the _check_confidence call"] = ((conf_old, "    if claims == 0:"),)
 
 failures = 0
@@ -59,9 +83,10 @@ try:
     for label, swaps in MUTATIONS.items():
         mutated = original
         for old, new in swaps:
+            old, new = loc(old), loc(new)
             assert mutated.count(old) == 1, f"{label}: anchor count {mutated.count(old)}"
             mutated = mutated.replace(old, new, 1)
-        TARGET.write_text(mutated, encoding="utf-8")
+        TARGET.write_bytes(mutated.encode("utf-8"))
         r = subprocess.run([sys.executable, "-m", "pytest", "tests/test_stats.py", "-q",
                             "--no-header", "-x"], capture_output=True, text=True, cwd=str(V2))
         if r.returncode:
@@ -73,11 +98,13 @@ try:
             print(f"NOT CAUGHT   {label}  <-- no test sees this")
             failures += 1
 finally:
-    TARGET.write_text(original, encoding="utf-8")
-    back = hashlib.sha256(TARGET.read_text(encoding='utf-8').encode('utf-8')).hexdigest()
+    TARGET.write_bytes(original.encode("utf-8"))
+    back = hashlib.sha256(TARGET.read_bytes()).hexdigest()
     print(f"\nrestored byte-identical: {back == digest}")
 
-r = subprocess.run([sys.executable, "-m", "pytest", "tests/test_stats.py", "-q", "--no-header"],
+# No "-q" here: pyproject already sets addopts = "-q", and a second one suppresses the
+# summary line this parse is looking for -- which is why it printed an empty list.
+r = subprocess.run([sys.executable, "-m", "pytest", "tests/test_stats.py", "--no-header"],
                    capture_output=True, text=True, cwd=str(V2))
 print("restored suite:", [l for l in r.stdout.splitlines() if "passed" in l or "failed" in l][:1])
 raise SystemExit(1 if failures else 0)

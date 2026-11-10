@@ -55,6 +55,44 @@ def arrival_seconds_two_weight(
     result across graph rebuilds is not guaranteed.
 
     Returns +inf for unreachable nodes. Never returns a penalty-inflated time.
+
+    `arrival_with_selected_destination` returns these same seconds plus *which* destination each
+    node's chosen path leads to. This function delegates to it, so there is one search and one
+    selection rule rather than two that can drift apart.
+    """
+    seconds, _selected = arrival_with_selected_destination(
+        cost_csr, time_csr, dest_idx=dest_idx, cutoff_s=cutoff_s
+    )
+    return seconds
+
+
+def arrival_with_selected_destination(
+    cost_csr: sp.csr_matrix,
+    time_csr: sp.csr_matrix,
+    *,
+    dest_idx,
+    cutoff_s: float | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """`(seconds, selected)` — the arrival seconds, and the destination node each path leads to.
+
+    `selected[i]` is the **node index** of the destination whose cost-optimal path node `i` was
+    assigned, or **-1** where `seconds[i]` is not finite. It is a node id drawn from `dest_idx`,
+    never a position within it.
+
+    This exists because the identity of the chosen destination was already being computed and
+    thrown away. `scipy`'s `min_only=True` search returns a `sources` array alongside the
+    distances and predecessors, and the two-weight variant discarded it as `_sources`. Every
+    published layer therefore knew which grocery it had routed each household to and kept no
+    record of it, which is what made the owner's walked audit unable to check our number: the
+    sheet could say "ten minutes" but not "ten minutes to where".
+
+    A destination node can carry several places (550 grocery places snap to 510 nodes on the
+    Triangle walk graph), so a node id identifies the journey, not a single shop. Resolving it to
+    a shop is the caller's job and is one-to-many.
+
+    `selected` is masked to -1 wherever the returned seconds are infinite — including by
+    `cutoff_s`, so a node cut by the horizon reports no destination rather than one it cannot
+    reach in the advertised budget.
     """
     if cost_csr.shape != time_csr.shape:
         raise ValueError(f"cost {cost_csr.shape} and time {time_csr.shape} matrices must match")
@@ -69,20 +107,24 @@ def arrival_seconds_two_weight(
     dest = np.asarray(list(dest_idx), dtype=np.int64)
     n = cost_csr.shape[0]
     if dest.size == 0:
-        return np.full(n, np.inf)
+        return np.full(n, np.inf), np.full(n, -1, dtype=np.int64)
 
     cost_t = cost_csr.transpose().tocsr()
     time_t = time_csr.transpose().tocsr()
-    dist, pred, _sources = dijkstra(
+    dist, pred, sources = dijkstra(
         cost_t, directed=True, indices=dest, min_only=True, return_predecessors=True
     )
     dist = np.asarray(dist, dtype=np.float64)
     pred = np.asarray(pred, dtype=np.int64)
+    # scipy returns the source as a NODE id (verified against a two-source fixture, not assumed),
+    # with -9999 for unreached. Widen to int64 before masking so the sentinel cannot collide with
+    # a legitimate index on a graph large enough to matter.
+    selected = np.asarray(sources, dtype=np.int64)
 
     out = np.full(n, np.inf)
     reachable = np.flatnonzero(np.isfinite(dist))
     if reachable.size == 0:
-        return out
+        return out, np.full(n, -1, dtype=np.int64)
     # Sources (the destinations themselves) are at zero. Every other reachable node is resolved
     # after its predecessor, so processing in increasing cost order is a valid topological order
     # over the shortest-path tree.
@@ -98,4 +140,8 @@ def arrival_seconds_two_weight(
 
     if cutoff_s is not None:
         out[out > float(cutoff_s)] = np.inf
-    return out
+    # The destination record must agree with the seconds it explains. A node can be reachable on
+    # cost yet have no finite reported time -- the cutoff is applied to time, and the sweep leaves
+    # +inf where a predecessor's time was unavailable -- so mask on `out`, not on `dist`.
+    selected = np.where(np.isfinite(out), selected, -1)
+    return out, selected

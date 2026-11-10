@@ -125,6 +125,7 @@ class _Snapped:
     e_idx: np.ndarray
     relevant_s: np.ndarray   # whether the start node's arrival time could have been used
     relevant_e: np.ndarray   # whether the end node's arrival time could have been used
+    chosen_idx: np.ndarray   # the endpoint whose arrival time was actually taken, -1 if neither
 
 
 def _snap_network(
@@ -160,6 +161,10 @@ def _snap_network(
 
     if node_cost is None:
         network = np.minimum(time_end, time_start)
+        # Which endpoint supplied that minimum. `<=` matches the cost branch's tie rule, and on an
+        # exact tie the two endpoints report the same time anyway, so the choice is immaterial to
+        # the seconds and matters only to the provenance.
+        take_end = time_end <= time_start
     else:
         D_s, D_e = node_cost[s_idx], node_cost[e_idx]
         cost_end = np.full(frac.shape, np.inf)
@@ -184,6 +189,13 @@ def _snap_network(
 
     # Which endpoint could have supplied the answer. A one-way edge offers only one, so the other
     # node's reason explains nothing about this cell; at a node, that node always counts.
+    #
+    # `chosen_idx` is the endpoint whose arrival time was actually taken, which is a stronger
+    # statement than `relevant_*`: those say an endpoint was eligible, this says it won. It is -1
+    # where no branch was available, so a caller cannot read an endpoint out of a journey that
+    # does not exist.
+    chosen = np.where(take_end, e_idx, s_idx)
+    chosen = np.where(np.isfinite(network), chosen, -1)
     return _Snapped(
         access_m=access_m,
         network=network,
@@ -191,6 +203,7 @@ def _snap_network(
         e_idx=e_idx,
         relevant_s=np.isfinite(rev_t) | at_start,
         relevant_e=np.isfinite(fwd_t) | at_end,
+        chosen_idx=chosen,
     )
 
 
@@ -227,6 +240,50 @@ def cell_seconds_from_arrival(
     if cutoff_s is not None:
         total = np.where(total > float(cutoff_s), np.inf, total)
     return total.reshape(np.shape(xs))
+
+
+def cell_selected_destination(
+    idx: EdgeIndex,
+    T: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    *,
+    mode: str,
+    max_access_m: float,
+    selected: np.ndarray,
+    node_cost: np.ndarray | None = None,
+    cutoff_s: float | None = None,
+) -> np.ndarray:
+    """The destination node each point's reported journey ends at, or **-1** where it has none.
+
+    `selected` is the per-node array from `arrival.arrival_with_selected_destination`, computed
+    from the same `T`. The point's matched edge offers two endpoints; this follows the same branch
+    choice the seconds were reported from and then reads that endpoint's destination, so the
+    answer is the destination of *the journey the product published*, not of the nearest node or
+    the nearest shop in a straight line.
+
+    -1 is returned for a point that is off-network, unreachable, or beyond `cutoff_s` — the same
+    exclusions `cell_seconds_from_arrival` applies to the seconds, re-derived here rather than
+    assumed, so a point with no published time cannot acquire a published destination.
+    """
+    x = np.asarray(xs, dtype=np.float64).ravel()
+    y = np.asarray(ys, dtype=np.float64).ravel()
+    snapped = _snap_network(idx, T, x, y, node_cost=node_cost)
+    total = snapped.network + snapped.access_m / access_speed_mps(mode)
+    total = np.where(snapped.access_m > max_access_m, np.inf, total)
+    if cutoff_s is not None:
+        total = np.where(total > float(cutoff_s), np.inf, total)
+
+    sel = np.asarray(selected, dtype=np.int64)
+    if sel.shape != (T.shape[0],):
+        raise ValueError(
+            f"selected has shape {sel.shape}, expected ({T.shape[0]},) to match the node arrival "
+            "array T; pass the array from arrival_with_selected_destination computed on this graph"
+        )
+    chosen = snapped.chosen_idx
+    out = np.where(chosen >= 0, sel[np.where(chosen >= 0, chosen, 0)], -1)
+    out = np.where(np.isfinite(total), out, -1)
+    return out.reshape(np.shape(xs))
 
 
 def cell_arrival_with_provenance(
