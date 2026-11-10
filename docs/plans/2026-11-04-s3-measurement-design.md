@@ -820,6 +820,14 @@ validity claim.
 **Added in revision 12, as a draft for the owner.** Plan §0 step 2, whose stated purpose is "the
 quantity a user is actually harmed by".
 
+> **Codex pass 31 reviewed this subsection before any of it was implemented, and its verdict was
+> that the estimand is legitimate and the interval specification should not be adopted.** All eight
+> findings were reproduced independently before being acted on. The estimand, the denominator
+> correction and the gate arithmetic survived; **the frame C interval method is withdrawn**, and
+> five claims are narrowed or withdrawn below — each marked where it sits. Placing the review before
+> the code was the single most useful decision in this step: the withdrawn method would have been
+> wired into T6 and T11 first.
+
 > **E1c conditional false inclusion** `= Pr(comparator = FAIL | product = PASS)`, per mode *m*,
 > published threshold *T* and frame — **of the claims the product made, the share that are wrong**.
 > On frame B that is a share of claimed structures; on frame C a share of claimed ground area.
@@ -828,11 +836,22 @@ quantity a user is actually harmed by".
 observation where the product declined to claim makes the reported rate smaller, and a user is
 exposed to the error only where the product *did* claim.
 
-**It also stops one specific concealment.** §4 records that an all-`UNKNOWN` product produces zero
-E1a and zero E1b events and **passes both construction thresholds** at 0.5974%. E1c's denominator
-*vanishes* in that case rather than its numerator, so it reports **undefined** instead of excellent.
-It does not reverse the degenerate — §4 is right that only an acceptance rule could — but it is the
-first reported number that declines to hide it.
+**It also declines to participate in one specific concealment, which is a weaker claim than the
+draft made.** §4 records that an all-`UNKNOWN` product produces zero E1a and zero E1b events and
+**passes both construction thresholds** at 0.5974%. E1c's denominator *vanishes* there rather than
+its numerator, so it reports **undefined** instead of excellent.
+
+**It is not "the first reported number that declines to hide it", which is what revision 12 first
+said and is false.** E0 already reports **100% `UNKNOWN`** for such a product, by census, and §3's
+abstention table and the status cross-tabulation expose the same behaviour. E1c adds no protection
+to acceptance either, since it cannot fail a layer. What it contributes is that **the quantity a user
+is exposed to is undefined rather than flattering** — worth having, and not a new safeguard.
+
+**Two different undefineds, which must not be reported as one.** *No PASS anywhere in the
+population* makes the estimand itself undefined. *No PASS in this sample* makes only the sample ratio
+undefined while the population quantity may exist and be large. And **an all-FAIL product also has
+zero claims**, so an undefined E1c is not by itself evidence of abstention — only E0 and the
+abstention table distinguish those cases.
 
 **The denominator is random and fully observed, which is the opposite of E1b's situation.** The
 product's verdict is known at every sampled point, so the claim count — written `n_claim`, because
@@ -854,19 +873,48 @@ match this section's frame sizes exactly:
 | 25 | 93,562 | 28.3091% | 298,705 | 58.2688% | — | — |
 | 45 | 161,664 | 48.9147% | 424,886 | 82.8831% | — | — |
 
-**So a 1.0% gate on E1c is unreachable under §4's allocation, and the test §4 chose that allocation
-by says so.** `tolerated_failures(n_claim, 0.01)` — the failure-tolerance test of §4, by §6's method —
-returns **-1** at all four published claim denominators: the unreachable-gate condition pass-15 H2
-found shipped undetected in revision 2, and which that function exists to report. With **zero** observed errors the 95% Clopper-Pearson bound is **7.7775%** (C,
+**A 1.0% gate on E1c is impractical at the short thresholds under §4's allocation.**
+`tolerated_failures(n_claim, 0.01)` — the failure-tolerance test of §4, by §6's method — returns
+**-1** at the four denominators above: the unreachable-gate condition pass-15 H2 found shipped
+undetected in revision 2, and which that function exists to report.
+
+> **Two corrections pass 31 made to this paragraph, both of which narrow it.** The draft said "all
+> four published claim denominators". There are **eight** published combinations — four thresholds
+> on two frames — and the four above are the short ones. At ***T* = 45 on frame B** the expected
+> claim denominator is **414**, where `tolerated_failures(414, 0.01)` = **0**: a 1.0% gate *is*
+> reachable there with zero observed errors. The frame-C obstruction at ten minutes is real and is
+> what binds; it is not a property of every published combination. With **zero** observed errors the 95% Clopper-Pearson bound is **7.7775%** (C,
 *T*=10), 4.0754% (C, 15), 3.7679% (B, 10) and 1.8549% (B, 15). Reaching 1.0% needs `n_claim` ≥ **299**,
 which at the measured PASS shares is *n* ≈ **4,076** on the binding frame and threshold — **8.2×**
 §4's allocation.
 
-**`n_claim` is itself random, and every figure above is its expectation at *n* = 500.** The realised
-denominator will differ, so these are planning quantities in exactly the sense §4 means — a
-statement of what the allocation can support, not a prediction of the sample. A realised `n_claim`
-far below expectation widens the interval further and must be reported as drawn, never replaced by
-the expectation.
+**`n_claim` is itself random, and every figure above is its expectation at *n* = 500.** At *n* = 500
+on frame C at *T* = 10, `E[n_claim]` = **36.6791** with SD **5.8255**. So these are planning
+quantities in exactly the sense §4 means, and a realised `n_claim` must be reported as drawn, never
+replaced by its expectation.
+
+**That randomness also makes 4,076 an expectation and not an assurance**, which the draft elided.
+`hypergeom.sf(298, 330502, 24245, 4076)` = **0.5089**: at *n* = 4,076 the chance of actually
+obtaining 299 claims is **50.89%**, a coin toss. The smallest allocation giving 95% assurance of the
+denominator is **4,454**, or **8.908×** — and even that figure assumes zero errors and no unresolved
+observations. The honest statement is that the 1.0% gate is **practically unreachable at this
+exposure**, not deterministically impossible.
+
+**Three things this measurement does *not* settle, each of which the draft claimed or implied.**
+
+- **It does not imply that E1c should carry no threshold.** Insufficient precision for *one*
+  threshold is not an argument against *every* threshold: `tolerated_failures(37, 0.08)` = **0**, so
+  an 8% gate is reachable at the current exposure. Whether 1%, 8% or none is right is a **product
+  judgement**, and picking a threshold because it happens to fit the allocation would be the
+  measurement tail wagging the product dog.
+- **It does not establish that 8.2× is the cost of gating E1c.** The PASS domain is known from the
+  frozen product, so a **separately allocated sample drawn directly from it** could collect claims
+  without enlarging every full-frame draw — a cheaper route the draft did not consider, and one that
+  would need its own §13 row and its own allocation.
+- **So "settled by measurement, not preference" is withdrawn.** It appeared in this subsection, in
+  §13's row, in the execution plan's step-2 note and in the engineering note, and it was an
+  overreach in all four. What the measurement settles is that the specific 1.0% gate is impractical
+  here. "Reported, non-gating" remains the **recommendation**, and it is now offered as one.
 
 **E1c therefore carries no acceptance verdict, and three consequences are stated rather than left to
 inference:**
@@ -874,22 +922,78 @@ inference:**
 1. it **cannot cause a layer to fail**, and §8's rule is untouched;
 2. no output may present it as a bar that was met — it has no bar;
 3. its precision is **inherited, not chosen**. E1c has no allocation of its own, so whatever
-   `n_claim` the E1 draw happens to yield is what it gets, and at *T* = 10 on frame C that is a
-   bound of roughly 8% at best. **A wide interval honestly reported is the deliverable here**, not a defect to be
+   `n_claim` the E1 draw happens to yield is what it gets. At *T* = 10 on frame C a zero-error
+   **Clopper-Pearson** bound there is 7.7775% — quoted as the reference arithmetic, **not** as the
+   reported interval, which is open below. **A wide interval honestly reported is the deliverable here**, not a defect to be
    tuned away.
 
 Raising E1c to a gate is a further owner decision with the sample-size consequence above, and needs
 its own §13 row.
 
-**The interval method differs by frame, and the binomial bound is valid on only one of them.**
-Frame B is SRS without replacement (§4), so *conditional on the observed* `n_claim` the numerator is
-binomial and Clopper-Pearson on `(k, n_claim)` is a valid conditional bound — conservative in exactly the way §6
-already notes for the full-frame bounds. **Frame C is two-stage** (§6: SRS of cells, then one uniform
-point per cell), so the conditional rate is a **ratio of two estimated quantities** and
-Clopper-Pearson does not apply to it; frame C's interval is a percentile bootstrap resampling
-**whole cells** as the primary unit (T1's `percentile_bootstrap`). Reusing the binomial bound on
-frame C would produce a number that looks right and is not — it is the one error in this subsection
-most likely to survive review, so it is named here.
+**The interval method is OPEN. Revision 12's first draft specified one and it was wrong; the
+specification is withdrawn rather than patched.** The estimand above stands. What follows is the
+state of the question, because an un-specified interval that is known to be un-specified is safer
+than the confident wrong one this subsection carried.
+
+**What was withdrawn, and why it was worse than no method at all.** The draft prescribed a
+**percentile bootstrap resampling whole cells** for frame C. Codex pass 31 showed it is **degenerate
+at exactly the boundary this measurement lives on**: with zero identified errors every replicate
+contains zero errors, so the interval is `[0, 0]` — *certainty* — no matter how little the sample
+knows. Reproduced through `percentile_bootstrap` itself on 463 non-claims and 37 correct claims:
+it returns **`(0.0, 0.0)`**, and with a single claim **`(nan, nan)`**. That is not an approximate
+interval, it is severe undercoverage. A worked case using this layer's own frame: let **243 of the
+24,245** PASS cells be erroneous throughout their area, a true E1c of **1.00227%** — just over the
+1.0% line. An SRS of 500 cells misses all 243 with probability
+`hypergeom.pmf(0, 330502, 243, 500)` = **0.6920924**, so **69.2% of samples would report `[0, 0]`
+against a population rate above the line.** The withdrawn method also contradicted this subsection's
+own "roughly 8% at best": under it, a zero-error result reports zero, not 8%.
+
+**And the reason given for preferring it was the wrong distinction.** "Frame C is two-stage, so
+Clopper-Pearson cannot apply" does not follow. With **one point per cell**, resampling whole cells
+and resampling complete observation rows are the *same operation* — "whole cells" adds no cluster
+information here. Pass 31 derived what the conditional law actually is, where PASS is constant within
+an original frame cell (which it is under the current partition) and `q_i` is the within-cell
+comparator-error probability: if every `q_i` is equal the conditional count is **exactly binomial**
+despite the two-stage design; if every `q_i` is 0 or 1 it is **hypergeometric**; heterogeneous `q_i`
+give a different mixture. It also showed the **zero-error** CP bound *is* conservative in that case,
+via `Pr(K = 0 | n_claim = m) = e_m(1−q₁,…,1−q_A) / C(A, m) ≤ (1−θ)^m` with `θ` the mean `q_i`, by the
+elementary-symmetric-mean inequality. So the categorical prohibition is refuted, and in particular
+the zero-error figures this amendment argues from are sound.
+
+**Frame B's conditional law is hypergeometric, not binomial, and one-sided Clopper-Pearson is not
+universally conservative under it.** With `A` PASS structures in the population and `F` of them
+comparator-FAIL, SRS symmetry gives `Pr(K = k | n_claim = m) = C(F,k) C(A−F, m−k) / C(A, m)`.
+Pass 31's counterexample on this layer's own `A` = **80,051**: let exactly 57 PASS structures be
+correct and condition on `n_claim` = 72. The true rate is `79994/80051` = **0.999287953929** and
+`CP_upper(71, 72)` = **0.999287846835** — *below* it — so every outcome with at least one correct
+observation misses, and coverage is `hypergeom.pmf(72, 80051, 79994, 72)` = **94.998570%**, under
+95%. The defect is minute and sits next to a 100% error rate, so it does not touch the arithmetic
+quoted above; it does disprove the unqualified guarantee the draft made. **§6 carries the same
+overbroad statement about one-sided CP conservatism**, which this draft inherited rather than
+invented, and which is now flagged there too.
+
+**The constructive consequence, which the withdrawn method obscured.** The PASS domain is
+**computable from the frozen product** — it is a deterministic lookup, so `A` is known, not
+estimated. Estimating *both* numerator and denominator was therefore an **estimator choice and not a
+necessity**, and it is the choice that created the ratio problem. Two routes remain open, and
+**choosing between them is part of what the owner is being asked**:
+
+> **(a) Hypergeometric inversion against the known PASS margin.** A direct finite-population
+> interval, valid under the law derived above, using `A` from the frozen product rather than from
+> the sample.
+> **(b) Clopper-Pearson on `(k, n_claim)`, declared as approximate**, with the zero-error case
+> justified exactly by the inequality above and the general case acknowledged as approximate rather
+> than exact.
+
+Whichever is adopted must also specify three things the first draft left silent: the ratio statistic
+itself, how unresolved completions `u` enter it, and what a replicate or sample with zero claims
+contributes. **No figure derived from an interval may be published until one is chosen**, and the
+zero-error Clopper-Pearson bounds quoted in this subsection are labelled as such rather than as the
+reported interval.
+
+**If export makes the PASS verdict vary within an original cell, the constant-partition reduction
+above needs redoing** — the same partition dependence §3 already records for E0 under a shifted
+80 m export.
 
 **A zero denominator reports undefined.** `n_claim` = 0 yields neither 0.0 nor a bound, and any output
 consuming E1c must render undefined **distinctly from a small rate**. This is the all-`UNKNOWN` case
@@ -899,22 +1003,57 @@ above, and collapsing it to zero would restore precisely the concealment E1c was
 simultaneous 95% bounds and that no output may present them so. E1c adds a further bound per mode,
 threshold and frame. The warning is unchanged in kind and stronger in degree.
 
-**Only the inclusion direction is conditioned, and the asymmetry is measured rather than argued.**
-The dilution argument is symmetric in *form*, so a measurement has to decide it. Conditioning on
-product PASS shrinks the denominator by **13.6×** at the binding case (frame C, *T* = 10);
-conditioning on product FAIL shrinks it by **1.3×**, because a sound lower bound on the FAIL share
-there is 75.2540% of area and 83.6710% of structures. E1a's full-frame form is therefore already
-close to its own conditional, and E1b's is not. A conditional false-exclusion rate is **not added**
-on that evidence; if the FAIL share falls materially in a future layer, the argument for adding one
-returns.
+**Only the inclusion direction is conditioned, and the asymmetry holds at the short thresholds and
+reverses at the long ones.** The dilution argument is symmetric in *form*, so a measurement has to
+decide it — but the draft measured one threshold and generalised. At the binding case for inclusion
+precision (frame C, *T* = 10) conditioning on product PASS shrinks the denominator **13.6×** while
+conditioning on product FAIL shrinks it **1.3×**, a sound lower bound on the FAIL share there being
+75.2540% of area and 83.6710% of structures. So E1a is already close to its own conditional and E1b
+is not — *there*.
+
+**At *T* = 45 on frame B it is the other way round, and that case is in this layer already.** PASS
+covers **82.8831%** of structures, a shrink of only **1.2065×**; known FAIL is **16.4035%** and
+cannot exceed **17.1169%** even assigning every off-network structure to it, so conditioning on FAIL
+shrinks the denominator by at least **5.84×**. Revision 12's "if the FAIL share falls materially in
+a future layer" therefore missed a published combination already in front of it, and is withdrawn as
+written. (Pass 31 confirmed the lower-bound treatment itself is sound: at ten minutes a lower bound
+on the FAIL share yields an *upper* bound on its shrink factor, so that comparison was conservative
+rather than flattering.)
+
+**A conditional false-exclusion rate is still not added in revision 12, for a narrower reason than
+the draft gave.** The shrink factor quantifies the relationship —
+`Pr(comparator = PASS | product = FAIL) = E1a / Pr(product = FAIL)` — but it **cannot decide whether
+that conditional quantity is useful**, nor what size of difference would matter; the draft treated a
+proxy as the thing. The actual reason to defer is scope: it is a second estimand with its own
+denominator, interval and blind spots, and the step it belongs to is boxed at half a day. **It is
+named here as deferred, not dismissed**, with the *T* = 45 frame B case as the one that would most
+justify it.
 
 **What E1c cannot see — and the report must use these words, not a softer paraphrase.** The product
-and the comparator read the **same destination list**. A grocery that has closed, is fenced off, or
-was never there produces *agreement* between the two sides and a wrong answer from both. Neither E1b
-nor E1c can detect it, and no conditioning on the product's own verdict ever could. E1c measures
-**"of the homes we recommend, the share our own comparator judges wrong"** — not **"the share that
-would disappoint on arrival."** The second quantity is measured only by plan §0's walked-journey
-audit, and by nothing else in this design.
+and the comparator read the **same destination list**, and no conditioning on the product's own
+verdict can ever separate a shared input error from a correct answer. E1c measures **"of the claimed
+mass, the share our own comparator judges wrong"** — not **"the share that would disappoint on
+arrival."**
+
+**The shared-error class is broader than the closed grocery the draft named**, and listing only the
+vivid case implied the rest were covered: omitted valid destinations, a destination at the wrong
+location or in the wrong category, shared road, access or connectivity errors, the speed assumptions
+themselves, and the connector conventions all survive agreement between the two sides. Comparator
+agreement is not physical validation of anything.
+
+**Nor does any part of this design estimate "the share that would disappoint on arrival", and
+revision 12 claimed the walked audit does.** It does not: plan §0's audit is **5-16 owner-chosen
+journeys**, a convenience sample, and §3's E3 explicitly disclaims a population-rate claim for it.
+An arbitrarily high disappointment rate elsewhere is compatible with every audited journey
+succeeding. What the walk supplies is **existence evidence** — a single failed journey is a
+demonstrated product failure that no engine-agreement estimand can produce — and that is a different
+kind of claim, not a smaller version of the same one. Plan §0's **step 7**, the grocery and
+geocoding truth audit, also addresses destination validity, so "only the walked audit sees it" was
+wrong twice.
+
+**Finally, E1c's populations are structures and ground area, not users or households.** Calling
+either result "the rate a user experiences" imports a population the sampling design does not
+support, and no output may do so.
 
 ### E2 — engine disagreement (descriptive)
 
@@ -1067,9 +1206,19 @@ with `qᵢ` the within-cell error probability. If every cell were half erroneous
 numerically small at *n* = 500; the formulas are stated because the wrong one implies a false limit.
 A Bernoulli variance is **never** applied to E2's median.
 
-Binomial bounds on a without-replacement SRS are **conservative** — hypergeometric would be tighter,
-and `(N−n)/(N−1) = 0.99902` at *n* = 500 — so the conservative direction is kept and named rather
-than claimed as precision.
+Binomial bounds on a without-replacement SRS are **conservative at the allocations and rates this
+design reports** — hypergeometric would be tighter, and `(N−n)/(N−1) = 0.99902` at *n* = 500 — so
+the conservative direction is kept and named rather than claimed as precision.
+
+> **"Conservative" is not a universal property of the one-sided binomial bound under hypergeometric
+> sampling, and revision 11 and earlier stated it as though it were.** Codex pass 31 produced a
+> counterexample on this layer's own ten-minute PASS population: with `A` = 80,051, exactly 57 of
+> them correct, and `m` = 72 drawn, the true rate is `79994/80051` = 0.999287953929 while
+> `CP_upper(71, 72)` = 0.999287846835 — *below* it — giving coverage of **94.998570%**, under 95%.
+> The exception is established in the literature (Mattner and Tasto, Remark 1.10). It lives next to
+> a 100% error rate and does not touch any figure this design reports at rates near 1%, which is why
+> the sentence above is now bounded by *where* it holds rather than deleted. §3's E1c subsection
+> carries the same correction, having widened the claim before pass 31 caught it.
 
 ### What each allocation tolerates
 
@@ -1390,11 +1539,18 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
-### Revision 12 — 2026-11-09 — DRAFT, awaiting an owner decision
+### Revision 12 — 2026-11-09, amended 2026-11-10 after Codex pass 31 — DRAFT, awaiting an owner decision
 
 **Adds §3's E1c**, `Pr(comparator = FAIL | product = PASS)`, as a reported and explicitly non-gating
 measure. **Additive**: E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule and the
 selection policy are unchanged, and E1c cannot fail a layer.
+
+> **Pass 31's verdict: the estimand is legitimate and the first draft's interval specification must
+> not be adopted.** Eight findings, all reproduced independently before being acted on. The estimand,
+> the denominator correction and the gate arithmetic survived. **The frame C percentile bootstrap is
+> withdrawn** — it returns `(0.0, 0.0)` at zero errors, and on a constructed case with a true rate of
+> 1.00227% it would do so for **69.2%** of samples. Five further claims are narrowed or withdrawn,
+> each marked in §3. The rows below are the amended ones.
 
 | what | why |
 |---|---|
@@ -1402,7 +1558,16 @@ selection policy are unchanged, and E1c cannot fail a layer.
 | **no threshold, no allocation** | measured, not preferred: `tolerated_failures(n_claim, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs `n_claim` ≥ 299, i.e. *n* ≈ 4,076, **8.2×** §4's allocation |
 | §3's "may be added only ... with its own formula, threshold and allocation" **narrowed** | E1c meets two of the three. Rather than invent an unsupportable threshold or drop the requirement silently, a conditional rate with **no acceptance role** now needs name and formula only; one that gates still needs all three |
 | the 417 figure corrected in place | 417 is the **answered** denominator (PASS and FAIL). The **claimed** denominator is ≈ **37** on frame C at *T* = 10 — a 13.6× shrink, measured from the saved arrays |
-| frame C's interval is a **cell bootstrap**, not Clopper-Pearson | frame C is two-stage, so the conditional rate is a ratio of two estimated quantities; the binomial bound is valid on frame B only. Named explicitly as this amendment's likeliest surviving error |
+| ~~frame C's interval is a **cell bootstrap**~~ — **WITHDRAWN, the interval method is OPEN** | the bootstrap is degenerate at the boundary: `(0.0, 0.0)` at zero errors, `(nan, nan)` at one claim, and `hypergeom.pmf(0, 330502, 243, 500)` = 0.692 means 69.2% of samples would report certainty against a true rate of 1.00227%. It also contradicted the subsection's own "roughly 8%" |
+| the reason given for it was the wrong distinction | with one point per cell, resampling cells and resampling rows are the same operation. Where PASS is constant within a cell the conditional count is **exactly binomial** if the within-cell error rates are equal, hypergeometric if they are 0/1 — and the **zero-error** CP bound is conservative there by the elementary-symmetric-mean inequality, so the figures this amendment argues from are sound |
+| frame B's conditional law is **hypergeometric**, not binomial, and one-sided CP is **not universally conservative** under it | `CP_upper(71, 72)` = 0.999287846835 against a true 0.999287953929 at `A` = 80,051 gives 94.998570% coverage. Tiny, next to a 100% rate, and it still disproves the unqualified guarantee. §6 carried the same overbroad sentence and is now bounded |
+| the PASS margin is **known from the frozen product**, so estimating both numerator and denominator was a choice | that choice is what created the ratio problem. Two routes stay open for the owner: hypergeometric inversion against the known margin, or CP declared as approximate. Three things must be specified either way — the ratio statistic, how `u` enters, and what a zero-claim replicate contributes |
+| "all four published claim denominators" → **four of eight** | four thresholds on two frames. At *T* = 45 on frame B the expected denominator is 414 and `tolerated_failures(414, 0.01)` = **0**: the 1.0% gate is reachable there. The frame-C ten-minute obstruction is what binds |
+| 4,076 is an **expectation, not an assurance** | `hypergeom.sf(298, 330502, 24245, 4076)` = **0.5089** — a coin toss. 95% assurance of the denominator needs **4,454**, or 8.908×, and that still assumes zero errors |
+| ~~"settled by measurement, not preference"~~ — **WITHDRAWN** | insufficient precision for a 1.0% gate does not imply no gate: `tolerated_failures(37, 0.08)` = **0**. Nor is 8.2× the cost of gating, since a separate sample could be drawn from the known PASS domain. "Reported, non-gating" is now offered as a **recommendation** |
+| the inclusion/exclusion asymmetry **reverses within this layer** | at *T* = 45 on frame B, PASS shrinks the denominator **1.2065×** and FAIL at least **5.84×** — the opposite of the ten-minute case the draft generalised from. A conditional false-exclusion rate is deferred on **scope**, not on the shrink factor, which cannot decide usefulness |
+| ~~"the first reported number that declines to hide" all-abstention~~ — **WITHDRAWN** | E0 already reports 100% `UNKNOWN` by census, as do the abstention table and the status cross-tabulation. Also: an all-FAIL product has zero claims too, so undefined E1c is not evidence of abstention — and *no PASS in the population* differs from *no PASS in this sample* |
+| the blind-spot statement **broadened**, and its measurement claim withdrawn | shared errors are not only closed groceries: omitted destinations, wrong locations or categories, shared road and access errors, speed assumptions and connector conventions all survive agreement. And no estimand here measures "the share that would disappoint on arrival" — the walk is **existence evidence** on a convenience sample (E3 disclaims population rates) and step 7 also addresses destination validity |
 | `u` inflates the **numerator only** | the product's verdict is known everywhere, so the claim denominator `n_claim` has no missingness — the opposite of E1b's situation. `n_claim` is random, so the figures here are its expectation at *n* = 500 and the realised value is reported as drawn |
 | `n_claim` = 0 reports **undefined**, distinctly from a small rate | an all-`UNKNOWN` product passes E1a and E1b at 0.5974% (§5). E1c's denominator vanishes instead, so it declines to hide that; collapsing undefined to 0.0 would restore the concealment |
 | **no** conditional false-exclusion rate | the asymmetry is measured: conditioning shrinks the PASS denominator 13.6× and the FAIL denominator 1.3×, so E1a is already close to its own conditional |

@@ -54,6 +54,27 @@ line and nothing else. **When a pattern is a stop condition, bound it to the lin
 mean**; an unanchored alternation against multi-record output is a loose proxy, exactly as
 `"layer import" not in s` was.
 
+**A fourth instance, and this one I had explicitly certified.** Codex pass 31
+([[project-phase1-s3-step2-conditional-estimand]]). I wrote a script to recompute every figure
+quoted in a design amendment and assert each appears in the text, then tested it by changing
+`7.3358%` to `7.3359%`, watched it fail, and wrote in the commit message that it was "shaped like the
+risk". Pass 31 then defeated it three ways: **swapping two whole table rows passed** (every figure
+was still present, on the wrong row), **deleting the entire interval-method passage passed**, and
+**flipping the estimand's conditioning event from product PASS to product FAIL passed**.
+
+The lesson is not "add more checks". It is that **presence is not association**, and that I had
+tested the check in the one way I had imagined it failing — the same mistake as the fixture drawn
+from the wrong domain, one level up. A single-digit perturbation exercises the figure-drift path and
+says nothing about the structural paths.
+
+**The durable fix is to make the ability to fail executable.** The rewrite parses the table so each
+figure is bound to its row, asserts the passage's required claims so deletion fails, and carries a
+`--self-test` mode that applies those three mutations and fails unless each is caught. **When a check
+guards a document or an artifact, put the mutations in the check** — then "it can fail the way the
+change can fail" is a thing the script proves on demand rather than a claim in its docstring. And
+state what it still cannot see: that script reuses the module it checks for its arithmetic, so that
+part is consistency, not validation.
+
 Related: [[feedback-a-fixture-is-exact-only-where-you-point-it]], which is the same error one level
 up — a test drawn from the wrong domain also passes without establishing anything. In this session
 that one recurred too: the fixture "proving" an `OFF_NETWORK` bound drew access distances from

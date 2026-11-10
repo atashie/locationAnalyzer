@@ -188,15 +188,24 @@ destination actually used, date, and outcome.
 §13 amendment and flagged, not adopted silently.
 
 > **The draft exists and is not in force.** Design revision 12 adds **E1c**,
-> `Pr(comparator = FAIL | product = PASS)`, as a reported measure with no threshold and no
-> acceptance role. The decision asked of the owner is whether to adopt it, and separately whether it
-> should ever gate — with one measured fact making that second question concrete: E1c's denominator
-> is the *claimed* subset, about **37 observations** on frame C at *T* = 10 rather than the 417 the
-> design's old example implied, so `tolerated_failures` reports a 1.0% gate **unreachable** at
-> §4's allocation and reaching it would need **8.2×** the sampling. Phases B-E of the step — a Codex
-> pass on the draft, then `stats.py`, tests, and wiring into T6 and T11 — are deliberately **not**
-> begun until the draft is accepted, because a statistics error is cheap to fix in prose and
-> expensive once it is wired into the report.
+> `Pr(comparator = FAIL | product = PASS)` as a reported measure with no acceptance role. E1c's
+> denominator is the *claimed* subset — about **37 observations** on frame C at *T* = 10, not the
+> 417 the design's old example implied — so a 1.0% gate there is impractical and reaching it would
+> need **8.2×** the sampling in expectation, or **8.908×** for 95% assurance of the denominator.
+>
+> **Codex pass 31 reviewed the draft before any code was written, and that ordering paid for
+> itself.** Its verdict: the estimand is legitimate, **the interval specification must not be
+> adopted**. The prescribed frame C bootstrap returns `(0.0, 0.0)` at zero errors — certainty — and
+> would do so for 69.2% of samples against a constructed true rate of 1.00227%. It is withdrawn, and
+> **the interval method is now an open question with two named candidate routes**, which is part of
+> what the owner is being asked. Five further claims were narrowed, including that a 1.0% gate is
+> unreachable at "all four" denominators (there are eight published combinations, and at *T* = 45 on
+> frame B it is reachable) and that the inclusion/exclusion asymmetry holds generally (it reverses at
+> *T* = 45 on frame B, inside this layer).
+>
+> **Phases C-E — `stats.py`, its tests, and wiring into T6 and T11 — remain not begun**, and now for
+> a sharper reason than caution: there is no interval method to implement until one is chosen. Had
+> the review come after the code, the degenerate bootstrap would already be in the report.
 
 > **Step 1 closed three of §12's four items, not four.** Its row lists non-finite query coordinates,
 > the numerical domain, the cost discriminator and the uniqueness promise — §12 items 2, 3 and 4,
