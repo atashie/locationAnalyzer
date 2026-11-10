@@ -33,3 +33,21 @@ Learned 2026-11-03 after five failed Codex launches:
 - The `codex:codex-rescue` subagent retries on its own and reports Bash task ids,
   not companion job ids; check `status --all --json` before launching another job.
 Related: [[feedback-codex-adversarial-review]].
+
+## Long text into a command: write a file, pass the path
+
+The "avoid big Bash heredocs" rule above bit twice more on 2026-11-10, in two different ways, so
+here is the general form rather than the two instances.
+
+- A `python - <<'PY'` heredoc carrying a patch script with `'''` triple-quoted blocks inside failed
+  with `unexpected EOF while looking for matching '`.
+- A `git commit --file=- <<'MSG'` heredoc carrying a long commit message failed the same way.
+
+In both cases nothing was written, so the failures were cheap — but the fix is the same and should
+be the default for anything long:
+
+- **script** → `Write` it to the scratchpad, then `python <path>`;
+- **commit message** → `Write` it to the scratchpad, then `git commit --file=<path>`.
+
+This also makes the content reviewable before it runs, which matters for assertion-guarded patch
+scripts. Short one-liners through a heredoc remain fine.

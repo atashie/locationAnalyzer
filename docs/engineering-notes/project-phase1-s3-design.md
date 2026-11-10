@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-10, head `44a14ec` on `v2-rethink`, pushed. **No sampling has happened.** Design
+As of 2026-11-10, head `a45daf2` on `v2-rethink`, pushed. **No sampling has happened.** Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; passes 27-30 ran in-session
@@ -26,7 +26,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 0 — the audit harness | **done**, `0a4a24b`..`c081920` |
 | the encoding decision | **done**, `2bb839d` — owner chose `ceil` |
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
-| 2 — the missing conditional | **done** `c93df95`, `c6807ca`, `337b635`, `44a14ec` — **adopted** |
+| 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **next**; 1 day, all data on disk |
 
 **Step 2 is adopted, and the owner's three decisions are what bind.** (1) Add **E1c** =
