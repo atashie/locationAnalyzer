@@ -167,3 +167,33 @@ Related: [[feedback-a-fixture-is-exact-only-where-you-point-it]], which is the s
 up — a test drawn from the wrong domain also passes without establishing anything. In this session
 that one recurred too: the fixture "proving" an `OFF_NETWORK` bound drew access distances from
 `[0, 200]` m, the range in which a cell is *not* off-network at all.
+
+## An eighth instance, 2026-11-10: the guard against an unchecked claim was itself an unchecked claim
+
+The `vehicle` defect existed because the code's rules and the data's contents were two separate
+claims with nothing comparing them. I wrote a guard: a manifest beside the graph cache declaring
+which OSM way tags it was parsed with, refused before the graph is read, with eleven tests and a
+docstring explaining why it mattered.
+
+Codex pass 35 wrote a valid graph and manifest, replaced **only the graphml** with a graph lacking
+`vehicle`, and the guard accepted it. The manifest declared a tag set and nothing said *which file
+it described* — so the fix had the shape of the bug, one level up. See
+[[project-phase1-s3-extract-tag-gap]].
+
+Three of the tests also died: one rejected a missing `surface` and waved every other missing tag
+through; one called `load_graphml`, swallowed the exception and then validated, which my
+"refuses before reading" test could not see because it monkeypatched a function that *raises*
+rather than one that *counts*; one loaded a valid graph twice. Each is a failure I had not
+pictured, and each passed a test written by picturing failures.
+
+Then the mutation harness I wrote to catch those found a twelfth survivor the twelve repaired tests
+still missed: **ignore the graph's sha256**. Every swap test I had written changed the file's length
+as well, so the cheap size check caught them all and the digest check was never exercised. One
+equal-length byte change closes it.
+
+**The compounding rule.** Each layer of this was a check whose power I could not see without
+attacking it: the rule against the data, the manifest against the file, the tests against the
+implementation, the tests against *each other's coverage*. The honest summary is that **writing a
+guard moves the unexamined assumption rather than removing it**, and the only thing that has
+reliably located it in this project is an adversary — human, agent or mutation harness — trying to
+get past it. Eight instances now, four of them inside two days.

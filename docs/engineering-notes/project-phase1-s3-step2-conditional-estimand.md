@@ -90,6 +90,18 @@ denominator is 414 where `tolerated_failures(414, 0.01)` = **0**, so the gate is
 4,076 is an **expectation, not an assurance**: `hypergeom.sf(298, 330502, 24245, 4076)` = **0.5089**,
 a coin toss; 95% assurance of the denominator needs **4,454**.
 
+> **Every figure in this note was measured on the pre-rebuild layer, and is left as measured.** The
+> 2026-11-10 rebuild (`ab01ffa`'s `symmetrise` fix, 7,246 cells) moves them slightly: PASS share at
+> *T* = 10 is **7.3388%**, PASS cells **24,255**, the reachable-gate *n* **4,074** at **8.1×**,
+> `E[n_claim]` **36.6942** with SD **5.8267**, the hypergeometric assurance **0.5083** with 95%
+> assurance at **4,452**, the worked degenerate-bootstrap case 243/24,255 = **1.00186%**, and the
+> ten-minute FAIL shares **75.2510%** of area and **83.6678%** of structures. The design document
+> §3 carries the current values and `v2/scripts/verify_e1c_figures.py` checks them against the
+> arrays; this note records the decision and the figures it was taken on. **No conclusion moves**:
+> `n_claim` ≈ 37, the 7.7775% zero-error bound, `tolerated_failures` = -1 and the 299/473/628
+> conditional-sample costs are all unchanged. Pass 35 found this note still presenting the old
+> numbers with nothing saying so.
+
 **6. The inclusion/exclusion asymmetry reverses inside this layer.** I measured one threshold and
 wrote "if the FAIL share falls materially in a future layer". At ***T* = 45 on frame B** PASS covers
 82.8831% of structures — a shrink of **1.2065×** — while FAIL is 16.4035% and at most 17.1169%, a

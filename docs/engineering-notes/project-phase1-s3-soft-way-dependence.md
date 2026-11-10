@@ -63,8 +63,11 @@ chain, established rather than inferred:
 1. `classify_access` labels it **`restricted`** — correctly.
 2. `add_travel_times` applies the penalty: `cost = travel_time + RESTRICTED_PENALTY_S["walk"]`,
    which is **120 s**.
-3. **120 s over the ~4 restricted edges is 480 s of cost, and the detour it must beat is 968 s**
-   (782.7 s via the track against 1,750.4 s on public roads).
+3. **120 s over the 3 restricted hops is 360 s of cost, and the detour it must beat is 968 s**
+   (782.7 s via the track against 1,750.4 s on public roads). Counted, not estimated: the
+   explainer's `RESTRICTED EDGES` line reports **3 of 29 hops, 159 m, 360 s of cost penalty**.
+   Earlier revisions said "~4 edges, 480 s" from a reading of the route rather than a count; the
+   real figure is smaller, which makes the penalty further from sufficient, not closer.
 4. So the private track still wins on cost — and because *selection is by cost, reporting is by
    time*, the household is shown **782.7 s**: the real time of a walk down a private track.
 
@@ -142,12 +145,14 @@ So the figures do measure what removing those classes does. The objection to the
 *means* — a class is not a usability judgement — not about whether they were computed on comparable
 populations.
 
-**The tag that would settle it is absent.** `EXTRA_WAY_TAGS` in `speeds.py` requests `foot`,
-`bicycle`, `motor_vehicle`, `motorcar`, `oneway:bicycle` and `sidewalk`. It does **not** request
-`surface`, so unpaved-versus-paved is not knowable from the extracted graph at all. Adding
-`surface` (and `informal`) and re-extracting is cheap, and the layer needs rebuilding anyway — see
-[[project-phase1-s3-stale-walk-raster]]. That is the single change that would turn this question
-from a guess into a measurement.
+**The tag that would settle it was absent — and now is not.** `EXTRA_WAY_TAGS` in `speeds.py` did
+not request `surface`, so unpaved-versus-paved was not knowable from the extracted graph at all,
+which is why two rounds of measurement could only ask about highway class. **Added 2026-11-10 with
+`vehicle`, and the graph re-extracted** (`55b2749`, `5bbdcfb`): 165,549 ways carry `surface`, and
+the walk layer is unchanged by the addition — the rebuild differs from the stored raster by exactly
+the 7,246 cells the `symmetrise` fix predicts and no more. **No rule reads `surface` yet**, so the
+question is now answerable rather than answered; `informal` (449 ways) is still not extracted. See
+[[project-phase1-s3-extract-tag-gap]] and [[project-phase1-s3-stale-walk-raster]].
 
 ## What the sheet rows actually show
 
@@ -207,7 +212,8 @@ was right.
    1.10% of 15-minute PASS buildings. The cheapest option, no new data, a mechanism already in
    production. **Priced, and not taken.**
 2. **Add `surface` to `EXTRA_WAY_TAGS` and re-extract**, so unpaved ways can be penalised on their
-   own evidence rather than by class. The layer needs rebuilding anyway. **Taken.**
+   own evidence rather than by class. **Taken 2026-11-10**, together with the layer rebuild the
+   staleness needed anyway. Extraction only: no rule reads the tag yet.
 3. **Keep 120 s and disclose.** Defensible only with the walked evidence stated: we know of at
    least one cell whose PASS depends on a private track and is wrong by about eleven minutes.
    **Taken.**
@@ -218,8 +224,12 @@ journey prices the candidates but does not identify the right one. The penalty i
 is a behavioural quantity nothing in this project has measured. Setting it from a single observation
 would be calibrating to an anecdote, and it would do so in the direction that makes the product
 look more careful while resting on no more evidence than the number it replaced. So the gap is
-carried: monitored against every further walked journey, with the signed error on restricted-route
-journeys as the statistic to accumulate, and flagged to households when estimates are delivered.
+carried, with the **signed error on restricted-route journeys** as the statistic to accumulate and
+disclosure owed to households when estimates are delivered. Both are **specified and manual**:
+`explain_journey.py` now prints each hop's access class and penalty and a per-journey
+`RESTRICTED EDGES` line, so membership is computable one journey at a time, but no per-cell flag is
+recorded in the layer bundle, no aggregation is defined, and nothing computes the statistic. Codex
+pass 35 was right to call the first wording a commitment described as a mechanism.
 **Do not quote the 600 s row as a plan.** Marking the cells whose route depends on a restricted way
 is a candidate for step 8 and needs no new data — `access_restricted` is already on the edges and
 the per-cell destination is now recovered.

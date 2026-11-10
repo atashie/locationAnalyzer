@@ -1,0 +1,13 @@
+cells differing            7,246 of 330,502 (2.1924%)
+  predicted (symmetrise)   7,245  NOT PREDICTED -- something else moved
+finiteness changes         0
+  faster now               7,227   slower now 19
+  largest change           2,316.8 s
+buildings in changed cells 11,436
+reason cells differing     0
+T=10 min  PASS cells 24,245 -> 24,255   gained 10 lost 0   buildings +16 -0
+T=15 min  PASS cells 47,495 -> 47,509   gained 15 lost 1   buildings +25 -0
+
+min_possible_s origin: stored
+
+wrote C:\Users\arikt\Documents\GitHub\distanceFinder\v2\.review35\rebuild_2026_11_10_delta.json

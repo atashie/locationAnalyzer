@@ -108,7 +108,7 @@ discarded row.** E1 and E2 cannot see that failure at all: both sides share the 
 > before it.** The owner walked `band15min_pass-03` and found **~25 minutes against a published
 > 13.5**. Cause established end to end: the 305 m approach is OSM way 1254722641, tagged
 > `access=private`; `classify_access` labels it restricted correctly; `add_travel_times` does apply
-> `cost = travel_time + 120 s`; and 480 s of penalty over four restricted edges cannot beat a 968 s
+> `cost = travel_time + 120 s`; and 360 s of penalty over three restricted hops cannot beat a 968 s
 > detour, so the private track wins on cost and the household is shown its real time. **A
 > calibration finding, not a missing mechanism** — E1 and E2 cannot see it, because both sides read
 > the same graph.
@@ -116,12 +116,13 @@ discarded row.** E1 and E2 cannot see that failure at all: both sides share the 
 > **Owner decision 2026-11-10: the penalty stays at 120 s.** Raising it to 600 s would fix that cell
 > at a cost of 1.10% of 15-minute PASS buildings, and that trade was priced and declined, because
 > one walked journey does not identify the right number and the penalty is a behavioural exchange
-> rate this project has not measured. The gap is **carried, monitored and disclosed**: the statistic
-> to accumulate is the signed error on journeys whose route uses a restricted edge, and step 8 owes
-> households a flag on estimates that depend on one. Done instead: `surface` and `vehicle` added to
+> rate this project has not measured. The gap is **carried and owed disclosure**: the statistic to
+> accumulate is the signed error on journeys whose route uses a restricted edge, which
+> `explain_journey.py` can now identify per journey but nothing aggregates, and step 8 owes
+> households a flag on estimates that depend on one. Both are commitments, not controls. Done instead: `surface` and `vehicle` added to
 > the extract, the latter a defect — `classify_access` has been reading `vehicle` for drive and bike
-> all along and it was never extracted, so 332 edges' access class was decided without it (walk is
-> unaffected; drive changes 24 usable edges, 12 each way). See
+> all along and it was never extracted, so 332 directed edges' access class was decided without it
+> (walk is unaffected; drive changes 24 usable edges, 12 each way). See
 > `docs/engineering-notes/project-phase1-s3-soft-way-dependence.md` and
 > `...-s3-extract-tag-gap.md`.
 

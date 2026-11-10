@@ -46,8 +46,9 @@ def load_graph(timings: dict):
     checked claim; see `_common.graph_cache_complaint`.
     """
     t = time.perf_counter()
-    stale = graph_cache_complaint(read_graph_cache_manifest())
-    if GRAPH_CACHE.exists() and stale is None:
+    stale = (graph_cache_complaint(read_graph_cache_manifest(), GRAPH_CACHE)
+             if GRAPH_CACHE.exists() else "absent")
+    if stale is None:
         G = ox.load_graphml(GRAPH_CACHE)
         timings["load_graph_s"] = time.perf_counter() - t
         timings["graph_source"] = "graphml cache"
@@ -55,6 +56,11 @@ def load_graph(timings: dict):
     if GRAPH_CACHE.exists():
         print(f"re-parsing {ROADS_XML.name}: cached graph is stale ({stale})")
         timings["cache_rejected"] = stale
+    # Remove the manifest BEFORE writing the graph. If this process dies between the two writes,
+    # the next run finds a graph with no manifest and re-parses -- the guard fails closed. Leaving
+    # the old manifest in place would leave a sidecar describing bytes that are no longer there,
+    # which the digest check would catch, but there is no reason to rely on that.
+    GRAPH_CACHE.with_suffix(".tags.json").unlink(missing_ok=True)
     ox.settings.useful_tags_way = sorted(set(ox.settings.useful_tags_way) | set(EXTRA_WAY_TAGS))
     G = ox.graph_from_xml(ROADS_XML, simplify=True, retain_all=True)
     timings["load_graph_s"] = time.perf_counter() - t

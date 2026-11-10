@@ -159,8 +159,8 @@ verdict the shipped page will show: see below.
 25**. It is recorded in the sheet's observation columns and marked owner-reported and approximate:
 it was not stopwatch-timed, no start door was recorded, and which shop was reached is not confirmed.
 The cause is understood — the 305 m approach is OSM way **1254722641**, tagged **`access=private`**,
-which costs 120 s per restricted edge in `cost` and wins anyway because 480 s of penalty cannot beat
-the 968 s public detour. **Owner decision 2026-11-10: the penalty stays at 120 s**, because one
+which costs 120 s per restricted edge in `cost` and wins anyway because 360 s of penalty over the
+three restricted hops cannot beat the 968 s public detour. **Owner decision 2026-11-10: the penalty stays at 120 s**, because one
 journey prices the alternatives without identifying the right one. The gap is monitored, and
 estimates that depend on a restricted way are to be flagged when they are delivered. The statistic
 to accumulate is the **signed error on journeys whose route uses a restricted edge**: this is one

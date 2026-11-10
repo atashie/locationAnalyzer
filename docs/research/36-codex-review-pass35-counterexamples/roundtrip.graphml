@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d7" for="edge" attr.name="vehicle" attr.type="string" />
+  <key id="d6" for="edge" attr.name="surface" attr.type="string" />
+  <key id="d5" for="edge" attr.name="highway" attr.type="string" />
+  <key id="d4" for="edge" attr.name="length" attr.type="string" />
+  <key id="d3" for="edge" attr.name="osmid" attr.type="string" />
+  <key id="d2" for="node" attr.name="y" attr.type="string" />
+  <key id="d1" for="node" attr.name="x" attr.type="string" />
+  <key id="d0" for="graph" attr.name="crs" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="1">
+      <data key="d1">0.0</data>
+      <data key="d2">0.0</data>
+    </node>
+    <node id="2">
+      <data key="d1">0.001</data>
+      <data key="d2">0.0</data>
+    </node>
+    <edge source="1" target="2" id="0">
+      <data key="d3">42</data>
+      <data key="d4">140.0</data>
+      <data key="d5">residential</data>
+      <data key="d6">['asphalt', 'gravel']</data>
+      <data key="d7">['yes', 'no']</data>
+    </edge>
+    <edge source="2" target="1" id="0">
+      <data key="d3">43</data>
+      <data key="d4">140.0</data>
+      <data key="d5">residential</data>
+      <data key="d6">paved</data>
+      <data key="d7">forestry</data>
+    </edge>
+    <data key="d0">EPSG:4326</data>
+  </graph>
+</graphml>

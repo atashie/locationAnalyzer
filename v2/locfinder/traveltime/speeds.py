@@ -57,14 +57,16 @@ ACCESS_SPEED_FACTOR = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 # classes* to delete, because class was the only evidence the extracted graph held. It is the wrong
 # evidence -- `track` says nothing about whether a way is paved or passable -- and the tag that
 # would say was never pulled out of the PBF. A tag the graph does not carry cannot be honoured by
-# any rule, so extraction comes first and a decision about unpaved ways second. 166,067 way tags
-# in the Triangle extract carry it. See
+# any rule, so extraction comes first and a decision about unpaved ways second. 165,549 WAYS in the
+# Triangle extract carry it (plus 518 nodes; `grep -c` over the XML gives 166,067 for both, which is
+# what I first quoted as a way count -- Codex pass 35). See
 # docs/engineering-notes/project-phase1-s3-soft-way-dependence.md.
 # `vehicle` is a straight defect fix, found by writing the invariant down as a test rather than by
 # looking for it: `access._MODE_TAG_ORDER` consults it for the drive and bike modes -- it is the
 # middle tier of OSM's `access` < `vehicle` < `motor_vehicle` < `motorcar` hierarchy -- and it was
-# never extracted, so that branch could not fire. 102 way tags in the Triangle XML carry it, which
-# is 332 directed edges in the simplified graph (278 `no`, 38 `yes`, 16 `forestry`).
+# never extracted, so that branch could not fire. 98 ways in the Triangle XML carry it -- 88 `no`,
+# 8 `forestry`, 2 `yes` -- which is 332 directed edges in the simplified graph (278 `no`, 38 `yes`,
+# 16 `forestry`); one way becomes several edges.
 #
 # Measured, not assumed (`scripts/measure_vehicle_tag_effect.py`): the walk layer is **unaffected**,
 # 0 edges changing class, because walk consults `foot` alone. Drive changes 234 edges but only 24 on

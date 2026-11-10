@@ -9,7 +9,7 @@ a test instead of by looking for the bug.
 Two rounds of measurement then asked *which highway classes to delete* — `track`, `path`,
 `footway`, `service` — and Codex pass 34 was right that this measures tag sensitivity rather than
 usability. The reason the question came out that shape is mechanical: **highway class was the only
-evidence the extracted graph held.** `surface` is the tag that would judge paving, 166,067 way tags
+evidence the extracted graph held.** `surface` is the tag that would judge paving, **165,549 ways**
 in the Triangle extract carry it, and osmnx was never told to keep it, so no rule could have used
 it however the rule was written.
 
@@ -17,8 +17,18 @@ it however the rule was written.
 `access` < `vehicle` < `motor_vehicle` < `motorcar`, and `_MODE_TAG_ORDER` lists `vehicle` for both
 the drive and bike modes. `vehicle` was never in `EXTRA_WAY_TAGS` and is not in osmnx's default
 `useful_tags_way` either, so **that branch has never fired on any layer this project has built.**
-102 way tags in the Triangle XML carry it, which is **332 directed edges** in the simplified graph
-(278 `no`, 38 `yes`, 16 `forestry`).
+**98 ways** in the Triangle XML carry it — 88 `no`, 8 `forestry`, 2 `yes` — which is **332
+directed edges** in the simplified graph (278 `no`, 38 `yes`, 16 `forestry`), because one way
+becomes several edges.
+
+> **The first version of this note said 166,067 and 102 "way tags", and those are element-blind
+> counts.** They came from `grep -c 'k="surface"'` over the XML, which counts the tag on nodes as
+> well: 165,549 ways + 518 nodes = 166,067, and 98 ways + 4 nodes = 102. Codex pass 35 parsed the
+> XML element-aware and I reproduced it. The 332 edge figure was right, and so was every measured
+> consequence — nothing downstream was computed from the wrong number — but a count is a count *of*
+> something and these were counts of the wrong thing. Same class of error as
+> [[feedback-decide-by-measurement-not-by-argument]]'s 2026-11-10 entry, on the same day it was
+> written.
 
 Measured rather than assumed, with `scripts/measure_vehicle_tag_effect.py`:
 
@@ -53,6 +63,44 @@ for today's rules, and `load_roads_graph` refuses **before** reading the graph. 
 purpose: a cache parsed with *more* tags than the rules need carries everything they ask for and is
 usable; one missing a tag cannot answer for a rule that reads it, whether or not any rule reads it
 yet.
+
+### And the fix had the bug's own shape — revision 2, Codex pass 35 F1
+
+The first manifest declared a tag set and **nothing said which graph it described**. Codex wrote a
+valid pair, replaced only the graphml with a graph lacking `vehicle`, and `load_roads_graph`
+accepted it, keeping a drive edge that `vehicle=no` should remove. That is the same defect one level
+up: the bug was that the code's rules and the data's contents were two unconnected claims, and the
+guard then made a third unconnected claim *about the data*. `g1` also wrote the graph and the
+manifest separately, so an interrupted run left a pair that did not belong together.
+
+Revision 2:
+
+- the manifest records `graphml_bytes` and `graphml_sha256`, and **both are checked** before the
+  graph is read — 0.5 s to hash 695 MB, against a 35 s load;
+- `graph_declared_edge_attrs` reads the graphml's own `<key>` declarations, so the **writer** refuses
+  to certify a graph that does not declare a tag `EXTRA_WAY_TAGS` adds deliberately. This consults
+  the graph, not a claim about it. A graphml declares a key only if some element carries it, so a
+  missing declaration cannot prove absence of intent — `landuse` is an osmnx default no highway way
+  carries — which is why osmnx's defaults are recorded as provenance rather than required, and why
+  only the parsing process may assert `requested_but_absent`;
+- the required set now includes **osmnx's defaults**, not only our additions: removing the default
+  retention of `oneway`, which orients every edge, survived the first invariant test;
+- the `parse` options (`simplify`, `retain_all`) are recorded and checked;
+- `g1` **deletes the manifest before writing the graph**, so an interrupted run leaves a graph with
+  no manifest and the next run re-parses. The guard fails closed.
+
+**What it still does not establish: parsing semantics.** A retained tag does not say how it was
+interpreted, and the manifest records the parse options it knows rather than every osmnx setting in
+effect. The claim is the narrow one: *the guard refuses an incompatible declared tag set, and a
+graph whose bytes the manifest does not describe.*
+
+And the tests needed the same treatment. Pass 35 killed three of them — rejecting a missing
+`surface` while waving every other missing tag through; calling `load_graphml`, swallowing the
+exception and then validating; loading a valid graph twice. All three are now caught, by
+parameterising the missing-tag test over the whole required set and replacing a stub that raises
+with a **call recorder** asserting the exact call list. `scripts/mutate_graph_cache_guard.py` then
+found a twelfth mutation the twelve tests still missed — *ignore the graph's sha256* — because every
+swap test changed the file's length and the size check caught them first. **12 of 12 caught.**
 
 ## The rule
 

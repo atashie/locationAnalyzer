@@ -9,8 +9,15 @@ Two questions, which are not the same question:
    *nothing* in the walk layer -- no rule reads `surface`, and `classify_access` consults `vehicle`
    only for drive and bike -- so this rebuild should differ from the stored raster by **exactly**
    the symmetrise fix. 7,246 is therefore a prediction, not a summary: a different number means
-   something changed that I have not accounted for, and the script says so rather than reporting
-   whatever it finds as the answer.
+   something changed that I have not accounted for, so the script says NOT PREDICTED **and exits
+   non-zero**. The first version printed the verdict and returned 0, which made it a report rather
+   than a check (Codex pass 35).
+
+   What an equal count does **not** do is establish attribution: 7,246 cells could in principle
+   differ for some other reason. That evidence comes from reproducing both surfaces -- the stored
+   one under the historical `symmetrise`, the new one under current code -- which Codex pass 34 did
+   for the first and pass 35 for both, bit-for-bit. This script checks that the prediction holds;
+   it does not prove why it holds.
 
 2. **On the sixteen audited journeys**, did any number the owner was told change? The sheet carries
    the seconds, reason, encoded minute and both outcomes as they stood when it was drawn, so the
@@ -71,6 +78,7 @@ def main() -> int:
     differs = (finite_both & (new_s != old_s)) | (np.isfinite(new_s) != np.isfinite(old_s))
     n_diff = int(differs.sum())
     matches = n_diff == PREDICTED_CELLS_DIFFERING
+    failures = 0 if matches else 1
     print(f"cells differing            {n_diff:,} of {new_s.size:,} ({n_diff / new_s.size:.4%})")
     print(f"  predicted (symmetrise)   {PREDICTED_CELLS_DIFFERING:,}  "
           f"{'AS PREDICTED' if matches else 'NOT PREDICTED -- something else moved'}")
@@ -121,7 +129,6 @@ def main() -> int:
         for t_min in THRESHOLDS_MIN
     }
 
-    failures = 0
     for name in ("triangle-grocery-walk-chapelhill", "triangle-grocery-walk"):
         sheet = SHEETS / f"{name}.csv"
         if not sheet.exists():

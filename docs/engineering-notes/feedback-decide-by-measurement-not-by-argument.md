@@ -101,7 +101,8 @@ question E1b failed in the fitness finding below, which is why this note is wher
 **The corollary, and the reason it mattered here.** Framing the question wrongly stopped me finding
 the cause. I measured highway-class sensitivity for two rounds; the actual mechanism was that the
 approach is tagged **`access=private`**, is correctly penalised at 120 s per edge, and wins anyway
-because 480 s of penalty cannot beat a 968 s detour. That is a **calibration** finding with a cheap
+because 360 s of penalty over three restricted hops cannot beat a 968 s detour. That is a
+**calibration** finding with a cheap
 fix — 600 s fixes the cell for 1.10% of 15-minute PASS buildings — and it was reachable only once
 the framing correction forced "what is causing this" in place of "which class should we delete".
 See [[project-phase1-s3-soft-way-dependence]] and [[35-codex-review-pass34]].

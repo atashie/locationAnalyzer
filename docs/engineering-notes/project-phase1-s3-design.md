@@ -10,15 +10,16 @@ metadata:
 
 As of 2026-11-10, head `5bbdcfb` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
-`...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
-per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 and 34 are
-`docs/research/34-` and `35-`, with their executable counterexamples committed beside them**;
+`...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
+per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33, 34 and 35 are
+`docs/research/34-`, `35-` and `36-`, with their executable counterexamples committed beside
+them**;
 passes 27-32 ran in-session and are recorded in the commits named below.
 Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-10, not recalled:** **1,177 passed, 24 skipped**. The E1c figure verifier
+**Measured 2026-11-10, not recalled:** **1,212 passed, 24 skipped**. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
@@ -35,9 +36,10 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 The owner walked `band15min_pass-03` and found **~25 min against a published 13.5**. The cause is
 established end to end: the 305 m approach is OSM way **1254722641**, tagged **`access=private`**;
 `classify_access` labels it `restricted` correctly; `add_travel_times` applies
-`cost = travel_time + RESTRICTED_PENALTY_S["walk"]` = **120 s**; and 120 s over ~4 restricted edges
-is 480 s of cost against a **968 s** detour, so the private track wins on cost and the household is
-shown its *real* time. **A calibration finding, not a missing mechanism.**
+`cost = travel_time + RESTRICTED_PENALTY_S["walk"]` = **120 s**; and 120 s over the **3** restricted
+hops is **360 s** of cost against a **968 s** detour, so the private track wins on cost and the
+household is shown its *real* time. (Counted by the explainer, which reports 3 of 29 hops and 159 m;
+earlier revisions said ~4 edges and 480 s from a reading rather than a count.) **A calibration finding, not a missing mechanism.**
 
 Measured over the full surface (`scripts/measure_restricted_walk_policy.py`, 126,197 restricted walk
 edges):
@@ -55,18 +57,24 @@ because nothing here establishes what the number should be. The table prices fou
 against one walked journey; it does not measure which one is right. A metro-wide parameter set from
 a single observation is calibration to an anecdote, and the exchange rate it would set
 — how much detour a household is assumed to accept rather than use a private way — is a
-behavioural quantity this project has not measured at all. So the gap is **carried, monitored and
+behavioural quantity this project has not measured at all. So the gap is **carried, and to be
 disclosed** rather than papered over:
 
-- **Monitor.** Every further walked journey is checked against it. The one number to watch is the
-  signed error on journeys whose route uses a restricted edge; one observation at +11.5 min is not
-  a rate, and a second and third will say whether 120 s is systematically too small or whether this
-  cell is unusual. `scripts/explain_journey.py` already names the restricted edges on a route.
-- **Flag when delivering estimates.** An estimate whose route depends on a restricted way is less
-  trustworthy than one that does not, and the surface knows which cells those are. Marking them is
-  a candidate for the step 8 report and the bounded household release — not built, and it needs
-  no new data when it is: `access_restricted` is already on the edges and the per-cell destination
-  is now recovered.
+- **Monitor — specified and MANUAL, not yet a mechanism.** The quantity to accumulate is the
+  **signed error on journeys whose route uses a restricted edge**: this is one observation at about
+  +11.5 min, which is not a rate, and a second and third will say whether 120 s is systematically
+  too small or whether this cell is unusual. What exists: `scripts/explain_journey.py` now prints
+  each hop's access class and penalty and a `RESTRICTED EDGES` line per journey, so the membership
+  of that statistic is computable one journey at a time. What does **not** exist: a per-cell
+  restricted-route flag in the layer bundle, a definition of the aggregation, and anything that
+  computes the statistic. Codex pass 35 was right that the first version of this bullet claimed the
+  tool "already names the restricted edges" when it printed only a name and a highway class —
+  a penalised private service road rendered as `private road [service]`.
+- **Flag when delivering estimates — owed by step 8, not built.** An estimate whose route depends on
+  a restricted way is less trustworthy than one that does not. Making that a release check needs
+  three things, none of them new data: record route-restriction status per cell when the layer is
+  built (`access_restricted` is already on the edges), define the error's sign and aggregation, and
+  require the flag before delivery. Until then it is a commitment, not a control.
 - **Do not quote the 600 s row as a plan.** It is a priced option, nothing more.
 
 **Done instead, 2026-11-10: `surface` and `vehicle` added to `EXTRA_WAY_TAGS`, and the extract
@@ -295,7 +303,8 @@ conditional** — `Pr(product PASS and comparator FAIL)` over the whole frame, n
 displayed)`, so a 1% frame-wide rate can coexist with 10% of *shown* results being wrong — and a
 **closed grocery passes both E1 and E2**, because both sides share the destination list.
 
-**Execution plan revision 11 adds §0, the risk-ordered next steps**, and that is now the entry point
+**Execution plan revision 11 added §0, the risk-ordered next steps**, and that is now the entry point
+(revision 12 records the first walked result there and the owner's decision on it)
 to the plan. Ordered by *product risk retired*, not defect severity, per pass 25:
 
 0. **The audit harness** (half a day) — so the owner can start walking real recommendations, the

@@ -1,0 +1,14 @@
+...........                                                              [100%]
+11 passed in 0.90s
+PYTEST_EXIT 0
+caught       swap the T=10 and T=15 table rows
+caught       delete the interval-method passage
+caught       quietly turn E1c into a gate
+caught       erase the record of the withdrawn bootstrap
+caught       swap the frame B and frame C column labels
+caught       replace the specified bound-range formula
+caught       exchange two zero-error bounds between their cases
+caught       flip the conditioning event to product FAIL
+
+unmutated copy passes (90 checks); the tracked document was never written
+FIGURE_SELFTEST_EXIT 0

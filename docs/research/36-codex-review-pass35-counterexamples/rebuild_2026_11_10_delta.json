@@ -1,0 +1,27 @@
+{
+ "cells_total": 330502,
+ "cells_differing": 7246,
+ "cells_differing_predicted": 7245,
+ "matches_prediction": false,
+ "finiteness_changes": 0,
+ "buildings_in_changed_cells": 11436,
+ "reason_cells_differing": 0,
+ "by_threshold": {
+  "10min": {
+   "cells_pass_before": 24245,
+   "cells_pass_after": 24255,
+   "cells_gaining_pass": 10,
+   "cells_losing_pass": 0,
+   "buildings_gaining_pass": 16,
+   "buildings_losing_pass": 0
+  },
+  "15min": {
+   "cells_pass_before": 47495,
+   "cells_pass_after": 47509,
+   "cells_gaining_pass": 15,
+   "cells_losing_pass": 1,
+   "buildings_gaining_pass": 25,
+   "buildings_losing_pass": 0
+  }
+ }
+}

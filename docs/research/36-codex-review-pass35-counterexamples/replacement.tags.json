@@ -1,0 +1,14 @@
+{
+  "extra_way_tags": [
+    "bicycle",
+    "foot",
+    "motor_vehicle",
+    "motorcar",
+    "oneway:bicycle",
+    "sidewalk",
+    "surface",
+    "vehicle"
+  ],
+  "source": "triangle-roads.osm",
+  "written_at": "2026-11-10 14:48:04"
+}
