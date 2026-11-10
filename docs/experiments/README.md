@@ -18,7 +18,7 @@ machine on the dates given; they are not research estimates.
 | Independent engine spot check | spotcheck-engines.md | ours vs Valhalla vs OSRM on 12 real journeys; Google leg needs a key |
 | Phase 0 decisions | phase0-decisions.md | revision 2, corrected against Codex pass 4 |
 | S3 instrument build | s3-instrument-build.md | measurement apparatus for S3 |
-| S3 whole-minute encoding at a threshold | s3-encoding.md | measured — `rint` shows 8.15% of its 10-minute passes wrongly to a minute-only client; `ceil` is exact. Decision pending at plan §0 step 6 |
+| S3 whole-minute encoding at a threshold | s3-encoding.md | **decided 2026-11-09: `ceil`** — `rint` showed 8.15% of its 10-minute passes wrongly to a minute-only client (8.16% re-measured on the 2026-11-10 rebuilt layer); `ceil` is exact by construction at every whole-minute threshold below 254. What remains at plan §0 step 6 is the larger finding: the export still collapses UNKNOWN into EXCLUDED |
 | Walked-journey audit sheets | audit/ | 21 journeys emitted for grocery/walk; owner columns blank, see audit/README.md |
 
 ## Notes for Phase 1

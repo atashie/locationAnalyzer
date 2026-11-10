@@ -61,6 +61,14 @@ At 10 minutes the same 2,151 cells are **0.84% of OK cells** and **0.65% of the 
 two different denominators, and an earlier version of this note called the first of them
 "frame-wide", which it is not (pass 27).
 
+**Re-measured 2026-11-10 on the rebuilt layer: 2,154 cells, 8.16%.** The figures in this note are
+the ones the decision was taken against on 2026-11-09 and are left as they stand; the rebuild
+(`ab01ffa`'s `symmetrise` fix, 7,246 cells) moves the ten-minute `rint` rate by one hundredth of a
+percentage point. The `ceil` column cannot move at all: `ceil(s/60) <= T` **is** `s <= 60T`, which
+is `evaluate`'s own comparison, so its zeros hold by construction on any layer rather than by luck
+on this one. That is the property the decision rests on, and it is the reason a changed surface
+does not reopen it.
+
 **Pass 25's objection to E1b was exactly this shape**: `Pr(product PASS and comparator FAIL)` over a
 whole frame can be ~1% while `Pr(wrong | displayed)` is ~10%, so a frame-wide number understates the
 harm. It was offered as a hypothetical about the routing comparison and here it is as arithmetic

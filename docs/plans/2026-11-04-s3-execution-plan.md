@@ -1,6 +1,13 @@
 # S3 execution plan — building the instrument
 
 **Status:** plan, for adversarial review. **Nothing here reports a result.**
+**Revision 12, 2026-11-10.** Records the **first walked audit result and the owner's decision on
+it** in §0 — the restricted-walk penalty stays at 120 s, the gap is monitored and disclosed rather
+than calibrated from one observation, and step 8 now owes households a flag on estimates whose route
+depends on a restricted way. Also corrects T0's dependency line, which said "depends on nothing"
+while its own stage 3 requires the comparator that is step 4. No estimand, allocation, threshold,
+uncertainty convention or selection policy changes.
+
 **Revision 11, 2026-11-09.** Adds **§0, the risk-ordered next steps**, after Codex pass 25
 judged the effort disproportionate and aimed at the wrong axis. §0 is now the entry point to
 this plan; T0 keeps its design and moves to position 3. No estimand, allocation, threshold,
@@ -97,6 +104,27 @@ the truth, rather than whether it agrees with itself. It runs in parallel with e
 **A destination that is closed, fenced off or unusable on arrival is a failed recommendation, not a
 discarded row.** E1 and E2 cannot see that failure at all: both sides share the destination list.
 
+> **The audit ran, on one journey, and it was worth more than the eleven adversarial passes
+> before it.** The owner walked `band15min_pass-03` and found **~25 minutes against a published
+> 13.5**. Cause established end to end: the 305 m approach is OSM way 1254722641, tagged
+> `access=private`; `classify_access` labels it restricted correctly; `add_travel_times` does apply
+> `cost = travel_time + 120 s`; and 480 s of penalty over four restricted edges cannot beat a 968 s
+> detour, so the private track wins on cost and the household is shown its real time. **A
+> calibration finding, not a missing mechanism** — E1 and E2 cannot see it, because both sides read
+> the same graph.
+>
+> **Owner decision 2026-11-10: the penalty stays at 120 s.** Raising it to 600 s would fix that cell
+> at a cost of 1.10% of 15-minute PASS buildings, and that trade was priced and declined, because
+> one walked journey does not identify the right number and the penalty is a behavioural exchange
+> rate this project has not measured. The gap is **carried, monitored and disclosed**: the statistic
+> to accumulate is the signed error on journeys whose route uses a restricted edge, and step 8 owes
+> households a flag on estimates that depend on one. Done instead: `surface` and `vehicle` added to
+> the extract, the latter a defect — `classify_access` has been reading `vehicle` for drive and bike
+> all along and it was never extracted, so 332 edges' access class was decided without it (walk is
+> unaffected; drive changes 24 usable edges, 12 each way). See
+> `docs/engineering-notes/project-phase1-s3-soft-way-dependence.md` and
+> `...-s3-extract-tag-gap.md`.
+
 ### Step 0 — the audit harness (half a day, mine) — **DONE** `0a4a24b`..`c081920`
 
 Delivered: `GridSpec.cell_for_xy` / `cell_for_lonlat`, `v2/scripts/audit_recommendations.py`, the owner's
@@ -182,7 +210,7 @@ destination actually used, date, and outcome.
 > `Reason` enum for does not reach the browser. That is the larger of the two and it still belongs
 > to step 6.
 | 7 | **Grocery and geocoding truth audit** — destination validity, resolution, coverage | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
-| 8 | **The one-page decision report**, then a bounded household release | 1/2 day + sessions | misunderstanding and overgeneralisation |
+| 8 | **The one-page decision report**, then a bounded household release. **Owes a flag on estimates whose route depends on a restricted way** — the owner's 2026-11-10 decision to keep the 120 s penalty was taken on the condition that the gap is disclosed rather than priced away. Needs no new data: `access_restricted` is on the edges and the per-cell destination is recovered | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
 
 **Step 2 changed what gets reported**, so it was an owner decision: it was drafted as an additive
 §13 amendment and flagged rather than adopted silently, and **the owner adopted it on 2026-11-10**.
@@ -255,8 +283,14 @@ E2, the four diagnostics, the conformance suite, the wire-format migration, and 
 
 ### T0 — the attachment prevalence-and-impact pilot
 
-**Depends on:** nothing that is not already built and on disk. **This is the next task**, ahead of T3
-and ahead of choosing a candidate convention. Codex pass 26 designed it after five rounds of choosing
+**Depends on:** **stages 1 and 2, nothing that is not already built and on disk** — the
+enumeration primitive they need is `shapely.STRtree.query_nearest(max_distance=..., all_matches=True)`,
+which ships in the pinned shapely. **Stage 3 needs a routing comparator**, which is step 4 and is
+itself gated on §12 item 1, so stage 3 is the part that can expire. Earlier revisions said "depends
+on nothing" flat and that was wrong about a third of the task. **This is the next task**, ahead of
+T3 and ahead of choosing a candidate convention; if the comparator is not ready when stages 1 and 2
+land, publish the attachment result and leave verdict impact explicitly unknown, as the time box
+below already requires. Codex pass 26 designed it after five rounds of choosing
 attachment rules by argument produced revision 9; the owner's stated trust order is **experimental
 results > research > priors**, and the rule has been chosen from priors throughout.
 

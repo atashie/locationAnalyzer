@@ -73,8 +73,9 @@ disclosed** rather than papered over:
 rebuilt.** The reason the first two rounds of measurement asked the wrong question is that highway
 class was the only evidence the extracted graph held. `surface` is the tag that would judge paving;
 `vehicle` is a **defect** — `access.classify_access` consults it for drive and bike, and it was
-never extracted, so that branch could not fire (102 ways carry it in the Triangle extract, 92 of
-them `vehicle=no`). Both are now checked by
+never extracted, so that branch could not fire. Measured: **walk is unaffected** (0 edges change
+class), drive changes 24 edges on highways it may use — **12 stricter and 12 more permissive**, not
+a one-directional tightening as I first wrote — and bike changes 28. Both tags are now checked by
 `v2/tests/test_graph_cache_manifest.py::test_every_tag_the_access_rules_consult_is_one_extraction_keeps`.
 See [[project-phase1-s3-soft-way-dependence]] and [[project-phase1-s3-extract-tag-gap]].
 

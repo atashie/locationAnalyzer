@@ -63,8 +63,16 @@ ACCESS_SPEED_FACTOR = {"walk": 0.9, "bike": 0.8, "drive": 0.2}
 # `vehicle` is a straight defect fix, found by writing the invariant down as a test rather than by
 # looking for it: `access._MODE_TAG_ORDER` consults it for the drive and bike modes -- it is the
 # middle tier of OSM's `access` < `vehicle` < `motor_vehicle` < `motorcar` hierarchy -- and it was
-# never extracted, so that branch could not fire. 102 ways in the Triangle extract carry it, 92 of
-# them `vehicle=no`. The walk layer is unaffected: walk consults `foot` alone.
+# never extracted, so that branch could not fire. 102 way tags in the Triangle XML carry it, which
+# is 332 directed edges in the simplified graph (278 `no`, 38 `yes`, 16 `forestry`).
+#
+# Measured, not assumed (`scripts/measure_vehicle_tag_effect.py`): the walk layer is **unaffected**,
+# 0 edges changing class, because walk consults `foot` alone. Drive changes 234 edges but only 24 on
+# a highway drive may use, and those 24 split **12 stricter and 12 more permissive** -- a
+# `vehicle=forestry` on an `access=no` way goes forbidden -> restricted, which *restores* an edge
+# the old rule removed outright. Bike changes 28, all usable: 14 forbidden -> restricted,
+# 12 open -> forbidden, 2 open -> restricted. So this is not a one-directional tightening, which is
+# what I first wrote before measuring it.
 EXTRA_WAY_TAGS = ["foot", "bicycle", "motor_vehicle", "motorcar", "oneway:bicycle", "sidewalk",
                   "surface", "vehicle"]
 

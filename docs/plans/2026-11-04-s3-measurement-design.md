@@ -824,7 +824,7 @@ nothing.
 > **Revision 12 adds such a measure, E1c, and satisfies two of those three requirements rather than
 > three.** It has its own name and its own formula. It has **no threshold and no allocation**, and
 > the measurement below is the reason: a 1.0% gate is unreachable at the denominator §4's allocation
-> produces, and an allocation that would reach it is 8.2× the current one. Rather than invent a
+> produces, and an allocation that would reach it is 8.1× the current one. Rather than invent a
 > threshold that the data cannot support or quietly drop the requirement, revision 12 **narrows it**:
 > a conditional rate may be added with its own name and formula alone **provided it carries no
 > acceptance role**, and a conditional rate that gates anything still requires all three. E1c is of
@@ -882,17 +882,21 @@ identification range is `[k/n_claim, (k+u)/n_claim]`. Treating `u` as denominato
 uncertainty would be the natural mistake to make here and is wrong.
 
 **The claim denominator is far smaller than the 417 figure implies, and this is measured.** 417 is
-500 × (1 − 0.166722) — the **answered** share of frame C at *T* = 10, PASS *and* FAIL. E1c conditions
+500 × (1 − 0.166722) — the **answered** share of frame C at *T* = 10, PASS *and* FAIL. That
+0.166722 is an **attribution of where the design's earlier example came from, not a figure of this
+layer**: this layer answers 77.6855% of frame C, which would put the answered
+count at 388.4, and nothing recomputes 0.166722 or 417 — they are quoted to be
+corrected. Stated because the arithmetic reads like a current measurement and is not one. E1c conditions
 on PASS alone. Measured 2026-11-09 from the saved arrays `own_triangle_grocery_walk.npy`,
 `..._reason.npy` and `own_triangle_buildings_per_cell.npy`, whose 330,502 cells and 512,633 buildings
 match this section's frame sizes exactly:
 
 | *T* | frame C PASS cells | share of area | frame B PASS buildings | share of structures | `n_claim` at *n*=500, C | B |
 |---|---|---|---|---|---|---|
-| 10 | 24,245 | **7.3358%** | 80,051 | **15.6157%** | **36.7** | **78.1** |
-| 15 | 47,495 | 14.3706% | 163,850 | 31.9624% | 71.9 | 159.8 |
-| 25 | 93,562 | 28.3091% | 298,705 | 58.2688% | — | — |
-| 45 | 161,664 | 48.9147% | 424,886 | 82.8831% | — | — |
+| 10 | 24,255 | **7.3388%** | 80,067 | **15.6188%** | **36.7** | **78.1** |
+| 15 | 47,509 | 14.3748% | 163,875 | 31.9673% | 71.9 | 159.8 |
+| 25 | 93,575 | 28.3130% | 298,716 | 58.2709% | — | — |
+| 45 | 161,670 | 48.9165% | 424,886 | 82.8831% | — | — |
 
 **A 1.0% gate on E1c is impractical at the short thresholds under §4's allocation.**
 `tolerated_failures(n_claim, 0.01)` — the failure-tolerance test of §4, by §6's method — returns
@@ -908,18 +912,18 @@ undetected in revision 2, and which that function exists to report.
 
 **With zero observed errors the 95% Clopper-Pearson bounds are** **7.7775%** (C, *T*=10),
 **4.0754%** (C, *T*=15), **3.7679%** (B, *T*=10) and **1.8549%** (B, *T*=15). Reaching 1.0% needs
-`n_claim` ≥ **299**, which at the measured PASS shares is *n* ≈ **4,076** on the binding frame and
-threshold — **8.2×** §4's allocation.
+`n_claim` ≥ **299**, which at the measured PASS shares is *n* ≈ **4,074** on the binding frame and
+threshold — **8.1×** §4's allocation.
 
 **`n_claim` is itself random, and every figure above is its expectation at *n* = 500.** At *n* = 500
-on frame C at *T* = 10, `E[n_claim]` = **36.6791** with SD **5.8255**. So these are planning
+on frame C at *T* = 10, `E[n_claim]` = **36.6942** with SD **5.8267**. So these are planning
 quantities in exactly the sense §4 means, and a realised `n_claim` must be reported as drawn, never
 replaced by its expectation.
 
-**That randomness also makes 4,076 an expectation and not an assurance**, which the draft elided.
-`hypergeom.sf(298, 330502, 24245, 4076)` = **0.5089**: at *n* = 4,076 the chance of actually
-obtaining 299 claims is **50.89%**, a coin toss. The smallest allocation giving 95% assurance of the
-denominator is **4,454**, or **8.908×** — and even that figure assumes zero errors and no unresolved
+**That randomness also makes 4,074 an expectation and not an assurance**, which the draft elided.
+`hypergeom.sf(298, 330502, 24255, 4074)` = **0.5083**: at *n* = 4,074 the chance of actually
+obtaining 299 claims is **50.83%**, a coin toss. The smallest allocation giving 95% assurance of the
+denominator is **4,452**, or **8.904×** — and even that figure assumes zero errors and no unresolved
 observations. The honest statement is that the 1.0% gate is **practically unreachable at this
 exposure**, not deterministically impossible.
 
@@ -930,7 +934,7 @@ exposure**, not deterministically impossible.
   an 8% gate is reachable at the current exposure. Whether 1%, 8% or none is right is a **product
   judgement**, and picking a threshold because it happens to fit the allocation would be the
   measurement tail wagging the product dog.
-- **It does not establish that 8.2× is the cost of gating E1c.** The PASS domain is known from the
+- **It does not establish that 8.1× is the cost of gating E1c.** The PASS domain is known from the
   frozen product, so a **separately allocated sample drawn directly from it** could collect claims
   without enlarging every full-frame draw — a cheaper route the draft did not consider, and one that
   would need its own §13 row and its own allocation.
@@ -1019,7 +1023,7 @@ contains zero errors, so the interval is `[0, 0]` — *certainty* — no matter 
 knows. Reproduced through `percentile_bootstrap` itself on 463 non-claims and 37 correct claims:
 it returns **`(0.0, 0.0)`**, and with a single claim **`(nan, nan)`**. That is not an approximate
 interval, it is severe undercoverage. A worked case using this layer's own frame: let **243 of the
-24,245** PASS cells be erroneous throughout their area, a true E1c of **1.00227%** — just over the
+24,255** PASS cells be erroneous throughout their area, a true E1c of **1.00186%** — just over the
 1.0% line. An SRS of 500 cells misses all 243 with probability
 `hypergeom.pmf(0, 330502, 243, 500)` = **0.6920924**, so **69.2% of samples would report `[0, 0]`
 against a population rate above the line.** The withdrawn method also contradicted this subsection's
@@ -1080,7 +1084,7 @@ reverses at the long ones.** The dilution argument is symmetric in *form*, so a 
 decide it — but the draft measured one threshold and generalised. At the binding case for inclusion
 precision (frame C, *T* = 10) conditioning on product PASS shrinks the denominator **13.6×** while
 conditioning on product FAIL shrinks it **1.3×**, a sound lower bound on the FAIL share there being
-75.2540% of area and 83.6710% of structures. So E1a is already close to its own conditional and E1b
+75.2510% of area and 83.6678% of structures. So E1a is already close to its own conditional and E1b
 is not — *there*.
 
 **At *T* = 45 on frame B it is the other way round, and that case is in this layer already.** PASS
@@ -1645,7 +1649,7 @@ selection policy are unchanged, and E1c cannot fail a layer.
 | what | why |
 |---|---|
 | E1c added, per mode, threshold and frame | E1b's denominator is the whole frame, so declining to answer improves the reported rate; a user is exposed only where a claim was made. Plan §0 step 2 |
-| **no threshold, no allocation** | measured, not preferred: `tolerated_failures(n_claim, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs `n_claim` ≥ 299, i.e. *n* ≈ 4,076, **8.2×** §4's allocation |
+| **no threshold, no allocation** | measured, not preferred: `tolerated_failures(n_claim, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs `n_claim` ≥ 299, i.e. *n* ≈ 4,074, **8.1×** §4's allocation |
 | §3's "may be added only ... with its own formula, threshold and allocation" **narrowed** | E1c meets two of the three. Rather than invent an unsupportable threshold or drop the requirement silently, a conditional rate with **no acceptance role** now needs name and formula only; one that gates still needs all three |
 | the 417 figure corrected in place | 417 is the **answered** denominator (PASS and FAIL). The **claimed** denominator is ≈ **37** on frame C at *T* = 10 — a 13.6× shrink, measured from the saved arrays |
 | ~~frame C's interval is a **cell bootstrap**~~ — **WITHDRAWN; the method is now Clopper-Pearson declared approximate** (decision 3) | the bootstrap is degenerate at the boundary: `(0.0, 0.0)` at zero errors, `(nan, nan)` at one claim, and `hypergeom.pmf(0, 330502, 243, 500)` = 0.692 means 69.2% of samples would report certainty against a true rate of 1.00227%. It also contradicted the subsection's own "roughly 8%" |
@@ -1653,7 +1657,7 @@ selection policy are unchanged, and E1c cannot fail a layer.
 | frame B's conditional law is **hypergeometric**, not binomial, and one-sided CP is **not universally conservative** under it | `CP_upper(71, 72)` = 0.999287846835 against a true 0.999287953929 at `A` = 80,051 gives 94.998570% coverage. Tiny, next to a 100% rate, and it still disproves the unqualified guarantee. §6 carried the same overbroad sentence and is now bounded |
 | the PASS margin is **known from the frozen product**, so estimating both numerator and denominator was a choice | that choice is what created the ratio problem. Two routes stay open for the owner: hypergeometric inversion against the known margin, or CP declared as approximate. Three things must be specified either way — the ratio statistic, how `u` enters, and what a zero-claim replicate contributes |
 | "all four published claim denominators" → **four of eight** | four thresholds on two frames. At *T* = 45 on frame B the expected denominator is 414 and `tolerated_failures(414, 0.01)` = **0**: the 1.0% gate is reachable there. The frame-C ten-minute obstruction is what binds |
-| 4,076 is an **expectation, not an assurance** | `hypergeom.sf(298, 330502, 24245, 4076)` = **0.5089** — a coin toss. 95% assurance of the denominator needs **4,454**, or 8.908×, and that still assumes zero errors |
+| 4,074 is an **expectation, not an assurance** | `hypergeom.sf(298, 330502, 24255, 4074)` = **0.5083** — a coin toss. 95% assurance of the denominator needs **4,452**, or 8.904×, and that still assumes zero errors |
 | ~~"settled by measurement, not preference"~~ — **WITHDRAWN** | insufficient precision for a 1.0% gate does not imply no gate: `tolerated_failures(37, 0.08)` = **0**. Nor is 8.2× the cost of gating, since a separate sample could be drawn from the known PASS domain. "Reported, non-gating" is now offered as a **recommendation** |
 | the inclusion/exclusion asymmetry **reverses within this layer** | at *T* = 45 on frame B, PASS shrinks the denominator **1.2065×** and FAIL at least **5.84×** — the opposite of the ten-minute case the draft generalised from. A conditional false-exclusion rate is deferred on **scope**, not on the shrink factor, which cannot decide usefulness |
 | ~~"the first reported number that declines to hide" all-abstention~~ — **WITHDRAWN** | E0 already reports 100% `UNKNOWN` by census, as do the abstention table and the status cross-tabulation. Also: an all-FAIL product has zero claims too, so undefined E1c is not evidence of abstention — and *no PASS in the population* differs from *no PASS in this sample* |

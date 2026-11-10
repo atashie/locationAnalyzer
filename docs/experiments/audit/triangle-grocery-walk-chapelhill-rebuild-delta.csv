@@ -1,0 +1,17 @@
+journey_id,stratum,row,col,seconds_sheet,seconds_rebuilt,delta_s,reason_sheet,reason_rebuilt,encoded_minutes_sheet,encoded_minutes_rebuilt,walked_seconds,outcome_10min_sheet,outcome_10min_rebuilt,outcome_15min_sheet,outcome_15min_rebuilt,changed,changed_a_verdict
+band10min_pass-01,band10min_pass,255,156,578.0,578.0,+0.0,OK,OK,10,10,,PASS,PASS,PASS,PASS,no,no
+band10min_pass-02,band10min_pass,271,93,587.2,587.2,+0.0,OK,OK,10,10,,PASS,PASS,PASS,PASS,no,no
+band10min_pass-03,band10min_pass,276,97,511.1,511.1,+0.0,OK,OK,9,9,,PASS,PASS,PASS,PASS,no,no
+band10min_fail-01,band10min_fail,269,120,643.3,643.3,+0.0,OK,OK,11,11,,FAIL,FAIL,PASS,PASS,no,no
+band10min_fail-02,band10min_fail,270,126,636.4,636.4,+0.0,OK,OK,11,11,,FAIL,FAIL,PASS,PASS,no,no
+band10min_fail-03,band10min_fail,286,110,640.5,640.5,+0.0,OK,OK,11,11,,FAIL,FAIL,PASS,PASS,no,no
+band15min_pass-01,band15min_pass,261,155,847.3,847.3,+0.0,OK,OK,15,15,,FAIL,FAIL,PASS,PASS,no,no
+band15min_pass-02,band15min_pass,278,153,847.2,847.2,+0.0,OK,OK,15,15,,FAIL,FAIL,PASS,PASS,no,no
+band15min_pass-03,band15min_pass,286,129,810.8,810.8,+0.0,OK,OK,14,14,1500,FAIL,FAIL,PASS,PASS,no,no
+band15min_fail-01,band15min_fail,260,168,966.1,966.1,+0.0,OK,OK,17,17,,FAIL,FAIL,FAIL,FAIL,no,no
+band15min_fail-02,band15min_fail,274,139,903.0,903.0,+0.0,OK,OK,16,16,,FAIL,FAIL,FAIL,FAIL,no,no
+band15min_fail-03,band15min_fail,288,125,962.6,962.6,+0.0,OK,OK,17,17,,FAIL,FAIL,FAIL,FAIL,no,no
+deep_pass_control-01,deep_pass_control,246,166,216.0,216.0,+0.0,OK,OK,4,4,,PASS,PASS,PASS,PASS,no,no
+deep_pass_control-02,deep_pass_control,247,163,110.0,110.0,+0.0,OK,OK,2,2,,PASS,PASS,PASS,PASS,no,no
+deep_pass_control-03,deep_pass_control,279,125,270.9,270.9,+0.0,OK,OK,5,5,,PASS,PASS,PASS,PASS,no,no
+deep_fail_control-01,deep_fail_control,289,94,1322.6,1322.6,+0.0,OK,OK,23,23,,FAIL,FAIL,FAIL,FAIL,no,no

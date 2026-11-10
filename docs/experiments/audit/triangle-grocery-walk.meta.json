@@ -127,5 +127,22 @@
  },
  "seconds_precision": "The stored seconds are float32. A model value of 600.00001 s is stored as 600.0 and so passes a 600 s threshold the model fails. This audit evaluates the stored artifact, which is what the product ships, not the model's float64 answer.",
  "reproducibility": "v2/data/ is gitignored, so the input rasters named above do not travel with a clone: this sheet is reproducible only on a machine that holds them. Rebuild with `uv run python spikes/s2_building_weighted_coverage.py grocery walk`, which needs data/triangle/roads.graphml (670 MB). The sha256s identify the inputs on a machine that has them.",
- "elapsed_s": 0.07
+ "elapsed_s": 0.07,
+ "superseded_by_rebuild": {
+  "rebuilt": "2026-11-10",
+  "why": "ab01ffa fixed `symmetrise` eight hours after the stored raster was built; `surface` and `vehicle` were also added to EXTRA_WAY_TAGS, which changes the profile digest and no walk-layer answer",
+  "sample_redrawn": false,
+  "sample_not_redrawn_because": "one journey has been walked against this draw; a redraw on the changed surface would select different cells and discard that observation",
+  "digests_above_describe": "v2/data/layers/prerebuild-2026-11-10/, where the arrays this sheet was drawn from are preserved",
+  "cells_differing_whole_surface": 7246,
+  "audited_rows_whose_seconds_moved": 0,
+  "audited_rows_whose_verdict_moved": 0,
+  "profile_version_now": "speeds-v0+7bd6d52dbf33d8fe",
+  "arrays_now": {
+   "seconds": "915f140b79affb30f883bc9df11a4e14e58681c79df051adc42e192179c9658a",
+   "reason": "977418efc127c6ecf79253e204e45e443b147652a1d20ebd64eb74e29eeca647",
+   "min_possible_s": "47c6006aa7e392ca600311e96271d4d409e174a77bb760df1c9c663d003c5395"
+  },
+  "delta": "docs/experiments/audit/triangle-grocery-walk-rebuild-delta.csv"
+ }
 }

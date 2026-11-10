@@ -153,6 +153,24 @@ the rule.
 The bands are split by the verdict computed from **float seconds**. That is not necessarily the
 verdict the shipped page will show: see below.
 
+## One journey has been walked
+
+**`band15min_pass-03`**, which the product put at **13.5 minutes** and the owner reports at **about
+25**. It is recorded in the sheet's observation columns and marked owner-reported and approximate:
+it was not stopwatch-timed, no start door was recorded, and which shop was reached is not confirmed.
+The cause is understood — the 305 m approach is OSM way **1254722641**, tagged **`access=private`**,
+which costs 120 s per restricted edge in `cost` and wins anyway because 480 s of penalty cannot beat
+the 968 s public detour. **Owner decision 2026-11-10: the penalty stays at 120 s**, because one
+journey prices the alternatives without identifying the right one. The gap is monitored, and
+estimates that depend on a restricted way are to be flagged when they are delivered. The statistic
+to accumulate is the **signed error on journeys whose route uses a restricted edge**: this is one
+observation at about +11.5 minutes, which is not a rate. See
+`docs/engineering-notes/project-phase1-s3-soft-way-dependence.md`.
+
+Note what the row does *not* claim. Per the asymmetry below, a slow walk to one shop does not refute
+the existential fifteen-minute claim for that cell. `witness_within_15min` is `no` **for this walk**;
+`unresolved` carries the rest.
+
 ## Two limits and one closed question
 
 **We can now tell you which destination we routed you to. Our number is still an upper bound.**
@@ -164,15 +182,22 @@ has now been done — `v2/scripts/recover_audit_destinations.py` — and the `pr
 columns are its output. Every row of both sheets was re-derived and matches the committed raster bit-exactly after the
 float32 cast.
 
-> **That is weaker than it sounds, and the layer needs a rebuild.** A current-code rebuild differs
-> from the committed raster on **7,246 of 330,502 cells** — the raster was built 2026-11-04 13:42
-> and `ab01ffa` at 21:12 then fixed `symmetrise`, which had been suppressing pedestrian reverse
-> edges in the shipped walk graph. None of the audited cells is among the 7,246, which is why they
-> all agree. So the destinations here are recovered with **current** code and agree with the
-> sheet's numbers everywhere, which is **consistent with but not proof of** the destination the
-> published layer actually chose (Codex pass 33). The recovery prints this disagreement on every
-> run. Rebuilding the layer removes the question; until then, treat a destination as the shop our
-> current model routes you to.
+> **The layer has been rebuilt, and that caveat is retired.** Until 2026-11-10 this said the
+> destinations were recovered with *current* code against a raster built before `ab01ffa` fixed
+> `symmetrise`, so the agreement was **consistent with but not proof of** the destination the
+> stored layer chose (Codex pass 33). The rebuild closes it: the recovery now prints *"the
+> committed own_triangle_grocery_walk.npy matches a current-code rebuild on all 330,502 cells"*,
+> so these destinations are the ones the layer on disk actually selects. It still runs that check
+> every time, so if the arrays and the code drift apart again it will say so.
+>
+> **What the rebuild moved, and what it did not.** 7,246 of 330,502 cells changed seconds — 7,227
+> faster, largest change 2,316.8 s, 11,436 buildings — with **no** change to any cell's reason and
+> none to finiteness. At fifteen minutes 15 cells gained a PASS and 1 lost one. **Not one of the 35
+> audited journeys moved by a second**, which is why the sample was *not* redrawn: the sheets
+> stand, each `.meta.json` now carries a `superseded_by_rebuild` block naming where the arrays it
+> digests are kept (`v2/data/layers/prerebuild-2026-11-10/`), and `…-rebuild-delta.csv` beside each
+> sheet records the before and after per journey. The same rebuild wrote `_min_possible_s.npy` for
+> the first time, so the audit reads a real lower bound instead of reconstructing one.
 
 Rebuild them with:
 

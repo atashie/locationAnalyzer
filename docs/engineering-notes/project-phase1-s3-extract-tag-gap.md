@@ -17,10 +17,22 @@ it however the rule was written.
 `access` < `vehicle` < `motor_vehicle` < `motorcar`, and `_MODE_TAG_ORDER` lists `vehicle` for both
 the drive and bike modes. `vehicle` was never in `EXTRA_WAY_TAGS` and is not in osmnx's default
 `useful_tags_way` either, so **that branch has never fired on any layer this project has built.**
-102 ways in the Triangle extract carry it, 92 of them `vehicle=no`. The walk layer is unaffected —
-walk consults `foot` alone — so this does not touch the walked finding; it is a defect in the drive
-and bike layers, and the correction runs in the strict direction: ways you may not legally drive
-stop being free to drive down.
+102 way tags in the Triangle XML carry it, which is **332 directed edges** in the simplified graph
+(278 `no`, 38 `yes`, 16 `forestry`).
+
+Measured rather than assumed, with `scripts/measure_vehicle_tag_effect.py`:
+
+| mode | edges changing class | on a highway the mode may use | which way |
+|---|---|---|---|
+| walk | **0** | 0 | walk consults `foot` alone |
+| drive | 234 | **24** | **12 stricter, 12 more permissive** |
+| bike | 28 | 28 | 14 more permissive, 14 stricter |
+
+**I wrote "the correction runs in the strict direction" before measuring it, and that is wrong.**
+Half of drive's usable changes are `forbidden -> restricted`: a way tagged `access=no` with
+`vehicle=forestry` was being **removed outright** and now survives with a penalty, which *restores*
+an edge the old rule deleted. The tag is a three-valued override in both directions, so honouring
+it both removes and restores. The walk layer really is untouched, and that half of the claim held.
 
 The shared shape: **the code's rules and the data's contents were two separate claims, and nothing
 compared them.** Either half alone looks right. `classify_access` reads `vehicle` correctly. The

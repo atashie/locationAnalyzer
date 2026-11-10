@@ -122,13 +122,42 @@ PASS_TABLE_HEADER_LINE = (
     "| *T* | frame C PASS cells | share of area | frame B PASS buildings | "
     "share of structures | `n_claim` at *n*=500, C | B |")
 
+def _swap_t10_t15_rows(text: str) -> str:
+    """Exchange the T=10 and T=15 rows' figures, derived from the document, not pinned to it.
+
+    This mutation used to carry the two rows as literal strings. The 2026-11-10 layer rebuild moved
+    every figure in them by a few cells, and the mutation stopped matching -- so the one test that
+    defends the table against a wholesale row swap retired itself, and said SKIP. It said it
+    loudly, which is the only reason this is a fix and not a silent hole. Deriving the anchors from
+    the table means a figure update cannot disable the check that guards those figures.
+    """
+    lines = text.splitlines()
+    try:
+        head = next(i for i, ln in enumerate(lines) if ln.startswith(PASS_TABLE_HEADER_LINE))
+    except StopIteration:
+        return text                      # the driver reports a mutation that changed nothing
+    body = {}
+    for i in range(head + 2, head + 6):
+        cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+        body[cells[0]] = (i, cells)
+    if "10" not in body or "15" not in body:
+        return text
+    (i10, c10), (i15, c15) = body["10"], body["15"]
+
+    def recast(target: list[str], source: list[str]) -> str:
+        """`source`'s figures in `target`'s own emphasis, so only the numbers move."""
+        out = [target[0]]
+        for t, sv in zip(target[1:], source[1:]):
+            bare = sv.strip("*")
+            out.append(f"**{bare}**" if t.startswith("**") else bare)
+        return "| " + " | ".join(out) + " |"
+
+    lines[i10], lines[i15] = recast(c10, c15), recast(c15, c10)
+    return "\n".join(lines)
+
+
 MUTATIONS = {
-    "swap the T=10 and T=15 table rows": (
-        ("| 10 | 24,245 | **7.3358%** | 80,051 | **15.6157%** | **36.7** | **78.1** |",
-         "| 10 | 47,495 | **14.3706%** | 163,850 | **31.9624%** | **71.9** | **159.8** |"),
-        ("| 15 | 47,495 | 14.3706% | 163,850 | 31.9624% | 71.9 | 159.8 |",
-         "| 15 | 24,245 | 7.3358% | 80,051 | 15.6157% | 36.7 | 78.1 |"),
-    ),
+    "swap the T=10 and T=15 table rows": _swap_t10_t15_rows,
     "delete the interval-method passage": (
         ("**The interval, decided 2026-11-10: Clopper-Pearson", "**DELETED:"),
     ),
@@ -207,12 +236,20 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
     except ValueError as exc:
         return 0, [f"cannot locate the E1c subsection or its change-log row: {exc}"]
 
-    def equals(label: str, got: object, want: object) -> None:
+    def equals(label: str, *, document: object, recomputed: object) -> None:
+        """Both sides keyword-only, because one call site had them the other way round.
+
+        The comparison was still correct -- equality is symmetric -- but the failure message named
+        the recomputed value as the document's and the document's as recomputed, on the one check
+        that carries the raster-derived figures and so the one most likely to fail. I spent several
+        minutes proving an impossible result before reading this function. A diagnostic that can
+        mislabel which side is which is worse than no diagnostic.
+        """
         nonlocal passed
-        if got == want:
+        if document == recomputed:
             passed += 1
         else:
-            problems.append(f"{label}: document says {want!r}, recomputed {got!r}")
+            problems.append(f"{label}: document says {document!r}, recomputed {recomputed!r}")
 
     def contains(label: str, phrase: str, where: str, body: str) -> None:
         nonlocal passed
@@ -230,16 +267,17 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
     cells = int(seconds.size)
     total_buildings = int(buildings.sum())
 
-    equals("frame C cell count", cells, FRAME_C_CELLS)
-    equals("frame B building count", total_buildings, FRAME_B_BUILDINGS)
+    equals("frame C cell count", recomputed=cells, document=FRAME_C_CELLS)
+    equals("frame B building count", recomputed=total_buildings, document=FRAME_B_BUILDINGS)
     contains("frame sizes named", f"{FRAME_C_CELLS:,} cells and {FRAME_B_BUILDINGS:,} buildings",
              "section", section)
 
     # ---- the PASS table, each figure bound to its own row and column
     table, header, table_problems = parse_pass_table(section)
     problems.extend(table_problems)
-    equals("the PASS table's column labels", header, PASS_TABLE_HEADER)
-    equals("the PASS table's thresholds", sorted(table), sorted(PUBLISHED_THRESHOLDS_MIN))
+    equals("the PASS table's column labels", document=header, recomputed=PASS_TABLE_HEADER)
+    equals("the PASS table's thresholds", document=sorted(table),
+           recomputed=sorted(PUBLISHED_THRESHOLDS_MIN))
     for minutes in PUBLISHED_THRESHOLDS_MIN:
         if minutes not in table:
             problems.append(f"the PASS table has no row for T = {minutes}")
@@ -253,15 +291,17 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
                      f"{ALLOCATION_N * b_count / total_buildings:.1f}"]
         else:
             want += ["—", "—"]
-        equals(f"the T = {minutes} row", table[minutes], want)
+        equals(f"the T = {minutes} row", document=table[minutes], recomputed=want)
 
     # ---- the bounds, and the unreachable-gate verdict that is the argument for not gating
     for (frame, minutes), m in CLAIM_DENOMINATORS.items():
         passing = answered & (seconds <= 60.0 * minutes)
         share = (int(passing.sum()) / cells if frame == "C"
                  else int(buildings[passing].sum()) / total_buildings)
-        equals(f"claim denominator, frame {frame} T={minutes}", round(ALLOCATION_N * share), m)
-        equals(f"tolerated_failures({m}, {GATE})", stats.tolerated_failures(m, GATE), -1)
+        equals(f"claim denominator, frame {frame} T={minutes}",
+               recomputed=round(ALLOCATION_N * share), document=m)
+        equals(f"tolerated_failures({m}, {GATE})",
+               recomputed=stats.tolerated_failures(m, GATE), document=-1)
         # Bound to its case, not merely present: pass 32 exchanged 7.7775% and 4.0754% between
         # their frame/threshold assignments and every presence check still passed.
         rendered = f"**{100 * stats.clopper_pearson_upper(0, m):.4f}%** ({frame}, *T*={minutes})"
@@ -270,15 +310,16 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
 
     # ---- the cost of a reachable gate, on the binding frame and threshold
     needed = next(m for m in range(1, 100_000) if stats.clopper_pearson_upper(0, m) <= GATE)
-    equals("smallest reachable 1.0% denominator", needed, 299)
+    equals("smallest reachable 1.0% denominator", recomputed=needed, document=299)
     contains("that denominator", "`n_claim` ≥ **299**", "section", section)
     pass_share_c10 = int((answered & (seconds <= 600.0)).sum()) / cells
     binding_n = needed / pass_share_c10
-    equals("n for a reachable gate", round(binding_n), 4076)
-    equals("as a multiple of the allocation", f"{binding_n / ALLOCATION_N:.1f}", "8.2")
-    contains("the allocation multiple", "**8.2×**", "section", section)
+    equals("n for a reachable gate", recomputed=round(binding_n), document=4074)
+    equals("as a multiple of the allocation",
+           recomputed=f"{binding_n / ALLOCATION_N:.1f}", document="8.1")
+    contains("the allocation multiple", "**8.1×**", "section", section)
 
-    # ---- E[n_claim] and its SD, which is why 4,076 is an expectation and not an assurance
+    # ---- E[n_claim] and its SD, which is why the reachable-gate n is an expectation
     expected_m = ALLOCATION_N * pass_share_c10
     sd = (ALLOCATION_N * pass_share_c10 * (1 - pass_share_c10)
           * (cells - ALLOCATION_N) / (cells - 1)) ** 0.5
@@ -287,16 +328,17 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
 
     # ---- the T = 45 frame B reversal, the case the first draft generalised away
     b45 = int(buildings[answered & (seconds <= 2700.0)].sum())
-    equals("a 1.0% gate at frame B T=45",
-           stats.tolerated_failures(round(ALLOCATION_N * b45 / total_buildings), GATE), 0)
+    equals("a 1.0% gate at frame B T=45", document=0,
+           recomputed=stats.tolerated_failures(round(ALLOCATION_N * b45 / total_buildings), GATE))
     pass45 = b45 / total_buildings
     fail45_lo = (int(buildings[answered & (seconds > 2700.0)].sum())
                  + int(buildings[beyond].sum())) / total_buildings
     fail45_hi = fail45_lo + int(buildings[off].sum()) / total_buildings
-    equals("PASS shrink at frame B T=45", f"{1 / pass45:.4f}", "1.2065")
-    equals("FAIL share at frame B T=45", f"{100 * fail45_lo:.4f}%", "16.4035%")
-    equals("FAIL share ceiling there", f"{100 * fail45_hi:.4f}%", "17.1169%")
-    equals("minimum FAIL shrink there", f"{1 / fail45_hi:.2f}", "5.84")
+    equals("PASS shrink at frame B T=45", recomputed=f"{1 / pass45:.4f}", document="1.2065")
+    equals("FAIL share at frame B T=45", recomputed=f"{100 * fail45_lo:.4f}%",
+           document="16.4035%")
+    equals("FAIL share ceiling there", recomputed=f"{100 * fail45_hi:.4f}%", document="17.1169%")
+    equals("minimum FAIL shrink there", recomputed=f"{1 / fail45_hi:.2f}", document="5.84")
     for rendered in ("**82.8831%**", "**1.2065×**", "**16.4035%**", "**17.1169%**", "**5.84×**"):
         contains("a T=45 reversal figure", rendered, "section", section)
 
@@ -304,16 +346,16 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
     fail_c = (int((answered & (seconds > 600.0)).sum()) + int(beyond.sum())) / cells
     fail_b = (int(buildings[answered & (seconds > 600.0)].sum())
               + int(buildings[beyond].sum())) / total_buildings
-    equals("PASS shrink at frame C T=10", f"{1 / pass_share_c10:.1f}", "13.6")
-    equals("FAIL shrink at frame C T=10", f"{1 / fail_c:.1f}", "1.3")
+    equals("PASS shrink at frame C T=10", recomputed=f"{1 / pass_share_c10:.1f}", document="13.6")
+    equals("FAIL shrink at frame C T=10", recomputed=f"{1 / fail_c:.1f}", document="1.3")
     contains("the PASS shrink", "**13.6×**", "section", section)
     contains("the FAIL shrink", "**1.3×**", "section", section)
     contains("FAIL share of area", f"{100 * fail_c:.4f}% of area", "section", section)
     contains("FAIL share of structures", f"{100 * fail_b:.4f}% of structures", "section", section)
 
     # ---- figures carried over from the design's existing text
-    equals("the all-UNKNOWN full-frame bound",
-           f"{100 * stats.clopper_pearson_upper(0, ALLOCATION_N):.4f}%", "0.5974%")
+    equals("the all-UNKNOWN full-frame bound", document="0.5974%",
+           recomputed=f"{100 * stats.clopper_pearson_upper(0, ALLOCATION_N):.4f}%")
     contains("that bound", "0.5974%", "section", section)
     contains("the corrected 417", "500 × (1 − 0.166722)", "section", section)
 
@@ -329,11 +371,28 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
         contains(label, " ".join(phrase.split()), "document header (normalised)", flat_all)
 
     # ---- the change-log row must carry the decisive figures, not a drifted copy
-    for rendered in ("**-1**", "7.7775%", "`n_claim` ≥ 299", "4,076", "**8.2×**",
+    for rendered in ("**-1**", "7.7775%", "`n_claim` ≥ 299", "4,074", "**8.1×**",
                      "13.6×", "1.3×", "≈ **37**"):
         contains("a change-log figure", rendered, "log", log)
 
     return passed, problems
+
+
+def _apply(mutation, text: str):
+    """A mutation is a callable on the whole text, or a sequence of unique (old, new) swaps.
+
+    Returns None when a swap anchor is not unique, which the caller reports as a mutation that has
+    stopped biting. A mutation that silently matches nothing is worse than a missing one: the
+    self-test still prints a line for it.
+    """
+    if callable(mutation):
+        return mutation(text)
+    out = text
+    for old, new in mutation:
+        if out.count(old) != 1:
+            return None
+        out = out.replace(old, new, 1)
+    return out
 
 
 def self_test() -> int:
@@ -348,23 +407,20 @@ def self_test() -> int:
     failures = 0
     with tempfile.TemporaryDirectory(prefix="verify_e1c_selftest_") as tmp:
         scratch = pathlib.Path(tmp) / DESIGN.name
-        for label, swaps in MUTATIONS.items():
-            mutated = original
-            for old, new in swaps:
-                if mutated.count(old) != 1:
-                    print(f"SKIP         {label}: anchor not unique ({mutated.count(old)}); "
-                          "the mutation needs updating to match the current text")
-                    failures += 1
-                    break
-                mutated = mutated.replace(old, new, 1)
+        for label, mutation in MUTATIONS.items():
+            mutated = _apply(mutation, original)
+            if mutated is None or mutated == original:
+                print(f"SKIP         {label}: the mutation no longer bites; it needs updating "
+                      "to match the current text")
+                failures += 1
+                continue
+            scratch.write_text(mutated, encoding="utf-8")
+            _, problems = check(scratch)
+            if problems:
+                print(f"caught       {label}")
             else:
-                scratch.write_text(mutated, encoding="utf-8")
-                _, problems = check(scratch)
-                if problems:
-                    print(f"caught       {label}")
-                else:
-                    print(f"NOT CAUGHT   {label}  <-- the check is blind to this")
-                    failures += 1
+                print(f"NOT CAUGHT   {label}  <-- the check is blind to this")
+                failures += 1
         # The unmutated copy must still pass; that is what shows the mutations did the failing.
         scratch.write_text(original, encoding="utf-8")
         passed, problems = check(scratch)
