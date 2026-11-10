@@ -835,9 +835,10 @@ It does not reverse the degenerate — §4 is right that only an acceptance rule
 first reported number that declines to hide it.
 
 **The denominator is random and fully observed, which is the opposite of E1b's situation.** The
-product's verdict is known at every sampled point, so the claim count *m* carries no missingness.
-Unresolved comparator verdicts therefore inflate the **numerator only**: `u` never enters the
-denominator, and the reported identification range is `[k/m, (k+u)/m]`. Treating `u` as denominator
+product's verdict is known at every sampled point, so the claim count — written `n_claim`, because
+*m* is already the mode in this section — carries no missingness. Unresolved comparator verdicts
+therefore inflate the **numerator only**: `u` never enters the denominator, and the reported
+identification range is `[k/n_claim, (k+u)/n_claim]`. Treating `u` as denominator
 uncertainty would be the natural mistake to make here and is wrong.
 
 **The claim denominator is far smaller than the 417 figure implies, and this is measured.** 417 is
@@ -846,7 +847,7 @@ on PASS alone. Measured 2026-11-09 from the saved arrays `own_triangle_grocery_w
 `..._reason.npy` and `own_triangle_buildings_per_cell.npy`, whose 330,502 cells and 512,633 buildings
 match this section's frame sizes exactly:
 
-| *T* | frame C PASS cells | share of area | frame B PASS buildings | share of structures | *m* at *n*=500, C | B |
+| *T* | frame C PASS cells | share of area | frame B PASS buildings | share of structures | `n_claim` at *n*=500, C | B |
 |---|---|---|---|---|---|---|
 | 10 | 24,245 | **7.3358%** | 80,051 | **15.6157%** | **36.7** | **78.1** |
 | 15 | 47,495 | 14.3706% | 163,850 | 31.9624% | 71.9 | 159.8 |
@@ -854,29 +855,35 @@ match this section's frame sizes exactly:
 | 45 | 161,664 | 48.9147% | 424,886 | 82.8831% | — | — |
 
 **So a 1.0% gate on E1c is unreachable under §4's allocation, and the test §4 chose that allocation
-by says so.** `tolerated_failures(m, 0.01)` — the failure-tolerance test of §4, by §6's method —
+by says so.** `tolerated_failures(n_claim, 0.01)` — the failure-tolerance test of §4, by §6's method —
 returns **-1** at all four published claim denominators: the unreachable-gate condition pass-15 H2
 found shipped undetected in revision 2, and which that function exists to report. With **zero** observed errors the 95% Clopper-Pearson bound is **7.7775%** (C,
-*T*=10), 4.0754% (C, 15), 3.7679% (B, 10) and 1.8549% (B, 15). Reaching 1.0% needs *m* ≥ **299**,
+*T*=10), 4.0754% (C, 15), 3.7679% (B, 10) and 1.8549% (B, 15). Reaching 1.0% needs `n_claim` ≥ **299**,
 which at the measured PASS shares is *n* ≈ **4,076** on the binding frame and threshold — **8.2×**
 §4's allocation.
+
+**`n_claim` is itself random, and every figure above is its expectation at *n* = 500.** The realised
+denominator will differ, so these are planning quantities in exactly the sense §4 means — a
+statement of what the allocation can support, not a prediction of the sample. A realised `n_claim`
+far below expectation widens the interval further and must be reported as drawn, never replaced by
+the expectation.
 
 **E1c therefore carries no acceptance verdict, and three consequences are stated rather than left to
 inference:**
 
 1. it **cannot cause a layer to fail**, and §8's rule is untouched;
 2. no output may present it as a bar that was met — it has no bar;
-3. its precision is **inherited, not chosen**. E1c has no allocation of its own, so whatever *m* the
-   E1 draw happens to yield is what it gets, and at *T* = 10 on frame C that is a bound of roughly
-   8% at best. **A wide interval honestly reported is the deliverable here**, not a defect to be
+3. its precision is **inherited, not chosen**. E1c has no allocation of its own, so whatever
+   `n_claim` the E1 draw happens to yield is what it gets, and at *T* = 10 on frame C that is a
+   bound of roughly 8% at best. **A wide interval honestly reported is the deliverable here**, not a defect to be
    tuned away.
 
 Raising E1c to a gate is a further owner decision with the sample-size consequence above, and needs
 its own §13 row.
 
 **The interval method differs by frame, and the binomial bound is valid on only one of them.**
-Frame B is SRS without replacement (§4), so *conditional on the observed m* the numerator is binomial
-and Clopper-Pearson on `(k, m)` is a valid conditional bound — conservative in exactly the way §6
+Frame B is SRS without replacement (§4), so *conditional on the observed* `n_claim` the numerator is
+binomial and Clopper-Pearson on `(k, n_claim)` is a valid conditional bound — conservative in exactly the way §6
 already notes for the full-frame bounds. **Frame C is two-stage** (§6: SRS of cells, then one uniform
 point per cell), so the conditional rate is a **ratio of two estimated quantities** and
 Clopper-Pearson does not apply to it; frame C's interval is a percentile bootstrap resampling
@@ -884,7 +891,7 @@ Clopper-Pearson does not apply to it; frame C's interval is a percentile bootstr
 frame C would produce a number that looks right and is not — it is the one error in this subsection
 most likely to survive review, so it is named here.
 
-**A zero denominator reports undefined.** *m* = 0 yields neither 0.0 nor a bound, and any output
+**A zero denominator reports undefined.** `n_claim` = 0 yields neither 0.0 nor a bound, and any output
 consuming E1c must render undefined **distinctly from a small rate**. This is the all-`UNKNOWN` case
 above, and collapsing it to zero would restore precisely the concealment E1c was added to end.
 
@@ -1392,12 +1399,12 @@ selection policy are unchanged, and E1c cannot fail a layer.
 | what | why |
 |---|---|
 | E1c added, per mode, threshold and frame | E1b's denominator is the whole frame, so declining to answer improves the reported rate; a user is exposed only where a claim was made. Plan §0 step 2 |
-| **no threshold, no allocation** | measured, not preferred: `tolerated_failures(m, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs *m* ≥ 299, i.e. *n* ≈ 4,076, **8.2×** §4's allocation |
+| **no threshold, no allocation** | measured, not preferred: `tolerated_failures(n_claim, 0.01)` = **-1** at all four claim denominators — §4's unreachable-gate condition. Zero errors still bounds only 7.7775% on frame C at *T* = 10. A 1.0% gate needs `n_claim` ≥ 299, i.e. *n* ≈ 4,076, **8.2×** §4's allocation |
 | §3's "may be added only ... with its own formula, threshold and allocation" **narrowed** | E1c meets two of the three. Rather than invent an unsupportable threshold or drop the requirement silently, a conditional rate with **no acceptance role** now needs name and formula only; one that gates still needs all three |
 | the 417 figure corrected in place | 417 is the **answered** denominator (PASS and FAIL). The **claimed** denominator is ≈ **37** on frame C at *T* = 10 — a 13.6× shrink, measured from the saved arrays |
 | frame C's interval is a **cell bootstrap**, not Clopper-Pearson | frame C is two-stage, so the conditional rate is a ratio of two estimated quantities; the binomial bound is valid on frame B only. Named explicitly as this amendment's likeliest surviving error |
-| `u` inflates the **numerator only** | the product's verdict is known everywhere, so the claim denominator has no missingness — the opposite of E1b's situation |
-| *m* = 0 reports **undefined**, distinctly from a small rate | an all-`UNKNOWN` product passes E1a and E1b at 0.5974% (§5). E1c's denominator vanishes instead, so it declines to hide that; collapsing undefined to 0.0 would restore the concealment |
+| `u` inflates the **numerator only** | the product's verdict is known everywhere, so the claim denominator `n_claim` has no missingness — the opposite of E1b's situation. `n_claim` is random, so the figures here are its expectation at *n* = 500 and the realised value is reported as drawn |
+| `n_claim` = 0 reports **undefined**, distinctly from a small rate | an all-`UNKNOWN` product passes E1a and E1b at 0.5974% (§5). E1c's denominator vanishes instead, so it declines to hide that; collapsing undefined to 0.0 would restore the concealment |
 | **no** conditional false-exclusion rate | the asymmetry is measured: conditioning shrinks the PASS denominator 13.6× and the FAIL denominator 1.3×, so E1a is already close to its own conditional |
 | the shared-destination blind spot stated in the report's own words | both sides read one destination list, so a closed or absent grocery yields agreement and two wrong answers. Only §0's walked audit sees it |
 

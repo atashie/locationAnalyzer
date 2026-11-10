@@ -12,7 +12,7 @@ contain it. Run it after any edit to that subsection or to §13's revision-12 ro
 
     python v2/scripts/verify_e1c_figures.py
 
-Exits non-zero with the offending figure named. 43 figures as of 2026-11-09.
+Exits non-zero with the offending figure named. 59 checks as of 2026-11-09.
 """
 from __future__ import annotations
 
@@ -107,7 +107,7 @@ def main() -> int:
     # ---- what a 1.0% gate would cost, on the binding frame and threshold
     needed = next(m for m in range(1, 100_000) if stats.clopper_pearson_upper(0, m) <= GATE)
     equals("smallest m with a reachable 1.0% gate", needed, 299)
-    present("*m* ≥ **299**")
+    present("`n_claim` ≥ **299**")
     pass_share_c10 = int((answered & (seconds <= 600.0)).sum()) / cells
     binding_n = needed / pass_share_c10
     equals("n for a reachable gate on the binding frame", round(binding_n), 4076)
@@ -135,7 +135,7 @@ def main() -> int:
     present("500 × (1 − 0.166722)")
 
     # ---- the change-log row must carry the same decisive figures, not a drifted copy of them
-    for rendered in ("**-1**", "7.7775%", "*m* ≥ 299", "4,076", "**8.2×**",
+    for rendered in ("**-1**", "7.7775%", "`n_claim` ≥ 299", "4,076", "**8.2×**",
                      "13.6×", "1.3×", "≈ **37**"):
         present(rendered, where="log")
 

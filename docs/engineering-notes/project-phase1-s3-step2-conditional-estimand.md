@@ -24,11 +24,13 @@ changes the acceptance rule. The measurement made the recommendation unnecessary
   — is the **answered** denominator, PASS *and* FAIL: 500 × (1 − 0.166722). E1c conditions on PASS
   alone. Measured from the saved arrays, the PASS share is **7.3358% of area** at *T* = 10, so the
   claim denominator at *n* = 500 is about **37**, a **13.6×** shrink rather than 1.2×.
-- At *m* = 37, **zero** observed errors still bounds only **7.7775%**. `tolerated_failures(m, 0.01)`
-  returns **-1** at all four published claim denominators — §4's own unreachable-gate condition,
+- At a claim denominator of 37 — written `n_claim` in the design, because *m* is already the mode
+  there — **zero** observed errors still bounds only **7.7775%**, and
+  `tolerated_failures(n_claim, 0.01)` returns **-1** at all four published claim denominators — §4's own unreachable-gate condition,
   the one pass-15 H2 found shipped undetected in revision 2.
-- A reachable 1.0% gate needs *m* ≥ **299**, i.e. *n* ≈ **4,076** on the binding frame and
-  threshold: **8.2×** §4's allocation.
+- A reachable 1.0% gate needs `n_claim` ≥ **299**, i.e. *n* ≈ **4,076** on the binding frame and
+  threshold: **8.2×** §4's allocation. `n_claim` is random, so each of these is its **expectation**
+  at *n* = 500; the realised denominator is reported as drawn.
 
 So E1c's deliverable is **a wide interval, honestly reported**. Its precision is inherited rather
 than chosen, because it has no allocation of its own, and that is stated in the design rather than
@@ -41,8 +43,8 @@ with no acceptance role needs name and formula only; one that gates still needs 
 of inventing a threshold the data cannot support or dropping the sentence without saying so.
 
 **The one error most likely to survive review, named in the design for that reason.** Frame B is SRS
-without replacement, so conditional on the observed *m* the numerator is binomial and
-Clopper–Pearson on `(k, m)` is valid. **Frame C is two-stage**, so its conditional rate is a *ratio
+without replacement, so conditional on the observed `n_claim` the numerator is binomial and
+Clopper–Pearson on `(k, n_claim)` is valid. **Frame C is two-stage**, so its conditional rate is a *ratio
 of two estimated quantities* and the binomial bound does not apply; it needs a percentile bootstrap
 over **whole cells**. Reusing `clopper_pearson_upper` on frame C would produce a figure that looks
 right and is not.
@@ -50,7 +52,7 @@ right and is not.
 **Two properties that are the opposite of E1b's, and are therefore easy to get backwards.** The claim
 denominator is random but **fully observed** — the product's verdict is known everywhere — so
 unresolved comparator verdicts inflate the **numerator only** and `u` never enters the denominator.
-And *m* = 0 reports **undefined**, never 0.0: an all-`UNKNOWN` product passes E1a and E1b at 0.5974%
+And `n_claim` = 0 reports **undefined**, never 0.0: an all-`UNKNOWN` product passes E1a and E1b at 0.5974%
 (§4), and E1c's denominator vanishes instead of its numerator, so it is the first reported number
 that declines to conceal that. Collapsing undefined to zero would restore exactly the concealment it
 was added to end.
