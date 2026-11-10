@@ -51,3 +51,34 @@ be the default for anything long:
 
 This also makes the content reviewable before it runs, which matters for assertion-guarded patch
 scripts. Short one-liners through a heredoc remain fine.
+
+### A third instance, and this one fails silently
+
+Later the same day I broke the `--file` rule above by using `git commit -q -m "..."` with a
+multi-line **double-quoted** message. Inside double quotes bash performs command substitution, so
+every backtick-quoted word in the message was executed as a command and replaced with its (empty)
+output:
+
+```
+adding `surface` to EXTRA_WAY_TAGS     ->     adding  to EXTRA_WAY_TAGS
+```
+
+with `bash: line 72: surface: command not found` on stderr — and **the commit still succeeded, exit
+0**. The two heredoc failures above at least errored and wrote nothing. This one lands a commit
+whose message is quietly missing the words that carried the meaning, and nothing downstream
+notices.
+
+Commit messages in this project are full of backticked identifiers, so this will recur on every
+`-m` that is not single-quoted. The rule is unchanged but now has teeth:
+
+- **Never `git commit -m` with a multi-line message.** `Write` it to the scratchpad and use
+  `git commit --file=<path>`, which does no shell interpretation at all.
+- If a message must go inline, single-quote it — but prefer `--file`, because the failure mode of
+  getting it wrong is invisible.
+- The same hazard applies to any double-quoted shell string carrying markdown: `echo`, `cat >>`
+  with an unquoted delimiter, `gh pr create --body "..."`.
+
+I did not rewrite the pushed commit for this: the degraded message is `917ea95`, the content it lost
+is intact in [[project-phase1-s3-soft-way-dependence]] and [[project-phase1-s3-design]], and
+force-pushing to repair a cosmetic message defect is a worse trade than leaving one commit's prose
+thin.
