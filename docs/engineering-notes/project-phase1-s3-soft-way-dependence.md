@@ -88,6 +88,12 @@ restricted walk edges.
 double and does not change this cell further, so 600 s already captures the effect here. UNKNOWN
 cells barely move at 600 s: 73,750 → 73,968.
 
+**Re-measured 2026-11-10 on the re-extracted graph** (with `surface` and `vehicle` retained), after
+the layer rebuild: every figure in this table is **byte-identical** to the first run — the same
+126,197 restricted edges, the same walked-cell seconds in all four variants, the same lost-PASS
+counts and the same UNKNOWN movement. Only the wall-clock timings differ. The owner's decision was
+taken against this table and the table still describes the extract we now have.
+
 > **One result in that table is not explained.** Removing restricted edges entirely loses *fewer*
 > 15-minute PASS buildings (0.81%) than penalising them at 600 s (1.10%), which is backwards for a
 > limit case. A plausible mechanism is that `symmetrise` runs after `add_travel_times`, so the
