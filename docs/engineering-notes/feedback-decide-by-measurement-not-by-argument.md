@@ -107,6 +107,40 @@ fix — 600 s fixes the cell for 1.10% of 15-minute PASS buildings — and it wa
 the framing correction forced "what is causing this" in place of "which class should we delete".
 See [[project-phase1-s3-soft-way-dependence]] and [[35-codex-review-pass34]].
 
+## 2026-11-10, same day: the rule fired twice in the first measurement taken after it was written
+
+T0, the attachment pilot. Two counts went into a decision and both counted the wrong population.
+Neither was an arithmetic error.
+
+**Descriptions, not candidates.** "Seven of 25 frame C points have an exact tie at the global
+minimum" was computed over raw per-segment positions, where one occurrence described twice —
+parameter 1 on segment *k*, parameter 0 on segment *k*+1 — appears as two entries that collapse in
+deduplication. The same run reported that **no** frame C point had more than one candidate. The pair
+is incoherent, which is what made it visible; a single plausible number would not have been.
+
+**Candidates, not positions — and this one inverted the conclusion.** The representation-sensitivity
+check compared candidate **counts** before and after a lawful re-expression. On that basis every
+convention looked representation-dependent, and the draft said so: *"A is not uniquely
+representation-dependent; every convention moves, including the incumbent."* It is bookkeeping. A
+lawful record split turns one shared-vertex occurrence into two, so the count rises while both
+candidates stay at the **same physical place** — and candidates at the same places minimise to the
+same journey under every objective. Comparing positions reverses the finding: A's positions do not
+move under record segmentation at all, C's do, and D's never move under any of the three
+transformations tested.
+
+**The generalisation this adds to the entry above.** That entry says the likeliest error is what a
+number is a number *of*. T0 adds the test that catches it: **ask what would have to change for the
+answer to change, and count that.** A candidate count cannot change an answer; a candidate position
+can. An occurrence description cannot; an occurrence can. Both wrong counts were of things one level
+away from the quantity the decision needed, and both were cheap to compute, which is why they were
+the ones computed.
+
+A corollary about cost, from the same measurement: **the sample size was a parameter nobody had
+priced.** The time box said to benchmark before choosing, and benchmarking showed the attachment
+stage ran at 0.2 ms per point — so both whole populations were affordable and a 0.5974% bound became
+an exact count over 843,135 points. Thirty seconds of measuring the cost of measuring bought four
+orders of magnitude. See [[project-phase1-s3-step3-attachment-pilot]].
+
 Related: [[feedback-experiments-over-priors]], [[feedback-fix-the-domain-not-the-example]],
 [[feedback-a-relative-invariant-cannot-see-an-absence]],
 [[feedback-computable-property-is-not-the-claim]],

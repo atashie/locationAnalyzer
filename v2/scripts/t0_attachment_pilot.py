@@ -1,0 +1,843 @@
+"""T0 — the attachment prevalence-and-impact pilot. Plan §0 step 3, stages 1 and 2.
+
+Design §2.2's candidate universe is a **declared convention** adopted for simplicity after five
+rounds of choosing it by argument. This measures how often the choice matters on the real Triangle
+walk graph. The pre-registered budget and decision rule are in
+`docs/experiments/t0-attachment-pilot.md`, committed **before** this ran.
+
+The three conventions, differing only in the retention filter. Occurrence deduplication and the cap
+run afterwards, identically, so a difference is attributable to the filter:
+
+* **A** (current, design revision 10) — every per-segment minimum within `ATTACH_TIE_M` = 0.01 m of
+  the **global** minimum, across all records.
+* **C** (design revision 9, reverted) — per record, the positions whose **computed** residual equals
+  that record's minimum computed residual, exactly; then the band across records. Implemented with
+  float equality *deliberately*, because that is what revision 9 did and what pass 24 F1 showed
+  discards genuine geometric ties. Measuring the rule that was reverted is the point.
+* **D** — the **exact rational** global minimum, no band. "Exact minima globally" is what the plan
+  calls it, so the minimum is taken in exact arithmetic rather than in binary64.
+
+**B is not implemented.** Stage 2 instead computes exact rational squared distances over the local
+segment sets, which separates a genuine geometric tie from a merely close computed residual. That is
+a diagnostic, not an implementation of B, and nothing here may call it one.
+
+**The enumeration is indexed and complete, not nearest-record-only.** A segment's distance is never
+less than its parent record's, so every segment within `global_min + band` belongs to a record
+within `global_min + band`: taking every record whose bounding box meets the disc of that radius and
+then every segment of those records cannot miss a candidate. `STRtree.query_nearest` supplies the
+global minimum and `STRtree.query` the window.
+
+**A record is one physical edge** — a distinct `(node pair, canonical geometry)`, which is exactly
+`snap.EdgeIndex`'s key and so the record set production snaps against. Parallel graph edges that
+share a node pair and a geometry are one place and are counted once; the run reports how many
+records that merge covers, because the design is explicit that merging by canonical identity must
+not decide a *ranking* question (it does not here — attachment does no ranking).
+
+Run from v2/:  uv run python scripts/t0_attachment_pilot.py [--subdivision-sample 100]
+Writes docs/experiments/t0-attachment-pilot.json -- a TRACKED path, deliberately. Nothing
+under v2/data/ travels with a clone, and the rendered figures in the write-up beside it have
+to be reproducible from the artifact they were rendered from.
+"""
+from __future__ import annotations
+
+import argparse
+import itertools
+import json
+import math
+import platform
+import sys
+import time
+from collections import Counter
+from fractions import Fraction
+from pathlib import Path
+
+import geopandas as gpd
+import numpy as np
+import osmnx as ox
+import shapely
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "spikes"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from _common import (ACCEPTED_PLACES, GRID, METRO, METRO_DIR,  # noqa: E402
+                     load_roads_graph, read_graph_cache_manifest, stamp)
+from locfinder import profile  # noqa: E402
+from locfinder.measure.frames import (file_digest, read_frame,  # noqa: E402
+                                      structure_population)
+from locfinder.measure.toy import ATTACH_TIE_M, MIN_SEGMENT_M, _segment_nearest  # noqa: E402
+from locfinder.places.categories import select_overture  # noqa: E402
+from locfinder.traveltime.components import largest_component  # noqa: E402
+from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
+from locfinder.traveltime.speeds import (access_speed_mps, add_travel_times,  # noqa: E402
+                                         symmetrise)
+
+MAX_ACCESS_M = 200.0        # origin cap, design §2.2
+POI_SNAP_MAX_M = 300.0      # destination cap, design §2.2
+FRAMES = Path(__file__).resolve().parents[1] / "data" / "frames" / "development"
+ARTIFACT = (Path(__file__).resolve().parents[2] / "docs" / "experiments"
+            / "t0-attachment-pilot.json")
+ACCEPTED_BUILDINGS = METRO_DIR / "overture_buildings_accepted.parquet"
+
+
+# --------------------------------------------------------------------------- exact arithmetic
+def exact_segment_sq(px: float, py: float, ax: float, ay: float,
+                     bx: float, by: float) -> Fraction:
+    """Exact rational squared distance from `p` to segment `a->b`.
+
+    Every binary64 is a rational, and the nearest point on a segment is a rational function of the
+    inputs, so this comparison is exact: no tolerance, no near-tie window. It is the only thing here
+    that can tell a genuine geometric tie from two residuals that merely compute close -- the
+    distinction design revision 10 reverted revision 9 over, where two arms at exact squared
+    distance 1 computed as 0.9999999999999999 and 1.0.
+
+    Degree two in the clamped parameter and no square root is taken, so the result is a Fraction
+    rather than an algebraic number.
+    """
+    PX, PY = Fraction(px), Fraction(py)
+    AX, AY = Fraction(ax), Fraction(ay)
+    DX, DY = Fraction(bx) - AX, Fraction(by) - AY
+    denom = DX * DX + DY * DY
+    if denom == 0:
+        t = Fraction(0)
+    else:
+        t = ((PX - AX) * DX + (PY - AY) * DY) / denom
+        if t < 0:
+            t = Fraction(0)
+        elif t > 1:
+            t = Fraction(1)
+    ex, ey = PX - (AX + t * DX), PY - (AY + t * DY)
+    return ex * ex + ey * ey
+
+
+# --------------------------------------------------------------------------- the candidate sets
+class Pos:
+    """One per-segment minimum, before any retention filter."""
+
+    __slots__ = ("record", "seg", "t", "residual", "arclength", "x", "y", "occurrence", "exact_sq")
+
+    def __init__(self, record, seg, t, residual, arclength, x, y, occurrence):
+        self.record, self.seg, self.t = record, seg, t
+        self.residual, self.arclength = residual, arclength
+        self.x, self.y, self.occurrence = x, y, occurrence
+        self.exact_sq: Fraction | None = None
+
+
+def raw_positions(geoms, window, px, py) -> list[Pos]:
+    """Every segment's nearest position, over every record in the window.
+
+    Uses `toy._segment_nearest`, so the projection arithmetic is the oracle's rather than a second
+    implementation of it.
+    """
+    out: list[Pos] = []
+    for r in window:
+        coords = shapely.get_coordinates(geoms[r])
+        run = 0.0
+        for seg, ((ax, ay), (bx, by)) in enumerate(itertools.pairwise(coords)):
+            ax, ay, bx, by = float(ax), float(ay), float(bx), float(by)
+            seg_len = math.hypot(bx - ax, by - ay)
+            d, t = _segment_nearest(px, py, ax, ay, bx, by)
+            if t == 0.0:
+                key: tuple = (r, "v", seg)
+            elif t == 1.0:
+                key = (r, "v", seg + 1)
+            else:
+                key = (r, "s", seg, t)
+            out.append(Pos(r, seg, t, d, run + t * seg_len,
+                           ax + t * (bx - ax), ay + t * (by - ay), key))
+            run += seg_len
+    return out
+
+
+def dedup_and_cap(kept: list[Pos], cap_m: float) -> list[Pos]:
+    """Design §2.2 steps 3 and 4, shared by every convention and applied in this order.
+
+    The representative of a merged occurrence is the smallest residual then the smallest arclength;
+    the cap is applied per candidate, after the merge.
+    """
+    merged: dict[tuple, Pos] = {}
+    for p in kept:
+        cur = merged.get(p.occurrence)
+        if cur is None or (p.residual, p.arclength) < (cur.residual, cur.arclength):
+            merged[p.occurrence] = p
+    ordered = sorted(merged.values(), key=lambda p: (p.record, p.arclength))
+    return [p for p in ordered if p.residual <= cap_m]
+
+
+def convention_a(raw: list[Pos], global_min: float) -> list[Pos]:
+    return [p for p in raw if p.residual <= global_min + ATTACH_TIE_M]
+
+
+def convention_c(raw: list[Pos], global_min: float) -> list[Pos]:
+    """Revision 9: exact equality on **computed** residuals, per record, then the band."""
+    by_record: dict[int, list[Pos]] = {}
+    for p in raw:
+        by_record.setdefault(p.record, []).append(p)
+    kept: list[Pos] = []
+    for positions in by_record.values():
+        best = min(p.residual for p in positions)
+        if best <= global_min + ATTACH_TIE_M:
+            kept.extend(p for p in positions if p.residual == best)
+    return kept
+
+
+def convention_d(raw: list[Pos]) -> list[Pos]:
+    """Exact rational global minimum, no band. `exact_sq` must already be filled in."""
+    best = min(p.exact_sq for p in raw)
+    return [p for p in raw if p.exact_sq == best]
+
+
+def signature(cands: list[Pos]) -> tuple:
+    """Identity of a candidate set for comparison: the occurrences retained, in order."""
+    return tuple(p.occurrence for p in cands)
+
+
+#: How close two positions must be to count as the same location. A micrometre is far below
+#: anything physical and far above the ~2.3e-10 m spacing of binary64 at UTM magnitudes, so this
+#: separates "re-expressed" from "moved" without being sensitive to which order the arithmetic ran.
+POSITION_TOL_M = 1e-6
+
+
+def positions_differ(before: list[Pos], after: list[Pos]) -> bool:
+    """Whether two candidate sets occupy different LOCATIONS, not merely different descriptions.
+
+    A record split un-merges a shared-vertex occurrence into two, which raises the count while both
+    candidates stay at one place -- and a set of candidates at the same places minimises to the same
+    journey under every objective. Deduplicating by position before comparing is what makes this a
+    question about the answer rather than about the bookkeeping.
+
+    **Where this UNDER-reports, stated rather than discovered later.** It compares locations, so it
+    merges the two passes of a self-crossing road at one XY -- which design §2.2 insists are "one
+    place and two decisions", because one leaves 500 m of road ahead and the other 100 m. The merge
+    happens on both sides of a transformation, so a difference is still detected unless the change
+    lies entirely within such a merged pair. A complete test would compare each candidate's
+    remaining-route options, which is routing and therefore stage 3.
+    """
+    def places(cands: list[Pos]) -> list[tuple[float, float]]:
+        out: list[tuple[float, float]] = []
+        for p in sorted(cands, key=lambda q: (q.x, q.y)):
+            if not out or math.hypot(p.x - out[-1][0], p.y - out[-1][1]) > POSITION_TOL_M:
+                out.append((p.x, p.y))
+        return out
+
+    a, b = places(before), places(after)
+    if len(a) != len(b):
+        return True
+    return any(math.hypot(x1 - x2, y1 - y2) > POSITION_TOL_M
+               for (x1, y1), (x2, y2) in zip(a, b))
+
+
+class Accum:
+    """Streaming aggregation, so a census need not hold a result per point.
+
+    Every counter here is over **points** except the three named `..._candidates`, which are over
+    candidates. The distinction is in the names on purpose: the first version of the exact block
+    mixed a count of raw descriptions with a count of candidates and reported seven tied points on
+    a set where no point had two candidates.
+    """
+
+    KEYS = ("A", "C", "D")
+
+    def __init__(self) -> None:
+        self.n = 0
+        self.no_geometry = 0
+        self.tree_disagrees = 0
+        self.eligible = {k: 0 for k in self.KEYS}
+        self.multi = {k: 0 for k in self.KEYS}
+        self.multi_record = {k: 0 for k in self.KEYS}
+        self.multi_occ_one_record = {k: 0 for k in self.KEYS}
+        self.hist = {k: Counter() for k in self.KEYS}
+        self.set_differs = {"A_vs_C": 0, "A_vs_D": 0}
+        self.place_differs = {"A_vs_C": 0, "A_vs_D": 0}
+        self.elig_differs = {"A_vs_C": 0, "A_vs_D": 0}
+        self.c_drop_points = 0
+        self.c_drop_candidates = 0
+        self.c_drop_genuine_ties = 0
+        self.tie_points = 0
+        self.above_points = 0
+        self.above_candidates = 0
+        self.key_disagree_points = 0
+        self.gmin: list[float] = []
+        self.over_cap = 0
+        self.window_max = 0
+        self.window_sum = 0
+        self.bounds = {pair: {"points_differing": 0, "same_record": 0,
+                              "cross_record_unbounded": 0, "bounds_s": []}
+                       for pair in ("A_vs_C", "A_vs_D")}
+
+    def add(self, r: dict, eidx=None) -> None:
+        self.n += 1
+        if r.get("no_geometry"):
+            self.no_geometry += 1
+            return
+        if eidx is not None:
+            for pair, other in (("A_vs_C", "C"), ("A_vs_D", "D")):
+                b = impact_bound(eidx, r["_sets"]["A"], r["_sets"][other])
+                if b is None:
+                    continue
+                acc = self.bounds[pair]
+                acc["points_differing"] += 1
+                if b["same_record"]:
+                    acc["same_record"] += 1
+                    acc["bounds_s"].append(b["bound_s"])
+                else:
+                    acc["cross_record_unbounded"] += 1
+        self.tree_disagrees += bool(r.get("tree_disagrees"))
+        for k in self.KEYS:
+            self.eligible[k] += bool(r["eligible"][k])
+            c = r["counts"][k]
+            self.hist[k][c] += 1
+            self.multi[k] += c > 1
+            self.multi_record[k] += r["records"][k] > 1
+            self.multi_occ_one_record[k] += r["max_occ_on_one_record"][k] > 1
+        for pair, other in (("A_vs_C", "C"), ("A_vs_D", "D")):
+            self.set_differs[pair] += not r["same_set"][pair]
+            self.place_differs[pair] += not r["same_places"][pair]
+            self.elig_differs[pair] += r["eligible"]["A"] != r["eligible"][other]
+        self.c_drop_points += bool(r.get("c_drops", 0))
+        self.c_drop_candidates += r.get("c_drops", 0)
+        self.c_drop_genuine_ties += r.get("c_drops_a_genuine_exact_tie", 0)
+        self.tie_points += r.get("candidates_at_exact_min", 0) > 1
+        self.above_points += r.get("candidates_above_exact_min", 0) > 0
+        self.above_candidates += r.get("candidates_above_exact_min", 0)
+        self.key_disagree_points += r.get("occurrences_whose_descriptions_disagree_exactly", 0) > 0
+        if r["global_min_m"] is not None:
+            self.gmin.append(r["global_min_m"])
+        self.window_max = max(self.window_max, r["window_records"])
+        self.window_sum += r["window_records"]
+
+    def summary(self, *, cap_m: float, meta: dict, seconds: float) -> dict:
+        n = self.n
+        agg: dict = dict(meta)
+        agg["cap_m"] = cap_m
+        agg["points"] = n
+        agg["seconds"] = round(seconds, 2)
+        agg["ms_per_point"] = round(1000.0 * seconds / max(n, 1), 4)
+        agg["no_geometry"] = self.no_geometry
+        agg["tree_and_recomputed_minimum_disagree"] = self.tree_disagrees
+        for k in self.KEYS:
+            agg[k] = {
+                "eligible": self.eligible[k],
+                "ineligible": n - self.eligible[k],
+                "candidate_count_histogram": dict(sorted(self.hist[k].items())),
+                "points_with_multiple_candidates": self.multi[k],
+                "points_with_candidates_on_multiple_records": self.multi_record[k],
+                "points_with_multiple_occurrences_on_one_record": self.multi_occ_one_record[k],
+            }
+        agg["A_vs_C_set_differs"] = self.set_differs["A_vs_C"]
+        agg["A_vs_D_set_differs"] = self.set_differs["A_vs_D"]
+        agg["A_vs_C_places_differ"] = self.place_differs["A_vs_C"]
+        agg["A_vs_D_places_differ"] = self.place_differs["A_vs_D"]
+        agg["A_vs_C_eligibility_differs"] = self.elig_differs["A_vs_C"]
+        agg["A_vs_D_eligibility_differs"] = self.elig_differs["A_vs_D"]
+        agg["exact"] = {
+            "note": "point counts except the three named `..._candidates`",
+            "points_where_C_drops_an_A_candidate": self.c_drop_points,
+            "A_candidates_C_drops": self.c_drop_candidates,
+            "A_candidates_C_drops_that_are_genuine_exact_ties": self.c_drop_genuine_ties,
+            "points_with_two_or_more_candidates_at_the_exact_minimum": self.tie_points,
+            "points_with_a_candidate_above_the_exact_minimum": self.above_points,
+            "A_candidates_above_the_exact_minimum": self.above_candidates,
+            "points_where_two_descriptions_of_one_occurrence_disagree_exactly":
+                self.key_disagree_points,
+        }
+        if self.gmin:
+            g = np.asarray(self.gmin)
+            agg["nearest_distance_m"] = {
+                "min": round(float(g.min()), 4), "median": round(float(np.median(g)), 4),
+                "p90": round(float(np.percentile(g, 90)), 4), "max": round(float(g.max()), 4),
+                "over_cap": int((g > cap_m).sum()),
+            }
+        agg["window_records"] = {"max": self.window_max,
+                                 "mean": round(self.window_sum / max(n, 1), 4)}
+        agg["impact_bound"] = {
+            "note": "a SOUND bound on the journey-time difference, with no routing: moving an "
+                    "attachment along one record trades one endpoint's partial traversal against "
+                    "the other's by |delta arc| / L * T. Across records nothing short of routing "
+                    "bounds it, and those are counted separately rather than assumed small.",
+            "access_speed_mps": ACCESS_MPS,
+        }
+        for pair, acc in self.bounds.items():
+            b = sorted(acc["bounds_s"])
+            agg["impact_bound"][pair] = {
+                "points_differing": acc["points_differing"],
+                "same_record": acc["same_record"],
+                "cross_record_unbounded": acc["cross_record_unbounded"],
+                "bound_s": ({"max": round(b[-1], 6), "median": round(b[len(b) // 2], 6),
+                             "over_1s": sum(1 for x in b if x > 1.0),
+                             "over_30s": sum(1 for x in b if x > 30.0),
+                             "over_60s": sum(1 for x in b if x > 60.0)} if b else None),
+            }
+        return agg
+
+
+# --------------------------------------------------------------------------- one point
+def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dict:
+    nearest = tree.query_nearest(shapely.points([px], [py])[0], return_distance=True,
+                                 all_matches=True)
+    idx, dist = nearest
+    idx = np.atleast_1d(idx)
+    if idx.size == 0:
+        return {"eligible": {}, "global_min_m": None, "no_geometry": True}
+    global_min = float(np.atleast_1d(dist)[0])
+    # A hair of slack on the window radius. `STRtree` computes the record distance and this file
+    # recomputes it from the segments, and the two need not agree to the last bit; without slack a
+    # segment at exactly the band edge could fall outside a window sized from the other number.
+    # Every filter below then uses the recomputed minimum, so the band itself is not widened.
+    radius = global_min + ATTACH_TIE_M + 1e-6
+    window = np.atleast_1d(tree.query(shapely.points([px], [py])[0].buffer(radius)))
+    raw = raw_positions(geoms, window, px, py)
+    computed_min = min(p.residual for p in raw)
+    if want_exact:
+        for p in raw:
+            if p.residual <= computed_min + ATTACH_TIE_M:
+                p.exact_sq = exact_segment_sq(px, py, *_seg_ends(geoms, p))
+
+    a = dedup_and_cap(convention_a(raw, computed_min), cap_m)
+    c = dedup_and_cap(convention_c(raw, computed_min), cap_m)
+    banded = [p for p in raw if p.residual <= computed_min + ATTACH_TIE_M]
+    d = dedup_and_cap(convention_d(banded), cap_m) if want_exact else []
+
+    out = {
+        "global_min_m": computed_min,
+        "tree_min_m": global_min,
+        "tree_disagrees": abs(global_min - computed_min) > 1e-9,
+        "window_records": int(window.size),
+        "n_raw": len(raw),
+        "counts": {"A": len(a), "C": len(c), "D": len(d)},
+        "records": {k: len({p.record for p in v}) for k, v in (("A", a), ("C", c), ("D", d))},
+        "max_occ_on_one_record": {
+            k: (max(Counter(p.record for p in v).values()) if v else 0)
+            for k, v in (("A", a), ("C", c), ("D", d))},
+        "eligible": {k: bool(v) for k, v in (("A", a), ("C", c), ("D", d))},
+        "same_set": {"A_vs_C": signature(a) == signature(c),
+                     "A_vs_D": signature(a) == signature(d)},
+        "same_places": {"A_vs_C": not positions_differ(a, c),
+                        "A_vs_D": not positions_differ(a, d)},
+        "_sets": {"A": a, "C": c, "D": d},
+    }
+    if want_exact:
+        exact_min = min(p.exact_sq for p in banded)
+        # Every count below is over **deduplicated candidates**, never over raw per-segment
+        # descriptions. One occurrence is described twice wherever a position sits on a shared
+        # vertex (t = 1 on segment k, t = 0 on segment k+1), and the first version of this counted
+        # those as two tied positions -- reporting 7 of 25 frame C points with "an exact tie" on a
+        # set where no point had more than one candidate. A count of descriptions is not a count of
+        # candidates.
+        a_keys = {p.occurrence for p in a}
+        c_keys = {p.occurrence for p in c}
+        dropped = [p for p in a if p.occurrence in a_keys - c_keys]
+        by_record_exact: dict[int, Fraction] = {}
+        for p in banded:
+            cur = by_record_exact.get(p.record)
+            if cur is None or p.exact_sq < cur:
+                by_record_exact[p.record] = p.exact_sq
+        out["c_drops"] = len(dropped)
+        out["c_drops_a_genuine_exact_tie"] = sum(
+            1 for p in dropped if p.exact_sq == by_record_exact[p.record])
+        # Among A's retained candidates: how many sit at the exact minimum **of that set** (a
+        # genuine tie the band preserved) and how many above it (a near-miss the band admitted).
+        # Taken over the retained set rather than over raw positions, so the two numbers describe
+        # the same population -- the smoke run produced "2 candidates, both above the minimum",
+        # which is impossible for any set that contains its own minimum.
+        if a:
+            exact_min_a = min(p.exact_sq for p in a)
+            out["candidates_at_exact_min"] = sum(1 for p in a if p.exact_sq == exact_min_a)
+            out["candidates_above_exact_min"] = sum(1 for p in a if p.exact_sq > exact_min_a)
+        else:
+            out["candidates_at_exact_min"] = 0
+            out["candidates_above_exact_min"] = 0
+        # Why that was possible, and it is a real property worth counting rather than smoothing
+        # over: the occurrence key is built from the **float** clamp, so two descriptions of one
+        # shared vertex collapse into one candidate -- but `exact_segment_sq` clamps in exact
+        # arithmetic, and where the two clamps disagree the merged descriptions carry different
+        # exact squared distances. The representative is chosen by residual and arclength, not by
+        # exact distance, so it need not be the nearer of the two.
+        buckets: dict[tuple, list[Fraction]] = {}
+        for p in banded:
+            buckets.setdefault(p.occurrence, []).append(p.exact_sq)
+        out["occurrences_whose_descriptions_disagree_exactly"] = sum(
+            1 for v in buckets.values() if len(set(v)) > 1)
+    return out
+
+
+def _seg_ends(geoms, p: Pos) -> tuple[float, float, float, float]:
+    coords = shapely.get_coordinates(geoms[p.record])
+    (ax, ay), (bx, by) = coords[p.seg], coords[p.seg + 1]
+    return float(ax), float(ay), float(bx), float(by)
+
+
+# --------------------------------------------------------------------------- impact, bounded
+#: Walk access speed for the connector, taken from `speeds.access_speed_mps` rather than retyped
+#: as 1.40 * 0.9 -- a second copy of a rule is a second thing that can drift from it.
+ACCESS_MPS = access_speed_mps("walk")
+
+
+def impact_bound(eidx, a: list[Pos], other: list[Pos]) -> dict | None:
+    """A sound bound on how much the journey time can differ between two candidate sets.
+
+    Returns None when the two sets agree. Otherwise the symmetric difference is partitioned:
+
+    * **same record** -- the bound is `|delta arclength| / L * T`, because moving along a record
+      trades one endpoint's partial traversal against the other's by exactly that amount whatever
+      lies beyond. `T` is the larger of the record's two directed times, so the bound does not
+      depend on which direction the route takes.
+    * **cross record** -- unbounded here. Two candidates on different records enter different
+      networks and only routing can say what that costs.
+
+    The access legs differ by at most the band (0.01 m, 0.0079 s at the walk access speed) and that
+    is added, so the bound covers the connector too.
+    """
+    a_keys = {p.occurrence: p for p in a}
+    o_keys = {p.occurrence: p for p in other}
+    only_a = [a_keys[k] for k in a_keys.keys() - o_keys.keys()]
+    only_o = [o_keys[k] for k in o_keys.keys() - a_keys.keys()]
+    if not only_a and not only_o:
+        return None
+    differing = only_a + only_o
+    shared_records = {p.record for p in only_a} | {p.record for p in only_o}
+    # Is every differing candidate on a record the other set also attaches to? If so the dispute is
+    # about WHERE on a shared record, and the bound applies.
+    records_a = {p.record for p in a}
+    records_o = {p.record for p in other}
+    same_record_only = shared_records <= (records_a & records_o)
+    if not same_record_only:
+        return {"same_record": False, "bound_s": None,
+                "records_in_dispute": len(shared_records)}
+    worst = 0.0
+    for record in shared_records:
+        arcs = [p.arclength for p in a if p.record == record]
+        arcs += [p.arclength for p in other if p.record == record]
+        length = float(shapely.length(eidx.geoms[record]))
+        times = [t for t in (eidx.fwd_time[record], eidx.rev_time[record]) if np.isfinite(t)]
+        if not times or length <= 0.0:
+            continue
+        spread = max(arcs) - min(arcs)
+        worst = max(worst, spread / length * max(times))
+    return {"same_record": True,
+            "bound_s": worst + ATTACH_TIE_M / ACCESS_MPS,
+            "arclength_spread_m": max(
+                (max(p.arclength for p in differing) - min(p.arclength for p in differing)), 0.0)}
+
+
+# --------------------------------------------------------------------------- subdivision
+def subdivide(geom):
+    """Insert each segment's midpoint: a lawful re-expression of the same road.
+
+    Segments shorter than twice `MIN_SEGMENT_M` are left alone -- halving one would produce
+    inadmissible segments, and the toy domain is explicit that it is not closed under subdivision at
+    its own boundary. The count of skipped segments is reported rather than hidden.
+    """
+    coords = shapely.get_coordinates(geom)
+    out = [tuple(coords[0])]
+    skipped = 0
+    for (ax, ay), (bx, by) in itertools.pairwise(coords):
+        if math.hypot(bx - ax, by - ay) >= 2.0 * MIN_SEGMENT_M:
+            out.append(((ax + bx) / 2.0, (ay + by) / 2.0))
+        else:
+            skipped += 1
+        out.append((float(bx), float(by)))
+    return shapely.LineString(out), skipped
+
+
+def split_record(geom, next_id: int) -> tuple[dict, int]:
+    """Express one record as two, cut at its arclength midpoint: a degree-two record split.
+
+    Lawful in the sense design §2.2 uses: the road, its length and its legal traversals are
+    unchanged, the weights apportion, and the cut introduces a degree-two node where there was
+    none. `A` is supposed to agree across the two forms and `C` is not -- that is pass 24 F2, and
+    this is what measures it on real geometry instead of on one constructed straight edge.
+
+    Returns `{record id: geometry}` for the halves and the next free id. A record too short to cut
+    into two admissible pieces is returned unsplit, and the caller counts that.
+    """
+    coords = [tuple(map(float, c)) for c in shapely.get_coordinates(geom)]
+    total = float(shapely.length(geom))
+    if total < 4.0 * MIN_SEGMENT_M:
+        return {next_id: shapely.LineString(coords)}, next_id + 1
+    half = total / 2.0
+    run = 0.0
+    first = [coords[0]]
+    rest: list[tuple[float, float]] = []
+    cut_done = False
+    for (ax, ay), (bx, by) in itertools.pairwise(coords):
+        seg = math.hypot(bx - ax, by - ay)
+        if not cut_done and run + seg >= half and seg > 0.0:
+            t = (half - run) / seg
+            mid = (ax + t * (bx - ax), ay + t * (by - ay))
+            # Keep both halves admissible: a cut landing on an existing vertex must not create a
+            # zero-length leading or trailing segment.
+            if math.hypot(mid[0] - ax, mid[1] - ay) >= MIN_SEGMENT_M:
+                first.append(mid)
+            rest = [mid if math.hypot(mid[0] - bx, mid[1] - by) >= MIN_SEGMENT_M else (ax, ay),
+                    (bx, by)]
+            cut_done = True
+        elif cut_done:
+            rest.append((bx, by))
+        else:
+            first.append((bx, by))
+        run += seg
+    if not cut_done or len(first) < 2 or len(rest) < 2:
+        return {next_id: shapely.LineString(coords)}, next_id + 1
+    return ({next_id: shapely.LineString(first), next_id + 1: shapely.LineString(rest)},
+            next_id + 2)
+
+
+def split_every_segment(geom, next_id: int) -> tuple[dict, int]:
+    """Express one record as one record per segment: the strongest lawful record segmentation.
+
+    This is the fair counterpart to `subdivide`. Subdividing every segment introduces one new
+    clamped endpoint per segment and so gives A many chances to gain a candidate; splitting a
+    record only at its midpoint introduces one new record boundary and so gives C exactly one.
+    Rates from transformations of such different size are **not** a ranking of sensitivity, which
+    is why this exists: it makes every segment endpoint a record boundary, so C must keep each
+    segment's own minimum, and the two conventions are then tested at comparable strength.
+
+    Still lawful: the road, its length and its legal traversals are unchanged, the weights
+    apportion, and every cut is at an existing vertex and so a degree-two node.
+    """
+    coords = [tuple(map(float, c)) for c in shapely.get_coordinates(geom)]
+    out: dict = {}
+    for (ax, ay), (bx, by) in itertools.pairwise(coords):
+        if math.hypot(bx - ax, by - ay) == 0.0:
+            continue                       # a zero-length segment is not a record
+        out[next_id] = shapely.LineString([(ax, ay), (bx, by)])
+        next_id += 1
+    if not out:
+        out[next_id] = shapely.LineString(coords)
+        next_id += 1
+    return out, next_id
+
+
+# --------------------------------------------------------------------------- main
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--subdivision-sample", type=int, default=5000,
+                    help="points per set for the representation-sensitivity check, drawn at "
+                         "random with --subdivision-seed")
+    ap.add_argument("--subdivision-seed", type=int, default=20261110,
+                    help="seed for the subdivision draw, so the rate is reproducible")
+    ap.add_argument("--limit", type=int, default=None,
+                    help="cap each point set, for the benchmark the time box asks for before "
+                         "committing to a larger sample or a census")
+    ap.add_argument("--census", action="store_true",
+                    help="also run the attachment stage over both whole populations: every "
+                         "structure centroid and every cell centre")
+    args = ap.parse_args()
+
+    t0 = time.perf_counter()
+    G = load_roads_graph()
+    G = ox.project_graph(G, to_crs=GRID.crs)
+    G = add_travel_times(G, mode="walk")
+    G = symmetrise(G)
+    G.remove_nodes_from([n for n, d in G.degree() if d == 0])
+    G, comp = largest_component(G)
+    index = {n: i for i, n in enumerate(G.nodes())}
+    eidx = EdgeIndex.from_graph(G, index)
+    geoms = eidx.geoms
+    tree = eidx.tree
+    prep_s = time.perf_counter() - t0
+    graph_edges = G.number_of_edges()
+    # How much the physical-record merge covers, promised in the docstring rather than asserted.
+    parallel = graph_edges - len(eidx.geoms)
+    print(f"prepared in {prep_s:.0f}s: {G.number_of_nodes():,} nodes, {graph_edges:,} graph edges "
+          f"-> {len(geoms):,} physical records", flush=True)
+
+    manifest = read_graph_cache_manifest() or {}
+    out: dict = {
+        "built": stamp(),
+        "pinned": {
+            "metro": METRO.name,
+            "graphml_sha256": manifest.get("graphml_sha256"),
+            "way_tags": manifest.get("way_tags"),
+            "profile_version": profile.profile_version(),
+            "grid_version": profile.grid_version(GRID),
+            "places": {"path": str(ACCEPTED_PLACES.relative_to(ACCEPTED_PLACES.parents[2])),
+                       "sha256": file_digest(ACCEPTED_PLACES)},
+            "attach_tie_m": ATTACH_TIE_M,
+            "max_access_m": MAX_ACCESS_M,
+            "poi_snap_max_m": POI_SNAP_MAX_M,
+            "runtime": {"python": sys.version.split()[0], "numpy": np.__version__,
+                        "shapely": shapely.__version__, "platform": platform.platform()},
+        },
+        "graph": {
+            "nodes": G.number_of_nodes(), "graph_edges": graph_edges,
+            "physical_records": len(geoms),
+            "graph_edges_per_record": round(graph_edges / len(geoms), 4),
+            "graph_edges_beyond_one_per_record": parallel,
+            "merge_note": "a record is one (node pair, canonical geometry); a symmetrised walk "
+                          "graph carries two directed edges per record, so a ratio near 2.0 is "
+                          "the pedestrian reverse rather than parallel roads",
+            "components": comp.summary,
+            "prepare_s": round(prep_s, 1),
+        },
+        "sets": {},
+    }
+
+    # ---- the three point sets ----------------------------------------------------------------
+    point_sets = []
+    for stem, label in (("frame_b_51a59463", "frame_B_structures"),
+                        ("frame_c_7914e80a", "frame_C_area")):
+        frame = read_frame(FRAMES / f"{stem}.json")
+        if frame.crs != GRID.crs:
+            raise SystemExit(f"{stem} is in {frame.crs}, the graph is in {GRID.crs}")
+        point_sets.append((label, np.array(frame.points, dtype=np.float64), MAX_ACCESS_M,
+                           {"frame_digest": frame.digest, "kind": frame.kind, "n": frame.n,
+                            "population_n": frame.population_n, "seed": frame.seed,
+                            "is_a_sample": True}))
+    places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
+    sel = select_overture(places, "grocery")
+    cent = sel.geometry.centroid
+    point_sets.append(("grocery_destinations",
+                       np.column_stack([cent.x.to_numpy(), cent.y.to_numpy()]),
+                       POI_SNAP_MAX_M,
+                       {"n": int(len(sel)), "is_a_sample": False,
+                        "note": "a census of the accepted grocery coordinates, not a sample"}))
+
+    if args.limit:
+        point_sets = [(lbl, pts[:args.limit], cap, dict(meta, limited_to=args.limit))
+                      for lbl, pts, cap, meta in point_sets]
+        out["limited_to"] = args.limit
+
+    if args.census:
+        ids, pop_pts, pop_n = structure_population(ACCEPTED_BUILDINGS, GRID)
+        point_sets.append(("census_all_structures", np.asarray(pop_pts, dtype=np.float64),
+                           MAX_ACCESS_M,
+                           {"n": int(pop_n), "is_a_sample": False,
+                            "note": "a census of frame B's population: every structure centroid "
+                                    "inside the grid. No sampling uncertainty."}))
+        cx, cy = GRID.cell_centers_xy()
+        point_sets.append(("census_all_cell_centres",
+                           np.column_stack([cx.ravel(), cy.ravel()]), MAX_ACCESS_M,
+                           {"n": int(cx.size), "is_a_sample": False,
+                            "note": "every cell CENTRE. This is NOT a census of frame C, which "
+                                    "draws independent points within each cell: a centre census "
+                                    "does not count every affected location inside a cell, and "
+                                    "the two must not be compared as if it did."}))
+
+    for label, pts, cap, meta in point_sets:
+        t = time.perf_counter()
+        acc = Accum()
+        for i, (x, y) in enumerate(pts):
+            acc.add(measure_point(geoms, tree, float(x), float(y), cap), eidx)
+            if label.startswith("census") and i and i % 100_000 == 0:
+                print(f"  {label}: {i:,} of {len(pts):,} "
+                      f"({time.perf_counter() - t:.0f}s)", flush=True)
+        elapsed = time.perf_counter() - t
+        n = acc.n
+        agg = acc.summary(cap_m=cap, meta=meta, seconds=elapsed)
+        out["sets"][label] = agg
+        print(f"\n{label}: {n} points in {elapsed:.1f}s ({agg['ms_per_point']:.2f} ms/point)",
+              flush=True)
+        for k in ("A", "C", "D"):
+            v = agg[k]
+            print(f"  {k}: eligible {v['eligible']}/{n}, >1 candidate "
+                  f"{v['points_with_multiple_candidates']}, on >1 record "
+                  f"{v['points_with_candidates_on_multiple_records']}, >1 occurrence on one record "
+                  f"{v['points_with_multiple_occurrences_on_one_record']}", flush=True)
+        print(f"  A vs C: {agg['A_vs_C_set_differs']} sets differ, "
+              f"{agg['A_vs_C_eligibility_differs']} eligibility differ", flush=True)
+        print(f"  A vs D: {agg['A_vs_D_set_differs']} sets differ, "
+              f"{agg['A_vs_D_eligibility_differs']} eligibility differ", flush=True)
+        print(f"  exact: {agg['exact']}", flush=True)
+
+    # ---- representation sensitivity, kept out of the population estimates --------------------
+    print(f"\nsubdivision check on the first {args.subdivision_sample} of each set", flush=True)
+    sub: dict = {"note": "TWO lawful re-expressions of every record in the point's band window, "
+                         "neither moving the road, changing its length or altering which "
+                         "traversals are legal: `subdivide` inserts every segment's midpoint, and "
+                         "`split_midpoint` expresses each record as two cut at its arclength "
+                         "midpoint, and `split_every_segment` makes every segment its own record. All three "
+                         "are reported because they penalise different "
+                         "conventions -- reporting only the first would be choosing the "
+                         "transformation that makes the incumbent look worst. Drawn at RANDOM "
+                         "with the seed below; the first version took a prefix, which on the two "
+                         "censuses is id or row order and so a spatial bias, and a rate from a "
+                         "biased slice is not a rate. Kept out of the population estimates above: "
+                         "this is a transformation diagnostic on its own sample.",
+                 "sample_per_set": args.subdivision_sample,
+                 "seed": args.subdivision_seed, "sets": {}}
+    rng = np.random.default_rng(args.subdivision_seed)
+
+    def recompute(shadow: dict, window, px: float, py: float, cap: float) -> dict:
+        after_raw = raw_positions(shadow, window, px, py)
+        cmin = min(p.residual for p in after_raw)
+        for p in after_raw:
+            if p.residual <= cmin + ATTACH_TIE_M:
+                p.exact_sq = exact_segment_sq(px, py, *_seg_ends(shadow, p))
+        banded = [p for p in after_raw if p.residual <= cmin + ATTACH_TIE_M]
+        return {"A": dedup_and_cap(convention_a(after_raw, cmin), cap),
+                "C": dedup_and_cap(convention_c(after_raw, cmin), cap),
+                "D": dedup_and_cap(convention_d(banded), cap)}
+
+    for label, pts, cap, _meta in point_sets:
+        kinds = ("subdivide", "split_midpoint", "split_every_segment")
+        changed = {t: {"A": 0, "C": 0, "D": 0} for t in kinds}
+        moved = {t: {"A": 0, "C": 0, "D": 0} for t in kinds}
+        elig_changed = {t: {"A": 0, "C": 0, "D": 0} for t in kinds}
+        skipped_segments = 0
+        unsplittable = 0
+        if len(pts) <= args.subdivision_sample:
+            taken = pts
+        else:
+            taken = pts[rng.choice(len(pts), size=args.subdivision_sample, replace=False)]
+        for x, y in taken:
+            px, py = float(x), float(y)
+            pt = shapely.points([px], [py])[0]
+            nearest = tree.query_nearest(pt, return_distance=True, all_matches=True)
+            gmin = float(np.atleast_1d(nearest[1])[0])
+            window = np.atleast_1d(tree.query(pt.buffer(gmin + ATTACH_TIE_M)))
+            before = measure_point(geoms, tree, px, py, cap)
+
+            # (1) insert every segment's midpoint. Penalises A; C and D are blind to it.
+            # Only the window records are needed, and `raw_positions` touches nothing else, so
+            # this is a dict of a handful of entries rather than a copy of 713,000.
+            shadow = {}
+            for r in window:
+                g2, sk = subdivide(geoms[r])
+                shadow[int(r)] = g2
+                skipped_segments += sk
+            after = recompute(shadow, window, px, py, cap)
+
+            # (2) express each record as two, cut at its arclength midpoint. This is the case A is
+            # supposed to win and C to lose (pass 24 F2), and measuring only (1) would be choosing
+            # the transformation that makes the incumbent look worst.
+            results = {"subdivide": after}
+            for kind, fn in (("split_midpoint", split_record),
+                             ("split_every_segment", split_every_segment)):
+                shadow2: dict = {}
+                window2: list[int] = []
+                next_id = 0
+                for r in window:
+                    pieces, next_id = fn(geoms[r], next_id)
+                    if kind == "split_midpoint" and len(pieces) == 1:
+                        unsplittable += 1
+                    shadow2.update(pieces)
+                    window2.extend(pieces)
+                results[kind] = recompute(shadow2, np.asarray(window2), px, py, cap)
+
+            for kind, got in results.items():
+                for k in ("A", "C", "D"):
+                    if len(got[k]) != before["counts"][k]:
+                        changed[kind][k] += 1
+                    if positions_differ(before["_sets"][k], got[k]):
+                        moved[kind][k] += 1
+                    if bool(got[k]) != before["eligible"][k]:
+                        elig_changed[kind][k] += 1
+        sub["sets"][label] = {"points": len(taken), "candidate_count_changed": changed,
+                              "candidate_positions_changed": moved,
+                              "eligibility_changed": elig_changed,
+                              "segments_too_short_to_halve": skipped_segments,
+                              "records_too_short_to_split": unsplittable}
+        print(f"  {label} ({len(taken)} points):", flush=True)
+        for t in kinds:
+            print(f"    {t:<20} count {changed[t]}  POSITIONS {moved[t]}  elig "
+                  f"{elig_changed[t]}", flush=True)
+    out["subdivision"] = sub
+
+    path = ARTIFACT
+    path.write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
+    print(f"\nwrote {path}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

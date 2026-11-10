@@ -192,7 +192,7 @@ destination actually used, date, and outcome.
 |---|---|---|---|
 | 1 | **DONE** `ed8bb6b`, except §12 item 1, which was never in its scope — see the note below. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
 | 2 | **ADOPTED 2026-11-10** — design revision 12, §3's E1c subsection and §13's row: add it, report it with no bar, Clopper-Pearson declared approximate. **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
-| 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
+| 3 | **STAGES 1-2 DONE 2026-11-10.** **T0**, the prevalence-and-impact pilot (§2 below). Budget pre-registered in history before the run (`14f9219`); results in `docs/experiments/t0-attachment-pilot.md`, rendered from the artifact beside it. **Censused** both populations rather than sampled, because benchmarking said 0.2 ms/point. Eligibility is invariant over **843,135 points**; candidate sets differ at 2.6-2.9%; A and C never disagree across records, so that whole disagreement is bounded without routing. **Stage 3 (verdict impact) needs the comparator and is explicitly unknown** — it is step 4, gated on §12 item 1. The choice is **open on impact** by the pre-registered rule | 1 day | settles A/B/C/D by measurement instead of argument — *partly*: prevalence and eligibility settled, verdict impact not |
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
 | 5 | **S3.1 — the matched 100 m / 200 m grid comparison** | 1/2 day after T3 | the grid decision S3 exists to make, never yet run |
 | 6 | **S3.5 — the browser path end to end**: writer, export, decode, lookup, card combination; whole-minute edges, UNKNOWN against FAIL, horizon equality, legacy codes 251-254, mismatched grids, outside-footprint; plus compressed size and phone decode latency per candidate | 1-2 days + a phone | errors in the answer actually shown, which Python-side fidelity cannot detect |
@@ -284,9 +284,13 @@ E2, the four diagnostics, the conformance suite, the wire-format migration, and 
 
 ### T0 — the attachment prevalence-and-impact pilot
 
-**Depends on:** **stages 1 and 2, nothing that is not already built and on disk** — the
-enumeration primitive they need is `shapely.STRtree.query_nearest(max_distance=..., all_matches=True)`,
-which ships in the pinned shapely. **Stage 3 needs a routing comparator**, which is step 4 and is
+**Depends on:** **stages 1 and 2, nothing that is not already built and on disk.** Confirmed by
+running them on 2026-11-10: the enumeration is `STRtree.query_nearest` for the global minimum plus
+`STRtree.query` over a band-radius buffer for the window, which is complete because a segment's
+distance is never less than its parent record's. (The pre-run note named
+`query_nearest(max_distance=..., all_matches=True)` for the window; that returns the nearest
+neighbours within a limit, not every record within it, so the buffer query is what the window
+actually needs.) **Stage 3 needs a routing comparator**, which is step 4 and is
 itself gated on §12 item 1, so stage 3 is the part that can expire. Earlier revisions said "depends
 on nothing" flat and that was wrong about a third of the task. **This is the next task**, ahead of
 T3 and ahead of choosing a candidate convention; if the comparator is not ready when stages 1 and 2

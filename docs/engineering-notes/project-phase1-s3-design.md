@@ -29,7 +29,8 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | the encoding decision | **done**, `2bb839d` — owner chose `ceil` |
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
-| 3 — T0, the prevalence-and-impact pilot | **next**; 1 day, all data on disk |
+| 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
+| 4 — T3 as a versioned development comparator | **next**, and now also what T0 stage 3 waits on; gated on §12 item 1 |
 
 ## THE WALKED FINDING, and the owner's decision on it
 
