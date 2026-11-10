@@ -181,6 +181,91 @@ def acceptance(identified: int, unresolved: int, n: int, threshold: float,
     )
 
 
+
+# ------------------------------------------------------------------- the conditional rate (E1c)
+
+
+@dataclass(frozen=True)
+class ConditionalRate:
+    """Design §3's **E1c**, `Pr(comparator = FAIL | product = PASS)`.
+
+    **There is deliberately no `verdict` field, and that absence is the design.** E1c was adopted on
+    2026-11-10 as reported-and-never-gated (owner decision 2), and a type that cannot represent a
+    verdict cannot be wired into an acceptance rule by accident. `Acceptance` is the type that
+    carries one; this is not it. Giving E1c a bar means a §13 row, not a field.
+
+    `interval_method` travels with the number into every manifest and report, because the bound is
+    **approximate** and an unlabelled bound invites being read as exact.
+
+    `identification_range` and `bound_range` are `None` when `claims == 0`: the estimand is
+    **undefined** there, which is distinct from zero and must be rendered distinctly.
+    """
+
+    identified: int                                     # k, comparator FAIL among the claims
+    unresolved: int                                     # u, comparator ignorance among the claims
+    claims: int                                         # n_claim, fully observed
+    identification_range: tuple[float, float] | None    # [k/n_claim, (k+u)/n_claim]
+    bound_range: tuple[float, float] | None             # [upper(k), upper(k+u)]
+    confidence: float
+    interval_method: str = "clopper-pearson-approximate"
+
+    @property
+    def defined(self) -> bool:
+        """False when no claim was sampled, so a caller cannot read `None` as a small rate."""
+        return self.claims > 0
+
+
+def conditional_rate(identified: int, unresolved: int, claims: int,
+                     *, confidence: float = 0.95) -> ConditionalRate:
+    """E1c for one mode, published threshold and frame. Design §3, verbatim.
+
+    `claims` is the number of sampled observations the product called **PASS**. It is random, and it
+    is **fully observed** — the product's verdict is known at every sampled point — so unlike E1b's
+    denominator it carries no missingness, and `unresolved` inflates the **numerator only**. Writing
+    `u` into the denominator is the natural inversion of E1b's situation and would be wrong.
+
+    **The bound is Clopper-Pearson and is approximate, not exact** (owner decision 3). Conditional on
+    `claims`, frame B's count is hypergeometric and frame C's is binomial, hypergeometric or a
+    mixture depending on the within-cell error rates; CP is the binomial bound in every case. At
+    `identified == 0` it is conservative on both frames by proof — on frame C via
+    `Pr(K = 0 | m) = e_m(1-q_1, ..., 1-q_A) / C(A, m) <= (1 - theta)^m` — and that is where these
+    denominators put it. **Away from zero the direction is not established**, and Codex pass 31's
+    counterexample shows it cannot be assumed: at `A` = 80,051 with 57 correct and `claims` = 72,
+    `clopper_pearson_upper(71, 72)` = 0.999287846835 falls below the true 0.999287953929, giving
+    94.998570% coverage. That sits next to a 100% error rate and threatens nothing reported here, but
+    it is why `interval_method` says `approximate`.
+
+    `claims == 0` returns an **undefined** result rather than raising: an all-`UNKNOWN` or all-`FAIL`
+    product legitimately produces no claims, and that is a fact to report, not an error. It is also
+    not by itself evidence of abstention — only E0 and §3's abstention table separate those cases.
+    """
+    for name, value in (("identified", identified), ("unresolved", unresolved),
+                        ("claims", claims)):
+        if value < 0:
+            raise ValueError(f"{name} must be non-negative, got {value}")
+    if identified + unresolved > claims:
+        raise ValueError(
+            f"k + u = {identified + unresolved} exceeds the claim denominator {claims}. Both count "
+            "observations the product called PASS, so neither can exceed how many there were.")
+    _check_confidence(confidence)
+
+    if claims == 0:
+        return ConditionalRate(identified=0, unresolved=0, claims=0,
+                               identification_range=None, bound_range=None,
+                               confidence=confidence)
+
+    completed = identified + unresolved
+    return ConditionalRate(
+        identified=identified,
+        unresolved=unresolved,
+        claims=claims,
+        identification_range=(identified / claims, completed / claims),
+        bound_range=(clopper_pearson_upper(identified, claims, confidence=confidence),
+                     clopper_pearson_upper(completed, claims, confidence=confidence)),
+        confidence=confidence,
+    )
+
+
 # ----------------------------------------------------------------------------- variance
 
 

@@ -76,14 +76,21 @@ CLAIM_DENOMINATORS = {("C", 10): 37, ("C", 15): 72, ("B", 10): 78, ("B", 15): 16
 # Claims the subsection must make. Deleting any passage removes its phrase and fails the run.
 REQUIRED_CLAIMS = [
     ("the conditioning event", "`= Pr(comparator = FAIL | product = PASS)`"),
-    ("the interval method is open", "**The interval method is OPEN."),
+    ("the interval method is decided", "The interval, decided 2026-11-10: Clopper-Pearson"),
+    ("the bound is labelled approximate", 'Why "approximate", and where it is nonetheless'),
+    ("conservative at zero by proof", "conservative on both frames, by proof"),
+    ("away from zero it is not established", "the direction is not established"),
+    ("inversion is deferred with a condition", "must be revisited in the same"),
+    ("E1c is never gated", "**Reported, never gated**"),
+    ("the type cannot carry a verdict", "has no verdict field"),
     ("the withdrawn bootstrap is named", "**percentile bootstrap resampling whole cells**"),
     ("its degeneracy is quantified", "`(0.0, 0.0)`"),
     ("frame B's law is hypergeometric", "hypergeometric, not binomial"),
     ("CP is not universally conservative", "is not universally conservative under it"),
     ("the known PASS margin", "computable from the frozen product"),
     ("both candidate interval routes", "Hypergeometric inversion against the known PASS margin"),
-    ("the unspecified three", "how unresolved completions `u` enter it"),
+    ("the three are now specified", "The three things the first draft left silent, now specified"),
+    ("u is numerator only", "enters the **numerator only**"),
     ("expectation is not assurance", "an expectation and not an assurance"),
     ("a reachable threshold exists", "`tolerated_failures(37, 0.08)` = **0**"),
     ("the overreach is withdrawn", '"settled by measurement, not preference" is withdrawn'),
@@ -96,6 +103,14 @@ REQUIRED_CLAIMS = [
     ("the eight published combinations", "There are **eight** published combinations"),
 ]
 
+# Claims that live in the document header rather than in §3's subsection, so they are matched
+# against the whole file. Both record the owner's decision and must not be lost in a re-edit.
+HEADER_CLAIMS = [
+    ("the owner's decisions are recorded", "The owner's three decisions, 2026-11-10"),
+    ("the cheap route to a bar is recorded", "conditional sample drawn from the PASS domain"),
+    ("revision 12 is adopted", "ADOPTED by the owner 2026-11-10"),
+]
+
 MUTATIONS = {
     "swap the T=10 and T=15 table rows": (
         ("| 10 | 24,245 | **7.3358%** | 80,051 | **15.6157%** | **36.7** | **78.1** |",
@@ -104,7 +119,15 @@ MUTATIONS = {
          "| 15 | 24,245 | 7.3358% | 80,051 | 15.6157% | 36.7 | 78.1 |"),
     ),
     "delete the interval-method passage": (
-        ("**The interval method is OPEN.", "**DELETED:"),
+        ("**The interval, decided 2026-11-10: Clopper-Pearson", "**DELETED:"),
+    ),
+    # The rule most consequential to lose: owner decision 2 is "report it, no bar".
+    "quietly turn E1c into a gate": (
+        ("**Reported, never gated**", "**Reported, and gated at 1.0%**"),
+    ),
+    # The withdrawal must stay on the record so the degenerate method cannot drift back in.
+    "erase the record of the withdrawn bootstrap": (
+        ("**percentile bootstrap resampling whole cells**", "the method"),
     ),
     "flip the conditioning event to product FAIL": (
         ("`= Pr(comparator = FAIL | product = PASS)`",
@@ -252,6 +275,10 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
     flat = " ".join(section.split())
     for label, phrase in REQUIRED_CLAIMS:
         contains(label, " ".join(phrase.split()), "section (normalised)", flat)
+
+    flat_all = " ".join(text.split())
+    for label, phrase in HEADER_CLAIMS:
+        contains(label, " ".join(phrase.split()), "document header (normalised)", flat_all)
 
     # ---- the change-log row must carry the decisive figures, not a drifted copy
     for rendered in ("**-1**", "7.7775%", "`n_claim` ≥ 299", "4,076", "**8.2×**",

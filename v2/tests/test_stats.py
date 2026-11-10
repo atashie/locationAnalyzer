@@ -20,15 +20,20 @@ monotone width would reject correct code (pass-18 F10).
 
 from __future__ import annotations
 
+import inspect
+
 import numpy as np
 import pytest
 from scipy.optimize import brentq
+from scipy.stats import hypergeom
 from scipy.stats import beta, binom
 
 from locfinder.measure.stats import (
     BIT_GENERATOR,
+    ConditionalRate,
     Verdict,
     acceptance,
+    conditional_rate,
     clopper_pearson_lower,
     clopper_pearson_upper,
     percentile_bootstrap,
@@ -508,3 +513,112 @@ def test_a_one_sided_confidence_below_a_half_is_refused():
     for confidence in (0.5, 0.75, 0.95, 0.99):
         for k, n in ((0, 10), (1, 10), (9, 10), (1, 500), (250, 500)):
             assert clopper_pearson_upper(k, n, confidence=confidence) >= k / n
+
+
+# ------------------------------------------------------------------- E1c, the conditional rate
+
+
+def test_the_conditional_rate_divides_by_the_claims_not_the_frame():
+    """E1c's whole point: the denominator is the claimed subset, not the sample.
+
+    One error among 37 claims is the measured shape of the binding case (frame C, T = 10, where
+    E[n_claim] = 36.6791). It bounds at 12.1905%, where the same error against the full frame of 500
+    bounds at 0.9452% -- a factor of 13, which is the dilution the estimand exists to undo.
+    """
+    r = conditional_rate(1, 0, 37)
+    assert r.claims == 37 and r.identified == 1
+    assert r.identification_range == (1 / 37, 1 / 37)
+    assert r.bound_range[0] == pytest.approx(0.121905, abs=1e-6)
+    assert r.bound_range == (r.bound_range[0], r.bound_range[0]), "no u, so the endpoints coincide"
+    assert clopper_pearson_upper(1, 500) == pytest.approx(0.0094518, abs=1e-6)
+
+
+def test_unresolved_verdicts_inflate_the_numerator_and_never_the_denominator():
+    """The property that is the exact opposite of E1b's, and therefore the one to get backwards.
+
+    The product's verdict is known at every sampled point, so the claim denominator carries no
+    missingness. `u` can only widen the range upward.
+    """
+    r = conditional_rate(1, 2, 37)
+    assert r.claims == 37, "u must not enter the denominator"
+    assert r.identification_range == (1 / 37, 3 / 37)
+    assert r.bound_range == (clopper_pearson_upper(1, 37),
+                             clopper_pearson_upper(3, 37))
+    assert r.bound_range[0] < r.bound_range[1]
+
+    # k + u cannot exceed the claims, because both count product-PASS observations.
+    with pytest.raises(ValueError, match="exceeds the claim denominator"):
+        conditional_rate(20, 20, 37)
+
+
+def test_no_claims_is_undefined_and_not_zero():
+    """An all-UNKNOWN product passes E1a and E1b at 0.5974% (design §4). E1c's denominator vanishes
+    instead of its numerator, so it must report undefined -- collapsing that to 0.0 would restore
+    precisely the concealment it was added to expose.
+
+    It is not, by itself, evidence of abstention: an all-FAIL product also makes no claims.
+    """
+    r = conditional_rate(0, 0, 0)
+    assert r.defined is False
+    assert r.identification_range is None and r.bound_range is None
+    assert r.claims == 0
+    # and the full-frame bound that makes the concealment possible is unchanged
+    assert clopper_pearson_upper(0, 500) == pytest.approx(0.0059743, abs=1e-6)
+
+    defined = conditional_rate(0, 0, 1)
+    assert defined.defined is True
+    assert defined.identification_range == (0.0, 0.0)
+    assert defined.bound_range[0] > 0.0, "zero observed errors is not zero uncertainty"
+
+
+def test_the_conditional_rate_carries_no_verdict_and_cannot_be_gated():
+    """Owner decision 2 is 'report it, no bar', and the type is how that is enforced.
+
+    `Acceptance` has a `verdict`; `ConditionalRate` deliberately does not, and takes no threshold
+    argument, so there is no way to turn E1c into a gate without changing the design.
+    """
+    r = conditional_rate(1, 0, 37)
+    assert isinstance(r, ConditionalRate)
+    assert not hasattr(r, "verdict")
+    assert "threshold" not in inspect.signature(conditional_rate).parameters
+    assert hasattr(acceptance(1, 0, 500, 0.01), "verdict"), "the gated type still has one"
+
+    # The approximation is named in the object, so it reaches every manifest that stores one.
+    assert r.interval_method == "clopper-pearson-approximate"
+
+
+def test_the_bound_is_approximate_and_the_counterexample_is_kept_as_a_test():
+    """Codex pass 31 disproved the first draft's claim that one-sided CP is universally conservative.
+
+    At A = 80,051 PASS structures with exactly 57 comparator-correct, conditioning on 72 claims, the
+    true rate exceeds the CP upper bound -- so every outcome with at least one correct observation
+    misses it. The exception sits beside a 100% error rate and threatens no figure S3 reports; it is
+    kept executable because the claim it refutes is the kind that gets rewritten back in.
+    """
+    true_rate = 79994 / 80051
+    assert clopper_pearson_upper(71, 72) < true_rate
+    assert clopper_pearson_upper(71, 72) == pytest.approx(0.999287846835, abs=1e-12)
+
+    # Hypergeometric coverage there is below the nominal 95%.
+    coverage = hypergeom.pmf(72, 80051, 79994, 72)
+    assert coverage < 0.95
+    assert coverage == pytest.approx(0.949985703697819, abs=1e-12)
+
+    # At k = 0 -- where these denominators actually put us -- it is conservative by proof, so the
+    # zero-error figures the amendment argues from are sound.
+    assert clopper_pearson_upper(0, 37) == pytest.approx(0.0777754, abs=1e-6)
+
+
+def test_a_claim_denominator_too_small_for_a_one_percent_bar_is_reported_as_such():
+    """Why E1c is not gated, as an executable fact rather than a sentence.
+
+    `tolerated_failures` returns -1 -- design §4's unreachable-gate condition -- at every one of the
+    four short-threshold claim denominators. It does NOT return -1 at frame B's 45-minute
+    denominator, which is why the design says four of eight published combinations and not all.
+    """
+    for m in (37, 72, 78, 160):
+        assert tolerated_failures(m, 0.01) == -1
+    assert tolerated_failures(414, 0.01) == 0, "reachable at frame B, T = 45"
+    assert tolerated_failures(37, 0.08) == 0, "a looser bar is reachable even at 37"
+    assert tolerated_failures(299, 0.01) == 0, "299 claims is the smallest that reaches 1%"
+    assert tolerated_failures(473, 0.01) == 1, "473 tolerates one, per design §4's own note"

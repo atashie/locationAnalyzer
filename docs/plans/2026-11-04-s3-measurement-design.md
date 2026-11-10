@@ -2,11 +2,22 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
-**Revision 12, 2026-11-09 — DRAFT, awaiting an owner decision; not in force.** Adds **E1c**, the
-conditional false-inclusion rate `Pr(comparator = FAIL | product = PASS)`, as a **reported and
-explicitly non-gating** measure beside E1a and E1b, which are unchanged. Plan §0 step 2. Nothing
-about E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule or the selection policy
-changes, and E1c cannot cause a layer to fail.
+**Revision 12, 2026-11-09; amended after Codex pass 31 and ADOPTED by the owner 2026-11-10.**
+Adds **E1c**, the conditional false-inclusion rate `Pr(comparator = FAIL | product = PASS)`, as a
+**reported and explicitly non-gating** measure beside E1a and E1b, which are unchanged. Plan §0
+step 2. Nothing about E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule or the
+selection policy changes, and E1c cannot cause a layer to fail.
+
+**The owner's three decisions, 2026-11-10**, taken on the amended draft after pass 31:
+
+> 1. **Add E1c.** The estimand is adopted.
+> 2. **Report it; no bar.** No threshold, no acceptance role, now or by default later. Revisiting
+>    that needs its own §13 row, and the cheap route to a reachable 1.0% bar is recorded below — a
+>    conditional sample drawn from the PASS domain, roughly 300-500 observations in the pattern §4's
+>    diagnostics already use, **not** the 8.9× enlargement of the full-frame draw.
+> 3. **Clopper-Pearson, declared approximate** — route (a) of the two the amended draft offered.
+>    Exact hypergeometric inversion is the better instrument and is deferred: it matters if E1c ever
+>    carries consequences, and under decision 2 it does not.
 
 The reason it is not gated is **measured, not preferred**: E1c's denominator is the *claimed* subset,
 and at §4's *n* = 500 that is about **37 observations** on frame C at *T* = 10, not the 417 the
@@ -817,16 +828,17 @@ validity claim.
 
 ### E1c — the conditional rate a user is exposed to (reported, never gated)
 
-**Added in revision 12, as a draft for the owner.** Plan §0 step 2, whose stated purpose is "the
-quantity a user is actually harmed by".
+**Added in revision 12 and adopted 2026-11-10.** Plan §0 step 2, whose stated purpose is "the
+quantity a user is actually harmed by". **Reported, never gated** — decision 2 of the three in the
+header.
 
 > **Codex pass 31 reviewed this subsection before any of it was implemented, and its verdict was
 > that the estimand is legitimate and the interval specification should not be adopted.** All eight
 > findings were reproduced independently before being acted on. The estimand, the denominator
-> correction and the gate arithmetic survived; **the frame C interval method is withdrawn**, and
-> five claims are narrowed or withdrawn below — each marked where it sits. Placing the review before
-> the code was the single most useful decision in this step: the withdrawn method would have been
-> wired into T6 and T11 first.
+> correction and the gate arithmetic survived; **the first draft's frame C interval method was
+> withdrawn**, and five claims are narrowed or withdrawn below — each marked where it sits. Placing
+> the review before the code was the single most useful decision in this step: the withdrawn method
+> would have been wired into T6 and T11 first.
 
 > **E1c conditional false inclusion** `= Pr(comparator = FAIL | product = PASS)`, per mode *m*,
 > published threshold *T* and frame — **of the claims the product made, the share that are wrong**.
@@ -930,10 +942,54 @@ inference:**
 Raising E1c to a gate is a further owner decision with the sample-size consequence above, and needs
 its own §13 row.
 
-**The interval method is OPEN. Revision 12's first draft specified one and it was wrong; the
-specification is withdrawn rather than patched.** The estimand above stands. What follows is the
-state of the question, because an un-specified interval that is known to be un-specified is safer
-than the confident wrong one this subsection carried.
+**The interval, decided 2026-11-10: Clopper-Pearson on the claim denominator, declared
+approximate.** Revision 12's first draft specified a different method and it was wrong; that
+withdrawal and the reasoning behind this choice are below, because both are part of what the method
+means.
+
+> For each mode, published threshold and frame, with `k` identified comparator-FAIL observations
+> among the claims, `u` unresolved among them, and `n_claim` claims:
+>
+> - **identification range** `[k/n_claim, (k+u)/n_claim]` — reported as the two objects §7 requires
+>   for E1a and E1b, so comparator ignorance stays visible instead of being completed silently;
+> - **bound range** `[CP_upper(k, n_claim), CP_upper(k+u, n_claim)]`, one-sided 95%;
+> - **`n_claim` = 0 → undefined.** No estimate, no bound, rendered distinctly from zero;
+> - **no verdict and no threshold.** E1c never enters §8's acceptance, and the reference
+>   implementation returns a type that has no verdict field, so it cannot be used as one by mistake.
+
+**Why "approximate", and where it is nonetheless conservative.** It is **not exact**, and no output
+may call it so:
+
+- **Frame B.** Conditional on `n_claim`, the count is **hypergeometric**, not binomial —
+  `Pr(K = k | n_claim = m) = C(F,k) C(A−F, m−k) / C(A, m)` with `A` the PASS structures and `F` the
+  comparator-FAIL ones among them. Clopper-Pearson is the binomial bound, so it is an approximation
+  to that law.
+- **Frame C.** Two-stage, and where the PASS verdict is constant within an original cell the
+  conditional count is **exactly binomial** if the within-cell comparator-error rates are equal,
+  **hypergeometric** if they are 0 or 1, and a mixture otherwise.
+- **At `k` = 0 it is conservative on both frames, by proof rather than by assumption.** On frame C
+  this follows from `Pr(K = 0 | n_claim = m) = e_m(1−q₁,…,1−q_A) / C(A, m) ≤ (1−θ)^m`, `θ` the mean
+  within-cell error rate, by the elementary-symmetric-mean inequality. **That is the case this
+  measurement will actually be in**, given the denominators above.
+- **Away from `k` = 0 the direction is not established**, and the label says so rather than implying
+  conservatism everywhere. Pass 31's counterexample is the proof that it cannot be assumed: at
+  `A` = 80,051 with 57 correct structures and `n_claim` = 72, `CP_upper(71, 72)` = 0.999287846835
+  sits *below* the true 0.999287953929 and coverage is **94.998570%**. It lives next to a 100% error
+  rate, which is why it does not threaten any figure reported here — and it is still a counterexample
+  to the unqualified claim the first draft made. §6 carries the same correction.
+
+**Why this and not exact hypergeometric inversion.** Inversion against the **known PASS margin** is
+the better instrument, and `A` is genuinely known — the PASS domain is a deterministic lookup on the
+frozen product, not something to be estimated, which is the fact the withdrawn method obscured. It is
+**deferred, not rejected**: under decision 2 E1c carries no consequences, so an approximate bound
+that is provably conservative where the data will sit is adequate and reuses an audited primitive.
+**If E1c is ever given a bar, this choice must be revisited in the same §13 row that gives it one** —
+a number that blocks a release should be exact.
+
+**The three things the first draft left silent, now specified.** (1) The statistic is errors among
+claims, as above. (2) `u` enters the **numerator only**, through the second endpoint of each range;
+it never enters `n_claim`, because the product's verdict is observed at every sampled point.
+(3) Zero claims yield **undefined**, never 0.0.
 
 **What was withdrawn, and why it was worse than no method at all.** The draft prescribed a
 **percentile bootstrap resampling whole cells** for frame C. Codex pass 31 showed it is **degenerate
@@ -985,11 +1041,8 @@ necessity**, and it is the choice that created the ratio problem. Two routes rem
 > justified exactly by the inequality above and the general case acknowledged as approximate rather
 > than exact.
 
-Whichever is adopted must also specify three things the first draft left silent: the ratio statistic
-itself, how unresolved completions `u` enter it, and what a replicate or sample with zero claims
-contributes. **No figure derived from an interval may be published until one is chosen**, and the
-zero-error Clopper-Pearson bounds quoted in this subsection are labelled as such rather than as the
-reported interval.
+**Decision 3 chose route (a)**, and the specification is at the head of this passage. Route (b)
+is deferred under the condition stated there.
 
 **If export makes the PASS verdict vary within an original cell, the constant-partition reduction
 above needs redoing** — the same partition dependence §3 already records for E0 under a shifted
@@ -1539,12 +1592,18 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
-### Revision 12 — 2026-11-09, amended 2026-11-10 after Codex pass 31 — DRAFT, awaiting an owner decision
+### Revision 12 — 2026-11-09, amended after Codex pass 31 and ADOPTED 2026-11-10
 
 **Adds §3's E1c**, `Pr(comparator = FAIL | product = PASS)`, as a reported and explicitly non-gating
 measure. **Additive**: E1a, E1b, their thresholds, §4's allocation, §8's acceptance rule and the
 selection policy are unchanged, and E1c cannot fail a layer.
 
+> **Owner decisions, 2026-11-10: add E1c; report it with no bar; Clopper-Pearson declared
+> approximate.** The cheap route to a reachable 1.0% bar is recorded for later — a conditional sample
+> of roughly 300-500 observations drawn from the PASS domain, in the pattern §4's diagnostics already
+> use, rather than an 8.9× enlargement of the full-frame draw. Exact hypergeometric inversion is
+> deferred and must be revisited in the same row that ever gives E1c a bar.
+>
 > **Pass 31's verdict: the estimand is legitimate and the first draft's interval specification must
 > not be adopted.** Eight findings, all reproduced independently before being acted on. The estimand,
 > the denominator correction and the gate arithmetic survived. **The frame C percentile bootstrap is

@@ -162,7 +162,7 @@ destination actually used, date, and outcome.
 | # | work | box | risk retired |
 |---|---|---|---|
 | 1 | **DONE** `ed8bb6b`, except §12 item 1, which was never in its scope — see the note below. **The cheap correctness debts.** Non-finite query coordinates rejected at every public entry — today a NaN origin manufactures an authoritative `NO_PATH`; the admissible numerical domain declared; the final cost discriminator lifted into normative §2.4; §2.4's uniqueness promise weakened, with reconstruction split out to T10 | 1/2 day | silent invalid-input absences, and four gaps §12's amendment now bounds |
-| 2 | **DRAFTED, awaiting the owner** — design revision 12, §3's E1c subsection and §13's row. **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
+| 2 | **ADOPTED 2026-11-10** — design revision 12, §3's E1c subsection and §13's row: add it, report it with no bar, Clopper-Pearson declared approximate. **The estimand that is missing.** Add `Pr(comparator FAIL \| product PASS)` with its own denominator and interval, keeping E1b. State the destination-validity blind spot explicitly | 1/2 day | the quantity a user is actually harmed by |
 | 3 | **T0**, the prevalence-and-impact pilot (§2 below) | 1 day | settles A/B/C/D by measurement instead of argument |
 | 4 | **T3 as a versioned development comparator**, under §12's rewritten terms: pinned runtime, no cross-implementation claim | 2-3 days | the comparator finally exists |
 | 5 | **S3.1 — the matched 100 m / 200 m grid comparison** | 1/2 day after T3 | the grid decision S3 exists to make, never yet run |

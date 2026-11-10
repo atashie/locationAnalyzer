@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-step2-conditional-estimand
-description: "E1c, the conditional false-inclusion rate, is drafted and NOT in force - its claim denominator is ~37 of 500 on the binding frame rather than 417, and Codex pass 31 withdrew the interval specification because the prescribed bootstrap reports certainty at zero errors"
+description: "E1c, the conditional false-inclusion rate, is ADOPTED 2026-11-10 as reported-never-gated with an approximate Clopper-Pearson bound - its claim denominator is ~37 of 500 on the binding frame rather than 417, and pass 31 killed the bootstrap that reported certainty at zero errors"
 metadata:
   node_type: memory
   type: project
@@ -8,8 +8,21 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-Plan §0 step 2, phases A and B. Design **revision 12 is a draft awaiting the owner** and is not in
-force; nothing in it can fail a layer. Commits `c93df95`, `c6807ca`, and the pass-31 amendment.
+Plan §0 step 2, phases A-D. Design **revision 12 was adopted by the owner on 2026-11-10** after
+Codex pass 31 amended the draft. Commits `c93df95`, `c6807ca`, `337b635`, and the adoption.
+
+**The owner's three decisions.** (1) **Add E1c.** (2) **Report it, no bar** — no threshold and no
+acceptance role; E1c cannot fail a layer. (3) **Clopper-Pearson, declared approximate** — route (a);
+exact hypergeometric inversion is deferred and must be revisited in the same §13 row that ever gives
+E1c a bar.
+
+**The cheap route to a bar, recorded because my first estimate of it was wrong by an order of
+magnitude.** I said a reachable 1.0% bar costs 8.2× the sampling. That is the cost of getting there
+by enlarging the *full-frame* draw. Drawing a **conditional sample from the PASS domain** — the exact
+pattern §4's four diagnostics already use, each 150-200 observations — needs **299 claims to tolerate
+zero errors, 473 for one, 628 for two**. So roughly 300-500 observations per frame, not 4,454. The
+PASS domain is a deterministic lookup on the frozen product, so such a sample is directly drawable.
+That option is now in the design and is what a future gating decision should cost out against.
 
 **What it adds.** `E1c = Pr(comparator = FAIL | product = PASS)` — of the claims the product made,
 the share that are wrong. E1b divides by the whole frame, so every point where the product declined
@@ -128,12 +141,37 @@ a boundary-degenerate interval, an expectation standing in for an assurance, or 
 from a correct number. Pass 31 found one of each — which is the argument for the review ordering
 restated as a measurement.
 
-## State
+## What was implemented, and the one rule encoded in a type
 
-**Phases C-E are not begun, and now for a sharper reason than caution: there is no interval method
-to implement until the owner picks one.** When there is, the first thing to check is whether the
-persisted record carries per-observation **product and comparator** verdicts; if it does not, E1c
-cannot be recomputed from a stored run, and that is a T6 gap to report rather than a scope to widen.
+`stats.conditional_rate` returns a frozen **`ConditionalRate`** with `identified`, `unresolved`,
+`claims`, an `identification_range` of `[k/n_claim, (k+u)/n_claim]`, a `bound_range` of
+`[CP_upper(k), CP_upper(k+u)]`, and `interval_method = "clopper-pearson-approximate"` so the
+approximation travels into every manifest that stores one.
+
+**It deliberately has no `verdict` field and takes no `threshold` argument.** `Acceptance` is the
+type that carries a verdict; this is not it. Owner decision 2 is "report it, no bar", and the way to
+make a rule hold is to encode it where violating it would require changing the design rather than
+forgetting a convention — the project's own standing practice. A test asserts the absence.
+
+`claims == 0` returns an **undefined** result rather than raising, because an all-`UNKNOWN` *or*
+all-`FAIL` product legitimately makes no claims; that is a fact to report, not an error, and not by
+itself evidence of abstention.
+
+**Pass 31's CP counterexample is kept as an executable test**, not just a paragraph: at `A` = 80,051
+with 57 correct and 72 claims, `clopper_pearson_upper(71, 72)` falls below the true rate and
+hypergeometric coverage is 94.998570%. The claim it refutes — "one-sided CP is conservative" — is
+the kind that gets rewritten back in by someone reasoning from first principles, so it now fails a
+test if it is.
+
+**T6 needs no change.** Its persistence list already carries, per point and per threshold, the
+product outcome and the comparator's status — so E1c is recomputable from a stored run, and the gap
+I had flagged as a risk does not exist.
+
+**1,141 passed, 24 skipped.** The figure verifier is at **83 checks with 5 mutations**, two of them
+added for this step: *quietly turn E1c into a gate* and *erase the record of the withdrawn
+bootstrap*. Both are caught.
+
+## State
 
 **Also fixed in phase A: revision 11 had no header block and no §13 row**, so the body referred to
 "revision 11" in eight places while both stopped at revision 10 — the same silence pass 30 found in
