@@ -96,6 +96,35 @@ Two more from the same pass, both about guards rather than figures:
   restore each other's mutated text and a forced termination could leave a mutation committed. It now
   mutates a private copy. **A verification tool must not be able to damage the thing it verifies.**
 
+## A sixth instance, 2026-11-10: the fixture could not see its own mutation
+
+Recovering which grocery the layer routed each household to (`aeef909`). The snapping fixture
+existed to check that the destination comes from **the endpoint whose time was actually reported**,
+and I wrote a mutation harness to confirm it: swap `e_idx` for `s_idx` and a test should fail.
+
+It did not fail. The fixture hung a *penalised* shop off the far endpoint, which made that
+endpoint's own cheapest path route back through the near endpoint to the **same shop**. Both
+endpoints selected one destination, so which endpoint won was unobservable. The test exercised the
+branch and could not see it.
+
+The fix is not a better fixture, it is a fixture **whose discriminating property is asserted**:
+
+    def test_the_two_endpoints_select_different_shops():
+        """Guards the fixture itself. If this ever fails, the branch tests below have stopped
+        being able to detect a flipped endpoint and are passing for the wrong reason."""
+
+**When a test's power depends on a property of its fixture, assert that property in its own test.**
+Otherwise the fixture can drift into degeneracy and every test built on it keeps passing — louder
+than before, because the suite is now larger.
+
+The same run produced two more of this shape, both recorded in
+[[project-phase1-s3-audit-destination-recovery]]: a guard that is **unobservable through the public
+API**, so no behavioural test could ever reach it (kept, with its test moved to where the invariant
+lives); and two mutation harnesses whose "restored byte-identically" check compared decoded text to
+decoded text and therefore could not see line endings at all — see
+[[reference-text-io-rewrites-line-endings]]. That one is the purest form of the pattern in this
+note: a check written specifically to catch a tool corrupting a tracked file, which could not fail.
+
 Related: [[feedback-a-fixture-is-exact-only-where-you-point-it]], which is the same error one level
 up — a test drawn from the wrong domain also passes without establishing anything. In this session
 that one recurred too: the fixture "proving" an `OFF_NETWORK` bound drew access distances from

@@ -322,3 +322,13 @@ the builder started recording the arrays' digests, which it now does and the con
 `cell_for_lonlat`, which is one entry point of several. Codex pass 26's own recommendation is to
 let the owner start walking a short local sheet while steps 1 and 2 proceed, and **not** to
 expand this harness further — that would repeat pass 25's mistake.
+
+---
+
+**Superseded in one respect, 2026-11-10.** This note and the sheet's README both recorded that the
+selected destination's identity "is not stored" and that recovering it "needs one bounded graph
+load". It was being computed on every build and discarded as `_sources`. The load has now been
+done, both sheets name their destinations, and every row was verified bit-exactly against the
+committed raster. See [[project-phase1-s3-audit-destination-recovery]] — including the three
+defects that recovery exposed in my own verification, and what the destinations show about
+`destination_qualifies` before any walking.

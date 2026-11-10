@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-10, head `a45daf2` on `v2-rethink`, pushed. **No sampling has happened.** Design
+As of 2026-11-10, head `00b597e` on `v2-rethink`, pushed. **No sampling has happened.** Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; passes 27-30 ran in-session
@@ -17,7 +17,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-10, not recalled:** **1,147 passed, 24 skipped**. The E1c figure verifier
+**Measured 2026-11-10, not recalled:** **1,164 passed, 24 skipped**. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
