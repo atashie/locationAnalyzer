@@ -23,6 +23,8 @@ independently establish joint uniformity". Guard 1 is therefore written against 
 
 from __future__ import annotations
 
+import pathlib
+
 import numpy as np
 import pytest
 
@@ -34,6 +36,7 @@ from locfinder.measure.frames import (
     cell_bounds,
     cell_row_col,
     grid_digest,
+    read_frame,
     write_frame,
 )
 
@@ -336,6 +339,64 @@ def test_a_frame_artifact_is_never_overwritten(tmp_path):
     assert f.digest[:8] in data.name
     with pytest.raises(FileExistsError):
         write_frame(f, tmp_path)
+
+
+def test_a_written_frame_reads_back_identically(tmp_path):
+    """The round trip has to survive the id dtype. Frame C's source ids are integers and frame B's
+    are Overture strings; the parquet stores both as text, and `frame_digest` keys on `str(id)`, so
+    a frame that could not reproduce its digest through this would have a second identity."""
+    for frame in (build_frame_c(TOY, n=6, seed=1),
+                  build_frame_b(None, TOY, n=5, seed=2,
+                                population=_fake_population(20), source_digest="x")):
+        _, manifest = write_frame(frame, tmp_path / frame.kind)
+        back = read_frame(manifest)
+        assert back.digest == frame.digest
+        assert back.kind == frame.kind and back.crs == frame.crs
+        assert back.seed == frame.seed and back.population_n == frame.population_n
+        assert np.array_equal(back.points, frame.points)
+        assert [str(s) for s in back.source_ids] == [str(s) for s in frame.source_ids]
+
+
+def test_reading_a_frame_whose_points_were_edited_on_disk_fails(tmp_path):
+    """`Frame.__post_init__` recomputes the digest, so the read **is** the verification. Design §12:
+    the identity a measurement reports has to be checked against the data it actually used, and a
+    reader that trusts the manifest provides a way for an edited artifact to keep its name."""
+    import pandas as pd
+
+    frame = build_frame_c(TOY, n=6, seed=1)
+    data, manifest = write_frame(frame, tmp_path)
+    table = pd.read_parquet(data)
+    table.loc[0, "x"] = float(table.loc[0, "x"]) + 999.0
+    table.to_parquet(data, index=False)
+    with pytest.raises(ValueError):
+        read_frame(manifest)
+
+
+def test_reading_a_frame_of_another_digest_version_fails(tmp_path):
+    import json
+
+    frame = build_frame_c(TOY, n=6, seed=1)
+    _, manifest = write_frame(frame, tmp_path)
+    body = json.loads(manifest.read_text(encoding="utf-8"))
+    body["digest_version"] = 1
+    manifest.write_text(json.dumps(body), encoding="utf-8")
+    with pytest.raises(ValueError):
+        read_frame(manifest)
+
+
+def test_the_frozen_development_frames_still_match_their_digests():
+    """The two frames T0 consumes, verified against the artifacts on disk rather than recalled.
+    Skipped where `v2/data/` is absent, which is every fresh clone -- nothing under it is tracked."""
+    directory = pathlib.Path(__file__).resolve().parents[1] / "data" / "frames" / "development"
+    manifests = sorted(directory.glob("frame_*.json")) if directory.exists() else []
+    if not manifests:
+        pytest.skip("no frozen frames on this machine; v2/data/ is not tracked")
+    seen = {}
+    for manifest in manifests:
+        frame = read_frame(manifest)      # raises unless the contents match the digest
+        seen[frame.kind] = (frame.digest[:8], frame.n)
+    assert seen.get("structures") == ("51a59463", 500)
+    assert seen.get("area") == ("7914e80a", 500)
 
 
 def test_the_manifest_records_what_is_needed_to_redraw_the_frame(tmp_path):

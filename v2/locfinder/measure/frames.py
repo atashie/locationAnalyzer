@@ -368,6 +368,39 @@ def build_frame_b(parquet: Path, grid: GridSpec, *, n: int, seed: int,
 # ----------------------------------------------------------------------------- persistence
 
 
+def read_frame(manifest_path: Path) -> Frame:
+    """Load a written frame, **verifying its digest against its contents**.
+
+    `Frame.__post_init__` recomputes the digest and refuses to construct a frame whose recorded
+    identity does not describe its points, so the check is the construction. Design §12: the
+    identity a measurement reports has to be checked against the data it actually used, and
+    "in-memory protection is a guard, not a proof".
+
+    The parquet stores every id as text, and `frame_digest` keys on `str(id)`, so a frame whose ids
+    were integers (frame C's flat cell indices) reproduces its digest through this round trip.
+    """
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    if manifest.get("digest_version") != DIGEST_VERSION:
+        raise ValueError(f"{manifest_path.name} is digest version "
+                         f"{manifest.get('digest_version')!r}, not {DIGEST_VERSION}")
+    data_path = Path(manifest_path).with_suffix(".parquet")
+    table = pd.read_parquet(data_path)
+    frame = Frame(
+        kind=manifest["kind"],
+        points=np.column_stack([table["x"].to_numpy(dtype=np.float64),
+                                table["y"].to_numpy(dtype=np.float64)]),
+        source_ids=table["source_id"].to_numpy(),
+        seed=int(manifest["seed"]),
+        population_n=int(manifest["population_n"]),
+        crs=manifest["crs"],
+        source_digest=manifest["source_digest"],
+        digest=manifest["digest"],
+        source_spec=manifest.get("source_spec", {}),
+    )
+    frame.verify()
+    return frame
+
+
 def write_frame(frame: Frame, directory: Path) -> tuple[Path, Path]:
     """Write `frame_<kind>_<digest8>.parquet` plus its manifest. **Never overwrites**: a new sample
     is a new digest, so a collision means an attempt to rewrite an existing frame.
