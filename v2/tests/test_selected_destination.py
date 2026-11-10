@@ -251,6 +251,100 @@ def test_the_time_fallback_branch_also_names_the_right_shop(x_m, expect):
     assert got[0] == index[expect]
 
 
+def divergent_fixture() -> nx.MultiDiGraph:
+    """A road where the cost-chosen endpoint and the time-chosen endpoint are **different**.
+
+    Codex pass 33 F5: `snap_fixture` guarantees a different shop behind each endpoint, which I
+    had asserted as the property that made the branch observable. It is not sufficient. Choosing
+    the endpoint by *time* while reporting seconds selected by *cost* passed all 17 tests, because
+    on that fixture the two rules happen to pick the same endpoint. Guaranteeing "the endpoints
+    differ" is not guaranteeing "the two selection rules differ".
+
+    Here the road is cheap in time (10 s) but expensive in cost (1000), and the far endpoint is
+    the quick one, so from a point 10 m along it:
+
+      * on COST, the point is served from S  -> shopS, reported journey 91 s
+      * on TIME, the point would prefer E    -> shopE, journey 19 s
+
+    The published seconds are the cost-selected ones, so a correct implementation names shopS.
+    """
+    G = nx.MultiDiGraph()
+    coords = {"S": (0.0, 0.0), "E": (100.0, 0.0),
+              "shopS": (0.0, -50.0), "shopE": (100.0, -50.0)}
+    for n, (x, y) in coords.items():
+        G.add_node(n, x=x, y=y)
+    G.add_edge("S", "E", travel_time=10.0, cost=1000.0)
+    G.add_edge("E", "S", travel_time=10.0, cost=1000.0)
+    edge(G, "S", "shopS", time=90.0)
+    edge(G, "E", "shopE", time=10.0)
+    return G
+
+
+def test_the_shop_follows_the_cost_endpoint_when_the_two_rules_disagree():
+    """The mutation that survived: naming the time-chosen endpoint while reporting cost seconds.
+
+    This is the defect that matters most on the ground. The sheet would print our cost-selected
+    seconds beside the time-selected shop, so the owner walks to a shop our number is not about
+    and the discrepancy reads as a product error rather than a reporting one.
+    """
+    from locfinder.traveltime.arrival import arrival_seconds
+
+    G = divergent_fixture()
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest = [index["shopS"], index["shopE"]]
+    T, selected = arrival_with_selected_destination(cost_csr, time_csr, dest_idx=dest)
+    node_cost = np.asarray(arrival_seconds(cost_csr, dest_idx=dest))
+    eidx = EdgeIndex.from_graph(G, index)
+
+    # 10 m east of S, so E is the far endpoint by distance but the quick one by time
+    xs, ys = np.array([10.0]), np.array([0.0])
+    kw = dict(mode="walk", max_access_m=200.0, node_cost=node_cost)
+    secs = cell_seconds_from_arrival(eidx, T, xs, ys, **kw)
+    got = cell_selected_destination(eidx, T, xs, ys, selected=selected, **kw)
+
+    # the fixture's whole point, asserted rather than assumed
+    time_pick = index["shopE"]
+    cost_pick = index["shopS"]
+    assert time_pick != cost_pick
+
+    # via S on cost: 0.1 * 10 s of road + T[S] = 90 s -> 91 s, and that is what is reported.
+    # via E on time: 0.9 * 10 s + T[E] = 10 s -> 19 s, which is quicker and deliberately not used.
+    assert secs[0] == pytest.approx(91.0), "the cost-selected journey's real time"
+    assert got[0] == cost_pick, "names the shop the reported seconds belong to"
+    assert got[0] != time_pick, "not the shop a time-based endpoint choice would name"
+
+
+def test_the_cell_cutoff_removes_the_destination():
+    """The second survivor: dropping `cell_selected_destination`'s own cutoff mask.
+
+    The node is inside the budget and the cell is not, because the access leg is added after the
+    node search. So masking on the node's time is not enough -- a cell with no published seconds
+    was still naming a shop.
+    """
+    from locfinder.traveltime.arrival import arrival_seconds
+
+    G = nx.MultiDiGraph()
+    for n, (x, y) in {"S": (0.0, 0.0), "E": (100.0, 0.0), "shop": (0.0, -50.0)}.items():
+        G.add_node(n, x=x, y=y)
+    edge(G, "S", "E", time=100.0)
+    edge(G, "S", "shop", time=10.0)
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest = [index["shop"]]
+    T, selected = arrival_with_selected_destination(cost_csr, time_csr, dest_idx=dest)
+    node_cost = np.asarray(arrival_seconds(cost_csr, dest_idx=dest))
+    eidx = EdgeIndex.from_graph(G, index)
+
+    # 14 m north of S: on-network part 10 s, plus 14 m of access at 1.26 m/s = 11.1 s
+    xs, ys = np.array([0.0]), np.array([14.0])
+    kw = dict(mode="walk", max_access_m=200.0, node_cost=node_cost, cutoff_s=15.0)
+    secs = cell_seconds_from_arrival(eidx, T, xs, ys, **kw)
+    got = cell_selected_destination(eidx, T, xs, ys, selected=selected, **kw)
+
+    assert T[index["S"]] == pytest.approx(10.0), "the node is inside the 15 s budget"
+    assert not math.isfinite(secs[0]), "but the cell is not, once access is charged"
+    assert got[0] == -1, "no published seconds, so no published destination"
+
+
 def test_an_off_network_point_has_no_destination():
     G = snap_fixture()
     _index, _dest, T, selected, node_cost, eidx = snap_inputs(G)

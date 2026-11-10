@@ -161,9 +161,20 @@ Until 2026-11-10 this section said the destination's identity was not stored and
 "needs one bounded graph load". It was never not computed: `scipy`'s multi-source search returns
 the selected source beside the distances, and our code discarded it as `_sources`. The graph load
 has now been done — `v2/scripts/recover_audit_destinations.py` — and the `predicted_destination*`
-columns are its output. Every row of both sheets was re-derived and matches the committed raster
-**bit-exactly after the float32 cast**, so the destinations belong to the published numbers rather
-than to a plausible rebuild. Rebuild them with:
+columns are its output. Every row of both sheets was re-derived and matches the committed raster bit-exactly after the
+float32 cast.
+
+> **That is weaker than it sounds, and the layer needs a rebuild.** A current-code rebuild differs
+> from the committed raster on **7,246 of 330,502 cells** — the raster was built 2026-11-04 13:42
+> and `ab01ffa` at 21:12 then fixed `symmetrise`, which had been suppressing pedestrian reverse
+> edges in the shipped walk graph. None of the audited cells is among the 7,246, which is why they
+> all agree. So the destinations here are recovered with **current** code and agree with the
+> sheet's numbers everywhere, which is **consistent with but not proof of** the destination the
+> published layer actually chose (Codex pass 33). The recovery prints this disagreement on every
+> run. Rebuilding the layer removes the question; until then, treat a destination as the shop our
+> current model routes you to.
+
+Rebuild them with:
 
     cd v2 && python scripts/recover_audit_destinations.py \
         ../docs/experiments/audit/triangle-grocery-walk-chapelhill.csv

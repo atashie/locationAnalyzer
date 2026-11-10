@@ -77,21 +77,78 @@ also lives in the recovery script's own comment.
 
 ## What the destinations show before anyone walks
 
-Seven distinct shops across the 16 Chapel Hill journeys: 4 Harris Teeter, 3 Food Lion, 1 Trader
-Joes — and **4 to Hill's Family Asian Markets, 2 to Mikyins Asian Market, 1 to Seal The Seasons**.
+**Nine physical destinations under seven names**, across the 16 Chapel Hill journeys. Harris
+Teeter (4 journeys) and Food Lion (3) are each **two different shops**, which is why the name count
+and the location count differ — and why `predicted_destination_lat`/`lon`, not the name, is what
+identifies a journey:
 
-Every one of the 550 grocery places carries `basic_category = food_and_beverage_store` with
-taxonomy primary `grocery_store`, so each passes the category rule exactly as written. Whether a
-specialty importer or a local-produce brand is what a household means by "ten minutes from a
-grocery" is the `destination_qualifies` judgement, and it is now **inspectable in advance** instead
-of discovered on arrival. Step 7's grocery-and-geocoding truth audit has its first concrete
-material, and it did not need a walk to produce it.
+| name | journeys | locations |
+|---|---|---|
+| Harris Teeter | 4 | 2 |
+| Hill's Family Asian Markets | 4 | 1 |
+| Food Lion | 3 | 2 |
+| Mikyins Asian Market | 2 | 1 |
+| The Fresh Market | 1 | 1 |
+| Seal The Seasons | 1 | 1 |
+| Trader Joes | 1 | 1 |
+
+**Seven of the sixteen** route to a specialty market or a produce brand rather than a general
+supermarket. Whether that is what a household means by "ten minutes from a grocery" is the
+`destination_qualifies` judgement, and it is now **inspectable in advance** instead of discovered on
+arrival. Step 7's grocery-and-geocoding truth audit has its first concrete material, and it did not
+need a walk to produce it.
+
+All 550 grocery places carry `basic_category = food_and_beverage_store`, and **531 of them carry
+taxonomy primary `grocery_store`** — not all 550, as revision 1 of this note said. The other 19
+carry more specific grocery primaries (8 `mexican_grocery_store`, 5 `organic_grocery_store`, 3
+`international_grocery_store`, and one each of `indian_`, `korean_` and `asian_grocery_store`) and
+satisfy the rule through the taxonomy hierarchy rather than the primary string. Codex pass 33 found
+all three miscounts: the uniform-taxonomy claim, the missing journey to The Fresh Market, and
+names read as locations.
 
 The claim that remains unchanged: the layer's aggregation is `cost_selected_category`, the time of
 the journey the **cost** model picked, which is an upper bound rather than the minimum over
 qualifying destinations. A walk that beats our number has not caught us in an error. And 550 places
 snap to 510 road nodes, so where `predicted_destination_alternatives` is non-empty our number does
 not distinguish them.
+
+## The verification I claimed was stronger than the one I had
+
+Revision 1 of this note and the sheet's README both said the recovery was verified "bit-exactly
+against the committed raster", and read that as establishing it was the published configuration.
+**Codex pass 33 took that apart, and it was already wrong for a reason I had found separately.**
+
+Two independent defeats of the argument:
+
+- **Matching counts is not matching sets.** The destination check compared three *counts* against
+  s0's recorded provenance. Swapping destination node 539680 for 500268 preserves every sampled
+  value in both sheets while changing **1,798 node arrival times**. The recorded provenance does
+  not store the node set, so with the artifacts on hand there is no check that can establish set
+  identity.
+- **Matching 35 sampled cells is not matching the layer.** A current-code rebuild differs from the
+  committed raster on **7,246 of 330,502 cells**, maximum difference 2,316.8 s, with finiteness
+  unchanged and 10 cells changing verdict at ten minutes. None of the 35 audit rows is among them,
+  which is why the sampled check passed. Codex also produced a synthetic tie that changes the
+  selected shop while preserving the seconds exactly — so numeric agreement cannot establish
+  historical identity even in principle.
+
+**And the raster is stale.** It was built 2026-11-04 13:42 and verified bit-identical at 14:43;
+`ab01ffa` at 21:12 then fixed `symmetrise`, which had been asking `G.has_edge(v, u)` and so letting
+any edge from `v` to `u` suppress the reverse of *every* road from `u` to `v` — silently removing
+pedestrian edges from the shipped walk graph. The sheet's numbers come from the pre-fix raster;
+its SHA-256 still matches the sheet metadata, so that is settled rather than suspected.
+
+The honest claim, now in both places: the recovery agrees with the sheet on every row, which is
+**consistent with but not proof of** the historical choice, and the layer needs rebuilding to
+remove the question. What the script does now is report the full-raster disagreement every time it
+runs, so the sheet cannot be produced again with it unstated.
+
+**The generalisation.** A verification that samples where the artifact is *known to agree* measures
+nothing. I checked 35 cells chosen by a sampler that had no reason to pick changed ones, and read
+agreement as identity. The same session's other instance of this is in
+[[reference-text-io-rewrites-line-endings]] — a restore check that compared translated text to
+translated text. Both are the same error: **the check ran, and the dimension it claimed to cover
+was not in its domain.**
 
 ## State
 

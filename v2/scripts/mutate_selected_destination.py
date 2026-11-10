@@ -84,6 +84,21 @@ MUTATIONS: list[tuple[str, pathlib.Path, str, str]] = [
         "    if sel.shape != (T.shape[0],):",
         "    if False:",
     ),
+    # Codex pass 33 F5 found these two, and both survived the eight above. The first is the one
+    # that matters on the ground: it prints our cost-selected seconds beside the time-selected
+    # shop, so a person walks to a shop our number is not about.
+    (
+        "name the TIME-chosen endpoint while reporting cost-chosen seconds",
+        SNAP,
+        "    chosen = np.where(take_end, e_idx, s_idx)",
+        "    chosen = np.where(time_end <= time_start, e_idx, s_idx)",
+    ),
+    (
+        "drop the cell-level cutoff mask on the destination",
+        SNAP,
+        "    out = np.where(np.isfinite(total), out, -1)\n    return out.reshape(np.shape(xs))",
+        "    return out.reshape(np.shape(xs))",
+    ),
 ]
 
 

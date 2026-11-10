@@ -125,6 +125,44 @@ decoded text and therefore could not see line endings at all — see
 [[reference-text-io-rewrites-line-endings]]. That one is the purest form of the pattern in this
 note: a check written specifically to catch a tool corrupting a tracked file, which could not fail.
 
+## A seventh instance, hours later: the fixture guard guarded the wrong property
+
+The sixth instance above ends with the rule *when a test's power depends on a property of its
+fixture, assert that property in its own test*. I did exactly that, adding
+
+    def test_the_two_endpoints_select_different_shops():
+
+and Codex pass 33 then defeated the suite anyway. **Naming the endpoint chosen by *time* while
+reporting the seconds chosen by *cost* passed all 17 tests.** Different shops behind the two
+endpoints is not the same as the two selection rules *disagreeing about which endpoint*, and on
+that fixture they agreed. I had written the guard for the degeneracy I had just been bitten by,
+and the live degeneracy was its neighbour.
+
+The repaired version builds a fixture where cost and time genuinely disagree -- an expensive road
+whose far endpoint is quick -- and asserts `time_pick != cost_pick` inside the test that depends on
+it. That defect was the one with real consequences: the sheet would have printed our cost-selected
+seconds beside the time-selected shop, so a person walks to a shop our number is not about and the
+gap reads as a product error.
+
+**The rule to add, and it is uncomfortable because it has no stopping point:** a fixture guard
+asserts a property, and the question is always whether that property is the one the test's power
+rests on. Writing the guard converts an unexamined assumption into a stated one, which is progress,
+but a stated assumption can still be the wrong assumption. What actually settles it is the
+mutation, every time. In this session the mutation harness is what found both the sixth and the
+seventh instance; the reasoning found neither.
+
+Two more from the same pass, both about checks rather than fixtures, and both in
+[[project-phase1-s3-audit-destination-recovery]]:
+
+- **A check that samples where the artifact is known to agree measures nothing.** I verified a
+  rebuild against the committed raster on 35 sampled rows, all 35 matched, and wrote that the
+  result "belongs to the published numbers". The full surface disagrees on 7,246 of 330,502 cells
+  and none of the 35 is among them -- the sampler had no reason to pick changed cells. See
+  [[project-phase1-s3-stale-walk-raster]].
+- **Comparing counts and reading it as comparing sets.** Three matching integers were treated as
+  establishing that a 510-node destination set was the published one. Codex swapped one node for
+  another, preserved every sampled value, and changed 1,798 node times.
+
 Related: [[feedback-a-fixture-is-exact-only-where-you-point-it]], which is the same error one level
 up — a test drawn from the wrong domain also passes without establishing anything. In this session
 that one recurred too: the fixture "proving" an `OFF_NETWORK` bound drew access distances from
