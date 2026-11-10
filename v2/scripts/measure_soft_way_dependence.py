@@ -14,8 +14,14 @@ One row is an anecdote. This measures the whole surface:
 * the share of each threshold's PASS that does not survive;
 * how many cells become UNKNOWN because their only access was a soft way.
 
-Writes `data/soft_way_dependence_grocery_walk.json`. Read-only on the layers. Three graph
-preparations plus three full surfaces, about 8 minutes.
+The fourth variant exists because the third was not the right question. Removing `track` from the
+walked cell moved its route onto **476 m of an unnamed 531 m `footway`** — same verification
+problem, different class — so a class-only knob relocates the dependence instead of removing it.
+`no_unnamed_informal` drops `track`/`path`/`footway`/`service` **only where the way has no name**,
+which separates a sidewalk from a trail about as well as the tags allow.
+
+Writes `data/soft_way_dependence_grocery_walk.json`. Read-only on the layers. Four graph
+preparations plus four full surfaces, about 11 minutes.
 """
 import json
 import pathlib
@@ -48,10 +54,19 @@ BUILDINGS = V2 / "data" / "layers" / "own_triangle_buildings_per_cell.npy"
 RASTER = V2 / "data" / "layers" / "own_triangle_grocery_walk.npy"
 OUT = V2 / "data" / "soft_way_dependence_grocery_walk.json"
 
+# A highway class alone does not say whether a way exists and is usable on the ground. A **named**
+# footway beside a street is a sidewalk, and removing those would cripple a pedestrian graph and
+# make the resulting number meaningless. An **unnamed** 531 m footway through woods is a trail --
+# and the no-track counterfactual for the cell the owner walked leaned on exactly that, which is
+# how this variant came to be needed. So the sharper knob is class AND namelessness, measured here
+# beside the class-only ones rather than substituted for them.
+INFORMAL = {"track", "path", "footway", "service"}
+
 VARIANTS = {
-    "as_published": set(),
-    "no_track": {"track"},
-    "no_track_or_path": {"track", "path"},
+    "as_published": (set(), False),
+    "no_track": ({"track"}, False),
+    "no_track_or_path": ({"track", "path"}, False),
+    "no_unnamed_informal": (INFORMAL, True),
 }
 
 
@@ -62,12 +77,20 @@ def classes(data) -> set:
     return {str(hw)} if hw else set()
 
 
-def surface(drop: set) -> tuple[np.ndarray, dict]:
+def unnamed(data) -> bool:
+    n = data.get("name")
+    if isinstance(n, (list, tuple)):
+        return not any(str(x).strip() for x in n)
+    return not (n and str(n).strip())
+
+
+def surface(drop: set, only_unnamed: bool = False) -> tuple[np.ndarray, dict]:
     G = ox.load_graphml(GRAPH_CACHE)
     G = ox.project_graph(G, to_crs=GRID.crs)
     removed = 0
     if drop:
-        doomed = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True) if classes(d) & drop]
+        doomed = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True)
+                  if (classes(d) & drop) and (unnamed(d) if only_unnamed else True)]
         removed = len(doomed)
         G.remove_edges_from(doomed)
     G = add_travel_times(G, mode=MODE)
@@ -110,9 +133,9 @@ def main() -> int:
                  "total_buildings": total_buildings, "variants": {}}
     surfaces: dict[str, np.ndarray] = {}
 
-    for name, drop in VARIANTS.items():
+    for name, (drop, only_unnamed) in VARIANTS.items():
         t = time.perf_counter()
-        secs, meta = surface(drop)
+        secs, meta = surface(drop, only_unnamed)
         surfaces[name] = secs
         meta["seconds_s"] = round(time.perf_counter() - t, 1)
         if name == "as_published":
@@ -152,14 +175,14 @@ def main() -> int:
     # ---- what the soft ways are holding up ---------------------------------------------------
     pub = surfaces["as_published"]
     out["lost"] = {}
-    print(f"\n{'T':>4}  {'PASS cells':>12} {'lost (trk)':>12} {'lost (t+p)':>12}   "
-          f"{'PASS buildings':>15} {'lost (t+p)':>12}  {'share':>7}")
-    print("-" * 94)
+    print(f"\n{'T':>4}  {'PASS cells':>12} {'lost(trk)':>11} {'lost(t+p)':>11} "
+          f"{'lost(unnamed)':>14}   {'PASS buildings':>15} {'bldg lost':>11}  {'share':>7}")
+    print("-" * 108)
     for tmin in THRESHOLDS_MIN:
         lim = 60.0 * tmin
         base = np.isfinite(pub) & (pub <= lim)
         row = {"pass_cells": int(base.sum()), "pass_buildings": int(buildings[base].sum())}
-        for name in ("no_track", "no_track_or_path"):
+        for name in ("no_track", "no_track_or_path", "no_unnamed_informal"):
             s = surfaces[name]
             still = np.isfinite(s) & (s <= lim)
             lost = base & ~still
@@ -171,10 +194,11 @@ def main() -> int:
                                         if buildings[base].sum() else 0.0),
             }
         out["lost"][str(tmin)] = row
-        a, b = row["no_track"], row["no_track_or_path"]
-        print(f"{tmin:>4}  {row['pass_cells']:>12,} {a['lost_cells']:>12,} "
-              f"{b['lost_cells']:>12,}   {row['pass_buildings']:>15,} "
-              f"{b['lost_buildings']:>12,}  {b['lost_building_share']:>6.2%}")
+        a, b, c = row["no_track"], row["no_track_or_path"], row["no_unnamed_informal"]
+        print(f"{tmin:>4}  {row['pass_cells']:>12,} {a['lost_cells']:>11,} "
+              f"{b['lost_cells']:>11,} {c['lost_cells']:>14,}   "
+              f"{row['pass_buildings']:>15,} {c['lost_buildings']:>11,}  "
+              f"{c['lost_building_share']:>6.2%}")
 
     OUT.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(f"\nwrote {OUT.relative_to(V2)}")

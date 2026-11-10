@@ -1,0 +1,1043 @@
+{
+  "no_all_four": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 3948,
+      "lost_buildings": 9951,
+      "lost_share": 0.16277056277056276,
+      "lost_building_share": 0.1242834126419124,
+      "gained_cells": 3091,
+      "gained_buildings": 9572,
+      "band_pass": {
+        "n": 6012,
+        "lost": 1826,
+        "share": 0.3037258815701929,
+        "buildings": 22172,
+        "lost_buildings": 5588
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 1826,
+        "share": 0.146243793048214,
+        "buildings": 45548,
+        "lost_buildings": 5588
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 2397,
+        "share": 0.13617770707874105,
+        "buildings": 80067,
+        "lost_buildings": 9951
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 1188,
+        "share": 0.27285254937988057,
+        "buildings": 22172,
+        "lost_buildings": 5588
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 6417,
+      "lost_buildings": 14710,
+      "lost_share": 0.13506914479361806,
+      "lost_building_share": 0.08976353928299008,
+      "gained_cells": 3668,
+      "gained_buildings": 10159,
+      "band_pass": {
+        "n": 7430,
+        "lost": 2391,
+        "share": 0.3218034993270525,
+        "buildings": 26328,
+        "lost_buildings": 7130
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 2391,
+        "share": 0.16007230367543684,
+        "buildings": 51281,
+        "lost_buildings": 7130
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 3472,
+        "share": 0.10161554671037228,
+        "buildings": 163875,
+        "lost_buildings": 14710
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 1501,
+        "share": 0.28815511614513345,
+        "buildings": 26328,
+        "lost_buildings": 7130
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 10612,
+      "lost_buildings": 15244,
+      "lost_share": 0.11340635853593374,
+      "lost_building_share": 0.05103174921999491,
+      "gained_cells": 3038,
+      "gained_buildings": 6190
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 19442,
+      "lost_buildings": 13626,
+      "lost_share": 0.12025731428217974,
+      "lost_building_share": 0.03206977871711471,
+      "gained_cells": 2118,
+      "gained_buildings": 2506
+    },
+    "finite_to_missing": 42326,
+    "missing_to_finite": 388
+  },
+  "no_footway": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 1262,
+      "lost_buildings": 4111,
+      "lost_share": 0.05203050917336632,
+      "lost_building_share": 0.05134449898210249,
+      "gained_cells": 385,
+      "gained_buildings": 1166,
+      "band_pass": {
+        "n": 6012,
+        "lost": 848,
+        "share": 0.14105123087159016,
+        "buildings": 22172,
+        "lost_buildings": 3055
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 848,
+        "share": 0.06791606599391319,
+        "buildings": 45548,
+        "lost_buildings": 3055
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 936,
+        "share": 0.053175775480059084,
+        "buildings": 80067,
+        "lost_buildings": 4111
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 643,
+        "share": 0.14768029398254479,
+        "buildings": 22172,
+        "lost_buildings": 3055
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 2049,
+      "lost_buildings": 6187,
+      "lost_share": 0.043128670357195475,
+      "lost_building_share": 0.03775438596491228,
+      "gained_cells": 479,
+      "gained_buildings": 1334,
+      "band_pass": {
+        "n": 7430,
+        "lost": 1161,
+        "share": 0.15625841184387618,
+        "buildings": 26328,
+        "lost_buildings": 4127
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 1161,
+        "share": 0.0777264510945973,
+        "buildings": 51281,
+        "lost_buildings": 4127
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 1360,
+        "share": 0.039803324748302504,
+        "buildings": 163875,
+        "lost_buildings": 6187
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 838,
+        "share": 0.16087540794778268,
+        "buildings": 26328,
+        "lost_buildings": 4127
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 2817,
+      "lost_buildings": 5906,
+      "lost_share": 0.030104194496393268,
+      "lost_building_share": 0.01977128777835804,
+      "gained_cells": 445,
+      "gained_buildings": 836
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 2893,
+      "lost_buildings": 4651,
+      "lost_share": 0.0178944764025484,
+      "lost_building_share": 0.010946465640195252,
+      "gained_cells": 375,
+      "gained_buildings": 357
+    },
+    "finite_to_missing": 3095,
+    "missing_to_finite": 51
+  },
+  "no_footway_service": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 3970,
+      "lost_buildings": 9984,
+      "lost_share": 0.16367759224902081,
+      "lost_building_share": 0.12469556746225037,
+      "gained_cells": 3030,
+      "gained_buildings": 9499,
+      "band_pass": {
+        "n": 6012,
+        "lost": 1831,
+        "share": 0.3045575515635396,
+        "buildings": 22172,
+        "lost_buildings": 5578
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 1831,
+        "share": 0.1466442415505366,
+        "buildings": 45548,
+        "lost_buildings": 5578
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 2411,
+        "share": 0.13697307124190433,
+        "buildings": 80067,
+        "lost_buildings": 9984
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 1190,
+        "share": 0.2733118971061093,
+        "buildings": 22172,
+        "lost_buildings": 5578
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 6373,
+      "lost_buildings": 14690,
+      "lost_share": 0.13414300448336106,
+      "lost_building_share": 0.0896414950419527,
+      "gained_cells": 3562,
+      "gained_buildings": 10089,
+      "band_pass": {
+        "n": 7430,
+        "lost": 2369,
+        "share": 0.318842530282638,
+        "buildings": 26328,
+        "lost_buildings": 7103
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 2369,
+        "share": 0.15859945102764947,
+        "buildings": 51281,
+        "lost_buildings": 7103
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 3467,
+        "share": 0.10146921095762117,
+        "buildings": 163875,
+        "lost_buildings": 14690
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 1496,
+        "share": 0.2871952390094068,
+        "buildings": 26328,
+        "lost_buildings": 7103
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 10006,
+      "lost_buildings": 14824,
+      "lost_share": 0.10693026983702912,
+      "lost_building_share": 0.04962573146399925,
+      "gained_cells": 2922,
+      "gained_buildings": 6108
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 16396,
+      "lost_buildings": 12014,
+      "lost_share": 0.10141646563988371,
+      "lost_building_share": 0.028275819866976082,
+      "gained_cells": 2151,
+      "gained_buildings": 2564
+    },
+    "finite_to_missing": 32234,
+    "missing_to_finite": 433
+  },
+  "no_path": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 89,
+      "lost_buildings": 196,
+      "lost_share": 0.0036693465264893838,
+      "lost_building_share": 0.002447949842007319,
+      "gained_cells": 119,
+      "gained_buildings": 67,
+      "band_pass": {
+        "n": 6012,
+        "lost": 61,
+        "share": 0.010146373918829008,
+        "buildings": 22172,
+        "lost_buildings": 115
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 61,
+        "share": 0.004885471728335736,
+        "buildings": 45548,
+        "lost_buildings": 115
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 54,
+        "share": 0.0030678332007726397,
+        "buildings": 80067,
+        "lost_buildings": 196
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 37,
+        "share": 0.008497932935231971,
+        "buildings": 22172,
+        "lost_buildings": 115
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 318,
+      "lost_buildings": 582,
+      "lost_share": 0.006693468605948346,
+      "lost_building_share": 0.003551487414187643,
+      "gained_cells": 201,
+      "gained_buildings": 132,
+      "band_pass": {
+        "n": 7430,
+        "lost": 163,
+        "share": 0.021938088829071334,
+        "buildings": 26328,
+        "lost_buildings": 295
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 163,
+        "share": 0.010912499163151904,
+        "buildings": 51281,
+        "lost_buildings": 295
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 149,
+        "share": 0.0043608054319831425,
+        "buildings": 163875,
+        "lost_buildings": 582
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 74,
+        "share": 0.01420618160875408,
+        "buildings": 26328,
+        "lost_buildings": 295
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 906,
+      "lost_buildings": 1095,
+      "lost_share": 0.00968207320331285,
+      "lost_building_share": 0.0036656891495601175,
+      "gained_cells": 301,
+      "gained_buildings": 140
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 1983,
+      "lost_buildings": 1954,
+      "lost_share": 0.012265726479866394,
+      "lost_building_share": 0.00459888064092486,
+      "gained_cells": 297,
+      "gained_buildings": 51
+    },
+    "finite_to_missing": 5358,
+    "missing_to_finite": 55
+  },
+  "no_service": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 3831,
+      "lost_buildings": 10418,
+      "lost_share": 0.15794681508967223,
+      "lost_building_share": 0.13011602782669515,
+      "gained_cells": 2137,
+      "gained_buildings": 6807,
+      "band_pass": {
+        "n": 6012,
+        "lost": 1863,
+        "share": 0.30988023952095806,
+        "buildings": 22172,
+        "lost_buildings": 6006
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 1863,
+        "share": 0.14920711196540126,
+        "buildings": 45548,
+        "lost_buildings": 6006
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 2417,
+        "share": 0.13731394159754573,
+        "buildings": 80067,
+        "lost_buildings": 10418
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 1261,
+        "share": 0.28961874138723015,
+        "buildings": 22172,
+        "lost_buildings": 6006
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 5975,
+      "lost_buildings": 14755,
+      "lost_share": 0.12576564440421814,
+      "lost_building_share": 0.09003813882532417,
+      "gained_cells": 2528,
+      "gained_buildings": 7352,
+      "band_pass": {
+        "n": 7430,
+        "lost": 2476,
+        "share": 0.33324360699865413,
+        "buildings": 26328,
+        "lost_buildings": 7858
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 2476,
+        "share": 0.16576287072370624,
+        "buildings": 51281,
+        "lost_buildings": 7858
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 3400,
+        "share": 0.09950831187075626,
+        "buildings": 163875,
+        "lost_buildings": 14755
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 1599,
+        "share": 0.3069687080053753,
+        "buildings": 26328,
+        "lost_buildings": 7858
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 8171,
+      "lost_buildings": 11992,
+      "lost_share": 0.08732033128506546,
+      "lost_building_share": 0.040145154594999934,
+      "gained_cells": 2125,
+      "gained_buildings": 4277
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 13139,
+      "lost_buildings": 8126,
+      "lost_share": 0.08127048926826251,
+      "lost_building_share": 0.019125130034879943,
+      "gained_cells": 1739,
+      "gained_buildings": 2048
+    },
+    "finite_to_missing": 27781,
+    "missing_to_finite": 453
+  },
+  "no_track": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 19,
+      "lost_buildings": 11,
+      "lost_share": 0.0007833436404864976,
+      "lost_building_share": 0.00013738494011265566,
+      "gained_cells": 35,
+      "gained_buildings": 11,
+      "band_pass": {
+        "n": 6012,
+        "lost": 11,
+        "share": 0.001829673985362608,
+        "buildings": 22172,
+        "lost_buildings": 4
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 11,
+        "share": 0.0008809867051097229,
+        "buildings": 45548,
+        "lost_buildings": 4
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 4,
+        "share": 0.00022724690376093625,
+        "buildings": 80067,
+        "lost_buildings": 11
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 1,
+        "share": 0.00022967386311437759,
+        "buildings": 22172,
+        "lost_buildings": 4
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 110,
+      "lost_buildings": 75,
+      "lost_share": 0.0023153507756425097,
+      "lost_building_share": 0.0004576659038901602,
+      "gained_cells": 53,
+      "gained_buildings": 15,
+      "band_pass": {
+        "n": 7430,
+        "lost": 42,
+        "share": 0.005652759084791386,
+        "buildings": 26328,
+        "lost_buildings": 52
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 42,
+        "share": 0.0028118096003213497,
+        "buildings": 51281,
+        "lost_buildings": 52
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 16,
+        "share": 0.0004682744088035589,
+        "buildings": 163875,
+        "lost_buildings": 75
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 10,
+        "share": 0.001919754271453254,
+        "buildings": 26328,
+        "lost_buildings": 52
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 520,
+      "lost_buildings": 173,
+      "lost_share": 0.0055570398076409296,
+      "lost_building_share": 0.0005791454090172606,
+      "gained_cells": 85,
+      "gained_buildings": 13
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 2524,
+      "lost_buildings": 505,
+      "lost_share": 0.015612049236098225,
+      "lost_building_share": 0.0011885541062779193,
+      "gained_cells": 111,
+      "gained_buildings": 20
+    },
+    "finite_to_missing": 5329,
+    "missing_to_finite": 25
+  },
+  "no_track_path": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 104,
+      "lost_buildings": 207,
+      "lost_share": 0.0042877757163471445,
+      "lost_building_share": 0.0025853347821199746,
+      "gained_cells": 149,
+      "gained_buildings": 78,
+      "band_pass": {
+        "n": 6012,
+        "lost": 70,
+        "share": 0.011643379906852961,
+        "buildings": 22172,
+        "lost_buildings": 119
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 70,
+        "share": 0.005606279032516418,
+        "buildings": 45548,
+        "lost_buildings": 119
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 58,
+        "share": 0.0032950801045335755,
+        "buildings": 80067,
+        "lost_buildings": 207
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 38,
+        "share": 0.008727606798346348,
+        "buildings": 22172,
+        "lost_buildings": 119
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 414,
+      "lost_buildings": 644,
+      "lost_share": 0.008714138373781809,
+      "lost_building_share": 0.003929824561403509,
+      "gained_cells": 245,
+      "gained_buildings": 151,
+      "band_pass": {
+        "n": 7430,
+        "lost": 197,
+        "share": 0.026514131897711977,
+        "buildings": 26328,
+        "lost_buildings": 334
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 197,
+        "share": 0.013188725982459664,
+        "buildings": 51281,
+        "lost_buildings": 334
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 161,
+        "share": 0.004712011238585811,
+        "buildings": 163875,
+        "lost_buildings": 644
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 80,
+        "share": 0.015358034171626032,
+        "buildings": 26328,
+        "lost_buildings": 334
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 1323,
+      "lost_buildings": 1224,
+      "lost_share": 0.01413839166444029,
+      "lost_building_share": 0.004097537460330213,
+      "gained_cells": 364,
+      "gained_buildings": 151
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 4239,
+      "lost_buildings": 2389,
+      "lost_share": 0.02622007793653739,
+      "lost_building_share": 0.005622684673065246,
+      "gained_cells": 341,
+      "gained_buildings": 67
+    },
+    "finite_to_missing": 10080,
+    "missing_to_finite": 70
+  },
+  "no_track_path_control": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 104,
+      "lost_buildings": 207,
+      "lost_share": 0.0042877757163471445,
+      "lost_building_share": 0.0025853347821199746,
+      "gained_cells": 149,
+      "gained_buildings": 78,
+      "band_pass": {
+        "n": 6012,
+        "lost": 70,
+        "share": 0.011643379906852961,
+        "buildings": 22172,
+        "lost_buildings": 119
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 70,
+        "share": 0.005606279032516418,
+        "buildings": 45548,
+        "lost_buildings": 119
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 58,
+        "share": 0.0032950801045335755,
+        "buildings": 80067,
+        "lost_buildings": 207
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 38,
+        "share": 0.008727606798346348,
+        "buildings": 22172,
+        "lost_buildings": 119
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 414,
+      "lost_buildings": 644,
+      "lost_share": 0.008714138373781809,
+      "lost_building_share": 0.003929824561403509,
+      "gained_cells": 245,
+      "gained_buildings": 151,
+      "band_pass": {
+        "n": 7430,
+        "lost": 197,
+        "share": 0.026514131897711977,
+        "buildings": 26328,
+        "lost_buildings": 334
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 197,
+        "share": 0.013188725982459664,
+        "buildings": 51281,
+        "lost_buildings": 334
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 161,
+        "share": 0.004712011238585811,
+        "buildings": 163875,
+        "lost_buildings": 644
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 80,
+        "share": 0.015358034171626032,
+        "buildings": 26328,
+        "lost_buildings": 334
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 1323,
+      "lost_buildings": 1224,
+      "lost_share": 0.01413839166444029,
+      "lost_building_share": 0.004097537460330213,
+      "gained_cells": 364,
+      "gained_buildings": 151
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 4239,
+      "lost_buildings": 2389,
+      "lost_share": 0.02622007793653739,
+      "lost_building_share": 0.005622684673065246,
+      "gained_cells": 341,
+      "gained_buildings": 67
+    },
+    "finite_to_missing": 10080,
+    "missing_to_finite": 70
+  },
+  "no_track_path_unpruned": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 110,
+      "lost_buildings": 218,
+      "lost_share": 0.0045351473922902496,
+      "lost_building_share": 0.0027227197222326302,
+      "gained_cells": 132,
+      "gained_buildings": 71,
+      "band_pass": {
+        "n": 6012,
+        "lost": 72,
+        "share": 0.011976047904191617,
+        "buildings": 22172,
+        "lost_buildings": 121
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 72,
+        "share": 0.005766458433445459,
+        "buildings": 45548,
+        "lost_buildings": 121
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 62,
+        "share": 0.003522327008294512,
+        "buildings": 80067,
+        "lost_buildings": 218
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 40,
+        "share": 0.009186954524575103,
+        "buildings": 22172,
+        "lost_buildings": 121
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 446,
+      "lost_buildings": 698,
+      "lost_share": 0.00938769496305963,
+      "lost_building_share": 0.004259344012204424,
+      "gained_cells": 215,
+      "gained_buildings": 119,
+      "band_pass": {
+        "n": 7430,
+        "lost": 206,
+        "share": 0.02772543741588156,
+        "buildings": 26328,
+        "lost_buildings": 350
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 206,
+        "share": 0.013791256611099954,
+        "buildings": 51281,
+        "lost_buildings": 350
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 173,
+        "share": 0.005063217045188481,
+        "buildings": 163875,
+        "lost_buildings": 698
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 84,
+        "share": 0.016125935880207335,
+        "buildings": 26328,
+        "lost_buildings": 350
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 1439,
+      "lost_buildings": 1385,
+      "lost_share": 0.015378039006144803,
+      "lost_building_share": 0.004636510933461883,
+      "gained_cells": 335,
+      "gained_buildings": 134
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 4507,
+      "lost_buildings": 2596,
+      "lost_share": 0.027877775715964618,
+      "lost_building_share": 0.006109874178014809,
+      "gained_cells": 306,
+      "gained_buildings": 50
+    },
+    "finite_to_missing": 10538,
+    "missing_to_finite": 68
+  },
+  "no_unnamed_footway_service": {
+    "600": {
+      "pass_cells": 24255,
+      "lost_cells": 3942,
+      "lost_buildings": 10074,
+      "lost_share": 0.16252319109461966,
+      "lost_building_share": 0.1258196260631721,
+      "gained_cells": 2883,
+      "gained_buildings": 9159,
+      "band_pass": {
+        "n": 6012,
+        "lost": 1811,
+        "share": 0.30123087159015305,
+        "buildings": 22172,
+        "lost_buildings": 5448
+      },
+      "band_both": {
+        "n": 12486,
+        "lost": 1811,
+        "share": 0.1450424475412462,
+        "buildings": 45548,
+        "lost_buildings": 5448
+      },
+      "building_cells_pass": {
+        "n": 17602,
+        "lost": 2426,
+        "share": 0.13782524713100783,
+        "buildings": 80067,
+        "lost_buildings": 10074
+      },
+      "building_cells_band": {
+        "n": 4354,
+        "lost": 1183,
+        "share": 0.2717041800643087,
+        "buildings": 22172,
+        "lost_buildings": 5448
+      }
+    },
+    "900": {
+      "pass_cells": 47509,
+      "lost_cells": 6195,
+      "lost_buildings": 14989,
+      "lost_share": 0.13039634595550317,
+      "lost_building_share": 0.09146605644546148,
+      "gained_cells": 3357,
+      "gained_buildings": 9552,
+      "band_pass": {
+        "n": 7430,
+        "lost": 2278,
+        "share": 0.3065948855989233,
+        "buildings": 26328,
+        "lost_buildings": 6829
+      },
+      "band_both": {
+        "n": 14937,
+        "lost": 2278,
+        "share": 0.15250719689361986,
+        "buildings": 51281,
+        "lost_buildings": 6829
+      },
+      "building_cells_pass": {
+        "n": 34168,
+        "lost": 3471,
+        "share": 0.10158627955982205,
+        "buildings": 163875,
+        "lost_buildings": 14989
+      },
+      "building_cells_band": {
+        "n": 5209,
+        "lost": 1447,
+        "share": 0.27778844307928585,
+        "buildings": 26328,
+        "lost_buildings": 6829
+      }
+    },
+    "1500": {
+      "pass_cells": 93575,
+      "lost_cells": 9036,
+      "lost_buildings": 14290,
+      "lost_share": 0.09656425327277585,
+      "lost_building_share": 0.047838080317090484,
+      "gained_cells": 2768,
+      "gained_buildings": 5845
+    },
+    "2700": {
+      "pass_cells": 161670,
+      "lost_cells": 13895,
+      "lost_buildings": 10998,
+      "lost_share": 0.08594668151172141,
+      "lost_building_share": 0.025884590219494172,
+      "gained_cells": 2047,
+      "gained_buildings": 2408
+    },
+    "finite_to_missing": 25056,
+    "missing_to_finite": 458
+  },
+  "sheet_changes": [
+    {
+      "id": "band15min_pass-01",
+      "baseline": 847.3121916564886,
+      "without": 863.7683920898552,
+      "lost10": false,
+      "lost15": false
+    },
+    {
+      "id": "band15min_pass-03",
+      "baseline": 810.8185535936899,
+      "without": 1786.9148390301027,
+      "lost10": false,
+      "lost15": true
+    },
+    {
+      "id": "band15min_fail-03",
+      "baseline": 962.5720129691751,
+      "without": 1011.0011949739137,
+      "lost10": false,
+      "lost15": false
+    }
+  ],
+  "pruning_effect": {
+    "600": {
+      "lost_pruned": 104,
+      "lost_unpruned": 110,
+      "lost_only_with_pruning": 0,
+      "lost_only_without_pruning": 6
+    },
+    "900": {
+      "lost_pruned": 414,
+      "lost_unpruned": 446,
+      "lost_only_with_pruning": 0,
+      "lost_only_without_pruning": 32
+    },
+    "1500": {
+      "lost_pruned": 1323,
+      "lost_unpruned": 1439,
+      "lost_only_with_pruning": 0,
+      "lost_only_without_pruning": 116
+    },
+    "2700": {
+      "lost_pruned": 4239,
+      "lost_unpruned": 4507,
+      "lost_only_with_pruning": 0,
+      "lost_only_without_pruning": 268
+    }
+  },
+  "reason_transitions": {
+    "0->0": 246672,
+    "0->1": 8307,
+    "0->2": 1773,
+    "0->3": 0,
+    "1->0": 0,
+    "1->1": 57541,
+    "1->2": 0,
+    "1->3": 0,
+    "2->0": 70,
+    "2->1": 1650,
+    "2->2": 14489,
+    "2->3": 0,
+    "3->0": 0,
+    "3->1": 0,
+    "3->2": 0,
+    "3->3": 0
+  },
+  "browser_sources": [
+    "data\\layers\\own_grocery_bike.tif",
+    "data\\layers\\own_grocery_drive.tif",
+    "data\\layers\\own_grocery_walk.tif",
+    "data\\layers\\valhalla_grocery_bike_controlled.tif",
+    "data\\layers\\valhalla_grocery_drive.tif",
+    "data\\layers\\valhalla_grocery_walk.tif"
+  ],
+  "class_penalties": {
+    "track": 0.0,
+    "path": 0.0,
+    "footway": 0.0,
+    "service": 0.0
+  }
+}

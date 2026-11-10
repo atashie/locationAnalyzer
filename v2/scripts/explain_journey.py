@@ -54,6 +54,13 @@ CATEGORY = "grocery"
 NO_PREDECESSOR = -9999
 
 
+def classes_of(data) -> set:
+    hw = data.get("highway")
+    if isinstance(hw, (list, tuple)):
+        return {str(x) for x in hw}
+    return {str(hw)} if hw else set()
+
+
 def edge_name(data) -> str:
     n = data.get("name")
     if isinstance(n, (list, tuple)):
@@ -70,7 +77,11 @@ def main() -> int:
     ap.add_argument("journey")
     ap.add_argument("--near-m", type=float, default=120.0,
                     help="list every edge within this distance of the cell centre")
+    ap.add_argument("--drop", default="",
+                    help="comma-separated OSM highway classes to remove first, e.g. track,path. "
+                         "Use this to inspect the counterfactual route, not just assert its time.")
     args = ap.parse_args()
+    drop = {c.strip() for c in args.drop.split(",") if c.strip()}
 
     rows = {r["journey_id"]: r for r in csv.DictReader(args.sheet.open(encoding="utf-8-sig"))}
     if args.journey not in rows:
@@ -86,6 +97,11 @@ def main() -> int:
     t = time.perf_counter()
     G = ox.load_graphml(GRAPH_CACHE)
     G = ox.project_graph(G, to_crs=GRID.crs)
+    if drop:
+        doomed = [(u, v, k) for u, v, k, d in G.edges(keys=True, data=True)
+                  if classes_of(d) & drop]
+        G.remove_edges_from(doomed)
+        print(f"removed {len(doomed):,} edges of class {sorted(drop)}")
     G = add_travel_times(G, mode=MODE)
     if MODE == "walk":
         G = symmetrise(G)
@@ -126,9 +142,15 @@ def main() -> int:
                        key=lambda dd: dd.get("travel_time", math.inf)) or {}
         cand.append((d, gi, edge_name(data)))
     cand.sort()
+    # Print the count before the list, and say when the list is cut. The first version printed the
+    # nearest 14 with no total, and I then wrote "every one of the 14 edges within 120 m is a
+    # track, path, footway or service way" into an engineering note -- there were 17, and 14 was my
+    # own slice presented as the population (Codex pass 34).
+    print(f"  {len(cand)} edges qualify; showing the nearest {min(len(cand), 14)}")
     for d, gi, name in cand[:14]:
-        mark = ""
-        print(f"  {d:7.1f} m  geom#{gi:<7} {name}{mark}")
+        print(f"  {d:7.1f} m  geom#{gi:<7} {name}")
+    if len(cand) > 14:
+        print(f"  ... {len(cand) - 14} more, farther than {cand[13][0]:.1f} m")
     if not cand:
         print("  (none)")
 
@@ -166,11 +188,22 @@ def main() -> int:
     frac = float(shapely.line_locate_point(eidx.geoms[gi], pt, normalized=True))
 
     print(f"\n--- what we snapped to ---")
-    print(f"  matched edge      {edge_name(matched)}")
+    # The matched edge's own OSM way id. Without it I read the way id off the first ROUTE segment
+    # and reported way 1254722642 as "what it snapped to"; the snapped way is 430448289 and
+    # 1254722642 is the next full segment along (Codex pass 34).
+    matched_osmid = matched.get("osmid")
+    print(f"  matched edge      {edge_name(matched)}  way {matched_osmid}")
     print(f"  access leg        {access_m:.1f} m straight line, "
           f"{access_m / access_speed_mps(MODE):.1f} s at {access_speed_mps(MODE):.2f} m/s"
           f"   (cap {MAX_ACCESS_M:.0f} m)")
-    print(f"  position on edge  fraction {frac:.4f} of its geometry")
+    matched_len = float(eidx.geoms[gi].length)
+    # Which END of the matched edge, and therefore how much of it is walked. This matters more
+    # than it looks: on the no-track counterfactual the matched edge is a 531 m footway and the
+    # cell sits near its far end, so 476 m of the journey is on the matched edge alone and the
+    # "partial first edge" accounts for 340 s. Without this line that figure reads as a defect.
+    on_edge_m = matched_len * (frac if chosen == eidx.start_idx[gi] else (1.0 - frac))
+    print(f"  position on edge  fraction {frac:.4f} of a {matched_len:,.0f} m geometry")
+    print(f"  walked on it      {on_edge_m:,.0f} m to reach the chosen endpoint")
     print(f"  endpoint used     {'end' if chosen == eidx.end_idx[gi] else 'start'} "
           f"= OSM node {rev.get(chosen, chosen)}")
     print(f"  on-network part   {float(snapped.network[0]):.1f} s")
@@ -218,12 +251,23 @@ def main() -> int:
         nm = sel["names"].iloc[node_to_places[dest_node][0]]
         shop = nm.get("primary") if isinstance(nm, dict) else str(nm)
     print(f"\n  destination       {shop}  (node {rev.get(dest_node, dest_node)})")
+    # The authoritative number is `snapped.network`, measured from the matched POINT. The segment
+    # sum starts at the chosen ENDPOINT, so it omits the partial first edge. Printing both and
+    # their difference makes a disagreement visible instead of leaving two plausible totals -- the
+    # first version printed only the sum, and when a defect made it 340 s low it read as two tools
+    # contradicting each other rather than as one of them being wrong.
+    network_s = float(snapped.network[0])
+    access_s = access_m / access_speed_mps(MODE)
     print(f"  segments          {hops}")
-    print(f"  route length      {total_m:,.0f} m = {total_m / 1609.344:.2f} miles")
-    print(f"  route time        {total_s:,.1f} s = {total_s / 60:.1f} min")
-    print(f"  + access leg      {access_m / access_speed_mps(MODE):.1f} s")
-    print(f"  implied speed     {total_m / total_s:.2f} m/s on the network"
-          if total_s > 0 else "")
+    print(f"  segment sum       {total_m:,.0f} m = {total_m / 1609.344:.2f} miles, "
+          f"{total_s:,.1f} s")
+    print(f"  on-network        {network_s:,.1f} s  (from the matched point, authoritative)")
+    print(f"    difference      {network_s - total_s:+.1f} s = the partial first edge")
+    print(f"  + access leg      {access_s:.1f} s over {access_m:.1f} m")
+    print(f"  PUBLISHED TOTAL   {network_s + access_s:,.1f} s = "
+          f"{(network_s + access_s) / 60:.1f} min")
+    if total_s > 0:
+        print(f"  implied speed     {total_m / total_s:.2f} m/s on the network")
     print(f"\n  streets used, most segments first:")
     for name, n in names.most_common(12):
         print(f"    {n:>3}x  {name}")

@@ -71,6 +71,41 @@ own engine. Worse, E1b measures `Pr(product PASS and comparator FAIL)` over the 
 `Pr(wrong | displayed)` — so a 1% frame-wide rate can coexist with 10% of *shown* results being wrong.
 **Check that the quantity under measurement is the one a user is harmed by.**
 
+## 2026-11-10: the measurements were right and every inference from them was wrong
+
+The owner walked one audited journey and found 25 minutes where the layer said 13.5. Everything that
+followed was measured on real data, and **six of the eight things Codex pass 34 corrected were in
+what the numbers were numbers *of*** — not in the arithmetic, which reproduced:
+
+- a **ratio between two different journeys**: our 1,131 m against the owner's 1.3 miles, presented
+  as "the route is half the real distance" when the two are lengths of journeys that need not be
+  the same one;
+- a **bracket across two destinations**: the no-track counterfactual routed to a different shop, so
+  "the observation sits between the two bounds" compared three things, not two;
+- a **class exclusion standing in for a usability question**: removing `track`+`path` costs 0.39% of
+  15-minute PASS buildings, removing `footway` costs 3.775% and `service` 9.004%, and none of them
+  measures whether a way exists on the ground — the tag that would (`surface`) was never extracted;
+- a **net change reported as a gross one**: "10,010 cells into UNKNOWN" was a net movement in
+  non-finite times, of which 1,773 became `BEYOND_HORIZON`, which are *known FAILs*;
+- **two differently-defined rates compared directly**: "3 of 16 sheet rows" counted any time change
+  against a metro-wide rate counting buildings that lose a PASS. One row loses a PASS;
+- a **print limit read as a population**: my tool showed the nearest 14 edges and I wrote "every one
+  of the 14 edges within 120 m". There are 19.
+
+**The rule: when a number is produced to inform a decision, the thing most likely to be wrong is
+what it is a number of.** Checking the computation does not touch this class of error at all, and
+every one of these passed that check. The question that catches them is *"what exactly is in the
+numerator and what exactly is in the denominator, and are they the same population"* — the same
+question E1b failed in the fitness finding below, which is why this note is where it belongs.
+
+**The corollary, and the reason it mattered here.** Framing the question wrongly stopped me finding
+the cause. I measured highway-class sensitivity for two rounds; the actual mechanism was that the
+approach is tagged **`access=private`**, is correctly penalised at 120 s per edge, and wins anyway
+because 480 s of penalty cannot beat a 968 s detour. That is a **calibration** finding with a cheap
+fix — 600 s fixes the cell for 1.10% of 15-minute PASS buildings — and it was reachable only once
+the framing correction forced "what is causing this" in place of "which class should we delete".
+See [[project-phase1-s3-soft-way-dependence]] and [[35-codex-review-pass34]].
+
 Related: [[feedback-experiments-over-priors]], [[feedback-fix-the-domain-not-the-example]],
 [[feedback-a-relative-invariant-cannot-see-an-absence]],
 [[feedback-computable-property-is-not-the-claim]],

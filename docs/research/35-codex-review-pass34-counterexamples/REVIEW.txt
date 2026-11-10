@@ -1,0 +1,326 @@
+Adversarial review, pass 34
+Reviewed commit: 893156360c7a97c606da74f2ac81504984fcd2db, v2-rethink.
+Scope: findings and recommendations in the two engineering notes, not code hygiene.
+
+The stale-raster finding survives, including its proposed mechanism. The soft-way
+note establishes sensitivity to two highway tags; it does not establish the cause
+of the owner's longer walk, physical nonexistence of a way, or a general exposure
+rate for unverified ways. The recommendation needs an artifact rebuild procedure
+and a distinction between an implementable penalty policy and an existing option.
+
+(a) HIGH: withdraw the causal headline and the assertion that speed is ruled out.
+Source: soft-way note lines 1, 15-19, 37-38, 60-63.
+Status: arithmetic is slightly wrong; causal conclusion is unsupported.
+
+Exact decomposition at (286,129), current code (unchanged from stored float32):
+  access: 35.470036325 m / 1.26 m/s = 28.150822480 s
+  network: 782.667731114 s at 1.40 m/s = 1,095.734823559 model m
+  total: 810.818553594 s, 1,131.204859884 model m including access
+  partial snapped edge: 7.562306219 m, 5.401647299 s
+
+Multiplying all time by 1.4 gives 1,135.145975 m: an overstatement of only
+3.941115 m. Correcting that does NOT eliminate the numerical near-half ratio:
+1,131.2 / (1.3 * 1,609.344) = 54.1%. What fails is calling the denominator
+the measured real length of this same journey. The owner estimated the length
+of the walk they took. We do not have that route, exact origin, or confirmation
+of the same destination. The model represents a substantially shorter journey
+than their estimate, conditionally on comparing the same trip; neither the
+graph defect nor the absence of a speed/delay error follows from this arithmetic.
+The owner explicitly mentions intersections, and this model omits their delays.
+
+Executable evidence: baseline_journey.json, baseline.npy, inputs.json.
+
+(b) HIGH: the deletion result is not a bracket around a fixed journey.
+Source: soft-way note lines 52-63.
+Status: the 1,787 s figure reproduces; its interpretation is wrong.
+
+Removing track gives:
+  access 45.964083128 m, 36.479431054 s
+  network 1,750.435407976 s, 2,450.609571166 model m
+  total 1,786.914839030 s = 29.7819 min; 2,496.573654295 model m
+This exceeds 1.3 miles by 404.426454 m (19.33%). Removing path too changes
+nothing for this cell. The replacement snaps to the 46 m permissive footway,
+way 1442221664, takes 476.139 m of its initial partial edge, then follows Chase
+Park Road, Dogwood Drive, Woodland Avenue, Westwood Drive, footways, Briar Bridge
+Lane, Ransom Street, West Cameron Avenue, Cameron Court, further footways and
+South Roberson Street. It ends at Seal The Seasons, node 2763965168. The
+published journey ends at Hill's Family Asian Markets, node 2904797599.
+
+There IS a close graph alternative with track/path removed and the destination
+held at Hill's: force the service entry 57.379836683 m away, way 744582082,
+endpoint 6968698266. Access is 45.539552923 s, network 1,487.520380658 s:
+  1,533.059933581 s = 25.5510 min
+  2,139.908369604 model m = 1.3297 miles (2.28% above 1.3 miles)
+Route: service -> Dogwood Drive -> Westwood Drive -> West University Drive ->
+Ransom Street -> West Cameron Avenue/Cameron Court -> footways/South Roberson
+Street -> West Franklin Street -> footways to Hill's.
+This result is identical with and without component pruning. It is a credible
+candidate consistent with the reported walk, not proof of the owner's actual
+route or of the traversability of the 57 m straight-line connector. The model
+currently forces the nearest edge; this forced-entry diagnostic is not its
+normal output. To ANY selected grocery, that same service entry gives a still
+different 1,325.929431 s / 1,849.925666 m trip to Seal The Seasons. To Hill's,
+the nearest footway gives 1,994.0 s / 2,786.6 m. This is precisely why origin
+entry and destination must be held explicit.
+
+Do not mistake the committed explain tool's endpoint segment sum for the whole
+journey: it omits the partial initial edge. That omission is 340.099304 s and
+476.139026 m in the no-track case. Our route files retain both quantities.
+
+Executable evidence: no_track_journey.json; no_track_path_control_hill_nearby.json
+(service entry is the second item); no_track_path_control_nearby.json.
+
+(c) HIGH: the exposure number answers a narrower question than the framing.
+Source: soft-way note lines 63, 65-84, 88-95.
+Status: published track/path arithmetic reproduces; generalization is unsupported.
+
+Building-weighted GROSS lost PASS share, same current-code baseline:
+  classes removed              T10       T15       T25       T45
+  track                        0.014%    0.046%    0.058%    0.119%
+  path                         0.245%    0.355%    0.367%    0.460%
+  track + path                 0.259%    0.393%    0.410%    0.562%
+  footway                      5.134%    3.775%    1.977%    1.095%
+  service                     13.012%    9.004%    4.015%    1.913%
+  footway + service           12.470%    8.964%    4.963%    2.828%
+  unnamed footway + service   12.582%    9.147%    4.784%    2.588%
+  all four                    12.428%    8.976%    5.103%    3.207%
+
+These are full-pipeline deletion sensitivities, not measured false-inclusion
+rates. The broader deletions change destination snapping (see below); do not
+present their numbers as clean fixed-destination route effects. They nonetheless
+refute treating track/path deletion as a census of unverified/unnamed-way exposure.
+Deleting more classes is not guaranteed to increase reported time: the model
+resnaps origins and destinations and chooses by cost, not reported seconds.
+
+OSM track does not mean necessarily unpaved; surface/tracktype/access are separate
+properties. Informal footways exist, and path need not mean informal. References:
+https://wiki.openstreetmap.org/wiki/Tag:highway%3Dtrack
+https://wiki.openstreetmap.org/wiki/Tag:informal%3Dyes
+The exact snapped track and three succeeding track segments carry access=private
+and already receive access penalties; the path has no such tag in this cache.
+The cached graph has no surface, tracktype, or smoothness values on these segments;
+that is missing evidence, not evidence that they are physically artificial.
+
+Executable evidence: metrics.json; summary.json; unnamed_summary.json.
+
+(d) Original comparison is controlled with respect to destinations, but pruning
+and missing-value language need qualification.
+Source: soft-way note lines 68-78, 90.
+Status: destination-contamination suspicion refuted for the original three runs;
+the UNKNOWN statement is wrong.
+
+                         baseline       no track       no track/path
+  retained nodes          539,814         538,178          534,949
+  components pre-prune      3,046           3,104            3,124
+  nonisolated nodes pruned 13,608          13,807           14,159
+  isolated nodes removed    2,425           3,862            6,739
+  destination nodes          510             510              510
+  accepted snapped places    549             549              549
+
+All destination NODE IDENTITIES, POI snap nodes, and 300 m admission decisions
+are identical across these three variants, not just their counts. Baseline has
+550 selected places, of which 549 meet the snap cap. Component pruning does
+change the retained node set by 1,636 / 4,865 nodes relative to baseline.
+
+Control: retain the baseline node set, delete track/path, keep the fixed baseline
+destination set, do not prune its disconnected pieces. Lost PASS counts are
+110/446/1,439/4,507 at T10/15/25/45, versus 104/414/1,323/4,239 after pruning.
+ZERO published lost PASSes are introduced only by pruning, at any threshold.
+Pruning rescues 6/32/116/268 otherwise-lost cells. A further direct path check
+covered the union of 5,287 lost cells across those thresholds: every one uses
+track/path on its original chosen network route, including its partial edge.
+So do not report the original lost-PASS counts as a destination/pruning artifact.
+They remain sensitivity to deletion, not proof that those ways are unusable.
+
+The broader splits are different: footway deletion has 509 destination nodes and
+82 POI resnaps; service has 503/393; both has 501/478; unnamed both has 502/469.
+Counts alone would not be a sufficient destination control.
+
+73,750 -> 83,760 is nonfinite seconds, NOT UNKNOWN outcomes. The gross transitions
+are 10,080 finite->nonfinite and 70 nonfinite->finite. Among the 10,080:
+  8,307 OK -> OFF_NETWORK
+  1,773 OK -> BEYOND_HORIZON
+The latter are known FAILs at T10/15/25/45, not UNKNOWNs. Another 1,650 previously
+BEYOND_HORIZON cells become OFF_NETWORK. The OFF_NETWORK count rises from 57,541
+to 67,498, and BEYOND_HORIZON from 16,209 to 16,262. OFF_NETWORK outcomes also
+depend on their lower bounds and the criterion. A net nonfinite difference cannot
+be labelled 10,010 cells whose only access was a soft way.
+
+The table is gross loss: at T15 there are also 245 newly passing cells / 151
+buildings. Net reduction is 169 cells / 493 buildings, not 414 / 644. At T10
+there is even a net gain of 45 PASS cells. Disclose gains beside losses when
+describing what exclusion 'costs'.
+
+Executable evidence: controlled.py, route_checks.json, metrics.json,
+no_track_path_control_reason.npy. The pruned control is exactly array-equal to
+the original no_track_path.npy.
+
+(e) Enrichment reproduces; it does not explain the statistic used in the note.
+Source: soft-way note lines 80-84.
+Status: probably-true claim now verified; explanation overstated and mismatched.
+
+For track/path deletion, using baseline seconds and PASS-side bands:
+  T10: 70/6,012 = 1.1643% lose PASS, vs 104/24,255 = 0.4288% overall (2.72x).
+  T15: 197/7,430 = 2.6514%, vs 414/47,509 = 0.8714% overall (3.04x).
+If the denominator is literally the whole +/-90 s band, including original FAILs,
+rates are 70/12,486 = 0.5606% and 197/14,937 = 1.3189%. Original FAILs cannot
+lose a PASS, which is why the PASS-side comparison is cleaner.
+With the sheet's >=1-building eligibility, cell-weighted PASS-band rates are
+38/4,354 = 0.8728% and 80/5,209 = 1.5358%, versus 58/17,602 = 0.3295% and
+161/34,168 = 0.4712% over all eligible PASS cells. Building-weighted PASS-band
+rates are 119/22,172 = 0.5367% and 334/26,328 = 1.2686%.
+
+The three changed Chapel Hill rows are:
+  band15min_pass-01: 847.312 -> 863.768 s; remains PASS
+  band15min_pass-03: 810.819 -> 1,786.915 s; loses PASS
+  band15min_fail-03: 962.572 -> 1,011.001 s; remains FAIL
+'3 of 16' counts any >=0.5 s change, whereas 0.39% counts buildings losing
+15-minute PASS. They have different outcomes, denominators, weights, strata,
+and geographical selection. Enrichment is measured, but cannot reconcile that
+comparison by itself. There is only one lost-PASS row, among three sampled
+15-minute PASS-band rows, not three false inclusions. Changed times are not
+three field-verified defects either.
+
+Executable evidence: analyse.py, metrics.json -> sheet_changes and band fields.
+
+(f) The stale-raster mechanism is confirmed on the real data.
+Source: stale-raster note lines 21-46.
+Status: verified, stronger evidence than merely matching build dates.
+
+Reimplementing the pre-ab01ffa symmetrise against the same weighted raw graph
+reproduces the stored raster EXACTLY over all 330,502 cells. Current code differs
+at 7,246 cells containing 11,436 buildings; finiteness changes zero; maximum
+absolute difference 2,316.80078125 s, cell (366,76). Gained/lost PASS counts
+are exactly (10,0), (15,1), (13,0), (6,0) at the four thresholds.
+
+The lost T15 cell is (211,150): 883.943918889 -> 923.709532263 s. Its origin
+snap, access 100.817338256 s, endpoint and destination are unchanged.
+At directed pair 6814689349 -> 6801677574:
+  old winner: private Harkness Circle, way 572930114
+    length 65.079327222 m, time 46.485233730 s, cost 166.485233730
+  newly added reverse: open service way 727164383
+    length 120.751185946 m, time/cost 86.250847104 s
+The service road previously existed only in the opposite direction. The fix adds
+its reverse; cost falls by 80.234386626 while real time rises by 39.765613374.
+CSR selects that cheaper/slower parallel edge. The rest of the chosen route is
+unchanged. This is exactly the note's mechanism, not just a possible mechanism.
+The walked cell remains 810.818553594 s under both old and current graphs.
+
+Executable evidence: old.npy, baseline.npy, reverse_edge_evidence.json,
+old_cell_211_150.json, baseline_cell_211_150.json, summary.json.
+
+(g) HIGH: rebuild recommendation is directionally right but incomplete; penalty
+recommendation describes an engineering proposal, not an available class knob.
+Sources: stale-raster lines 68-81; soft-way lines 92-97.
+
+Use a coherent surface build: seconds .npy, reason .npy, min_possible_s .npy,
+_build.json with their digests and parameters, encoded .tif derived from stored
+float32 seconds; then verify and regenerate the appropriate reports. The S2
+builder, spikes/s2_building_weighted_coverage.py grocery walk, writes that bundle.
+The recommended G1 script writes seconds/TIFF/oneway mask but not reasons,
+bounds or build sidecar; S0 verifies/reports but does not write those arrays.
+The present symmetrise-only change preserves finiteness; this observation is not
+a general substitute for regenerating and binding the companion artifacts.
+
+Regenerate data/s0_status_triangle_grocery_walk.json AFTER the new layer and check
+without --allow-artifact-mismatch. Refresh graph-derived one-way masks if consumed.
+Regenerate audit draws, their .meta.json raster hashes/census, and destination
+enrichment against that new build. Re-running recover_audit_destinations alone
+does not regenerate samples or their metadata. Preserve field observations by
+stable cell/journey identity and version the replacement sheets rather than
+overwriting open files. Recompute affected measurement outputs, figures, and
+claims that read the raster (including verify_e1c_figures.py's figures).
+
+The frozen B/C sample frames themselves do NOT depend on travel time: B depends
+on buildings/grid/seed, C on grid/seed. Preserve them; recompute their layer-based
+measurements. The frames' manifests and build_dev_frames.py confirm those inputs.
+
+The CURRENT browser manifest/bins do not consume this Triangle raster. The
+exporter's filename regex rejects own_triangle_grocery_walk.tif; discovery
+selects data/layers/own_grocery_walk.tif instead. Running the exporter after a
+Triangle rebuild will therefore not publish the corrected Triangle layer. Decide
+the intended browser dataset first; change discovery/configuration and regenerate
+both bins and manifest together if Triangle is to be served. A ceil encoding
+stamp identifies rounding, not the graph revision or source-raster identity.
+
+access_penalty_s consults access/foot/etc tags, not highway classes. Open track,
+path, footway and service examples all return zero. The two-weight downstream
+machinery can support a new class penalty, so penalisation IS a real engineering
+option; an explicit class rule, value and measurement remain to be implemented.
+Moreover, finite penalties do NOT guarantee losing to any paved alternative:
+our executable 100 s track + 120 s penalty beats a 1,000 s paved road, reporting
+100 s. Guaranteed preference requires a different ordering/policy. The walked
+route already pays private-access penalties on its track segments and still wins.
+Do not conflate class, surface, permission, and verified traversability.
+
+profile_version currently hashes constants and walk_symmetrised=True, not the
+symmetrise implementation: replacing the function leaves its hash unchanged
+(speeds-v0+9893b1b0168ff19a). Existing profile keys cannot invalidate this change.
+
+Executable evidence: analyse.py -> browser_sources; check_policy.py;
+policy-counterexample.json. Builder output dependencies are explicit in the
+referenced scripts; no production rebuild or export was performed during review.
+
+(h) Other corrections a product reader would reasonably act on.
+
+The precise snap identity is WRONG: it is unnamed track way 430448289, between
+13233527148 and 11663898541, at 35.470036325 m. Way 1254722642 is the next
+full segment. The note omitted the initial 7.562306219 m and therefore has
+297.873486 m of listed track/path instead of 305.435792 m including that partial
+edge before Raintree. Our cost-selected route has 559.151708 m on SOUTH Merritt
+Mill Road plus 46.302540 m on NORTH Merritt Mill Road, rather than its claimed
+573 m on South. The exact geometry/directional edge data are in route_checks.json.
+
+There are 17 EdgeIndex physical-geometry entries at true distance <=120 m, not
+14. The committed explain tool prints only cand[:14], and its tree query is a
+bounding-box candidate query. That output cap cannot establish an edge census.
+All 17 here still belong to the four listed classes, so the qualitative local
+class observation survives.
+
+'Unmapped track' contradicts citing an OSM way. 'Artificial', 'impassable', and
+'some are presumably usable and some are not' are not established by this walk
+or these graph deletions. A track/path deletion experiment is not ground truth.
+Keep the shared-graph blind-spot argument as a conditional risk, not proof that
+this walk confirmed an impassable shortcut.
+
+The stale note correctly says nothing under v2/data is tracked (git ls-files
+v2/data returns nothing; check-ignore confirms the provenance JSON is ignored).
+Call these local/stored artifacts rather than 'committed' rasters. Making
+provenance mandatory is a sound recommendation, but counts alone do not bind
+destination identities or graph/code inputs; store their actual identifiers and
+digests. The current profile digest demonstration above shows the missing code
+dependency in a directly executable form.
+
+Reproduction and verification:
+  cd C:/Users/arikt/Documents/GitHub/distanceFinder/v2
+  python .review34/reproduce.py
+  python .review34/controlled.py
+  python .review34/unnamed.py
+  python .review34/check_routes.py
+  python .review34/analyse.py
+  python .review34/check_policy.py
+  python .review34/run_tests.py
+
+reproduce.py resumes completed variants from summary.json and reuses a projected,
+weighted graph cache. inputs.json records the reviewed head and SHA-256s of raw
+graph, POIs, stored seconds and building weights. A fresh data reproduction should
+use a fresh scratch cache/summary. The historical symmetrise is copied exactly
+from ab01ffa^; current code is otherwise unchanged. Weighted filtering precedes
+class deletion here; it commutes with deletion for walk and reproduces the note's
+original three full surfaces/counts. Raw removed-edge counts in the note include
+edges later forbidden by access filtering; our summary labels weighted counts.
+
+Tests: first direct pytest attempt encountered Windows sandbox ACL denial for
+pytest's mode=0700 temp directory. Scratch-only run_tests.py keeps temporary files
+under .review34 and uses inherited directory ACLs; it does not change product
+code or tests. Result: 1,166 passed, 24 skipped, 1 warning (timeout plugin absent).
+
+All review-created files are under v2/.review34 (approximately 451 MB decimal),
+including the 329,738,191-byte weighted graph cache, saved float64 surfaces/node
+arrays, route JSONs, metrics, input hashes, logs, scripts and this review.
+No docs/experiments/audit file was modified. Before/after hashes match for the five
+unlocked audit files. The two with-destinations CSVs are locked by the spreadsheet
+and could not be opened for hashing; no write was attempted. Concurrent edits to
+v2/scripts/explain_journey.py and the soft-way engineering note were observed and
+preserved; they are not this review's changes. The claims above refer to the
+requested committed version.

@@ -5,8 +5,9 @@ current-code rebuild refused to reproduce the shipped layer.
 
 ## The fact
 
-`v2/data/layers/own_triangle_grocery_walk.npy` was built **2026-11-04 13:42** and verified
-bit-identical by `spikes/s0_status_on_real_layer.py` at **14:43**
+`v2/data/layers/own_triangle_grocery_walk.npy` — **stored, not committed: nothing under
+`v2/data/` is tracked, which is its own problem, below** — was built **2026-11-04 13:42** and
+verified bit-identical by `spikes/s0_status_on_real_layer.py` at **14:43**
 (`data/s0_status_triangle_grocery_walk.json`: `float32_identical: true`, `cells_differing: 0`).
 
 **`ab01ffa`, 2026-11-04 21:12**, then fixed a production defect in `speeds.symmetrise`. It had
@@ -20,7 +21,7 @@ The raster was never rebuilt. `symmetrise` now adds **54,453** reverse edges
 
 ## What differs
 
-A current-code rebuild against the committed raster:
+A current-code rebuild against the stored raster:
 
 | | |
 |---|---|
@@ -39,11 +40,22 @@ Verdict movement is small:
 | 45 | 6 | 0 |
 
 **One cell lost a 15-minute PASS, and that should not be possible if adding pedestrian edges can
-only shorten journeys.** It is possible, and the reason is in `csr.py`: for parallel edges the
-**cost**-minimal one wins and carries *its own* time. A new reverse edge that is cheaper but slower
-can therefore displace a faster one and lengthen the reported journey. So the staleness is not
-monotone, and I should not have assumed it was — the assumption survived one sentence before the
-data refuted it. Not chased further; recorded so the next person does not re-derive it.
+only shorten journeys.** It is possible, and Codex pass 34 **confirmed the mechanism exactly** on
+the real data rather than leaving it as my hypothesis. The cell is **(211, 150)**, moving
+883.9439 → 923.7095 s. At the directed pair `6814689349 → 6801677574`:
+
+| edge | time | cost |
+|---|---|---|
+| the old private Harkness Circle, way `572930114` | 46.4852 s | 166.4852 |
+| the newly added reverse `service` edge, way `727164383` | 86.2508 s | 86.2508 |
+
+`csr.graph_to_cost_time_csr` keeps the **cost**-minimal parallel edge and carries *its own* time, so
+the cheaper-but-slower new edge displaced the faster penalised one. Access, endpoint, destination and
+the rest of the route are unchanged. So the staleness is **not monotone**, and I should not have
+assumed it was — the assumption survived one sentence before the data refuted it.
+
+Pass 34 also reproduced the whole diagnosis independently: reinstating the historical `symmetrise`
+regenerates the stored raster **bit-for-bit across all 330,502 cells**.
 
 ## Why it matters more than 2.19% suggests
 
@@ -52,7 +64,7 @@ metadata. So the owner is being asked to walk journeys whose predicted times wer
 pedestrian edges missing.
 
 It also broke a verification claim. `scripts/recover_audit_destinations.py` checked its rebuild
-against the committed raster on the 35 audit rows, all 35 matched, and I wrote in the sheet's
+against the stored raster on the 35 audit rows, all 35 matched, and I wrote in the sheet's
 README that the recovered destinations therefore "belong to the published numbers". **None of the
 35 is among the 7,246**, which is why they agreed — the sampler had no reason to pick changed
 cells. See [[project-phase1-s3-audit-destination-recovery]] for the withdrawal and for Codex pass
@@ -60,16 +72,31 @@ cells. See [[project-phase1-s3-audit-destination-recovery]] for the withdrawal a
 
 ## It does not explain the owner's walk
 
-`band15min_pass-03` is **810.8 s in both** the committed raster and the current rebuild. The cell
+`band15min_pass-03` is **810.8 s in both** the stored raster and the current rebuild. The cell
 the owner walked is not among the 7,246. So the staleness and
 [[project-phase1-s3-soft-way-dependence]] are two independent problems, and fixing this one would
 not have moved that journey by a second.
 
-## What to do
+## What to do — and the one-command version of it was wrong
 
-**Rebuild the layer**, and the audit sheets from it. The rebuild is a known command
-(`spikes/g1_own_graph_layer.py`, verified by `spikes/s0_status_on_real_layer.py`) and the
-differences are measured, so this is bookkeeping rather than a decision.
+**Rebuild the layer**, and the audit sheets from it. Revision 1 called this "a known command
+(`spikes/g1_own_graph_layer.py`) … bookkeeping rather than a decision". Codex pass 34 found that
+insufficient in two ways.
+
+**The G1 command does not write all the companions.** A coherent rebuild has to produce the seconds,
+the reason raster, the lower bounds, the build sidecar and its digests, and the encoded TIFF
+together — the **S2 builder** writes that bundle; G1 does not. Then S0 verification, then the audit
+draws, their metadata hashes and the destination enrichment, then any published figure computed off
+the old surface. Sequenced, not one command.
+
+**The browser is not downstream of this raster at all.** The exporter ignores
+`own_triangle_grocery_walk.tif` and selects `own_grocery_walk.tif` — the earlier 401×550 slice. So
+a Triangle rebuild does **not** update what the browser serves, and serving Triangle at all needs
+explicit export configuration plus regenerated bins and manifest. That is a separate gap from the
+staleness and it belongs to plan §0 step 6.
+
+**The frozen B/C sampling frames are safe.** Their inputs are the buildings file, the grid and the
+seed — not this raster — so a rebuild does not disturb `51a59463` or `7914e80a`.
 
 The process lesson is the one worth keeping: **a fix to a graph-building function invalidates every
 artifact built from it, and nothing in the repository connected those two facts.** The provenance
