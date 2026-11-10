@@ -184,14 +184,21 @@ destination actually used, date, and outcome.
 | 7 | **Grocery and geocoding truth audit** — destination validity, resolution, coverage | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
 | 8 | **The one-page decision report**, then a bounded household release | 1/2 day + sessions | misunderstanding and overgeneralisation |
 
-**Step 2 changes what gets reported**, so it is an owner decision: it will be drafted as an additive
-§13 amendment and flagged, not adopted silently.
+**Step 2 changed what gets reported**, so it was an owner decision: it was drafted as an additive
+§13 amendment and flagged rather than adopted silently, and **the owner adopted it on 2026-11-10**.
 
-> **The draft exists and is not in force.** Design revision 12 adds **E1c**,
-> `Pr(comparator = FAIL | product = PASS)` as a reported measure with no acceptance role. E1c's
-> denominator is the *claimed* subset — about **37 observations** on frame C at *T* = 10, not the
-> 417 the design's old example implied — so a 1.0% gate there is impractical and reaching it would
-> need **8.2×** the sampling in expectation, or **8.908×** for 95% assurance of the denominator.
+> **Adopted 2026-11-10, after a review that ran before any code existed.** Design revision 12 adds
+> **E1c**, `Pr(comparator = FAIL | product = PASS)`, as a reported measure with **no threshold and no
+> acceptance role**, and the interval is **Clopper-Pearson declared approximate**. E1c's denominator
+> is the *claimed* subset — about **37 observations** on frame C at *T* = 10, not the 417 the
+> design's old example implied — so a 1.0% bar is impractical at this exposure.
+>
+> **If a bar is ever wanted, the cost is ~299-628 claim observations, not 8.9× the survey.** The
+> 8.2×/8.908× figures are the cost of reaching the denominator by enlarging the **full-frame** draw.
+> A conditional sample drawn from the PASS domain — the pattern §4's four diagnostics already use,
+> 150-200 observations each — reaches it directly: 299 claims tolerate zero errors, 473 one, 628 two.
+> Codex pass 32 confirmed such a sample introduces no selection mismatch for E1c, provided it is
+> kept out of the full-frame estimates and frame C's two-stage design is preserved.
 >
 > **Codex pass 31 reviewed the draft before any code was written, and that ordering paid for
 > itself.** Its verdict: the estimand is legitimate, **the interval specification must not be

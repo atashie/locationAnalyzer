@@ -622,3 +622,90 @@ def test_a_claim_denominator_too_small_for_a_one_percent_bar_is_reported_as_such
     assert tolerated_failures(37, 0.08) == 0, "a looser bar is reachable even at 37"
     assert tolerated_failures(299, 0.01) == 0, "299 claims is the smallest that reaches 1%"
     assert tolerated_failures(473, 0.01) == 1, "473 tolerates one, per design §4's own note"
+
+
+def test_the_conditional_rate_forwards_its_confidence_to_both_endpoints():
+    """Codex pass 32 mutated `conditional_rate` to drop `confidence` from both CP calls and **all
+    146 tests passed** -- so a result labelled 99% could have carried a 95% bound. For (1, 0, 37)
+    the 95% upper is 0.1219048982 and the 99% upper is 0.1663382150; nothing distinguished them.
+    """
+    r95 = stats_conditional_rate_at(0.95)
+    r99 = stats_conditional_rate_at(0.99)
+    assert r95.confidence == 0.95 and r99.confidence == 0.99
+    assert r95.bound_range[0] == pytest.approx(0.1219048982, abs=1e-9)
+    assert r99.bound_range[0] == pytest.approx(0.1663382150, abs=1e-9)
+    assert r99.bound_range[0] > r95.bound_range[0], "a higher level must give a wider bound"
+
+    # Both endpoints, not only the first: with u > 0 the completed endpoint must move too.
+    u95 = conditional_rate(1, 2, 37, confidence=0.95)
+    u99 = conditional_rate(1, 2, 37, confidence=0.99)
+    assert u99.bound_range[1] > u95.bound_range[1]
+    assert u99.bound_range[1] == pytest.approx(
+        clopper_pearson_upper(3, 37, confidence=0.99), abs=1e-12)
+
+
+def stats_conditional_rate_at(confidence):
+    return conditional_rate(1, 0, 37, confidence=confidence)
+
+
+def test_the_conditional_rate_refuses_negative_counts():
+    """Pass 32 removed the non-negativity guard and all 146 tests passed, admitting `u = -1` and an
+    inverted identification range. The guard was present and untested, which is the same as absent
+    the moment someone simplifies it.
+    """
+    for args in ((-1, 0, 37), (0, -1, 37), (0, 0, -1)):
+        with pytest.raises(ValueError, match="must be non-negative"):
+            conditional_rate(*args)
+
+    # An inverted range is what the missing guard produced, so assert the ordering directly.
+    r = conditional_rate(1, 2, 37)
+    assert r.identification_range[0] <= r.identification_range[1]
+    assert r.bound_range[0] <= r.bound_range[1]
+
+
+def test_the_conditional_rate_checks_its_confidence_even_with_no_claims():
+    """Pass 32 removed the `_check_confidence` call and all 146 tests passed -- and the zero-claim
+    branch returns before touching a bound, so an invalid level could pass through unnoticed and be
+    recorded on an undefined result. The guard belongs before the branch.
+    """
+    with pytest.raises(ValueError, match="confidence must lie"):
+        conditional_rate(0, 0, 0, confidence=0.3)
+    with pytest.raises(ValueError, match="confidence must lie"):
+        conditional_rate(1, 0, 37, confidence=1.0)
+
+
+def test_a_count_must_be_an_integer_count():
+    """Pass 32: `conditional_rate(0, 0, float("inf"))` returned `bound_range = (0.0, 0.0)` -- a
+    REASSURING result from an impossible input, which is the worst failure this estimand has
+    available. `conditional_rate(float("nan"), 0, 0)` reported `identified = 0`, because the
+    zero-claim branch discards its arguments. Fractional counts gave ordinary-looking bounds.
+    """
+    for bad in (float("inf"), float("nan"), 0.5, 1.0, True):
+        with pytest.raises(ValueError, match="must be an int count"):
+            conditional_rate(0, 0, bad)
+    with pytest.raises(ValueError, match="must be an int count"):
+        conditional_rate(float("nan"), 0, 0)
+    # `1.0` is rejected even though it equals 1: a float count is a caller error either way.
+    assert conditional_rate(0, 0, 1).defined is True
+
+
+def test_the_completed_endpoint_needs_k_plus_u_zero_not_k_zero():
+    """The conservatism proof covers a ZERO COUNT, and pass 32 found I had widened it to zero
+    IDENTIFIED errors. They differ as soon as `u > 0`: the upper endpoint is computed at `k + u`.
+    """
+    r = conditional_rate(0, 71, 72)
+    assert r.identified == 0
+    assert r.bound_range[0] == pytest.approx(clopper_pearson_upper(0, 72), abs=1e-12)
+    assert r.bound_range[1] == pytest.approx(0.9992878468350281, abs=1e-12)
+    # which is precisely pass 31's counterexample value, now reached with k = 0
+    assert r.bound_range[1] == pytest.approx(clopper_pearson_upper(71, 72), abs=1e-12)
+    assert r.bound_range[1] > 0.99, "so 'conservative at k == 0' cannot cover this endpoint"
+
+
+def test_zero_errors_is_not_the_expected_outcome_at_these_denominators():
+    """The design used to say the denominators are 'where the data will sit', implying zero errors.
+
+    In the admitted equal-rate frame C model, a true 1% rate with 37 claims gives a 31.1% chance of
+    at least one error (pass 32). The conservative case is the one to hope for, not to plan on.
+    """
+    assert 1 - 0.99 ** 37 == pytest.approx(0.3105509141, abs=1e-9)

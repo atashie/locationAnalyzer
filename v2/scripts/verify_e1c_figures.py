@@ -45,7 +45,6 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-import shutil
 import sys
 import tempfile
 
@@ -78,7 +77,9 @@ REQUIRED_CLAIMS = [
     ("the conditioning event", "`= Pr(comparator = FAIL | product = PASS)`"),
     ("the interval method is decided", "The interval, decided 2026-11-10: Clopper-Pearson"),
     ("the bound is labelled approximate", 'Why "approximate", and where it is nonetheless'),
-    ("conservative at zero by proof", "conservative on both frames, by proof"),
+    ("conservatism is per endpoint", "The conservatism is per endpoint, not per result"),
+    ("the lower endpoint condition", "conservative on both frames when `k` = 0"),
+    ("zero errors is not expected", "31.1%"),
     ("away from zero it is not established", "the direction is not established"),
     ("inversion is deferred with a condition", "must be revisited in the same"),
     ("E1c is never gated", "**Reported, never gated**"),
@@ -101,6 +102,12 @@ REQUIRED_CLAIMS = [
     ("the walk is existence evidence", "**existence evidence**"),
     ("populations are not users", "not users or households"),
     ("the eight published combinations", "There are **eight** published combinations"),
+    # Pass 32 replaced the specified bound range with [CP_upper(k+u, n+u), CP_upper(k, n+u)] and
+    # every check passed, because nothing bound the *formula*. These four do.
+    ("the identification range formula", "`[k/n_claim, (k+u)/n_claim]`"),
+    ("the bound range formula", "`[CP_upper(k, n_claim), CP_upper(k+u, n_claim)]`"),
+    ("u is excluded from the denominator", "it never enters `n_claim`"),
+    ("the completed endpoint needs k+u zero", "needs **`k + u == 0`**"),
 ]
 
 # Claims that live in the document header rather than in §3's subsection, so they are matched
@@ -110,6 +117,10 @@ HEADER_CLAIMS = [
     ("the cheap route to a bar is recorded", "conditional sample drawn from the PASS domain"),
     ("revision 12 is adopted", "ADOPTED by the owner 2026-11-10"),
 ]
+
+PASS_TABLE_HEADER_LINE = (
+    "| *T* | frame C PASS cells | share of area | frame B PASS buildings | "
+    "share of structures | `n_claim` at *n*=500, C | B |")
 
 MUTATIONS = {
     "swap the T=10 and T=15 table rows": (
@@ -129,6 +140,20 @@ MUTATIONS = {
     "erase the record of the withdrawn bootstrap": (
         ("**percentile bootstrap resampling whole cells**", "the method"),
     ),
+    # Pass 32's three survivors, now first-class mutations.
+    "swap the frame B and frame C column labels": (
+        (PASS_TABLE_HEADER_LINE,
+         "| *T* | frame B PASS cells | share of structures | frame C PASS buildings | "
+         "share of area | `n_claim` at *n*=500, C | B |"),
+    ),
+    "replace the specified bound-range formula": (
+        ("`[CP_upper(k, n_claim), CP_upper(k+u, n_claim)]`",
+         "`[CP_upper(k+u, n_claim+u), CP_upper(k, n_claim+u)]`"),
+    ),
+    "exchange two zero-error bounds between their cases": (
+        ("**7.7775%** (C, *T*=10)", "**4.0754%** (C, *T*=10)"),
+        ("**4.0754%** (C, *T*=15)", "**7.7775%** (C, *T*=15)"),
+    ),
     "flip the conditioning event to product FAIL": (
         ("`= Pr(comparator = FAIL | product = PASS)`",
          "`= Pr(comparator = PASS | product = FAIL)`"),
@@ -136,22 +161,40 @@ MUTATIONS = {
 }
 
 
-def parse_pass_table(section: str) -> dict[int, list[str]]:
-    """The PASS table, as {threshold: [cells, area share, buildings, structure share, mC, mB]}.
+# The PASS table's column labels, in order. Codex pass 32 swapped the frame B and frame C labels
+# and all 83 checks passed, because binding a figure to a *position* says nothing about what that
+# position means. The header is validated too now.
+PASS_TABLE_HEADER = ["frame C PASS cells", "share of area", "frame B PASS buildings",
+                     "share of structures", "n_claim at n=500, C", "B"]
 
-    Parsed rather than substring-searched, because the defect this exists to catch is a correct
-    figure on the wrong row.
+
+def parse_pass_table(section: str) -> tuple[dict[int, list[str]], list[str], list[str]]:
+    """The PASS table as `({threshold: [six cells]}, header_labels, problems)`.
+
+    Parsed rather than substring-searched, because one defect this catches is a correct figure on
+    the wrong row -- and the header comes back so the other can be caught too: a correct figure in
+    a correctly-positioned column whose *label* has been swapped.
+
+    A duplicate threshold row is reported rather than silently overwriting the first (pass 32).
     """
     rows: dict[int, list[str]] = {}
+    header: list[str] = []
+    problems: list[str] = []
     for line in section.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) != 7:
             continue
         head = cells[0].strip("*` ")
+        if head == "T":
+            header = [c.replace("*", "").replace("`", "").strip() for c in cells[1:]]
+            continue
         if not head.isdigit():
             continue
+        if int(head) in rows:
+            problems.append(f"the PASS table has two rows for T = {head}")
+            continue
         rows[int(head)] = [c.replace("**", "").replace("`", "").strip() for c in cells[1:]]
-    return rows
+    return rows, header, problems
 
 
 def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
@@ -193,7 +236,9 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
              "section", section)
 
     # ---- the PASS table, each figure bound to its own row and column
-    table = parse_pass_table(section)
+    table, header, table_problems = parse_pass_table(section)
+    problems.extend(table_problems)
+    equals("the PASS table's column labels", header, PASS_TABLE_HEADER)
     equals("the PASS table's thresholds", sorted(table), sorted(PUBLISHED_THRESHOLDS_MIN))
     for minutes in PUBLISHED_THRESHOLDS_MIN:
         if minutes not in table:
@@ -217,8 +262,11 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
                  else int(buildings[passing].sum()) / total_buildings)
         equals(f"claim denominator, frame {frame} T={minutes}", round(ALLOCATION_N * share), m)
         equals(f"tolerated_failures({m}, {GATE})", stats.tolerated_failures(m, GATE), -1)
-        contains(f"zero-error bound at m={m}",
-                 f"{100 * stats.clopper_pearson_upper(0, m):.4f}%", "section", section)
+        # Bound to its case, not merely present: pass 32 exchanged 7.7775% and 4.0754% between
+        # their frame/threshold assignments and every presence check still passed.
+        rendered = f"**{100 * stats.clopper_pearson_upper(0, m):.4f}%** ({frame}, *T*={minutes})"
+        contains(f"zero-error bound for frame {frame} at T={minutes}", rendered,
+                 "section", section)
 
     # ---- the cost of a reachable gate, on the binding frame and threshold
     needed = next(m for m in range(1, 100_000) if stats.clopper_pearson_upper(0, m) <= GATE)
@@ -289,12 +337,17 @@ def check(design_path: pathlib.Path) -> tuple[int, list[str]]:
 
 
 def self_test() -> int:
-    """Apply pass 31's three mutations to a scratch copy and require each to be caught."""
+    """Apply each mutation to a throwaway copy and require it to be caught.
+
+    **The tracked document is never written.** The first version mutated `DESIGN` in place and
+    restored from a fixed shared temporary filename, so two concurrent runs could restore each
+    other's mutated text, and a forced termination could leave a mutation installed in the
+    repository (Codex pass 32). `check()` already took a path, so a private copy was all it needed.
+    """
     original = DESIGN.read_text(encoding="utf-8")
-    backup = pathlib.Path(tempfile.gettempdir()) / "verify_e1c_selftest_backup.md"
-    shutil.copy(DESIGN, backup)
     failures = 0
-    try:
+    with tempfile.TemporaryDirectory(prefix="verify_e1c_selftest_") as tmp:
+        scratch = pathlib.Path(tmp) / DESIGN.name
         for label, swaps in MUTATIONS.items():
             mutated = original
             for old, new in swaps:
@@ -305,20 +358,20 @@ def self_test() -> int:
                     break
                 mutated = mutated.replace(old, new, 1)
             else:
-                DESIGN.write_text(mutated, encoding="utf-8")
-                _, problems = check(DESIGN)
+                scratch.write_text(mutated, encoding="utf-8")
+                _, problems = check(scratch)
                 if problems:
                     print(f"caught       {label}")
                 else:
                     print(f"NOT CAUGHT   {label}  <-- the check is blind to this")
                     failures += 1
-    finally:
-        shutil.copy(backup, DESIGN)
-    passed, problems = check(DESIGN)
+        # The unmutated copy must still pass; that is what shows the mutations did the failing.
+        scratch.write_text(original, encoding="utf-8")
+        passed, problems = check(scratch)
     if problems:
-        print(f"\nFAIL: the restored document does not pass: {problems[:3]}")
+        print(f"\nFAIL: the unmutated copy does not pass: {problems[:3]}")
         return 1
-    print(f"\nrestored and passing ({passed} checks)")
+    print(f"\nunmutated copy passes ({passed} checks); the tracked document was never written")
     return 1 if failures else 0
 
 

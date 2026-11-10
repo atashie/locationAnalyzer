@@ -1,15 +1,15 @@
 ---
 name: project-phase1-s3-design
-description: "S3 state after plan §0 steps 0 and 1: the walked-journey audit harness and the Chapel Hill sheet exist, encode_minutes rounds up, three of §12's four items are settled and the geometry arithmetic is the one still open and still gating T3. Codex passes 25-30. No sampling has happened"
+description: "S3 state after plan §0 steps 0, 1 and 2: the audit harness and Chapel Hill sheet exist, encode_minutes rounds up, E1c is adopted as reported-never-gated, and the geometry arithmetic is the one §12 item still open and still gating T3. Codex passes 25-32. No sampling has happened"
 metadata:
   node_type: memory
   type: project
   originSessionId: 3448970c-7f62-4034-83e7-b7d86efb0261
-  modified: 2026-11-09T00:00:00.000Z
+  modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-09, head `f8b123f` on `v2-rethink`, pushed. **No sampling has happened.** Design
-`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 11**; plan
+As of 2026-11-10, head `44a14ec` on `v2-rethink`, pushed. **No sampling has happened.** Design
+`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; passes 27-30 ran in-session
 and their findings are recorded in the commits named below rather than as research files.
@@ -17,15 +17,34 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-09, not recalled:** 1,159 collected, **1,135 passed, 24 skipped**; 31 scenarios,
-14 mutants, 17 conformance cases.
+**Measured 2026-11-10, not recalled:** **1,147 passed, 24 skipped**. The E1c figure verifier
+`v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
+`--self-test`, which no longer writes the tracked document.
 
 | step | state |
 |---|---|
 | 0 — the audit harness | **done**, `0a4a24b`..`c081920` |
 | the encoding decision | **done**, `2bb839d` — owner chose `ceil` |
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
-| 2 — the missing conditional | **next**, and an owner decision |
+| 2 — the missing conditional | **done** `c93df95`, `c6807ca`, `337b635`, `44a14ec` — **adopted** |
+| 3 — T0, the prevalence-and-impact pilot | **next**; 1 day, all data on disk |
+
+**Step 2 is adopted, and the owner's three decisions are what bind.** (1) Add **E1c** =
+`Pr(comparator = FAIL | product = PASS)`. (2) **Report it, no bar** — no threshold, no acceptance
+role, cannot fail a layer; the rule is encoded in a type (`ConditionalRate` has no `verdict` field
+and `conditional_rate` takes no `threshold`) rather than in a convention. (3) **Clopper-Pearson
+declared approximate**; exact hypergeometric inversion is deferred and must be revisited in the same
+§13 row that ever gives E1c a bar. The claim denominator is the *claimed* subset — about **37** of
+500 on frame C at *T* = 10, not the 417 the design's old example implied. A reachable 1.0% bar needs
+**299-628 claim observations** drawn from the PASS domain in the pattern §4's diagnostics already
+use, **not** the 4,454 full-frame draw I first quoted. See
+[[project-phase1-s3-step2-conditional-estimand]].
+
+> **Codex pass 32 is absorbed.** Eight findings on step 2's implementation, four of them in the
+> repairs written for pass 31; all reproduced before acting and all fixed. The prediction that the
+> verifier's self-test would be the weakest part was right — it defeated the *fixed* checker three
+> more ways, and that generalisation is now in [[feedback-verify-the-shape-of-the-risk]] as its fifth
+> instance. See [[project-phase1-s3-step2-conditional-estimand]].
 
 **The thing to walk:** `docs/experiments/audit/triangle-grocery-walk-chapelhill.csv` — 16 journeys
 inside 5 km of Franklin Street and Carrboro, **3.01 h one-way**, longest 22 min. Codex pass 29
@@ -47,14 +66,22 @@ found two witnesses inside the newly declared numerical domain, so the domain do
 **T3 remains gated on it**. It needs exact binary-rational arithmetic in the projection: a
 revision-12 change, not a cheap debt.
 
-**What four adversarial passes cost, as a fact about this work rather than a complaint.** Passes
-26-30 found roughly twenty verified defects across step 0, the encoding change and step 1 — and the
+**What six adversarial passes cost, as a fact about this work rather than a complaint.** Passes
+26-31 found roughly thirty verified defects across step 0, the encoding change and step 1 — and the
 majority were in the *repairs* for earlier findings, not in the original work. Pass 26 inverted my
 central claim (200 m is the floor of the OFF_NETWORK access distances, not the ceiling); pass 27
 found the guard I wrote in response was a false refusal; pass 28 found the provenance sidecar I added
 was certifying seconds the build never wrote; pass 29 found a guard built from a loose substring
 match had silently skipped an import; pass 30 found the uniqueness promise I had just weakened was
-still too strong. The pattern is recorded in
+still too strong; **pass 31 found the interval method I specified for E1c reports *certainty* at
+zero errors** — `(0.0, 0.0)` — and would do so for 69.2% of samples against a constructed true rate
+above the 1% line, and that the figure verifier I had certified passed when two whole table rows
+were swapped.
+
+**Pass 31 is also the clearest evidence for reviewing before implementing rather than after.** It ran
+against a draft with no code behind it, and the method it killed would otherwise already have been
+wired into T6's manifest and T11's report. That ordering is now the habit for anything that changes
+what gets reported. The pattern is recorded in
 [[feedback-verify-the-shape-of-the-risk]] and
 [[feedback-a-fixture-is-exact-only-where-you-point-it]], and the practical lesson is that a repair
 deserves the same adversarial pass as the thing it repairs.

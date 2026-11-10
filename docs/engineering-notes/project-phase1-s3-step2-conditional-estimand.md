@@ -167,9 +167,84 @@ test if it is.
 product outcome and the comparator's status — so E1c is recomputable from a stored run, and the gap
 I had flagged as a risk does not exist.
 
-**1,141 passed, 24 skipped.** The figure verifier is at **83 checks with 5 mutations**, two of them
-added for this step: *quietly turn E1c into a gate* and *erase the record of the withdrawn
-bootstrap*. Both are caught.
+**1,147 passed, 24 skipped.** The figure verifier is at **90 checks with 8 mutations**, all caught.
+
+## What Codex pass 32 took off the implementation
+
+Eight findings, every one reproduced before acting. Four were in the **repairs** written for pass 31,
+which is the pattern this project keeps producing.
+
+**1. An impossible input produced a reassuring answer.** `conditional_rate(0, 0, float("inf"))`
+returned `bound_range = (0.0, 0.0)` — certainty of zero error, the worst output this estimand has
+available — and `conditional_rate(float("nan"), 0, 0)` reported `identified = 0`, because the
+zero-claim branch discards its arguments before anything reads them. Fractional counts gave
+ordinary-looking bounds. The counts are now checked to be `int` (and not `bool`, which is an `int`
+subclass) **before any comparison and before the zero-claim return**.
+
+**2. Three contract mutations survived all 146 tests.** Dropping `confidence` from both CP calls
+(so a result labelled 99% could carry a 95% bound — 0.1219048982 against 0.1663382150), removing the
+non-negativity guard (admitting `u = −1` and an inverted range), and removing `_check_confidence`
+(an invalid level recorded on an undefined result). **The guards were present and untested, which is
+the same as absent the moment someone simplifies them.** Four tests added, and a mutation harness
+confirms each mutation is now caught by the test written for it, with `stats.py` restored
+byte-identical.
+
+**3. I widened the conservatism proof from a zero *count* to zero *identified* errors.** They differ
+as soon as `u > 0`, because the upper endpoint is computed at `k + u`:
+`conditional_rate(0, 71, 72).bound_range[1]` is **0.9992878468350281** with `identified == 0`, and
+pass 31's coverage counterexample applies to it directly once its erroneous structures are recast as
+unresolved. The design and the docstring now state the condition **per endpoint**. I also wrote that
+`k` = 0 is "the case this measurement will actually be in" — at a true 1% rate with 37 claims there
+is a **31.1%** chance of at least one error, so the conservative case is the one to hope for, not to
+plan on.
+
+**4. I wrote the wrong letter into the design.** The draft lettered the two interval routes with
+**(a) = hypergeometric inversion**; the chat that put the choice to the owner lettered them the other
+way round, so the owner's "a" meant Clopper-Pearson. I then wrote "decision 3 chose route (a)" into
+the design, which said the opposite of both the decision and the implementation. **The letters are
+gone and the methods are named** — a lettering that exists in two places with two meanings is a
+defect waiting to happen.
+
+**5. Adoption left live contradictions behind.** The plan still said "draft … not in force", the
+interval still open, the phases not begun; the design header still argued "measured, not preferred"
+and "all four published claim denominators" after both were withdrawn below; §13's row still said the
+method was **OPEN** and still carried two claims pass 31 had retired. **Retaining both the assertion
+and its withdrawal does not finish a repair** — the normative copy has to say one thing.
+
+**6. The verifier still certified misplaced meanings.** Three more mutations passed all 83 checks:
+swapping the frame B and frame C **column labels** (positions bound, meanings not), replacing the
+specified bound-range **formula**, and exchanging **7.7775%** and **4.0754%** between their
+frame/threshold cases. Its parser also silently overwrote a duplicate threshold row. Now the header
+labels are validated, each quoted bound is matched as `**value** (frame, T=minutes)`, the formulas
+are required claims, and duplicate rows are reported. Fixing it also exposed a formatting break my
+pass-31 edit had caused: the bound list had been absorbed into a block quote.
+
+**7. `--self-test` mutated the tracked document.** It wrote mutations directly to the design and
+restored from a fixed shared temporary filename, so two concurrent runs could restore each other's
+mutated text and a forced termination could **leave a mutation installed in the repository**. It now
+works on a private `TemporaryDirectory` copy — `check()` already took a path, so that was all it
+needed. Verified by hashing the document across a run.
+
+**8. "The type forbids gating" was overstated.** `conditional_rate(0, 0, 299).bound_range[1] <= 0.01`
+is a gate, and no API can prevent that. The absence of a `verdict` field means nothing here
+*computes* one and a stored result cannot be mistaken for a decision — a guard rail, not a wall.
+**Actual enforcement belongs where the layer verdict is assembled**, which is §8's rule and
+`Acceptance`, and E1c must appear in neither.
+
+**What pass 32 confirmed.** All five implementation mutations I asked it to try were killed by the
+tests. The frame C zero-count inequality is correctly transcribed, conditional on `m` > 0 and PASS
+constant within original cells. The 299/473/628 minima are right, and **a sample drawn directly from
+the frozen PASS domain introduces no selection mismatch for E1c**, provided it stays out of the
+full-frame estimates and frame C's two-stage design is preserved. No existing acceptance arithmetic,
+threshold or allocation changed.
+
+**§6 needed a third attempt, and the second was wrong in an instructive way.** I first repaired
+"binomial bounds are conservative" to "conservative **at the allocations and rates this design
+reports**". Pass 32's counterexample is *at* an allocation and a rate this design reports: with
+`N` = 2,925, `n` = 150 and one event, `CP_lower(1, 150)` = 0.000341896836 exceeds the true
+`1/2925` = 0.000341880342 and coverage is **94.871795%**. So the qualification I added was
+insufficient rather than sufficient. The sentence now claims only "usually, not universally" and
+**defers to per-bound arguments** — the one this design relies on being §3's zero-count case.
 
 ## State
 

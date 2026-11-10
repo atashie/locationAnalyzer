@@ -189,10 +189,15 @@ def acceptance(identified: int, unresolved: int, n: int, threshold: float,
 class ConditionalRate:
     """Design §3's **E1c**, `Pr(comparator = FAIL | product = PASS)`.
 
-    **There is deliberately no `verdict` field, and that absence is the design.** E1c was adopted on
-    2026-11-10 as reported-and-never-gated (owner decision 2), and a type that cannot represent a
-    verdict cannot be wired into an acceptance rule by accident. `Acceptance` is the type that
-    carries one; this is not it. Giving E1c a bar means a §13 row, not a field.
+    **There is deliberately no `verdict` field.** E1c was adopted on 2026-11-10 as
+    reported-and-never-gated (owner decision 2); `Acceptance` is the type that carries a verdict and
+    this is not it, so nothing here *computes* one and a reader of a stored result cannot mistake a
+    bound for a decision.
+
+    **That is a guard rail, not a prohibition, and the stronger claim is withdrawn** (Codex pass 32).
+    A caller can write `conditional_rate(...).bound_range[1] <= 0.01` and have a gate; no API can stop
+    that. **Actual enforcement belongs where a layer verdict is assembled**, which is §8's rule and
+    `Acceptance` — E1c must not appear in either. Giving E1c a bar means a §13 row.
 
     `interval_method` travels with the number into every manifest and report, because the bound is
     **approximate** and an unlabelled bound invites being read as exact.
@@ -226,21 +231,56 @@ def conditional_rate(identified: int, unresolved: int, claims: int,
 
     **The bound is Clopper-Pearson and is approximate, not exact** (owner decision 3). Conditional on
     `claims`, frame B's count is hypergeometric and frame C's is binomial, hypergeometric or a
-    mixture depending on the within-cell error rates; CP is the binomial bound in every case. At
-    `identified == 0` it is conservative on both frames by proof — on frame C via
-    `Pr(K = 0 | m) = e_m(1-q_1, ..., 1-q_A) / C(A, m) <= (1 - theta)^m` — and that is where these
-    denominators put it. **Away from zero the direction is not established**, and Codex pass 31's
-    counterexample shows it cannot be assumed: at `A` = 80,051 with 57 correct and `claims` = 72,
-    `clopper_pearson_upper(71, 72)` = 0.999287846835 falls below the true 0.999287953929, giving
-    94.998570% coverage. That sits next to a 100% error rate and threatens nothing reported here, but
-    it is why `interval_method` says `approximate`.
+    mixture depending on the within-cell error rates; CP is the binomial bound in every case.
+
+    **Where it is conservative, stated per endpoint rather than per result** -- pass 32 found the
+    first version widened the proof from "zero count" to "zero *identified*", which is not the same
+    thing once `u > 0`:
+
+    * the **lower endpoint** `CP_upper(k, claims)` is conservative on both frames when `k == 0`, on
+      frame C via `Pr(K = 0 | m) = e_m(1-q_1, ..., 1-q_A) / C(A, m) <= (1 - theta)^m`;
+    * the **upper endpoint** `CP_upper(k + u, claims)` needs **`k + u == 0`**, not `k == 0`.
+      `conditional_rate(0, 71, 72).bound_range[1]` is 0.9992878468350281 with `identified == 0`, and
+      pass 31's coverage counterexample applies to it directly when its 79,994 erroneous structures
+      are recast as unresolved;
+    * **away from zero the direction is not established** for either endpoint. At `A` = 80,051 with
+      57 correct and `claims` = 72, `clopper_pearson_upper(71, 72)` = 0.999287846835 falls below the
+      true 0.999287953929, giving 94.998570% coverage. That sits next to a 100% error rate and
+      threatens nothing reported here -- and it is why `interval_method` says `approximate`.
+
+    **The denominators do not make zero errors likely, and the first version implied they did.** In
+    the admitted equal-rate frame C model, a true rate of 1% with 37 claims gives a **31.1%** chance
+    of observing at least one error. So the conservative case is the one to hope for, not the one to
+    plan on.
 
     `claims == 0` returns an **undefined** result rather than raising: an all-`UNKNOWN` or all-`FAIL`
     product legitimately produces no claims, and that is a fact to report, not an error. It is also
-    not by itself evidence of abstention — only E0 and §3's abstention table separate those cases.
+    not by itself evidence of abstention -- only E0 and §3's abstention table separate those cases.
+
+    **What is undefined there is the SAMPLE ratio, not the estimand** (pass 32 corrected the first
+    version, which said the latter). No claim in this sample is entirely compatible with a population
+    in which claims exist and a large share of them are wrong; it is the small-denominator case taken
+    to its limit, not evidence that the quantity does not exist. Only a product that claims nothing
+    **anywhere** makes the population quantity undefined, and that is E0's observation, not this one.
+
+    `defined` is a **convenience property, not a rendering safeguard**: it makes the two cases easy to
+    branch on and does nothing to stop a caller formatting `None` as 0. Whatever renders an E1c must
+    handle the undefined case explicitly.
     """
+    # **Validate that the counts are counts, before any comparison and before the zero-claim
+    # return.** Pass 32: `conditional_rate(0, 0, float("inf"))` returned `bound_range = (0.0, 0.0)`
+    # -- a *reassuring* result from an impossible input, which is the worst failure available to this
+    # estimand -- and `conditional_rate(float("nan"), 0, 0)` silently reported `identified = 0`
+    # because the zero-claim branch discards its arguments. Fractional counts produced
+    # ordinary-looking bounds. `bool` is rejected with the rest: it is an `int` subclass, and a
+    # caller passing a flag where a count belongs has made a mistake worth hearing about.
     for name, value in (("identified", identified), ("unresolved", unresolved),
                         ("claims", claims)):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(
+                f"{name} must be an int count, got {type(value).__name__} {value!r}. Floats are "
+                "refused because a non-integer or non-finite count produces a plausible-looking "
+                "bound from an impossible input.")
         if value < 0:
             raise ValueError(f"{name} must be non-negative, got {value}")
     if identified + unresolved > claims:
