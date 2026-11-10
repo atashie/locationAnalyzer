@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-10, head `1cafab5` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
+As of 2026-11-10, head `5bbdcfb` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 and 34 are
@@ -18,7 +18,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-10, not recalled:** **1,166 passed, 24 skipped**. The E1c figure verifier
+**Measured 2026-11-10, not recalled:** **1,177 passed, 24 skipped**. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
@@ -83,22 +83,46 @@ One thing in that table is **unexplained**: removing restricted edges loses *few
 than penalising them at 600 s, which is backwards for a limit case. Recorded as an unverified
 hypothesis about `symmetrise` ordering, not asserted.
 
-## The stored walk raster is stale and needs a SEQUENCED rebuild
+## The walk raster was stale and has been REBUILT — 2026-11-10, `5bbdcfb`
 
-`own_triangle_grocery_walk.npy` was built 2026-11-04 13:42 and verified bit-identical at 14:43;
-`ab01ffa` at 21:12 then fixed `symmetrise`, which had been suppressing pedestrian reverse edges.
-**7,246 of 330,502 cells differ** (11,436 buildings, zero finiteness changes, max 2,316.8 s).
-Codex pass 34 reproduced the stored raster bit-for-bit by reinstating the historical `symmetrise`,
-so this is settled rather than suspected. It does **not** explain the walked finding — that cell is
-810.8 s in both.
+`own_triangle_grocery_walk.npy` was built 2026-11-04 13:42; `ab01ffa` at 21:12 then fixed
+`symmetrise`, which had been suppressing pedestrian reverse edges. Codex pass 34 reproduced the
+stored raster bit-for-bit by reinstating the historical `symmetrise`, which put the mechanism beyond
+doubt and turned **7,246 cells** into a *prediction* about what a rebuild would move.
 
-**The rebuild is not one command.** G1 does not write the reasons, lower bounds, sidecar digests or
-encoded TIFF — the **S2 builder** writes that bundle — and the sequence continues through S0
-verification, the audit draws, their metadata hashes, the destination enrichment, and any published
-figure computed off the old surface. The frozen B/C frames are safe (inputs are buildings, grid,
-seed). And the **browser exporter ignores `own_triangle_grocery_walk.tif`**, selecting
-`own_grocery_walk.tif` — so a Triangle rebuild does not update what the browser serves; that is a
-separate §0 step 6 gap. See [[project-phase1-s3-stale-walk-raster]].
+**The prediction held exactly.** `scripts/compare_rebuild_to_stored.py`:
+
+| | |
+|---|---|
+| cells differing | **7,246 of 330,502**, as predicted |
+| finiteness changes | 0 |
+| reason cells differing | 0 |
+| direction | 7,227 faster, 19 slower, largest 2,316.8 s, 11,436 buildings |
+| *T*=10 PASS cells | 24,245 → 24,255 (gained 10, lost 0) |
+| *T*=15 PASS cells | 47,495 → 47,509 (gained 15, **lost 1** — pass 34's cell) |
+| audited journeys that moved | **0 of 35** |
+
+That the number came out at 7,246 and not near it is the evidence that the two new way tags move
+nothing in the walk layer. The script prints AS PREDICTED or NOT PREDICTED rather than reporting
+whatever it finds.
+
+**The rebuild was a sequence, not one command**, and this is the order: `g1_own_graph_layer`
+(re-parses the XML and is the only writer of the graph cache) → `s2_building_weighted_coverage` (the
+authoritative bundle: seconds, reasons, **lower bounds and sidecar digests, written for this metro
+for the first time**) → `s0_status_on_real_layer` (independent rebuild: *float32 identical, 0 cells
+differ*; 1 strongly connected component, 0 of 539,814 nodes unreached, so `NO_PATH` is still
+unreachable here) → destination enrichment → the E1c figures → the encoding re-measurement. The
+audit sample was deliberately **not redrawn**; see below. The frozen B/C frames are unaffected
+(inputs are buildings, grid, seed). Still open: the **browser exporter ignores
+`own_triangle_grocery_walk.tif`**, selecting `own_grocery_walk.tif`, so a Triangle rebuild does not
+update what the browser serves — a separate §0 step 6 gap. See
+[[project-phase1-s3-stale-walk-raster]] and [[project-phase1-s3-extract-tag-gap]].
+
+**The sample was not redrawn, and the sheets say so.** A redraw on the changed surface selects
+different cells and would discard the walked observation. Nothing audited moved, so each
+`.meta.json` carries a `superseded_by_rebuild` block naming `v2/data/layers/prerebuild-2026-11-10/`
+as what its digests describe, and a `…-rebuild-delta.csv` sits beside each sheet. Rewriting the
+digests would have claimed a provenance the sample does not have.
 
 ## The audit sheets now name their destination
 
