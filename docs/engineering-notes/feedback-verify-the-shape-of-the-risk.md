@@ -44,6 +44,16 @@ while an absent one at least leaves the work visibly undone.
 - `uv run --with pyflakes python -m pyflakes <dirs>` needs no project dependency and takes a second;
   it is now the check after any edit that moves or adds a name. `ruff` is not installed here.
 
+**It happened a third time, twenty minutes after this note was written**, which is why the rule needs
+to be a habit rather than a paragraph. Waiting on a background review, I armed
+`until ... | grep -qE "Phase: done|completed"` against a status command whose output also lists
+*previous* jobs — one of which was completed — so the wait returned immediately and I reported a
+review finished that was ninety seconds into a nine-minute run. The fix is the same shape as the
+others: anchor it. `grep -qE "^[[:space:]]*Phase: done[[:space:]]*$"` matches that job's own phase
+line and nothing else. **When a pattern is a stop condition, bound it to the line and the field you
+mean**; an unanchored alternation against multi-record output is a loose proxy, exactly as
+`"layer import" not in s` was.
+
 Related: [[feedback-a-fixture-is-exact-only-where-you-point-it]], which is the same error one level
 up — a test drawn from the wrong domain also passes without establishing anything. In this session
 that one recurred too: the fixture "proving" an `OFF_NETWORK` bound drew access distances from
