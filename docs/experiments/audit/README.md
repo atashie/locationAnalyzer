@@ -9,8 +9,13 @@ be cheap to fill in.
 
 ## Walk this one
 
-**`triangle-grocery-walk-chapelhill.csv`** — 16 journeys inside 5 km of Franklin Street and
-Carrboro, **3.01 hours of one-way walking**, longest 22 minutes. This is the sheet to fill in.
+**`triangle-grocery-walk-chapelhill-with-destinations.csv`** — 16 journeys inside 5 km of
+Franklin Street and Carrboro, **3.01 hours of one-way walking**, longest 22 minutes. This is the
+sheet to fill in.
+
+It is the `…-chapelhill.csv` draw plus the `predicted_destination*` columns, which say **which
+grocery each number is about**. Walk this one, not the bare draw: without those columns you would
+be picking your own destination and timing your journey rather than checking ours.
 
 `triangle-grocery-walk.csv` beside it is the unrestricted metro-wide draw, kept because its stratum
 counts are the metro-wide populations the local sheet is sampled from. Its 19 journeys are scattered
@@ -25,6 +30,10 @@ Regenerate with, from `v2/`:
 uv run python scripts/audit_recommendations.py grocery walk --near -79.0656 35.9117 --radius-km 5 \
   --out ../docs/experiments/audit/triangle-grocery-walk-chapelhill.csv
 uv run python scripts/audit_recommendations.py grocery walk      # the metro-wide draw
+
+# then add the destinations (one graph load, about 1.5 minutes per sheet)
+python scripts/recover_audit_destinations.py \
+  ../docs/experiments/audit/triangle-grocery-walk-chapelhill.csv
 ```
 
 It **refuses to overwrite** an existing sheet, because a rerun would erase walked results; pass
@@ -36,8 +45,13 @@ The two sheets, kept straight because an earlier version of this file mixed thei
 
 | sheet | journeys | with a predicted time | one-way walking | longest |
 |---|---|---|---|---|
-| `…-chapelhill.csv` — **walk this** | 16 | 16 | **3.01 h** | 22 min |
-| `…-walk.csv` — metro-wide reference | 19 | 16 | 2.98 h | 20 min |
+| `…-chapelhill-with-destinations.csv` — **walk this** | 16 | 16 | **3.01 h** | 22 min |
+| `…-walk-with-destinations.csv` — metro-wide reference | 19 | 16 | 2.98 h | 20 min |
+
+The bare `…-chapelhill.csv` and `…-walk.csv` are kept as the draws the recovery reads, and are
+what `audit_recommendations.py` regenerates. All 16 Chapel Hill journeys and 16 of the 19
+metro-wide ones name a destination; the three that do not are the `off_network` rows, which have no
+predicted time and therefore no journey to name.
 
 The metro-wide sheet's other three rows are `off_network_beside_pass15min` and have **no predicted
 time at all**, so they sit outside both the `--max-walk-min` cap and the walking total: adjacency
@@ -53,9 +67,18 @@ Chapel Hill sheet has none of them — see below.
    how far the centre can be from any door in the cell; this column is how far it was for you. Note
    that 70.7 m bounds the *straight-line* displacement, not the travel-time error it causes — a
    fence or a one-entrance building can turn 40 m of displacement into five minutes of walking.
-3. Walk to a destination that **qualifies under our own category rule** and that you would
-   genuinely use. Time it door to door at a normal pace. Record `walked_seconds` and the store in
-   `destination_used`.
+3. Walk to **`predicted_destination`** — the shop we actually routed you to. Its coordinates
+   and its own map link are in the next columns. Time it door to door at a normal pace. Record
+   `walked_seconds`, and put the store you actually used in `destination_used`: normally the same
+   name, but not if you had to divert.
+
+   If `predicted_destination_alternatives` is non-empty, several shops snapped to the same road
+   node and our number cannot distinguish them. Walk to whichever you would use and name it.
+
+   **If that shop is not somewhere you would genuinely buy groceries, record that and walk it
+   anyway.** "Within ten minutes of a grocery" resting on a specialty importer or a produce
+   wholesaler is a product finding, and it is the one `destination_qualifies` exists to capture.
+   Walking it still gives a usable `walked_seconds` for the routing question.
 4. Fill in the four observation columns separately. They are separate because they fail separately:
    - `destination_qualifies` — is it a grocery by our category rule, or your preferred supermarket
      that happens not to be one?
@@ -87,7 +110,9 @@ changes what a single walk proves.
   being able to walk it is useful information about the access rule, not a contradiction.
 - **Walking to a *different* destination than the product chose does not clear the product.** If we
   selected a shop that has closed and you walk nine minutes to another one, the real-world claim
-  holds and our stale destination is still undetected. That is why `destination_used` is recorded.
+  holds and our stale destination is still undetected. That is why `destination_used` is recorded
+  separately from `predicted_destination`: the pair is what shows whether you checked our journey
+  or substituted a better one.
 
 So `agrees` is not a column on this sheet. An earlier version had one and it conflated five
 different failures; the observations above are recorded separately and the finding is derived
@@ -130,11 +155,31 @@ verdict the shipped page will show: see below.
 
 ## Two limits and one closed question
 
-**We cannot tell you which destination we routed you to, and our number is an upper bound.** The
-layer's aggregation is `cost_selected_category` — the travel time of the journey our *cost* model
-picked, which is an upper bound on the time, not the minimum over qualifying destinations — and the
-identity of that destination is not stored. Recovering it needs one bounded graph load over the
-sampled cells; that is the decisive version of this audit and it is not what this sheet is.
+**We can now tell you which destination we routed you to. Our number is still an upper bound.**
+
+Until 2026-11-10 this section said the destination's identity was not stored and recovering it
+"needs one bounded graph load". It was never not computed: `scipy`'s multi-source search returns
+the selected source beside the distances, and our code discarded it as `_sources`. The graph load
+has now been done — `v2/scripts/recover_audit_destinations.py` — and the `predicted_destination*`
+columns are its output. Every row of both sheets was re-derived and matches the committed raster
+**bit-exactly after the float32 cast**, so the destinations belong to the published numbers rather
+than to a plausible rebuild. Rebuild them with:
+
+    cd v2 && python scripts/recover_audit_destinations.py \
+        ../docs/experiments/audit/triangle-grocery-walk-chapelhill.csv
+
+Two things that remain true. The layer's aggregation is `cost_selected_category` — the travel time
+of the journey our **cost** model picked, which is an upper bound on the time, not the minimum over
+qualifying destinations. So a walk that beats our number has not caught us in an error. And a
+destination node can carry several places (550 grocery places snap to 510 road nodes), so where
+`predicted_destination_alternatives` is non-empty our number does not distinguish them.
+
+One measured detail, because it looked like a defect and was not: `query_lon`/`query_lat` are the
+cell centre rendered to six decimal places, which is up to **0.069 m** from the centre itself. That
+is enough to shift the snapped journey by about a tenth of a second, so re-projecting the printed
+coordinate does **not** reproduce the published number — the recovery works from `row`/`col`
+instead. Irrelevant beside a 70 m door offset, but it is why the re-check is exact rather than
+tolerance-based.
 
 **The encoded minute now agrees with the printed verdict, and did not before.** Until
 2026-11-09 the encoding rounded to nearest, which made every threshold up to 30 s more permissive:
