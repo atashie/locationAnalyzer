@@ -118,6 +118,24 @@ sidewalks and crossings and unnamed service ways are driveways, which is why the
 60% of the graph. The spread from 0.39% to 9.2% is the measure of **how little the class tag
 settles**, not a range the true exposure lies in.
 
+**What pass 34 confirmed about these numbers, as against what it corrected.** The corrections above
+are easy to read as "the whole table is doubtful", and that would be the wrong conclusion. Three
+independent checks came back clean:
+
+- **No destination contamination.** The baseline, no-track and no-track-or-path variants retain
+  539,814 / 538,178 / 534,949 nodes, yet all three keep exactly the **same 510 destination
+  identities, POI snaps and admission decisions**. Removing those classes does not quietly change
+  what the layer is routing to.
+- **Component pruning causes none of the losses.** Holding the baseline nodes and destinations fixed
+  while disabling pruning gives **446** lost 15-minute PASSes against 414 — so pruning introduces
+  zero of them and in fact *rescues* 32.
+- **The losses are attributable.** Across all four thresholds, **every one of the 5,287 distinct
+  lost cells uses `track` or `path` on its baseline route.**
+
+So the figures do measure what removing those classes does. The objection to them is about what that
+*means* — a class is not a usability judgement — not about whether they were computed on comparable
+populations.
+
 **The tag that would settle it is absent.** `EXTRA_WAY_TAGS` in `speeds.py` requests `foot`,
 `bicycle`, `motor_vehicle`, `motorcar`, `oneway:bicycle` and `sidewalk`. It does **not** request
 `surface`, so unpaved-versus-paved is not knowable from the extracted graph at all. Adding

@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-design
-description: "S3 state after plan §0 steps 0, 1 and 2: the audit harness and Chapel Hill sheet exist, encode_minutes rounds up, E1c is adopted as reported-never-gated, and the geometry arithmetic is the one §12 item still open and still gating T3. Codex passes 25-32. No sampling has happened"
+description: "S3 state after plan §0 steps 0, 1 and 2, plus the first WALKED finding: a published 13.5-minute PASS routes down an access=private track whose 120 s penalty is too small to stop it, and raising it to 600 s costs 1.10% of 15-minute PASS buildings - an OPEN OWNER DECISION. The stored walk raster is also stale by the ab01ffa symmetrise fix (7,246 cells) and needs a sequenced rebuild. E1c adopted as reported-never-gated; geometry arithmetic still gates T3. Codex passes 25-34"
 metadata:
   node_type: memory
   type: project
@@ -8,16 +8,17 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-10, head `00b597e` on `v2-rethink`, pushed. **No sampling has happened.** Design
+As of 2026-11-10, head `1cafab5` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 11**, whose **§0 is the entry point** and now carries
-per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; passes 27-30 ran in-session
-and their findings are recorded in the commits named below rather than as research files.
+per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 and 34 are
+`docs/research/34-` and `35-`, with their executable counterexamples committed beside them**;
+passes 27-32 ran in-session and are recorded in the commits named below.
 Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-10, not recalled:** **1,164 passed, 24 skipped**. The E1c figure verifier
+**Measured 2026-11-10, not recalled:** **1,166 passed, 24 skipped**. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
@@ -28,6 +29,65 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **next**; 1 day, all data on disk |
+
+## THE OPEN OWNER DECISION, which is where to resume
+
+The owner walked `band15min_pass-03` and found **~25 min against a published 13.5**. The cause is
+established end to end: the 305 m approach is OSM way **1254722641**, tagged **`access=private`**;
+`classify_access` labels it `restricted` correctly; `add_travel_times` applies
+`cost = travel_time + RESTRICTED_PENALTY_S["walk"]` = **120 s**; and 120 s over ~4 restricted edges
+is 480 s of cost against a **968 s** detour, so the private track wins on cost and the household is
+shown its *real* time. **A calibration finding, not a missing mechanism.**
+
+Measured over the full surface (`scripts/measure_restricted_walk_policy.py`, 126,197 restricted walk
+edges):
+
+| variant | the walked cell | lost PASS buildings at *T*=15 |
+|---|---|---|
+| as published, 120 s | 13.5 min, **PASS** | — |
+| **penalty 600 s** | 31.5 min, FAIL | **1.10%** (1,803 of 163,875) |
+| penalty 1800 s | 31.5 min, FAIL | 2.02% |
+| restricted removed | 29.8 min, FAIL | 0.81% |
+| **observed** | **~25 min** | |
+
+**Recommended: raise `RESTRICTED_PENALTY_S["walk"]` from 120 s to 600 s.** Needs no new data, uses
+production machinery, UNKNOWN moves only 73,750 → 73,968. **Not yet made — it is the owner's.**
+Second, cheap and independent: add **`surface`** to `EXTRA_WAY_TAGS` and re-extract, since the tag
+that would judge a way's usability was never pulled from the PBF. See
+[[project-phase1-s3-soft-way-dependence]].
+
+One thing in that table is **unexplained**: removing restricted edges loses *fewer* 15-minute PASSes
+than penalising them at 600 s, which is backwards for a limit case. Recorded as an unverified
+hypothesis about `symmetrise` ordering, not asserted.
+
+## The stored walk raster is stale and needs a SEQUENCED rebuild
+
+`own_triangle_grocery_walk.npy` was built 2026-11-04 13:42 and verified bit-identical at 14:43;
+`ab01ffa` at 21:12 then fixed `symmetrise`, which had been suppressing pedestrian reverse edges.
+**7,246 of 330,502 cells differ** (11,436 buildings, zero finiteness changes, max 2,316.8 s).
+Codex pass 34 reproduced the stored raster bit-for-bit by reinstating the historical `symmetrise`,
+so this is settled rather than suspected. It does **not** explain the walked finding — that cell is
+810.8 s in both.
+
+**The rebuild is not one command.** G1 does not write the reasons, lower bounds, sidecar digests or
+encoded TIFF — the **S2 builder** writes that bundle — and the sequence continues through S0
+verification, the audit draws, their metadata hashes, the destination enrichment, and any published
+figure computed off the old surface. The frozen B/C frames are safe (inputs are buildings, grid,
+seed). And the **browser exporter ignores `own_triangle_grocery_walk.tif`**, selecting
+`own_grocery_walk.tif` — so a Triangle rebuild does not update what the browser serves; that is a
+separate §0 step 6 gap. See [[project-phase1-s3-stale-walk-raster]].
+
+## The audit sheets now name their destination
+
+`arrival_with_selected_destination` keeps what `scipy`'s search had always returned and the code
+discarded as `_sources`. Both sheets have `predicted_destination*` columns; walk
+`triangle-grocery-walk-chapelhill-with-destinations.csv`, not the bare draw.
+`scripts/recover_audit_destinations.py` refuses to overwrite without `--force` (it would have erased
+walked observations) and verifies before writing. **Its agreement with the stored raster on 35 rows
+is consistent with, not proof of, the published configuration** — none of those 35 is among the
+7,246. Nine physical destinations under seven names; **seven of sixteen journeys route to a
+specialty market or produce brand**, which is step 7's first concrete material. See
+[[project-phase1-s3-audit-destination-recovery]].
 
 **Step 2 is adopted, and the owner's three decisions are what bind.** (1) Add **E1c** =
 `Pr(comparator = FAIL | product = PASS)`. (2) **Report it, no bar** — no threshold, no acceptance
@@ -46,7 +106,9 @@ use, **not** the 4,454 full-frame draw I first quoted. See
 > more ways, and that generalisation is now in [[feedback-verify-the-shape-of-the-risk]] as its fifth
 > instance. See [[project-phase1-s3-step2-conditional-estimand]].
 
-**The thing to walk:** `docs/experiments/audit/triangle-grocery-walk-chapelhill.csv` — 16 journeys
+**The thing to walk:** `docs/experiments/audit/triangle-grocery-walk-chapelhill-with-destinations.csv`
+— the bare `…-chapelhill.csv` is the draw the recovery reads, and walking it would mean picking
+your own destination and timing your own journey rather than checking ours. 16 journeys
 inside 5 km of Franklin Street and Carrboro, **3.01 h one-way**, longest 22 min. Codex pass 29
 verified it fit to walk: byte-identical regeneration, all three input digests matching, all 16
 encoded minutes matching the current raster. Its own README is the protocol; there is no `agrees`
