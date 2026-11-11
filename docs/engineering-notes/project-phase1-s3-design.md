@@ -11,8 +11,8 @@ metadata:
 As of 2026-11-10, head `5bbdcfb` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
-per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33, 34 and 35 are
-`docs/research/34-`, `35-` and `36-`, with their executable counterexamples committed beside
+per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 36 are
+`docs/research/34-` to `37-`, with their executable counterexamples committed beside
 them**;
 passes 27-32 ran in-session and are recorded in the commits named below.
 Build record: `docs/experiments/s3-instrument-build.md`.
@@ -29,7 +29,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | the encoding decision | **done**, `2bb839d` — owner chose `ceil` |
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
-| 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
+| 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10, corrected 2026-11-11 after pass 36**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
 | 4 — T3 as a versioned development comparator | **next**, and now also what T0 stage 3 waits on; gated on §12 item 1 |
 
 ## THE WALKED FINDING, and the owner's decision on it

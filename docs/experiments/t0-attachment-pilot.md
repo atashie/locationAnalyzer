@@ -118,97 +118,150 @@ audited in full rather than sampled.
 ## Part 2 — results
 
 *Nothing in Part 1 is edited now that this section exists; a correction appears here as a
-correction. The figures below are **rendered from `v2/data/t0_attachment_pilot.json` by
-`v2/scripts/render_t0_results.py`**, not transcribed — this project has produced wrong figures by
-transcription three times, and `--check` fails if the document and the artifact drift apart. The
-prose outside the generated block is written by hand.*
+correction, and the table at the top of this section is the record of them. The figures below the
+rule are **rendered from `t0-attachment-pilot.json` by `v2/scripts/render_t0_results.py`**, not
+transcribed, and `--check` fails if the document and the artifact drift apart. The prose is written
+by hand.*
+
+### Corrected after Codex pass 36
+
+**This section was rewritten.** Pass 36 returned three High findings and five Medium against the
+first version, and all nine were reproduced before being acted on. Two of the three Highs were
+against claims this document led with, so the corrections are listed before the results rather than
+after them:
+
+| first version said | pass 36 | now |
+|---|---|---|
+| C discards **a genuine exact tie** at 2 of 512,633 structures | at both points the exact minimum is **unique**; a tie needs two occurrences at one exact distance | genuine ties discarded: **0**. What happens at those two points is a float/exact **inversion** — C keeps a position that is exactly *farther* and drops the exactly nearest one |
+| the impact bound bounds **the journey time** | it bounds min-over-a-fixed-option-family in one metric. A 0.013 s cost change flipped the selection and moved **objective 2** by 120.011 s; a one-way case turned a finite journey into **none** | the bound is stated for **objective 1** only — which is the objective E1 is defined against — and one-way records are excluded and counted |
+| stage 3 needs routing only for the ~2.5% of origins whose attachments differ | a **destination's** attachment change can affect any origin, as the plan itself says; seven grocery sets differ between A and C | **withdrawn.** Every origin is potentially affected. The artifact also holds counts, not the identities the first version claimed were enumerated |
+| a record is one `(node pair, canonical geometry)` | that is production's grouping; it collapses parallel records with **different weights**, which design §2.4 requires be kept apart | the pilot now attaches to the **design's** records, keyed by `(node pair, canonical geometry, travel_time, cost)`. The first run's prevalence counts are superseded |
+| "0 of 843,135 points" over "both whole populations" | cell centres are **not** a census of frame C, whose population is the cell's *area* | every point measured — all structure centroids, all cell centres, the frozen samples — shows no eligibility difference. The centre census does not establish that for frame C's area |
+| `split_midpoint` is lawful | `(0,0),(1,0),(2,0)` became pieces of length 1 and 2, total 3 against 2 | fixed: the two pieces share the cut vertex, and a cut within `MIN_SEGMENT_M` of a vertex snaps to it. Verified length-preserving on all three counterexamples |
+| the transformation check isolates the transformation | the transformed window omitted `measure_point`'s numerical slack, so candidates vanished between the two sides with the geometry unchanged | both sides now use the identical window, returned by `measure_point` |
+| `positions_differ` matches within tolerance | lexicographic sorting breaks the pairing: `{(0,0),(0,10)}` against `{(-10⁻⁷,10),(10⁻⁷,0)}` was reported as a change | each position is matched to its nearest unmatched counterpart |
+| the quoted sample rates `2.2%, 2.0%, 3.45%` | those are A's *multiple-candidate* rates, not A-versus-C disagreement | corrected; and the transformation tables total 11,550 evaluations, not 11,050 |
+
+What pass 36 confirmed: the bbox enumeration is sound (no omissions against full enumeration on 100
+queries, including degenerate boxes, zero-length segments and ties); the A/C/D filters, the shared
+projection and the dedup-before-cap order match the stated conventions; Part 1 is unchanged from
+`14f9219` and precedes the run; the renderer's `--check` fails on a drifted document; `read_frame`
+rejects tampered contents; and **rule 3 remains the correct outcome.**
 
 ### The verdict against the pre-registered rule
 
-**Rule 3: the choice is open on impact.** Candidate sets differ and eligibility never does, so no
-convention is rejected and none is endorsed by the rule. A stays the provisional baseline because it
-is the incumbent, not because the pilot endorsed it. Everything below is what the measurement added
-past that, and two of the results are sharper than rule 3 anticipated.
+**Rule 3: the choice is open on impact.** Candidate sets differ between conventions, eligibility does
+not, so the rule neither rejects nor endorses one. A stays the incumbent. What follows is what the
+measurement adds past that.
 
 ### The stage was cheap enough to census, so a bound became a count
 
 The time box says to benchmark the first batch before committing to a larger sample or a census, and
-to census the attachment stage if benchmarking supports it. At about **0.2 ms per point** it does:
-both populations — every structure centroid and every cell centre — ran in under three minutes. So
+to census the attachment stage if benchmarking supports it. At about 0.2 ms per point it does. So
 where the pre-registration could only have offered "zero events in 500, one-sided 95% bound
-0.5974%", the tables below carry exact counts over **843,135 points**. That was available for the
-price of reading a benchmark before fixing a sample size.
+0.5974%", the tables below carry exact counts over every structure centroid and every cell centre.
 
-### Eligibility never changes — exactly, not approximately
+**But a cell-centre census is not a census of frame C.** Frame C's population is the cell's *area*,
+sampled as an independent point within each cell; attachment can vary inside a cell, and the centre
+is one point of it. The censuses are exact for the structure population and for the centres, and
+frame C's area is covered only by its 500-point sample.
 
-**0 of 843,135 points** change eligibility between A, C and D. Eligibility is the only
-verdict-relevant effect observable without the comparator: a point with an in-cap candidate under
-one convention and none under another moves between answerable and `OFF_NETWORK`. Over the whole of
-both populations that never happens. §2.2's worry that "two disconnected roads 1 m either side of a
-point are equally near and can differ by 900 s" is a real hazard for *which* journey gets reported;
-on this graph it is not a hazard for *whether* one does.
+### No eligibility difference anywhere measured
 
-### The convention matters at about one point in forty, which is not rare
+Not one point — across both censuses and all three pre-registered sets — changes between answerable
+and `OFF_NETWORK` under A, C or D. Eligibility is the only verdict-relevant effect reachable without
+a router, and nothing in the attachment convention moved it.
 
-On the two censuses A retains more than one candidate at **2.611%** of cell centres and **2.894%**
-of structures, and A's candidate set differs from C's at **2.268%** and **2.574%**. Pass 26 was right
-to refuse "a handful in 512,633": the honest figure is four orders of magnitude larger than that
-phrase suggests. The three pre-registered sets agree — 2.2%, 2.0% and 3.45% — but at *n* = 500 they
-could only ever have seen about a dozen such points. The census is what pins the rate.
+### Two different rates, and only one of them is about ambiguity
 
-### A and C disagree only ever about *where on one record*
+Under the design's record definition about **30%** of points have more than one candidate — ten
+times what the first run reported over production's grouping. Almost all of it is one phenomenon:
+coincident parallel roads carrying different weights are separate records with the same geometry, so
+a point near them attaches to several records **at one position**. Not one point in 843,135 has two
+*distinct positions* at the exact minimum. That is multiplicity about **which record**, which the
+design wants because those records carry different weights and therefore different journeys, and it
+is not ambiguity about **where**.
 
-**Zero cross-record differences between A and C in 843,135 points.** Every A≠C point is a dispute
-about which position along one polyline to attach to, which is exactly the class the impact bound
-covers — so the magnitude of the entire A-vs-C disagreement is bounded **without routing anything**.
-The median bound is about **0.3 s**. The tail is not negligible: it exceeds 60 s at 8 structures and
-3 cell centres, eleven points in 843,135.
+The decision-relevant rate is how often the conventions *disagree*, and it is **unchanged by the
+record definition** — A≠C at **2.5742%** of structures and **2.2678%** of cell centres, identical
+to the production-grouping run to the point. The extra multiplicity is shared by all three
+conventions, so it cancels out of every comparison. That the disagreement rate is invariant to a
+definition which moved the prevalence rate tenfold is worth more than either figure alone.
 
-A-vs-D is different in kind. D drops every banded near-miss, so **1,232 structures and 728 cell
-centres** differ across records, and for those nothing short of the comparator bounds the
-difference. That asymmetry is why the two comparisons are reported separately rather than averaged.
+Pass 26 was still right to refuse "a handful in 512,633": one point in forty is orders of magnitude
+larger, and the census pins it rather than bounding it.
 
-A small gap in the A≠C row is worth naming because it is the only place the two columns come apart:
-candidate sets differ at 13,196 structures and **positions** at 13,191. The five-point difference is
-the float-against-exact clamp — the occurrence key is built from the binary64 clamp, so two
-descriptions of a shared vertex merge into one candidate while `exact_segment_sq` clamps in exact
-arithmetic and can place them a hair apart. It is five points in 512,633 and it is reported rather
-than rounded away.
+### What A and C actually disagree about
 
-**A bound is not a rate.** `|Δarclength| / L × T` bounds how much a journey time *could* move; it
-says nothing about how often a whole-minute verdict actually moves, which depends on how close the
-time sits to a threshold. Turning the bound into a verdict rate needs the times, which needs the
-comparator. Using the product's own arrival times instead would compare one side of E1 to itself,
-which is the error §2.6 exists to prevent.
+Every A≠C point is a dispute about *where along one record* to attach — the pilot found no
+cross-record A/C disagreement at all, on any set. But "same record" is not sufficient for the
+bound, and the first version treated it as though it were: of 13,196 A≠C structure points,
+**7,324 are bounded** and **5,872 sit on a one-way record**, where moving the attachment can change
+whether a legal journey exists. Among the bounded ones the median is **0.2818 s**, the maximum
+79.16 s, 419 exceed one second and one exceeds sixty.
 
-### The reason C was reverted is real, and it is four parts per million
+So the bound covers **55%** of the A-vs-C disagreement on structures, not all of it. And the
+one-way share is partly a consequence of the record definition itself: keying by weights separates
+a forward/reverse pair whose weights differ into two single-direction records, where production's
+grouping merged them and both directions were finite.
+
+**Three limits on that, all of which the first version of this section overstated.**
+
+**It is objective 1, not the reported time.** Design §2.1 defines objective 2 as the time along the
+*cost*-minimising path. Selection by cost and reporting by time means an arbitrarily small cost
+change can switch the selected route and move the reported time without limit — pass 36 produced a
+0.0129 s bound against a 120.011 s objective-2 move, the size of an apportioned restricted-access
+penalty. E1 is defined against objective 1, so the bound is useful for the estimand this feeds; it
+says nothing about objective 2, whose gap is reported separately inside E1 by construction.
+
+**It is not a rate.** The bound limits how much a time *could* move, not how often a whole-minute
+verdict does. That depends on how close each time sits to a threshold, which needs the times.
+
+**One-way records are excluded.** On a one-way record a moved attachment can leave no legal journey
+at all; a finite time becomes none, which no difference in seconds describes. Those points are
+counted in their own column rather than folded into the bound.
+
+A-vs-D is different in kind: D drops every banded near-miss, so a substantial number of points
+differ across records, and nothing here bounds those.
+
+### The reason C was reverted, measured — and it is not the reason that appeared
 
 Revision 10 reverted revision 9 partly because C compares *computed* residuals for exact equality
-and so can discard a genuine geometric tie — pass 24 F1, shown on a constructed record whose two
-arms are at exact rational squared distance 1 but compute as 0.9999999999999999 and 1.0. The exact
-rational diagnostic finds that on real geometry at **2 of 512,633 structure centroids and 0 of
-330,502 cell centres**.
+and can therefore discard a genuine geometric tie (pass 24 F1, two arms at exact rational squared
+distance 1 computing as 0.9999999999999999 and 1.0).
 
-It is real. It is also about 4 × 10⁻⁶. Genuine exact ties are far more common than the failure to
-keep them — **422 structures and 411 cell centres** have two or more candidates at the exact minimum
-— and C preserves nearly all of them, because positions that are genuinely equidistant usually
-compute equal too. The arithmetic loses a tie only in the narrow case where it does not.
+**That did not occur.** Genuine exact ties discarded by C: zero, on every set measured.
 
-This does not make C correct. It does mean the first of revision 10's two reasons, taken on its own,
-is a thin basis for a convention choice, and this is the first thing to say so with a number.
+**What did occur is a float/exact inversion: four dropped candidates in 512,633 structures,
+arising from two physical events** — each appears on two coincident parallel records under the
+design's keying, and on one under production's. At both points the record's exact minimum is
+unique, and C keeps a position whose exact squared distance is *larger* while dropping the exactly
+nearest one. The computed order is inverted against the exact order:
 
-### Counting candidates is not measuring the answer, and that distinction decides this section
+| | exact squared distance | computed residual |
+|---|---|---|
+| the position C dropped | **482.8530714527748** (nearer) | 21.973917981489485 |
+| the position C kept | 482.8530714540442 | **21.973917981417063** (nearer) |
+
+The mechanism is the same family as pass 24 F1 — computed residuals disagreeing with exact ones —
+but the consequence the design described, losing a tie, is not what the real graph produces. This
+does not make C correct; it means the first of revision 10's two reasons rests on a case that is
+either absent, or a handful of parts per million, depending on how narrowly it is read.
+
+Under the design's record definition there is a second kind of exact tie, counted separately:
+coincident **parallel** roads carrying different weights are different records with the same
+geometry, so a point near them has several candidates at one *position* and one exact distance. That
+is a tie in the design's sense and a duplicate geometrically. Only the distinct-position column is a
+geometric tie of the kind §2.2's band exists to preserve.
+
+### Counting candidates is not measuring the answer
 
 The transformation check first compared candidate **counts**, and on that basis every convention
-looked representation-dependent: a lawful record split moved A, C and D alike. That reading was
-wrong, and the reason is worth keeping. A record split turns one shared-vertex occurrence into two —
-`(r,"v",k)` becomes `(r_a,"v",1)` and `(r_b,"v",0)` — so the count rises while **both candidates sit
-at the same physical position**, and a set of candidates at the same places minimises to the same
-journey under every objective. The count changed; the answer could not.
+looked representation-dependent — the draft said so. It is bookkeeping: a record split turns one
+shared-vertex occurrence into two while both candidates stay at the same physical place, and
+candidates at the same places minimise to the same journey under every objective.
 
-So both are measured, and only the second one bears on a reported time. Comparing positions at a
-1 µm tolerance — far below anything physical, far above the ~2.3 × 10⁻¹⁰ m spacing of binary64 at
-UTM magnitudes — gives a clean and quite different picture:
+Comparing **positions** gives a different and consistent picture across every set:
 
 | lawful re-expression | what it changes | A | C | D |
 |---|---|---|---|---|
@@ -216,65 +269,59 @@ UTM magnitudes — gives a clean and quite different picture:
 | `split_every_segment` — one record per segment | records, same vertices | — | **moves** | — |
 | `split_midpoint` — cut each record at its arclength midpoint | both | **moves** | **moves** | — |
 
-Three things follow, and the third was not predicted by anybody.
-
 **§2.2's claim about A is confirmed, not refuted.** "A degree-two record split does *not* move it"
-holds: under a pure record segmentation A's candidate count changes but **not one retained position
-does**. My first reading of the count table had this backwards.
+holds: under pure record segmentation A's candidate count changes and not one retained position
+does. The count reading had this backwards.
 
-**Pass 24 F2 is confirmed on real geometry.** C's positions *do* move under record segmentation —
-the record-dependence revision 10 reverted revision 9 for. Unlike F1's four-parts-per-million, this
-one is common.
+**Pass 24 F2 is confirmed on real geometry.** C's positions move under record segmentation — the
+record-dependence revision 10 reverted revision 9 for. Unlike F1, this one is common.
 
-**D is the only convention whose retained positions survive all three re-expressions.** That is a
-real argument for the option nobody argued for, and it should be stated with its price: D is defined
-by an **exact rational** global minimum, which is §12 item 1 — the open geometry-arithmetic item —
-rather than something the current float pipeline supplies, and it discards every banded near-miss,
-which is the 1,232 and 728 cross-record differences whose impact nothing here bounds.
+**D's positions did not move under any of the three.** That is an argument for the option nobody
+argued for, and it needs two caveats pass 36 supplied. D is defined by an **exact rational** global
+minimum, which is §12 item 1 — the open geometry-arithmetic item — not something the float pipeline
+provides. And **D's invariance is a property of transformations that preserve exact geometry**: both
+`subdivide` and `split_midpoint` introduce a rounded midpoint, which is not exactly on the original
+line, and pass 36 built a case where that alone moves a retained D position. Only
+`split_every_segment` cuts at existing vertices and preserves exact geometry. So the zeros are
+observations on the points tested, not a theorem.
 
-`split_midpoint` is **confounded by construction** and is reported only for completeness: it inserts
-a vertex *and* splits a record, so a convention moving under it may be responding to either. It is
-not evidence about record segmentation, and `split_every_segment` — same vertices, new records — is
-the clean test.
+`split_midpoint` is **confounded by construction** and reported only for completeness: it inserts a
+vertex *and* splits a record, so a convention moving under it may be responding to either. That A
+and C move under it in equal numbers in every set is what a shared cause looks like.
 
-**The three transformations are not of equal strength.** `subdivide` adds one clamped endpoint per
-segment, `split_every_segment` one record boundary per segment, `split_midpoint` one per record. The
-rates in the generated table are not a ranking of sensitivity between conventions; what they support
-is the qualitative pattern above.
+**The three transformations are not of equal strength** — one new clamped endpoint per segment, one
+record boundary per record, one per segment respectively — so the rates are not a ranking of
+sensitivity between conventions. What they support is the pattern above.
 
 ### What this changes about the choice
 
-Nothing is settled, and the pre-registered rule says so. But the evidential position has moved:
-
-| | before T0 | after T0 |
+| | before T0 | after T0, corrected |
 |---|---|---|
-| "a handful in 512,633" | the phrasing pass 26 refused | **2.6–2.9% of points**, counted |
-| eligibility risk | unmeasured | **0 of 843,135**, exact |
-| A vs C magnitude | unknown without routing | **bounded everywhere**: median 0.3 s, >60 s at 11 points |
-| C discards a genuine tie (F1) | a constructed counterexample | **2 in 512,633**, 0 in 330,502 |
+| "a handful in 512,633" | the phrasing pass 26 refused | a rate orders of magnitude larger, counted on censuses |
+| eligibility risk | unmeasured | no difference on any point measured |
+| A vs C magnitude | unknown without routing | **objective 1** bounded; objective 2 and one-way availability not |
+| C discards a genuine tie (F1) | a constructed counterexample | **not observed**; two float/exact inversions instead |
 | C depends on record segmentation (F2) | a constructed counterexample | **confirmed, and common** |
 | A depends on subdivision | a constructed counterexample | **confirmed, and common** |
 | A under record segmentation | claimed invariant | **invariant in position**, as claimed |
-| D | nobody's candidate | **the only position-invariant convention**, at the price of exact arithmetic and unbounded near-miss loss |
+| D | nobody's candidate | positions unmoved on every point tested, under transformations preserving exact geometry; needs §12 item 1 |
 
-**What would settle it is stage 3**, which needs the development comparator — plan §0 step 4, itself
-gated on §12 item 1. The time box requires this be said rather than substituted for: **verdict
-impact is explicitly unknown.**
+**What would settle it is stage 3**, which needs the development comparator — plan §0 step 4, gated
+on §12 item 1. The time box requires that be said rather than substituted for: **verdict impact is
+explicitly unknown.** And it cannot be shortened by routing only the origins whose own attachments
+differ: a destination's attachment change can affect any origin, which is why the plan says so
+explicitly and why the first version's routing-cost estimate is withdrawn.
 
-One thing the pilot has made cheap for whoever runs stage 3: the points needing a paired route are
-enumerated rather than guessed. Only the points whose candidate sets differ need one — **13,196
-structures and 7,495 cell centres** for A against C, about 2.5% of the routing a full comparison
-would have cost.
+### What was nearly published instead
 
-### A note on what was nearly published instead
-
-Two figures in this document were wrong in a first draft and both were caught by asking what the
-number was a number *of*. "Seven of 25 frame C points have an exact tie" counted raw per-segment
-*descriptions* where one occurrence described twice appears as two — on a set where no point had two
-candidates. And "every convention is representation-dependent" counted candidates where it should
-have counted positions, which inverted the conclusion about A and about D. Both are the failure mode
-`feedback-decide-by-measurement-not-by-argument` records from 2026-11-10, two days after it was
-written, in the first measurement taken since.
+Three figures in drafts of this document were wrong, and the same question caught all three: what is
+the number a number *of*? "Seven of 25 frame C points have an exact tie" counted raw per-segment
+*descriptions*. "Every convention is representation-dependent" counted candidates where it should
+have counted positions, which inverted the conclusion about A and about D. And "C discards a genuine
+tie" counted *being a record's exact minimum* where a tie requires *two occurrences at one
+distance* — that one survived into the committed version and needed an adversary to find. The
+failure mode is recorded in `feedback-decide-by-measurement-not-by-argument`, written two days
+before this measurement.
 
 ---
 
@@ -282,7 +329,7 @@ written, in the first measurement taken since.
 
 <!-- BEGIN GENERATED: scripts/render_t0_results.py -->
 
-**The graph and the record set.** 539,814 nodes, 1,436,992 directed graph edges, **713,452 physical records** (2.0141 graph edges per record — a symmetrised walk graph carries two directed edges per record, so a ratio near 2.0 is the pedestrian reverse and not parallel roads).
+**The graph and the record set.** 539,814 nodes, 1,436,992 directed graph edges, **808,433 design records** against 713,452 production ones — 94,981 records that `snap.EdgeIndex`'s grouping collapses, being parallel roads with different weights. The measurement attaches to the design's records; the first run attached to production's and its prevalence counts are superseded.
 
 **Pinned.** graph `2ee931bc0f2a…`, profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`, places `26ad5ea1a4fd…`, `attach_tie_m` 0.01, caps 200 m / 300 m, shapely 2.2.0, numpy 2.5.4.
 
@@ -290,11 +337,11 @@ written, in the first measurement taken since.
 
 | set | points | A | C | D | on >1 record (A) | >1 occurrence on one record (A) |
 |---|---:|---:|---:|---:|---:|---:|
-| frame B sample | 500 | 11 (2.2000%) | 0 (0.0000%) | 0 (0.0000%) | 0 | 11 |
-| frame C sample | 500 | 10 (2.0000%) | 2 (0.4000%) | 1 (0.2000%) | 2 | 8 |
-| groceries (census) | 550 | 19 (3.4545%) | 12 (2.1818%) | 0 (0.0000%) | 12 | 7 |
-| **all structures (census)** | 512,633 | 14,833 (2.8935%) | 1,654 (0.3226%) | 422 (0.0823%) | 1,654 | 13,211 |
-| **all cell centres (census)** | 330,502 | 8,629 (2.6109%) | 1,139 (0.3446%) | 411 (0.1244%) | 1,139 | 7,511 |
+| frame B sample | 500 | 153 (30.6000%) | 151 (30.2000%) | 151 (30.2000%) | 151 | 11 |
+| frame C sample | 500 | 144 (28.8000%) | 140 (28.0000%) | 139 (27.8000%) | 140 | 8 |
+| groceries (census) | 550 | 99 (18.0000%) | 93 (16.9091%) | 81 (14.7273%) | 93 | 7 |
+| **all structures (census)** | 512,633 | 165,259 (32.2373%) | 157,735 (30.7696%) | 156,703 (30.5683%) | 157,735 | 13,211 |
+| **all cell centres (census)** | 330,502 | 102,473 (31.0053%) | 98,428 (29.7814%) | 97,835 (29.6019%) | 98,428 | 7,511 |
 
 ### Where the conventions disagree, and whether it changes an answer
 
@@ -310,30 +357,32 @@ Over both censuses — **843,135 points** — eligibility differs on **0** point
 
 ### The exact rational diagnostic
 
-| set | points | A candidates C drops | …that are genuine exact ties | points with ≥2 candidates at the exact minimum |
-|---|---:|---:|---:|---:|
-| frame B sample | 500 | 11 | **0** | 0 (0.0000%) |
-| frame C sample | 500 | 8 | **0** | 1 (0.2000%) |
-| groceries (census) | 550 | 7 | **0** | 0 (0.0000%) |
-| **all structures (census)** | 512,633 | 13,205 | **2** | 422 (0.0823%) |
-| **all cell centres (census)** | 330,502 | 7,505 | **0** | 411 (0.1244%) |
+A *tie* needs two occurrences at the same exact distance. A candidate that is simply its record's **unique** exact minimum is not one, and C dropping it is a float/exact **inversion** — C keeps a position that is exactly farther. The two were conflated in the first run (Codex pass 36 F1). And under the design's record definition, coincident parallel roads give several candidates at one *position*, which is a tie in the design's sense and a duplicate geometrically, so the distinct-position count is reported separately.
 
-### The impact bound, with no routing
+| set | points | A cand. C drops | …genuine exact ties | …unique exact minimum (inversions) | ≥2 candidates at exact min | ≥2 **distinct positions** at exact min |
+|---|---:|---:|---:|---:|---:|---:|
+| frame B sample | 500 | 20 | **0** | **0** | 151 (30.2000%) | 0 (0.0000%) |
+| frame C sample | 500 | 12 | **0** | **0** | 139 (27.8000%) | 0 (0.0000%) |
+| groceries (census) | 550 | 8 | **0** | **0** | 81 (14.7273%) | 0 (0.0000%) |
+| **all structures (census)** | 512,633 | 18,865 | **0** | **4** | 156,703 (30.5683%) | 0 (0.0000%) |
+| **all cell centres (census)** | 330,502 | 10,955 | **0** | **0** | 97,835 (29.6019%) | 0 (0.0000%) |
 
-`|Δarclength| / L × T` plus the band's connector difference, which bounds the journey-time change whatever the network beyond the record's endpoints. Applies only where the disputed candidates sit on the **same record**; across records nothing short of routing bounds it.
+### The objective-1 impact bound, with no routing
 
-| set | pair | differing | same record | cross record (unbounded) | median | max | >1 s | >30 s | >60 s |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| frame B sample | A vs C | 11 | 11 | 0 | 0.3043 s | 2.38 s | 2 | 0 | 0 |
-| frame B sample | A vs D | 11 | 11 | 0 | 0.3043 s | 2.38 s | 2 | 0 | 0 |
-| frame C sample | A vs C | 8 | 8 | 0 | 0.5605 s | 0.84 s | 0 | 0 | 0 |
-| frame C sample | A vs D | 9 | 8 | 1 | 0.5605 s | 0.84 s | 0 | 0 | 0 |
-| groceries (census) | A vs C | 7 | 7 | 0 | 0.1287 s | 1.39 s | 1 | 0 | 0 |
-| groceries (census) | A vs D | 19 | 7 | 12 | 0.1287 s | 1.39 s | 1 | 0 | 0 |
-| **all structures (census)** | A vs C | 13,196 | 13,196 | 0 | 0.2794 s | 127.41 s | 726 | 14 | 8 |
-| **all structures (census)** | A vs D | 14,411 | 13,179 | 1,232 | 0.2793 s | 79.16 s | 719 | 7 | 2 |
-| **all cell centres (census)** | A vs C | 7,495 | 7,495 | 0 | 0.3431 s | 80.24 s | 577 | 6 | 3 |
-| **all cell centres (census)** | A vs D | 8,218 | 7,490 | 728 | 0.3428 s | 80.24 s | 574 | 3 | 1 |
+`|Δarclength| / L × T` plus the band's connector difference. It bounds **objective 1** — `min over eligible destinations of total travel time`, which is the objective E1 is defined against (design §2.1). It does **not** bound objective 2, the time along the *cost*-minimising path: selection by cost and reporting by time means a 0.013 s cost change can switch the route and move the reported time by 120 s (Codex pass 36 F2). Nor does it bound route **availability**, so points whose disputed record is one-way are excluded and counted — on a one-way record a finite journey can become none, which no difference in seconds describes.
+
+| set | pair | differing | bounded | one-way (excl.) | cross record (unbounded) | median | max | >1 s | >30 s | >60 s |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| frame B sample | A vs C | 11 | 2 | 9 | 0 | 2.3754 s | 2.38 s | 1 | 0 | 0 |
+| frame B sample | A vs D | 11 | 2 | 9 | 0 | 2.3754 s | 2.38 s | 1 | 0 | 0 |
+| frame C sample | A vs C | 8 | 4 | 4 | 0 | 0.6818 s | 0.84 s | 0 | 0 | 0 |
+| frame C sample | A vs D | 9 | 4 | 4 | 1 | 0.6818 s | 0.84 s | 0 | 0 | 0 |
+| groceries (census) | A vs C | 7 | 6 | 1 | 0 | 0.1698 s | 1.39 s | 1 | 0 | 0 |
+| groceries (census) | A vs D | 19 | 6 | 1 | 12 | 0.1698 s | 1.39 s | 1 | 0 | 0 |
+| **all structures (census)** | A vs C | 13,196 | 7,324 | 5,872 | 0 | 0.2818 s | 79.16 s | 419 | 3 | 1 |
+| **all structures (census)** | A vs D | 14,411 | 7,316 | 5,863 | 1,232 | 0.2823 s | 79.16 s | 419 | 3 | 1 |
+| **all cell centres (census)** | A vs C | 7,495 | 3,957 | 3,538 | 0 | 0.3207 s | 38.05 s | 283 | 1 | 0 |
+| **all cell centres (census)** | A vs D | 8,218 | 3,956 | 3,534 | 728 | 0.3207 s | 38.05 s | 283 | 1 | 0 |
 
 ### Representation sensitivity: three lawful re-expressions
 
@@ -363,11 +412,11 @@ Two columns per convention, and the difference between them is the whole point: 
 
 | set | points | seconds | ms/point |
 |---|---:|---:|---:|
-| frame B sample | 500 | 0.1 | 0.274 |
-| frame C sample | 500 | 0.1 | 0.281 |
-| groceries (census) | 550 | 0.1 | 0.207 |
-| **all structures (census)** | 512,633 | 118.2 | 0.231 |
-| **all cell centres (census)** | 330,502 | 75.5 | 0.228 |
+| frame B sample | 500 | 0.1 | 0.266 |
+| frame C sample | 500 | 0.1 | 0.298 |
+| groceries (census) | 550 | 0.1 | 0.214 |
+| **all structures (census)** | 512,633 | 128.8 | 0.251 |
+| **all cell centres (census)** | 330,502 | 92.8 | 0.281 |
 
 Graph preparation 109 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
 

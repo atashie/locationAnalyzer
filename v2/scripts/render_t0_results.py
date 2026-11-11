@@ -49,10 +49,12 @@ def render(d: dict) -> str:
     g = d["graph"]
     out.append("**The graph and the record set.** "
                f"{g['nodes']:,} nodes, {g['graph_edges']:,} directed graph edges, "
-               f"**{g['physical_records']:,} physical records** "
-               f"({g['graph_edges_per_record']} graph edges per record — a symmetrised walk graph "
-               "carries two directed edges per record, so a ratio near 2.0 is the pedestrian "
-               "reverse and not parallel roads).")
+               f"**{g['design_records']:,} design records** against "
+               f"{g['production_records']:,} production ones — "
+               f"{g['records_production_collapses']:,} records that `snap.EdgeIndex`'s grouping "
+               "collapses, being parallel roads with different weights. The measurement attaches "
+               "to the design's records; the first run attached to production's and its "
+               "prevalence counts are superseded.")
     p = d["pinned"]
     out.append("")
     out.append(f"**Pinned.** graph `{str(p['graphml_sha256'])[:12]}…`, profile "
@@ -110,29 +112,44 @@ def render(d: dict) -> str:
     out.append("")
     out.append("### The exact rational diagnostic")
     out.append("")
-    out.append("| set | points | A candidates C drops | …that are genuine exact ties | "
-               "points with ≥2 candidates at the exact minimum |")
-    out.append("|---|---:|---:|---:|---:|")
+    out.append("A *tie* needs two occurrences at the same exact distance. A candidate that is "
+               "simply its record's **unique** exact minimum is not one, and C dropping it is a "
+               "float/exact **inversion** — C keeps a position that is exactly farther. The two "
+               "were conflated in the first run (Codex pass 36 F1). And under the design's record "
+               "definition, coincident parallel roads give several candidates at one *position*, "
+               "which is a tie in the design's sense and a duplicate geometrically, so the "
+               "distinct-position count is reported separately.")
+    out.append("")
+    out.append("| set | points | A cand. C drops | …genuine exact ties | …unique exact minimum "
+               "(inversions) | ≥2 candidates at exact min | ≥2 **distinct positions** at exact min |")
+    out.append("|---|---:|---:|---:|---:|---:|---:|")
     for k in present:
         v, n = sets[k], sets[k]["points"]
         e = v["exact"]
         out.append(f"| {LABELS[k]} | {n:,} | {e['A_candidates_C_drops']:,} "
                    f"| **{e['A_candidates_C_drops_that_are_genuine_exact_ties']}** "
+                   f"| **{e.get('A_candidates_C_drops_that_are_the_unique_exact_minimum', 0)}** "
                    f"| {e['points_with_two_or_more_candidates_at_the_exact_minimum']:,} "
-                   f"({pct(e['points_with_two_or_more_candidates_at_the_exact_minimum'], n)}) |")
+                   f"({pct(e['points_with_two_or_more_candidates_at_the_exact_minimum'], n)}) "
+                   f"| {e.get('points_with_two_or_more_DISTINCT_POSITIONS_at_the_exact_minimum', 0):,} "
+                   f"({pct(e.get('points_with_two_or_more_DISTINCT_POSITIONS_at_the_exact_minimum', 0), n)}) |")
 
     # ---- the impact bound
     out.append("")
-    out.append("### The impact bound, with no routing")
+    out.append("### The objective-1 impact bound, with no routing")
     out.append("")
-    out.append("`|Δarclength| / L × T` plus the band's connector difference, which bounds the "
-               "journey-time change whatever the network beyond the record's endpoints. Applies "
-               "only where the disputed candidates sit on the **same record**; across records "
-               "nothing short of routing bounds it.")
+    out.append("`|Δarclength| / L × T` plus the band's connector difference. It bounds **objective "
+               "1** — `min over eligible destinations of total travel time`, which is the "
+               "objective E1 is defined against (design §2.1). It does **not** bound objective 2, "
+               "the time along the *cost*-minimising path: selection by cost and reporting by time "
+               "means a 0.013 s cost change can switch the route and move the reported time by "
+               "120 s (Codex pass 36 F2). Nor does it bound route **availability**, so points "
+               "whose disputed record is one-way are excluded and counted — on a one-way record a "
+               "finite journey can become none, which no difference in seconds describes.")
     out.append("")
-    out.append("| set | pair | differing | same record | cross record (unbounded) | median | max "
-               "| >1 s | >30 s | >60 s |")
-    out.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+    out.append("| set | pair | differing | bounded | one-way (excl.) | cross record (unbounded) "
+               "| median | max | >1 s | >30 s | >60 s |")
+    out.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for k in present:
         for pair in ("A_vs_C", "A_vs_D"):
             b = sets[k]["impact_bound"][pair]
@@ -140,7 +157,9 @@ def render(d: dict) -> str:
             cells = (f"{s_['median']:.4f} s | {s_['max']:.2f} s | {s_['over_1s']:,} "
                      f"| {s_['over_30s']:,} | {s_['over_60s']:,}") if s_ else "— | — | — | — | —"
             out.append(f"| {LABELS[k]} | {pair.replace('_', ' ')} | {b['points_differing']:,} "
-                       f"| {b['same_record']:,} | {b['cross_record_unbounded']:,} | {cells} |")
+                       f"| {b.get('same_record_bidirectional_bounded', 0):,} "
+                       f"| {b.get('one_way_unbounded', 0):,} "
+                       f"| {b['cross_record_unbounded']:,} | {cells} |")
 
     # ---- representation sensitivity
     sub = d["subdivision"]

@@ -27,11 +27,20 @@ within `global_min + band`: taking every record whose bounding box meets the dis
 then every segment of those records cannot miss a candidate. `STRtree.query_nearest` supplies the
 global minimum and `STRtree.query` the window.
 
-**A record is one physical edge** — a distinct `(node pair, canonical geometry)`, which is exactly
-`snap.EdgeIndex`'s key and so the record set production snaps against. Parallel graph edges that
-share a node pair and a geometry are one place and are counted once; the run reports how many
-records that merge covers, because the design is explicit that merging by canonical identity must
-not decide a *ranking* question (it does not here — attachment does no ranking).
+**A record is an edge record in the DESIGN's sense.** `snap.EdgeIndex` keys by
+`(node pair, canonical geometry)` and keeps the cost-minimal parallel edge. That is right for
+production — it is what the CSR does — but it collapses parallel records carrying *different
+weights*, and design §2.4 fixes identity and grouping separately from ranking precisely so that
+grouping cannot answer a ranking question. Codex pass 36 F4 measured the cost of conflating them:
+11 multiple-candidate points on frozen frame B become **16** when the weight-variants are kept
+apart, across 5,239 affected geometry groups.
+
+So this attaches to `Records(kind="design")`, keyed by
+`(node pair, canonical geometry, travel_time, cost)`. `symmetrise` copies the data dict exactly, so
+a walk graph's forward/reverse pair carries identical weights and collapses into one bidirectional
+record — as `toy.ToyEdge` models it — while a parallel edge with different weights is a second
+record. The production count is reported beside it. **The first run of this pilot attached to the
+production grouping, and its prevalence counts are superseded.**
 
 Run from v2/:  uv run python scripts/t0_attachment_pilot.py [--subdivision-sample 100]
 Writes docs/experiments/t0-attachment-pilot.json -- a TRACKED path, deliberately. Nothing
@@ -66,7 +75,6 @@ from locfinder.measure.frames import (file_digest, read_frame,  # noqa: E402
 from locfinder.measure.toy import ATTACH_TIE_M, MIN_SEGMENT_M, _segment_nearest  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
-from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import (access_speed_mps, add_travel_times,  # noqa: E402
                                          symmetrise)
 
@@ -119,6 +127,67 @@ class Pos:
         self.residual, self.arclength = residual, arclength
         self.x, self.y, self.occurrence = x, y, occurrence
         self.exact_sq: Fraction | None = None
+
+
+class Records:
+    """The record set the pilot attaches to, with its own STRtree. See the module docstring.
+
+    Exposes exactly what the measurement needs — `geoms`, `tree`, `fwd_time`, `rev_time` — so the
+    two definitions are interchangeable and the difference between them is measured rather than
+    assumed.
+    """
+
+    __slots__ = ("kind", "geoms", "tree", "fwd_time", "rev_time", "graph_edges")
+
+    def __init__(self, G, index, *, kind: str) -> None:
+        from locfinder.traveltime.snap import _canonical_geometry_key, _edge_geometry
+
+        if kind not in ("design", "production"):
+            raise ValueError(f"unknown record kind {kind!r}")
+        geoms: list = []
+        starts: list[int] = []
+        fwd_t: list[float] = []
+        rev_t: list[float] = []
+        fwd_c: list[float] = []
+        rev_c: list[float] = []
+        seen: dict[tuple, int] = {}
+        edges = 0
+        for u, v, _k, data in G.edges(keys=True, data=True):
+            edges += 1
+            t = float(data["travel_time"])
+            c = float(data.get("cost", t))
+            geom = _edge_geometry(G, u, v, data)
+            iu, iv = index[u], index[v]
+            key = (min(iu, iv), max(iu, iv), _canonical_geometry_key(geom))
+            if kind == "design":
+                key = key + (t, c)
+            if key not in seen:
+                g0 = geom.coords[0]
+                near_u = abs(g0[0] - G.nodes[u]["x"]) + abs(g0[1] - G.nodes[u]["y"]) < 1e-6
+                starts.append(iu if near_u else iv)
+                seen[key] = len(geoms)
+                geoms.append(geom)
+                fwd_t.append(math.inf)
+                rev_t.append(math.inf)
+                fwd_c.append(math.inf)
+                rev_c.append(math.inf)
+            i = seen[key]
+            if iu == starts[i]:
+                if c < fwd_c[i]:
+                    fwd_c[i], fwd_t[i] = c, t
+            elif c < rev_c[i]:
+                rev_c[i], rev_t[i] = c, t
+        arr = np.empty(len(geoms), dtype=object)
+        arr[:] = geoms
+        self.kind = kind
+        self.geoms = arr
+        self.tree = shapely.STRtree(geoms)
+        self.fwd_time = np.asarray(fwd_t, dtype=np.float64)
+        self.rev_time = np.asarray(rev_t, dtype=np.float64)
+        self.graph_edges = edges
+
+    def __len__(self) -> int:
+        return len(self.geoms)
 
 
 def raw_positions(geoms, window, px, py) -> list[Pos]:
@@ -204,25 +273,42 @@ def positions_differ(before: list[Pos], after: list[Pos]) -> bool:
     journey under every objective. Deduplicating by position before comparing is what makes this a
     question about the answer rather than about the bookkeeping.
 
+    **Matching is spatial, not lexicographic (Codex pass 36 F7).** The first version sorted both
+    sets by `(x, y)` and compared them pairwise, which breaks the correspondence under a coordinate
+    perturbation smaller than the tolerance: `{(0,0), (0,10)}` against
+    `{(-1e-7, 10), (1e-7, 0)}` sorts into crossed order and was reported as a change. Each position
+    is now matched to its nearest unmatched counterpart, so a set is "the same places" exactly when
+    a one-to-one correspondence within tolerance exists.
+
     **Where this UNDER-reports, stated rather than discovered later.** It compares locations, so it
     merges the two passes of a self-crossing road at one XY -- which design §2.2 insists are "one
-    place and two decisions", because one leaves 500 m of road ahead and the other 100 m. The merge
-    happens on both sides of a transformation, so a difference is still detected unless the change
-    lies entirely within such a merged pair. A complete test would compare each candidate's
-    remaining-route options, which is routing and therefore stage 3.
+    place and two decisions", because one leaves 500 m of road ahead and the other 100 m. Pass 36
+    quantified it: removing one such occurrence is invisible here even where the remaining journey
+    times differ by 666.667 s. A complete test compares each candidate's remaining-route options,
+    which is routing and therefore stage 3.
     """
     def places(cands: list[Pos]) -> list[tuple[float, float]]:
+        """Distinct locations. Pairwise against everything kept, not just the last one."""
         out: list[tuple[float, float]] = []
-        for p in sorted(cands, key=lambda q: (q.x, q.y)):
-            if not out or math.hypot(p.x - out[-1][0], p.y - out[-1][1]) > POSITION_TOL_M:
+        for p in cands:
+            if not any(math.hypot(p.x - qx, p.y - qy) <= POSITION_TOL_M for qx, qy in out):
                 out.append((p.x, p.y))
         return out
 
     a, b = places(before), places(after)
     if len(a) != len(b):
         return True
-    return any(math.hypot(x1 - x2, y1 - y2) > POSITION_TOL_M
-               for (x1, y1), (x2, y2) in zip(a, b))
+    unmatched = list(b)
+    for x1, y1 in a:
+        best, best_d = None, None
+        for j, (x2, y2) in enumerate(unmatched):
+            d = math.hypot(x1 - x2, y1 - y2)
+            if best_d is None or d < best_d:
+                best, best_d = j, d
+        if best is None or best_d > POSITION_TOL_M:
+            return True
+        unmatched.pop(best)
+    return bool(unmatched)
 
 
 class Accum:
@@ -251,7 +337,9 @@ class Accum:
         self.c_drop_points = 0
         self.c_drop_candidates = 0
         self.c_drop_genuine_ties = 0
+        self.c_drop_unique_minima = 0
         self.tie_points = 0
+        self.distinct_tie_points = 0
         self.above_points = 0
         self.above_candidates = 0
         self.key_disagree_points = 0
@@ -260,7 +348,8 @@ class Accum:
         self.window_max = 0
         self.window_sum = 0
         self.bounds = {pair: {"points_differing": 0, "same_record": 0,
-                              "cross_record_unbounded": 0, "bounds_s": []}
+                              "cross_record_unbounded": 0, "one_way_unbounded": 0,
+                              "bounds_s": []}
                        for pair in ("A_vs_C", "A_vs_D")}
 
     def add(self, r: dict, eidx=None) -> None:
@@ -275,9 +364,11 @@ class Accum:
                     continue
                 acc = self.bounds[pair]
                 acc["points_differing"] += 1
-                if b["same_record"]:
+                if b["scope"] == "same_record_bidirectional":
                     acc["same_record"] += 1
                     acc["bounds_s"].append(b["bound_s"])
+                elif b["scope"] == "one_way":
+                    acc["one_way_unbounded"] += 1
                 else:
                     acc["cross_record_unbounded"] += 1
         self.tree_disagrees += bool(r.get("tree_disagrees"))
@@ -295,7 +386,9 @@ class Accum:
         self.c_drop_points += bool(r.get("c_drops", 0))
         self.c_drop_candidates += r.get("c_drops", 0)
         self.c_drop_genuine_ties += r.get("c_drops_a_genuine_exact_tie", 0)
+        self.c_drop_unique_minima += r.get("c_drops_the_unique_exact_minimum", 0)
         self.tie_points += r.get("candidates_at_exact_min", 0) > 1
+        self.distinct_tie_points += r.get("distinct_positions_at_exact_min", 0) > 1
         self.above_points += r.get("candidates_above_exact_min", 0) > 0
         self.above_candidates += r.get("candidates_above_exact_min", 0)
         self.key_disagree_points += r.get("occurrences_whose_descriptions_disagree_exactly", 0) > 0
@@ -333,7 +426,10 @@ class Accum:
             "points_where_C_drops_an_A_candidate": self.c_drop_points,
             "A_candidates_C_drops": self.c_drop_candidates,
             "A_candidates_C_drops_that_are_genuine_exact_ties": self.c_drop_genuine_ties,
+            "A_candidates_C_drops_that_are_the_unique_exact_minimum": self.c_drop_unique_minima,
             "points_with_two_or_more_candidates_at_the_exact_minimum": self.tie_points,
+            "points_with_two_or_more_DISTINCT_POSITIONS_at_the_exact_minimum":
+                self.distinct_tie_points,
             "points_with_a_candidate_above_the_exact_minimum": self.above_points,
             "A_candidates_above_the_exact_minimum": self.above_candidates,
             "points_where_two_descriptions_of_one_occurrence_disagree_exactly":
@@ -349,17 +445,23 @@ class Accum:
         agg["window_records"] = {"max": self.window_max,
                                  "mean": round(self.window_sum / max(n, 1), 4)}
         agg["impact_bound"] = {
-            "note": "a SOUND bound on the journey-time difference, with no routing: moving an "
-                    "attachment along one record trades one endpoint's partial traversal against "
-                    "the other's by |delta arc| / L * T. Across records nothing short of routing "
-                    "bounds it, and those are counted separately rather than assumed small.",
+            "bounds": "OBJECTIVE 1 only -- min over options of total travel time, which is the "
+                      "objective E1 is defined against (design §2.1). Moving an attachment along "
+                      "one record trades one endpoint's partial traversal against the other's by "
+                      "|delta arc| / L * T, so the minimum moves by no more than that.",
+            "does_not_bound": "OBJECTIVE 2, the time along the COST-minimising path: selection by "
+                              "cost and reporting by time means a 0.013 s cost change can switch "
+                              "the route and move the reported time by 120 s (Codex pass 36 F2). "
+                              "Nor does it bound route AVAILABILITY, so one-way records are "
+                              "excluded and counted.",
             "access_speed_mps": ACCESS_MPS,
         }
         for pair, acc in self.bounds.items():
             b = sorted(acc["bounds_s"])
             agg["impact_bound"][pair] = {
                 "points_differing": acc["points_differing"],
-                "same_record": acc["same_record"],
+                "same_record_bidirectional_bounded": acc["same_record"],
+                "one_way_unbounded": acc["one_way_unbounded"],
                 "cross_record_unbounded": acc["cross_record_unbounded"],
                 "bound_s": ({"max": round(b[-1], 6), "median": round(b[len(b) // 2], 6),
                              "over_1s": sum(1 for x in b if x > 1.0),
@@ -413,6 +515,12 @@ def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dic
         "same_places": {"A_vs_C": not positions_differ(a, c),
                         "A_vs_D": not positions_differ(a, d)},
         "_sets": {"A": a, "C": c, "D": d},
+        # The window this point was measured over, so a transformation check uses the SAME one on
+        # both sides. The first version recomputed a narrower window without `measure_point`'s
+        # numerical slack, and a record sitting at the computed band edge then vanished between the
+        # baseline and the transformed set with the geometry unchanged -- two A candidates became
+        # one before any transformation was applied (Codex pass 36 F6).
+        "_window": window,
     }
     if want_exact:
         exact_min = min(p.exact_sq for p in banded)
@@ -431,8 +539,21 @@ def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dic
             if cur is None or p.exact_sq < cur:
                 by_record_exact[p.record] = p.exact_sq
         out["c_drops"] = len(dropped)
+        # A **tie** needs two occurrences at the same exact distance. The first version asked only
+        # whether the dropped candidate equalled its record's exact minimum, which is a different
+        # question, and it labelled two float/exact INVERSIONS as ties (Codex pass 36 F1): at both
+        # points the exact minimum was unique, and C kept a position that is exactly FARTHER while
+        # dropping the exactly nearest one. Both are now counted, separately.
+        exact_counts: dict[tuple[int, Fraction], int] = {}
+        for q in banded:
+            exact_counts[(q.record, q.exact_sq)] = exact_counts.get((q.record, q.exact_sq), 0) + 1
         out["c_drops_a_genuine_exact_tie"] = sum(
-            1 for p in dropped if p.exact_sq == by_record_exact[p.record])
+            1 for p in dropped
+            if p.exact_sq == by_record_exact[p.record] and exact_counts[(p.record, p.exact_sq)] > 1)
+        out["c_drops_the_unique_exact_minimum"] = sum(
+            1 for p in dropped
+            if p.exact_sq == by_record_exact[p.record]
+            and exact_counts[(p.record, p.exact_sq)] == 1)
         # Among A's retained candidates: how many sit at the exact minimum **of that set** (a
         # genuine tie the band preserved) and how many above it (a near-miss the band admitted).
         # Taken over the retained set rather than over raw positions, so the two numbers describe
@@ -440,11 +561,25 @@ def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dic
         # which is impossible for any set that contains its own minimum.
         if a:
             exact_min_a = min(p.exact_sq for p in a)
-            out["candidates_at_exact_min"] = sum(1 for p in a if p.exact_sq == exact_min_a)
+            at_min = [p for p in a if p.exact_sq == exact_min_a]
+            out["candidates_at_exact_min"] = len(at_min)
             out["candidates_above_exact_min"] = sum(1 for p in a if p.exact_sq > exact_min_a)
+            # Two kinds of exact tie, and conflating them would be the familiar error. Under the
+            # design's record definition, coincident PARALLEL records carrying different weights
+            # are separate records with the same geometry, so a point near them has several
+            # candidates at the same POSITION and the same exact distance. That is a tie in the
+            # design's sense and a duplicate in the geometric sense. A tie between candidates at
+            # DISTINCT positions is the thing §2.2's band exists to preserve -- two arms of a road
+            # genuinely equidistant -- and only that one is a geometric tie.
+            distinct = []
+            for p in at_min:
+                if not any(math.hypot(p.x - qx, p.y - qy) <= POSITION_TOL_M for qx, qy in distinct):
+                    distinct.append((p.x, p.y))
+            out["distinct_positions_at_exact_min"] = len(distinct)
         else:
             out["candidates_at_exact_min"] = 0
             out["candidates_above_exact_min"] = 0
+            out["distinct_positions_at_exact_min"] = 0
         # Why that was possible, and it is a real property worth counting rather than smoothing
         # over: the occurrence key is built from the **float** clamp, so two descriptions of one
         # shared vertex collapse into one candidate -- but `exact_segment_sq` clamps in exact
@@ -472,19 +607,35 @@ ACCESS_MPS = access_speed_mps("walk")
 
 
 def impact_bound(eidx, a: list[Pos], other: list[Pos]) -> dict | None:
-    """A sound bound on how much the journey time can differ between two candidate sets.
+    """Bounds the **objective 1** time difference between two candidate sets, with no routing.
+
+    `|delta arclength| / L * T` plus the band's connector difference. The argument: objective 1 is
+    `min over options of (time to an endpoint + partial traversal)`, and moving along a record
+    trades one endpoint's partial term against the other's by exactly that amount, so the minimum
+    moves by no more than it, whatever lies beyond. Design §2.1 defines objective 1 as
+    `min over eligible destinations of total travel time`, and **E1 is defined against objective
+    1**, so this is the objective the impact question actually feeds.
+
+    **What it does NOT bound, and the first version claimed it did (Codex pass 36 F2).**
+
+    * **Objective 2** -- `time along the path minimising total COST`. Selection by cost and
+      reporting by time means an arbitrarily small cost change can switch the selected route and
+      move the reported time without limit. Pass 36's counterexample: a bound of **0.0129365 s**
+      against an objective-2 move from **249.995 s to 129.983968 s**, a 120.011 s change produced
+      by an apportioned 120 s restricted penalty. No local quantity can bound this; the
+      objective-2-minus-objective-1 gap is the pass-8 H2 selection gap, reported inside E1 as its
+      own signed distribution.
+    * **Route availability.** On a one-way record, moving the attachment can leave no legal journey
+      at all -- a finite time becomes none, which no difference in seconds describes. The bound is
+      therefore reported **only** where every record in dispute is traversable in both directions,
+      and the excluded cases are counted rather than absorbed.
 
     Returns None when the two sets agree. Otherwise the symmetric difference is partitioned:
 
-    * **same record** -- the bound is `|delta arclength| / L * T`, because moving along a record
-      trades one endpoint's partial traversal against the other's by exactly that amount whatever
-      lies beyond. `T` is the larger of the record's two directed times, so the bound does not
-      depend on which direction the route takes.
+    * **same record, both directions legal** -- the bound applies;
+    * **same record, one-way** -- excluded, availability can change;
     * **cross record** -- unbounded here. Two candidates on different records enter different
       networks and only routing can say what that costs.
-
-    The access legs differ by at most the band (0.01 m, 0.0079 s at the walk access speed) and that
-    is added, so the bound covers the connector too.
     """
     a_keys = {p.occurrence: p for p in a}
     o_keys = {p.occurrence: p for p in other}
@@ -500,7 +651,13 @@ def impact_bound(eidx, a: list[Pos], other: list[Pos]) -> dict | None:
     records_o = {p.record for p in other}
     same_record_only = shared_records <= (records_a & records_o)
     if not same_record_only:
-        return {"same_record": False, "bound_s": None,
+        return {"scope": "cross_record", "bound_s": None,
+                "records_in_dispute": len(shared_records)}
+    # Availability: a one-way record can lose its journey entirely when the attachment moves, and
+    # no bound in seconds covers that (pass 36 F2). Excluded and counted, not absorbed.
+    if any(not (np.isfinite(eidx.fwd_time[r]) and np.isfinite(eidx.rev_time[r]))
+           for r in shared_records):
+        return {"scope": "one_way", "bound_s": None,
                 "records_in_dispute": len(shared_records)}
     worst = 0.0
     for record in shared_records:
@@ -512,7 +669,7 @@ def impact_bound(eidx, a: list[Pos], other: list[Pos]) -> dict | None:
             continue
         spread = max(arcs) - min(arcs)
         worst = max(worst, spread / length * max(times))
-    return {"same_record": True,
+    return {"scope": "same_record_bidirectional",
             "bound_s": worst + ATTACH_TIE_M / ACCESS_MPS,
             "arclength_spread_m": max(
                 (max(p.arclength for p in differing) - min(p.arclength for p in differing)), 0.0)}
@@ -541,10 +698,15 @@ def subdivide(geom):
 def split_record(geom, next_id: int) -> tuple[dict, int]:
     """Express one record as two, cut at its arclength midpoint: a degree-two record split.
 
-    Lawful in the sense design §2.2 uses: the road, its length and its legal traversals are
-    unchanged, the weights apportion, and the cut introduces a degree-two node where there was
-    none. `A` is supposed to agree across the two forms and `C` is not -- that is pass 24 F2, and
-    this is what measures it on real geometry instead of on one constructed straight edge.
+Lawful in the sense design §2.2 uses -- the road, its legal traversals and (now) its length
+    are unchanged, the weights apportion, and the cut introduces a degree-two node where there was
+    none. `A` is supposed to agree across the two forms and `C` is not; that is pass 24 F2.
+
+    **It does not preserve EXACT geometry.** An interior cut introduces `(a + t*(b - a))` rounded
+    to binary64, which is not exactly on the original line, so a convention defined by exact
+    arithmetic can move under it for a reason that is arithmetic rather than representational
+    (pass 36 F5). `split_every_segment` cuts only at existing vertices and is the transformation
+    that preserves exact geometry.
 
     Returns `{record id: geometry}` for the halves and the next free id. A record too short to cut
     into two admissible pieces is returned unsplit, and the caller counts that.
@@ -555,30 +717,29 @@ def split_record(geom, next_id: int) -> tuple[dict, int]:
         return {next_id: shapely.LineString(coords)}, next_id + 1
     half = total / 2.0
     run = 0.0
-    first = [coords[0]]
-    rest: list[tuple[float, float]] = []
-    cut_done = False
-    for (ax, ay), (bx, by) in itertools.pairwise(coords):
+    for i, ((ax, ay), (bx, by)) in enumerate(itertools.pairwise(coords)):
         seg = math.hypot(bx - ax, by - ay)
-        if not cut_done and run + seg >= half and seg > 0.0:
+        if run + seg >= half and seg > 0.0:
             t = (half - run) / seg
             mid = (ax + t * (bx - ax), ay + t * (by - ay))
-            # Keep both halves admissible: a cut landing on an existing vertex must not create a
-            # zero-length leading or trailing segment.
-            if math.hypot(mid[0] - ax, mid[1] - ay) >= MIN_SEGMENT_M:
-                first.append(mid)
-            rest = [mid if math.hypot(mid[0] - bx, mid[1] - by) >= MIN_SEGMENT_M else (ax, ay),
-                    (bx, by)]
-            cut_done = True
-        elif cut_done:
-            rest.append((bx, by))
-        else:
-            first.append((bx, by))
+            # The two pieces must SHARE the cut vertex, or the pair is not the same road. The first
+            # version built the second piece from the segment's start where the cut landed on its
+            # end, which turned (0,0),(1,0),(2,0) into pieces of length 1 and 2 -- total 3 against
+            # an original 2 (Codex pass 36 F5). Where the cut lands within MIN_SEGMENT_M of an
+            # existing vertex it is snapped to that vertex, which keeps both pieces admissible and
+            # introduces no new coordinate at all.
+            if math.hypot(mid[0] - ax, mid[1] - ay) < MIN_SEGMENT_M:
+                first, rest = coords[:i + 1], coords[i:]
+            elif math.hypot(mid[0] - bx, mid[1] - by) < MIN_SEGMENT_M:
+                first, rest = coords[:i + 2], coords[i + 1:]
+            else:
+                first, rest = coords[:i + 1] + [mid], [mid] + coords[i + 1:]
+            if len(first) < 2 or len(rest) < 2:
+                return {next_id: shapely.LineString(coords)}, next_id + 1
+            return ({next_id: shapely.LineString(first),
+                     next_id + 1: shapely.LineString(rest)}, next_id + 2)
         run += seg
-    if not cut_done or len(first) < 2 or len(rest) < 2:
-        return {next_id: shapely.LineString(coords)}, next_id + 1
-    return ({next_id: shapely.LineString(first), next_id + 1: shapely.LineString(rest)},
-            next_id + 2)
+    return {next_id: shapely.LineString(coords)}, next_id + 1
 
 
 def split_every_segment(geom, next_id: int) -> tuple[dict, int]:
@@ -631,15 +792,18 @@ def main() -> int:
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
     G, comp = largest_component(G)
     index = {n: i for i, n in enumerate(G.nodes())}
-    eidx = EdgeIndex.from_graph(G, index)
+    # The DESIGN's edge records, not production's geometry groups. T0 measures the design's
+    # convention, so it has to attach to the design's record set; `snap.EdgeIndex`'s grouping is
+    # what production routes on and belongs to E1, not to this question. The production count is
+    # reported beside it so the size of the difference is visible (Codex pass 36 F4).
+    eidx = Records(G, index, kind="design")
+    production = Records(G, index, kind="production")
     geoms = eidx.geoms
     tree = eidx.tree
     prep_s = time.perf_counter() - t0
     graph_edges = G.number_of_edges()
-    # How much the physical-record merge covers, promised in the docstring rather than asserted.
-    parallel = graph_edges - len(eidx.geoms)
     print(f"prepared in {prep_s:.0f}s: {G.number_of_nodes():,} nodes, {graph_edges:,} graph edges "
-          f"-> {len(geoms):,} physical records", flush=True)
+          f"-> {len(geoms):,} design records, {len(production):,} production records", flush=True)
 
     manifest = read_graph_cache_manifest() or {}
     out: dict = {
@@ -660,12 +824,18 @@ def main() -> int:
         },
         "graph": {
             "nodes": G.number_of_nodes(), "graph_edges": graph_edges,
-            "physical_records": len(geoms),
-            "graph_edges_per_record": round(graph_edges / len(geoms), 4),
-            "graph_edges_beyond_one_per_record": parallel,
-            "merge_note": "a record is one (node pair, canonical geometry); a symmetrised walk "
-                          "graph carries two directed edges per record, so a ratio near 2.0 is "
-                          "the pedestrian reverse rather than parallel roads",
+            "record_definition": "design: (node pair, canonical geometry, travel_time, cost)",
+            "design_records": len(geoms),
+            "production_records": len(production),
+            "records_production_collapses": len(geoms) - len(production),
+            "merge_note": "`symmetrise` copies the data dict exactly, so a walk graph's "
+                          "forward/reverse pair has identical weights and collapses into one "
+                          "bidirectional record under BOTH definitions. The difference between "
+                          "the two counts is therefore parallel roads carrying DIFFERENT weights, "
+                          "which design §2.4 requires be kept apart because grouping must not "
+                          "answer a ranking question. The first run of this pilot attached to the "
+                          "production grouping and its prevalence counts are superseded "
+                          "(Codex pass 36 F4).",
             "components": comp.summary,
             "prepare_s": round(prep_s, 1),
         },
@@ -781,11 +951,8 @@ def main() -> int:
             taken = pts[rng.choice(len(pts), size=args.subdivision_sample, replace=False)]
         for x, y in taken:
             px, py = float(x), float(y)
-            pt = shapely.points([px], [py])[0]
-            nearest = tree.query_nearest(pt, return_distance=True, all_matches=True)
-            gmin = float(np.atleast_1d(nearest[1])[0])
-            window = np.atleast_1d(tree.query(pt.buffer(gmin + ATTACH_TIE_M)))
             before = measure_point(geoms, tree, px, py, cap)
+            window = before["_window"]
 
             # (1) insert every segment's midpoint. Penalises A; C and D are blind to it.
             # Only the window records are needed, and `raw_positions` touches nothing else, so
