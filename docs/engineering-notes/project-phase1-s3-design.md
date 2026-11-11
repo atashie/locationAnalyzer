@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-10, head `5bbdcfb` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had. Design
+As of 2026-11-11, head `785f3d1` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 36 are
@@ -19,7 +19,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-10, not recalled:** **1,212 passed, 24 skipped**. The E1c figure verifier
+**Measured 2026-11-11, not recalled:** **1,216 passed, 24 skipped**, across **36** engineering notes. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
@@ -30,7 +30,27 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10, corrected 2026-11-11 after pass 36**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
-| 4 — T3 as a versioned development comparator | **next**, and now also what T0 stage 3 waits on; gated on §12 item 1 |
+| 4 — T3 as a versioned development comparator | **NEXT, AND WHERE TO RESUME.** Also what T0 stage 3 waits on. Still gated on §12 item 1; the plan is below |
+
+## WHERE TO RESUME: step 4, and the gate in front of it
+
+**Step 4 is T3, the development comparator — and it cannot start on its own terms, because §12 item
+1 is still open.** The plan is `docs/plans/2026-11-11-step4-comparator-plan.md`. The short form:
+
+| phase | what | why it is in this order |
+|---|---|---|
+| **4a** | close **§12 item 1**, the geometry arithmetic, with exact binary-rational projection terms | the only remaining T3 gate; three known witnesses, two of them *inside* the declared numerical domain, so the domain does not close it |
+| **4b** | T3 as a **development** comparator — pinned runtime, no cross-implementation claim, fixture-first from T4 | pass 20's standing instruction still holds: *"Do not start a purportedly frozen T3 yet"* |
+| **4c** | T0 **stage 3**, the verdict impact | needs 4b; and pass 36 F3 established it cannot be restricted to the origins whose own attachments differ |
+
+**T0 moved item 0 off the gate list and added a reason for 4a.** Item 0 was "the candidate universe,
+deferred to measurement"; T0 measured it, and the pre-registered rule returned **open on impact**,
+so §2.2's convention A stays provisional and T3 must implement it while remaining able to switch.
+Meanwhile T0's own exact-rational diagnostic is **the arithmetic 4a needs**, already written and
+exercised over 843,135 points — `exact_segment_sq` in `v2/scripts/t0_attachment_pilot.py` computes
+the clamped projection parameter and squared distance in exact rationals. And pass 36 showed D's
+position-invariance holds only under transformations preserving **exact** geometry, which is a third
+independent reason to close 4a.
 
 ## THE WALKED FINDING, and the owner's decision on it
 
