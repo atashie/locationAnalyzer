@@ -72,6 +72,7 @@ from _common import (ACCEPTED_PLACES, GRID, METRO, METRO_DIR,  # noqa: E402
 from locfinder import profile  # noqa: E402
 from locfinder.measure.frames import (file_digest, read_frame,  # noqa: E402
                                       structure_population)
+from locfinder.measure.exact import exact_segment_sq  # noqa: E402
 from locfinder.measure.toy import ATTACH_TIE_M, MIN_SEGMENT_M, _segment_nearest  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
@@ -87,34 +88,18 @@ ACCEPTED_BUILDINGS = METRO_DIR / "overture_buildings_accepted.parquet"
 
 
 # --------------------------------------------------------------------------- exact arithmetic
-def exact_segment_sq(px: float, py: float, ax: float, ay: float,
-                     bx: float, by: float) -> Fraction:
-    """Exact rational squared distance from `p` to segment `a->b`.
-
-    Every binary64 is a rational, and the nearest point on a segment is a rational function of the
-    inputs, so this comparison is exact: no tolerance, no near-tie window. It is the only thing here
-    that can tell a genuine geometric tie from two residuals that merely compute close -- the
-    distinction design revision 10 reverted revision 9 over, where two arms at exact squared
-    distance 1 computed as 0.9999999999999999 and 1.0.
-
-    Degree two in the clamped parameter and no square root is taken, so the result is a Fraction
-    rather than an algebraic number.
-    """
-    PX, PY = Fraction(px), Fraction(py)
-    AX, AY = Fraction(ax), Fraction(ay)
-    DX, DY = Fraction(bx) - AX, Fraction(by) - AY
-    denom = DX * DX + DY * DY
-    if denom == 0:
-        t = Fraction(0)
-    else:
-        t = ((PX - AX) * DX + (PY - AY) * DY) / denom
-        if t < 0:
-            t = Fraction(0)
-        elif t > 1:
-            t = Fraction(1)
-    ex, ey = PX - (AX + t * DX), PY - (AY + t * DY)
-    return ex * ex + ey * ey
-
+# `exact_segment_sq` is imported from `locfinder.measure.exact`, which phase 4a.1 built and design
+# revision 13 made normative as section 2.4 item 7. This file carried its own copy of it until
+# 2026-11-12. The copy clamped with `t < 0` / `t > 1` and the module clamps with `t <= 0` /
+# `t >= 1`; at t exactly 0 or 1 both return the same Fraction, and the two were checked to agree on
+# 10 named cases -- the pass-30 and pass-37 witnesses, a degenerate segment, both clamp boundaries,
+# subnormal and 1e300 coordinates -- and 200,000 random segments across five coordinate scales,
+# a quarter of them placed on the segment so the clamp decides. Exact rational arithmetic on both
+# sides, so that is bit-exact agreement. **This replacement changes no measured quantity**, which is
+# the point: the adoption of the module's other primitives is a separate, labelled change, because
+# it CAN move them.
+#
+# What the module adds beyond the copy: 38 fixtures and a mutation harness. The copy had neither.
 
 # --------------------------------------------------------------------------- the candidate sets
 class Pos:

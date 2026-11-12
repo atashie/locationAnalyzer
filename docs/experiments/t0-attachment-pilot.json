@@ -1,5 +1,5 @@
 {
- "built": "2026-11-11 07:11:29",
+ "built": "2026-11-12 14:22:32",
  "pinned": {
   "metro": "triangle",
   "graphml_sha256": "2ee931bc0f2a303a2b35b29584d5224a2cd175b016734e34ba59e7ea91a5df1f",
@@ -53,7 +53,7 @@
   "records_production_collapses": 94981,
   "merge_note": "`symmetrise` copies the data dict exactly, so a walk graph's forward/reverse pair has identical weights and collapses into one bidirectional record under BOTH definitions. The difference between the two counts is therefore parallel roads carrying DIFFERENT weights, which design \u00a72.4 requires be kept apart because grouping must not answer a ranking question. The first run of this pilot attached to the production grouping and its prevalence counts are superseded (Codex pass 36 F4).",
   "components": "3046 components; kept 539814 nodes (97.5%), dropped 13608",
-  "prepare_s": 109.2
+  "prepare_s": 99.9
  },
  "sets": {
   "frame_B_structures": {
@@ -65,8 +65,8 @@
    "is_a_sample": true,
    "cap_m": 200.0,
    "points": 500,
-   "seconds": 0.13,
-   "ms_per_point": 0.2661,
+   "seconds": 0.12,
+   "ms_per_point": 0.241,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -176,8 +176,8 @@
    "is_a_sample": true,
    "cap_m": 200.0,
    "points": 500,
-   "seconds": 0.15,
-   "ms_per_point": 0.2985,
+   "seconds": 0.14,
+   "ms_per_point": 0.2761,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -287,8 +287,8 @@
    "note": "a census of the accepted grocery coordinates, not a sample",
    "cap_m": 300.0,
    "points": 550,
-   "seconds": 0.12,
-   "ms_per_point": 0.2142,
+   "seconds": 0.11,
+   "ms_per_point": 0.1992,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -397,8 +397,8 @@
    "note": "a census of frame B's population: every structure centroid inside the grid. No sampling uncertainty.",
    "cap_m": 200.0,
    "points": 512633,
-   "seconds": 128.75,
-   "ms_per_point": 0.2511,
+   "seconds": 122.54,
+   "ms_per_point": 0.239,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -519,8 +519,8 @@
    "note": "every cell CENTRE. This is NOT a census of frame C, which draws independent points within each cell: a centre census does not count every affected location inside a cell, and the two must not be compared as if it did.",
    "cap_m": 200.0,
    "points": 330502,
-   "seconds": 92.8,
-   "ms_per_point": 0.2808,
+   "seconds": 100.08,
+   "ms_per_point": 0.3028,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
