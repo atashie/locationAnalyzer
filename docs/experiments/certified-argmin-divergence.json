@@ -1,0 +1,32 @@
+{
+  "draws_per_regime": 5000,
+  "seed": 20261112,
+  "max_precision": 192,
+  "population": "a manufactured cost tie: a partial traversal against a full edge at exactly its rounded cost, with the full edge given the smaller time so the convention always selects it",
+  "regimes": {
+    "utm-like, 1e5 to 1e6 m": {
+      "decided_draws": 5000,
+      "skipped_zero_cost": 0,
+      "agrees": 2429,
+      "differs": 2571,
+      "unresolved": 0,
+      "unresolved_exactly_tied": 0,
+      "unresolved_not_exactly_tied": 0,
+      "differs_rate": 0.5142,
+      "worst_precision_exponent": 64,
+      "seconds": 2.4
+    },
+    "toy, single digits": {
+      "decided_draws": 5000,
+      "skipped_zero_cost": 0,
+      "agrees": 2584,
+      "differs": 2416,
+      "unresolved": 0,
+      "unresolved_exactly_tied": 0,
+      "unresolved_not_exactly_tied": 0,
+      "differs_rate": 0.4832,
+      "worst_precision_exponent": 64,
+      "seconds": 2.44
+    }
+  }
+}
