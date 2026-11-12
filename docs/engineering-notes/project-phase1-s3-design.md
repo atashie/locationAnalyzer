@@ -8,11 +8,11 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-11, head `785f3d1` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
+As of 2026-11-11, head `255970e` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
 `docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
 `...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
-per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 36 are
-`docs/research/34-` to `37-`, with their executable counterexamples committed beside
+per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 37 are
+`docs/research/34-` to `38-`, with their executable counterexamples committed beside
 them**;
 passes 27-32 ran in-session and are recorded in the commits named below.
 Build record: `docs/experiments/s3-instrument-build.md`.
@@ -30,27 +30,42 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10, corrected 2026-11-11 after pass 36**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
-| 4 — T3 as a versioned development comparator | **NEXT, AND WHERE TO RESUME.** Also what T0 stage 3 waits on. Still gated on §12 item 1; the plan is below |
+| 4 — T3 as a versioned development comparator | **NEXT, AND WHERE TO RESUME.** Also what T0 stage 3 waits on. Gated on §12 item 1 and on two gaps Codex pass 37 opened; the plan is below, at **revision 2** |
 
 ## WHERE TO RESUME: step 4, and the gate in front of it
 
 **Step 4 is T3, the development comparator — and it cannot start on its own terms, because §12 item
-1 is still open.** The plan is `docs/plans/2026-11-11-step4-comparator-plan.md`. The short form:
+1 is still open and Codex pass 37 opened two more gaps beside it.** The plan is
+`docs/plans/2026-11-11-step4-comparator-plan.md`, **revision 2**; revision 1 is in history at
+`255970e` and the plan opens with what it got wrong. The short form:
 
 | phase | what | why it is in this order |
 |---|---|---|
-| **4a** | close **§12 item 1**, the geometry arithmetic, with exact binary-rational projection terms | the only remaining T3 gate; three known witnesses, two of them *inside* the declared numerical domain, so the domain does not close it |
+| **4a.1** | close **§12 item 1**: exact rational projection and clamp, correctly-rounded lengths, and the **six formulas actually written** | the only gate the design itself names. Five witnesses W1–W5, three of them *inside* the declared numerical domain, so the domain does not close it |
+| **4a.2** | a **certified** cost comparison, as a diagnostic that measures how often the normative convention's argmin differs | pass 37 F1: exact projection plus exactly-rounded arclength does **not** give the real argmin, and no binary64 convention can. Measuring the gap is what lets development proceed |
+| **4b.0** | a spike on **search semantics** — band, amend, or accept-and-measure | pass 37 F3: §2.4's whole-journey tie rule is **not implementable by a scalar-label search**. Unaffected by 4a, and it is what threatens 4b's box |
 | **4b** | T3 as a **development** comparator — pinned runtime, no cross-implementation claim, fixture-first from T4 | pass 20's standing instruction still holds: *"Do not start a purportedly frozen T3 yet"* |
-| **4c** | T0 **stage 3**, the verdict impact | needs 4b; and pass 36 F3 established it cannot be restricted to the origins whose own attachments differ |
+| **4c** | T0 **stage 3**, the verdict impact | needs 4b; pass 36 F3 established it cannot be restricted to the origins whose own attachments differ, and pass 37 F6 established it measures one fixed graph only |
 
-**T0 moved item 0 off the gate list and added a reason for 4a.** Item 0 was "the candidate universe,
-deferred to measurement"; T0 measured it, and the pre-registered rule returned **open on impact**,
-so §2.2's convention A stays provisional and T3 must implement it while remaining able to switch.
-Meanwhile T0's own exact-rational diagnostic is **the arithmetic 4a needs**, already written and
-exercised over 843,135 points — `exact_segment_sq` in `v2/scripts/t0_attachment_pilot.py` computes
-the clamped projection parameter and squared distance in exact rationals. And pass 36 showed D's
-position-invariance holds only under transformations preserving **exact** geometry, which is a third
-independent reason to close 4a.
+**What "closing item 1" can and cannot mean.** It means exact where the quantity is rational,
+exactly-rounded where it is algebraic, every *deciding* comparison made on the exact value, and the
+composition order fixed and written. It does **not** mean the comparator selects what real arithmetic
+would: the traversal fraction is irrational, so two candidates whose exact costs differ by less than
+one ulp of that fraction can still tie or invert. Pass 37 built the witness — 994.11 s FAIL against
+1 s PASS — and revision 1 of the plan had claimed the stronger thing.
+
+**T0 moved item 0 off the gate list.** Item 0 was "the candidate universe, deferred to measurement";
+T0 measured it, the pre-registered rule returned **open on impact**, so §2.2's convention A stays
+provisional and T3 must implement it while remaining able to switch. Pass 36 also showed D's
+position-invariance holds only under transformations preserving **exact** geometry, which is a second
+reason to close 4a.
+
+**One claim to stop repeating.** T0's `exact_segment_sq` is *not* "the arithmetic 4a needs, already
+written". Pass 37 F7: it returns **only a squared distance**, and `raw_positions` calls it **zero**
+times — the parameter, position, occurrence label and prefix arclength all come from the float
+`_segment_nearest` path, with the exact value attached afterwards as a diagnostic field. It is a
+reusable exact squared-distance diagnostic and nothing more, and re-running T0 on real exact
+primitives is a **hypothesis to test**, not a prediction.
 
 ## THE WALKED FINDING, and the owner's decision on it
 
@@ -241,7 +256,7 @@ deserves the same adversarial pass as the thing it repairs.
   byte-backed arrays stop accidental writes but not a native write through
   `__array_interface__`.
 - **T4** `measure/toy.py` + `conformance.py` + `conformance_cases.py` — **17 cases, 23 numeric
-  rejected values** (cases measured), corpus digest `e645be28`.
+  rejected values** (cases measured), corpus digest `47f4beb6` (verified by Codex pass 37; the chain `e645be28` -> `f5ced7a0` -> `47f4beb6` is in `docs/experiments/s3-instrument-build.md` and this note had not followed it).
 - **T4's second layer** `measure/invariants.py` + `mutants.py` — **31 scenarios, 14 mutants** (measured).
   **Nine** mutants escape the corpus; **one** escapes the invariants (`pass20-F5-strict-cap`); each is
   caught by the other layer, and `EXPECTED_COVERAGE` pins the split.

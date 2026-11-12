@@ -197,3 +197,39 @@ implementation, the tests against *each other's coverage*. The honest summary is
 guard moves the unexamined assumption rather than removing it**, and the only thing that has
 reliably located it in this project is an adversary — human, agent or mutation harness — trying to
 get past it. Eight instances now, four of them inside two days.
+
+## A ninth instance, 2026-11-11: a plan whose own invalidation condition it failed to run
+
+Codex pass 37 reviewed the step 4 plan — a plan, nothing built. Four High findings, and the first of
+them tripped a condition the plan had written down itself:
+
+> **4a turns out not to close W2.** [...] if an exact projection still produces a wrong argmin on
+> some witness, the item is wider than arithmetic and T3 stays gated.
+
+I wrote that sentence and then did not test it. Pass 37 did, and produced the witness in one try:
+two records whose exact costs differ by `4.1e-17`, where the plan's arithmetic makes them tie and
+the time discriminator then reports **1 s PASS** against the real answer of **994.11 s FAIL**.
+
+The shape is the usual one, one level further up than pass 36's: **a guarantee about intermediate
+quantities reported as a guarantee about the decision that consumes them.** Correctly rounding every
+operand says nothing about their ratio. I had even written the honest version of the limit —
+"exact where the quantity is rational, exactly-rounded where it is algebraic... not exact
+throughout" — and then drew the conclusion that the gate was closed, which that sentence does not
+support.
+
+Three more in the same pass were cheaper to find and should have been free:
+
+- **Two of my own sentences contradicted each other four lines apart.** 4b.2 named "two CSR
+  matrices, cost for selection and time for reporting" as the architecture; 4b.3 required both
+  objectives first-class. The production pair is *one cost-selected view* and erases objective 1.
+- **A fixture's expected value was inverted against the rule adopted in the same table.** W1's
+  "required" answer was the one that follows from the summation the table rejects. The adopted rule
+  leaves W1 at its current value, so the fixture as written would have failed on day one.
+- **"`fsum` cannot reach W2" was too strong**, and W2 was load-bearing for the choice of method.
+  Reassociating before rounding reaches it exactly.
+
+**What this instance adds to the rule.** The previous eight were all about guards and measurements.
+This one is about a *plan*, and it is the cheapest of the nine by a wide margin: the cost was a
+rewrite of a document, not a correction to published figures or a rebuild. **An adversarial pass on
+a plan buys the same class of finding at a fraction of the price**, which is the argument for running
+one before the first line of code rather than after the last. Nine instances now.
