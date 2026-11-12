@@ -148,15 +148,32 @@ hot path.
   one**, over T4's fixtures and over T2's frames. That turns F1 from an open gate into a disclosed,
   measured limit.
 
-> **A scope defect in this phase, found while designing it.** The sentence above says the reported
-> quantity is measured "over T4's fixtures and over T2's frames". **The second half cannot be
-> delivered here, because it needs a router and the router is 4b.** A journey cost over a frame
-> point requires selecting a destination over the real graph, which is T3; nothing that exists
-> produces journey costs over frame points, and `toy.py` evaluates constructed toy graphs only. T0's
-> own stage 3 is deferred for exactly this reason. So 4a.2 delivers the comparator, proves it on
-> T4's fixtures and on W5, and reports the divergence rate **over T4's fixtures**; the journey-level
-> rate over T2's frames moves to **4c**, after 4b exists. The plan as written put a dependency after
-> its dependent.
+> **Neither half of that sentence survived building the phase, and both reasons are measured.**
+> The sentence says the rate is measured "over T4's fixtures and over T2's frames".
+>
+> * **Over T2's frames needs a router, and the router is 4b.** A journey cost over a frame point
+>   requires selecting a destination over the real graph, which is T3; nothing that exists produces
+>   journey costs over frame points, and `toy.py` evaluates constructed toy graphs only. T0's own
+>   stage 3 is deferred for exactly this reason. **The plan put a dependency after its dependent**;
+>   this half moves to **4c**.
+> * **Over T4's fixtures would measure nothing, and that is a measurement rather than an excuse.**
+>   Certifying a T4 journey needs its *terms* — which edges, which partial spans, which connectors
+>   — and `toy.Journey` carries only rounded totals, while §2.4 says in terms that a route identity
+>   contains **no arclength interval**, so the terms cannot be recovered from it. Recording them
+>   means threading exact term provenance through the oracle that 112 corpus tests and 14 mutants
+>   stand on. `scripts/measure_certified_argmin.py` measured whether that would buy anything:
+>   **0 of 17 fixtures contains a near tie** under 10⁶ ulps, the tightest margin being `0.8` at
+>   3.6e15 ulps. A certified sweep would therefore return `AGREES`, or an exactly-tied
+>   `UNRESOLVED`, on every one of them and report no divergence. The plumbing is not bought.
+>
+> **A conformance-coverage finding fell out of that measurement, and it is worth more than the
+> sweep would have been.** §2.4's travel-time discriminator fires in **11 of the 17** fixtures, each
+> time on an *exact* cost tie — and in **10** of those 11 the tied journeys all share one travel
+> time, so which one the discriminator picks cannot move a reported number. The rule's *consequence*
+> is exercised by **exactly one** fixture. Set against this phase's own finding that the
+> discriminator selects the wrong journey about **half** the time when a tie is manufactured, one
+> consequential fixture is thin cover for a load-bearing rule, and §12's conformance-suite artifact
+> should say so.
 
 **This is what lets T3-as-development proceed.** Pass 20's instruction already permitted ordinary
 development; what it refused was a frozen T3, and that stays refused.

@@ -69,6 +69,56 @@ def draw(rng: random.Random, regime: str) -> tuple[c.Journey, c.Journey]:
     return a, b
 
 
+def t4_margins() -> dict:
+    """Why the certified comparator is not swept over T4's fixtures: they contain no near-ties.
+
+    The step 4 plan asked for the divergence rate "over T4's fixtures". Certifying a T4 journey
+    needs its **terms** — which edges, which partial spans, which connectors — and `toy.Journey`
+    carries only the rounded totals, while §2.4 says in terms that a route identity contains no
+    arclength interval, so the terms cannot be recovered from it. Recording them would mean
+    threading exact term provenance through the oracle that 112 corpus tests and 14 mutants stand
+    on.
+
+    This measures whether that would buy anything, instead of arguing about it. Two figures per
+    case: the gap between the best cost and the next **distinct** cost, in ulps; and how many
+    journeys sit **exactly** at the minimum, which is when §2.4's travel-time discriminator fires.
+    """
+    from locfinder.measure import toy
+    from locfinder.measure.conformance_cases import CASES
+
+    rows = []
+    for case in CASES:
+        js = toy.journeys(case.graph, case.origin, list(case.destinations))
+        row: dict = {"case": case.name, "journeys": len(js)}
+        if js:
+            best = min(j.cost for j in js)
+            at_min = [j for j in js if j.cost == best]
+            second = next((c for c in sorted(j.cost for j in js) if c != best), None)
+            import math as _m
+            row["journeys_at_the_minimum_cost"] = len(at_min)
+            row["distinct_times_among_them"] = sorted({j.time_s for j in at_min})
+            row["discriminator_fires"] = len(at_min) > 1
+            row["discriminator_changes_the_reported_time"] = len(row["distinct_times_among_them"]) > 1
+            if second is not None:
+                gap = second - best
+                row["cost_gap"] = gap
+                row["cost_gap_in_ulps"] = gap / (_m.ulp(best) if best else _m.ulp(1.0))
+        rows.append(row)
+
+    fires = sum(1 for r in rows if r.get("discriminator_fires"))
+    matters = sum(1 for r in rows if r.get("discriminator_changes_the_reported_time"))
+    near = sum(1 for r in rows if r.get("cost_gap_in_ulps", float("inf")) < 1e6)
+    return {
+        "note": ("the certified comparator is NOT swept over these fixtures; this measures why. "
+                 "A near-tie is where the convention's argmin can diverge from the real one, and "
+                 "these fixtures have none"),
+        "cases": rows,
+        "cases_with_a_near_tie_under_1e6_ulps": near,
+        "cases_where_the_time_discriminator_fires": fires,
+        "cases_where_it_changes_the_reported_time": matters,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -136,6 +186,17 @@ def main(argv: list[str] | None = None) -> int:
 
     # Plain ASCII in the printed line: this goes to a Windows console whose code page mangles a
     # section sign into a replacement character.
+    t4 = t4_margins()
+    report["t4_fixtures"] = t4
+    print(f"\nT4's conformance fixtures, measured rather than swept: "
+          f"{t4['cases_with_a_near_tie_under_1e6_ulps']} of {len(t4['cases'])} contain a near tie "
+          f"under 1e6 ulps. The time discriminator fires in "
+          f"{t4['cases_where_the_time_discriminator_fires']} of them, by an EXACT cost tie, and "
+          f"changes the reported time in {t4['cases_where_it_changes_the_reported_time']}.")
+    print("  So a certified sweep over them would return AGREES or an exactly-tied UNRESOLVED "
+          "throughout and measure no divergence. That is why the terms are not threaded through "
+          "the oracle for it.")
+
     print("\nWhat this does and does not say. The rate is over a MANUFACTURED tie, which is the "
           "case section 2.4's tie rule exists for and not the frequency of that case on a real "
           "graph. It bounds nothing about T2's frames; it says what happens when the rule fires.")

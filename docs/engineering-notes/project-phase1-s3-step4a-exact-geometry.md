@@ -296,6 +296,60 @@ and gives every counter its own expectation per witness, because the old control
 attack against the new sentinel and confirmed it is rejected. **Checking a repair against the
 specific attack is cheap and I had not been doing it.**
 
+## 8. Phase 4a.2: the divergence is about half, and two scope claims died by measurement
+
+`v2/locfinder/measure/certify.py`, 40 fixtures, 21 mutations all caught,
+`scripts/measure_certified_argmin.py`. Suite 1,300 passed, 24 skipped.
+
+**The number item 5 was missing.** When §2.4's tie rule fires on a manufactured cost tie — a partial
+traversal against a full edge at exactly its rounded cost, which is W5 generalised from one witness
+to a population — the convention selects the wrong journey **51.42%** of the time at UTM-like
+magnitudes and **48.32%** at toy magnitudes, over 5,000 draws each. So "unknown rather than small"
+becomes "about half, when the rule fires". How often it fires on a real graph is still unmeasured,
+and that is 4c.
+
+**The invalidation condition was run, not asserted.** The plan said the approach fails if
+`UNRESOLVED` is common rather than confined to exact ties. **Zero** `UNRESOLVED` in 10,000 draws,
+worst refinement `2**-64`. Pass 37 F1 was a condition I wrote down and did not execute; this one is
+executed and its result is in the artifact.
+
+**The interval primitive's bound is proved by squaring, not inferred from its construction.**
+`s = isqrt(floor(q * 4**k))` gives `s/2**k <= sqrt(q) < (s+1)/2**k` because `s**2 <= floor(q*4**k)`
+and `(s+1)**2 > floor(q*4**k)` are integer facts. Pass 37's lesson — integer scaling alone is not a
+rounding proof — is why that is a test over a constructed family rather than a comment.
+
+**The harness found two real gaps the 34 fixtures missed, and both are about where fixtures were
+chosen from.** Replacing the bracket's floor with a **ceiling** passed everything, because a ceiling
+breaks the lower bound only when rounding the scaled radicand up crosses a perfect square; uniform
+random radicands never land there. Witness found by search: `q = 130461413/6` at `k=1`. And no
+fixture spanned **more than two segments**, so deleting the whole middle segment of a span changed
+nothing anywhere. Both are the same lesson as pass 38 F3's midpoint destination: *fixtures drawn
+from the easy part of the input space test the easy part of the code.*
+
+Two further survivors were **equivalent** mutants — removing the zero-denominator guard still raises
+`ZeroDivisionError` from the next statement, and removing the index guard still raises `IndexError`
+from the list — so both now mutate to *swallow* the condition instead. And one anchor matched twice,
+because `_rational_cost` carries the same orientation lines, so that mutation had been reporting
+SKIP and testing nothing. **That is pass 38 F3's defect again, found by the harness itself this time
+rather than by a reviewer** — which is what the SKIP report is for.
+
+**Two scope claims in the plan died by measurement rather than by argument**, which is the part of
+this phase I would keep if I kept nothing else:
+
+* the rate "over T2's frames" needs a router, and the router is a *later* phase — the plan had a
+  dependency after its dependent;
+* the rate "over T4's fixtures" would measure nothing: **0 of 17** fixtures has a near tie, the
+  tightest margin being `0.8` at 3.6e15 ulps. Threading exact term provenance through the oracle to
+  sweep them would have been a day spent certifying foregone conclusions. **Measuring the margins
+  first cost four minutes.**
+
+**And that measurement found something better than the sweep.** §2.4's travel-time discriminator
+fires in **11 of 17** fixtures, always on an exact tie, and in **10** of those 11 every tied journey
+carries the same travel time — so the choice cannot move a reported number. The rule's *consequence*
+is covered by **one** fixture. Against a measured ~50% wrong-selection rate when a tie is
+manufactured, that is thin cover for a load-bearing rule. **A rule can be exercised often and tested
+once.**
+
 ## What this phase does not do
 
 It does not make the comparator select what real arithmetic would select. That is pass 37 F1, it is
