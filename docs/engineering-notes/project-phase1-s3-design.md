@@ -8,19 +8,21 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-12, head `d1276c2` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
-`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 13** — revision 13 closes §12
-amendment item 1, the geometry arithmetic, and opens items 5 and 6; plan
+As of 2026-11-12, head `0b7281d` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
+`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 13**, amended the same day after Codex pass 38 — it closes §12
+amendment item 1, the geometry arithmetic, opens items 5 and 6, and scopes item 7’s
+"every comparison on the exact value" clause away from §2.2’s caps and band, which are
+decided on the correctly-rounded residual; plan
 `...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
-per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 37 are
-`docs/research/34-` to `38-`, with their executable counterexamples committed beside
-them**;
+per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 38 are
+`docs/research/34-` to `39-`, with their executable counterexamples committed beside
+them, and pass 38 also has its prompt committed before the pass ran**;
 passes 27-32 ran in-session and are recorded in the commits named below.
 Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-11, not recalled:** **1,254 passed, 24 skipped**, across **37** engineering notes. The E1c figure verifier
+**Measured 2026-11-12, not recalled:** **1,259 passed, 24 skipped**, across **37** engineering notes, with **24** geometry mutations all caught. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 

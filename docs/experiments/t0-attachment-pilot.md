@@ -339,7 +339,10 @@ segment, both clamp boundaries, subnormal and `1e300` coordinates — and on 200
 across five coordinate scales, a quarter of them placed on the segment so the clamp decides.
 `v2/scripts/compare_t0_artifacts.py` then compared the whole re-run against the previous artifact:
 **610 leaves, no difference outside the build stamp and the durations**. The tool was itself tested
-with planted edits, two volatile and two real, before it was believed.
+with planted edits, two volatile and two real, before it was believed — and after Codex pass 38 F7
+showed it flattened containers (`{"x": []}` matched `{"x": [{}]}`, `False` matched `0`) it was
+rewritten as a recursive typed comparison with a 13-case self-test. **The refactor claim was
+re-checked under the stronger tool and survives.**
 
 **The adoption was censused rather than sampled**, at 844,685 points and 36,555,718 per-segment
 positions, because making `prefix_arclength` take a cache of its record's segment lengths took the
@@ -348,12 +351,31 @@ per segment, which is quadratic in the segment count. The cache is a performance
 have altered a measured quantity, so its equivalence is held by a test over random geometries and by
 a mutation that supplies a wrong cache, not by the argument that it obviously cannot.
 
-**The result: the arithmetic moves, and one rule's decision moves with it.** Conventions **A** and
-**D** retain the same candidates at the same places on every one of the 844,685 points.
-**`C_exact`** differs from **C** on **2** of the 512,633 structure centroids, and on neither of the
-other four sets. Underneath, 2.1 million residuals and 16.4 million arclengths differ — by at most
-`2.4e-10` m and `7.3e-12` m — 42 attachment positions move by at most `4.7e-10` m, and **no single
-segment's parameter flips between a vertex and an interior point anywhere**.
+**The result, as corrected after Codex pass 38 F4.** It has two halves and the first draft of this
+section reported only one of them.
+
+*What does not move.* Eligibility, candidate counts and retained **places** are identical under
+**A**, **C_exact** and **D** on every one of the 844,685 points, bar C's two. The vertex/segment
+**structure** of the retained occurrences is identical too, and **no single segment's parameter
+flips between a vertex and an interior point anywhere** in 36,555,718 positions. `C_exact` differs
+from `C` on **2** of the 512,633 structure centroids and on none of the other four sets.
+
+*What does move.* The **occurrence identity §2.2 actually specifies** carries the *unrounded*
+parameter, and it changes on **573,107 of 844,685 points — 67.8%**. The first draft reported "0
+occurrences changed" because it compared a deliberately coarsened label with the parameter dropped,
+which is the vertex/segment structure and not the normative identity. Underneath, 2,142,228
+parameters differ **exactly** where only 1,333,808 differ as rounded binary64 images — the exact
+count is **1.61×** the figure first published, which had converted both sides to `float` before
+comparing them. 2,142,080 residuals and 16,459,230 arclengths differ, by at most `2.4e-10` m and
+`7.3e-12` m, and 42 rounded positions move by at most `4.7e-10` m.
+
+**So the honest summary is a provenance finding, not an answer finding.** The adoption does not move
+where a point attaches — the places are identical and the largest displacement anywhere is half a
+nanometre — and it does not move which candidates are retained. It does change the **recorded
+identity** of two thirds of those candidates, because an occurrence label contains a parameter and
+the parameter changes. §12 requires the retained candidate set to be persisted *by identity*, so two
+runs differing only in this arithmetic would write different manifests for the same points while
+reporting the same answers. That is worth knowing and it is not a defect in either arithmetic.
 
 **Why C is the one that moves, and why that was predicted rather than discovered.** A's rule is a
 0.01 m band, which is seven to eight orders of magnitude wider than anything the arithmetic changes,
@@ -392,9 +414,15 @@ positional** — a vertex candidate may leave along every incident edge, an inte
 traverse 36 µm of segment 2 — and whether either of those changes a reported journey time is a
 routing question this pilot does not answer. That is stage 3, and it is step 4's phase 4c.
 
-**Two limits of the comparison, stated rather than left to be found.** The two tables answer
-different questions and neither alone is the measurement.
+**What each column can and cannot see.** No column alone is the measurement, and Codex pass 38 found
+this list one entry short — the missing entry was the one that mattered.
 
+* **Vertex/segment structure against exact occurrence identity.** `coarse_occurrence` drops the
+  interior parameter, so it answers "did the retained occurrence move between a vertex and a segment
+  interior, or onto a different segment". It is **not** §2.2's identity, which includes the
+  unrounded parameter. Reporting only the coarse column is how the first draft of this section said
+  nothing changed while two thirds of the recorded identities did. Both are now reported, and a
+  reader wanting "did the recorded candidate set change" wants the **exact** column.
 * `positions_differ` matches places within `POSITION_TOL_M` = `1e-6` m. Every displacement the
   arithmetic itself produces is at most `4.7e-10` m, three to four orders of magnitude *below* that
   tolerance, so the places column is blind to the arithmetic's own drift by construction. What it is
@@ -497,58 +525,184 @@ Two columns per convention, and the difference between them is the whole point: 
 
 The same points measured twice: once with the arithmetic this pilot published, once with §2.4 item 7's primitives. Scope: **every point of every set** — 844,685 points and 36,555,718 per-segment positions. **A** and **D** are one rule measured two ways. **C** is not: its rule is equality of the *computed* residual, so exact arithmetic makes a different rule, reported as `C_exact` and inheriting none of this pilot's evidence.
 
-| set | points | comparison | eligibility | count | occurrences | places |
-|---|---:|---|---:|---:|---:|---:|
-| frame B sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
-| frame B sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
-| frame B sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
-| frame C sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
-| frame C sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
-| frame C sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
-| groceries (census) | 550 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
-| groceries (census) | 550 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
-| groceries (census) | 550 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
-| **all structures (census)** | 512,633 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
-| **all structures (census)** | 512,633 | `C_exact_vs_C` | 0 | 0 | 2 | **2** |
-| **all structures (census)** | 512,633 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
-| **all cell centres (census)** | 330,502 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
-| **all cell centres (census)** | 330,502 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
-| **all cell centres (census)** | 330,502 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+| set | points | comparison | eligibility | count | vertex/segment structure | **exact occurrence identity** | places |
+|---|---:|---|---:|---:|---:|---:|---:|
+| frame B sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **384** (76.8000%) | 0 |
+| frame B sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **384** (76.8000%) | 0 |
+| frame B sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **384** (76.8000%) | 0 |
+| frame C sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **259** (51.8000%) | 0 |
+| frame C sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **259** (51.8000%) | 0 |
+| frame C sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **259** (51.8000%) | 0 |
+| groceries (census) | 550 | `A_exact_vs_A` | 0 | 0 | 0 | **486** (88.3636%) | 0 |
+| groceries (census) | 550 | `C_exact_vs_C` | 0 | 0 | 0 | **486** (88.3636%) | 0 |
+| groceries (census) | 550 | `D_exact_vs_D` | 0 | 0 | 0 | **486** (88.3636%) | 0 |
+| **all structures (census)** | 512,633 | `A_exact_vs_A` | 0 | 0 | 0 | **389,703** (76.0199%) | 0 |
+| **all structures (census)** | 512,633 | `C_exact_vs_C` | 0 | 0 | 2 | **389,696** (76.0185%) | 2 |
+| **all structures (census)** | 512,633 | `D_exact_vs_D` | 0 | 0 | 0 | **389,673** (76.0140%) | 0 |
+| **all cell centres (census)** | 330,502 | `A_exact_vs_A` | 0 | 0 | 0 | **182,275** (55.1510%) | 0 |
+| **all cell centres (census)** | 330,502 | `C_exact_vs_C` | 0 | 0 | 0 | **182,272** (55.1500%) | 0 |
+| **all cell centres (census)** | 330,502 | `D_exact_vs_D` | 0 | 0 | 0 | **182,264** (55.1476%) | 0 |
 
 The arithmetic underneath those decisions does move. Counted over the same positions, so a zero above is a statement about decisions and not about numbers:
 
-| set | positions | residual differs | max | arclength differs | max | parameter differs | position moved | max | vertex/interior flips |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| frame B sample | 20,353 | 1,459 | 2.364e-10 m | 8,819 | 3.638e-12 m | 910 | 0 | 0.000e+00 m | 0 |
-| frame C sample | 28,363 | 969 | 2.308e-10 m | 14,699 | 7.276e-12 m | 652 | 0 | 0.000e+00 m | 0 |
-| groceries (census) | 9,417 | 1,889 | 2.355e-10 m | 2,504 | 9.095e-13 m | 1,056 | 0 | 0.000e+00 m | 0 |
-| **all structures (census)** | 17,555,955 | 1,441,030 | 2.394e-10 m | 6,866,788 | 7.276e-12 m | 869,627 | 28 | 4.657e-10 m | 0 |
-| **all cell centres (census)** | 18,941,630 | 696,733 | 2.397e-10 m | 9,566,420 | 7.276e-12 m | 461,563 | 14 | 4.657e-10 m | 0 |
+| set | positions | residual differs | max | arclength differs | max | parameter differs, exactly | its rounded image differs | rounded position moved | max | vertex/interior flips |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| frame B sample | 20,353 | 1,459 | 2.364e-10 m | 8,819 | 3.638e-12 m | **1,459** | 910 | 0 | 0.000e+00 m | 0 |
+| frame C sample | 28,363 | 969 | 2.308e-10 m | 14,699 | 7.276e-12 m | **969** | 652 | 0 | 0.000e+00 m | 0 |
+| groceries (census) | 9,417 | 1,889 | 2.355e-10 m | 2,504 | 9.095e-13 m | **1,889** | 1,056 | 0 | 0.000e+00 m | 0 |
+| **all structures (census)** | 17,555,955 | 1,441,030 | 2.394e-10 m | 6,866,788 | 7.276e-12 m | **1,441,101** | 869,627 | 28 | 4.657e-10 m | 0 |
+| **all cell centres (census)** | 18,941,630 | 696,733 | 2.397e-10 m | 9,566,420 | 7.276e-12 m | **696,810** | 461,563 | 14 | 4.657e-10 m | 0 |
 
 **The sentinel, because every figure above is a count of differences.** An exact path that silently behaved like the float one would report zeros and read as good news, so two witnesses built to separate the paths must separate them or the run stops:
 
-| witness | float parameter | exact parameter | float label | exact label |
-|---|---|---|---|---|
-| W2 dot-product cancellation | `0.0` | `33554432/4722366482869645` | `(0, 'v', 0)` | `(0, 's', 0)` |
-| W3 subtraction near the coordinate bound | `1.0` | `10737418239999999/10737418240000000` | `(0, 'v', 1)` | `(0, 's', 0)` |
+| witness | must separate | counters fired | float parameter | exact parameter | float label | exact label |
+|---|---|---|---|---|---|---|
+| W2 dot-product cancellation | yes | yes | `0.0` | `33554432/4722366482869645` | `(0, 'v', 0)` | `(0, 's', 0)` |
+| W3 subtraction near the coordinate bound | yes | yes | `1.0` | `10737418239999999/10737418240000000` | `(0, 'v', 1)` | `(0, 's', 0)` |
+| control, an ordinary interior attachment | no (control) | no | `0.5` | `1/2` | `(0, 's', 0)` | `(0, 's', 0)` |
+
+Each witness is run through `adoption_stats`, the function that produces the census figures, and not through the projection alone — Codex pass 38 F5 showed that forcing both arithmetic requests to the float branch left the earlier sentinel passing while the census reported zeros. The control exists because two witnesses alone cannot distinguish a live counter from one stuck at 1.
 
 The points where a retained candidate changed:
 
 | point | comparison | what changed | candidates before | after | float minimum (m) | exact minimum (m) |
 |---|---|---|---:|---:|---:|---:|
-| `699485.6283, 3963460.7648` | `C_exact_vs_C` | occurrences, places | 2 | 2 | 21.973917981417063 | 21.97391798138818 |
-| `665635.9142, 3983718.6369` | `C_exact_vs_C` | occurrences, places | 2 | 2 | 17.71692748864446 | 17.716927488643076 |
+| `683146.6607, 3978519.8710` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 32.988845740123175 | 32.9888457401507 |
+| `683146.6607, 3978519.8710` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 32.988845740123175 | 32.9888457401507 |
+| `683146.6607, 3978519.8710` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 32.988845740123175 | 32.9888457401507 |
+| `690742.6606, 3966109.4743` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 19.055310778327527 | 19.055310778363538 |
+| `690742.6606, 3966109.4743` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 19.055310778327527 | 19.055310778363538 |
+| `690742.6606, 3966109.4743` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 19.055310778327527 | 19.055310778363538 |
+| `714529.6446, 3952743.1862` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 24.545500466016552 | 24.545500466042192 |
+| `714529.6446, 3952743.1862` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 24.545500466016552 | 24.545500466042192 |
+| `714529.6446, 3952743.1862` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 24.545500466016552 | 24.545500466042192 |
+| `725253.6908, 3968851.1242` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 18.372147142183337 | 18.37214714220993 |
+| `725253.6908, 3968851.1242` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 18.372147142183337 | 18.37214714220993 |
+| `725253.6908, 3968851.1242` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 18.372147142183337 | 18.37214714220993 |
+| `720214.3154, 3971646.1918` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 22.93997885039857 | 22.93997885056329 |
+| `720214.3154, 3971646.1918` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 22.93997885039857 | 22.93997885056329 |
+| `720214.3154, 3971646.1918` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 22.93997885039857 | 22.93997885056329 |
+| `702385.3573, 3952714.9979` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 33.30509823706569 | 33.30509823707345 |
+| `702385.3573, 3952714.9979` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 33.30509823706569 | 33.30509823707345 |
+| `702385.3573, 3952714.9979` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 33.30509823706569 | 33.30509823707345 |
+| `686393.2132, 3962595.1125` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 18.287077896368395 | 18.287077896496886 |
+| `686393.2132, 3962595.1125` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 18.287077896368395 | 18.287077896496886 |
+| `686393.2132, 3962595.1125` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 18.287077896368395 | 18.287077896496886 |
+| `716207.4275, 3963041.0154` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 26.88415970672004 | 26.88415970678109 |
+| `716207.4275, 3963041.0154` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 26.88415970672004 | 26.88415970678109 |
+| `716207.4275, 3963041.0154` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 26.88415970672004 | 26.88415970678109 |
+| `715842.4228, 3970098.7283` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 10.891224550679937 | 10.891224550641212 |
+| `714120.2237, 3981967.8591` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 61.904383568377824 | 61.90438356825979 |
+| `714120.2237, 3981967.8591` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 61.904383568377824 | 61.90438356825979 |
+| `714120.2237, 3981967.8591` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 61.904383568377824 | 61.90438356825979 |
+| `698903.5190, 3957872.0486` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 2.0285290496316017 | 2.0285290495027626 |
+| `698903.5190, 3957872.0486` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 2.0285290496316017 | 2.0285290495027626 |
+| `698903.5190, 3957872.0486` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 2.0285290496316017 | 2.0285290495027626 |
+| `670578.6202, 3978901.3946` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 18.96929249383617 | 18.969292493834345 |
+| `670578.6202, 3978901.3946` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 18.96929249383617 | 18.969292493834345 |
+| `670578.6202, 3978901.3946` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 18.96929249383617 | 18.969292493834345 |
+| `725788.3540, 3974280.8040` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 37.7153657585658 | 37.71536575863075 |
+| `725788.3540, 3974280.8040` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 37.7153657585658 | 37.71536575863075 |
+| `725788.3540, 3974280.8040` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 37.7153657585658 | 37.71536575863075 |
+| `717171.5886, 3992771.8588` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 6.3952451475143075 | 6.3952451474873655 |
+| `717171.5886, 3992771.8588` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 6.3952451475143075 | 6.3952451474873655 |
+| `717171.5886, 3992771.8588` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 6.3952451475143075 | 6.3952451474873655 |
+| `720369.9936, 3972455.2341` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 5.1056966856260235 | 5.105696685467033 |
+| `720369.9936, 3972455.2341` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 5.1056966856260235 | 5.105696685467033 |
+| `720369.9936, 3972455.2341` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 5.1056966856260235 | 5.105696685467033 |
+| `689764.2705, 3967764.5560` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 16.35518199217936 | 16.355181992208895 |
+| `689764.2705, 3967764.5560` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 16.35518199217936 | 16.355181992208895 |
+| `689764.2705, 3967764.5560` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 16.35518199217936 | 16.355181992208895 |
+| `669830.7804, 3957216.0547` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 51.32439105378845 | 51.32439105387083 |
+| `669830.7804, 3957216.0547` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 51.32439105378845 | 51.32439105387083 |
+| `669830.7804, 3957216.0547` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 51.32439105378845 | 51.32439105387083 |
+| `666350.1127, 3993798.9653` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 123.52546542711657 | 123.52546542692708 |
+| `701967.7222, 3963135.3724` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 14.035870539312931 | 14.035870539181852 |
+| `701967.7222, 3963135.3724` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 14.035870539312931 | 14.035870539181852 |
+| `701967.7222, 3963135.3724` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 14.035870539312931 | 14.035870539181852 |
+| `718594.0972, 3968431.2921` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 8.329624653351763 | 8.329624653472203 |
+| `718594.0972, 3968431.2921` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 8.329624653351763 | 8.329624653472203 |
+| `718594.0972, 3968431.2921` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 8.329624653351763 | 8.329624653472203 |
+| `714192.8098, 3974721.7423` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 33.684204060569364 | 33.68420406038772 |
+| `714192.8098, 3974721.7423` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 33.684204060569364 | 33.68420406038772 |
+| `714192.8098, 3974721.7423` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 33.684204060569364 | 33.68420406038772 |
+| `715591.5915, 3959342.5051` | `A_exact_vs_A` | exact occurrences | 3 | 3 | 36.78133925343151 | 36.781339253462164 |
+| `715591.5915, 3959342.5051` | `C_exact_vs_C` | exact occurrences | 3 | 3 | 36.78133925343151 | 36.781339253462164 |
+| `715591.5915, 3959342.5051` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 36.78133925343151 | 36.781339253462164 |
+| `716054.0240, 3968676.8637` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 8.04113977304191 | 8.041139773197127 |
+| `716054.0240, 3968676.8637` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 8.04113977304191 | 8.041139773197127 |
+| `716054.0240, 3968676.8637` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 8.04113977304191 | 8.041139773197127 |
+| `712593.6282, 3963885.3442` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 26.665738948306654 | 26.665738948438538 |
+| `712593.6282, 3963885.3442` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 26.665738948306654 | 26.665738948438538 |
+| `712593.6282, 3963885.3442` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 26.665738948306654 | 26.665738948438538 |
+| `695791.4718, 3948364.4290` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 20.31031743052109 | 20.310317430571672 |
+| `695791.4718, 3948364.4290` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 20.31031743052109 | 20.310317430571672 |
+| `695791.4718, 3948364.4290` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 20.31031743052109 | 20.310317430571672 |
+| `730250.1130, 3948038.9275` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 4.292554865555211 | 4.292554865428522 |
+| `730250.1130, 3948038.9275` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 4.292554865555211 | 4.292554865428522 |
+| `730250.1130, 3948038.9275` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 4.292554865555211 | 4.292554865428522 |
+| `696424.4528, 3962696.1212` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 18.85105772543465 | 18.851057725332666 |
+| `708064.8893, 3979367.9073` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 28.205967114011045 | 28.20596711404647 |
+| `708064.8893, 3979367.9073` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 28.205967114011045 | 28.20596711404647 |
+| `708064.8893, 3979367.9073` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 28.205967114011045 | 28.20596711404647 |
+| `688771.3334, 3974212.1913` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 17.967268628841634 | 17.967268628736104 |
+| `688771.3334, 3974212.1913` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 17.967268628841634 | 17.967268628736104 |
+| `688771.3334, 3974212.1913` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 17.967268628841634 | 17.967268628736104 |
+| `690117.4913, 3988351.5923` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 13.384645880327877 | 13.38464588033691 |
+| `690117.4913, 3988351.5923` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 13.384645880327877 | 13.38464588033691 |
+| `690117.4913, 3988351.5923` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 13.384645880327877 | 13.38464588033691 |
+| `722743.3998, 3957481.8879` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 13.724368625674435 | 13.724368625656602 |
+| `722743.3998, 3957481.8879` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 13.724368625674435 | 13.724368625656602 |
+| `722743.3998, 3957481.8879` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 13.724368625674435 | 13.724368625656602 |
+| `691926.7202, 3984247.8644` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 43.09284829956751 | 43.09284829961493 |
+| `691926.7202, 3984247.8644` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 43.09284829956751 | 43.09284829961493 |
+| `691926.7202, 3984247.8644` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 43.09284829956751 | 43.09284829961493 |
+| `710004.5163, 3963918.1317` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 21.427726447964073 | 21.427726448001085 |
+| `710004.5163, 3963918.1317` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 21.427726447964073 | 21.427726448001085 |
+| `710004.5163, 3963918.1317` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 21.427726447964073 | 21.427726448001085 |
+| `678292.4987, 3969009.9924` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 22.09945281378831 | 22.099452813794603 |
+| `678292.4987, 3969009.9924` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 22.09945281378831 | 22.099452813794603 |
+| `678292.4987, 3969009.9924` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 22.09945281378831 | 22.099452813794603 |
+| `720175.2035, 3965415.1894` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 11.398926901034194 | 11.398926900843945 |
+| `720175.2035, 3965415.1894` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 11.398926901034194 | 11.398926900843945 |
+| `720175.2035, 3965415.1894` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 11.398926901034194 | 11.398926900843945 |
+| `683211.4948, 3978663.8336` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 31.18703111076491 | 31.18703111079902 |
+| `662150.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 0.890926894299036 | 0.8909268944047917 |
+| `662150.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 0.890926894299036 | 0.8909268944047917 |
+| `662150.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 0.890926894299036 | 0.8909268944047917 |
+| `662250.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 21.64280896173798 | 21.64280896165804 |
+| `662250.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 21.64280896173798 | 21.64280896165804 |
+| `662250.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 21.64280896173798 | 21.64280896165804 |
+| `662350.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 42.394691028721404 | 42.394691028911296 |
+| `662350.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 42.394691028721404 | 42.394691028911296 |
+| `662350.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 42.394691028721404 | 42.394691028911296 |
+| `662450.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 22.539380366182808 | 22.539380365978293 |
+| `662450.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 22.539380366182808 | 22.539380365978293 |
+| `662450.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 22.539380366182808 | 22.539380365978293 |
+| `662550.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 13.202618964729657 | 13.202618964623632 |
+| `662550.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 2 | 2 | 13.202618964729657 | 13.202618964623632 |
+| `662550.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 2 | 2 | 13.202618964729657 | 13.202618964623632 |
+| `662650.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 4.052400257299257 | 4.052400257299308 |
+| `662650.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 4.052400257299257 | 4.052400257299308 |
+| `662650.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 4.052400257299257 | 4.052400257299308 |
+| `662750.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 2 | 2 | 18.882997847057513 | 18.88299784707186 |
+| `662750.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 18.882997847057513 | 18.88299784707186 |
+| `662750.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 18.882997847057513 | 18.88299784707186 |
+| `662850.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 33.107713543273086 | 33.10771354330191 |
+| `662850.0000, 4003450.0000` | `C_exact_vs_C` | exact occurrences | 1 | 1 | 33.107713543273086 | 33.10771354330191 |
+| `662850.0000, 4003450.0000` | `D_exact_vs_D` | exact occurrences | 1 | 1 | 33.107713543273086 | 33.10771354330191 |
+| `664650.0000, 4003450.0000` | `A_exact_vs_A` | exact occurrences | 1 | 1 | 145.9827193721531 | 145.98271937215694 |
 
 ### Cost
 
 | set | points | seconds | ms/point |
 |---|---:|---:|---:|
-| frame B sample | 500 | 0.1 | 0.252 |
-| frame C sample | 500 | 0.1 | 0.277 |
-| groceries (census) | 550 | 0.1 | 0.195 |
-| **all structures (census)** | 512,633 | 123.2 | 0.240 |
-| **all cell centres (census)** | 330,502 | 91.4 | 0.276 |
+| frame B sample | 500 | 0.1 | 0.257 |
+| frame C sample | 500 | 0.1 | 0.290 |
+| groceries (census) | 550 | 0.1 | 0.202 |
+| **all structures (census)** | 512,633 | 124.9 | 0.244 |
+| **all cell centres (census)** | 330,502 | 91.3 | 0.276 |
 
-Graph preparation 101 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
+Graph preparation 102 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
 
 <!-- END GENERATED -->

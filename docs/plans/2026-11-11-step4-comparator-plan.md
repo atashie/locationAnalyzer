@@ -73,13 +73,34 @@ arithmetic — is not, and the amendment has to say so.
 | same-edge interval | **chosen, not merely "specified"** | `f = RN(|s_d − s_o| / total)`, where `s_d` and `s_o` are each the exactly-rounded prefix above and the subtraction is performed **on the exact rational prefixes before rounding**. The rejected reading, `|RN(s_d/total) − RN(s_o/total)|`, differs: at an admissible weight of `6e18`, 666.13 s FAIL against 558.79 s PASS |
 | zero total length | **normative value** | `total == 0` gives `f = 0`, every occurrence on the record shares one position, and the record contributes `cost_base + penalty` once with no apportionment. Distinct structural vertices on an all-zero-length record are **one** occurrence for §2.2's identity and the record's own vertex index is retained for provenance |
 
-> **Two rows of this table were superseded by building it, and the corrections are in design
-> revision 13.** Recorded here rather than edited away, because both were written as settled rules.
+> **Three rows of this table were superseded, and the corrections are in design revision 13.**
+> Recorded here rather than edited away, because all three were written as settled rules. The first
+> two were found by building the table; the third by Codex pass 38 F8, which also corrected the
+> reason given for the first.
+>
+> * **Zero total length.** This row says a zero-length record "contributes `cost_base + penalty`
+>   once with no apportionment" and that "distinct structural vertices on an all-zero-length record
+>   are **one** occurrence". Design revision 13 instead fixes the fraction at **0.0** for every
+>   occurrence pair, and §2.2 preserves the structural occurrence keys. Measured on `(5,5),(5,5),
+>   (5,5)`: the adopted primitive gives a partial cost of **0** at weight 1000 against this row's
+>   **1000**, and the exact pilot retains **two** vertex occurrences, `(0,'v',0)` and `(0,'v',1)`,
+>   against this row's instruction to merge them. The adopted contract is revision 13's; this row is
+>   superseded, and the distinction it was reaching for — a **full** topological traversal of a
+>   zero-length edge against a **partial** one — is a separate question that needs stating in §2.2
+>   rather than smuggling into a fraction rule.
 >
 > * **The same-edge interval.** This table says the subtraction is "performed on the exact rational
->   prefixes before rounding". **There are no exact rational prefixes.** A prefix arclength is a sum
->   of square roots of rationals, which is not rational in general and is not representable as a
->   `Fraction`, so the rule as worded is not implementable. What 4a.1 adopted is the **span**: the
+>   prefixes before rounding", having two lines earlier defined those prefixes as the
+>   *exactly-rounded* ones. ~~**There are no exact rational prefixes**, so the rule as worded is not
+>   implementable.~~ **That claim is withdrawn after Codex pass 38 F2, and it was wrong twice.** A
+>   binary64 is a rational, so subtracting the two rounded prefixes exactly is immediate and the
+>   rule as written was implementable all along; and even for genuinely unrounded prefixes, "not a
+>   `Fraction`" is not "not representable" — a finite sum of rational radicals is an exact algebraic
+>   expression, and pass 38 cancelled W3's common irrational part symbolically to recover the
+>   `1.862645149230957e-9` m gap. The rule is rejected for the reason already **measured** below:
+>   on W3 both rounded prefixes are `20000000`, so their exact difference is `0.0` and the traversal
+>   disappears, against 558.7935 s for the span. I reached for an impossibility argument while
+>   holding a sufficient measurement. What 4a.1 adopted is the **span**: the
 >   remainder of the origin's segment, the whole segments between, and the leading part of the
 >   destination's segment, summed once. In exact arithmetic the span *is* the difference of the two
 >   prefixes, so this is the implementable form of the same intent — and it also never forms the

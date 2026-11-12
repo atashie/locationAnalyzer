@@ -209,30 +209,36 @@ def render(d: dict) -> str:
                    "equality of the *computed* residual, so exact arithmetic makes a different "
                    "rule, reported as `C_exact` and inheriting none of this pilot's evidence.")
         out.append("")
-        out.append("| set | points | comparison | eligibility | count | occurrences | places |")
-        out.append("|---|---:|---|---:|---:|---:|---:|")
+        out.append("| set | points | comparison | eligibility | count | vertex/segment structure | "
+                   "**exact occurrence identity** | places |")
+        out.append("|---|---:|---|---:|---:|---:|---:|---:|")
         for k in apresent:
             v = aset[k]
             for name in ("A_exact_vs_A", "C_exact_vs_C", "D_exact_vs_D"):
+                ex = v["exact_occurrences_changed"][name]
                 out.append(f"| {LABELS[k]} | {v['points']:,} | `{name}` | "
                            f"{v['eligibility_changed'][name]:,} | "
                            f"{v['count_changed'][name]:,} | "
                            f"{v['occurrences_changed'][name]:,} | "
-                           f"**{v['places_changed'][name]:,}** |")
+                           f"**{ex:,}** ({pct(ex, v['points'])}) | "
+                           f"{v['places_changed'][name]:,} |")
         out.append("")
         out.append("The arithmetic underneath those decisions does move. Counted over the same "
                    "positions, so a zero above is a statement about decisions and not about "
                    "numbers:")
         out.append("")
         out.append("| set | positions | residual differs | max | arclength differs | max | "
-                   "parameter differs | position moved | max | vertex/interior flips |")
-        out.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+                   "parameter differs, exactly | its rounded image differs | rounded position "
+                   "moved | max | vertex/interior flips |")
+        out.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
         for k in apresent:
             r = aset[k]["raw"]
             out.append(f"| {LABELS[k]} | {r['positions_compared']:,} | "
                        f"{r['residual_differs']:,} | {r['max_abs_residual_diff_m']:.3e} m | "
                        f"{r['arclength_differs']:,} | {r['max_abs_arclength_diff_m']:.3e} m | "
-                       f"{r['parameter_differs']:,} | {r['position_differs']:,} | "
+                       f"**{r['exact_parameter_differs']:,}** | "
+                       f"{r['rounded_parameter_image_differs']:,} | "
+                       f"{r['position_differs']:,} | "
                        f"{r['max_position_shift_m']:.3e} m | "
                        f"{r['vertex_or_interior_differs']:,} |")
         out.append("")
@@ -241,11 +247,20 @@ def render(d: dict) -> str:
                    "read as good news, so two witnesses built to separate the paths must separate "
                    "them or the run stops:")
         out.append("")
-        out.append("| witness | float parameter | exact parameter | float label | exact label |")
-        out.append("|---|---|---|---|---|")
+        out.append("| witness | must separate | counters fired | float parameter | "
+                   "exact parameter | float label | exact label |")
+        out.append("|---|---|---|---|---|---|---|")
         for c in ad["sentinel"]:
-            out.append(f"| {c['witness']} | `{c['float_t']}` | `{c['exact_t']}` | "
+            out.append(f"| {c['witness']} | {'yes' if c.get('must_differ') else 'no (control)'} | "
+                       f"{'yes' if c.get('counters_fired') else 'no'} | "
+                       f"`{c['float_t']}` | `{c['exact_t']}` | "
                        f"`{c['float_occurrence']}` | `{c['exact_occurrence']}` |")
+        out.append("")
+        out.append("Each witness is run through `adoption_stats`, the function that produces the "
+                   "census figures, and not through the projection alone — Codex pass 38 F5 showed "
+                   "that forcing both arithmetic requests to the float branch left the earlier "
+                   "sentinel passing while the census reported zeros. The control exists because "
+                   "two witnesses alone cannot distinguish a live counter from one stuck at 1.")
         examples = [e for k in apresent for e in aset[k]["examples"]]
         if examples:
             out.append("")

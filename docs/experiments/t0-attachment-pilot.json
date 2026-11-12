@@ -1,5 +1,5 @@
 {
- "built": "2026-11-12 14:56:32",
+ "built": "2026-11-12 16:28:23",
  "pinned": {
   "metro": "triangle",
   "graphml_sha256": "2ee931bc0f2a303a2b35b29584d5224a2cd175b016734e34ba59e7ea91a5df1f",
@@ -49,11 +49,12 @@
   "graph_edges": 1436992,
   "record_definition": "design: (node pair, canonical geometry, travel_time, cost)",
   "design_records": 808433,
+  "design_records_fingerprint": "ed3aae3f04c34dbabae67da5ad79071945556d832a27ef05b8dc82360488f3c8",
   "production_records": 713452,
   "records_production_collapses": 94981,
   "merge_note": "`symmetrise` copies the data dict exactly, so a walk graph's forward/reverse pair has identical weights and collapses into one bidirectional record under BOTH definitions. The difference between the two counts is therefore parallel roads carrying DIFFERENT weights, which design \u00a72.4 requires be kept apart because grouping must not answer a ranking question. The first run of this pilot attached to the production grouping and its prevalence counts are superseded (Codex pass 36 F4).",
   "components": "3046 components; kept 539814 nodes (97.5%), dropped 13608",
-  "prepare_s": 101.1
+  "prepare_s": 102.3
  },
  "sets": {
   "frame_B_structures": {
@@ -66,7 +67,7 @@
    "cap_m": 200.0,
    "points": 500,
    "seconds": 0.13,
-   "ms_per_point": 0.2516,
+   "ms_per_point": 0.257,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -177,7 +178,7 @@
    "cap_m": 200.0,
    "points": 500,
    "seconds": 0.14,
-   "ms_per_point": 0.2772,
+   "ms_per_point": 0.2897,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -288,7 +289,7 @@
    "cap_m": 300.0,
    "points": 550,
    "seconds": 0.11,
-   "ms_per_point": 0.1952,
+   "ms_per_point": 0.2015,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -397,8 +398,8 @@
    "note": "a census of frame B's population: every structure centroid inside the grid. No sampling uncertainty.",
    "cap_m": 200.0,
    "points": 512633,
-   "seconds": 123.2,
-   "ms_per_point": 0.2403,
+   "seconds": 124.88,
+   "ms_per_point": 0.2436,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -519,8 +520,8 @@
    "note": "every cell CENTRE. This is NOT a census of frame C, which draws independent points within each cell: a centre census does not count every affected location inside a cell, and the two must not be compared as if it did.",
    "cap_m": 200.0,
    "points": 330502,
-   "seconds": 91.36,
-   "ms_per_point": 0.2764,
+   "seconds": 91.32,
+   "ms_per_point": 0.2763,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -641,23 +642,45 @@
   "sentinel": [
    {
     "witness": "W2 dot-product cancellation",
+    "must_differ": true,
     "float_t": "0.0",
     "exact_t": "33554432/4722366482869645",
     "float_occurrence": "(0, 'v', 0)",
     "exact_occurrence": "(0, 's', 0)",
     "float_lands_on_a_vertex": true,
     "exact_lands_on_a_vertex": false,
-    "differs": true
+    "positions_compared": 1,
+    "exact_parameter_differs": 1,
+    "vertex_or_interior_differs": 1,
+    "counters_fired": true
    },
    {
     "witness": "W3 subtraction near the coordinate bound",
+    "must_differ": true,
     "float_t": "1.0",
     "exact_t": "10737418239999999/10737418240000000",
     "float_occurrence": "(0, 'v', 1)",
     "exact_occurrence": "(0, 's', 0)",
     "float_lands_on_a_vertex": true,
     "exact_lands_on_a_vertex": false,
-    "differs": true
+    "positions_compared": 1,
+    "exact_parameter_differs": 1,
+    "vertex_or_interior_differs": 1,
+    "counters_fired": true
+   },
+   {
+    "witness": "control, an ordinary interior attachment",
+    "must_differ": false,
+    "float_t": "0.5",
+    "exact_t": "1/2",
+    "float_occurrence": "(0, 's', 0)",
+    "exact_occurrence": "(0, 's', 0)",
+    "float_lands_on_a_vertex": false,
+    "exact_lands_on_a_vertex": false,
+    "positions_compared": 1,
+    "exact_parameter_differs": 0,
+    "vertex_or_interior_differs": 0,
+    "counters_fired": false
    }
   ],
   "sets": {
@@ -679,27 +702,360 @@
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
+    "exact_occurrences_changed": {
+     "A_exact_vs_A": 384,
+     "C_exact_vs_C": 384,
+     "D_exact_vs_D": 384
+    },
     "places_changed": {
      "A_exact_vs_A": 0,
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
-    "points_with_any_change": 0,
+    "points_with_any_change": 384,
     "raw": {
      "positions_compared": 20353,
      "residual_differs": 1459,
      "arclength_differs": 8819,
-     "parameter_differs": 910,
+     "parameter_differs": 0,
      "vertex_or_interior_differs": 0,
      "max_abs_residual_diff_m": 2.3641177904210053e-10,
      "max_abs_arclength_diff_m": 3.637978807091713e-12,
-     "max_abs_parameter_diff": 3.774758283725532e-15,
+     "exact_parameter_differs": 1459,
+     "rounded_parameter_image_differs": 910,
+     "max_abs_parameter_diff": 3.778347311897389e-15,
      "position_differs": 0,
      "max_position_shift_m": 0.0
     },
-    "examples": [],
+    "examples": [
+     {
+      "point_index": 1,
+      "x": 683146.6607313227,
+      "y": 3978519.870972193,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 32.988845740123175,
+      "exact_min_m": 32.9888457401507
+     },
+     {
+      "point_index": 1,
+      "x": 683146.6607313227,
+      "y": 3978519.870972193,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 32.988845740123175,
+      "exact_min_m": 32.9888457401507
+     },
+     {
+      "point_index": 1,
+      "x": 683146.6607313227,
+      "y": 3978519.870972193,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 32.988845740123175,
+      "exact_min_m": 32.9888457401507
+     },
+     {
+      "point_index": 2,
+      "x": 690742.6606275782,
+      "y": 3966109.4742838326,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 19.055310778327527,
+      "exact_min_m": 19.055310778363538
+     },
+     {
+      "point_index": 2,
+      "x": 690742.6606275782,
+      "y": 3966109.4742838326,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 19.055310778327527,
+      "exact_min_m": 19.055310778363538
+     },
+     {
+      "point_index": 2,
+      "x": 690742.6606275782,
+      "y": 3966109.4742838326,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 19.055310778327527,
+      "exact_min_m": 19.055310778363538
+     },
+     {
+      "point_index": 3,
+      "x": 714529.6445825946,
+      "y": 3952743.1862356076,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 24.545500466016552,
+      "exact_min_m": 24.545500466042192
+     },
+     {
+      "point_index": 3,
+      "x": 714529.6445825946,
+      "y": 3952743.1862356076,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 24.545500466016552,
+      "exact_min_m": 24.545500466042192
+     },
+     {
+      "point_index": 3,
+      "x": 714529.6445825946,
+      "y": 3952743.1862356076,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 24.545500466016552,
+      "exact_min_m": 24.545500466042192
+     },
+     {
+      "point_index": 4,
+      "x": 725253.690780462,
+      "y": 3968851.124221122,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.372147142183337,
+      "exact_min_m": 18.37214714220993
+     },
+     {
+      "point_index": 4,
+      "x": 725253.690780462,
+      "y": 3968851.124221122,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.372147142183337,
+      "exact_min_m": 18.37214714220993
+     },
+     {
+      "point_index": 4,
+      "x": 725253.690780462,
+      "y": 3968851.124221122,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.372147142183337,
+      "exact_min_m": 18.37214714220993
+     },
+     {
+      "point_index": 5,
+      "x": 720214.3153903113,
+      "y": 3971646.1917970143,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.93997885039857,
+      "exact_min_m": 22.93997885056329
+     },
+     {
+      "point_index": 5,
+      "x": 720214.3153903113,
+      "y": 3971646.1917970143,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.93997885039857,
+      "exact_min_m": 22.93997885056329
+     },
+     {
+      "point_index": 5,
+      "x": 720214.3153903113,
+      "y": 3971646.1917970143,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.93997885039857,
+      "exact_min_m": 22.93997885056329
+     },
+     {
+      "point_index": 6,
+      "x": 702385.3573011232,
+      "y": 3952714.9979219637,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.30509823706569,
+      "exact_min_m": 33.30509823707345
+     },
+     {
+      "point_index": 6,
+      "x": 702385.3573011232,
+      "y": 3952714.9979219637,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.30509823706569,
+      "exact_min_m": 33.30509823707345
+     },
+     {
+      "point_index": 6,
+      "x": 702385.3573011232,
+      "y": 3952714.9979219637,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.30509823706569,
+      "exact_min_m": 33.30509823707345
+     },
+     {
+      "point_index": 9,
+      "x": 686393.2131613423,
+      "y": 3962595.1124908677,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 18.287077896368395,
+      "exact_min_m": 18.287077896496886
+     },
+     {
+      "point_index": 9,
+      "x": 686393.2131613423,
+      "y": 3962595.1124908677,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 18.287077896368395,
+      "exact_min_m": 18.287077896496886
+     },
+     {
+      "point_index": 9,
+      "x": 686393.2131613423,
+      "y": 3962595.1124908677,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 18.287077896368395,
+      "exact_min_m": 18.287077896496886
+     },
+     {
+      "point_index": 10,
+      "x": 716207.4274964278,
+      "y": 3963041.0154036293,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.88415970672004,
+      "exact_min_m": 26.88415970678109
+     },
+     {
+      "point_index": 10,
+      "x": 716207.4274964278,
+      "y": 3963041.0154036293,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.88415970672004,
+      "exact_min_m": 26.88415970678109
+     },
+     {
+      "point_index": 10,
+      "x": 716207.4274964278,
+      "y": 3963041.0154036293,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.88415970672004,
+      "exact_min_m": 26.88415970678109
+     },
+     {
+      "point_index": 11,
+      "x": 715842.4228089098,
+      "y": 3970098.7283033803,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 10.891224550679937,
+      "exact_min_m": 10.891224550641212
+     }
+    ],
     "sampling": "every point in the set",
-    "seconds": 1.59
+    "seconds": 1.63
    },
    "frame_C_area": {
     "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
@@ -719,27 +1075,360 @@
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
+    "exact_occurrences_changed": {
+     "A_exact_vs_A": 259,
+     "C_exact_vs_C": 259,
+     "D_exact_vs_D": 259
+    },
     "places_changed": {
      "A_exact_vs_A": 0,
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
-    "points_with_any_change": 0,
+    "points_with_any_change": 259,
     "raw": {
      "positions_compared": 28363,
      "residual_differs": 969,
      "arclength_differs": 14699,
-     "parameter_differs": 652,
+     "parameter_differs": 0,
      "vertex_or_interior_differs": 0,
      "max_abs_residual_diff_m": 2.3078605693171994e-10,
      "max_abs_arclength_diff_m": 7.275957614183426e-12,
-     "max_abs_parameter_diff": 6.439293542825908e-15,
+     "exact_parameter_differs": 969,
+     "rounded_parameter_image_differs": 652,
+     "max_abs_parameter_diff": 6.470509976762812e-15,
      "position_differs": 0,
      "max_position_shift_m": 0.0
     },
-    "examples": [],
+    "examples": [
+     {
+      "point_index": 0,
+      "x": 714120.2236928233,
+      "y": 3981967.8590765838,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 61.904383568377824,
+      "exact_min_m": 61.90438356825979
+     },
+     {
+      "point_index": 0,
+      "x": 714120.2236928233,
+      "y": 3981967.8590765838,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 61.904383568377824,
+      "exact_min_m": 61.90438356825979
+     },
+     {
+      "point_index": 0,
+      "x": 714120.2236928233,
+      "y": 3981967.8590765838,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 61.904383568377824,
+      "exact_min_m": 61.90438356825979
+     },
+     {
+      "point_index": 1,
+      "x": 698903.5189520875,
+      "y": 3957872.0485857325,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 2.0285290496316017,
+      "exact_min_m": 2.0285290495027626
+     },
+     {
+      "point_index": 1,
+      "x": 698903.5189520875,
+      "y": 3957872.0485857325,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 2.0285290496316017,
+      "exact_min_m": 2.0285290495027626
+     },
+     {
+      "point_index": 1,
+      "x": 698903.5189520875,
+      "y": 3957872.0485857325,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 2.0285290496316017,
+      "exact_min_m": 2.0285290495027626
+     },
+     {
+      "point_index": 2,
+      "x": 670578.6202270248,
+      "y": 3978901.3945791265,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.96929249383617,
+      "exact_min_m": 18.969292493834345
+     },
+     {
+      "point_index": 2,
+      "x": 670578.6202270248,
+      "y": 3978901.3945791265,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.96929249383617,
+      "exact_min_m": 18.969292493834345
+     },
+     {
+      "point_index": 2,
+      "x": 670578.6202270248,
+      "y": 3978901.3945791265,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.96929249383617,
+      "exact_min_m": 18.969292493834345
+     },
+     {
+      "point_index": 3,
+      "x": 725788.3539724941,
+      "y": 3974280.8040184504,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 37.7153657585658,
+      "exact_min_m": 37.71536575863075
+     },
+     {
+      "point_index": 3,
+      "x": 725788.3539724941,
+      "y": 3974280.8040184504,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 37.7153657585658,
+      "exact_min_m": 37.71536575863075
+     },
+     {
+      "point_index": 3,
+      "x": 725788.3539724941,
+      "y": 3974280.8040184504,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 37.7153657585658,
+      "exact_min_m": 37.71536575863075
+     },
+     {
+      "point_index": 4,
+      "x": 717171.5886495793,
+      "y": 3992771.8587568956,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 6.3952451475143075,
+      "exact_min_m": 6.3952451474873655
+     },
+     {
+      "point_index": 4,
+      "x": 717171.5886495793,
+      "y": 3992771.8587568956,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 6.3952451475143075,
+      "exact_min_m": 6.3952451474873655
+     },
+     {
+      "point_index": 4,
+      "x": 717171.5886495793,
+      "y": 3992771.8587568956,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 6.3952451475143075,
+      "exact_min_m": 6.3952451474873655
+     },
+     {
+      "point_index": 7,
+      "x": 720369.9936215574,
+      "y": 3972455.2341115866,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 5.1056966856260235,
+      "exact_min_m": 5.105696685467033
+     },
+     {
+      "point_index": 7,
+      "x": 720369.9936215574,
+      "y": 3972455.2341115866,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 5.1056966856260235,
+      "exact_min_m": 5.105696685467033
+     },
+     {
+      "point_index": 7,
+      "x": 720369.9936215574,
+      "y": 3972455.2341115866,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 5.1056966856260235,
+      "exact_min_m": 5.105696685467033
+     },
+     {
+      "point_index": 8,
+      "x": 689764.2704567278,
+      "y": 3967764.5559951924,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 16.35518199217936,
+      "exact_min_m": 16.355181992208895
+     },
+     {
+      "point_index": 8,
+      "x": 689764.2704567278,
+      "y": 3967764.5559951924,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 16.35518199217936,
+      "exact_min_m": 16.355181992208895
+     },
+     {
+      "point_index": 8,
+      "x": 689764.2704567278,
+      "y": 3967764.5559951924,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 16.35518199217936,
+      "exact_min_m": 16.355181992208895
+     },
+     {
+      "point_index": 10,
+      "x": 669830.7803704006,
+      "y": 3957216.054656116,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 51.32439105378845,
+      "exact_min_m": 51.32439105387083
+     },
+     {
+      "point_index": 10,
+      "x": 669830.7803704006,
+      "y": 3957216.054656116,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 51.32439105378845,
+      "exact_min_m": 51.32439105387083
+     },
+     {
+      "point_index": 10,
+      "x": 669830.7803704006,
+      "y": 3957216.054656116,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 51.32439105378845,
+      "exact_min_m": 51.32439105387083
+     },
+     {
+      "point_index": 16,
+      "x": 666350.1127060176,
+      "y": 3993798.965271699,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 123.52546542711657,
+      "exact_min_m": 123.52546542692708
+     }
+    ],
     "sampling": "every point in the set",
-    "seconds": 2.1
+    "seconds": 2.14
    },
    "grocery_destinations": {
     "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
@@ -759,27 +1448,360 @@
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
+    "exact_occurrences_changed": {
+     "A_exact_vs_A": 486,
+     "C_exact_vs_C": 486,
+     "D_exact_vs_D": 486
+    },
     "places_changed": {
      "A_exact_vs_A": 0,
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
-    "points_with_any_change": 0,
+    "points_with_any_change": 486,
     "raw": {
      "positions_compared": 9417,
      "residual_differs": 1889,
      "arclength_differs": 2504,
-     "parameter_differs": 1056,
+     "parameter_differs": 0,
      "vertex_or_interior_differs": 0,
      "max_abs_residual_diff_m": 2.355022843403276e-10,
      "max_abs_arclength_diff_m": 9.094947017729282e-13,
-     "max_abs_parameter_diff": 1.6653345369377348e-15,
+     "exact_parameter_differs": 1889,
+     "rounded_parameter_image_differs": 1056,
+     "max_abs_parameter_diff": 1.6302057947502045e-15,
      "position_differs": 0,
      "max_position_shift_m": 0.0
     },
-    "examples": [],
+    "examples": [
+     {
+      "point_index": 1,
+      "x": 701967.7221962763,
+      "y": 3963135.3723859964,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 14.035870539312931,
+      "exact_min_m": 14.035870539181852
+     },
+     {
+      "point_index": 1,
+      "x": 701967.7221962763,
+      "y": 3963135.3723859964,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 14.035870539312931,
+      "exact_min_m": 14.035870539181852
+     },
+     {
+      "point_index": 1,
+      "x": 701967.7221962763,
+      "y": 3963135.3723859964,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 14.035870539312931,
+      "exact_min_m": 14.035870539181852
+     },
+     {
+      "point_index": 2,
+      "x": 718594.0972049285,
+      "y": 3968431.292129638,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.329624653351763,
+      "exact_min_m": 8.329624653472203
+     },
+     {
+      "point_index": 2,
+      "x": 718594.0972049285,
+      "y": 3968431.292129638,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.329624653351763,
+      "exact_min_m": 8.329624653472203
+     },
+     {
+      "point_index": 2,
+      "x": 718594.0972049285,
+      "y": 3968431.292129638,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.329624653351763,
+      "exact_min_m": 8.329624653472203
+     },
+     {
+      "point_index": 3,
+      "x": 714192.8097827474,
+      "y": 3974721.74230066,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.684204060569364,
+      "exact_min_m": 33.68420406038772
+     },
+     {
+      "point_index": 3,
+      "x": 714192.8097827474,
+      "y": 3974721.74230066,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.684204060569364,
+      "exact_min_m": 33.68420406038772
+     },
+     {
+      "point_index": 3,
+      "x": 714192.8097827474,
+      "y": 3974721.74230066,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.684204060569364,
+      "exact_min_m": 33.68420406038772
+     },
+     {
+      "point_index": 4,
+      "x": 715591.5914828276,
+      "y": 3959342.5050896313,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 3,
+      "exact_count": 3,
+      "float_min_m": 36.78133925343151,
+      "exact_min_m": 36.781339253462164
+     },
+     {
+      "point_index": 4,
+      "x": 715591.5914828276,
+      "y": 3959342.5050896313,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 3,
+      "exact_count": 3,
+      "float_min_m": 36.78133925343151,
+      "exact_min_m": 36.781339253462164
+     },
+     {
+      "point_index": 4,
+      "x": 715591.5914828276,
+      "y": 3959342.5050896313,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 36.78133925343151,
+      "exact_min_m": 36.781339253462164
+     },
+     {
+      "point_index": 5,
+      "x": 716054.0239543545,
+      "y": 3968676.8636575574,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.04113977304191,
+      "exact_min_m": 8.041139773197127
+     },
+     {
+      "point_index": 5,
+      "x": 716054.0239543545,
+      "y": 3968676.8636575574,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.04113977304191,
+      "exact_min_m": 8.041139773197127
+     },
+     {
+      "point_index": 5,
+      "x": 716054.0239543545,
+      "y": 3968676.8636575574,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 8.04113977304191,
+      "exact_min_m": 8.041139773197127
+     },
+     {
+      "point_index": 8,
+      "x": 712593.6281755124,
+      "y": 3963885.3442218364,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.665738948306654,
+      "exact_min_m": 26.665738948438538
+     },
+     {
+      "point_index": 8,
+      "x": 712593.6281755124,
+      "y": 3963885.3442218364,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.665738948306654,
+      "exact_min_m": 26.665738948438538
+     },
+     {
+      "point_index": 8,
+      "x": 712593.6281755124,
+      "y": 3963885.3442218364,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 26.665738948306654,
+      "exact_min_m": 26.665738948438538
+     },
+     {
+      "point_index": 9,
+      "x": 695791.4717646963,
+      "y": 3948364.4289525026,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 20.31031743052109,
+      "exact_min_m": 20.310317430571672
+     },
+     {
+      "point_index": 9,
+      "x": 695791.4717646963,
+      "y": 3948364.4289525026,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 20.31031743052109,
+      "exact_min_m": 20.310317430571672
+     },
+     {
+      "point_index": 9,
+      "x": 695791.4717646963,
+      "y": 3948364.4289525026,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 20.31031743052109,
+      "exact_min_m": 20.310317430571672
+     },
+     {
+      "point_index": 10,
+      "x": 730250.113049833,
+      "y": 3948038.9275149275,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.292554865555211,
+      "exact_min_m": 4.292554865428522
+     },
+     {
+      "point_index": 10,
+      "x": 730250.113049833,
+      "y": 3948038.9275149275,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.292554865555211,
+      "exact_min_m": 4.292554865428522
+     },
+     {
+      "point_index": 10,
+      "x": 730250.113049833,
+      "y": 3948038.9275149275,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.292554865555211,
+      "exact_min_m": 4.292554865428522
+     },
+     {
+      "point_index": 11,
+      "x": 696424.4527716863,
+      "y": 3962696.1211551013,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.85105772543465,
+      "exact_min_m": 18.851057725332666
+     }
+    ],
     "sampling": "every point in the set",
-    "seconds": 0.88
+    "seconds": 0.9
    },
    "census_all_structures": {
     "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
@@ -799,56 +1821,360 @@
      "C_exact_vs_C": 2,
      "D_exact_vs_D": 0
     },
+    "exact_occurrences_changed": {
+     "A_exact_vs_A": 389703,
+     "C_exact_vs_C": 389696,
+     "D_exact_vs_D": 389673
+    },
     "places_changed": {
      "A_exact_vs_A": 0,
      "C_exact_vs_C": 2,
      "D_exact_vs_D": 0
     },
-    "points_with_any_change": 2,
+    "points_with_any_change": 389703,
     "raw": {
      "positions_compared": 17555955,
      "residual_differs": 1441030,
      "arclength_differs": 6866788,
-     "parameter_differs": 869627,
+     "parameter_differs": 0,
      "vertex_or_interior_differs": 0,
      "max_abs_residual_diff_m": 2.3939605853229295e-10,
      "max_abs_arclength_diff_m": 7.275957614183426e-12,
-     "max_abs_parameter_diff": 1.9206858326015208e-14,
+     "exact_parameter_differs": 1441101,
+     "rounded_parameter_image_differs": 869627,
+     "max_abs_parameter_diff": 1.9200404642804075e-14,
      "position_differs": 28,
      "max_position_shift_m": 4.656612873077393e-10
     },
     "examples": [
      {
-      "point_index": 280349,
-      "x": 699485.6282859619,
-      "y": 3963460.7648411603,
-      "comparison": "C_exact_vs_C",
+      "point_index": 0,
+      "x": 708064.889278926,
+      "y": 3979367.907265499,
+      "comparison": "A_exact_vs_A",
       "changed": [
-       "occurrences",
-       "places"
+       "exact occurrences"
       ],
-      "float_count": 2,
-      "exact_count": 2,
-      "float_min_m": 21.973917981417063,
-      "exact_min_m": 21.97391798138818
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 28.205967114011045,
+      "exact_min_m": 28.20596711404647
      },
      {
-      "point_index": 461149,
-      "x": 665635.9142146338,
-      "y": 3983718.636862272,
+      "point_index": 0,
+      "x": 708064.889278926,
+      "y": 3979367.907265499,
       "comparison": "C_exact_vs_C",
       "changed": [
-       "occurrences",
-       "places"
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 28.205967114011045,
+      "exact_min_m": 28.20596711404647
+     },
+     {
+      "point_index": 0,
+      "x": 708064.889278926,
+      "y": 3979367.907265499,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 28.205967114011045,
+      "exact_min_m": 28.20596711404647
+     },
+     {
+      "point_index": 4,
+      "x": 688771.3334171283,
+      "y": 3974212.1913351603,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 17.967268628841634,
+      "exact_min_m": 17.967268628736104
+     },
+     {
+      "point_index": 4,
+      "x": 688771.3334171283,
+      "y": 3974212.1913351603,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 17.967268628841634,
+      "exact_min_m": 17.967268628736104
+     },
+     {
+      "point_index": 4,
+      "x": 688771.3334171283,
+      "y": 3974212.1913351603,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 17.967268628841634,
+      "exact_min_m": 17.967268628736104
+     },
+     {
+      "point_index": 6,
+      "x": 690117.4913106499,
+      "y": 3988351.5922986236,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
       ],
       "float_count": 2,
       "exact_count": 2,
-      "float_min_m": 17.71692748864446,
-      "exact_min_m": 17.716927488643076
+      "float_min_m": 13.384645880327877,
+      "exact_min_m": 13.38464588033691
+     },
+     {
+      "point_index": 6,
+      "x": 690117.4913106499,
+      "y": 3988351.5922986236,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.384645880327877,
+      "exact_min_m": 13.38464588033691
+     },
+     {
+      "point_index": 6,
+      "x": 690117.4913106499,
+      "y": 3988351.5922986236,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.384645880327877,
+      "exact_min_m": 13.38464588033691
+     },
+     {
+      "point_index": 7,
+      "x": 722743.3998272219,
+      "y": 3957481.8878507414,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.724368625674435,
+      "exact_min_m": 13.724368625656602
+     },
+     {
+      "point_index": 7,
+      "x": 722743.3998272219,
+      "y": 3957481.8878507414,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.724368625674435,
+      "exact_min_m": 13.724368625656602
+     },
+     {
+      "point_index": 7,
+      "x": 722743.3998272219,
+      "y": 3957481.8878507414,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.724368625674435,
+      "exact_min_m": 13.724368625656602
+     },
+     {
+      "point_index": 8,
+      "x": 691926.7202243691,
+      "y": 3984247.864426864,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 43.09284829956751,
+      "exact_min_m": 43.09284829961493
+     },
+     {
+      "point_index": 8,
+      "x": 691926.7202243691,
+      "y": 3984247.864426864,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 43.09284829956751,
+      "exact_min_m": 43.09284829961493
+     },
+     {
+      "point_index": 8,
+      "x": 691926.7202243691,
+      "y": 3984247.864426864,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 43.09284829956751,
+      "exact_min_m": 43.09284829961493
+     },
+     {
+      "point_index": 9,
+      "x": 710004.516312218,
+      "y": 3963918.1316928123,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.427726447964073,
+      "exact_min_m": 21.427726448001085
+     },
+     {
+      "point_index": 9,
+      "x": 710004.516312218,
+      "y": 3963918.1316928123,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.427726447964073,
+      "exact_min_m": 21.427726448001085
+     },
+     {
+      "point_index": 9,
+      "x": 710004.516312218,
+      "y": 3963918.1316928123,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.427726447964073,
+      "exact_min_m": 21.427726448001085
+     },
+     {
+      "point_index": 10,
+      "x": 678292.4987406377,
+      "y": 3969009.9923920245,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.09945281378831,
+      "exact_min_m": 22.099452813794603
+     },
+     {
+      "point_index": 10,
+      "x": 678292.4987406377,
+      "y": 3969009.9923920245,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.09945281378831,
+      "exact_min_m": 22.099452813794603
+     },
+     {
+      "point_index": 10,
+      "x": 678292.4987406377,
+      "y": 3969009.9923920245,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 22.09945281378831,
+      "exact_min_m": 22.099452813794603
+     },
+     {
+      "point_index": 11,
+      "x": 720175.2035309721,
+      "y": 3965415.1894099796,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 11.398926901034194,
+      "exact_min_m": 11.398926900843945
+     },
+     {
+      "point_index": 11,
+      "x": 720175.2035309721,
+      "y": 3965415.1894099796,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 11.398926901034194,
+      "exact_min_m": 11.398926900843945
+     },
+     {
+      "point_index": 11,
+      "x": 720175.2035309721,
+      "y": 3965415.1894099796,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 11.398926901034194,
+      "exact_min_m": 11.398926900843945
+     },
+     {
+      "point_index": 12,
+      "x": 683211.4947535002,
+      "y": 3978663.8335643844,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 31.18703111076491,
+      "exact_min_m": 31.18703111079902
      }
     ],
     "sampling": "every point in the set",
-    "seconds": 1448.39
+    "seconds": 1407.51
    },
    "census_all_cell_centres": {
     "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
@@ -868,27 +2194,360 @@
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
+    "exact_occurrences_changed": {
+     "A_exact_vs_A": 182275,
+     "C_exact_vs_C": 182272,
+     "D_exact_vs_D": 182264
+    },
     "places_changed": {
      "A_exact_vs_A": 0,
      "C_exact_vs_C": 0,
      "D_exact_vs_D": 0
     },
-    "points_with_any_change": 0,
+    "points_with_any_change": 182275,
     "raw": {
      "positions_compared": 18941630,
      "residual_differs": 696733,
      "arclength_differs": 9566420,
-     "parameter_differs": 461563,
+     "parameter_differs": 0,
      "vertex_or_interior_differs": 0,
      "max_abs_residual_diff_m": 2.396749465560788e-10,
      "max_abs_arclength_diff_m": 7.275957614183426e-12,
-     "max_abs_parameter_diff": 5.3290705182007514e-14,
+     "exact_parameter_differs": 696810,
+     "rounded_parameter_image_differs": 461563,
+     "max_abs_parameter_diff": 5.3276859183802696e-14,
      "position_differs": 14,
      "max_position_shift_m": 4.656612873077393e-10
     },
-    "examples": [],
+    "examples": [
+     {
+      "point_index": 2,
+      "x": 662150.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 0.890926894299036,
+      "exact_min_m": 0.8909268944047917
+     },
+     {
+      "point_index": 2,
+      "x": 662150.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 0.890926894299036,
+      "exact_min_m": 0.8909268944047917
+     },
+     {
+      "point_index": 2,
+      "x": 662150.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 0.890926894299036,
+      "exact_min_m": 0.8909268944047917
+     },
+     {
+      "point_index": 3,
+      "x": 662250.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.64280896173798,
+      "exact_min_m": 21.64280896165804
+     },
+     {
+      "point_index": 3,
+      "x": 662250.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.64280896173798,
+      "exact_min_m": 21.64280896165804
+     },
+     {
+      "point_index": 3,
+      "x": 662250.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.64280896173798,
+      "exact_min_m": 21.64280896165804
+     },
+     {
+      "point_index": 4,
+      "x": 662350.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 42.394691028721404,
+      "exact_min_m": 42.394691028911296
+     },
+     {
+      "point_index": 4,
+      "x": 662350.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 42.394691028721404,
+      "exact_min_m": 42.394691028911296
+     },
+     {
+      "point_index": 4,
+      "x": 662350.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 42.394691028721404,
+      "exact_min_m": 42.394691028911296
+     },
+     {
+      "point_index": 5,
+      "x": 662450.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 22.539380366182808,
+      "exact_min_m": 22.539380365978293
+     },
+     {
+      "point_index": 5,
+      "x": 662450.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 22.539380366182808,
+      "exact_min_m": 22.539380365978293
+     },
+     {
+      "point_index": 5,
+      "x": 662450.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 22.539380366182808,
+      "exact_min_m": 22.539380365978293
+     },
+     {
+      "point_index": 6,
+      "x": 662550.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.202618964729657,
+      "exact_min_m": 13.202618964623632
+     },
+     {
+      "point_index": 6,
+      "x": 662550.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.202618964729657,
+      "exact_min_m": 13.202618964623632
+     },
+     {
+      "point_index": 6,
+      "x": 662550.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 13.202618964729657,
+      "exact_min_m": 13.202618964623632
+     },
+     {
+      "point_index": 7,
+      "x": 662650.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.052400257299257,
+      "exact_min_m": 4.052400257299308
+     },
+     {
+      "point_index": 7,
+      "x": 662650.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.052400257299257,
+      "exact_min_m": 4.052400257299308
+     },
+     {
+      "point_index": 7,
+      "x": 662650.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 4.052400257299257,
+      "exact_min_m": 4.052400257299308
+     },
+     {
+      "point_index": 8,
+      "x": 662750.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 18.882997847057513,
+      "exact_min_m": 18.88299784707186
+     },
+     {
+      "point_index": 8,
+      "x": 662750.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.882997847057513,
+      "exact_min_m": 18.88299784707186
+     },
+     {
+      "point_index": 8,
+      "x": 662750.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 18.882997847057513,
+      "exact_min_m": 18.88299784707186
+     },
+     {
+      "point_index": 9,
+      "x": 662850.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.107713543273086,
+      "exact_min_m": 33.10771354330191
+     },
+     {
+      "point_index": 9,
+      "x": 662850.0,
+      "y": 4003450.0,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.107713543273086,
+      "exact_min_m": 33.10771354330191
+     },
+     {
+      "point_index": 9,
+      "x": 662850.0,
+      "y": 4003450.0,
+      "comparison": "D_exact_vs_D",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 33.107713543273086,
+      "exact_min_m": 33.10771354330191
+     },
+     {
+      "point_index": 27,
+      "x": 664650.0,
+      "y": 4003450.0,
+      "comparison": "A_exact_vs_A",
+      "changed": [
+       "exact occurrences"
+      ],
+      "float_count": 1,
+      "exact_count": 1,
+      "float_min_m": 145.9827193721531,
+      "exact_min_m": 145.98271937215694
+     }
+    ],
     "sampling": "every point in the set",
-    "seconds": 1462.21
+    "seconds": 1390.84
    }
   }
  },

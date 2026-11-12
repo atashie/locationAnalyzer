@@ -100,15 +100,40 @@ def main(argv: list[str] | None = None) -> int:
     records = t0.Records(G, index, kind="design")
     geoms, tree = records.geoms, records.tree
 
+    import hashlib
     import json
+    import shapely as _sh
     artifact = json.loads((ROOT.parent / "docs" / "experiments"
                            / "t0-attachment-pilot.json").read_text(encoding="utf-8"))
-    expected = artifact["graph"]["design_records"]
-    if len(records) != expected:
+
+    # Codex pass 38 F6: the first version of this guard compared only the design record COUNT, and
+    # two record sets can hold the artifact's 808,433 records with different geometry in the one
+    # being queried -- the reproducer moved a measured residual from 1.0 m to 95.005 m without the
+    # count changing. The guard is now a fingerprint over the records in their constructed order:
+    # every coordinate of every geometry, plus the forward and reverse times. That binds the thing
+    # the measurement actually reads.
+    g = artifact["graph"]
+    expected_count = g["design_records"]
+    h = hashlib.sha256()
+    for i, geom in enumerate(records.geoms):
+        h.update(_sh.to_wkb(geom, flavor="iso"))
+        h.update(repr((float(records.fwd_time[i]), float(records.rev_time[i]))).encode())
+    fingerprint = h.hexdigest()
+    print(f"ready: {len(records):,} design records, fingerprint {fingerprint[:16]}", flush=True)
+    if len(records) != expected_count:
         raise SystemExit(f"this script prepared {len(records):,} design records and the artifact "
-                         f"was measured with {expected:,}. The preparation here has drifted from "
-                         "the pilot's, so nothing below would describe the measured run")
-    print(f"ready: {len(records):,} design records, matching the artifact", flush=True)
+                         f"was measured with {expected_count:,}. The preparation here has drifted "
+                         "from the pilot's, so nothing below would describe the measured run")
+    recorded = g.get("design_records_fingerprint")
+    if recorded is None:
+        print("  NOTE: this artifact predates the record fingerprint, so only the count and the "
+              "graph digest are checked. Re-run the pilot to record one.", flush=True)
+    elif recorded != fingerprint:
+        raise SystemExit(f"the record fingerprint is {fingerprint} and the artifact was measured "
+                         f"with {recorded}. Same count, different records: exactly what the count "
+                         "alone cannot detect.")
+    else:
+        print("  fingerprint matches the artifact", flush=True)
 
     if args.x is not None and args.y is not None:
         describe(t0, geoms, tree, args.x, args.y, "requested point")

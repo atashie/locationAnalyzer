@@ -162,6 +162,77 @@ A smaller one, worth a line: `--limit` was applied *before* the census sets were
 in full. A shakedown flag that did nothing to the only sets large enough to need it, and said
 otherwise in the artifact.
 
+## 6. Codex pass 38, the same day: 1 High, 5 Medium, 2 Low against all of the above
+
+Every finding reproduced; the High re-derived independently before being acted on. The full report
+and runnable reproducers are `docs/research/39-codex-review-pass38-counterexamples/`. Seven lessons,
+and five of them are about claims in sections 1 to 5 of *this note*.
+
+**A mutant that crashes is banked as a catch.** The harness ran each mutation and took a failing
+test suite as proof the tests saw it. One mutation referenced `scaled`, a local of `rational_sqrt`,
+from inside `_decide`: it raised `NameError`, the subprocess failed, and "22 of 22 caught" counted
+it. **It had never once exercised the arithmetic it was named after.** Repaired to compute the floor
+locally, it fails three fixtures as it always should have. Generally: *any "N of N caught" claim
+needs a validity check on each mutant, not just an exit code.* Every mutant is now smoke-run on
+ordinary input first and reported `INVALID` if it raises `NameError`, `AttributeError`, `TypeError`
+or the like — and `--self-test` plants such a mutant to prove the detector fires, because a
+crash-detector that cannot fire is the same defect one level up.
+
+**I escalated a measured "this is wrong here" into "this cannot be done".** I had the measurement
+that settles the same-edge rule: the rounded-prefix subtraction gives `0.0` on W3 and loses the
+traversal. I then wrote that the alternative was **not implementable**, because a prefix arclength
+is a sum of square roots. Both halves of that are wrong — the plan's own rule defined its prefixes
+as the *rounded* ones, which are rational, and a finite sum of rational radicals is exactly
+representable anyway, which pass 38 demonstrated by cancelling W3's irrational part symbolically.
+This is a **new shape** of the old failure: not over-generalising a measurement, but **reaching past
+a sufficient reason for a stronger one**. The measurement was enough. See
+[[feedback-verify-the-shape-of-the-risk]].
+
+**A blanket normative clause collects cases nobody checked it against.** Item 7 said "every
+comparison that decides something made on the exact value". §2.2's two caps and its 0.01 m band are
+comparisons that decide something, and all three are decided in binary64 on a correctly-rounded
+residual. Witness: on `(0,-1)→(0,0)` from `(200, 1e-6)` the exact squared distance exceeds `200**2`
+while the correctly-rounded residual is exactly `200.0`, so the exact predicate puts the point
+outside the 200 m cap and the rounded one lets it in — an **eligibility** difference, not an
+intermediate number. The clause is now scoped to the quantities item 7 fixes, and the exact-distance
+cap is recorded as a *different convention* rather than quietly adopted or quietly denied.
+
+**A fixture chosen for its roundness tests less than it looks like.** The only multi-segment span
+fixture put the destination at a segment **midpoint**, where `t_d` and `1 - t_d` are the same
+number. A mutation swapping them therefore passed all 40 fixtures — **625 s against 375 s** at
+weight 1000. A second gap of the same kind: every fixture touching `exact_position` used a
+horizontal segment or went through a residual, so dropping the `y` interpolation also passed all 40.
+*Pick fixture values that make the formula's parts distinguishable, not values that are easy to
+check by eye.*
+
+**A counter named for a quantity can be measuring its image — and that one cost a published
+result.** `parameter_differs` converted both parameters to `float` before comparing, so it counted
+unequal *rounded images* of parameters that differ exactly. And the candidate-level comparison used
+a *coarse* occurrence label with the parameter dropped, which I had justified as removing noise.
+§2.2's occurrence key carries the **unrounded** parameter, so the coarse label is not the normative
+identity. Re-measured: the exact parameter count is strictly larger, and the **exact occurrence
+identity of the retained candidate changes on about three quarters of points** where the coarse
+reading reported zero. "The adoption changes no candidate set" was true only of places, counts and
+vertex/segment structure. Both figures are now reported, each under its own name.
+
+**A guard must bind what the measurement actually reads.** `explain_adoption_diff.py` asserted the
+design **record count** matched the artifact's 808,433. Two record sets can hold that count and
+differ in the geometry of the record being queried — the reproducer moved a measured residual from
+1.0 m to 95.005 m without the count moving. The guard is now a digest of every coordinate of every
+record plus its forward and reverse times, recorded in the artifact.
+
+**A sentinel has to sit on the path that produces the numbers.** Mine called the projection
+directly, so forcing *both* arithmetic requests to the float branch left it passing 2 of 2 while the
+census reported zero for every difference — precisely the failed-adoption shape it existed to
+reject. It now runs each witness through `adoption_stats`, and carries a **control** that must not
+fire, because two witnesses cannot tell a live counter from one stuck at 1.
+
+**And one about the artifact comparator**, which was the evidence for "nothing moved": it flattened
+the document to dotted paths, so `{"x": []}` matched `{"x": [{}]}`, `{"x": {}}` matched `{}`, and a
+literal `"a.b"` key collided with a nested one; `False` also matched `0`. It is now a recursive
+typed comparison with a 13-case self-test, and the historical 610-leaf refactor claim **survives
+re-checking under the stronger tool**.
+
 ## What this phase does not do
 
 It does not make the comparator select what real arithmetic would select. That is pass 37 F1, it is

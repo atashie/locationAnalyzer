@@ -331,6 +331,60 @@ def test_same_edge_span_spans_whole_intermediate_segments():
     assert exact.same_edge_fraction(geom, 2, Fraction(1, 2), 0, Fraction(1, 2)) == f
 
 
+def test_same_edge_span_uses_the_destination_partial_and_not_its_complement():
+    """A cross-segment span must take `t_d` of the destination's segment, not `1 - t_d`.
+
+    Codex pass 38 F3: the only multi-segment span fixture used a destination at the **midpoint**,
+    where `t_d` and `1 - t_d` are the same number, so a mutation swapping them passed all 40
+    fixtures. A fixture chosen for its roundness tested less than it looked like it did.
+    """
+    geom = ((0.0, 0.0), (10.0, 0.0), (20.0, 0.0))       # lengths 10, 10
+    assert exact.total_length(geom) == 20.0
+    # origin halfway along segment 0, destination a QUARTER along segment 1: 5 + 2.5 = 7.5
+    f = exact.same_edge_fraction(geom, 0, Fraction(1, 2), 1, Fraction(1, 4))
+    assert f == 0.375
+    # the complement reading gives 5 + 7.5 = 12.5, which is 625 s against 375 s at weight 1000
+    assert f != 0.625
+    assert f * 1000 == 375.0
+    # and the magnitude is still symmetric in the two occurrences
+    assert exact.same_edge_fraction(geom, 1, Fraction(1, 4), 0, Fraction(1, 2)) == f
+
+
+def test_exact_position_interpolates_both_coordinates():
+    """Codex pass 38 F3: dropping the `y` interpolation passed all 40 fixtures.
+
+    Every fixture that exercised `exact_position` did so on a horizontal segment or through
+    `exact_segment_sq`'s residual, where a missing `y` term either vanished or was masked. A point
+    taken from the interior of a diagonal segment is the cheapest case that cannot be.
+    """
+    qx, qy = exact.exact_position(0.0, 0.0, 3.0, 4.0, Fraction(1, 2))
+    assert (qx, qy) == (Fraction(3, 2), Fraction(2))
+    # the midpoint of (0,0)->(3,4) is ON the segment, so its distance to it is exactly zero
+    assert exact.exact_segment_sq(1.5, 2.0, 0.0, 0.0, 3.0, 4.0) == 0
+    # without the y term the foot would be (1.5, 0) and the squared distance 4
+    assert exact.exact_segment_sq(1.5, 2.0, 0.0, 0.0, 3.0, 4.0) != 4
+
+
+def test_an_exact_cap_and_a_rounded_cap_disagree_and_the_difference_is_decidable():
+    """Codex pass 38 F1. The caps are §2.2 predicates, and which arithmetic decides them matters.
+
+    On the admissible segment `(0,-1)->(0,0)` from `(200, 1e-6)` the exact squared distance exceeds
+    `200**2`, so the exact predicate puts the point **outside** the 200 m origin cap — while the
+    correctly-rounded residual is exactly `200.0` and a binary64 `<=` comparison lets it **in**.
+
+    Both predicates are decidable, and `exact_segment_sq` is what makes the exact one possible. No
+    caller uses it that way: T0's exact path and production both compare the rounded residual. This
+    test exists so that the design's narrowed claim and the code stay in contact.
+    """
+    px, py = 200.0, 1e-6
+    sq = exact.exact_segment_sq(px, py, 0.0, -1.0, 0.0, 0.0)
+    assert sq > Fraction(200) ** 2, "the exact distance is outside the cap"
+    assert exact.rational_sqrt(sq) == 200.0, "the correctly rounded distance lands exactly on it"
+    assert 200.0 <= 200.0, "so a rounded comparison admits what the exact one rejects"
+    # and the squared comparison needs no root, which is why the exact predicate is cheap
+    assert (sq > Fraction(200) ** 2) is not (exact.rational_sqrt(sq) > 200.0)
+
+
 def test_scaled_segment_length_rounds_once_not_twice():
     """`t * L` is computed as `sqrt(t^2 * (dx^2+dy^2))` — one correct rounding, not two.
 

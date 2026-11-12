@@ -50,6 +50,7 @@ to be reproducible from the artifact they were rendered from.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import math
@@ -176,6 +177,22 @@ class Records:
 
     def __len__(self) -> int:
         return len(self.geoms)
+
+
+def records_fingerprint(records: "Records") -> str:
+    """A digest of the record set itself, not of how many records there are.
+
+    Codex pass 38 F6. Two record sets can agree on the design record count and differ in the
+    geometry of the one a witness is attached to, which makes an equal-count assertion no guard at
+    all. This covers every coordinate of every geometry in construction order, together with the
+    forward and reverse times, so a reproduction script can establish that it is looking at the
+    records the artifact was measured with.
+    """
+    h = hashlib.sha256()
+    for i, geom in enumerate(records.geoms):
+        h.update(shapely.to_wkb(geom, flavor="iso"))
+        h.update(repr((float(records.fwd_time[i]), float(records.rev_time[i]))).encode())
+    return h.hexdigest()
 
 
 def _occurrence_key(r: int, seg: int, t) -> tuple:
@@ -511,6 +528,19 @@ def coarse_occurrence(key: tuple) -> tuple:
     return key[:3]
 
 
+def exact_occurrence(key: tuple) -> tuple:
+    """The occurrence label §2.2 actually specifies, with the interior parameter compared exactly.
+
+    `coarse_occurrence` above drops the parameter deliberately, to answer "did the vertex/segment
+    structure change". That is not the normative identity: §2.2's key carries the **unrounded**
+    parameter, so two candidates agreeing on segment and kind can still be different occurrences.
+    Codex pass 38 F4 asked for both, and both are reported. The float path's parameter is a
+    binary64 and every binary64 is a rational, so `Fraction` makes the two sides comparable without
+    rounding either.
+    """
+    return key[:3] + (Fraction(key[3]),) if len(key) > 3 else key[:3]
+
+
 def adoption_sentinel() -> list[dict]:
     """Prove the exact path is not quietly the float path, before any zero below is believed.
 
@@ -522,32 +552,61 @@ def adoption_sentinel() -> list[dict]:
     These are Codex pass 30's two witnesses, which exist because the float projection lands on an
     endpoint where the exact one does not. If either stops differing, the axis is broken and the run
     stops rather than publishing zeros.
+
+    **It runs them through `adoption_stats`, not through `raw_positions`.** The first version called
+    `raw_positions` directly, and Codex pass 38 F5 showed what that bought: forcing
+    `measure_point`'s dispatch to the float branch for *both* requests left the sentinel passing
+    2 of 2 while the census reported zero for every difference — exactly the failed-adoption shape
+    the sentinel exists to reject. A guard has to cover the path that produces the numbers.
+
+    It is also a **positive control for each counter**, not only for the dispatch: the two witnesses
+    must increment the parameter and vertex/interior counters, and a plain interior attachment must
+    increment neither.
     """
     cases = (
         ("W2 dot-product cancellation",
-         [(0.0, 0.0), (1e-6, 1e-6)], (122.09, -122.08999999999999)),
+         [(0.0, 0.0), (1e-6, 1e-6)], (122.09, -122.08999999999999), True),
         ("W3 subtraction near the coordinate bound",
-         [(-1e7, 0.0), (1e7, 0.0)], (math.nextafter(1e7, 0.0), 0.0)),
+         [(-1e7, 0.0), (1e7, 0.0)], (math.nextafter(1e7, 0.0), 0.0), True),
+        # The control: an ordinary interior foot on a horizontal segment, where the two arithmetics
+        # agree. Without it, a counter stuck permanently at 1 would pass the two witnesses above.
+        ("control, an ordinary interior attachment",
+         [(0.0, 0.0), (100.0, 0.0)], (50.0, 10.0), False),
     )
     checks: list[dict] = []
-    for name, coords, (px, py) in cases:
+    problems: list[str] = []
+    for name, coords, (px, py), must_differ in cases:
         arr = np.empty(1, dtype=object)
         arr[:] = [shapely.LineString(coords)]
+        stats = adoption_stats(arr, shapely.STRtree([shapely.LineString(coords)]),
+                               [(px, py)], MAX_ACCESS_M)
+        raw = stats["raw"]
         f = raw_positions(arr, [0], px, py, arithmetic="float")[0]
         x = raw_positions(arr, [0], px, py, arithmetic="exact")[0]
-        checks.append({
+        check = {
             "witness": name,
+            "must_differ": must_differ,
             "float_t": repr(f.t), "exact_t": str(x.t),
             "float_occurrence": str(f.occurrence[:3]), "exact_occurrence": str(x.occurrence[:3]),
             "float_lands_on_a_vertex": f.occurrence[1] == "v",
             "exact_lands_on_a_vertex": x.occurrence[1] == "v",
-            "differs": f.occurrence[:3] != x.occurrence[:3],
-        })
-    if not all(c["differs"] for c in checks):
-        raise SystemExit(
-            "adoption sentinel FAILED: the exact path agrees with the float path on a witness "
-            "built to separate them, so every zero it reports would be meaningless. "
-            f"{checks}")
+            # measured through the census path, which is the point of this sentinel
+            "positions_compared": raw["positions_compared"],
+            "exact_parameter_differs": raw["exact_parameter_differs"],
+            "vertex_or_interior_differs": raw["vertex_or_interior_differs"],
+        }
+        fired = (raw["vertex_or_interior_differs"] > 0 and raw["exact_parameter_differs"] > 0)
+        check["counters_fired"] = fired
+        if must_differ and not fired:
+            problems.append(f"{name}: built to separate the two arithmetics, and the counters "
+                            f"measured through adoption_stats did not move ({check})")
+        if not must_differ and fired:
+            problems.append(f"{name}: a control where the two arithmetics agree, and a counter "
+                            f"fired anyway ({check})")
+        checks.append(check)
+    if problems:
+        raise SystemExit("adoption sentinel FAILED, so every zero it would report is meaningless:"
+                         + "".join(f"{chr(10)}  - {p}" for p in problems))
     return checks
 
 
@@ -582,6 +641,9 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
         "eligibility_changed": {v: 0 for v in OUT.values()},
         "count_changed": {v: 0 for v in OUT.values()},
         "occurrences_changed": {v: 0 for v in OUT.values()},
+        # The normative identity, parameter included and compared exactly (pass 38 F4). The
+        # `occurrences_changed` row above is the vertex/segment structure only.
+        "exact_occurrences_changed": {v: 0 for v in OUT.values()},
         "places_changed": {v: 0 for v in OUT.values()},
         "points_with_any_change": 0,
         # Did the arithmetic move a number at all? Without this, every zero above could mean the
@@ -594,6 +656,14 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
             "vertex_or_interior_differs": 0,
             "max_abs_residual_diff_m": 0.0,
             "max_abs_arclength_diff_m": 0.0,
+            # Codex pass 38 F4. The first version compared `float(pf.t)` with `float(px.t)`, so it
+            # counted unequal *rounded images* of the parameter and reported them as "parameters
+            # differ". §2.2's occurrence key carries the UNROUNDED parameter, so the exact
+            # comparison is the normative one and it finds strictly more: on the first census
+            # witness, 4 differences under the rounded test against 6 under this one. Both are
+            # reported, each under its own name, because they answer different questions.
+            "exact_parameter_differs": 0,
+            "rounded_parameter_image_differs": 0,
             "max_abs_parameter_diff": 0.0,
             # How far the attachment POSITION moved, in metres. The most interpretable figure here
             # and not derivable from the others: a parameter difference is dimensionless, and a
@@ -626,7 +696,9 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
         r = agg["raw"]
         r["positions_compared"] += len(fr)
         for pf, pxx in zip(fr, xr):
-            tf, tx = float(pf.t), float(pxx.t)
+            # Exact on both sides: `pf.t` is a binary64 and every binary64 is a rational, so
+            # `Fraction(pf.t)` loses nothing, and `pxx.t` is already a Fraction.
+            tf, tx = Fraction(pf.t), Fraction(pxx.t)
             if pf.residual != pxx.residual:
                 r["residual_differs"] += 1
                 r["max_abs_residual_diff_m"] = max(r["max_abs_residual_diff_m"],
@@ -636,8 +708,11 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
                 r["max_abs_arclength_diff_m"] = max(r["max_abs_arclength_diff_m"],
                                                     abs(pf.arclength - pxx.arclength))
             if tf != tx:
-                r["parameter_differs"] += 1
-                r["max_abs_parameter_diff"] = max(r["max_abs_parameter_diff"], abs(tf - tx))
+                r["exact_parameter_differs"] += 1
+                r["max_abs_parameter_diff"] = max(r["max_abs_parameter_diff"],
+                                                  float(abs(tf - tx)))
+            if float(pf.t) != float(pxx.t):
+                r["rounded_parameter_image_differs"] += 1
             if (pf.x, pf.y) != (pxx.x, pxx.y):
                 r["position_differs"] += 1
                 r["max_position_shift_m"] = max(r["max_position_shift_m"],
@@ -659,6 +734,10 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
                     != {coarse_occurrence(p.occurrence) for p in xs}):
                 agg["occurrences_changed"][name] += 1
                 changed.append("occurrences")
+            if ({exact_occurrence(p.occurrence) for p in fs}
+                    != {exact_occurrence(p.occurrence) for p in xs}):
+                agg["exact_occurrences_changed"][name] += 1
+                changed.append("exact occurrences")
             if positions_differ(fs, xs):
                 agg["places_changed"][name] += 1
                 changed.append("places")
@@ -1046,6 +1125,13 @@ def main() -> int:
             "nodes": G.number_of_nodes(), "graph_edges": graph_edges,
             "record_definition": "design: (node pair, canonical geometry, travel_time, cost)",
             "design_records": len(geoms),
+            # Codex pass 38 F6: a record COUNT is not a provenance guard, because two record sets
+            # can share this count and differ in the geometry being queried -- the reproducer moved
+            # a measured residual from 1.0 m to 95.005 m without the count changing. This binds the
+            # records themselves, in their constructed order: every coordinate of every geometry,
+            # plus the forward and reverse times. `explain_adoption_diff.py` checks it before
+            # claiming to describe a measured run.
+            "design_records_fingerprint": records_fingerprint(eidx),
             "production_records": len(production),
             "records_production_collapses": len(geoms) - len(production),
             "merge_note": "`symmetrise` copies the data dict exactly, so a walk graph's "
@@ -1167,14 +1253,16 @@ def main() -> int:
             for name in ("A_exact_vs_A", "C_exact_vs_C", "D_exact_vs_D"):
                 print(f"    {name:14s} eligibility {stats['eligibility_changed'][name]}, "
                       f"count {stats['count_changed'][name]}, "
-                      f"occurrences {stats['occurrences_changed'][name]}, "
+                      f"structure {stats['occurrences_changed'][name]}, "
+                      f"EXACT occurrences {stats['exact_occurrences_changed'][name]}, "
                       f"PLACES {stats['places_changed'][name]}", flush=True)
             r = stats['raw']
             print(f"    raw: {r['positions_compared']:,} positions, residual differs "
                   f"{r['residual_differs']:,} (max {r['max_abs_residual_diff_m']:.3e} m), "
                   f"arclength differs {r['arclength_differs']:,} "
                   f"(max {r['max_abs_arclength_diff_m']:.3e} m), parameter differs "
-                  f"{r['parameter_differs']:,}, POSITION moved "
+                  f"{r['exact_parameter_differs']:,} exactly / "
+                  f"{r['rounded_parameter_image_differs']:,} as rounded images, POSITION moved "
                   f"{r['position_differs']:,} (max {r['max_position_shift_m']:.3e} m), "
                   f"vertex/interior flips {r['vertex_or_interior_differs']:,}", flush=True)
         out["adoption"] = ad

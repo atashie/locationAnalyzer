@@ -80,10 +80,27 @@ MUTATIONS: list[tuple[str, str, str]] = [
         "    return lo if k % 2 == 0 else lo + u",
         "    return lo + u",
     ),
+    # Codex pass 38 F3: this mutation used to read `scaled.numerator // scaled.denominator`, and
+    # `scaled` is a local of `rational_sqrt`, not of `_decide`. The mutant raised NameError, the
+    # subprocess failed, and the harness counted a crash as "caught" -- so the arithmetic it was
+    # named after was never tested by it. The floor is now computed locally from `q` and `u`, which
+    # is the same quantity, and the mutation fails three fixtures as it always should have.
     (
         "compare the midpoint against the floored scaling instead of the original rational",
         "    cmp = q - midpoint * midpoint",
-        "    cmp = (scaled.numerator // scaled.denominator) * u * u - midpoint * midpoint",
+        "    cmp = ((q / (u * u)).numerator // (q / (u * u)).denominator) * u * u"
+        " - midpoint * midpoint",
+    ),
+    # --- two rules that had no mutation at all until Codex pass 38 F3 found them.
+    (
+        "drop the y interpolation in exact_position, so a diagonal foot is wrong",
+        "    return (ax_f + t * (Fraction(bx) - ax_f), ay_f + t * (Fraction(by) - ay_f))",
+        "    return (ax_f + t * (Fraction(bx) - ax_f), ay_f)",
+    ),
+    (
+        "take the complement of the destination's partial in a cross-segment span",
+        "    terms.append(_partial(seg_d, t_d))",
+        "    terms.append(_partial(seg_d, 1 - t_d))",
     ),
     # Two mutations have been retired from this list after the harness PROVED them equivalent, which
     # is a result rather than a gap:
@@ -198,6 +215,46 @@ def localise(anchor: str, source: str) -> str:
     return anchor.replace(LF, CRLF) if CRLF in source else anchor
 
 
+#: Exercises every public function once, on inputs where no *intended* mutation raises: a
+#: non-degenerate diagonal three-segment geometry, an interior parameter, a cross-segment span.
+#: Its job is to make a structurally broken mutant raise before the suite is consulted.
+SMOKE = (
+    "from fractions import Fraction as F;"
+    "import locfinder.measure.exact as e;"
+    "g=((0.0,0.0),(3.0,4.0),(3.0,14.0),(9.0,22.0));"
+    "e.rational_sqrt(F(2));"
+    "t=e.exact_projection(1.0,2.0,0.0,0.0,3.0,4.0);"
+    "e.exact_position(0.0,0.0,3.0,4.0,t);"
+    "e.exact_segment_sq(1.0,2.0,0.0,0.0,3.0,4.0);"
+    "e.segment_length(0.0,0.0,3.0,4.0);"
+    "e.scaled_segment_length(0.0,0.0,3.0,4.0,F(1,3));"
+    "e.segment_lengths(g);"
+    "tot=e.total_length(g);"
+    "p=e.prefix_arclength(g,1,F(1,3));"
+    "e.traversal_fraction(p,tot);"
+    "e.same_edge_fraction(g,0,F(1,2),2,F(1,4))"
+)
+
+#: Errors that mean the MUTATION is broken rather than the behaviour changed. A mutant that cannot
+#: run tests nothing, and counting its crash as "caught" is how pass 38 F3 found a mutation that had
+#: never exercised the arithmetic it was named after. Errors a real behaviour change could plausibly
+#: produce -- ZeroDivisionError, IndexError, ValueError -- are deliberately NOT in this list.
+BROKEN = ("NameError", "ImportError", "SyntaxError", "IndentationError", "AttributeError",
+          "TypeError", "UnboundLocalError")
+
+
+def smoke() -> str | None:
+    """`None` if the mutated module runs, else the name of the error that says it is broken."""
+    proc = subprocess.run([sys.executable, "-B", "-c", SMOKE],
+                          cwd=ROOT, capture_output=True, text=True)
+    if proc.returncode == 0:
+        return None
+    for name in BROKEN:
+        if name in proc.stderr:
+            return name
+    return None
+
+
 def run_tests() -> bool:
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", TESTS, "-x", "-q", "-p", "no:cacheprovider"],
@@ -206,7 +263,53 @@ def run_tests() -> bool:
     return proc.returncode == 0
 
 
+def self_test() -> int:
+    """Does the crash detector fire? A detector that cannot is the pass-38 F3 defect one level up.
+
+        python scripts/mutate_exact_geometry.py --self-test
+    """
+    original = read(TARGET)
+    before = digest(TARGET)
+    failures = 0
+    try:
+        if smoke() is not None:
+            print("FAIL: the UNMUTATED module is reported broken, so every mutation would be "
+                  "INVALID and the harness would report nothing useful")
+            failures += 1
+        else:
+            print("clean source: smoke passes")
+
+        # A mutation referring to a name that exists only in another function -- which is exactly
+        # the shape of the mutation pass 38 F3 found counted as caught.
+        anchor = localise("    cmp = q - midpoint * midpoint", original)
+        if original.count(anchor) != 1:
+            print(f"FAIL: the self-test's anchor appears {original.count(anchor)} times")
+            failures += 1
+        else:
+            write(TARGET, original.replace(
+                anchor, localise("    cmp = a_name_from_another_scope - midpoint * midpoint",
+                                 original), 1))
+            got = smoke()
+            if got == "NameError":
+                print("broken mutant: reported INVALID as NameError, so a crash can no longer be "
+                      "banked as a catch")
+            else:
+                print(f"FAIL: a mutant referencing an undefined name was reported as {got!r}")
+                failures += 1
+    finally:
+        write(TARGET, original)
+
+    if digest(TARGET) != before:
+        print(f"FAIL: {TARGET.name} was not restored byte-identically")
+        failures += 1
+    else:
+        print("source restored byte-identically")
+    return 1 if failures else 0
+
+
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return self_test()
     original = read(TARGET)
     before = digest(TARGET)
     survived: list[str] = []
@@ -227,7 +330,13 @@ def main() -> int:
                 continue
             write(TARGET, original.replace(old_l, new_l, 1))
             try:
-                if run_tests():
+                broken = smoke()
+                if broken is not None:
+                    print(f"INVALID      {label}: the mutant raises {broken} on ordinary input, so "
+                          "it tests nothing and a failing suite would be evidence of a crash "
+                          "rather than of a caught defect")
+                    survived.append(label)
+                elif run_tests():
                     print(f"NOT CAUGHT   {label}  <-- no test sees this")
                     survived.append(label)
                 else:

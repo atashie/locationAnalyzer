@@ -12,6 +12,15 @@ is not real arithmetic's (pass 37 F1, measured by phase 4a.2) and §2.4's rankin
 by a scalar-label search (pass 37 F3, decided by phase 4b.0). **T3's gate moves from item 1 to those
 two.** `d1276c2`; §13's revision 13 row.
 
+**Amended the same day after Codex pass 38** (1 High, 5 Medium, 2 Low, all reproduced). Two claims
+this revision made are narrowed in place: item 7's "every comparison that decides something" is
+**scoped to the quantities item 7 fixes** and explicitly does **not** reach §2.2's caps or its
+0.01 m band, which are decided on the correctly-rounded residual — a point whose exact distance
+exceeds 200 m can be admitted by the cap; and "the span is the only implementable reading" is
+**withdrawn**, the span being adopted because the alternative loses W3's traversal to `0.0` rather
+than because it cannot be done. §13's revision 13 block lists all eight findings and what each
+changed.
+
 **Revision 12, 2026-11-09; amended after Codex pass 31 and ADOPTED by the owner 2026-11-10.**
 Adds **E1c**, the conditional false-inclusion rate `Pr(comparator = FAIL | product = PASS)`, as a
 **reported and explicitly non-gating** measure beside E1a and E1b, which are unchanged. Plan §0
@@ -532,13 +541,35 @@ So, normatively:
    where it is algebraic, every comparison that decides something made on the exact value, and the
    composition order written down.**
 
+   **The scope of that third clause, narrowed after Codex pass 38 F1.** It governs the comparisons
+   *within* the quantities this item fixes — the clamp against 0 and 1, the ordering of squared
+   distances, the span's orientation. It does **not** reach §2.2's two caps or its 0.01 m band,
+   which are predicates on a **distance** and are decided on the **correctly-rounded residual**, in
+   binary64, under both the production path and T0's exact path. The first draft of this item said
+   "every comparison that decides something" without that boundary, and the caps and the band are
+   comparisons that decide something. Measured witness: on the admissible segment `(0,-1)→(0,0)`
+   from `(200, 1e-6)` the exact squared distance exceeds `200**2`, so an exact predicate puts the
+   point **outside** the 200 m origin cap, while the correctly-rounded residual is exactly `200.0`
+   and the binary64 `<=` admits it. The same arithmetic admits a destination outside the 300 m cap.
+   That is an eligibility difference, not an intermediate number.
+
+   **An exact-distance cap is decidable and is a different convention.** `d <= cap` is equivalent to
+   `exact_sq <= cap**2`, which needs no square root, so nothing prevents it. What prevents adopting
+   it here is that it changes which points are answerable, which is an E0 and E1 quantity, and this
+   design settles conventions by measurement rather than by preference. It is therefore recorded as
+   an open question in §2.2's terms rather than decided in this item, and `exact.py`'s
+   `exact_segment_sq` is the primitive that would implement it. **No current caller does.**
+   Likewise the band: adding `ATTACH_TIE_M` to a correctly-rounded minimum and comparing in
+   binary64 is an operational rounded-distance predicate, not the literal exact-distance band, and
+   it is not convention B either — B additionally requires the degree-two normalisation of §2.2.
+
    | quantity | the rule |
    |---|---|
-   | **segment length** | one correct rounding of the exact rational radicand `dx**2 + dy**2`, where `dx` and `dy` are exact differences of the binary64 endpoints. `math.hypot` does **not** satisfy this: CPython implements its own compensated `vector_norm` and documents the result as *usually* correctly rounded |
+   | **segment length** | one correct rounding of **the square root of** the exact rational radicand `dx**2 + dy**2`, where `dx` and `dy` are exact differences of the binary64 endpoints. (Pass 38: the first draft said "of the radicand", which names the wrong quantity.) `math.hypot` does **not** satisfy this: CPython implements its own compensated `vector_norm` and documents the result as *usually* correctly rounded |
    | **prefix arclength** | an exactly-rounded, order-independent sum — `math.fsum` or arithmetic giving the same result — of the exactly-rounded segment lengths, which is the rule item 6 already requires of journey totals. **Never left accumulation.** `run += seg` and `sum(...)` are two different rules in CPython >= 3.12, where `sum` is compensated |
    | **the projection parameter** | the exact rational `((p - a) . (b - a)) / ((b - a) . (b - a))`, the dot products taken over exact differences of the binary64 coordinates. It contains no square root, so over binary64 inputs it is exactly representable as a rational and is computed as one. The clamp to `[0, 1]` compares the **exact** parameter against 0 and 1, never its binary64 image. A degenerate segment — `b == a` — gives parameter 0, the numerator being zero as well |
    | **the traversal fraction** | the partial length along a segment is **one** correct rounding of `sqrt(t**2 * (dx**2 + dy**2))`, not a correctly-rounded `t` multiplied by a correctly-rounded length. The fraction is that partial, combined with whole segment lengths under the prefix rule above, divided by the record's total length |
-   | **the same-edge interval** | measured as a **span from one occurrence to the other** — the remainder of the origin's segment, the whole segments between, the leading part of the destination's segment — and **never** as a difference of two prefix arclengths |
+   | **the same-edge interval** | measured as a **span from one occurrence to the other** and **never** as a difference of two prefix arclengths. Fully: order the two occurrences by `(segment, parameter)` so the magnitude is symmetric in them; when they lie on **one** segment the span is that segment's length scaled by `abs(t_d - t_o)`, one rounding; otherwise it is the three-part sum `(1 - t_o)` of the origin's segment, the whole segments strictly between, and `t_d` of the destination's segment, each term rounded once and the terms combined by a single `fsum` in that order; the fraction is that span divided by the record's total length, itself the `fsum` of the whole segment lengths |
    | **zero total length** | a record whose segment lengths sum to zero contributes fraction **0.0**, for every occurrence pair on it |
 
    **The span rule is required rather than tidier, and the reason is measured.** Pass 37 F5 showed
@@ -551,11 +582,21 @@ So, normatively:
    resurfacing one layer up, **after** the projection has been made exact. The span never forms the
    cancelling prefix.
 
-   **The span is also the only implementable reading.** Subtracting two *exact* prefixes would be
-   equivalent and is what the step 4 plan first specified, but a prefix arclength is a sum of
-   square roots of rationals: not rational in general, and not representable as a `Fraction`. So
-   there is no exact prefix to subtract, and the span — which is that difference, formed without
-   ever building either prefix — is what the rule requires.
+   **Why the rejected reading is rejected — corrected after Codex pass 38 F2.** The first draft of
+   this paragraph said the span was "the only implementable reading", because a prefix arclength is
+   a sum of square roots and so is not rational in general. **That argument is wrong twice.** The
+   step 4 plan's rule defined its two prefixes as the *exactly-rounded* ones, and a binary64 is a
+   rational, so subtracting them exactly is immediate — the rule as written was implementable all
+   along. And "not a `Fraction`" is not "not representable": a finite sum of rational radicals is an
+   exact algebraic expression, and subtracting two such expressions cancels their common irrational
+   part. Pass 38 did exactly that on W3 and recovered the `1.862645149230957e-9` m gap symbolically.
+
+   The real reason is the one already measured above, and it is sufficient: **the rounded-prefix
+   subtraction loses the traversal.** On W3 both rounded prefixes are `20000000`, so their exact
+   difference is `0.0` where the span gives `9.313225746154785e-17` — 558.7935 s at weight `6e18`
+   against nothing at all. The span is adopted because the alternative is *wrong here*, not because
+   it is impossible. An impossibility argument was reached for when a measurement was already in
+   hand.
 
    **What item 7 does not settle.** Correctly rounding every operand does not make this convention
    select what real arithmetic selects, and no binary64 convention can: the traversal fraction is
@@ -1683,7 +1724,32 @@ Collected here because they were found as defects and must not be lost again.
 
 ## 13. Change log
 
-### Revision 13 — 2026-11-12, after Codex pass 37 against the step 4 plan
+### Revision 13 — 2026-11-12, after Codex pass 37 against the step 4 plan, amended the same day after Codex pass 38
+
+> **The pass 38 amendments, listed first because two of them narrow a claim this revision made.**
+> 1 High, 5 Medium, 2 Low; all eight reproduced, the High re-derived independently before it was
+> acted on. `docs/research/39-codex-review-pass38-counterexamples/`.
+>
+> | finding | what changed here |
+> |---|---|
+> | **F1, High — "every comparison that decides something made on the exact value" is false for §2.2's caps and band** | the clause is **scoped** to the quantities item 7 fixes. The caps and the 0.01 m band are predicates on a *distance* and are decided on the **correctly-rounded residual** in binary64, under production and under T0's exact path alike. Witness: `(0,-1)→(0,0)` from `(200, 1e-6)` has exact squared distance above `200**2` while its correctly-rounded residual is exactly `200.0`, so the exact predicate rejects and the rounded one admits — an **eligibility** difference. An exact-distance cap is `exact_sq <= cap**2`, needs no root, and is a **different convention**; it is left open in §2.2's terms rather than adopted silently, because it moves which points are answerable |
+> | **F2, Medium — the span was not "the only implementable reading"** | withdrawn. The step 4 plan's rule defined its prefixes as the *rounded* ones, and a binary64 is a rational, so subtracting them exactly was always possible; and a finite sum of rational radicals is exactly representable even unrounded, which pass 38 demonstrated by cancelling W3's common irrational part symbolically. The span is adopted because the alternative **gives 0.0 on W3 and loses the traversal**, which was already measured. An impossibility argument was reached for with a sufficient measurement in hand |
+> | **F3, Medium — one of the 22 mutations was "caught" because it crashed** | `scaled` is a local of `rational_sqrt`, not of `_decide`, so that mutant raised `NameError` and never tested the arithmetic it was named after. Repaired to compute the floor locally, where it fails three fixtures as it always should have. The harness now **smoke-runs every mutant first** and reports `INVALID` for one that raises `NameError`, `AttributeError`, `TypeError` and the like, so a crash can no longer be banked as a catch; `--self-test` proves that detector fires. Two rules had **no** mutation at all and two new fixtures now cover them: dropping the `y` interpolation in `exact_position`, and taking `1 - t_d` instead of `t_d` for a cross-segment destination — **625 s against 375 s** at weight 1000, which passed all 40 fixtures because the only multi-segment span fixture used a destination at the midpoint, where the two expressions coincide |
+> | **F4, Medium — "parameters differ" counted rounded images** | §2.2's occurrence key carries the **unrounded** parameter, and the comparison converted both sides to `float` first. Now reported as two figures under two names, `exact_parameter_differs` and `rounded_parameter_image_differs`, and the candidate-level comparison gains **exact occurrence identity** beside the vertex/segment structure it had. This changes a published result, not only a label — see the re-run in `docs/experiments/t0-attachment-pilot.md` |
+> | **F5, Medium — the sentinel bypassed the path it guarded** | it called the projection directly, so forcing both arithmetic requests to the float branch left it passing 2 of 2 while the census reported zeros. It now runs each witness through `adoption_stats` itself and carries a **control** that must *not* fire, since two witnesses cannot distinguish a live counter from one stuck at 1 |
+> | **F8, Medium — a third step 4 row contradicts this revision** | the zero-total row said a record "contributes `cost_base + penalty` once with no apportionment" and merges distinct structural vertices into one occurrence; item 7 requires fraction **0.0** for every occurrence pair and §2.2 preserves the structural keys. Marked superseded in the plan |
+> | **F6, Low — an equal record count is not a provenance guard** | two record sets can hold the artifact's 808,433 count and different geometry. The guard in `explain_adoption_diff.py` is strengthened to a geometry fingerprint |
+> | **F7, Low — the artifact comparator flattens containers** | `{"x": []}` and `{"x": [{}]}` flatten alike, and dotted paths can collide. Made structural and type-sensitive |
+>
+> **What pass 38 certified rather than refuted**, which is as useful: the correctly-rounded root
+> against an independent oracle on 2,004 radicands including subnormals and ties; every other row of
+> item 7; the one-rounding argument, as a statement about *that partial* and not about later
+> composition; the 610-leaf refactor equivalence, plus 2,005 further exact agreements between the
+> pilot's old copy and the module; the lengths cache under its documented precondition, with 400
+> more checks; all three mutation retirements; and both real census witnesses, including the
+> quadratic corroboration. It also re-ran pass 37's scalar-search reproducer and confirmed items 5
+> and 6 must stay open.
+
 
 **Closes §12 amendment item 1, the geometry arithmetic, as far as arithmetic can close it — and
 opens items 5 and 6 rather than closing over them.** A **semantic amendment**: it fixes six

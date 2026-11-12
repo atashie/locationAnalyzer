@@ -233,3 +233,31 @@ This one is about a *plan*, and it is the cheapest of the nine by a wide margin:
 rewrite of a document, not a correction to published figures or a rebuild. **An adversarial pass on
 a plan buys the same class of finding at a fraction of the price**, which is the argument for running
 one before the first line of code rather than after the last. Nine instances now.
+
+## A tenth, 2026-11-12: reaching past a sufficient reason for a stronger one
+
+Codex pass 38 F2. The adopted same-edge rule is right and the measurement that settles it was
+already in hand: subtracting two rounded prefixes gives `0.0` on W3 and loses the traversal
+entirely, against 558.7935 s for the span. Having measured that, I wrote into the normative design
+that the alternative was **not implementable**, because a prefix arclength is a sum of square roots
+and so "not representable as a `Fraction`".
+
+Wrong twice. The step 4 plan's own rule had defined its two prefixes as the *exactly-rounded* ones,
+and every binary64 is a rational, so subtracting them exactly was immediate — the rule as written
+was implementable all along. And "not a `Fraction`" is not "not representable": a finite sum of
+rational radicals is an exact algebraic expression, and the review cancelled W3's common irrational
+part symbolically to recover the `1.862645149230957e-9` m gap.
+
+**This is a different shape from the first nine.** Those over-generalised a narrow measurement into
+a broad guarantee. This one keeps the measurement accurate and *replaces* it with a stronger
+argument that is false — an impossibility claim where a "this is wrong here" claim was already
+sufficient and already verified. The tell is the same in both: a sentence that would be more
+impressive if true, written without being checked.
+
+**How to apply:** when a measurement already decides a question, state the measurement as the
+reason. If a stronger reason occurs to you, it needs its own evidence before it goes in the document
+— and it buys nothing, because the question is already decided. Ten instances now, and the same
+pass found three more of the ordinary kind in the same artifacts: a blanket "every comparison that
+decides something" that swept in two §2.2 predicates it had never been checked against, a counter
+named `parameter_differs` that compared rounded images of the parameters, and a mutation harness
+that counted a crashing mutant as caught.
