@@ -19,7 +19,7 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 
 ## Where §0 has got to
 
-**Measured 2026-11-11, not recalled:** **1,216 passed, 24 skipped**, across **36** engineering notes. The E1c figure verifier
+**Measured 2026-11-11, not recalled:** **1,254 passed, 24 skipped**, across **37** engineering notes. The E1c figure verifier
 `v2/scripts/verify_e1c_figures.py` is at **90 checks and 8 mutations**, all caught under
 `--self-test`, which no longer writes the tracked document.
 
