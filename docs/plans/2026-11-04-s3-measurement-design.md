@@ -2,6 +2,16 @@
 
 **Status:** design, predeclared before any sampling. Nothing here reports a result.
 
+**Revision 13, 2026-11-12, after Codex pass 37 against the step 4 plan.** Closes **§12 amendment
+item 1, the geometry arithmetic**, as far as arithmetic can close it: §2.4 gains **item 7**, a
+six-quantity rule table — exact where the quantity is rational, correctly rounded once where it is
+algebraic, every deciding comparison made on the exact value, composition order written down. A
+**semantic amendment**, but not an owner decision, and it changes no estimand, allocation, threshold
+or acceptance rule. It **opens items 5 and 6** rather than closing over them: the convention's argmin
+is not real arithmetic's (pass 37 F1, measured by phase 4a.2) and §2.4's ranking is not implementable
+by a scalar-label search (pass 37 F3, decided by phase 4b.0). **T3's gate moves from item 1 to those
+two.** `d1276c2`; §13's revision 13 row.
+
 **Revision 12, 2026-11-09; amended after Codex pass 31 and ADOPTED by the owner 2026-11-10.**
 Adds **E1c**, the conditional false-inclusion rate `Pr(comparator = FAIL | product = PASS)`, as a
 **reported and explicitly non-gating** measure beside E1a and E1b, which are unchanged. Plan §0
@@ -37,7 +47,8 @@ preference" was withdrawn there after Codex pass 31** and this paragraph said it
 **Revision 11, 2026-11-09.** Plan §0 step 1: §12 amendment items 2, 3 and 4 — the uniqueness
 promise, the admissible numerical domain, and the final cost discriminator lifted into normative
 §2.4 — plus rejection of non-finite query coordinates at every public entry. `ed8bb6b`, `f8b123f`.
-**§12 item 1, the geometry arithmetic, was not in it and is still open**; T3 remains gated on it.
+**§12 item 1, the geometry arithmetic, was not in it**; it stayed open until revision 13, and
+T3 is now gated on items 5 and 6 instead.
 This row is written late: revision 11's changes went into the body without a header block or a §13
 row, which is why the body referred to "revision 11" while both of those stopped at 10.
 
@@ -385,6 +396,8 @@ a **semantic amendment** under §13 requiring different fixtures, not an impleme
 
 §2.4 item 6 fixes the binary64 terms this forms and the summation that totals them, because
 apportioning the components separately is equally faithful to this rule and gives a different number.
+**§2.4 item 7 fixes the fraction *f* itself** — the projection, the segment lengths, the prefix
+and the same-edge span — because item 6 settles how *f* is multiplied and not how it is computed.
 
 #### Direction
 
@@ -511,6 +524,48 @@ So, normatively:
    summation removes the need for one. Declaring left accumulation instead would also have been
    coherent, but it would mean withdrawing §12's equivalence claim, which is the more valuable of the
    two.
+
+7. **The geometry those terms are formed from is frozen too**, because item 6 settles how a
+   fraction is multiplied into an already-formed cost and not how the fraction is computed. Six
+   quantities decide the exact cost argmin before any `fsum` sees a term, and all six were unfrozen
+   until this revision. The rule is: **exact where the quantity is rational, correctly rounded once
+   where it is algebraic, every comparison that decides something made on the exact value, and the
+   composition order written down.**
+
+   | quantity | the rule |
+   |---|---|
+   | **segment length** | one correct rounding of the exact rational radicand `dx**2 + dy**2`, where `dx` and `dy` are exact differences of the binary64 endpoints. `math.hypot` does **not** satisfy this: CPython implements its own compensated `vector_norm` and documents the result as *usually* correctly rounded |
+   | **prefix arclength** | an exactly-rounded, order-independent sum — `math.fsum` or arithmetic giving the same result — of the exactly-rounded segment lengths, which is the rule item 6 already requires of journey totals. **Never left accumulation.** `run += seg` and `sum(...)` are two different rules in CPython >= 3.12, where `sum` is compensated |
+   | **the projection parameter** | the exact rational `((p - a) . (b - a)) / ((b - a) . (b - a))`, the dot products taken over exact differences of the binary64 coordinates. It contains no square root, so over binary64 inputs it is exactly representable as a rational and is computed as one. The clamp to `[0, 1]` compares the **exact** parameter against 0 and 1, never its binary64 image. A degenerate segment — `b == a` — gives parameter 0, the numerator being zero as well |
+   | **the traversal fraction** | the partial length along a segment is **one** correct rounding of `sqrt(t**2 * (dx**2 + dy**2))`, not a correctly-rounded `t` multiplied by a correctly-rounded length. The fraction is that partial, combined with whole segment lengths under the prefix rule above, divided by the record's total length |
+   | **the same-edge interval** | measured as a **span from one occurrence to the other** — the remainder of the origin's segment, the whole segments between, the leading part of the destination's segment — and **never** as a difference of two prefix arclengths |
+   | **zero total length** | a record whose segment lengths sum to zero contributes fraction **0.0**, for every occurrence pair on it |
+
+   **The span rule is required rather than tidier, and the reason is measured.** Pass 37 F5 showed
+   two "exactly rounded" readings of one same-edge interval splitting **666.1338 s FAIL** against
+   **558.7935 s PASS**, and an exact projection does not pick between them. Nor does it repair the
+   rejected reading: on W3's geometry the exact gap to the endpoint is `1.862645149230957e-9` m, the
+   prefix is `2e7`, and `ulp(2e7)` is `3.725290298461914e-9`. The gap is **exactly half an ulp**, and
+   `2e7` has an even significand, so rounding the exact prefix to binary64 puts it back *on* the
+   endpoint under round-half-to-even and the traversal disappears. That is W3's own defect
+   resurfacing one layer up, **after** the projection has been made exact. The span never forms the
+   cancelling prefix.
+
+   **The span is also the only implementable reading.** Subtracting two *exact* prefixes would be
+   equivalent and is what the step 4 plan first specified, but a prefix arclength is a sum of
+   square roots of rationals: not rational in general, and not representable as a `Fraction`. So
+   there is no exact prefix to subtract, and the span — which is that difference, formed without
+   ever building either prefix — is what the rule requires.
+
+   **What item 7 does not settle.** Correctly rounding every operand does not make this convention
+   select what real arithmetic selects, and no binary64 convention can: the traversal fraction is
+   irrational, and the exactly-rounded ratio of exactly-rounded operands is not the correctly-rounded
+   ratio. Pass 37 F1's witness is two records whose exact costs differ by `4.1e-17`, where this
+   convention makes them compare **equal**, the travel-time key above then decides, and the reported
+   answer is **1 s PASS** against a real-arithmetic **994.1125 s FAIL**. That residue is §12
+   amendment **item 5**, which is disclosed and measured rather than closed. **Item 6** is the
+   separate observation that the ranking in this section is not implementable by a scalar-label
+   search at all.
 
 **Ranking, applied only after identity and grouping:**
 
@@ -1587,7 +1642,8 @@ Collected here because they were found as defects and must not be lost again.
 ## 12. The five frozen artifacts
 
 - [ ] **A normative specification** — §§2, 3, 6, 7 of this document, which fix quantities and
-      observable decision rules.
+      observable decision rules. Amendment **item 1 closed in revision 13** (§2.4 item 7);
+      **items 5 and 6 are open against it** and are what T3 is now gated on.
 - [ ] **A versioned reference comparator** implementing them, built fixture-first.
 - [ ] **A conformance suite** of independently derived expected results, containing every
       counterexample from Codex passes 15, 16, 17 and 18 and the objective-specific properties of
@@ -1626,6 +1682,57 @@ Collected here because they were found as defects and must not be lost again.
 ---
 
 ## 13. Change log
+
+### Revision 13 — 2026-11-12, after Codex pass 37 against the step 4 plan
+
+**Closes §12 amendment item 1, the geometry arithmetic, as far as arithmetic can close it — and
+opens items 5 and 6 rather than closing over them.** A **semantic amendment**: it fixes six
+quantities that decide a cost argmin, so it carries this row and needs fresh certification, not an
+"equivalent implementation change" note. Nothing has been certified yet — §10's freeze has not
+happened — so the certification clause is met by building the conformance fixtures beside the rule,
+which phase 4a.1 did.
+
+> **Not an owner decision.** Item 1 is one of the four rules the pass-22 note records as "none an
+> owner decision, an allocation or a threshold". No estimand, allocation, threshold, interval
+> convention or acceptance rule changes, and §2.4's identity, grouping and ranking rules are
+> untouched.
+>
+> **How it was decided, stated narrowly.** Where two readings were both already specified — the
+> exactly-rounded sum against left accumulation — the adopted one is nearer the true total, by a
+> factor of three on the pass-22 witness. Elsewhere the argument is that **one correct rounding of an
+> exact value is by definition the nearest representable number to it**, so a one-rounding
+> composition cannot be farther off than a two-rounding one. It is **not** claimed that the adopted
+> convention is nearest to real arithmetic at every step; item 5 below says the opposite, and the
+> prefix rule is the exactly-rounded sum of *given* terms rather than of the true arclength.
+
+| what | why |
+|---|---|
+| **§2.4 item 7** added: a six-quantity rule table, with the rule stated as *exact where the quantity is rational, correctly rounded once where it is algebraic, every deciding comparison on the exact value, composition order written down* | item 6 froze `f * (cost_base + penalty)` as one term and left *f* unfrozen. Segment-length summation, prefix arclength, the projection parameter, the traversal fraction, the same-edge interval formula and the zero-total-length convention all decide the argmin before any `fsum` sees a term |
+| the **projection parameter and the squared distance are exact rationals**, not rounded floats | neither contains a square root, so over binary64 inputs both are exactly representable. Pass 30's two witnesses lie inside revision 11's declared numerical domain: a dot product cancelling to exactly 0.0 where the exact value is `1.4210854715202003e-20` — 0 s of network travel against 710.542736 s — and a subtraction rounding a projection onto an endpoint, `1.48e-9` s against 931.3226 s |
+| the **clamp compares the exact parameter** against 0 and 1, not its binary64 image | on `(0,0)->(3,4)` with the origin at `(nextafter(3,0), 4)` the exact parameter is `1 - 5.329070518200751e-17`, which rounds to exactly 1.0 and would discard a `2.66e-16` m traversal |
+| **segment length is one correct rounding** of the exact rational radicand, by a binade-lattice algorithm, and explicitly **not `math.hypot`** | CPython implements its own compensated `vector_norm` and documents the result as *usually* correctly rounded. The operative contract is CPython's, not IEEE-754's. Integer scaling alone is not a rounding proof either: the comparison that decides the last bit is made against the **original rational**, at a lattice floored at the subnormal exponent, ties to even |
+| `t * L` is **one** rounding of `sqrt(t**2 * (dx**2 + dy**2))`, not a rounded `t` times a rounded `L` | two roundings are never better and the one-rounding form costs nothing. The two rules agree on almost every input — separating them needed a search of 400,000 random segments — which is itself the argument for preferring the better form **by construction** rather than by spot check |
+| **prefix arclength is an exactly-rounded, order-independent sum**, never left accumulation | item 6's rule for journey totals, extended down into the geometry. `run += seg` and `sum(...)` are different rules in CPython >= 3.12, where `sum` is compensated; `toy.py` used the first for the running prefix and the second for the record total, so the two quantities were computed by different rules |
+| **the same-edge interval is measured as a span**, never as a difference of two prefix arclengths | pass 37 F5: two exactly-rounded readings of one interval split **666.1338 s FAIL** against **558.7935 s PASS**, and an exact projection does not pick between them. The span rule removes the choice rather than settling it. It is **required, not tidier**: on W3's geometry the exact gap to the endpoint is exactly **half an ulp** of the `2e7` prefix and `2e7` has an even significand, so rounding the exact prefix puts it back on the endpoint and the traversal disappears — W3's own defect resurfacing after the projection has been made exact |
+| **zero total length** contributes fraction 0.0, normatively | it was a convention in code with no normative sentence behind it |
+| **item 5 opened** — the convention's argmin is not real arithmetic's | pass 37 F1, which is the step 4 plan's own first invalidation condition, stated in the plan and not run. Correctly rounding each operand does not correctly round their ratio or their sum. Measured by phase 4a.2, not closed |
+| **item 6 opened** — §2.4's ranking is not implementable by a scalar-label search | pass 37 F3. A prefix pruned on cost can rejoin the final cost tie and win it on time, so the rule is not a property of any single-scalar search. Phase 4b.0 decides between a label band, amending the rule, and accepting a measured gap |
+| **T3's gate moves** from item 1 to items 5 and 6 | item 1 is closed as far as arithmetic can close it, and calling that the whole gate would report a guarantee about adjacent intermediate quantities as a guarantee about the decision that consumes them — the precise failure pass 37 found |
+
+**Built fixture-first**, and the evidence is `d1276c2`: `v2/locfinder/measure/exact.py`, 38 fixtures
+in `v2/tests/test_exact_geometry.py` written before the module, and
+`v2/scripts/mutate_exact_geometry.py` with **21 mutations, all caught** — including the mutant that
+rounds every operand correctly and composes wrongly, which is what revision 1 of the step 4 plan
+would have shipped.
+
+**The independence of those fixtures is partial, and is recorded rather than assumed.** W1 comes
+from pass 22 and W2–W5 from passes 30 and 37, so the witnesses were produced by an adversarial
+reviewer before this module existed — better than fixtures derived from the implementation, which is
+what §12's conformance-suite artifact warns against. But their **expected values are computed under
+the rule this revision adopts**, so they test conformance to the rule and not the rule's
+correctness. One of them was wrong for exactly that reason: the step 4 plan's W1 fixture expected
+the answer the adopted rule **rejects** (pass 37 F2), and it would have failed on first run. §12's
+independence evidence for these five is therefore **not yet satisfied**.
 
 ### Revision 12 — 2026-11-09, amended after Codex pass 31 and ADOPTED 2026-11-10
 
@@ -1820,9 +1927,10 @@ amplifies the lost network fraction with no bound from connector speed. §2.2's 
 framed correctly; its stakes are this table, not float noise. **It has since been settled — see the
 revision-9 row above, which adopted the exact-per-record reading on the strength of this table.**
 
-**Deferred to revision 9 — four rules, none an owner decision, an allocation or a threshold.**
+**The running §12 amendment-item list.** It began here as four rules deferred to revision 9, none of them an owner decision, an allocation or a threshold, and the numbering is cited elsewhere in this document, so items are added to it rather than renumbered or re-homed. **Items 5 and 6 were added by revision 13 from Codex pass 37** and belong to that pass, not to pass 22; the heading above covers items 1-4.
 
-1. **§2.4's geometry arithmetic — STILL OPEN after revision 11.** Freezing
+1. **§2.4's geometry arithmetic — CLOSED in revision 13**, as far as arithmetic can close it.
+   Freezing
    `f × (cost_base + penalty)` as one term froze the
    multiplication and left the **fraction** unfrozen. Segment-length summation, prefix arclength, the
    projection parameter, the traversal fraction, the same-edge interval formula and the
@@ -1855,9 +1963,17 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
 
    So revision 11's bounds prevent the demonstrated *underflow* and *overflow* and do **not**
    establish projection accuracy; its claim that they were "derived from where the arithmetic stops
-   being exact" was too broad and is withdrawn. Closing this needs an exact binary-rational fallback
-   for the cancellation-sensitive projection terms — a revision-12 change, and what **T3 remains
-   gated on**.
+   being exact" was too broad and is withdrawn. Closing this needed an exact binary-rational
+   fallback for the cancellation-sensitive projection terms, and **revision 13 supplies it** —
+   §2.4 item 7, implemented in `v2/locfinder/measure/exact.py`.
+
+   **What revision 13 does not close, and what T3 is gated on now.** The fallback makes the
+   projection exact and rounds every length correctly once. It does not make the convention
+   select what real arithmetic selects, and it does not make §2.4's ranking reachable by the
+   search that would have to implement it. Those are items **5** and **6** below, both from
+   Codex pass 37 against the step 4 plan. **T3's gate moves to them.** Item 1 is not permitted
+   to close over them, because reporting a guarantee about adjacent intermediate quantities as a
+   guarantee about the decision that consumes them is the precise failure that pass found.
 2. **§2.4's uniqueness promise — SETTLED in revision 11**, as the weaker promise plus T10's own
    reconstruction rule. Node simplicity makes the route set finite; it does not make a
    reconstruction unique. On a zero-weight self-crossing edge, direct partial journeys over
@@ -1878,6 +1994,31 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
    code; the normative lift used to end at the route sequence. A
    conforming reader of the prose may therefore report a different selected cost on two
    same-identity equal-time records of cost 1 and 2. Implemented, not amended.
+5. **The argmin is not the real argmin — OPEN, from Codex pass 37 F1, and not closable by
+   arithmetic.** §2.4 item 7 makes the projection parameter exact and rounds every length correctly
+   once. The traversal fraction remains irrational, and neither the ratio of correctly-rounded
+   operands nor the sum of correctly-rounded terms is the correctly-rounded ratio or sum. Witness:
+   two records whose exact costs differ by `4.1e-17`, where item 7's convention makes them compare
+   **equal**, the travel-time key decides, and the answer is **1 s PASS** against a real-arithmetic
+   **994.1125 s FAIL**. No binary64 convention avoids this; a different one moves which pairs it
+   happens to. The response is **measurement, not closure**: step 4 phase 4a.2 builds a certified
+   cost comparison returning `AGREES`, `DIFFERS` or `UNRESOLVED` at a declared refinement limit, and
+   reports how often the convention's argmin differs over T4's fixtures and T2's frames.
+   `UNRESOLVED` is a retained status and is never counted as agreement. Until that figure exists the
+   divergence rate is **unknown rather than small**.
+
+   This item exists because the step 4 plan wrote its own first invalidation condition — *"if an
+   exact projection still produces a wrong argmin on some witness, the item is wider than
+   arithmetic"* — and did not run it. Pass 37 produced the witness on the first attempt.
+6. **§2.4's ranking is not implementable by a scalar-label search — OPEN, from Codex pass 37 F3.**
+   The ranking is lexicographic over cost and then travel time, and a label-setting search that
+   prunes on cost alone can discard a prefix that would rejoin the final cost tie and win it on
+   **time**. The rule is therefore not a property any single-scalar shortest-path implementation has,
+   whatever its arithmetic, and §2.4 item 7 does not touch it. Three repairs are available and none
+   is free: carry a band of cost-equivalent labels, amend the rule to what a scalar search can
+   deliver, or accept the gap and measure it. Step 4's phase 4b.0 decides between them **before** any
+   comparator claims to implement this section; its recommendation is to measure first, because the
+   frequency of a rejoining tie on the real graph is unmeasured.
 
 Pass 22 also **qualified** two revision-8 statements without refuting them. A palindrome's two
 directions share one identity only for a **closed** palindrome: an open edge whose endpoint node ids

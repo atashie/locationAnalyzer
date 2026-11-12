@@ -8,8 +8,9 @@ metadata:
   modified: 2026-11-10T00:00:00.000Z
 ---
 
-As of 2026-11-11, head `255970e` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
-`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 12**; plan
+As of 2026-11-12, head `d1276c2` on `v2-rethink` plus the commit carrying this note, pushed. **No sampling has happened**, but the owner **walked one journey** and it found more than eleven adversarial passes on the instrument had, and **T0 has run** over both populations. Design
+`docs/plans/2026-11-04-s3-measurement-design.md` is **revision 13** — revision 13 closes §12
+amendment item 1, the geometry arithmetic, and opens items 5 and 6; plan
 `...-s3-execution-plan.md` is **revision 12**, whose **§0 is the entry point** and now carries
 per-step status. Codex passes 14-26 are `docs/research/21-` to `33-`; **passes 33 to 37 are
 `docs/research/34-` to `38-`, with their executable counterexamples committed beside
@@ -30,24 +31,27 @@ Build record: `docs/experiments/s3-instrument-build.md`.
 | 1 — the cheap correctness debts | **done** `ed8bb6b`, `f8b123f`; three of §12's four items |
 | 2 — the missing conditional | **done** `c93df95`..`a45daf2` — **adopted**; Codex passes 31-32 absorbed |
 | 3 — T0, the prevalence-and-impact pilot | **stages 1-2 done 2026-11-10, corrected 2026-11-11 after pass 36**; stage 3 needs the comparator. `docs/experiments/t0-attachment-pilot.md` |
-| 4 — T3 as a versioned development comparator | **NEXT, AND WHERE TO RESUME.** Also what T0 stage 3 waits on. Gated on §12 item 1 and on two gaps Codex pass 37 opened; the plan is below, at **revision 2** |
+| 4 — T3 as a versioned development comparator | **IN PROGRESS, AND WHERE TO RESUME.** Also what T0 stage 3 waits on. **4a.1 done** `d1276c2` plus design revision 13; §12 item 1 is closed and the gate is now items **5 and 6**, the two gaps Codex pass 37 opened. The plan is below, at **revision 2** |
 
 ## WHERE TO RESUME: step 4, and the gate in front of it
 
-**Step 4 is T3, the development comparator — and it cannot start on its own terms, because §12 item
-1 is still open and Codex pass 37 opened two more gaps beside it.** The plan is
+**Step 4 is T3, the development comparator — and it cannot start on its own terms.** §12 item 1
+is now **closed**, by design revision 13 and `d1276c2`, but the gate did not empty: Codex pass 37
+opened two gaps beside it, which revision 13 records as **items 5 and 6**, and T3 is gated on
+those. The plan is
 `docs/plans/2026-11-11-step4-comparator-plan.md`, **revision 2**; revision 1 is in history at
 `255970e` and the plan opens with what it got wrong. The short form:
 
 | phase | what | why it is in this order |
 |---|---|---|
-| **4a.1** | close **§12 item 1**: exact rational projection and clamp, correctly-rounded lengths, and the **six formulas actually written** | the only gate the design itself names. Five witnesses W1–W5, three of them *inside* the declared numerical domain, so the domain does not close it |
+| **4a.1** | **DONE, `d1276c2` + design revision 13.** `measure/exact.py`: exact rational projection and clamp, correctly-rounded lengths, and the **six formulas actually written**, now normative as §2.4 **item 7**. 38 fixtures written before the module; 21 mutations, all caught | the only gate the design itself named. Five witnesses W1–W5, three of them *inside* the declared numerical domain, so the domain did not close it |
 | **4a.2** | a **certified** cost comparison, as a diagnostic that measures how often the normative convention's argmin differs | pass 37 F1: exact projection plus exactly-rounded arclength does **not** give the real argmin, and no binary64 convention can. Measuring the gap is what lets development proceed |
 | **4b.0** | a spike on **search semantics** — band, amend, or accept-and-measure | pass 37 F3: §2.4's whole-journey tie rule is **not implementable by a scalar-label search**. Unaffected by 4a, and it is what threatens 4b's box |
 | **4b** | T3 as a **development** comparator — pinned runtime, no cross-implementation claim, fixture-first from T4 | pass 20's standing instruction still holds: *"Do not start a purportedly frozen T3 yet"* |
 | **4c** | T0 **stage 3**, the verdict impact | needs 4b; pass 36 F3 established it cannot be restricted to the origins whose own attachments differ, and pass 37 F6 established it measures one fixed graph only |
 
-**What "closing item 1" can and cannot mean.** It means exact where the quantity is rational,
+**What "closing item 1" can and cannot mean** — now written into the design as **§2.4 item 7**,
+with the two residues as amendment items 5 and 6. It means exact where the quantity is rational,
 exactly-rounded where it is algebraic, every *deciding* comparison made on the exact value, and the
 composition order fixed and written. It does **not** mean the comparator selects what real arithmetic
 would: the traversal fraction is irrational, so two candidates whose exact costs differ by less than
@@ -279,12 +283,15 @@ that was supposed to prove connector inclusion; and the subdivision exposure, wh
 except on a zero-length segment" and is wrong on an ordinary straight edge.
 
 **T3 has been refused four times** — passes 19, 20, 21, 22 — and pass 23 found a defect in every one
-of the four replacement rules written for pass 22. **Four rules are still owed**, all named in §13 and
-in the plan's T3 section, none an owner decision. (The candidate universe is *not* among them any
+of the four replacement rules written for pass 22. **All four are now settled**: rules 2, 3 and 4 in
+design revision 11, and rule 1 — the geometry arithmetic — in **revision 13**, as far as arithmetic
+can settle it. What is owed instead is amendment **items 5 and 6**, which revision 13 opened in place
+of closing item 1 over them; neither is an owner decision either. (The candidate universe is *not* among them any
 more: revision 9 claimed to settle it, was reverted, and §2.2 now declares a convention — see the
 REVERTED block below.) Plan §0 step 1 boxes rules 3 and 4 at half a day together with the weakened
 uniqueness promise:
-1. **The geometry arithmetic** that produces a traversal fraction. Revision 8 froze
+1. **The geometry arithmetic** that produces a traversal fraction — **CLOSED in revision 13 as
+   §2.4 item 7.** Revision 8 froze
    `f × (cost_base + penalty)` as one term and left the fraction unfrozen; `sum` against left
    accumulation of one edge's segment lengths reports **1,000 s against 1 s**. **Already decided in
    principle:** 0.6 is the exactly-rounded sum (nearer the true total than 0.6000000000000001 by 3x),

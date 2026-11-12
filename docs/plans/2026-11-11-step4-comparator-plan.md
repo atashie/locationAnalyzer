@@ -73,6 +73,28 @@ arithmetic — is not, and the amendment has to say so.
 | same-edge interval | **chosen, not merely "specified"** | `f = RN(|s_d − s_o| / total)`, where `s_d` and `s_o` are each the exactly-rounded prefix above and the subtraction is performed **on the exact rational prefixes before rounding**. The rejected reading, `|RN(s_d/total) − RN(s_o/total)|`, differs: at an admissible weight of `6e18`, 666.13 s FAIL against 558.79 s PASS |
 | zero total length | **normative value** | `total == 0` gives `f = 0`, every occurrence on the record shares one position, and the record contributes `cost_base + penalty` once with no apportionment. Distinct structural vertices on an all-zero-length record are **one** occurrence for §2.2's identity and the record's own vertex index is retained for provenance |
 
+> **Two rows of this table were superseded by building it, and the corrections are in design
+> revision 13.** Recorded here rather than edited away, because both were written as settled rules.
+>
+> * **The same-edge interval.** This table says the subtraction is "performed on the exact rational
+>   prefixes before rounding". **There are no exact rational prefixes.** A prefix arclength is a sum
+>   of square roots of rationals, which is not rational in general and is not representable as a
+>   `Fraction`, so the rule as worded is not implementable. What 4a.1 adopted is the **span**: the
+>   remainder of the origin's segment, the whole segments between, and the leading part of the
+>   destination's segment, summed once. In exact arithmetic the span *is* the difference of the two
+>   prefixes, so this is the implementable form of the same intent — and it also never forms the
+>   large cancelling prefix, which turned out to matter. On W3's geometry the exact gap to the
+>   endpoint is **exactly half an ulp** of the `2e7` prefix, and `2e7` has an even significand, so
+>   rounding the prefix puts it back on the endpoint and the traversal disappears. **An exact
+>   projection is necessary and not sufficient:** the arithmetic that consumes the exact parameter
+>   can throw away what the exactness bought.
+> * **The traversal fraction.** This table specifies the interior-attachment partial as
+>   `RN(t × RN(segment length))` — two roundings. 4a.1 computes it as **one**:
+>   `rational_sqrt(t² (dx² + dy²))`. One correct rounding of an exact value is by definition the
+>   nearest representable number to it, so the two-rounding form cannot be better and is sometimes
+>   worse. The separating witness needed a search of 400,000 random segments, which is the argument
+>   for preferring the better form by construction rather than by spot check.
+
 > **What "closing item 1" means, stated so it cannot be read as more:** exact where the quantity is
 > rational, exactly-rounded where it is algebraic, every comparison that *decides* something made on
 > the exact value where one exists, and the composition order fixed and written. **It does not mean
@@ -119,18 +141,21 @@ reachable by any reassociation, and W5 needs certified comparison rather than be
 
 ### Tasks
 
-1. **`v2/locfinder/measure/exact.py`** — exact rational projection parameter and clamp; exact squared
+1. **DONE, `d1276c2`. `v2/locfinder/measure/exact.py`** — exact rational projection parameter and clamp; exact squared
    distance; correctly-rounded `sqrt` of an exact rational by the binade-lattice algorithm;
    exactly-rounded segment length; the prefix, fraction, same-edge and zero-length formulas above as
    named functions. Fixture-first against W1–W5 and the `toy.py` cases that already exercise the
    projection.
 2. **`v2/locfinder/measure/certify.py`** — the certified cost comparison of 4a.2, with
    `AGREES`/`DIFFERS`/`UNRESOLVED` and a declared refinement limit.
-3. **A mutation harness** over both. Every rule in this project that was trusted on reading has
+3. **DONE for `exact.py`, `d1276c2` — 21 mutations, all caught. A mutation harness** over both. Every rule in this project that was trusted on reading has
    failed; there are eight instances in `feedback-verify-the-shape-of-the-risk` and pass 37 is a
    ninth. The harness must include a mutant that **rounds each operand correctly and composes
    wrongly**, because that is the mutant revision 1 would have shipped.
-4. **Design revision 13** — amend §2.4 with the rule table; add a §13 row; add the **two new §12
+4. **DONE. Design revision 13** — §2.4 gains **item 7**, the six-quantity rule table; §13 carries
+   the revision 13 row and block; amendment **items 5 and 6** are opened in the running list; the
+   limit is stated in item 7's own closing paragraph. Two rows of 4a.1's table above were
+   superseded in the process, and the callout there says how. Originally: amend §2.4 with the rule table; add a §13 row; add the **two new §12
    items** (the argmin gap, the scalar-search gap) rather than silently closing item 1 over them;
    state the limit in the terms of the callout above. A **semantic amendment**: it changes a
    quantity, so it needs the row and fresh certification, not an "equivalent implementation change"
