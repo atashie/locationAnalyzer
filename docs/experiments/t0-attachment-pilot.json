@@ -1,5 +1,5 @@
 {
- "built": "2026-11-12 14:22:32",
+ "built": "2026-11-12 14:56:32",
  "pinned": {
   "metro": "triangle",
   "graphml_sha256": "2ee931bc0f2a303a2b35b29584d5224a2cd175b016734e34ba59e7ea91a5df1f",
@@ -53,7 +53,7 @@
   "records_production_collapses": 94981,
   "merge_note": "`symmetrise` copies the data dict exactly, so a walk graph's forward/reverse pair has identical weights and collapses into one bidirectional record under BOTH definitions. The difference between the two counts is therefore parallel roads carrying DIFFERENT weights, which design \u00a72.4 requires be kept apart because grouping must not answer a ranking question. The first run of this pilot attached to the production grouping and its prevalence counts are superseded (Codex pass 36 F4).",
   "components": "3046 components; kept 539814 nodes (97.5%), dropped 13608",
-  "prepare_s": 99.9
+  "prepare_s": 101.1
  },
  "sets": {
   "frame_B_structures": {
@@ -65,8 +65,8 @@
    "is_a_sample": true,
    "cap_m": 200.0,
    "points": 500,
-   "seconds": 0.12,
-   "ms_per_point": 0.241,
+   "seconds": 0.13,
+   "ms_per_point": 0.2516,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -177,7 +177,7 @@
    "cap_m": 200.0,
    "points": 500,
    "seconds": 0.14,
-   "ms_per_point": 0.2761,
+   "ms_per_point": 0.2772,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -288,7 +288,7 @@
    "cap_m": 300.0,
    "points": 550,
    "seconds": 0.11,
-   "ms_per_point": 0.1992,
+   "ms_per_point": 0.1952,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -397,8 +397,8 @@
    "note": "a census of frame B's population: every structure centroid inside the grid. No sampling uncertainty.",
    "cap_m": 200.0,
    "points": 512633,
-   "seconds": 122.54,
-   "ms_per_point": 0.239,
+   "seconds": 123.2,
+   "ms_per_point": 0.2403,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -519,8 +519,8 @@
    "note": "every cell CENTRE. This is NOT a census of frame C, which draws independent points within each cell: a centre census does not count every affected location inside a cell, and the two must not be compared as if it did.",
    "cap_m": 200.0,
    "points": 330502,
-   "seconds": 100.08,
-   "ms_per_point": 0.3028,
+   "seconds": 91.36,
+   "ms_per_point": 0.2764,
    "no_geometry": 0,
    "tree_and_recomputed_minimum_disagree": 0,
    "A": {
@@ -631,6 +631,264 @@
       "over_60s": 0
      }
     }
+   }
+  }
+ },
+ "adoption": {
+  "note": "Step 4 plan task 5. Design revision 13's \u00a72.4 item 7 primitives against the arithmetic this pilot published, on the SAME points and the same windows. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule and is reported as C_exact, inheriting none of this pilot's evidence. An exact band PREDICATE is convention B and is not implemented.",
+  "sample_per_set": "census",
+  "seed": 20261112,
+  "sentinel": [
+   {
+    "witness": "W2 dot-product cancellation",
+    "float_t": "0.0",
+    "exact_t": "33554432/4722366482869645",
+    "float_occurrence": "(0, 'v', 0)",
+    "exact_occurrence": "(0, 's', 0)",
+    "float_lands_on_a_vertex": true,
+    "exact_lands_on_a_vertex": false,
+    "differs": true
+   },
+   {
+    "witness": "W3 subtraction near the coordinate bound",
+    "float_t": "1.0",
+    "exact_t": "10737418239999999/10737418240000000",
+    "float_occurrence": "(0, 'v', 1)",
+    "exact_occurrence": "(0, 's', 0)",
+    "float_lands_on_a_vertex": true,
+    "exact_lands_on_a_vertex": false,
+    "differs": true
+   }
+  ],
+  "sets": {
+   "frame_B_structures": {
+    "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
+    "points": 500,
+    "eligibility_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "count_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "occurrences_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "places_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "points_with_any_change": 0,
+    "raw": {
+     "positions_compared": 20353,
+     "residual_differs": 1459,
+     "arclength_differs": 8819,
+     "parameter_differs": 910,
+     "vertex_or_interior_differs": 0,
+     "max_abs_residual_diff_m": 2.3641177904210053e-10,
+     "max_abs_arclength_diff_m": 3.637978807091713e-12,
+     "max_abs_parameter_diff": 3.774758283725532e-15,
+     "position_differs": 0,
+     "max_position_shift_m": 0.0
+    },
+    "examples": [],
+    "sampling": "every point in the set",
+    "seconds": 1.59
+   },
+   "frame_C_area": {
+    "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
+    "points": 500,
+    "eligibility_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "count_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "occurrences_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "places_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "points_with_any_change": 0,
+    "raw": {
+     "positions_compared": 28363,
+     "residual_differs": 969,
+     "arclength_differs": 14699,
+     "parameter_differs": 652,
+     "vertex_or_interior_differs": 0,
+     "max_abs_residual_diff_m": 2.3078605693171994e-10,
+     "max_abs_arclength_diff_m": 7.275957614183426e-12,
+     "max_abs_parameter_diff": 6.439293542825908e-15,
+     "position_differs": 0,
+     "max_position_shift_m": 0.0
+    },
+    "examples": [],
+    "sampling": "every point in the set",
+    "seconds": 2.1
+   },
+   "grocery_destinations": {
+    "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
+    "points": 550,
+    "eligibility_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "count_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "occurrences_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "places_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "points_with_any_change": 0,
+    "raw": {
+     "positions_compared": 9417,
+     "residual_differs": 1889,
+     "arclength_differs": 2504,
+     "parameter_differs": 1056,
+     "vertex_or_interior_differs": 0,
+     "max_abs_residual_diff_m": 2.355022843403276e-10,
+     "max_abs_arclength_diff_m": 9.094947017729282e-13,
+     "max_abs_parameter_diff": 1.6653345369377348e-15,
+     "position_differs": 0,
+     "max_position_shift_m": 0.0
+    },
+    "examples": [],
+    "sampling": "every point in the set",
+    "seconds": 0.88
+   },
+   "census_all_structures": {
+    "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
+    "points": 512633,
+    "eligibility_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "count_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "occurrences_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 2,
+     "D_exact_vs_D": 0
+    },
+    "places_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 2,
+     "D_exact_vs_D": 0
+    },
+    "points_with_any_change": 2,
+    "raw": {
+     "positions_compared": 17555955,
+     "residual_differs": 1441030,
+     "arclength_differs": 6866788,
+     "parameter_differs": 869627,
+     "vertex_or_interior_differs": 0,
+     "max_abs_residual_diff_m": 2.3939605853229295e-10,
+     "max_abs_arclength_diff_m": 7.275957614183426e-12,
+     "max_abs_parameter_diff": 1.9206858326015208e-14,
+     "position_differs": 28,
+     "max_position_shift_m": 4.656612873077393e-10
+    },
+    "examples": [
+     {
+      "point_index": 280349,
+      "x": 699485.6282859619,
+      "y": 3963460.7648411603,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "occurrences",
+       "places"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 21.973917981417063,
+      "exact_min_m": 21.97391798138818
+     },
+     {
+      "point_index": 461149,
+      "x": 665635.9142146338,
+      "y": 3983718.636862272,
+      "comparison": "C_exact_vs_C",
+      "changed": [
+       "occurrences",
+       "places"
+      ],
+      "float_count": 2,
+      "exact_count": 2,
+      "float_min_m": 17.71692748864446,
+      "exact_min_m": 17.716927488643076
+     }
+    ],
+    "sampling": "every point in the set",
+    "seconds": 1448.39
+   },
+   "census_all_cell_centres": {
+    "note": "float is the arithmetic this pilot published; exact is design revision 13's \u00a72.4 item 7 primitives. A and D are one rule measured two ways; C under exact arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C",
+    "points": 330502,
+    "eligibility_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "count_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "occurrences_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "places_changed": {
+     "A_exact_vs_A": 0,
+     "C_exact_vs_C": 0,
+     "D_exact_vs_D": 0
+    },
+    "points_with_any_change": 0,
+    "raw": {
+     "positions_compared": 18941630,
+     "residual_differs": 696733,
+     "arclength_differs": 9566420,
+     "parameter_differs": 461563,
+     "vertex_or_interior_differs": 0,
+     "max_abs_residual_diff_m": 2.396749465560788e-10,
+     "max_abs_arclength_diff_m": 7.275957614183426e-12,
+     "max_abs_parameter_diff": 5.3290705182007514e-14,
+     "position_differs": 14,
+     "max_position_shift_m": 4.656612873077393e-10
+    },
+    "examples": [],
+    "sampling": "every point in the set",
+    "seconds": 1462.21
    }
   }
  },

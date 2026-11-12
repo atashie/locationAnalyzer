@@ -325,6 +325,91 @@ before this measurement.
 
 ---
 
+### Re-run against design revision 13's exact primitives, 2026-11-12
+
+Step 4 phase 4a.1 built `v2/locfinder/measure/exact.py` and design revision 13 made it normative as
+§2.4 **item 7**. This pilot was then re-run against it, in two labelled steps, because the step 4
+plan required the distinction: a **behaviour-preserving refactor** first, then a **separate
+adoption** that can move the figures.
+
+**The refactor moved nothing, and that is a checked claim.** This pilot carried its own copy of the
+exact squared distance, written before the module existed. It now imports the module's. The two were
+checked to agree bit-exactly on 10 named cases — the pass-30 and pass-37 witnesses, a degenerate
+segment, both clamp boundaries, subnormal and `1e300` coordinates — and on 200,000 random segments
+across five coordinate scales, a quarter of them placed on the segment so the clamp decides.
+`v2/scripts/compare_t0_artifacts.py` then compared the whole re-run against the previous artifact:
+**610 leaves, no difference outside the build stamp and the durations**. The tool was itself tested
+with planted edits, two volatile and two real, before it was believed.
+
+**The adoption was censused rather than sampled**, at 844,685 points and 36,555,718 per-segment
+positions, because making `prefix_arclength` take a cache of its record's segment lengths took the
+exact path from 135 ms a point to 4.2 — the function had been recomputing every segment length once
+per segment, which is quadratic in the segment count. The cache is a performance argument that could
+have altered a measured quantity, so its equivalence is held by a test over random geometries and by
+a mutation that supplies a wrong cache, not by the argument that it obviously cannot.
+
+**The result: the arithmetic moves, and one rule's decision moves with it.** Conventions **A** and
+**D** retain the same candidates at the same places on every one of the 844,685 points.
+**`C_exact`** differs from **C** on **2** of the 512,633 structure centroids, and on neither of the
+other four sets. Underneath, 2.1 million residuals and 16.4 million arclengths differ — by at most
+`2.4e-10` m and `7.3e-12` m — 42 attachment positions move by at most `4.7e-10` m, and **no single
+segment's parameter flips between a vertex and an interior point anywhere**.
+
+**Why C is the one that moves, and why that was predicted rather than discovered.** A's rule is a
+0.01 m band, which is seven to eight orders of magnitude wider than anything the arithmetic changes,
+so a difference would need a residual sitting within `2.4e-10` m of the band edge. D's rule already
+*was* exact — it takes the exact rational minimum. C's rule is **equality of the computed residual**
+per record, which is the one predicate in the set that reads the last bit. That is why revision 13
+reports it as a different rule rather than the same rule computed better, and why it may not inherit
+this pilot's evidence.
+
+**The mechanism, read off the numbers rather than inferred.**
+`v2/scripts/explain_adoption_diff.py` reproduces both points. At structure `699485.6283,
+3963460.7648` the nearest record has two adjacent segments whose own minima are genuinely
+`2.89e-11` m apart:
+
+| | segment 2 | segment 3 |
+|---|---|---|
+| float residual | 21.973917981489485 | **21.973917981417063** (the float minimum) |
+| exact residual | **21.97391798138818** (the exact minimum) | 21.973917981417063 |
+
+Segment 3's foot is the shared vertex, where both arithmetics compute the same number. Segment 2's
+foot is interior, and there the float residual carries an error of `1.01e-10` m — **larger than the
+`2.89e-11` m gap between the two segments**. So the float arithmetic cannot resolve which segment is
+nearer, and orders them the wrong way round. C then retains the vertex where the nearer position is
+**about 36 µm** (`3.56e-5` m) away inside segment 2. The same record appears twice, once per
+direction, which is why both records move together and the candidate count stays at two.
+
+Those two figures check each other, which is the reason to quote both. Moving a distance δ along the
+road near the foot of the perpendicular changes the distance to the point only to second order, by
+about δ²/2*d*: `(3.56e-5)**2 / (2 * 21.97)` is `2.9e-11` m, which is the measured gap between the
+two segments' minima to one part in 50. A 36 µm displacement and a 29 picometre distance difference
+are the same fact seen twice.
+
+**What this does and does not license.** It is a census, so there is no sampling uncertainty: the
+rate is 2 of 512,633, not an estimate of one. But the change is **structural as well as
+positional** — a vertex candidate may leave along every incident edge, an interior one must first
+traverse 36 µm of segment 2 — and whether either of those changes a reported journey time is a
+routing question this pilot does not answer. That is stage 3, and it is step 4's phase 4c.
+
+**Two limits of the comparison, stated rather than left to be found.** The two tables answer
+different questions and neither alone is the measurement.
+
+* `positions_differ` matches places within `POSITION_TOL_M` = `1e-6` m. Every displacement the
+  arithmetic itself produces is at most `4.7e-10` m, three to four orders of magnitude *below* that
+  tolerance, so the places column is blind to the arithmetic's own drift by construction. What it is
+  sensitive to is a **different candidate being selected**, and that is what fired here: 36 µm is 36
+  times the tolerance. A zero in that column means "no candidate was swapped, added or removed", not
+  "nothing moved".
+* The "vertex/interior flips" column compares each segment with itself, so it counts a parameter
+  landing on an endpoint in one arithmetic and not the other. It is **zero** across all 36.5 million
+  positions — the W2 and W3 mechanism is real, as the sentinel shows, and it did not occur once on
+  the Triangle graph. It also cannot see what did happen at these two points, which is *which
+  segment* holds the record's minimum, because the two competing positions lie on different segments
+  and so are never compared with each other.
+
+---
+
 ### The measured figures
 
 <!-- BEGIN GENERATED: scripts/render_t0_results.py -->
@@ -408,16 +493,62 @@ Two columns per convention, and the difference between them is the whole point: 
 | **all cell centres (census)** | 5,000 | `split_midpoint` | 33 | **33** (0.6600%) | 33 | **33** (0.6600%) | 0 | **0** (0.0000%) | 0 |
 | **all cell centres (census)** | 5,000 | `split_every_segment` | 565 | **0** (0.0000%) | 683 | **118** (2.3600%) | 565 | **0** (0.0000%) | 0 |
 
+### Adopting design revision 13's exact primitives
+
+The same points measured twice: once with the arithmetic this pilot published, once with §2.4 item 7's primitives. Scope: **every point of every set** — 844,685 points and 36,555,718 per-segment positions. **A** and **D** are one rule measured two ways. **C** is not: its rule is equality of the *computed* residual, so exact arithmetic makes a different rule, reported as `C_exact` and inheriting none of this pilot's evidence.
+
+| set | points | comparison | eligibility | count | occurrences | places |
+|---|---:|---|---:|---:|---:|---:|
+| frame B sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
+| frame B sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
+| frame B sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+| frame C sample | 500 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
+| frame C sample | 500 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
+| frame C sample | 500 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+| groceries (census) | 550 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
+| groceries (census) | 550 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
+| groceries (census) | 550 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+| **all structures (census)** | 512,633 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
+| **all structures (census)** | 512,633 | `C_exact_vs_C` | 0 | 0 | 2 | **2** |
+| **all structures (census)** | 512,633 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+| **all cell centres (census)** | 330,502 | `A_exact_vs_A` | 0 | 0 | 0 | **0** |
+| **all cell centres (census)** | 330,502 | `C_exact_vs_C` | 0 | 0 | 0 | **0** |
+| **all cell centres (census)** | 330,502 | `D_exact_vs_D` | 0 | 0 | 0 | **0** |
+
+The arithmetic underneath those decisions does move. Counted over the same positions, so a zero above is a statement about decisions and not about numbers:
+
+| set | positions | residual differs | max | arclength differs | max | parameter differs | position moved | max | vertex/interior flips |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| frame B sample | 20,353 | 1,459 | 2.364e-10 m | 8,819 | 3.638e-12 m | 910 | 0 | 0.000e+00 m | 0 |
+| frame C sample | 28,363 | 969 | 2.308e-10 m | 14,699 | 7.276e-12 m | 652 | 0 | 0.000e+00 m | 0 |
+| groceries (census) | 9,417 | 1,889 | 2.355e-10 m | 2,504 | 9.095e-13 m | 1,056 | 0 | 0.000e+00 m | 0 |
+| **all structures (census)** | 17,555,955 | 1,441,030 | 2.394e-10 m | 6,866,788 | 7.276e-12 m | 869,627 | 28 | 4.657e-10 m | 0 |
+| **all cell centres (census)** | 18,941,630 | 696,733 | 2.397e-10 m | 9,566,420 | 7.276e-12 m | 461,563 | 14 | 4.657e-10 m | 0 |
+
+**The sentinel, because every figure above is a count of differences.** An exact path that silently behaved like the float one would report zeros and read as good news, so two witnesses built to separate the paths must separate them or the run stops:
+
+| witness | float parameter | exact parameter | float label | exact label |
+|---|---|---|---|---|
+| W2 dot-product cancellation | `0.0` | `33554432/4722366482869645` | `(0, 'v', 0)` | `(0, 's', 0)` |
+| W3 subtraction near the coordinate bound | `1.0` | `10737418239999999/10737418240000000` | `(0, 'v', 1)` | `(0, 's', 0)` |
+
+The points where a retained candidate changed:
+
+| point | comparison | what changed | candidates before | after | float minimum (m) | exact minimum (m) |
+|---|---|---|---:|---:|---:|---:|
+| `699485.6283, 3963460.7648` | `C_exact_vs_C` | occurrences, places | 2 | 2 | 21.973917981417063 | 21.97391798138818 |
+| `665635.9142, 3983718.6369` | `C_exact_vs_C` | occurrences, places | 2 | 2 | 17.71692748864446 | 17.716927488643076 |
+
 ### Cost
 
 | set | points | seconds | ms/point |
 |---|---:|---:|---:|
-| frame B sample | 500 | 0.1 | 0.266 |
-| frame C sample | 500 | 0.1 | 0.298 |
-| groceries (census) | 550 | 0.1 | 0.214 |
-| **all structures (census)** | 512,633 | 128.8 | 0.251 |
-| **all cell centres (census)** | 330,502 | 92.8 | 0.281 |
+| frame B sample | 500 | 0.1 | 0.252 |
+| frame C sample | 500 | 0.1 | 0.277 |
+| groceries (census) | 550 | 0.1 | 0.195 |
+| **all structures (census)** | 512,633 | 123.2 | 0.240 |
+| **all cell centres (census)** | 330,502 | 91.4 | 0.276 |
 
-Graph preparation 109 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
+Graph preparation 101 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
 
 <!-- END GENERATED -->

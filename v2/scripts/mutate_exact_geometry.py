@@ -115,6 +115,11 @@ MUTATIONS: list[tuple[str, str, str]] = [
         "    run = 0.0\n    for seg in _segment_lengths(geometry):\n        run += seg\n    return run",
     ),
     (
+        "trust a supplied lengths cache that is wrong, so the cache can change an answer",
+        "    lengths = _segment_lengths(geometry) if lengths is None else lengths",
+        "    lengths = _segment_lengths(geometry) if lengths is None else [2 * x for x in lengths]",
+    ),
+    (
         "accumulate the prefix from the left, as toy.py does today",
         "    return math.fsum(lengths[:seg_index] + [partial])",
         "    run = 0.0\n    for seg in lengths[:seg_index]:\n        run += seg\n"

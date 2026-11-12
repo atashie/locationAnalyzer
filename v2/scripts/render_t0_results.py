@@ -190,6 +190,75 @@ def render(d: dict) -> str:
                 f"{got[c]:,} | **{mv[c]:,}** ({pct(mv[c], n)})" for c in ("A", "C", "D"))
             out.append(f"| {LABELS[k]} | {n:,} | `{t}` | {cells} | {sum(el.values())} |")
 
+    # ---- the labelled adoption of design revision 13's primitives
+    ad = d.get("adoption")
+    if ad:
+        aset = ad["sets"]
+        apresent = [k for k in LABELS if k in aset]
+        out.append("")
+        out.append("### Adopting design revision 13's exact primitives")
+        out.append("")
+        scope = ("every point of every set" if ad["sample_per_set"] == "census"
+                 else f"up to {ad['sample_per_set']:,} points of each set")
+        total_pts = sum(aset[k]["points"] for k in apresent)
+        total_raw = sum(aset[k]["raw"]["positions_compared"] for k in apresent)
+        out.append(f"The same points measured twice: once with the arithmetic this pilot "
+                   f"published, once with §2.4 item 7's primitives. Scope: **{scope}** "
+                   f"— {total_pts:,} points and {total_raw:,} per-segment positions. "
+                   "**A** and **D** are one rule measured two ways. **C** is not: its rule is "
+                   "equality of the *computed* residual, so exact arithmetic makes a different "
+                   "rule, reported as `C_exact` and inheriting none of this pilot's evidence.")
+        out.append("")
+        out.append("| set | points | comparison | eligibility | count | occurrences | places |")
+        out.append("|---|---:|---|---:|---:|---:|---:|")
+        for k in apresent:
+            v = aset[k]
+            for name in ("A_exact_vs_A", "C_exact_vs_C", "D_exact_vs_D"):
+                out.append(f"| {LABELS[k]} | {v['points']:,} | `{name}` | "
+                           f"{v['eligibility_changed'][name]:,} | "
+                           f"{v['count_changed'][name]:,} | "
+                           f"{v['occurrences_changed'][name]:,} | "
+                           f"**{v['places_changed'][name]:,}** |")
+        out.append("")
+        out.append("The arithmetic underneath those decisions does move. Counted over the same "
+                   "positions, so a zero above is a statement about decisions and not about "
+                   "numbers:")
+        out.append("")
+        out.append("| set | positions | residual differs | max | arclength differs | max | "
+                   "parameter differs | position moved | max | vertex/interior flips |")
+        out.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        for k in apresent:
+            r = aset[k]["raw"]
+            out.append(f"| {LABELS[k]} | {r['positions_compared']:,} | "
+                       f"{r['residual_differs']:,} | {r['max_abs_residual_diff_m']:.3e} m | "
+                       f"{r['arclength_differs']:,} | {r['max_abs_arclength_diff_m']:.3e} m | "
+                       f"{r['parameter_differs']:,} | {r['position_differs']:,} | "
+                       f"{r['max_position_shift_m']:.3e} m | "
+                       f"{r['vertex_or_interior_differs']:,} |")
+        out.append("")
+        out.append("**The sentinel, because every figure above is a count of differences.** An "
+                   "exact path that silently behaved like the float one would report zeros and "
+                   "read as good news, so two witnesses built to separate the paths must separate "
+                   "them or the run stops:")
+        out.append("")
+        out.append("| witness | float parameter | exact parameter | float label | exact label |")
+        out.append("|---|---|---|---|---|")
+        for c in ad["sentinel"]:
+            out.append(f"| {c['witness']} | `{c['float_t']}` | `{c['exact_t']}` | "
+                       f"`{c['float_occurrence']}` | `{c['exact_occurrence']}` |")
+        examples = [e for k in apresent for e in aset[k]["examples"]]
+        if examples:
+            out.append("")
+            out.append("The points where a retained candidate changed:")
+            out.append("")
+            out.append("| point | comparison | what changed | candidates before | after | "
+                       "float minimum (m) | exact minimum (m) |")
+            out.append("|---|---|---|---:|---:|---:|---:|")
+            for e in examples:
+                out.append(f"| `{e['x']:.4f}, {e['y']:.4f}` | `{e['comparison']}` | "
+                           f"{', '.join(e['changed'])} | {e['float_count']} | {e['exact_count']} | "
+                           f"{e['float_min_m']!r} | {e['exact_min_m']!r} |")
+
     # ---- cost
     out.append("")
     out.append("### Cost")

@@ -50,6 +50,7 @@ __all__ = [
     "segment_length",
     "scaled_segment_length",
     "total_length",
+    "segment_lengths",
     "prefix_arclength",
     "traversal_fraction",
     "same_edge_fraction",
@@ -241,14 +242,31 @@ def total_length(geometry: Geometry) -> float:
     return math.fsum(_segment_lengths(geometry))
 
 
-def prefix_arclength(geometry: Geometry, seg_index: int, t: Fraction) -> float:
+def segment_lengths(geometry: Geometry) -> list[float]:
+    """The exactly-rounded length of every segment, in order.
+
+    Public so a caller attaching many points to one record can compute them **once**. Doing it per
+    segment makes `prefix_arclength` quadratic in the segment count, which cost the T0 adoption
+    check about 135 ms a point before it was passed in.
+    """
+    return _segment_lengths(geometry)
+
+
+def prefix_arclength(geometry: Geometry, seg_index: int, t: Fraction,
+                     lengths: list[float] | None = None) -> float:
     """Arclength from the record's first vertex to parameter `t` on segment `seg_index`.
 
     `fsum` of the whole preceding segment lengths, then the partial, in that order and as one
     `fsum` so the result does not depend on the order of accumulation. The partial term is
     `scaled_segment_length`, which rounds once.
+
+    `lengths` is an optional cache of this geometry's `segment_lengths`, for a caller measuring
+    many positions on one record. It is a **performance** argument and nothing else: the lengths it
+    supplies must be the ones this function would compute, and
+    `test_prefix_arclength_is_unchanged_by_passing_the_lengths_in` holds that over random
+    geometries rather than trusting the caller.
     """
-    lengths = _segment_lengths(geometry)
+    lengths = _segment_lengths(geometry) if lengths is None else lengths
     if not 0 <= seg_index < len(lengths):
         raise IndexError(f"segment {seg_index} is not in a geometry of {len(lengths)} segments")
     a, b = geometry[seg_index], geometry[seg_index + 1]

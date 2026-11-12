@@ -397,6 +397,36 @@ def test_prefix_arclength_does_not_accumulate_from_the_left():
     assert run == 0.6000000000000001, "the rejected rule, pinned so the choice stays visible"
 
 
+def test_prefix_arclength_is_unchanged_by_passing_the_lengths_in():
+    """The `lengths` argument is a cache, so it must not be able to change an answer.
+
+    It exists because computing the lengths per segment makes `prefix_arclength` quadratic in the
+    segment count: the T0 adoption check paid about 135 ms a point for that. A performance argument
+    that can alter a measured quantity is not a performance argument, so the equivalence is held
+    here over random geometries rather than argued in a docstring.
+    """
+    rng = random.Random(20261112)
+    for _ in range(300):
+        n = rng.randint(2, 9)
+        geom = tuple((rng.uniform(-1e6, 1e6), rng.uniform(-1e6, 1e6)) for _ in range(n))
+        cache = exact.segment_lengths(geom)
+        assert len(cache) == n - 1
+        for seg in range(n - 1):
+            for t in (Fraction(0), Fraction(1), Fraction(rng.randint(1, 999), 1000)):
+                assert (exact.prefix_arclength(geom, seg, t)
+                        == exact.prefix_arclength(geom, seg, t, cache))
+
+
+def test_segment_lengths_are_the_exactly_rounded_ones_not_hypot():
+    """The public cache is the same list the private helper builds, and it is not `math.hypot`."""
+    geom = ((0.0, 0.0), (1.0, 1.0), (2.0, 3.0))
+    assert exact.segment_lengths(geom) == [exact.segment_length(0.0, 0.0, 1.0, 1.0),
+                                           exact.segment_length(1.0, 1.0, 2.0, 3.0)]
+    # the pass-37 radicand, where hypot and a correct rounding differ
+    ax, ay, bx, by = 0.0, 0.0, 1.150468525493579, 0.6047831353619284
+    assert exact.segment_lengths(((ax, ay), (bx, by))) == [exact.segment_length(ax, ay, bx, by)]
+
+
 def test_single_point_geometry_has_no_span():
     """A geometry with no segments at all: a span of zero, not an IndexError."""
     assert exact.same_edge_fraction(((1.0, 1.0),), 0, Fraction(0), 0, Fraction(0)) == 0.0

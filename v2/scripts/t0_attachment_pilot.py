@@ -72,7 +72,10 @@ from _common import (ACCEPTED_PLACES, GRID, METRO, METRO_DIR,  # noqa: E402
 from locfinder import profile  # noqa: E402
 from locfinder.measure.frames import (file_digest, read_frame,  # noqa: E402
                                       structure_population)
-from locfinder.measure.exact import exact_segment_sq  # noqa: E402
+from locfinder.measure.exact import (exact_position,  # noqa: E402
+                                     exact_projection, exact_segment_sq,
+                                     prefix_arclength, rational_sqrt,
+                                     segment_lengths)
 from locfinder.measure.toy import ATTACH_TIE_M, MIN_SEGMENT_M, _segment_nearest  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
@@ -175,29 +178,68 @@ class Records:
         return len(self.geoms)
 
 
-def raw_positions(geoms, window, px, py) -> list[Pos]:
+def _occurrence_key(r: int, seg: int, t) -> tuple:
+    """§2.2's occurrence label. A parameter at an endpoint is the VERTEX, shared between segments."""
+    if t == 0:
+        return (r, "v", seg)
+    if t == 1:
+        return (r, "v", seg + 1)
+    return (r, "s", seg, t)
+
+
+def raw_positions(geoms, window, px, py, *, arithmetic: str = "float") -> list[Pos]:
     """Every segment's nearest position, over every record in the window.
 
-    Uses `toy._segment_nearest`, so the projection arithmetic is the oracle's rather than a second
-    implementation of it.
+    **`arithmetic="float"` is what this pilot published** (`docs/experiments/t0-attachment-pilot.md`,
+    stages 1-2): `toy._segment_nearest` for the projection, `math.hypot` for a segment length, and
+    the prefix accumulated with `run += seg_len`. It is kept exactly as it ran, because the figures
+    in the write-up were measured with it.
+
+    **`arithmetic="exact"` is design revision 13's §2.4 item 7**, via `locfinder.measure.exact`:
+    an exact rational projection parameter with the clamp decided on the exact value, a position and
+    squared distance that are exact rationals, a residual that is one correct rounding of the exact
+    root, and a prefix arclength that is `fsum` over correctly-rounded lengths with the partial
+    segment rounded once. The occurrence label is then taken from the EXACT parameter, which is what
+    pass 30's two witnesses need: both are cases where the float parameter lands on an endpoint and
+    the exact one does not.
+
+    The two are not interchangeable and the difference is **measured, not assumed** — see
+    `adoption_stats`. The float path's `t` is a float and the exact path's is a `Fraction`, so an
+    interior occurrence label is a different object on the two sides even where it denotes the same
+    position; comparisons across the two therefore use the coarse label and the positions, never the
+    raw label.
     """
+    if arithmetic not in ("float", "exact"):
+        raise ValueError(f"unknown arithmetic {arithmetic!r}")
     out: list[Pos] = []
     for r in window:
         coords = shapely.get_coordinates(geoms[r])
-        run = 0.0
-        for seg, ((ax, ay), (bx, by)) in enumerate(itertools.pairwise(coords)):
-            ax, ay, bx, by = float(ax), float(ay), float(bx), float(by)
-            seg_len = math.hypot(bx - ax, by - ay)
-            d, t = _segment_nearest(px, py, ax, ay, bx, by)
-            if t == 0.0:
-                key: tuple = (r, "v", seg)
-            elif t == 1.0:
-                key = (r, "v", seg + 1)
-            else:
-                key = (r, "s", seg, t)
-            out.append(Pos(r, seg, t, d, run + t * seg_len,
-                           ax + t * (bx - ax), ay + t * (by - ay), key))
-            run += seg_len
+        if arithmetic == "float":
+            run = 0.0
+            for seg, ((ax, ay), (bx, by)) in enumerate(itertools.pairwise(coords)):
+                ax, ay, bx, by = float(ax), float(ay), float(bx), float(by)
+                seg_len = math.hypot(bx - ax, by - ay)
+                d, t = _segment_nearest(px, py, ax, ay, bx, by)
+                out.append(Pos(r, seg, t, d, run + t * seg_len,
+                               ax + t * (bx - ax), ay + t * (by - ay),
+                               _occurrence_key(r, seg, t)))
+                run += seg_len
+            continue
+        pts = [(float(x), float(y)) for x, y in coords]
+        PX, PY = Fraction(px), Fraction(py)
+        # Once per record, not once per segment: `prefix_arclength` is quadratic in the segment
+        # count without this, and the cache is proved not to change an answer by
+        # `test_prefix_arclength_is_unchanged_by_passing_the_lengths_in`.
+        lens = segment_lengths(pts)
+        for seg, ((ax, ay), (bx, by)) in enumerate(itertools.pairwise(pts)):
+            t = exact_projection(px, py, ax, ay, bx, by)
+            qx, qy = exact_position(ax, ay, bx, by, t)
+            ex, ey = PX - qx, PY - qy
+            sq = ex * ex + ey * ey
+            p = Pos(r, seg, t, rational_sqrt(sq), prefix_arclength(pts, seg, t, lens),
+                    float(qx), float(qy), _occurrence_key(r, seg, t))
+            p.exact_sq = sq
+            out.append(p)
     return out
 
 
@@ -456,8 +498,187 @@ class Accum:
         return agg
 
 
+# --------------------------------------------------------------------------- the labelled adoption
+def coarse_occurrence(key: tuple) -> tuple:
+    """An occurrence label with the interior parameter dropped.
+
+    The float and exact paths describe the same interior position with different numbers — a float
+    `0.3333333333333333` against a `Fraction(1, 3)` — so comparing raw labels across the two would
+    report nearly every interior attachment as changed, which is noise. What is NOT noise is a
+    position moving between a vertex and a segment interior, or onto a different segment: that is
+    what pass 30's two witnesses do, and it is what this label keeps.
+    """
+    return key[:3]
+
+
+def adoption_sentinel() -> list[dict]:
+    """Prove the exact path is not quietly the float path, before any zero below is believed.
+
+    Every figure `adoption_stats` reports is a **count of differences**, so an exact path that
+    silently behaved like the float one would report a clean zero everywhere and read as good news.
+    That is the failure mode pass 22 found in the invariant harness, and the fix there was the same:
+    a sentinel that must fire.
+
+    These are Codex pass 30's two witnesses, which exist because the float projection lands on an
+    endpoint where the exact one does not. If either stops differing, the axis is broken and the run
+    stops rather than publishing zeros.
+    """
+    cases = (
+        ("W2 dot-product cancellation",
+         [(0.0, 0.0), (1e-6, 1e-6)], (122.09, -122.08999999999999)),
+        ("W3 subtraction near the coordinate bound",
+         [(-1e7, 0.0), (1e7, 0.0)], (math.nextafter(1e7, 0.0), 0.0)),
+    )
+    checks: list[dict] = []
+    for name, coords, (px, py) in cases:
+        arr = np.empty(1, dtype=object)
+        arr[:] = [shapely.LineString(coords)]
+        f = raw_positions(arr, [0], px, py, arithmetic="float")[0]
+        x = raw_positions(arr, [0], px, py, arithmetic="exact")[0]
+        checks.append({
+            "witness": name,
+            "float_t": repr(f.t), "exact_t": str(x.t),
+            "float_occurrence": str(f.occurrence[:3]), "exact_occurrence": str(x.occurrence[:3]),
+            "float_lands_on_a_vertex": f.occurrence[1] == "v",
+            "exact_lands_on_a_vertex": x.occurrence[1] == "v",
+            "differs": f.occurrence[:3] != x.occurrence[:3],
+        })
+    if not all(c["differs"] for c in checks):
+        raise SystemExit(
+            "adoption sentinel FAILED: the exact path agrees with the float path on a witness "
+            "built to separate them, so every zero it reports would be meaningless. "
+            f"{checks}")
+    return checks
+
+
+def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True) -> dict:
+    """Design revision 13's primitives against the arithmetic this pilot published.
+
+    **Conventions A and D are the same rule measured two ways.** Neither is defined in terms of a
+    computed value: A is "within `ATTACH_TIE_M` of the global minimum" and D is "the exact rational
+    global minimum", so running them on better arithmetic implements the same declared rule.
+
+    **Convention C is not.** Its rule is *equality of the COMPUTED residual*, chosen deliberately
+    because that is what design revision 9 did and what pass 24 F1 showed discards genuine
+    geometric ties. Exact arithmetic therefore produces a **different rule**, reported here as
+    `C_exact` and never merged with `C`'s figures. It does not inherit this pilot's evidence.
+
+    **An exact band PREDICATE is not implemented here, and would be convention B.** Deciding
+    `sqrt(q) <= sqrt(q_min) + 0.01` exactly is possible over the rationals — squaring twice removes
+    both roots — but convention B is a declared alternative in design §2.2 with its own evidence
+    requirements, and smuggling it in as an arithmetic change would be exactly the mislabelling
+    this phase exists to avoid. The exact path's residual is a correctly-rounded distance and the
+    band is still a binary64 comparison of it.
+    """
+    #: internal convention key -> the name this comparison is reported under. `C` is renamed
+    #: because exact arithmetic turns its rule into a different one.
+    OUT = {"A": "A_exact_vs_A", "C": "C_exact_vs_C", "D": "D_exact_vs_D"}
+    keys = ("A", "C", "D")
+    agg = {
+        "note": ("float is the arithmetic this pilot published; exact is design revision 13's "
+                 "§2.4 item 7 primitives. A and D are one rule measured two ways; C under exact "
+                 "arithmetic is a DIFFERENT rule, which is why it is named C_exact_vs_C"),
+        "points": 0,
+        "eligibility_changed": {v: 0 for v in OUT.values()},
+        "count_changed": {v: 0 for v in OUT.values()},
+        "occurrences_changed": {v: 0 for v in OUT.values()},
+        "places_changed": {v: 0 for v in OUT.values()},
+        "points_with_any_change": 0,
+        # Did the arithmetic move a number at all? Without this, every zero above could mean the
+        # exact path is a no-op on real geometry, and nothing would distinguish the two readings.
+        "raw": {
+            "positions_compared": 0,
+            "residual_differs": 0,
+            "arclength_differs": 0,
+            "parameter_differs": 0,
+            "vertex_or_interior_differs": 0,
+            "max_abs_residual_diff_m": 0.0,
+            "max_abs_arclength_diff_m": 0.0,
+            "max_abs_parameter_diff": 0.0,
+            # How far the attachment POSITION moved, in metres. The most interpretable figure here
+            # and not derivable from the others: a parameter difference is dimensionless, and a
+            # residual difference measures the distance to the point rather than the displacement
+            # along the road, which a shift in the parameter changes by more.
+            "position_differs": 0,
+            "max_position_shift_m": 0.0,
+        },
+        "examples": [],
+    }
+    started = time.perf_counter()
+    for i, (px, py) in enumerate(points):
+        # A census here runs for about 25 minutes. The main loop reports every 100,000 points and
+        # this one reported nothing, so the first census run looked indistinguishable from a hang.
+        if i and i % 100_000 == 0:
+            print(f"    adoption: {i:,} of {len(points):,} "
+                  f"({time.perf_counter() - started:.0f}s)", flush=True)
+        f = measure_point(geoms, tree, float(px), float(py), cap_m,
+                          want_exact=want_exact, arithmetic="float")
+        x = measure_point(geoms, tree, float(px), float(py), cap_m,
+                          want_exact=want_exact, arithmetic="exact")
+        if f.get("no_geometry") or x.get("no_geometry"):
+            continue
+        agg["points"] += 1
+        fr, xr = f["_raw"], x["_raw"]
+        if len(fr) != len(xr):
+            raise SystemExit("the two arithmetics enumerated different numbers of raw positions "
+                             f"at point {i}: {len(fr)} against {len(xr)}. They are given the same "
+                             "window and the same segments, so this is a bug, not a measurement")
+        r = agg["raw"]
+        r["positions_compared"] += len(fr)
+        for pf, pxx in zip(fr, xr):
+            tf, tx = float(pf.t), float(pxx.t)
+            if pf.residual != pxx.residual:
+                r["residual_differs"] += 1
+                r["max_abs_residual_diff_m"] = max(r["max_abs_residual_diff_m"],
+                                                   abs(pf.residual - pxx.residual))
+            if pf.arclength != pxx.arclength:
+                r["arclength_differs"] += 1
+                r["max_abs_arclength_diff_m"] = max(r["max_abs_arclength_diff_m"],
+                                                    abs(pf.arclength - pxx.arclength))
+            if tf != tx:
+                r["parameter_differs"] += 1
+                r["max_abs_parameter_diff"] = max(r["max_abs_parameter_diff"], abs(tf - tx))
+            if (pf.x, pf.y) != (pxx.x, pxx.y):
+                r["position_differs"] += 1
+                r["max_position_shift_m"] = max(r["max_position_shift_m"],
+                                                math.hypot(pf.x - pxx.x, pf.y - pxx.y))
+            if (pf.occurrence[1], pf.occurrence[2]) != (pxx.occurrence[1], pxx.occurrence[2]):
+                r["vertex_or_interior_differs"] += 1
+        moved = False
+        for k in keys:
+            name = OUT[k]
+            fs, xs = f["_sets"][k], x["_sets"][k]
+            changed = []
+            if bool(fs) != bool(xs):
+                agg["eligibility_changed"][name] += 1
+                changed.append("eligibility")
+            if len(fs) != len(xs):
+                agg["count_changed"][name] += 1
+                changed.append("count")
+            if ({coarse_occurrence(p.occurrence) for p in fs}
+                    != {coarse_occurrence(p.occurrence) for p in xs}):
+                agg["occurrences_changed"][name] += 1
+                changed.append("occurrences")
+            if positions_differ(fs, xs):
+                agg["places_changed"][name] += 1
+                changed.append("places")
+            if changed:
+                moved = True
+                if len(agg["examples"]) < 25:
+                    agg["examples"].append({
+                        "point_index": i, "x": float(px), "y": float(py),
+                        "comparison": name, "changed": changed,
+                        "float_count": len(fs), "exact_count": len(xs),
+                        "float_min_m": f["global_min_m"], "exact_min_m": x["global_min_m"],
+                    })
+        if moved:
+            agg["points_with_any_change"] += 1
+    return agg
+
+
 # --------------------------------------------------------------------------- one point
-def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dict:
+def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True,
+                  arithmetic: str = "float") -> dict:
     nearest = tree.query_nearest(shapely.points([px], [py])[0], return_distance=True,
                                  all_matches=True)
     idx, dist = nearest
@@ -471,9 +692,12 @@ def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dic
     # Every filter below then uses the recomputed minimum, so the band itself is not widened.
     radius = global_min + ATTACH_TIE_M + 1e-6
     window = np.atleast_1d(tree.query(shapely.points([px], [py])[0].buffer(radius)))
-    raw = raw_positions(geoms, window, px, py)
+    raw = raw_positions(geoms, window, px, py, arithmetic=arithmetic)
     computed_min = min(p.residual for p in raw)
-    if want_exact:
+    if want_exact and arithmetic == "float":
+        # The exact path already filled `exact_sq` for every position, as a by-product of its own
+        # projection. The float path fills it only inside the band, which is where convention D
+        # needs it, and which is what keeps stage 2 affordable over an 843,000-point census.
         for p in raw:
             if p.residual <= computed_min + ATTACH_TIE_M:
                 p.exact_sq = exact_segment_sq(px, py, *_seg_ends(geoms, p))
@@ -506,6 +730,9 @@ def measure_point(geoms, tree, px, py, cap_m, *, want_exact: bool = True) -> dic
         # baseline and the transformed set with the geometry unchanged -- two A candidates became
         # one before any transformation was applied (Codex pass 36 F6).
         "_window": window,
+        # The per-segment positions before any retention filter, so the adoption check can
+        # ask whether the arithmetic moved a NUMBER as well as whether it moved a decision.
+        "_raw": raw,
     }
     if want_exact:
         exact_min = min(p.exact_sq for p in banded)
@@ -764,6 +991,14 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=None,
                     help="cap each point set, for the benchmark the time box asks for before "
                          "committing to a larger sample or a census")
+    ap.add_argument("--adoption-sample", type=int, default=5000,
+                    help="how many points of each set to measure under BOTH arithmetics "
+                         "(step 4 plan task 5). 0 skips it")
+    ap.add_argument("--adoption-seed", type=int, default=20261112,
+                    help="seed for the adoption subsample of a set larger than the sample size")
+    ap.add_argument("--adoption-census", action="store_true",
+                    help="run the adoption check over EVERY point of every set rather than a "
+                         "subsample. About 3-4 ms a point, so roughly 90 minutes with --census")
     ap.add_argument("--census", action="store_true",
                     help="also run the attachment stage over both whole populations: every "
                          "structure centroid and every cell centre")
@@ -847,11 +1082,6 @@ def main() -> int:
                        {"n": int(len(sel)), "is_a_sample": False,
                         "note": "a census of the accepted grocery coordinates, not a sample"}))
 
-    if args.limit:
-        point_sets = [(lbl, pts[:args.limit], cap, dict(meta, limited_to=args.limit))
-                      for lbl, pts, cap, meta in point_sets]
-        out["limited_to"] = args.limit
-
     if args.census:
         ids, pop_pts, pop_n = structure_population(ACCEPTED_BUILDINGS, GRID)
         point_sets.append(("census_all_structures", np.asarray(pop_pts, dtype=np.float64),
@@ -867,6 +1097,15 @@ def main() -> int:
                                     "draws independent points within each cell: a centre census "
                                     "does not count every affected location inside a cell, and "
                                     "the two must not be compared as if it did."}))
+
+    # Applied AFTER the census sets are appended. It used to be applied before them, so
+    # `--limit 3000 --census` recorded `limited_to: 3000` while running both 500,000-point
+    # censuses in full -- a shakedown flag that silently did nothing to the only sets large enough
+    # to need it, and said otherwise in the artifact.
+    if args.limit:
+        point_sets = [(lbl, pts[:args.limit], cap, dict(meta, limited_to=args.limit))
+                      for lbl, pts, cap, meta in point_sets]
+        out["limited_to"] = args.limit
 
     for label, pts, cap, meta in point_sets:
         t = time.perf_counter()
@@ -893,6 +1132,52 @@ def main() -> int:
         print(f"  A vs D: {agg['A_vs_D_set_differs']} sets differ, "
               f"{agg['A_vs_D_eligibility_differs']} eligibility differ", flush=True)
         print(f"  exact: {agg['exact']}", flush=True)
+
+    # ---- the labelled adoption of design revision 13's primitives ---------------------------
+    if args.adoption_sample:
+        print(f"\nadoption check: both arithmetics on up to {args.adoption_sample:,} points "
+              f"of each set", flush=True)
+        ad: dict = {
+            "note": ("Step 4 plan task 5. Design revision 13's §2.4 item 7 primitives against the "
+                     "arithmetic this pilot published, on the SAME points and the same windows. "
+                     "A and D are one rule measured two ways; C under exact arithmetic is a "
+                     "DIFFERENT rule and is reported as C_exact, inheriting none of this pilot's "
+                     "evidence. An exact band PREDICATE is convention B and is not implemented."),
+            "sample_per_set": ("census" if args.adoption_census else args.adoption_sample),
+            "seed": args.adoption_seed,
+            "sentinel": adoption_sentinel(),
+            "sets": {},
+        }
+        for c in ad["sentinel"]:
+            print(f"  sentinel {c['witness']}: float {c['float_occurrence']} "
+                  f"vs exact {c['exact_occurrence']}", flush=True)
+        rng_ad = np.random.default_rng(args.adoption_seed)
+        for label, pts, cap, _meta in point_sets:
+            if args.adoption_census or len(pts) <= args.adoption_sample:
+                taken, how = pts, "every point in the set"
+            else:
+                taken = pts[rng_ad.choice(len(pts), size=args.adoption_sample, replace=False)]
+                how = f"a {args.adoption_sample:,}-point subsample, seed {args.adoption_seed}"
+            t = time.perf_counter()
+            stats = adoption_stats(geoms, tree, taken, cap)
+            stats["sampling"] = how
+            stats["seconds"] = round(time.perf_counter() - t, 2)
+            ad["sets"][label] = stats
+            print(f"  {label}: {stats['points']:,} points, {how}", flush=True)
+            for name in ("A_exact_vs_A", "C_exact_vs_C", "D_exact_vs_D"):
+                print(f"    {name:14s} eligibility {stats['eligibility_changed'][name]}, "
+                      f"count {stats['count_changed'][name]}, "
+                      f"occurrences {stats['occurrences_changed'][name]}, "
+                      f"PLACES {stats['places_changed'][name]}", flush=True)
+            r = stats['raw']
+            print(f"    raw: {r['positions_compared']:,} positions, residual differs "
+                  f"{r['residual_differs']:,} (max {r['max_abs_residual_diff_m']:.3e} m), "
+                  f"arclength differs {r['arclength_differs']:,} "
+                  f"(max {r['max_abs_arclength_diff_m']:.3e} m), parameter differs "
+                  f"{r['parameter_differs']:,}, POSITION moved "
+                  f"{r['position_differs']:,} (max {r['max_position_shift_m']:.3e} m), "
+                  f"vertex/interior flips {r['vertex_or_interior_differs']:,}", flush=True)
+        out["adoption"] = ad
 
     # ---- representation sensitivity, kept out of the population estimates --------------------
     print(f"\nsubdivision check on the first {args.subdivision_sample} of each set", flush=True)
