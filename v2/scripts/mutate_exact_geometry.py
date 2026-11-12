@@ -162,6 +162,15 @@ MUTATIONS: list[tuple[str, str, str]] = [
         "    terms.extend(lengths[seg_o + 1:seg_d])",
         "    terms.extend([])",
     ),
+    # Pass 39 R3: the span's own summation had no mutation. The total had one and the prefix had
+    # one, and this third `fsum` -- the one combining the span's terms -- did not, so a left
+    # accumulation here passed all 43 fixtures while returning 1.0000000000000002 for a complete
+    # traversal whose fraction is exactly 1.0.
+    (
+        "accumulate the span from the left instead of with fsum",
+        "    return math.fsum(terms) / total",
+        "    run = 0.0\n    for term in terms:\n        run += term\n    return run / total",
+    ),
     (
         "do not orient the span, so the two occurrences are not symmetric",
         "    if (seg_o, t_o) > (seg_d, t_d):\n"
@@ -215,44 +224,72 @@ def localise(anchor: str, source: str) -> str:
     return anchor.replace(LF, CRLF) if CRLF in source else anchor
 
 
-#: Exercises every public function once, on inputs where no *intended* mutation raises: a
-#: non-degenerate diagonal three-segment geometry, an interior parameter, a cross-segment span.
-#: Its job is to make a structurally broken mutant raise before the suite is consulted.
+#: Exercises every public function and **every branch a mutation touches**, on inputs where no
+#: intended mutation raises. It prints a digest of what it computed, so a mutant whose line the
+#: smoke never reaches can be told from one the smoke reaches and disagrees with.
+#:
+#: Pass 39 R2: the first version called `same_edge_fraction` only across segments, so the
+#: same-segment branch was unprobed and a structurally broken mutant there passed the smoke and
+#: would have been banked as caught. The same-segment, degenerate-segment and zero-length cases are
+#: now all exercised.
 SMOKE = (
     "from fractions import Fraction as F;"
     "import locfinder.measure.exact as e;"
     "g=((0.0,0.0),(3.0,4.0),(3.0,14.0),(9.0,22.0));"
-    "e.rational_sqrt(F(2));"
+    "z=((5.0,5.0),(5.0,5.0));"
+    "out=[];"
+    "out.append(e.rational_sqrt(F(2)));"
     "t=e.exact_projection(1.0,2.0,0.0,0.0,3.0,4.0);"
-    "e.exact_position(0.0,0.0,3.0,4.0,t);"
-    "e.exact_segment_sq(1.0,2.0,0.0,0.0,3.0,4.0);"
-    "e.segment_length(0.0,0.0,3.0,4.0);"
-    "e.scaled_segment_length(0.0,0.0,3.0,4.0,F(1,3));"
-    "e.segment_lengths(g);"
+    "out.append(t);"
+    "out.append(e.exact_projection(1.0,2.0,7.0,7.0,7.0,7.0));"
+    "out.append(e.exact_position(0.0,0.0,3.0,4.0,t));"
+    "out.append(e.exact_segment_sq(1.0,2.0,0.0,0.0,3.0,4.0));"
+    "out.append(e.segment_length(0.0,0.0,3.0,4.0));"
+    "out.append(e.scaled_segment_length(0.0,0.0,3.0,4.0,F(1,3)));"
+    "out.append(e.segment_lengths(g));"
     "tot=e.total_length(g);"
+    "out.append(tot);"
     "p=e.prefix_arclength(g,1,F(1,3));"
-    "e.traversal_fraction(p,tot);"
-    "e.same_edge_fraction(g,0,F(1,2),2,F(1,4))"
+    "out.append(p);"
+    "out.append(e.prefix_arclength(g,1,F(1,3),e.segment_lengths(g)));"
+    "out.append(e.traversal_fraction(p,tot));"
+    "out.append(e.traversal_fraction(0.0,0.0));"
+    "out.append(e.same_edge_fraction(g,0,F(1,2),2,F(1,4)));"
+    "out.append(e.same_edge_fraction(g,1,F(1,4),1,F(3,4)));"
+    "out.append(e.same_edge_fraction(g,2,F(3,4),0,F(1,4)));"
+    "out.append(e.same_edge_fraction(z,0,F(0),0,F(1)));"
+    "out.append(e.same_edge_fraction(((1.0,1.0),),0,F(0),0,F(0)));"
+    "print(repr(out))"
 )
 
-#: Errors that mean the MUTATION is broken rather than the behaviour changed. A mutant that cannot
-#: run tests nothing, and counting its crash as "caught" is how pass 38 F3 found a mutation that had
-#: never exercised the arithmetic it was named after. Errors a real behaviour change could plausibly
-#: produce -- ZeroDivisionError, IndexError, ValueError -- are deliberately NOT in this list.
-BROKEN = ("NameError", "ImportError", "SyntaxError", "IndentationError", "AttributeError",
-          "TypeError", "UnboundLocalError")
+#: Errors that mean the MUTATION ITSELF is broken rather than the behaviour changed: the mutated
+#: text does not name a thing that exists, or does not parse.
+#:
+#: Pass 39 R2 removed `TypeError` and `AttributeError` from this list. Replacing an integer floor
+#: division with true division is a **legitimate arithmetic defect** and raises
+#: `TypeError: 'float' object cannot be interpreted as an integer`, so classifying `TypeError` as
+#: broken dismissed a real mutation as invalid. Exception class alone cannot separate "invalid" from
+#: "wrong"; what separates them is whether the smoke's *values* move, which is why `smoke()` now
+#: returns a digest as well.
+BROKEN = ("NameError", "ImportError", "SyntaxError", "IndentationError", "UnboundLocalError")
 
 
-def smoke() -> str | None:
-    """`None` if the mutated module runs, else the name of the error that says it is broken."""
+def smoke() -> tuple[str | None, str | None]:
+    """`(broken_error_name, digest)` for the module as it currently stands on disk.
+
+    `broken_error_name` is set when the mutated text does not name something that exists or does not
+    parse — a mutant that tests nothing. `digest` is what the smoke computed, or `None` if it did
+    not finish; comparing a mutant's digest with the baseline's says whether the smoke **reached**
+    the mutated line at all, which an exception class cannot.
+    """
     proc = subprocess.run([sys.executable, "-B", "-c", SMOKE],
                           cwd=ROOT, capture_output=True, text=True)
     if proc.returncode == 0:
-        return None
+        return (None, proc.stdout.strip())
     for name in BROKEN:
         if name in proc.stderr:
-            return name
-    return None
+            return (name, None)
+    return (None, None)
 
 
 def run_tests() -> bool:
@@ -272,7 +309,7 @@ def self_test() -> int:
     before = digest(TARGET)
     failures = 0
     try:
-        if smoke() is not None:
+        if smoke()[0] is not None:
             print("FAIL: the UNMUTATED module is reported broken, so every mutation would be "
                   "INVALID and the harness would report nothing useful")
             failures += 1
@@ -289,7 +326,7 @@ def self_test() -> int:
             write(TARGET, original.replace(
                 anchor, localise("    cmp = a_name_from_another_scope - midpoint * midpoint",
                                  original), 1))
-            got = smoke()
+            got = smoke()[0]
             if got == "NameError":
                 print("broken mutant: reported INVALID as NameError, so a crash can no longer be "
                       "banked as a catch")
@@ -318,7 +355,12 @@ def main() -> int:
         if not run_tests():
             print("FAIL: the unmutated tests do not pass; nothing below would mean anything")
             return 1
-        print("baseline passes\n")
+        broken, baseline_digest = smoke()
+        if broken is not None or baseline_digest is None:
+            print(f"FAIL: the unmutated smoke does not run ({broken}); every mutation below would "
+                  "be reported INVALID and the harness would say nothing")
+            return 1
+        print("baseline passes, and its smoke digest is recorded\n")
 
         for label, old, new in MUTATIONS:
             old_l, new_l = localise(old, original), localise(new, original)
@@ -330,13 +372,24 @@ def main() -> int:
                 continue
             write(TARGET, original.replace(old_l, new_l, 1))
             try:
-                broken = smoke()
+                broken, digest_now = smoke()
                 if broken is not None:
                     print(f"INVALID      {label}: the mutant raises {broken} on ordinary input, so "
                           "it tests nothing and a failing suite would be evidence of a crash "
                           "rather than of a caught defect")
                     survived.append(label)
-                elif run_tests():
+                    continue
+                if digest_now is not None and digest_now == baseline_digest:
+                    # The smoke ran and computed exactly what the clean module computes. That means
+                    # it did not DISTINGUISH this mutant -- either the line was not reached, or it
+                    # was reached on inputs where the two rules agree, which is the usual case here
+                    # (left accumulation of three short lengths agrees with `fsum`). Saying "not
+                    # reached" would be a claim this check cannot support. Either way the mutation
+                    # has no smoke-level probe and its validity rests on the suite alone, which is
+                    # pass 39 R2's second half and is reported rather than hidden.
+                    print(f"UNSEPARATED  {label}: the smoke computes the same values as the clean "
+                          "module, so only the suite distinguishes this mutant")
+                if run_tests():
                     print(f"NOT CAUGHT   {label}  <-- no test sees this")
                     survived.append(label)
                 else:

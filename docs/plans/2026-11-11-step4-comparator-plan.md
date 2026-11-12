@@ -45,7 +45,7 @@ are settled; §2.6 is genuinely separate; and T0's "open on impact" outcome stan
 | §12 blocker | state |
 |---|---|
 | 0. the candidate universe | **measured by T0.** The pre-registered rule returned **open on impact**, so §2.2's convention A stays provisional. Not a blocker; a **design requirement on T3** — see 4b.1 |
-| 1. the geometry arithmetic | **OPEN. This is phase 4a**, and it is closable as the design words it |
+| 1. the geometry arithmetic | **CLOSED, design revision 13** (§2.4 item 7), as far as arithmetic closes it. Phase 4a.1 built it; revision 13 was then amended after pass 38 to scope the clause away from §2.2's caps and band, which are compared in binary64 on a computed residual |
 | 2. what uniqueness §2.4 promises | settled, revision 11, at its stated scope. T10 still owes a reconstruction rule; that blocks T10's boundary-touch output, not 4b's totals |
 | 3. the admissible numerical domain | settled, revision 11, extended after pass 30. It prevents the demonstrated underflow and overflow. It does **not** prevent F1 |
 | 4. the final cost discriminator | **settled**, revision 11, normative in §2.4 |
@@ -118,7 +118,12 @@ arithmetic — is not, and the amendment has to say so.
 
 > **What "closing item 1" means, stated so it cannot be read as more:** exact where the quantity is
 > rational, exactly-rounded where it is algebraic, every comparison that *decides* something made on
-> the exact value where one exists, and the composition order fixed and written. **It does not mean
+> the exact value **within the quantities this table fixes**, and the composition order fixed and
+> written. **Not** §2.2's two caps or its 0.01 m band: those are predicates on a distance, they are
+> compared in binary64 on a computed residual, and a point whose exact distance exceeds 200 m can
+> be admitted by one (pass 38 F1, pass 39 R7). The "squared distance, residual ordering" row above
+> means convention D's exact comparison of exact squared distances; A's and C's residual predicates
+> are the rounded ones just excluded. **It does not mean
 > the comparator selects what real arithmetic would select.** It cannot: the traversal fraction is
 > irrational, so two candidates whose exact costs differ by less than one ulp of that fraction can
 > still be ordered wrongly or tie when they should not, and no binary64 convention avoids that.
@@ -142,6 +147,16 @@ hot path.
 - The reported quantity is **how often the normative convention's argmin differs from the certified
   one**, over T4's fixtures and over T2's frames. That turns F1 from an open gate into a disclosed,
   measured limit.
+
+> **A scope defect in this phase, found while designing it.** The sentence above says the reported
+> quantity is measured "over T4's fixtures and over T2's frames". **The second half cannot be
+> delivered here, because it needs a router and the router is 4b.** A journey cost over a frame
+> point requires selecting a destination over the real graph, which is T3; nothing that exists
+> produces journey costs over frame points, and `toy.py` evaluates constructed toy graphs only. T0's
+> own stage 3 is deferred for exactly this reason. So 4a.2 delivers the comparator, proves it on
+> T4's fixtures and on W5, and reports the divergence rate **over T4's fixtures**; the journey-level
+> rate over T2's frames moves to **4c**, after 4b exists. The plan as written put a dependency after
+> its dependent.
 
 **This is what lets T3-as-development proceed.** Pass 20's instruction already permitted ordinary
 development; what it refused was a frozen T3, and that stays refused.
@@ -169,14 +184,15 @@ reachable by any reassociation, and W5 needs certified comparison rather than be
    projection.
 2. **`v2/locfinder/measure/certify.py`** — the certified cost comparison of 4a.2, with
    `AGREES`/`DIFFERS`/`UNRESOLVED` and a declared refinement limit.
-3. **DONE for `exact.py`, `d1276c2` — 21 mutations, all caught. A mutation harness** over both. Every rule in this project that was trusted on reading has
+3. **DONE for `exact.py`. 21 mutations at `d1276c2`, **25 now** — pass 38 F3 repaired one that was being counted as caught because it crashed and added two for rules that had none, and pass 39 R3 added one for the span’s own summation. A mutation harness** over both. Every rule in this project that was trusted on reading has
    failed; there are eight instances in `feedback-verify-the-shape-of-the-risk` and pass 37 is a
    ninth. The harness must include a mutant that **rounds each operand correctly and composes
    wrongly**, because that is the mutant revision 1 would have shipped.
 4. **DONE. Design revision 13** — §2.4 gains **item 7**, the six-quantity rule table; §13 carries
    the revision 13 row and block; amendment **items 5 and 6** are opened in the running list; the
    limit is stated in item 7's own closing paragraph. Two rows of 4a.1's table above were
-   superseded in the process, and the callout there says how. Originally: amend §2.4 with the rule table; add a §13 row; add the **two new §12
+   superseded in the process -- **three** once pass 38 F8 added the zero-total row -- and the callout
+   there says how. Originally: amend §2.4 with the rule table; add a §13 row; add the **two new §12
    items** (the argmin gap, the scalar-search gap) rather than silently closing item 1 over them;
    state the limit in the terms of the callout above. A **semantic amendment**: it changes a
    quantity, so it needs the row and fresh certification, not an "equivalent implementation change"

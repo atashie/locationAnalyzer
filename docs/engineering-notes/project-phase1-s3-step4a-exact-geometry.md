@@ -9,7 +9,9 @@ metadata:
 
 **2026-11-11.** Step 4 phase 4a.1 of `docs/plans/2026-11-11-step4-comparator-plan.md`:
 `v2/locfinder/measure/exact.py`, 38 fixtures in `v2/tests/test_exact_geometry.py`, and
-`v2/scripts/mutate_exact_geometry.py` with **21 mutations, all caught**. Suite 1,254 passed,
+`v2/scripts/mutate_exact_geometry.py` with **21 mutations, all caught** — figures as this phase
+shipped; they are **44 fixtures and 25 mutations** after passes 38 and 39, and sections 5 and 6
+below say what each pass added and why. Suite 1,254 passed,
 24 skipped.
 
 The module settles all six of §12 item 1's unfrozen quantities. What is worth keeping is not the
@@ -210,10 +212,16 @@ result.** `parameter_differs` converted both parameters to `float` before compar
 unequal *rounded images* of parameters that differ exactly. And the candidate-level comparison used
 a *coarse* occurrence label with the parameter dropped, which I had justified as removing noise.
 §2.2's occurrence key carries the **unrounded** parameter, so the coarse label is not the normative
-identity. Re-measured: the exact parameter count is strictly larger, and the **exact occurrence
-identity of the retained candidate changes on about three quarters of points** where the coarse
-reading reported zero. "The adoption changes no candidate set" was true only of places, counts and
-vertex/segment structure. Both figures are now reported, each under its own name.
+identity. Re-measured: the exact parameter count is 2,142,228 against 1,333,808 rounded images, and
+the **exact occurrence identity of the retained candidate changes on 573,107 of 844,685 point
+observations — 67.85%** where the coarse reading reported zero. "The adoption changes no candidate
+set" was true only of places, counts and vertex/segment structure. Both figures are now reported,
+each under its own name.
+
+*And the sentence above said "about three quarters" until pass 39 R4 measured it at 67.85%, which is
+7.15 percentage points lower — a rounded-up recollection of a number I had in front of me. It is
+also a rate over point **observations across five overlapping sets**, not over candidates and not
+over a population.*
 
 **A guard must bind what the measurement actually reads.** `explain_adoption_diff.py` asserted the
 design **record count** matched the artifact's 808,433. Two record sets can hold that count and
@@ -232,6 +240,61 @@ the document to dotted paths, so `{"x": []}` matched `{"x": [{}]}`, `{"x": {}}` 
 literal `"a.b"` key collided with a nested one; `False` also matched `0`. It is now a recursive
 typed comparison with a 13-case self-test, and the historical 610-leaf refactor claim **survives
 re-checking under the stronger tool**.
+
+## 7. Codex pass 39, on the repairs: 5 Medium, 2 Low, no High
+
+Pass 38's eight repairs were reviewed the same day, because Codex pass 23 once found a defect in
+every one of the four replacement rules written for pass 22. **Three of the seven findings are
+defects in the repairs themselves**, and two of those are the repaired sentence overclaiming again.
+
+**A correction can carry the same error as the thing it corrects.** Pass 38 F1 was my saying
+"every comparison on the exact value" when §2.2's caps are decided in binary64. My fix said the caps
+are decided "on the **correctly-rounded** residual, under both the production path and T0's exact
+path". Production does no such thing: its residual is `shapely.distance`, a GEOS computation with no
+correct-rounding guarantee, and pass 39 measured it **one ulp out** on an ordinary segment inside the
+declared domain. I replaced one overclaim with a smaller one in the same sentence. What is actually
+shared is weaker and is now what the design says: both compare a *computed binary64 distance*.
+
+**Then the same thing a third time, in the write-up.** I wrote that the adoption was "a provenance
+finding, not an answer finding" and that the manifests would differ "while reporting the same
+answers". Pass 39 built the route I had asserted did not exist: feed the two occurrence identities
+into the same normative `same_edge_fraction` and the remaining fractions are `0.4` and
+`0.39999999999999997`, which at an admissible weight is **512 seconds** apart. The same paragraph
+also said "the largest displacement anywhere is half a nanometre", which contradicted a figure three
+paragraphs further down in the same document: the retained candidates at C's two swap points move
+36 µm and 7 µm. `4.66e-10` m is the largest movement of a position compared *with itself*.
+
+**The lesson is not "be more careful".** It is that a *summary sentence* is where this failure lives.
+Each of the three was a short confident clause written to round off a section, over a scope nobody
+had enumerated, in a document whose detailed figures were right. **The detail was never wrong; the
+summary was.** So: when a section ends with a sentence that generalises its own table, check the
+sentence against the table rather than against the intention.
+
+**A crash-classifier cannot separate "invalid" from "wrong".** I had put `TypeError` in the list of
+errors meaning a mutant is structurally broken. Replacing an integer floor division with true
+division is a *legitimate arithmetic defect* and raises exactly that, so my detector would dismiss a
+real mutation as invalid. And the smoke that was supposed to prove validity called
+`same_edge_fraction` only across segments, leaving the same-segment branch unprobed — a broken
+mutant there would still have been banked. Narrowed the error list to undefined-name, import and
+syntax classes, extended the smoke to every branch, and added a **digest comparison**: when a mutant
+computes exactly what the clean module computes, the harness now prints `UNSEPARATED` rather than
+claiming anything about reachability. Ten of 25 come back `UNSEPARATED`, which is honest and useful —
+those mutations are distinguished only by the suite's specific inputs.
+
+**A third `fsum` had no mutation.** The total had one and the prefix had one; the summation that
+combines the *span's* terms did not, so left accumulation there passed all 43 fixtures while
+returning `1.0000000000000002` for a complete traversal whose fraction is exactly `1.0`. Added, with
+a fixture whose expected value follows from the rule rather than from a run.
+
+**And the strengthened sentinel was still defeatable, so this time the fix was tested against the
+attack.** Pass 39's patch returned the float result whenever no *coarse* key changed — and the
+census records **zero** coarse changes in 36.5 million positions, so that erases the entire signal
+while the sentinel passes 3 of 3. Both my positive witnesses were vertex/interior transitions. The
+repair adds an **interior-only** witness, where the parameter must move and the structure must not,
+and gives every counter its own expectation per witness, because the old control demanded only
+`NOT(parameter AND vertex)` — which a counter stuck at 1 satisfies. I then re-ran pass 39's own
+attack against the new sentinel and confirmed it is rejected. **Checking a repair against the
+specific attack is cheap and I had not been doing it.**
 
 ## What this phase does not do
 

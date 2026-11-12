@@ -247,20 +247,26 @@ def render(d: dict) -> str:
                    "read as good news, so two witnesses built to separate the paths must separate "
                    "them or the run stops:")
         out.append("")
-        out.append("| witness | must separate | counters fired | float parameter | "
-                   "exact parameter | float label | exact label |")
+        out.append("| witness | parameter must move | it moved | vertex/interior must move | "
+                   "it moved | float parameter | exact parameter |")
         out.append("|---|---|---|---|---|---|---|")
         for c in ad["sentinel"]:
-            out.append(f"| {c['witness']} | {'yes' if c.get('must_differ') else 'no (control)'} | "
-                       f"{'yes' if c.get('counters_fired') else 'no'} | "
-                       f"`{c['float_t']}` | `{c['exact_t']}` | "
-                       f"`{c['float_occurrence']}` | `{c['exact_occurrence']}` |")
+            def yn(v):
+                return "yes" if v else "no"
+            out.append(f"| {c['witness']} | {yn(c.get('parameter_must_move'))} | "
+                       f"{yn(c.get('parameter_moved'))} | {yn(c.get('vertex_must_move'))} | "
+                       f"{yn(c.get('vertex_moved'))} | `{c['float_t']}` | `{c['exact_t']}` |")
         out.append("")
-        out.append("Each witness is run through `adoption_stats`, the function that produces the "
+        out.append("Each witness runs through `adoption_stats`, the function that produces the "
                    "census figures, and not through the projection alone — Codex pass 38 F5 showed "
                    "that forcing both arithmetic requests to the float branch left the earlier "
-                   "sentinel passing while the census reported zeros. The control exists because "
-                   "two witnesses alone cannot distinguish a live counter from one stuck at 1.")
+                   "sentinel passing while the census reported zeros. **Each counter now carries "
+                   "its own expectation per witness**, because pass 39 R5 defeated the first repair "
+                   "too: it demanded only that the two counters not *both* fire on the control, "
+                   "which a counter stuck at 1 still satisfies, and both its positive witnesses "
+                   "were vertex/interior transitions — of which the census has **zero**. The "
+                   "interior-only witness is what closes that, and the strengthened sentinel was "
+                   "checked against pass 39's own attack rather than against the idea of it.")
         examples = [e for k in apresent for e in aset[k]["examples"]]
         if examples:
             out.append("")

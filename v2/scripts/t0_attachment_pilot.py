@@ -559,23 +559,38 @@ def adoption_sentinel() -> list[dict]:
     2 of 2 while the census reported zero for every difference — exactly the failed-adoption shape
     the sentinel exists to reject. A guard has to cover the path that produces the numbers.
 
-    It is also a **positive control for each counter**, not only for the dispatch: the two witnesses
-    must increment the parameter and vertex/interior counters, and a plain interior attachment must
-    increment neither.
+    **Each counter is checked independently, and each witness declares what it must do.** Codex pass
+    39 R5 defeated the first version of this: it demanded only `NOT(parameter AND vertex)` of the
+    control, which a parameter counter stuck permanently at 1 still passes, and both its positive
+    witnesses were vertex/interior transitions — so an adoption that returned the float result
+    whenever the *coarse* key was unchanged erased the entire recorded census signal (which has zero
+    vertex transitions) while the sentinel passed 3 of 3. The **interior-only** witness below is
+    what closes that: the parameter must move where the vertex/segment structure does not.
+
+        witness                     exact parameter      vertex/interior
+        W2, W3                      must move            must move
+        interior only               must move            must NOT move
+        control                     must NOT move        must NOT move
     """
+    #: (name, geometry, query point, parameter must move, vertex/interior must move)
     cases = (
         ("W2 dot-product cancellation",
-         [(0.0, 0.0), (1e-6, 1e-6)], (122.09, -122.08999999999999), True),
+         [(0.0, 0.0), (1e-6, 1e-6)], (122.09, -122.08999999999999), True, True),
         ("W3 subtraction near the coordinate bound",
-         [(-1e7, 0.0), (1e7, 0.0)], (math.nextafter(1e7, 0.0), 0.0), True),
-        # The control: an ordinary interior foot on a horizontal segment, where the two arithmetics
-        # agree. Without it, a counter stuck permanently at 1 would pass the two witnesses above.
+         [(-1e7, 0.0), (1e7, 0.0)], (math.nextafter(1e7, 0.0), 0.0), True, True),
+        # Pass 39 R5. The float parameter is 5404319552844595/9007199254740992 and the exact one is
+        # 3/5: the same rounded foot, the same rounded parameter image, and a different occurrence.
+        # An adoption that only works where a coarse key changes is dead here and the census is all
+        # cases like this one -- it recorded zero vertex transitions in 36.5 million positions.
+        ("interior only, where no coarse key changes",
+         [(0.0, 0.0), (1.0, 2.0)], (1.0, 1.0), True, False),
+        # The control: an exactly representable foot, where the two arithmetics genuinely agree.
         ("control, an ordinary interior attachment",
-         [(0.0, 0.0), (100.0, 0.0)], (50.0, 10.0), False),
+         [(0.0, 0.0), (100.0, 0.0)], (50.0, 10.0), False, False),
     )
     checks: list[dict] = []
     problems: list[str] = []
-    for name, coords, (px, py), must_differ in cases:
+    for name, coords, (px, py), want_param, want_vertex in cases:
         arr = np.empty(1, dtype=object)
         arr[:] = [shapely.LineString(coords)]
         stats = adoption_stats(arr, shapely.STRtree([shapely.LineString(coords)]),
@@ -583,26 +598,26 @@ def adoption_sentinel() -> list[dict]:
         raw = stats["raw"]
         f = raw_positions(arr, [0], px, py, arithmetic="float")[0]
         x = raw_positions(arr, [0], px, py, arithmetic="exact")[0]
+        got_param = raw["exact_parameter_differs"] > 0
+        got_vertex = raw["vertex_or_interior_differs"] > 0
         check = {
             "witness": name,
-            "must_differ": must_differ,
+            "parameter_must_move": want_param, "parameter_moved": got_param,
+            "vertex_must_move": want_vertex, "vertex_moved": got_vertex,
             "float_t": repr(f.t), "exact_t": str(x.t),
             "float_occurrence": str(f.occurrence[:3]), "exact_occurrence": str(x.occurrence[:3]),
-            "float_lands_on_a_vertex": f.occurrence[1] == "v",
-            "exact_lands_on_a_vertex": x.occurrence[1] == "v",
             # measured through the census path, which is the point of this sentinel
             "positions_compared": raw["positions_compared"],
             "exact_parameter_differs": raw["exact_parameter_differs"],
             "vertex_or_interior_differs": raw["vertex_or_interior_differs"],
+            "as_expected": got_param == want_param and got_vertex == want_vertex,
         }
-        fired = (raw["vertex_or_interior_differs"] > 0 and raw["exact_parameter_differs"] > 0)
-        check["counters_fired"] = fired
-        if must_differ and not fired:
-            problems.append(f"{name}: built to separate the two arithmetics, and the counters "
-                            f"measured through adoption_stats did not move ({check})")
-        if not must_differ and fired:
-            problems.append(f"{name}: a control where the two arithmetics agree, and a counter "
-                            f"fired anyway ({check})")
+        if got_param != want_param:
+            problems.append(f"{name}: the exact parameter counter should "
+                            f"{'move' if want_param else 'stay put'} and it did not ({check})")
+        if got_vertex != want_vertex:
+            problems.append(f"{name}: the vertex/interior counter should "
+                            f"{'move' if want_vertex else 'stay put'} and it did not ({check})")
         checks.append(check)
     if problems:
         raise SystemExit("adoption sentinel FAILED, so every zero it would report is meaningless:"
@@ -652,7 +667,6 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
             "positions_compared": 0,
             "residual_differs": 0,
             "arclength_differs": 0,
-            "parameter_differs": 0,
             "vertex_or_interior_differs": 0,
             "max_abs_residual_diff_m": 0.0,
             "max_abs_arclength_diff_m": 0.0,
@@ -665,6 +679,10 @@ def adoption_stats(geoms, tree, points, cap_m: float, *, want_exact: bool = True
             "exact_parameter_differs": 0,
             "rounded_parameter_image_differs": 0,
             "max_abs_parameter_diff": 0.0,
+            # Pass 39 R6: a `parameter_differs` key survived here after the comparison was fixed,
+            # still initialised and no longer incremented, so the artifact published it as a
+            # permanent zero beside a real count of 2,142,228. A plausible named zero is worse than
+            # a missing field. It is gone rather than deprecated, because nothing reads it.
             # How far the attachment POSITION moved, in metres. The most interpretable figure here
             # and not derivable from the others: a parameter difference is dimensionless, and a
             # residual difference measures the distance to the point rather than the displacement

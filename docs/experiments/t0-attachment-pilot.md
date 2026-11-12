@@ -361,21 +361,42 @@ flips between a vertex and an interior point anywhere** in 36,555,718 positions.
 from `C` on **2** of the 512,633 structure centroids and on none of the other four sets.
 
 *What does move.* The **occurrence identity §2.2 actually specifies** carries the *unrounded*
-parameter, and it changes on **573,107 of 844,685 points — 67.8%**. The first draft reported "0
-occurrences changed" because it compared a deliberately coarsened label with the parameter dropped,
-which is the vertex/segment structure and not the normative identity. Underneath, 2,142,228
-parameters differ **exactly** where only 1,333,808 differ as rounded binary64 images — the exact
-count is **1.61×** the figure first published, which had converted both sides to `float` before
-comparing them. 2,142,080 residuals and 16,459,230 arclengths differ, by at most `2.4e-10` m and
-`7.3e-12` m, and 42 rounded positions move by at most `4.7e-10` m.
+parameter, and it changes on **573,107 of 844,685 point observations — 67.85%** under A (67.85% under
+C, 67.84% under D). The first draft reported "0 occurrences changed" because it compared a
+deliberately coarsened label with the parameter dropped, which is the vertex/segment structure and
+not the normative identity. Underneath, 2,142,228 parameters differ **exactly** where only 1,333,808
+differ as rounded binary64 images — the exact count is **1.61×** the figure first published, which
+had converted both sides to `float` before comparing them. 2,142,080 residuals and 16,459,230
+arclengths differ, by at most `2.4e-10` m and `7.3e-12` m.
 
-**So the honest summary is a provenance finding, not an answer finding.** The adoption does not move
-where a point attaches — the places are identical and the largest displacement anywhere is half a
-nanometre — and it does not move which candidates are retained. It does change the **recorded
-identity** of two thirds of those candidates, because an occurrence label contains a parameter and
-the parameter changes. §12 requires the retained candidate set to be persisted *by identity*, so two
-runs differing only in this arithmetic would write different manifests for the same points while
-reporting the same answers. That is worth knowing and it is not a defect in either arithmetic.
+> **Read that denominator carefully.** 844,685 is **point observations across five sets**, two of
+> them censuses and two of them 500-point samples of populations the censuses also cover. It is not
+> a count of distinct coordinates, and the rate is not a population parameter. It is also a rate
+> over **points whose retained set changes**, not over candidates: an earlier draft of this section
+> said "two thirds of those candidates", which is not the statistic measured.
+
+**What this does and does not license — corrected after Codex pass 39 R4, which refuted the first
+version of this paragraph.** I had written that it was "a provenance finding, not an answer finding"
+and that two runs would "write different manifests for the same points while reporting the same
+answers". **Both are too strong**, and two figures in the surrounding prose were wrong with them.
+
+* **There is a route from a changed identity to a changed reported number.** §12 persists the
+  occurrence, and the parameter in it is what apportions a partial edge's cost and time, so a
+  reconstruction consumes it. Pass 39 took one of these identities — on `(0,0)→(1,2)` from `(1,1)`,
+  the two paths agree on the rounded foot `(0.6, 1.2)` and on the rounded parameter image `0.6`,
+  while the parameters are `5404319552844595/9007199254740992` and `3/5` — and fed each into the
+  same normative `same_edge_fraction`. The remaining fractions are `0.4` and `0.39999999999999997`;
+  at an admissible full weight of `1e19` the reported journey seconds are `4e18` and
+  `3.9999999999999995e18`, a difference of **512 seconds**. Whether any such weight and geometry
+  co-occur on the Triangle is **unmeasured**, and measuring it is routing — phase 4c.
+* **"The largest displacement anywhere is half a nanometre" was false.** `4.66e-10` m is the largest
+  movement of a position compared **with itself**. The *retained candidates* at C's two swap points
+  move `3.56e-5` m and `7.00e-6` m, as the mechanism section below says — so the blanket sentence
+  contradicted a measurement three paragraphs later in the same document.
+
+What survives is narrower and still worth having: **eligibility, candidate counts, retained places
+within 1 µm, and vertex/segment structure are unchanged** across 844,685 point observations, bar
+C's two; and the zeros in those four columns mean exactly that, not that nothing moved.
 
 **Why C is the one that moves, and why that was predicted rather than discovered.** A's rule is a
 0.01 m band, which is seven to eight orders of magnitude wider than anything the arithmetic changes,
@@ -555,13 +576,14 @@ The arithmetic underneath those decisions does move. Counted over the same posit
 
 **The sentinel, because every figure above is a count of differences.** An exact path that silently behaved like the float one would report zeros and read as good news, so two witnesses built to separate the paths must separate them or the run stops:
 
-| witness | must separate | counters fired | float parameter | exact parameter | float label | exact label |
+| witness | parameter must move | it moved | vertex/interior must move | it moved | float parameter | exact parameter |
 |---|---|---|---|---|---|---|
-| W2 dot-product cancellation | yes | yes | `0.0` | `33554432/4722366482869645` | `(0, 'v', 0)` | `(0, 's', 0)` |
-| W3 subtraction near the coordinate bound | yes | yes | `1.0` | `10737418239999999/10737418240000000` | `(0, 'v', 1)` | `(0, 's', 0)` |
-| control, an ordinary interior attachment | no (control) | no | `0.5` | `1/2` | `(0, 's', 0)` | `(0, 's', 0)` |
+| W2 dot-product cancellation | yes | yes | yes | yes | `0.0` | `33554432/4722366482869645` |
+| W3 subtraction near the coordinate bound | yes | yes | yes | yes | `1.0` | `10737418239999999/10737418240000000` |
+| interior only, where no coarse key changes | yes | yes | no | no | `0.6` | `3/5` |
+| control, an ordinary interior attachment | no | no | no | no | `0.5` | `1/2` |
 
-Each witness is run through `adoption_stats`, the function that produces the census figures, and not through the projection alone — Codex pass 38 F5 showed that forcing both arithmetic requests to the float branch left the earlier sentinel passing while the census reported zeros. The control exists because two witnesses alone cannot distinguish a live counter from one stuck at 1.
+Each witness runs through `adoption_stats`, the function that produces the census figures, and not through the projection alone — Codex pass 38 F5 showed that forcing both arithmetic requests to the float branch left the earlier sentinel passing while the census reported zeros. **Each counter now carries its own expectation per witness**, because pass 39 R5 defeated the first repair too: it demanded only that the two counters not *both* fire on the control, which a counter stuck at 1 still satisfies, and both its positive witnesses were vertex/interior transitions — of which the census has **zero**. The interior-only witness is what closes that, and the strengthened sentinel was checked against pass 39's own attack rather than against the idea of it.
 
 The points where a retained candidate changed:
 
@@ -697,12 +719,12 @@ The points where a retained candidate changed:
 
 | set | points | seconds | ms/point |
 |---|---:|---:|---:|
-| frame B sample | 500 | 0.1 | 0.257 |
-| frame C sample | 500 | 0.1 | 0.290 |
-| groceries (census) | 550 | 0.1 | 0.202 |
-| **all structures (census)** | 512,633 | 124.9 | 0.244 |
+| frame B sample | 500 | 0.1 | 0.244 |
+| frame C sample | 500 | 0.1 | 0.280 |
+| groceries (census) | 550 | 0.1 | 0.196 |
+| **all structures (census)** | 512,633 | 125.4 | 0.244 |
 | **all cell centres (census)** | 330,502 | 91.3 | 0.276 |
 
-Graph preparation 102 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
+Graph preparation 100 s, once. The attachment stage is cheap enough that the time box's "census it if benchmarking supports it" applies, which is why both censuses are here rather than a 500-point bound.
 
 <!-- END GENERATED -->

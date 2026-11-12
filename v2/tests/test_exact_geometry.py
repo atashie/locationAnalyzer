@@ -350,6 +350,29 @@ def test_same_edge_span_uses_the_destination_partial_and_not_its_complement():
     assert exact.same_edge_fraction(geom, 1, Fraction(1, 4), 0, Fraction(1, 2)) == f
 
 
+def test_a_complete_traversal_of_a_record_is_exactly_one():
+    """The span's own `fsum` is a third summation and had no fixture of its own.
+
+    Codex pass 39 R3: the total and the prefix each had a mutation forbidding left accumulation, and
+    the `fsum` that combines the span's terms did not, so a left accumulation there passed all 43
+    fixtures. On W1's lengths it returns `1.0000000000000002` for a traversal of the whole record.
+
+    The required answer does not come from running the module: the span of a complete traversal is
+    the same multiset of whole segment lengths as the total, so under one order-independent
+    summation rule applied to numerator and denominator the fraction is **exactly 1**.
+    """
+    geom = ((0.0, 0.0), (0.1, 0.0), (0.1, 0.2), (0.1, 0.5))     # lengths 0.1, 0.2, 0.3
+    assert exact.segment_lengths(geom) == [0.1, 0.2, 0.3]
+    assert exact.total_length(geom) == 0.6
+    assert exact.same_edge_fraction(geom, 0, Fraction(0), 2, Fraction(1)) == 1.0
+    # left accumulation of the same three terms is the rejected rule, and it is not 0.6
+    run = 0.0
+    for seg in (0.1, 0.2, 0.3):
+        run += seg
+    assert run == 0.6000000000000001
+    assert run / 0.6 == 1.0000000000000002, "the figure the unprotected span used to return"
+
+
 def test_exact_position_interpolates_both_coordinates():
     """Codex pass 38 F3: dropping the `y` interpolation passed all 40 fixtures.
 

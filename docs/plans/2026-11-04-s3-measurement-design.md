@@ -320,6 +320,17 @@ each objective minimises over it.
 >    its own cap: `max_access_m` = **200 m** for an origin, `poi_snap_max_m` = **300 m** for a
 >    destination. **Both are inclusive.** A nearest origin candidate at 199.995 m does not authorise
 >    a second at 200.004 m merely because it is inside the band.
+>
+>    **Which arithmetic decides "within", added after Codex pass 39 R1.** The band in item 2 and
+>    both caps here are compared **in binary64, on a computed residual** — not on the exact
+>    distance, and §2.4 item 7's "every comparison on the exact value" does **not** extend to them.
+>    A point whose exact distance exceeds 200 m can therefore be admitted: on `(0,-1)→(0,0)` from
+>    `(200, 1e-6)` the exact squared distance exceeds `200**2` while the correctly-rounded distance
+>    is exactly `200.0`. The excess there is about `1e-12` m², and the same arithmetic admits a
+>    destination past 300 m. An **exact** cap, `exact_sq <= cap**2`, needs no square root and is
+>    perfectly cheap; adopting it is a **semantic amendment**, not an optimisation, because it moves
+>    eligibility and so moves E0's known/unknown split and E1's operands. It is open, and the
+>    reason it is open is that nothing has measured how often the two predicates disagree.
 
 **An edge is a measured line, not a shape.** An attachment is a mark *along* the polyline, not a
 point *on the map*, and the difference is load-bearing wherever a road crosses itself. The edge
@@ -544,8 +555,19 @@ So, normatively:
    **The scope of that third clause, narrowed after Codex pass 38 F1.** It governs the comparisons
    *within* the quantities this item fixes — the clamp against 0 and 1, the ordering of squared
    distances, the span's orientation. It does **not** reach §2.2's two caps or its 0.01 m band,
-   which are predicates on a **distance** and are decided on the **correctly-rounded residual**, in
-   binary64, under both the production path and T0's exact path. The first draft of this item said
+   which are predicates on a **distance** and are decided in binary64 on a **computed residual**.
+
+   > **Which residual, stated after Codex pass 39 R1, because the first correction overclaimed
+   > too.** It said both paths compare a *correctly-rounded* residual. T0's exact path does;
+   > **production does not** — its residual comes from `shapely.distance`, a GEOS computation with
+   > no correct-rounding guarantee. Measured: from `(0,0)` to the segment
+   > `(56.31181001463545, 64.61649631867172)→(112.6236200292709, 129.23299263734344)`, production
+   > returns `85.71062678352851` where the correctly-rounded distance is `85.7106267835285` — one
+   > ulp out, inside the declared domain. What both paths share is that the comparison against the
+   > cap is made in **binary64 on a computed distance**, and that is the property this item
+   > disclaims responsibility for.
+
+   The first draft of this item said
    "every comparison that decides something" without that boundary, and the caps and the band are
    comparisons that decide something. Measured witness: on the admissible segment `(0,-1)→(0,0)`
    from `(200, 1e-6)` the exact squared distance exceeds `200**2`, so an exact predicate puts the

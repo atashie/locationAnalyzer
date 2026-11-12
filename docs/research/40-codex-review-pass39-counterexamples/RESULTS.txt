@@ -1,0 +1,132 @@
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\f01_and_f08_contract.py']: exit 0 ===
+production _snap_network residual: 85.71062678352851
+certified correctly rounded residual: 85.7106267835285 ; error in ulps: 1.0
+cap 200.0 ; exact squared excess: 1e-12 ; rounded admission: {'A': True, 'C': True, 'D': True}
+cap 300.0 ; exact squared excess: 1e-12 ; rounded admission: {'A': True, 'C': True, 'D': True}
+plan retains blanket every-comparison clause: True
+plan supersession counts: callout 3; task 4 still 2
+F2 confirmed: prefixes 20000000.0 20000000.0 ; exact difference 0 ; span seconds 558.7935447692871
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\f03_mutation_validity.py']: exit 0 ===
+integer-floor-to-division mutant: TypeError 'float' object cannot be interpreted as an integer
+harness classification: INVALID; this is an executable arithmetic defect
+broken same-segment branch: smoke passes
+same-segment call: NameError (would be counted caught after passing smoke)
+...........................................                              [100%]
+left-accumulated span fraction: 1.0000000000000002 ; required 1.0
+
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\f04_identity_and_answers.py']: exit 0 ===
+exact_occurrence: vertex, interior, equivalent rational, distinct rational: 4 checks pass
+legacy parameter_differs: 0 ; exact_parameter_differs: 1
+same rounded foot: (0.6, 1.2) ; same parameter image: 0.6
+unrounded parameters: 5404319552844595/9007199254740992 3/5
+eligibility_changed 0
+count_changed 0
+occurrences_changed 0
+places_changed 0
+exact_occurrences_changed 1
+weight 1000.0 ; reported direct-journey seconds: [400.35493142499996, 400.3549314249999] ; absolute difference: 5.684341886080802e-14
+weight 1e+19 ; reported direct-journey seconds: [4e+18, 3.9999999999999995e+18] ; absolute difference: 512.0
+A_exact_vs_A changed point observations: 573107 / 844685 = 67.848606%
+C_exact_vs_C changed point observations: 573097 / 844685 = 67.847422%
+D_exact_vs_D changed point observations: 573066 / 844685 = 67.843752%
+67.8% is a POINT-observation rate under A; it is not a candidate-identity rate.
+real C retained-candidate displacements (m): [3.562794224442979e-05, 3.562794224442979e-05]
+real C retained-candidate displacements (m): [6.998565223626435e-06, 6.998565223626435e-06]
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\f05_sentinel.py']: exit 0 ===
+sentinel passes: 3 of 3; firing pattern: [True, True, False]
+ordinary interior: live exact_parameter_differs = 1 ; dead = 0
+dead adoption: positions compared = 1 ; every difference counter = 0
+both committed real census windows also report every difference as zero
+control passes with exact_parameter_differs stuck at 1: False
+control DOES reject both counters stuck at 1
+pass-38 unconditional float-dispatch attack: rejected (repair confirmed)
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\verify_f06_f07.py']: exit 0 ===
+finite 2D coordinate-bit round trips: 1009
+fingerprint detects signed coordinate zero, one coordinate ulp, one time ulp: 3/3
+unchanged records, changed band: A count 2 -> 1 (fingerprint binds records, not rules or query points)
+typed structural pairs: 1024 ; false equalities: 0
+volatile path boundary/subtree checks: 6/6
+ok   identical documents: expected no difference, found 0
+ok   a changed count: expected a difference, found 1 (CHANGED   a: 1 -> 2)
+ok   a one-ulp float nested in a list: expected a difference, found 1 (CHANGED   a[0].b: 1.0 -> 1.0000000000000002)
+ok   an added key: expected a difference, found 1 (ADDED     b)
+ok   a removed key: expected a difference, found 1 (REMOVED   b)
+ok   an empty list against a list holding an empty dict: expected a difference, found 1 (LENGTH    x: 0 -> 1)
+ok   an empty dict against a missing key: expected a difference, found 1 (REMOVED   x)
+ok   a literal dotted key against a nested one: expected a difference, found 2 (REMOVED   a.b)
+ok   False against 0: expected a difference, found 1 (CHANGED   x: False -> 0)
+ok   negative zero against zero: expected a difference, found 1 (CHANGED   x: -0.0 -> 0.0)
+ok   a tampered build stamp: expected no difference, found 0
+ok   a different numpy version: expected no difference, found 0
+ok   a different stage duration: expected no difference, found 0
+
+13 of 13 self-tests behaved
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\verify_numbers.py']: exit 0 ===
+positions_compared 36555718
+residual_differs 2142080
+arclength_differs 16459230
+exact_parameter_differs 2142228
+rounded_parameter_image_differs 1333808
+position_differs 42
+vertex_or_interior_differs 0
+legacy parameter_differs: 0 (dead counter; disagrees with both new counters)
+max_abs_residual_diff_m 2.396749465560788e-10
+max_abs_arclength_diff_m 7.275957614183426e-12
+max_position_shift_m 4.656612873077393e-10
+eligibility_changed {'A_exact_vs_A': 0, 'C_exact_vs_C': 0, 'D_exact_vs_D': 0}
+count_changed {'A_exact_vs_A': 0, 'C_exact_vs_C': 0, 'D_exact_vs_D': 0}
+occurrences_changed {'A_exact_vs_A': 0, 'C_exact_vs_C': 2, 'D_exact_vs_D': 0}
+places_changed {'A_exact_vs_A': 0, 'C_exact_vs_C': 2, 'D_exact_vs_D': 0}
+adoption recorded runtime seconds: 2803.02 ; minutes: 46.717
+exact / rounded parameter difference count: 1.6060992286745919
+graph records: 808433 ; fingerprint: ed3aae3f04c34dbabae67da5ad79071945556d832a27ef05b8dc82360488f3c8
+historical refactor: 610 nonvolatile leaves each, 0 structural differences
+t0-attachment-pilot.md matches the artifact
+point rate under A: 67.84860628518324 ; percentage points below three quarters: 7.151393714816763
+The original 135 ms benchmark and pre-cache runtime are not stored in this artifact.
+search-derived fixture literals independently certified: 3
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\40-codex-review-pass39-counterexamples\\verify_mutants.py']: exit 0 ===
+CAUGHT: compose by rounding twice instead of once (what revision 1 would have shipped)
+CAUGHT: project in binary64 instead of exactly
+CAUGHT: clamp on the rounded parameter rather than the exact one
+CAUGHT: delete the degenerate-segment branch
+CAUGHT: use math.sqrt of the rounded radicand (rounds twice)
+CAUGHT: use math.hypot for the segment length
+CAUGHT: skip the midpoint comparison and always round down
+CAUGHT: break the tie away from even
+CAUGHT: compare the midpoint against the floored scaling instead of the original rational
+CAUGHT: drop the y interpolation in exact_position, so a diagonal foot is wrong
+CAUGHT: take the complement of the destination's partial in a cross-segment span
+CAUGHT: compare the midpoint on the lattice below, so the self-correction stops holding
+CAUGHT: ignore the subnormal floor on the lattice unit
+CAUGHT: accumulate the total from the left instead of with fsum
+CAUGHT: trust a supplied lengths cache that is wrong, so the cache can change an answer
+CAUGHT: accumulate the prefix from the left, as toy.py does today
+CAUGHT: measure the same-edge span as a difference of two prefixes
+CAUGHT: take the span from the start of the origin's segment rather than from the occurrence
+CAUGHT: drop the whole intermediate segments from the span
+CAUGHT: do not orient the span, so the two occurrences are not symmetric
+CAUGHT: divide by a zero total length instead of returning the normative zero
+CAUGHT: drop the no-segment guard, so a single-point geometry raises
+CAUGHT: return the squared distance to the segment start, ignoring the projection
+CAUGHT: return the unsquared distance, so ordering needs a root
+24/24 existing mutants smoke successfully and produce test failures.
+
+=== ['C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\docs\\research\\39-codex-review-pass38-counterexamples\\verify_surviving_claims.py']: exit 0 ===
+Certified nearest-even rounding cells: 2004 radicands
+Valid cache equivalences: 400 ; symmetric spans: 400
+Retired rounded-scaling mutation: 2000 checked; 224 changed indices, 0 answers
+Retired degenerate denom=1 and zero-total=1 identities hold on their stated preconditions
+fsum of RN lengths: 4.16227766016838 ; certified RN(real total): 4.162277660168379
+Cache is equivalent under documented precondition; invalid cache gives 2.5 versus 1.5
+An invalid/stale cache is caller misuse, not a counterexample to that conditional contract.
+Old committed copy vs imported exact squared distance: 2005 exact agreements
+
+=== ['-m', 'pytest', 'C:\\Users\\arikt\\Documents\\GitHub\\distanceFinder\\v2\\tests\\test_exact_geometry.py', '-q', '-p', 'no:cacheprovider']: exit 0 ===
+...........................................                              [100%]

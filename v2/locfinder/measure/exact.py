@@ -192,8 +192,16 @@ def exact_segment_sq(px: float, py: float, ax: float, ay: float,
     """The exact squared distance from `p` to the nearest point of segment `a->b`.
 
     Squared, because ordering distances never needs the root: `d1 < d2` iff `d1**2 < d2**2` for
-    non-negative reals. §2.2's residual ordering and both caps are therefore decided exactly, by
-    comparing against the squared cap.
+    non-negative reals. So §2.2's residual ordering and both caps **can** be decided exactly, by
+    comparing against the squared cap and never taking a root.
+
+    **Nothing currently decides them that way, and this docstring used to imply otherwise.** Codex
+    pass 39 R1: T0's exact path and production both compare a *computed binary64 distance* against
+    the cap, so a point whose exact distance exceeds 200 m can be admitted — the witness is
+    `(0,-1)->(0,0)` from `(200, 1e-6)`, where the exact squared distance exceeds `200**2` while the
+    correctly-rounded distance is exactly `200.0`. Returning the primitive that could decide a
+    predicate is not using it to decide one. An exact cap is a **different convention** and §2.4
+    item 7 leaves it open.
     """
     t = exact_projection(px, py, ax, ay, bx, by)
     qx, qy = exact_position(ax, ay, bx, by, t)
