@@ -1,0 +1,72 @@
+{
+  "what_this_is": "step 8's disclosure aggregation: which published answers depend on a restricted way. The owner's 2026-11-10 decision to keep the 120 s penalty was conditional on disclosing this gap rather than pricing it away",
+  "built": "2026-11-13 13:35:53",
+  "mode": "walk",
+  "category": "grocery",
+  "graph": {
+    "edges": 1436992,
+    "restricted_edges": 123756,
+    "destination_nodes": 510
+  },
+  "nodes": {
+    "reachable": 539814,
+    "reachable_with_a_restricted_route": 74901
+  },
+  "units": {
+    "grid_cells": {
+      "population": 330502,
+      "thresholds": {
+        "10": {
+          "included": 24255,
+          "included_on_a_restricted_route": 2540,
+          "share_of_included": 0.10472067614924757
+        },
+        "15": {
+          "included": 47509,
+          "included_on_a_restricted_route": 5510,
+          "share_of_included": 0.11597802521627482
+        },
+        "25": {
+          "included": 93575,
+          "included_on_a_restricted_route": 12391,
+          "share_of_included": 0.13241784664707454
+        },
+        "45": {
+          "included": 161670,
+          "included_on_a_restricted_route": 26887,
+          "share_of_included": 0.16630791117708912
+        }
+      },
+      "answered_at_all": 256752,
+      "answered_on_a_restricted_route": 57194
+    },
+    "structures": {
+      "population": 512633,
+      "thresholds": {
+        "10": {
+          "included": 78627,
+          "included_on_a_restricted_route": 8033,
+          "share_of_included": 0.10216592264743662
+        },
+        "15": {
+          "included": 162699,
+          "included_on_a_restricted_route": 16871,
+          "share_of_included": 0.10369455251722506
+        },
+        "25": {
+          "included": 298236,
+          "included_on_a_restricted_route": 33413,
+          "share_of_included": 0.11203543502461139
+        },
+        "45": {
+          "included": 424650,
+          "included_on_a_restricted_route": 50197,
+          "share_of_included": 0.11820793594725068
+        }
+      },
+      "answered_at_all": 499031,
+      "answered_on_a_restricted_route": 70864
+    }
+  },
+  "the_statistic_this_does_not_compute": "the SIGNED ERROR on restricted-route journeys. That needs walked journeys: this computes the denominator -- which answers are in the class -- and leaves the numerator empty. One walked journey found about 25 minutes against a published 13.5, so the known direction of the bias is OPTIMISTIC, but one journey is existence evidence and not a rate"
+}

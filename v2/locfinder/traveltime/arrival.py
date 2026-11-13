@@ -66,6 +66,34 @@ def arrival_seconds_two_weight(
     return seconds
 
 
+def arrival_with_route_flag(
+    cost_csr: sp.csr_matrix,
+    time_csr: sp.csr_matrix,
+    flag_csr: sp.csr_matrix,
+    *,
+    dest_idx,
+    cutoff_s: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """`(seconds, selected, flagged)` — arrival seconds, the chosen destination, and whether the
+    cost-optimal path from each node uses at least one flagged edge.
+
+    **Step 8 owes this to households.** The owner's 2026-11-10 decision to keep the restricted-walk
+    penalty at 120 s was taken on the condition that the gap is **disclosed rather than priced
+    away**, and disclosure needs per-cell membership: not "the graph contains restricted edges",
+    which is true everywhere, but "the route behind *this* number uses one". The soft-way note
+    recorded that as specified and manual — computable one journey at a time by
+    `explain_journey.py`, with no aggregation anywhere. This is the aggregation.
+
+    The flag propagates along the same predecessor forest the reported time does, in the same
+    increasing-cost sweep, so a node is flagged exactly when its chosen path is. It is therefore
+    **not** monotone in anything a caller might expect: a cheaper path may be flagged where a
+    dearer one is not, and that is the point — the flag describes the route the selection took.
+    """
+    seconds, selected, flagged = _arrival_sweep(
+        cost_csr, time_csr, flag_csr, dest_idx=dest_idx, cutoff_s=cutoff_s)
+    return seconds, selected, flagged
+
+
 def arrival_with_selected_destination(
     cost_csr: sp.csr_matrix,
     time_csr: sp.csr_matrix,
@@ -94,23 +122,41 @@ def arrival_with_selected_destination(
     `cutoff_s`, so a node cut by the horizon reports no destination rather than one it cannot
     reach in the advertised budget.
     """
+    seconds, selected, _flagged = _arrival_sweep(
+        cost_csr, time_csr, None, dest_idx=dest_idx, cutoff_s=cutoff_s)
+    return seconds, selected
+
+
+def _arrival_sweep(cost_csr, time_csr, flag_csr, *, dest_idx, cutoff_s):
+    """One search and one sweep, carrying time and optionally a route flag.
+
+    Extracted when step 8 needed a third quantity on the same forest. Two sweeps over the same
+    predecessors would be two chances to disagree about which path was chosen, which is the defect
+    pass-6 M4 found between the cost and time matrices.
+    """
     if cost_csr.shape != time_csr.shape:
         raise ValueError(f"cost {cost_csr.shape} and time {time_csr.shape} matrices must match")
     # Same shape is not enough: the two must describe the SAME edges, or a reported time would be
     # read from an edge the search never used (Codex pass-6 M4).
     if cost_csr.nnz != time_csr.nnz or not (
-        np.array_equal(cost_csr.indptr, time_csr.indptr) and np.array_equal(cost_csr.indices, time_csr.indices)
+        np.array_equal(cost_csr.indptr, time_csr.indptr)
+        and np.array_equal(cost_csr.indices, time_csr.indices)
     ):
-        raise ValueError("cost and time matrices must share sparsity; build them with graph_to_cost_time_csr")
+        raise ValueError(
+            "cost and time matrices must share sparsity; build them with graph_to_cost_time_csr")
+    if flag_csr is not None and flag_csr.shape != cost_csr.shape:
+        raise ValueError(f"flag {flag_csr.shape} must match cost {cost_csr.shape}")
     if cost_csr.nnz and float(cost_csr.data.min()) <= 0.0:
         raise ValueError("costs must be strictly positive: the increasing-cost sweep relies on it")
     dest = np.asarray(list(dest_idx), dtype=np.int64)
     n = cost_csr.shape[0]
+    empty_flags = np.zeros(n, dtype=bool)
     if dest.size == 0:
-        return np.full(n, np.inf), np.full(n, -1, dtype=np.int64)
+        return np.full(n, np.inf), np.full(n, -1, dtype=np.int64), empty_flags
 
     cost_t = cost_csr.transpose().tocsr()
     time_t = time_csr.transpose().tocsr()
+    flag_t = None if flag_csr is None else flag_csr.transpose().tocsr()
     dist, pred, sources = dijkstra(
         cost_t, directed=True, indices=dest, min_only=True, return_predecessors=True
     )
@@ -122,9 +168,10 @@ def arrival_with_selected_destination(
     selected = np.asarray(sources, dtype=np.int64)
 
     out = np.full(n, np.inf)
+    flagged = np.zeros(n, dtype=bool)
     reachable = np.flatnonzero(np.isfinite(dist))
     if reachable.size == 0:
-        return out, np.full(n, -1, dtype=np.int64)
+        return out, np.full(n, -1, dtype=np.int64), flagged
     # Sources (the destinations themselves) are at zero. Every other reachable node is resolved
     # after its predecessor, so processing in increasing cost order is a valid topological order
     # over the shortest-path tree.
@@ -137,6 +184,8 @@ def arrival_with_selected_destination(
         edge = time_t[p, node]
         prev = out[p]
         out[node] = prev + edge if np.isfinite(prev) else np.inf
+        if flag_t is not None:
+            flagged[node] = bool(flagged[p]) or bool(flag_t[p, node])
 
     if cutoff_s is not None:
         out[out > float(cutoff_s)] = np.inf
@@ -144,4 +193,6 @@ def arrival_with_selected_destination(
     # cost yet have no finite reported time -- the cutoff is applied to time, and the sweep leaves
     # +inf where a predecessor's time was unavailable -- so mask on `out`, not on `dist`.
     selected = np.where(np.isfinite(out), selected, -1)
-    return out, selected
+    # A node with no reported time discloses no route, so its flag is not an assertion about one.
+    flagged = flagged & np.isfinite(out)
+    return out, selected, flagged

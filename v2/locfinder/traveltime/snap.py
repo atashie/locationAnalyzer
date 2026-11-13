@@ -61,9 +61,19 @@ class EdgeIndex:
     rev_time: np.ndarray    # seconds end->start, inf if no such edge
     fwd_cost: np.ndarray    # selection cost start->end, inf if no such edge
     rev_cost: np.ndarray    # selection cost end->start, inf if no such edge
+    #: Whether the **cost-selected** edge in each direction carries the route flag, normally
+    #: `access_restricted`. `None` means none was supplied, which reads as "not flagged"
+    #: everywhere; the four callers that build an index by hand predate this field.
+    #:
+    #: The matched edge belongs to the journey, so a flag that looked only at the network path
+    #: beyond its endpoint would miss the audited walk's own case -- a private approach the
+    #: household walks along before reaching any node.
+    fwd_flag: np.ndarray | None = None
+    rev_flag: np.ndarray | None = None
 
     @classmethod
-    def from_graph(cls, G: nx.MultiDiGraph, index: dict, *, cost_key: str = "cost") -> "EdgeIndex":
+    def from_graph(cls, G: nx.MultiDiGraph, index: dict, *, cost_key: str = "cost",
+                   flag_key: str = "access_restricted") -> "EdgeIndex":
         """Build the index. For each physical edge and direction the **cost-minimal** parallel edge
         wins and its own time is carried, matching `csr.graph_to_cost_time_csr` so the two stages
         cannot disagree about which edge a path uses."""
@@ -74,6 +84,8 @@ class EdgeIndex:
         rev_t: list[float] = []
         fwd_c: list[float] = []
         rev_c: list[float] = []
+        fwd_f: list[bool] = []
+        rev_f: list[bool] = []
         seen: dict[tuple, int] = {}
         for u, v, k, data in G.edges(keys=True, data=True):
             t = float(data["travel_time"])
@@ -93,13 +105,17 @@ class EdgeIndex:
                 ends.append(e)
                 fwd_t.append(np.inf); rev_t.append(np.inf)
                 fwd_c.append(np.inf); rev_c.append(np.inf)
+                fwd_f.append(False); rev_f.append(False)
             i = seen[key]
+            # The flag follows the cost-minimal edge in each direction, exactly as the time does.
+            # "Any parallel edge is flagged" would describe a way the journey does not use.
+            flagged = bool(data.get(flag_key))
             if iu == starts[i]:
                 if c < fwd_c[i]:
-                    fwd_c[i], fwd_t[i] = c, t
+                    fwd_c[i], fwd_t[i], fwd_f[i] = c, t, flagged
             else:
                 if c < rev_c[i]:
-                    rev_c[i], rev_t[i] = c, t
+                    rev_c[i], rev_t[i], rev_f[i] = c, t, flagged
         arr = np.empty(len(geoms), dtype=object)
         arr[:] = geoms
         return cls(
@@ -111,6 +127,8 @@ class EdgeIndex:
             rev_time=np.asarray(rev_t, dtype=np.float64),
             fwd_cost=np.asarray(fwd_c, dtype=np.float64),
             rev_cost=np.asarray(rev_c, dtype=np.float64),
+            fwd_flag=np.asarray(fwd_f, dtype=bool),
+            rev_flag=np.asarray(rev_f, dtype=bool),
         )
 
 
@@ -126,6 +144,8 @@ class _Snapped:
     relevant_s: np.ndarray   # whether the start node's arrival time could have been used
     relevant_e: np.ndarray   # whether the end node's arrival time could have been used
     chosen_idx: np.ndarray   # the endpoint whose arrival time was actually taken, -1 if neither
+    matched_idx: np.ndarray  # the geometry the point snapped to, an index into EdgeIndex.geoms
+    took_end: np.ndarray     # whether the journey walked toward `e_idx`, which fixes the direction
 
 
 def _snap_network(
@@ -199,6 +219,8 @@ def _snap_network(
     return _Snapped(
         access_m=access_m,
         network=network,
+        matched_idx=nearest,
+        took_end=take_end,
         s_idx=s_idx,
         e_idx=e_idx,
         relevant_s=np.isfinite(rev_t) | at_start,
@@ -284,6 +306,66 @@ def cell_selected_destination(
     out = np.where(chosen >= 0, sel[np.where(chosen >= 0, chosen, 0)], -1)
     out = np.where(np.isfinite(total), out, -1)
     return out.reshape(np.shape(xs))
+
+
+def cell_route_flag(
+    idx: EdgeIndex,
+    T: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    *,
+    mode: str,
+    max_access_m: float,
+    node_flag: np.ndarray,
+    node_cost: np.ndarray | None = None,
+    cutoff_s: float | None = None,
+) -> np.ndarray:
+    """Whether each point's **published** journey uses a flagged way.
+
+    Step 8's disclosure obligation. `node_flag` is the per-node array from
+    `arrival.arrival_with_route_flag`, computed from the same `T`.
+
+    A sibling of `cell_selected_destination`, for the same reason: it goes through
+    `_snap_network`, so it follows the **same branch choice** the seconds were reported from and
+    describes the journey the product published rather than a nearby one. The journey has two
+    flaggable parts and both count -- the matched edge the point walks along to reach an endpoint,
+    and the network path onward from there. The straight-line access leg carries no way
+    classification, so it cannot be flagged.
+
+    Returns `False` wherever the point has no published time, because a point with no answer has
+    no route to describe.
+    """
+    x = np.asarray(xs, dtype=np.float64).ravel()
+    y = np.asarray(ys, dtype=np.float64).ravel()
+    snapped = _snap_network(idx, T, x, y, node_cost=node_cost)
+    total = snapped.network + snapped.access_m / access_speed_mps(mode)
+    total = np.where(snapped.access_m > max_access_m, np.inf, total)
+    if cutoff_s is not None:
+        total = np.where(total > float(cutoff_s), np.inf, total)
+
+    flags = np.asarray(node_flag, dtype=bool)
+    if flags.shape != (T.shape[0],):
+        raise ValueError(
+            f"node_flag has shape {flags.shape}, expected ({T.shape[0]},) to match the node "
+            "arrival array T; pass the array from arrival_with_route_flag")
+
+    chosen = snapped.chosen_idx
+    have = chosen >= 0
+    onward = np.where(have, flags[np.where(have, chosen, 0)], False)
+
+    edge_flag = np.zeros(x.shape, dtype=bool)
+    if idx.fwd_flag is not None and idx.rev_flag is not None:
+        m = snapped.matched_idx
+        fwd = idx.fwd_flag[m]
+        rev = idx.rev_flag[m]
+        # Walking toward `e_idx` traverses the geometry forwards; toward `s_idx`, backwards. On a
+        # loop edge the endpoints coincide and the direction is undetermined, so both count --
+        # the conservative reading, since the purpose is to disclose rather than to minimise
+        # disclosure.
+        loop = snapped.s_idx == snapped.e_idx
+        edge_flag = np.where(loop, fwd | rev, np.where(snapped.took_end, fwd, rev)) & have
+
+    return ((onward | edge_flag) & np.isfinite(total)).reshape(np.shape(xs))
 
 
 def cell_arrival_with_provenance(

@@ -279,7 +279,44 @@ destination actually used, date, and outcome.
 > **Still owed on step 7:** the **geocoding** half — whether a household's address resolves to the
 > right cell — is not started. And nothing here measures whether an *open* store is usable on
 > arrival; that remains the walked audit, the only check that consults the world.
-| 8 | **The one-page decision report**, then a bounded household release. **Owes a flag on estimates whose route depends on a restricted way** — the owner's 2026-11-10 decision to keep the 120 s penalty was taken on the condition that the gap is disclosed rather than priced away. Needs no new data: `access_restricted` is on the edges and the per-cell destination is recovered | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
+| 8 | **REPORT AND FLAG DONE 2026-11-13; the release is the owner's.** **The one-page decision report** (`docs/s3-decision-report.md`), then a bounded household release. The **restricted-route flag is computed** — `arrival_with_route_flag` and `cell_route_flag`, 13 fixtures — and **about one household in ten is exposed**: the route depends on a restricted way for 8,033 of the 78,627 structures included at *T* = 10 and 16,871 of 162,699 at *T* = 15. The flag is **not yet published in the layer bundle**, which is the remaining piece | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
+
+> **OUTCOME, 2026-11-13: the report exists and the disclosure is computed. The release decision is
+> the owner's and this does not pre-empt it.** `docs/s3-decision-report.md`,
+> `v2/scripts/flag_restricted_routes.py`, `docs/experiments/s3-8-restricted-routes.json`.
+>
+> **The commitment discharged.** The owner's 2026-11-10 decision kept the restricted-walk penalty
+> at 120 s on the condition that the gap is **disclosed rather than priced away**, and
+> `project-phase1-s3-soft-way-dependence` recorded the disclosure as *specified and manual* — one
+> journey at a time, "no per-cell flag recorded in the layer bundle, no aggregation defined, and
+> nothing computes the statistic". The aggregation now exists.
+>
+> **Why an edge count was never the disclosure.** 123,756 of 1,436,992 walk edges are restricted,
+> so "the graph contains restricted ways" is true everywhere and tells a household nothing. The
+> flag propagates along the **cost-optimal path**, on the same predecessor forest that carries the
+> reported time, and resolves per point through the same branch choice the seconds came from. Both
+> flaggable parts of a journey count: the matched edge the household walks along, and the network
+> path beyond it — the audited walk's own private approach was the first leg, so a flag that looked
+> only past the node would have missed the case it exists for.
+>
+> | | included | of those, on a restricted route |
+> |---|---|---|
+> | *T* = 10 min | 78,627 structures | **8,033 (10.2%)** |
+> | *T* = 15 min | 162,699 | 16,871 (10.4%) |
+> | *T* = 25 min | 298,236 | 33,413 (11.2%) |
+> | *T* = 45 min | 424,650 | 50,197 (11.8%) |
+>
+> 74,901 of 539,814 reachable nodes (13.9%) have a restricted cost-optimal route.
+>
+> **What this does not compute, and says so.** The statistic the owner's decision owes is the
+> **signed error on restricted-route journeys**. That needs walked journeys: this supplies the
+> denominator — which answers are in the class — and leaves the numerator empty. One walked journey
+> found ≈25 minutes against a published 13.5, so the known direction is **optimistic**, and one
+> journey is existence evidence rather than a rate.
+>
+> **Still owed on step 8:** the flag is **not published in the layer bundle**. Adding it is a wire
+> format change — a third plane or a status bit — and therefore a design question rather than a
+> silent addition. The household sessions are the owner's.
 
 **Step 2 changed what gets reported**, so it was an owner decision: it was drafted as an additive
 §13 amendment and flagged rather than adopted silently, and **the owner adopted it on 2026-11-10**.
