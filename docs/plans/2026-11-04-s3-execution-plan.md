@@ -210,7 +210,47 @@ destination actually used, date, and outcome.
 > alike, so the export collapses UNKNOWN into EXCLUDED and the three-outcome algebra S0 built the
 > `Reason` enum for does not reach the browser. That is the larger of the two and it still belongs
 > to step 6.
-| 7 | **Grocery and geocoding truth audit** — destination validity, resolution, coverage | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
+| 7 | **DESTINATION HALF DONE 2026-11-13**, geocoding half not started. **Grocery and geocoding truth audit** — destination validity, resolution, coverage. Results in `docs/experiments/s3-7-destination-truth.md`; owner sheet in `docs/experiments/audit/s3-7-destinations-to-check.csv`. **Two defects and one decision**: `operating_status` is unread, so **9 permanently-closed places are published as grocery destinations** and 1,473 structures are included at *T* = 10 only because of one; the grocery wedge rejects **Walmart Supercenter, Target, Costco, Sam's Club and BJ's entirely** and **splits nine chains** across it, Overture having all of them under `superstore`, `department_store`, `discount_store`, `wholesale_grocer` or `specialty_foods_store`; and resolution is fine (549 of 550 inside the cap, 75 sharing a node) | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
+
+> **OUTCOME, 2026-11-13: step 7's destination half ran, and it found what §3's blind spot
+> predicted — in data we had already ingested.** `v2/scripts/audit_destination_truth.py`,
+> `docs/experiments/s3-7-destination-truth.md` and `.json`.
+>
+> **A defect that needs an amendment, not a patch.** Overture publishes `operating_status` and
+> nothing in this pipeline reads it, so **9 of the 550 grocery destinations are marked
+> `permanently_closed`** — one of them a Kroger at confidence 0.92, one of them "Roofing Inc.",
+> which is a category error too. Over all 512,633 structures, **1,473 are included at *T* = 10 and
+> 1,979 at *T* = 15 only because of a closed grocery**. Nobody chose to route households to shut
+> shops, but filtering them changes which destinations are eligible, so this section's own
+> prohibition makes it a **design amendment with a §13 row**, drafted and not adopted — step 2's
+> precedent.
+>
+> **A decision that is the owner's, with its price measured.** The grocery wedge requires taxonomy
+> hierarchy `grocery_store`, and so contains **no Walmart Supercenter, no Target, no Costco, no
+> Sam's Club and no BJ's** — Overture has all of them, as `superstore`, `department_store`,
+> `wholesale_grocer` and `warehouse_club_store`. Worse than conservative: **nine chains are split
+> across the wedge** (Harris Teeter, Publix, Kroger, Aldi, Lidl, Trader Joe's, Whole Foods, Weaver
+> Street, Compare Foods), because Overture tags some branches `grocery_store` and others
+> `discount_store` or `specialty_foods_store`. Two households the same distance from the same chain
+> get different answers. A brand-based definition adds 49 store rows and would gain **4,318
+> structures at *T* = 10 and 7,128 at *T* = 15**. Not adopted: `discount_store` holds 195 places
+> inside the footprint, almost all dollar stores, so admitting a taxonomy wholesale is a different
+> error — and "what is a grocery" changes every published number.
+>
+> **Coverage against OSM, which needed no scraping**: 455 Overture grocery places against 233 OSM
+> `shop=supermarket`/`greengrocer` inside the footprint, half of them within 17 m of each other.
+> **28 OSM shops sit more than 300 m from any Overture grocery**, worth 4,551 structures at
+> *T* = 10 if real — but OSM's own tagging includes "Tar Heels Termite Removal" at
+> `opening_hours=24/7`, and the top of the list (Weaver Street, Publix, Walmart, Aldi) is **the
+> same category-definition problem wearing a different hat**, so the two impact figures overlap
+> rather than adding. Written as a 28-row sheet for the owner to strike or confirm.
+>
+> **Resolution is not the problem**: 549 of 550 places snap inside the 300 m cap, 510 distinct
+> nodes, 75 places sharing a node with another and a largest share of 3.
+>
+> **Still owed on step 7:** the **geocoding** half — whether a household's address resolves to the
+> right cell — is not started. And nothing here measures whether an *open* store is usable on
+> arrival; that remains the walked audit, the only check that consults the world.
 | 8 | **The one-page decision report**, then a bounded household release. **Owes a flag on estimates whose route depends on a restricted way** — the owner's 2026-11-10 decision to keep the 120 s penalty was taken on the condition that the gap is disclosed rather than priced away. Needs no new data: `access_restricted` is on the edges and the per-cell destination is recovered | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
 
 **Step 2 changed what gets reported**, so it was an owner decision: it was drafted as an additive

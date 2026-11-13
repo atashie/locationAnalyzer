@@ -1,0 +1,712 @@
+{
+  "what_this_is": "step 7: the destination truth audit. E1 and E2 read one destination list on both sides, so a closed, absent, misplaced or omitted grocery produces agreement and two wrong answers",
+  "built": "2026-11-13 11:51:20",
+  "category": "grocery",
+  "mode": "walk",
+  "validity": {
+    "places": 550,
+    "operating_status": {
+      "open": 435,
+      "None": 106,
+      "permanently_closed": 9
+    },
+    "nothing_in_the_pipeline_reads_operating_status": true,
+    "permanently_closed": [
+      {
+        "id": "0d5215b0-3192-4bc8-aee5-d5ba6fdb2973",
+        "name": "La Tiendita Market",
+        "confidence": 0.65,
+        "lon": -78.712212,
+        "lat": 35.860383999999996
+      },
+      {
+        "id": "27b4e2f0-fc2a-442f-be32-afdaad6fb309",
+        "name": "Kinstar International Food Inc",
+        "confidence": 0.65,
+        "lon": -78.957455,
+        "lat": 35.964612
+      },
+      {
+        "id": "3fed30d2-7538-4f0f-aece-e77ab3a4d484",
+        "name": "Carolina Cupboard",
+        "confidence": 0.55,
+        "lon": -79.1123977,
+        "lat": 36.0726769
+      },
+      {
+        "id": "4f318935-7d66-4a5e-833a-1131fdf4b4fe",
+        "name": "Longview Poole Road",
+        "confidence": 0.65,
+        "lon": -78.6052133,
+        "lat": 35.77484900000001
+      },
+      {
+        "id": "81190996-0ac4-401f-817a-a9ebff1af58c",
+        "name": "Kroger",
+        "confidence": 0.9199122190475464,
+        "lon": -78.9364864,
+        "lat": 35.91268620000001
+      },
+      {
+        "id": "a4cd9c69-95d2-4170-8433-c5e48adc9406",
+        "name": "Bell Tower Mart",
+        "confidence": 0.65,
+        "lon": -78.663393,
+        "lat": 35.786761999999996
+      },
+      {
+        "id": "b7b9f517-7f58-4a53-abd2-ac8620a93726",
+        "name": "Jinja Fair Trade Llc",
+        "confidence": 0.65,
+        "lon": -78.639068,
+        "lat": 35.85824299999999
+      },
+      {
+        "id": "dc09b073-d0ac-4141-8275-3127c748878d",
+        "name": "Roofing Inc.",
+        "confidence": 0.65,
+        "lon": -78.7853683,
+        "lat": 35.7678011
+      },
+      {
+        "id": "fa488537-1065-4f10-80e6-8e7d978375fb",
+        "name": "La Nueva Mexicana",
+        "confidence": 0.65,
+        "lon": -78.7805137,
+        "lat": 35.7876882
+      }
+    ],
+    "confidence": {
+      "min": 0.16532686352729797,
+      "p05": 0.5395608693361282,
+      "median": 0.957171618938446,
+      "max": 0.9999990958184004,
+      "below_0_3": 6,
+      "below_0_5": 24,
+      "below_0_6": 55
+    }
+  },
+  "resolution": {
+    "snap_cap_m": 300.0,
+    "places": 550,
+    "kept_by_the_cap": 549,
+    "dropped_by_the_cap": 1,
+    "snap_distance_m": {
+      "median": 28.07318159859883,
+      "p90": 45.71052569640156,
+      "p99": 156.32325612482367,
+      "max": 478.6636833275403,
+      "within_10m": 51,
+      "between_200_and_300m": 1
+    },
+    "distinct_nodes": 510,
+    "nodes_serving_more_than_one_place": 36,
+    "places_sharing_a_node": 75,
+    "largest_node_share": 3,
+    "why_this_matters": "a place beyond the cap is not a destination at all, and places sharing a node are indistinguishable in the published answer -- the layer reports the cost-selected one and cannot name which"
+  },
+  "coverage": {
+    "inside_the_footprint": {
+      "overture_grocery": 455,
+      "osm_grocery": 233
+    },
+    "osm_to_nearest_overture_m": {
+      "median": 17.327618620138647,
+      "p90": 362.6509215049077,
+      "beyond_50m": 55,
+      "beyond_100m": 46,
+      "beyond_300m": 28
+    },
+    "overture_to_nearest_osm_m": {
+      "beyond_100m": 236,
+      "beyond_300m": 197,
+      "note": "this direction is mostly a DEFINITIONAL difference, not evidence of nonexistence: the Overture selector admits ethnic and organic grocery stores through the taxonomy hierarchy, which OSM tags as shop=convenience, shop=grocery or a deli rather than shop=supermarket"
+    },
+    "candidate_omitted_destinations": [
+      {
+        "osm_feature_id": "node/2622974983",
+        "lon": -79.0660226,
+        "lat": 35.88013339999999,
+        "metres_to_nearest_overture_grocery": 3323.5,
+        "name": "Weaver Street Market",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Market Street",
+        "addr:city": "Chapel Hill",
+        "opening_hours": "Mo-Su 07:00-22:00"
+      },
+      {
+        "osm_feature_id": "node/13159948114",
+        "lon": -78.5167439,
+        "lat": 35.8433524,
+        "metres_to_nearest_overture_grocery": 2546.5,
+        "name": "Publix At Buffaloe Bend",
+        "brand": "Publix",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Buffaloe Road",
+        "addr:city": "Raleigh",
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "node/6984176607",
+        "lon": -78.5361931,
+        "lat": 35.7544878,
+        "metres_to_nearest_overture_grocery": 1756.3,
+        "name": "Carolina Open Air Market",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Poole Road",
+        "addr:city": "Raleigh",
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "way/263658578",
+        "lon": -79.08154747814865,
+        "lat": 35.85861687572206,
+        "metres_to_nearest_overture_grocery": 1675.6,
+        "name": "Walmart Supercenter",
+        "brand": "Walmart",
+        "shop": "supermarket",
+        "operator": "Walmart",
+        "addr:street": "US 15;US 501",
+        "addr:city": "Chapel Hill",
+        "opening_hours": "24/7"
+      },
+      {
+        "osm_feature_id": "node/8723466026",
+        "lon": -78.6782787,
+        "lat": 35.87192019999999,
+        "metres_to_nearest_overture_grocery": 1487.3,
+        "name": "Aldi",
+        "brand": "Aldi",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Creedmoor Road",
+        "addr:city": "Raleigh",
+        "opening_hours": "Mo-Su 09:00-20:00"
+      },
+      {
+        "osm_feature_id": "way/109864205",
+        "lon": -78.99909302678094,
+        "lat": 35.954989456540794,
+        "metres_to_nearest_overture_grocery": 1433.4,
+        "name": "Walmart Supercenter",
+        "brand": "Walmart",
+        "shop": "supermarket",
+        "operator": "Walmart",
+        "addr:street": "New Hope Commons Drive",
+        "addr:city": "Durham",
+        "opening_hours": "Mo-Su 06:00-24:00"
+      },
+      {
+        "osm_feature_id": "node/1620828145",
+        "lon": -79.1752735,
+        "lat": 35.7270273,
+        "metres_to_nearest_overture_grocery": 1245.3,
+        "name": "Chatham Marketplace",
+        "brand": null,
+        "shop": "greengrocer",
+        "operator": null,
+        "addr:street": "Hillsboro Street",
+        "addr:city": "Pittsboro",
+        "opening_hours": "Mo-Su 07:00-21:00"
+      },
+      {
+        "osm_feature_id": "way/456886835",
+        "lon": -78.88269375102789,
+        "lat": 35.833659863019605,
+        "metres_to_nearest_overture_grocery": 1199.1,
+        "name": "Whole Foods Market",
+        "brand": "Whole Foods Market",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Arco Street",
+        "addr:city": "Cary",
+        "opening_hours": "Mo-Su 07:00-22:00"
+      },
+      {
+        "osm_feature_id": "node/10274783546",
+        "lon": -79.0546027,
+        "lat": 35.91409310000001,
+        "metres_to_nearest_overture_grocery": 901.4,
+        "name": "Wiley's Workshop on Wheels",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": "Ashifur Rahman",
+        "addr:street": "Trouser Leg Road",
+        "addr:city": "Springfield",
+        "opening_hours": "24/7"
+      },
+      {
+        "osm_feature_id": "node/10253258282",
+        "lon": -79.054822,
+        "lat": 35.91426820000001,
+        "metres_to_nearest_overture_grocery": 894.5,
+        "name": "Tar Heels Termite Removal",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": "Brandon Nguyen",
+        "addr:street": "Franklin St",
+        "addr:city": "Chapel Hill",
+        "opening_hours": "24/7"
+      },
+      {
+        "osm_feature_id": "node/11478935669",
+        "lon": -78.6932029,
+        "lat": 35.79421599999999,
+        "metres_to_nearest_overture_grocery": 887.7,
+        "name": "Al-Basha Market & Grill",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": null,
+        "addr:city": null,
+        "opening_hours": "Mo-Su 10:00-22:00"
+      },
+      {
+        "osm_feature_id": "node/13474629907",
+        "lon": -78.6494787,
+        "lat": 35.7601769,
+        "metres_to_nearest_overture_grocery": 865.7,
+        "name": "Tienda ToDo Guerrerense",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "South Saunders Street",
+        "addr:city": "Raleigh",
+        "opening_hours": "Mo-Fr 10:30-21:00; Sa 10:30-12:00"
+      },
+      {
+        "osm_feature_id": "way/1193223153",
+        "lon": -79.12147514435551,
+        "lat": 36.143251677980004,
+        "metres_to_nearest_overture_grocery": 769.6,
+        "name": "Farm and Garden",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": null,
+        "addr:city": null,
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "node/4337340136",
+        "lon": -78.5650742,
+        "lat": 35.86978119999999,
+        "metres_to_nearest_overture_grocery": 675.8,
+        "name": "Walmart Supercenter",
+        "brand": "Walmart",
+        "shop": "supermarket",
+        "operator": "Walmart",
+        "addr:street": "Town Drive",
+        "addr:city": "Raleigh",
+        "opening_hours": "24/7"
+      },
+      {
+        "osm_feature_id": "node/8406512958",
+        "lon": -78.6455625,
+        "lat": 35.778651999999994,
+        "metres_to_nearest_overture_grocery": 657.6,
+        "name": "Weaver Street Market",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": null,
+        "addr:city": null,
+        "opening_hours": "Mo-Su 08:00-21:00"
+      },
+      {
+        "osm_feature_id": "node/9879779653",
+        "lon": -78.8965648,
+        "lat": 35.80870310000001,
+        "metres_to_nearest_overture_grocery": 636.5,
+        "name": "Lowes Foods",
+        "brand": "Lowes Foods",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Mills Park Drive",
+        "addr:city": "Cary",
+        "opening_hours": "Mo-Su 06:00-00:00"
+      },
+      {
+        "osm_feature_id": "node/748177717",
+        "lon": -78.8892549,
+        "lat": 35.9018741,
+        "metres_to_nearest_overture_grocery": 519.8,
+        "name": "Halgo European Deli",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": null,
+        "addr:city": null,
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "way/586718433",
+        "lon": -78.65943812275754,
+        "lat": 35.71908854265208,
+        "metres_to_nearest_overture_grocery": 485.6,
+        "name": "Walmart Supercenter",
+        "brand": "Walmart",
+        "shop": "supermarket",
+        "operator": "Walmart",
+        "addr:street": "Fayetteville Road",
+        "addr:city": "Raleigh",
+        "opening_hours": "24/7"
+      },
+      {
+        "osm_feature_id": "node/2430315096",
+        "lon": -78.6150392,
+        "lat": 35.836424399999984,
+        "metres_to_nearest_overture_grocery": 484.7,
+        "name": "ALDI",
+        "brand": "ALDI",
+        "shop": "supermarket",
+        "operator": "Aldi",
+        "addr:street": "Wake Forest Road",
+        "addr:city": "Raleigh",
+        "opening_hours": "Mo-Su 08:00-21:00"
+      },
+      {
+        "osm_feature_id": "way/583516097",
+        "lon": -78.53552471445907,
+        "lat": 35.948394590321925,
+        "metres_to_nearest_overture_grocery": 458.0,
+        "name": "ALDI",
+        "brand": "ALDI",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "South Main Street",
+        "addr:city": "Wake Forest",
+        "opening_hours": "Mo-Su 08:00-20:00"
+      },
+      {
+        "osm_feature_id": "node/5785410068",
+        "lon": -79.1711539,
+        "lat": 35.7193788,
+        "metres_to_nearest_overture_grocery": 455.1,
+        "name": "580 Craft Beer",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "East Street",
+        "addr:city": "Pittsboro",
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "node/266814250",
+        "lon": -78.9205563,
+        "lat": 36.0070992,
+        "metres_to_nearest_overture_grocery": 438.7,
+        "name": "Whole Foods Market",
+        "brand": "Whole Foods Market",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Broad Street",
+        "addr:city": "Durham",
+        "opening_hours": "Mo-Su 07:00-22:00"
+      },
+      {
+        "osm_feature_id": "way/725826119",
+        "lon": -78.84379161563317,
+        "lat": 36.02821420091747,
+        "metres_to_nearest_overture_grocery": 431.8,
+        "name": "Walmart Supercenter",
+        "brand": "Walmart",
+        "shop": "supermarket",
+        "operator": "Walmart",
+        "addr:street": "Glenn School Road",
+        "addr:city": "Durham",
+        "opening_hours": "Mo-Su 06:00-24:00"
+      },
+      {
+        "osm_feature_id": "node/1775718440",
+        "lon": -78.7772281,
+        "lat": 35.7374666,
+        "metres_to_nearest_overture_grocery": 367.8,
+        "name": "Whole Foods Market",
+        "brand": "Whole Foods Market",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "New Waverly Place",
+        "addr:city": "Cary",
+        "opening_hours": "Mo-Su 07:00-22:00"
+      },
+      {
+        "osm_feature_id": "node/13963531429",
+        "lon": -78.88628980000001,
+        "lat": 36.0182773,
+        "metres_to_nearest_overture_grocery": 342.1,
+        "name": "Super Compare Foods",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Avondale Drive A",
+        "addr:city": "Durham",
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "node/9425965290",
+        "lon": -78.6538639,
+        "lat": 35.73440369999999,
+        "metres_to_nearest_overture_grocery": 335.0,
+        "name": "International Food",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": null,
+        "addr:city": null,
+        "opening_hours": null
+      },
+      {
+        "osm_feature_id": "way/245862076",
+        "lon": -78.54718573372206,
+        "lat": 35.79386987734977,
+        "metres_to_nearest_overture_grocery": 316.3,
+        "name": "Aldi",
+        "brand": "Aldi",
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Sunrise Valley Place",
+        "addr:city": "Raleigh",
+        "opening_hours": "Mo-Su 09:00-20:00"
+      },
+      {
+        "osm_feature_id": "node/14157964150",
+        "lon": -78.6165774,
+        "lat": 35.779612900000004,
+        "metres_to_nearest_overture_grocery": 309.4,
+        "name": "Black Farmers Hub",
+        "brand": null,
+        "shop": "supermarket",
+        "operator": null,
+        "addr:street": "Cross Street",
+        "addr:city": "Raleigh",
+        "opening_hours": null
+      }
+    ],
+    "candidate_not_finding": "OSM shop=supermarket in this extract includes obvious mistags -- 'Tar Heels Termite Removal' and 'Wiley's Workshop on Wheels', both opening_hours=24/7 -- so this is an upper bound needing human triage, written as a sheet to check rather than added to the destination list"
+  },
+  "brand_coverage": {
+    "brands": [
+      {
+        "brand": "Harris Teeter",
+        "in_the_destination_list": 44,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "(none)": 1
+        }
+      },
+      {
+        "brand": "Food Lion",
+        "in_the_destination_list": 76,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Publix",
+        "in_the_destination_list": 9,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "(none)": 1
+        }
+      },
+      {
+        "brand": "Kroger",
+        "in_the_destination_list": 3,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "department_store": 1
+        }
+      },
+      {
+        "brand": "Aldi",
+        "in_the_destination_list": 9,
+        "store_rows_not_in_it": 6,
+        "their_primaries": {
+          "discount_store": 5,
+          "(none)": 1
+        }
+      },
+      {
+        "brand": "Lidl",
+        "in_the_destination_list": 7,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "discount_store": 1
+        }
+      },
+      {
+        "brand": "Trader Joe",
+        "in_the_destination_list": 4,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "specialty_foods_store": 1
+        }
+      },
+      {
+        "brand": "Whole Foods",
+        "in_the_destination_list": 1,
+        "store_rows_not_in_it": 5,
+        "their_primaries": {
+          "specialty_foods_store": 5
+        }
+      },
+      {
+        "brand": "Walmart Supercenter",
+        "in_the_destination_list": 0,
+        "store_rows_not_in_it": 3,
+        "their_primaries": {
+          "superstore": 1,
+          "department_store": 1,
+          "warehouse_club_store": 1
+        }
+      },
+      {
+        "brand": "Walmart Neighborhood",
+        "in_the_destination_list": 3,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Target",
+        "in_the_destination_list": 0,
+        "store_rows_not_in_it": 16,
+        "their_primaries": {
+          "department_store": 16
+        }
+      },
+      {
+        "brand": "Wegmans",
+        "in_the_destination_list": 4,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Weaver Street",
+        "in_the_destination_list": 3,
+        "store_rows_not_in_it": 3,
+        "their_primaries": {
+          "specialty_foods_store": 3
+        }
+      },
+      {
+        "brand": "Sprouts",
+        "in_the_destination_list": 2,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Fresh Market",
+        "in_the_destination_list": 7,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Compare Foods",
+        "in_the_destination_list": 4,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "specialty_foods_store": 1
+        }
+      },
+      {
+        "brand": "Grand Asia",
+        "in_the_destination_list": 1,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "H Mart",
+        "in_the_destination_list": 1,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {}
+      },
+      {
+        "brand": "Costco",
+        "in_the_destination_list": 0,
+        "store_rows_not_in_it": 3,
+        "their_primaries": {
+          "wholesale_grocer": 2,
+          "warehouse_club_store": 1
+        }
+      },
+      {
+        "brand": "Sam's Club",
+        "in_the_destination_list": 0,
+        "store_rows_not_in_it": 2,
+        "their_primaries": {
+          "warehouse_club_store": 2
+        }
+      },
+      {
+        "brand": "BJ's",
+        "in_the_destination_list": 0,
+        "store_rows_not_in_it": 5,
+        "their_primaries": {
+          "wholesale_grocer": 4,
+          "warehouse_club_store": 1
+        }
+      }
+    ],
+    "brands_with_no_store_in_the_destination_list": [
+      "Walmart Supercenter",
+      "Target",
+      "Costco",
+      "Sam's Club",
+      "BJ's"
+    ],
+    "brands_split_across_the_wedge": [
+      "Harris Teeter",
+      "Publix",
+      "Kroger",
+      "Aldi",
+      "Lidl",
+      "Trader Joe",
+      "Whole Foods",
+      "Weaver Street",
+      "Compare Foods"
+    ],
+    "why_split_matters": "a chain on both sides means the wedge admits some branches and not others, so two households the same distance from the same chain get different answers -- arbitrary rather than conservative",
+    "name_matching_caveat": "a brand name also appears on concessions inside a store -- a money-transfer desk, a fuel station, a pharmacy -- so rows are restricted to primaries that can be the store itself, and the counts are still an upper bound",
+    "store_rows_a_brand_definition_would_add": 49
+  },
+  "impact": {
+    "structures": 512633,
+    "destination_nodes": {
+      "published": 510,
+      "open_only": 503,
+      "plus_unmatched_osm": 538,
+      "plus_household_brands": 557
+    },
+    "thresholds": {
+      "10": {
+        "included_as_published": 78627,
+        "structures_served_only_by_a_closed_grocery": 1473,
+        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 4551,
+        "structures_that_would_gain_from_a_brand_based_definition": 4318
+      },
+      "15": {
+        "included_as_published": 162699,
+        "structures_served_only_by_a_closed_grocery": 1979,
+        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 6455,
+        "structures_that_would_gain_from_a_brand_based_definition": 7128
+      },
+      "25": {
+        "included_as_published": 298236,
+        "structures_served_only_by_a_closed_grocery": 963,
+        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 7450,
+        "structures_that_would_gain_from_a_brand_based_definition": 10411
+      },
+      "45": {
+        "included_as_published": 424650,
+        "structures_served_only_by_a_closed_grocery": 0,
+        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 5595,
+        "structures_that_would_gain_from_a_brand_based_definition": 5566
+      }
+    }
+  }
+}
