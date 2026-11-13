@@ -482,3 +482,36 @@ cheap:
    my assertion compared it to 1. The consumer's rule is the specification, not mine.
 
 Twenty-one instances now.
+
+## Twenty-second, 2026-11-13 — the cost/time conflation, twice in three days
+
+The fifteenth instance was recommending a **travel-time threshold** as a bound on **cost**, in a
+design whose first principle is *selection is by cost, reporting is by time*. Three days later I
+wrote this, in the step 7 audit's own docstring:
+
+> "Removing destinations can only lengthen a time, and adding them can only shorten one, so each
+> comparison has a direction and the direction is what makes it a harm statement."
+
+False, for exactly the same reason. The search minimises cost and reports time, so a cheaper
+destination can select a slower journey. Three lines refute it: costs `(700, 650)` with times
+`(500, 650)`, and adding the second destination turns 500 s into 650 s — a ten-minute pass into a
+fail. Measured on the real graph, 69 structures **lose** inclusion when destinations are added.
+
+**Why it recurred is the useful part.** Both times the sentence was about a *direction of effect*,
+and both times I reasoned about the quantity I was reporting rather than the quantity the
+implementation selects on. "Adding a destination can only help" is true of the minimum over
+destinations. This pipeline does not take a minimum over destinations — it takes an argmin over
+**cost** and reports that journey's **time**, which is the whole reason `cost_selected_category`
+has its own name and the whole reason §2.1 exists.
+
+It also let a worse error through unchallenged: because I believed the effect was one-directional,
+I only **counted** one direction. The losses were not hidden by a bug; they were never looked for.
+
+**How to apply.** Any sentence of the form "X can only make Y better/worse" in this codebase is a
+claim about a monotone relationship between the **selected** quantity and the **reported** one, and
+there is none. Before writing one, name both quantities explicitly — "adding a destination can only
+lower the selected cost" is true, "and therefore the reported time" does not follow. And count both
+directions regardless of what the argument says, because the count costs nothing and the argument
+has now been wrong twice.
+
+Twenty-two instances now.

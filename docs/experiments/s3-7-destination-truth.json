@@ -1,6 +1,6 @@
 {
   "what_this_is": "step 7: the destination truth audit. E1 and E2 read one destination list on both sides, so a closed, absent, misplaced or omitted grocery produces agreement and two wrong answers",
-  "built": "2026-11-13 11:51:20",
+  "built": "2026-11-13 12:14:49",
   "category": "grocery",
   "mode": "walk",
   "validity": {
@@ -495,217 +495,571 @@
       {
         "brand": "Harris Teeter",
         "in_the_destination_list": 44,
-        "store_rows_not_in_it": 1,
-        "their_primaries": {
-          "(none)": 1
-        }
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Food Lion",
         "in_the_destination_list": 76,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Publix",
         "in_the_destination_list": 9,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 1,
         "their_primaries": {
           "(none)": 1
-        }
+        },
+        "excluded_row_names": [
+          "Publix Super Market at Buffaloe Bend"
+        ]
       },
       {
         "brand": "Kroger",
         "in_the_destination_list": 3,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 1,
         "their_primaries": {
           "department_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "Kroger"
+        ]
       },
       {
         "brand": "Aldi",
         "in_the_destination_list": 9,
-        "store_rows_not_in_it": 6,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 5,
         "their_primaries": {
-          "discount_store": 5,
-          "(none)": 1
-        }
+          "discount_store": 5
+        },
+        "excluded_row_names": [
+          "Aldi",
+          "Aldi",
+          "Aldi",
+          "Aldi",
+          "Aldi"
+        ]
       },
       {
         "brand": "Lidl",
         "in_the_destination_list": 7,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 1,
         "their_primaries": {
           "discount_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "Lidl"
+        ]
       },
       {
         "brand": "Trader Joe",
-        "in_the_destination_list": 4,
+        "in_the_destination_list": 2,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 1,
         "their_primaries": {
           "specialty_foods_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "Trader Joe's"
+        ]
       },
       {
         "brand": "Whole Foods",
         "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 5,
         "their_primaries": {
           "specialty_foods_store": 5
-        }
+        },
+        "excluded_row_names": [
+          "Whole Foods Market",
+          "Whole Foods Market",
+          "Whole Foods Market",
+          "Whole Foods Market",
+          "Whole Foods Market"
+        ]
       },
       {
-        "brand": "Walmart Supercenter",
-        "in_the_destination_list": 0,
-        "store_rows_not_in_it": 3,
+        "brand": "Walmart",
+        "in_the_destination_list": 14,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 12,
         "their_primaries": {
-          "superstore": 1,
-          "department_store": 1,
-          "warehouse_club_store": 1
-        }
+          "superstore": 4,
+          "department_store": 6,
+          "warehouse_club_store": 1,
+          "(none)": 1
+        },
+        "excluded_row_names": [
+          "Walmart Supercenter",
+          "Walmart",
+          "Walmart Supercenter",
+          "Walmart",
+          "Walmart",
+          "Walmart Supercenter"
+        ]
       },
       {
-        "brand": "Walmart Neighborhood",
-        "in_the_destination_list": 3,
-        "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "brand": "Wal-Mart",
+        "in_the_destination_list": 0,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "superstore": 1
+        },
+        "excluded_row_names": [
+          "Wal-Mart"
+        ]
       },
       {
         "brand": "Target",
         "in_the_destination_list": 0,
-        "store_rows_not_in_it": 16,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 15,
         "their_primaries": {
-          "department_store": 16
-        }
+          "department_store": 15
+        },
+        "excluded_row_names": [
+          "Target",
+          "Target",
+          "Target Grocery",
+          "Target",
+          "Target",
+          "Target"
+        ]
       },
       {
         "brand": "Wegmans",
         "in_the_destination_list": 4,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Weaver Street",
-        "in_the_destination_list": 3,
+        "in_the_destination_list": 2,
+        "in_the_list_but_not_a_store_row": 1,
         "store_rows_not_in_it": 3,
         "their_primaries": {
           "specialty_foods_store": 3
-        }
+        },
+        "excluded_row_names": [
+          "Weaver Street Market",
+          "Weaver Street Market",
+          "Weaver Street Market"
+        ]
       },
       {
         "brand": "Sprouts",
         "in_the_destination_list": 2,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Fresh Market",
         "in_the_destination_list": 7,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Compare Foods",
         "in_the_destination_list": 4,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 1,
         "their_primaries": {
           "specialty_foods_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "Super Compare Foods"
+        ]
       },
       {
         "brand": "Grand Asia",
         "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "H Mart",
         "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 0,
-        "their_primaries": {}
+        "their_primaries": {},
+        "excluded_row_names": []
       },
       {
         "brand": "Costco",
         "in_the_destination_list": 0,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 3,
         "their_primaries": {
           "wholesale_grocer": 2,
           "warehouse_club_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "Costco",
+          "Costco",
+          "Costco"
+        ]
       },
       {
         "brand": "Sam's Club",
         "in_the_destination_list": 0,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 2,
         "their_primaries": {
           "warehouse_club_store": 2
-        }
+        },
+        "excluded_row_names": [
+          "Raleigh, S. Saunders Sam's Club",
+          "Sam's Club"
+        ]
       },
       {
         "brand": "BJ's",
         "in_the_destination_list": 0,
+        "in_the_list_but_not_a_store_row": 0,
         "store_rows_not_in_it": 5,
         "their_primaries": {
           "wholesale_grocer": 4,
           "warehouse_club_store": 1
-        }
+        },
+        "excluded_row_names": [
+          "BJ's Wholesale Club",
+          "BJ's Wholesale Club",
+          "BJ's Wholesale Club",
+          "BJ's Wholesale Club",
+          "BJ's Wholesale Club"
+        ]
+      },
+      {
+        "brand": "Lowes Foods",
+        "in_the_destination_list": 18,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
+      },
+      {
+        "brand": "Carlie",
+        "in_the_destination_list": 4,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
+      },
+      {
+        "brand": "Save A Lot",
+        "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
+      },
+      {
+        "brand": "Chatham Marketplace",
+        "in_the_destination_list": 0,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 1,
+        "their_primaries": {
+          "specialty_foods_store": 1
+        },
+        "excluded_row_names": [
+          "Chatham Marketplace"
+        ]
+      },
+      {
+        "brand": "Li Ming",
+        "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
+      },
+      {
+        "brand": "Food World",
+        "in_the_destination_list": 1,
+        "in_the_list_but_not_a_store_row": 0,
+        "store_rows_not_in_it": 0,
+        "their_primaries": {},
+        "excluded_row_names": []
       }
     ],
     "brands_with_no_store_in_the_destination_list": [
-      "Walmart Supercenter",
+      "Wal-Mart",
       "Target",
       "Costco",
       "Sam's Club",
-      "BJ's"
+      "BJ's",
+      "Chatham Marketplace"
     ],
-    "brands_split_across_the_wedge": [
-      "Harris Teeter",
+    "brands_with_store_rows_on_both_sides": [
       "Publix",
       "Kroger",
       "Aldi",
       "Lidl",
       "Trader Joe",
       "Whole Foods",
+      "Walmart",
       "Weaver Street",
       "Compare Foods"
     ],
-    "why_split_matters": "a chain on both sides means the wedge admits some branches and not others, so two households the same distance from the same chain get different answers -- arbitrary rather than conservative",
-    "name_matching_caveat": "a brand name also appears on concessions inside a store -- a money-transfer desk, a fuel station, a pharmacy -- so rows are restricted to primaries that can be the store itself, and the counts are still an upper bound",
-    "store_rows_a_brand_definition_would_add": 49
+    "what_both_sides_does_and_does_not_mean": "rows on both sides is NOT by itself a split chain. Pass 45 F2 checked each: Harris Teeter's only excluded row was a fuel centre; Lidl's excluded store shares an address with an INCLUDED record whose brand is Lidl, so that branch is already represented; Kroger's excluded record sits 13 m from an included Harris Teeter, so its current identity is unresolved. Real taxonomy inconsistency remains after those are removed, but the branch-level claim does not follow from this table",
+    "name_matching_caveat": "whole-word matching plus a not-the-store name filter, after pass 45 F2 found a mariachi band counted as an Aldi branch (Garib-ALDI), a pharmaceutical company counted as a Target, and a fuel centre counted as a Harris Teeter. Genuine collisions remain -- 'Las Carolinas Fresh Market' really does contain 'Fresh Market' -- and the counts are still records, not physical stores: nothing here deduplicates two rows for one shop",
+    "store_rows_a_brand_definition_would_add": 57
   },
   "impact": {
     "structures": 512633,
     "destination_nodes": {
       "published": 510,
-      "open_only": 503,
+      "without_flagged_records": 503,
+      "explicitly_open_only": 411,
       "plus_unmatched_osm": 538,
-      "plus_household_brands": 557
+      "plus_household_brands": 563
     },
+    "nodes_changed_against_published": {
+      "without_flagged_records": {
+        "removed": 7,
+        "added": 0
+      },
+      "explicitly_open_only": {
+        "removed": 99,
+        "added": 0
+      },
+      "plus_unmatched_osm": {
+        "removed": 0,
+        "added": 28
+      },
+      "plus_household_brands": {
+        "removed": 0,
+        "added": 53
+      }
+    },
+    "units": "'direct' evaluates each structure's own coordinate, 'cell' evaluates the centre of the cell that structure falls in, which is what the product publishes for it",
     "thresholds": {
       "10": {
-        "included_as_published": 78627,
-        "structures_served_only_by_a_closed_grocery": 1473,
-        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 4551,
-        "structures_that_would_gain_from_a_brand_based_definition": 4318
+        "direct": {
+          "included_as_published": 78627,
+          "without_flagged_records": {
+            "lost_inclusion": 1473,
+            "gained_inclusion": 14,
+            "net": -1459
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 11962,
+            "gained_inclusion": 11,
+            "net": -11951
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 1,
+            "gained_inclusion": 4551,
+            "net": 4550
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 69,
+            "gained_inclusion": 3912,
+            "net": 3843
+          },
+          "gains_in_both_osm_and_brand_sets": 2490,
+          "gains_in_either": 5973
+        },
+        "cell": {
+          "included_as_published": 80067,
+          "without_flagged_records": {
+            "lost_inclusion": 1568,
+            "gained_inclusion": 9,
+            "net": -1559
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 12057,
+            "gained_inclusion": 11,
+            "net": -12046
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 3,
+            "gained_inclusion": 4619,
+            "net": 4616
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 84,
+            "gained_inclusion": 4014,
+            "net": 3930
+          },
+          "gains_in_both_osm_and_brand_sets": 2544,
+          "gains_in_either": 6089
+        }
       },
       "15": {
-        "included_as_published": 162699,
-        "structures_served_only_by_a_closed_grocery": 1979,
-        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 6455,
-        "structures_that_would_gain_from_a_brand_based_definition": 7128
+        "direct": {
+          "included_as_published": 162699,
+          "without_flagged_records": {
+            "lost_inclusion": 1979,
+            "gained_inclusion": 0,
+            "net": -1979
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 16867,
+            "gained_inclusion": 29,
+            "net": -16838
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 5,
+            "gained_inclusion": 6455,
+            "net": 6450
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 32,
+            "gained_inclusion": 6325,
+            "net": 6293
+          },
+          "gains_in_both_osm_and_brand_sets": 4409,
+          "gains_in_either": 8371
+        },
+        "cell": {
+          "included_as_published": 163875,
+          "without_flagged_records": {
+            "lost_inclusion": 2073,
+            "gained_inclusion": 0,
+            "net": -2073
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 16798,
+            "gained_inclusion": 21,
+            "net": -16777
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 6364,
+            "net": 6364
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 15,
+            "gained_inclusion": 6222,
+            "net": 6207
+          },
+          "gains_in_both_osm_and_brand_sets": 4361,
+          "gains_in_either": 8225
+        }
       },
       "25": {
-        "included_as_published": 298236,
-        "structures_served_only_by_a_closed_grocery": 963,
-        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 7450,
-        "structures_that_would_gain_from_a_brand_based_definition": 10411
+        "direct": {
+          "included_as_published": 298236,
+          "without_flagged_records": {
+            "lost_inclusion": 963,
+            "gained_inclusion": 0,
+            "net": -963
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 11811,
+            "gained_inclusion": 18,
+            "net": -11793
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 7450,
+            "net": 7450
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 5,
+            "gained_inclusion": 8243,
+            "net": 8238
+          },
+          "gains_in_both_osm_and_brand_sets": 5454,
+          "gains_in_either": 10239
+        },
+        "cell": {
+          "included_as_published": 298716,
+          "without_flagged_records": {
+            "lost_inclusion": 950,
+            "gained_inclusion": 0,
+            "net": -950
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 11768,
+            "gained_inclusion": 27,
+            "net": -11741
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 7417,
+            "net": 7417
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 7,
+            "gained_inclusion": 8156,
+            "net": 8149
+          },
+          "gains_in_both_osm_and_brand_sets": 5369,
+          "gains_in_either": 10204
+        }
       },
       "45": {
-        "included_as_published": 424650,
-        "structures_served_only_by_a_closed_grocery": 0,
-        "structures_that_would_gain_if_the_unmatched_osm_shops_are_real": 5595,
-        "structures_that_would_gain_from_a_brand_based_definition": 5566
+        "direct": {
+          "included_as_published": 424650,
+          "without_flagged_records": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 0,
+            "net": 0
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 4832,
+            "gained_inclusion": 0,
+            "net": -4832
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 5595,
+            "net": 5595
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 5947,
+            "net": 5947
+          },
+          "gains_in_both_osm_and_brand_sets": 5169,
+          "gains_in_either": 6373
+        },
+        "cell": {
+          "included_as_published": 424886,
+          "without_flagged_records": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 0,
+            "net": 0
+          },
+          "explicitly_open_only": {
+            "lost_inclusion": 4823,
+            "gained_inclusion": 0,
+            "net": -4823
+          },
+          "plus_unmatched_osm": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 5557,
+            "net": 5557
+          },
+          "plus_household_brands": {
+            "lost_inclusion": 0,
+            "gained_inclusion": 5909,
+            "net": 5909
+          },
+          "gains_in_both_osm_and_brand_sets": 5114,
+          "gains_in_either": 6352
+        }
       }
     }
   }

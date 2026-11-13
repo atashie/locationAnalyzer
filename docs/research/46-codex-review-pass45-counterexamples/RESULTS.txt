@@ -1,0 +1,185 @@
+--- f3_adding_a_destination_can_lengthen_the_reported_time
+{
+  "one_destination_seconds": 500.0,
+  "two_destinations_seconds": 650.0,
+  "adding_a_destination_made_it_slower": true,
+  "a_ten_minute_verdict_flips": true
+}
+--- f2_the_matcher_no_longer_admits_nonstores
+{
+  "brand_hit": {
+    "Mariachi Garibaldi NC vs Aldi": true,
+    "ALDI #123 vs Aldi": true,
+    "Las Carolinas Fresh Market vs Fresh Market": true
+  },
+  "is_the_store": {
+    "Harris Teeter Fuel Center": false,
+    "TARGET PharmaSolutions": false,
+    "Weaver Street Market Administration": false,
+    "Harris Teeter": true
+  },
+  "all_as_expected": true
+}
+--- f1_the_flagged_records_have_corroboration_against_them
+{
+  "records": [
+    {
+      "name": "La Tiendita Market",
+      "nearest_open_of_ours": "Green Berry Llc",
+      "metres": 29.5,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Kinstar International Food Inc",
+      "nearest_open_of_ours": "Little India",
+      "metres": 19.8,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Carolina Cupboard",
+      "nearest_open_of_ours": "Southern Season",
+      "metres": 0.0,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Longview Poole Road",
+      "nearest_open_of_ours": "Family Fare",
+      "metres": 507.7,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Kroger",
+      "nearest_open_of_ours": "Harris Teeter",
+      "metres": 16.2,
+      "flag_source": [
+        "Overture-signals"
+      ]
+    },
+    {
+      "name": "Bell Tower Mart",
+      "nearest_open_of_ours": "Cameron Village ABC Store",
+      "metres": 528.0,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Jinja Fair Trade Llc",
+      "nearest_open_of_ours": "Food Lion",
+      "metres": 416.6,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "Roofing Inc.",
+      "nearest_open_of_ours": "Food Lion",
+      "metres": 524.6,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    },
+    {
+      "name": "La Nueva Mexicana",
+      "nearest_open_of_ours": "La Esmeralda Tienda Latina",
+      "metres": 1241.5,
+      "flag_source": [
+        "BrightQuery"
+      ]
+    }
+  ],
+  "flag_provenance": {
+    "BrightQuery": 8,
+    "Overture-signals": 1
+  },
+  "within_150m_of_an_open_destination": 4
+}
+--- routed_figures_from_the_artifact
+{
+  "destination_nodes": {
+    "published": 510,
+    "without_flagged_records": 503,
+    "explicitly_open_only": 411,
+    "plus_unmatched_osm": 538,
+    "plus_household_brands": 563
+  },
+  "nodes_changed": {
+    "without_flagged_records": {
+      "removed": 7,
+      "added": 0
+    },
+    "explicitly_open_only": {
+      "removed": 99,
+      "added": 0
+    },
+    "plus_unmatched_osm": {
+      "removed": 0,
+      "added": 28
+    },
+    "plus_household_brands": {
+      "removed": 0,
+      "added": 53
+    }
+  },
+  "at_ten_minutes": {
+    "direct": {
+      "included_as_published": 78627,
+      "without_flagged_records": {
+        "lost_inclusion": 1473,
+        "gained_inclusion": 14,
+        "net": -1459
+      },
+      "explicitly_open_only": {
+        "lost_inclusion": 11962,
+        "gained_inclusion": 11,
+        "net": -11951
+      },
+      "plus_unmatched_osm": {
+        "lost_inclusion": 1,
+        "gained_inclusion": 4551,
+        "net": 4550
+      },
+      "plus_household_brands": {
+        "lost_inclusion": 69,
+        "gained_inclusion": 3912,
+        "net": 3843
+      },
+      "gains_in_both_osm_and_brand_sets": 2490,
+      "gains_in_either": 5973
+    },
+    "cell": {
+      "included_as_published": 80067,
+      "without_flagged_records": {
+        "lost_inclusion": 1568,
+        "gained_inclusion": 9,
+        "net": -1559
+      },
+      "explicitly_open_only": {
+        "lost_inclusion": 12057,
+        "gained_inclusion": 11,
+        "net": -12046
+      },
+      "plus_unmatched_osm": {
+        "lost_inclusion": 3,
+        "gained_inclusion": 4619,
+        "net": 4616
+      },
+      "plus_household_brands": {
+        "lost_inclusion": 84,
+        "gained_inclusion": 4014,
+        "net": 3930
+      },
+      "gains_in_both_osm_and_brand_sets": 2544,
+      "gains_in_either": 6089
+    }
+  },
+  "brand_rows_added": 57
+}

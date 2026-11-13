@@ -210,10 +210,10 @@ destination actually used, date, and outcome.
 > alike, so the export collapses UNKNOWN into EXCLUDED and the three-outcome algebra S0 built the
 > `Reason` enum for does not reach the browser. That is the larger of the two and it still belongs
 > to step 6.
-| 7 | **DESTINATION HALF DONE 2026-11-13**, geocoding half not started. **Grocery and geocoding truth audit** — destination validity, resolution, coverage. Results in `docs/experiments/s3-7-destination-truth.md`; owner sheet in `docs/experiments/audit/s3-7-destinations-to-check.csv`. **Two defects and one decision**: `operating_status` is unread, so **9 permanently-closed places are published as grocery destinations** and 1,473 structures are included at *T* = 10 only because of one; the grocery wedge rejects **Walmart Supercenter, Target, Costco, Sam's Club and BJ's entirely** and **splits nine chains** across it, Overture having all of them under `superstore`, `department_store`, `discount_store`, `wholesale_grocer` or `specialty_foods_store`; and resolution is fine (549 of 550 inside the cap, 75 sharing a node) | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
+| 7 | **DESTINATION SCREENING PASS DONE 2026-11-13, validation outstanding**; geocoding half not started. **Grocery and geocoding truth audit** — destination validity, resolution, coverage. Results in `docs/experiments/s3-7-destination-truth.md`, owner sheet in `docs/experiments/audit/s3-7-destinations-to-check.csv`, reviewed as Codex pass 45 (3 High). **One defect and one decision, both needing someone who can look**: `operating_status` and `confidence` are unread anywhere, and **9 records carry a closure flag** (8 BrightQuery, 1 Overture-signals) whose removal deletes 7 destination nodes and costs 1,473 structures their inclusion at *T* = 10 — but **4 of the 9 sit within 150 m of an open destination we already publish**, so these are flagged records rather than verified closures and must not be filtered on this evidence; and the grocery wedge admits **Walmart Neighborhood Markets while rejecting 4 `superstore` rows of the same chain**, with Target, Costco, Sam's Club and BJ's absent entirely | 1-2 days + owner checking | shared-source and wrong-place failures invisible to engine agreement |
 
-> **OUTCOME, 2026-11-13: step 7's destination half ran, and it found what §3's blind spot
-> predicted — in data we had already ingested.** `v2/scripts/audit_destination_truth.py`,
+> **OUTCOME, 2026-11-13: step 7's destination screening pass ran, and Codex pass 45
+> refuted several of its interpretations. Rewritten; the surviving claims are narrower.** `v2/scripts/audit_destination_truth.py`,
 > `docs/experiments/s3-7-destination-truth.md` and `.json`.
 >
 > **A defect that needs an amendment, not a patch.** Overture publishes `operating_status` and
@@ -247,6 +247,34 @@ destination actually used, date, and outcome.
 >
 > **Resolution is not the problem**: 549 of 550 places snap inside the 300 m cap, 510 distinct
 > nodes, 75 places sharing a node with another and a largest share of 3.
+>
+>
+> **Corrected after pass 45, which reproduced every number and broke several readings of them.**
+> "Nine closed grocery destinations" is withdrawn: those are nine **flagged records**, 8 from
+> BrightQuery and one from Overture-signals, and **four of the nine sit within 150 m of an open
+> destination we already publish** — the Kroger site is an operating Harris Teeter already in the
+> list, on the same destination node. Removing all nine deletes **7 nodes**, not nine. They must
+> **not** be filtered on this evidence; an amendment needs corroboration per record or a measured
+> error rate, and it has to say what it does with the **106 records carrying no status at all**,
+> whose exclusion would cost 11,962 structures at *T* = 10 rather than 1,473.
+>
+> "Nine chains split across the wedge" is withdrawn as a branch-level claim: Harris Teeter's only
+> excluded row was a **fuel centre**, Lidl's excluded store shares an address with an included
+> Lidl-branded record, and the matcher counted **Mariachi Garib-ALDI- NC** as an Aldi branch and
+> **TARGET PharmaSolutions** as a Target. What survives is sharper and smaller — **Walmart
+> Neighborhood Markets are destinations while 4 `superstore` rows of the same chain are not**.
+>
+> And the impact function asserted a monotonicity that is **false for this project's own central
+> reason**: the search minimises cost and reports time, so adding a destination can lengthen the
+> reported journey. 69 structures **lose** inclusion from the brand addition at *T* = 10. Every
+> figure now carries both directions, and both evaluation units — the structure's coordinate and
+> the cell centre the product actually publishes for it.
+>
+> "Resolution is not the problem" is withdrawn too: 75 places sharing a node have equal times
+> **because the representation makes them equal**, and a Publix whose Overture and OSM records sit
+> 354 m apart is an unresolved coordinate question. The 28-row OSM sheet is a count of spatially
+> unmatched records under a heuristic that **masks** at least four real identity disagreements, and
+> `fetch_places.py` never acquires `shop=grocery`, so that stratum was never downloaded.
 >
 > **Still owed on step 7:** the **geocoding** half — whether a household's address resolves to the
 > right cell — is not started. And nothing here measures whether an *open* store is usable on

@@ -40,6 +40,7 @@ import argparse
 import csv
 import json
 import pathlib
+import re
 import sys
 import time
 from collections import Counter
@@ -64,10 +65,22 @@ from locfinder.status import Verdict                               # noqa: E402
 #: "does our destination list contain the shops people actually buy food at".
 HOUSEHOLD_BRANDS = (
     "Harris Teeter", "Food Lion", "Publix", "Kroger", "Aldi", "Lidl", "Trader Joe",
-    "Whole Foods", "Walmart Supercenter", "Walmart Neighborhood", "Target", "Wegmans",
+    "Whole Foods", "Walmart", "Wal-Mart", "Target", "Wegmans",
     "Weaver Street", "Sprouts", "Fresh Market", "Compare Foods", "Grand Asia", "H Mart",
     "Costco", "Sam's Club", "BJ's",
+    # Pass 45 F6: the first list omitted chains that are PRESENT AND SELECTED, so the table read
+    # as a list of failures rather than a coverage picture. These are here to be counted on the
+    # "in the destination list" side as much as the other.
+    "Lowes Foods", "Carlie", "Save A Lot", "Chatham Marketplace", "Li Ming", "Food World",
 )
+
+#: Name fragments that mean the row is **not the store** even though it carries the brand.
+#: Pass 45 F2: `STORE_PRIMARIES` admitting `None` let in "Harris Teeter Fuel Center", and
+#: `department_store` let in "TARGET PharmaSolutions", a pharmaceutical company. An included
+#: "Weaver Street Market Administration" row is the same error on the other side of the wedge.
+NOT_THE_STORE = ("fuel", "gas station", "pharmasolutions", "administration", "corporate",
+                 "office", "optical", "vision", "pharmacy", "wireless", "money", "atm",
+                 "distribution", "warehouse club services")
 
 #: Primaries that can plausibly be the store itself rather than a concession inside it. A brand
 #: name alone is not enough: "WALMART #003182" is a money-transfer desk and "Harris Teeter Fuel"
@@ -90,6 +103,22 @@ SAME_SHOP_M = 300.0
 V2 = pathlib.Path(__file__).resolve().parents[1]
 ARTIFACT = V2.parent / "docs" / "experiments" / "s3-7-destination-truth.json"
 SHEET = V2.parent / "docs" / "experiments" / "audit" / "s3-7-destinations-to-check.csv"
+
+
+def brand_hit(name: str, brand: str) -> bool:
+    """Whole-word brand matching, and not a substring.
+
+    Pass 45 F2: `"aldi" in name.lower()` matched **Mariachi Garib-ALDI-** NC and counted a mariachi
+    band as an omitted Aldi branch. A word boundary fixes that class. It does not fix a genuine
+    name collision -- "Las Carolinas Fresh Market" still matches "Fresh Market", because it really
+    does contain that phrase -- so the collision is disclosed rather than regexed away.
+    """
+    return re.search(rf"(?<![A-Za-z]){re.escape(brand)}(?![A-Za-z])", name, re.IGNORECASE) is not None
+
+
+def is_the_store(name: str) -> bool:
+    low = name.lower()
+    return not any(frag in low for frag in NOT_THE_STORE)
 
 
 def overture_name(names) -> str:
@@ -245,35 +274,49 @@ def brand_coverage(grocery: gpd.GeoDataFrame, ov_inside: gpd.GeoDataFrame) -> di
 
     rows = []
     for brand in HOUSEHOLD_BRANDS:
-        low = brand.lower()
-        hits = [k for k, n in enumerate(names) if low in n.lower()]
+        hits = [k for k, n in enumerate(names) if brand_hit(n, brand)]
         if not hits:
             continue
-        inside_n = sum(1 for k in hits if in_wedge[k])
-        outside = [k for k in hits if not in_wedge[k] and prims[k] in STORE_PRIMARIES]
+        inside_n = sum(1 for k in hits if in_wedge[k] and is_the_store(names[k]))
+        inside_not_store = sum(1 for k in hits if in_wedge[k] and not is_the_store(names[k]))
+        outside = [k for k in hits if not in_wedge[k] and prims[k] in STORE_PRIMARIES
+                   and is_the_store(names[k])]
         if inside_n == 0 and not outside:
             continue
         rows.append({
             "brand": brand,
             "in_the_destination_list": inside_n,
+            "in_the_list_but_not_a_store_row": inside_not_store,
             "store_rows_not_in_it": len(outside),
             "their_primaries": dict(Counter(p or "(none)" for p in (prims[k] for k in outside))),
+            "excluded_row_names": [names[k] for k in outside][:6],
         })
     absent = [r["brand"] for r in rows
               if r["in_the_destination_list"] == 0 and r["store_rows_not_in_it"] > 0]
+    # Pass 45 F2: a chain with rows on both sides is not necessarily a chain whose BRANCHES are
+    # split -- the excluded row may be a concession, a duplicate representation of an included
+    # branch, or a stale record. This counter is therefore named for what it measures.
     split = [r["brand"] for r in rows
              if r["in_the_destination_list"] > 0 and r["store_rows_not_in_it"] > 0]
     return {
         "brands": rows,
         "brands_with_no_store_in_the_destination_list": absent,
-        "brands_split_across_the_wedge": split,
-        "why_split_matters": ("a chain on both sides means the wedge admits some branches and "
-                              "not others, so two households the same distance from the same "
-                              "chain get different answers -- arbitrary rather than conservative"),
-        "name_matching_caveat": ("a brand name also appears on concessions inside a store -- a "
-                                 "money-transfer desk, a fuel station, a pharmacy -- so rows are "
-                                 "restricted to primaries that can be the store itself, and the "
-                                 "counts are still an upper bound"),
+        "brands_with_store_rows_on_both_sides": split,
+        "what_both_sides_does_and_does_not_mean": (
+            "rows on both sides is NOT by itself a split chain. Pass 45 F2 checked each: Harris "
+            "Teeter's only excluded row was a fuel centre; Lidl's excluded store shares an "
+            "address with an INCLUDED record whose brand is Lidl, so that branch is already "
+            "represented; Kroger's excluded record sits 13 m from an included Harris Teeter, so "
+            "its current identity is unresolved. Real taxonomy inconsistency remains after those "
+            "are removed, but the branch-level claim does not follow from this table"),
+        "name_matching_caveat": ("whole-word matching plus a not-the-store name filter, after "
+                                 "pass 45 F2 found a mariachi band counted as an Aldi branch "
+                                 "(Garib-ALDI), a pharmaceutical company counted as a Target, and "
+                                 "a fuel centre counted as a Harris Teeter. Genuine collisions "
+                                 "remain -- 'Las Carolinas Fresh Market' really does contain "
+                                 "'Fresh Market' -- and the counts are still records, not "
+                                 "physical stores: nothing here deduplicates two rows for one "
+                                 "shop"),
     }
 
 
@@ -286,8 +329,7 @@ def brand_candidates(ov_inside: gpd.GeoDataFrame, grocery: gpd.GeoDataFrame):
     for k, (name, prim, pid) in enumerate(zip(names, prims, ov_inside["id"])):
         if pid in ids or prim not in STORE_PRIMARIES:
             continue
-        low = name.lower()
-        if any(b.lower() in low for b in HOUSEHOLD_BRANDS):
+        if is_the_store(name) and any(brand_hit(name, b) for b in HOUSEHOLD_BRANDS):
             keep.append(k)
     return ov_inside.iloc[keep]
 
@@ -305,10 +347,19 @@ def destination_nodes(G, index, points) -> list[int]:
 
 
 def impact(G, csr, index, grocery, osm_unmatched, grid, limit=None, brand_frame=None) -> dict:
-    """Verdicts at the structure population under three destination sets.
+    """Verdicts under four destination sets, at structure coordinates **and** at cell centres.
 
-    Removing destinations can only lengthen a time, and adding them can only shorten one, so each
-    comparison has a direction and the direction is what makes it a harm statement.
+    **The monotonicity this used to assert is false, and the reason is this project's central
+    distinction.** The docstring said "removing destinations can only lengthen a time, and adding
+    them can only shorten one". Pass 45 F3 refuted it in three lines: the search minimises **cost**
+    and reports **time**, so adding a cheaper destination can select a slower journey. On costs
+    `(700, 650)` with times `(500, 650)`, adding the second destination turns 500 s into 650 s --
+    a ten-minute pass into a fail. So every comparison below reports **both** directions, and
+    "served only by" is replaced with a transition count.
+
+    The two evaluation units are both reported because step 5 measured them differing on 2.2-2.5%
+    of structures: the coordinate answer is model sensitivity, and the containing cell's answer is
+    what the product publishes for that structure.
     """
     from locfinder.status import (CATEGORY_COST_SELECTED, Criterion, Reason,  # noqa: PLC0415
                                   Surface, evaluate)
@@ -332,42 +383,78 @@ def impact(G, csr, index, grocery, osm_unmatched, grid, limit=None, brand_frame=
     plus_osm = sorted(set(published) | set(destination_nodes(
         G, index, list(osm_unmatched.geometry.centroid.values))))
 
-    def surface_for(dest):
+    # Each structure's containing cell centre, for the published-answer unit.
+    col = np.floor((pts[:, 0] - grid.x_min) / grid.cell_m)
+    row = np.floor((grid.y_max - pts[:, 1]) / grid.cell_m)
+    cx = grid.x_min + (np.clip(col, 0, grid.ncols - 1) + 0.5) * grid.cell_m
+    cy = grid.y_max - (np.clip(row, 0, grid.nrows - 1) + 0.5) * grid.cell_m
+
+    def surface_for(dest, at_cell_centres=False):
         T = arrival_seconds_two_weight(cost_csr, time_csr, dest_idx=dest)
         node_cost = arrival_seconds(cost_csr, dest_idx=dest)
         reasons = node_reasons(T, ENGINES["own-graph"], search_bounded=False)
+        xs, ys = (cx, cy) if at_cell_centres else (pts[:, 0], pts[:, 1])
         secs, reason, lower = cell_arrival_with_provenance(
-            idx, T, pts[:, 0], pts[:, 1], mode=MODE, max_access_m=200.0, horizon_s=7200.0,
+            idx, T, xs, ys, mode=MODE, max_access_m=200.0, horizon_s=7200.0,
             node_reason=reasons, node_cost=node_cost)
         return Surface(mode=MODE, engine="own-graph", target=CATEGORY,
                        aggregation=CATEGORY_COST_SELECTED, horizon_s=7200.0,
                        seconds=secs, reason=reason, min_possible_s=lower).validate()
 
+    explicit_open = destination_nodes(
+        G, index, list(cen[np.array([str(s) == "open" for s in grocery["operating_status"]])]
+                       .values))
     plus_brands = sorted(set(published) | set(destination_nodes(
         G, index, list(brand_frame.geometry.centroid.values)))) if brand_frame is not None \
         else published
-    surfaces = {"published": surface_for(published), "open_only": surface_for(open_only),
-                "plus_unmatched_osm": surface_for(plus_osm),
-                "plus_household_brands": surface_for(plus_brands)}
+    sets = {"published": published,
+            # Pass 45: "open_only" was a misleading name -- it keeps the 106 records with NO
+            # status. That is the right counterfactual for "remove the flagged records", and it is
+            # now named for that. The much stricter "only records explicitly marked open" is
+            # reported beside it, because the two differ by an order of magnitude.
+            "without_flagged_records": open_only,
+            "explicitly_open_only": explicit_open,
+            "plus_unmatched_osm": plus_osm,
+            "plus_household_brands": plus_brands}
+    surfaces = {k: surface_for(v) for k, v in sets.items()}
+    cell_surfaces = {k: surface_for(v, at_cell_centres=True) for k, v in sets.items()}
     out = {"structures": int(len(pts)),
-           "destination_nodes": {"published": len(published), "open_only": len(open_only),
-                                 "plus_unmatched_osm": len(plus_osm),
-                                 "plus_household_brands": len(plus_brands)},
+           "destination_nodes": {k: len(v) for k, v in sets.items()},
+           "nodes_changed_against_published": {
+               k: {"removed": len(set(published) - set(v)), "added": len(set(v) - set(published))}
+               for k, v in sets.items() if k != "published"},
+           "units": ("'direct' evaluates each structure's own coordinate, 'cell' evaluates the "
+                     "centre of the cell that structure falls in, which is what the product "
+                     "publishes for it"),
            "thresholds": {}}
+    inc = int(Verdict.INCLUDED)
     for t_min in THRESHOLDS_MIN:
         crit = Criterion(label=f"g{t_min}", mode=MODE, target=CATEGORY, kind="category",
                          threshold_s=float(t_min) * 60.0)
-        v = {k: evaluate(crit, s) for k, s in surfaces.items()}
-        inc = int(Verdict.INCLUDED)
-        out["thresholds"][str(t_min)] = {
-            "included_as_published": int((v["published"] == inc).sum()),
-            "structures_served_only_by_a_closed_grocery":
-                int(((v["published"] == inc) & (v["open_only"] != inc)).sum()),
-            "structures_that_would_gain_if_the_unmatched_osm_shops_are_real":
-                int(((v["published"] != inc) & (v["plus_unmatched_osm"] == inc)).sum()),
-            "structures_that_would_gain_from_a_brand_based_definition":
-                int(((v["published"] != inc) & (v["plus_household_brands"] == inc)).sum()),
-        }
+        row_out = {}
+        for unit, surf_set in (("direct", surfaces), ("cell", cell_surfaces)):
+            v = {k: evaluate(crit, s) for k, s in surf_set.items()}
+            base = v["published"]
+            entry = {"included_as_published": int((base == inc).sum())}
+            for name in sets:
+                if name == "published":
+                    continue
+                # BOTH directions, because the cost/time split makes neither monotone.
+                entry[name] = {
+                    "lost_inclusion": int(((base == inc) & (v[name] != inc)).sum()),
+                    "gained_inclusion": int(((base != inc) & (v[name] == inc)).sum()),
+                }
+                entry[name]["net"] = (entry[name]["gained_inclusion"]
+                                      - entry[name]["lost_inclusion"])
+            # Pass 45 F: the two candidate additions were claimed to "overlap rather than add".
+            # That is a number, not an argument -- the top of the OSM sheet is the same stores the
+            # brand question is about, so the gain sets intersect.
+            gained_osm = (base != inc) & (v["plus_unmatched_osm"] == inc)
+            gained_brand = (base != inc) & (v["plus_household_brands"] == inc)
+            entry["gains_in_both_osm_and_brand_sets"] = int((gained_osm & gained_brand).sum())
+            entry["gains_in_either"] = int((gained_osm | gained_brand).sum())
+            row_out[unit] = entry
+        out["thresholds"][str(t_min)] = row_out
     return out
 
 
@@ -478,8 +565,8 @@ def print_summary(report: dict, args) -> None:
                       f"{', '.join(f'{k}x{v}' for k, v in r['their_primaries'].items())}")
         print(f"  NO store in the destination list: "
               f"{', '.join(b['brands_with_no_store_in_the_destination_list']) or 'none'}")
-        print(f"  SPLIT across the wedge (some branches in, some out): "
-              f"{', '.join(b['brands_split_across_the_wedge']) or 'none'}")
+        print(f"  store rows on BOTH sides (not the same as a split chain -- see the note): "
+              f"{', '.join(b['brands_with_store_rows_on_both_sides']) or 'none'}")
         print(f"  store rows a brand-based definition would add: "
               f"{b['store_rows_a_brand_definition_would_add']}")
 
@@ -491,14 +578,15 @@ def print_summary(report: dict, args) -> None:
 
     if "impact" in report:
         print(f"\nIMPACT over {report['impact']['structures']:,} structures:")
+        print(f"  nodes changed vs published: "
+              f"{report['impact']['nodes_changed_against_published']}")
         for t_min, row in report["impact"]["thresholds"].items():
-            print(f"  T={t_min:>2} min: {row['included_as_published']:,} included; "
-                  f"{row['structures_served_only_by_a_closed_grocery']:,} served ONLY by a "
-                  f"closed grocery; "
-                  f"{row['structures_that_would_gain_if_the_unmatched_osm_shops_are_real']:,} "
-                  f"would gain from the unmatched OSM shops; "
-                  f"{row['structures_that_would_gain_from_a_brand_based_definition']:,} "
-                  f"from a brand-based definition")
+            for unit in ("direct", "cell"):
+                e = row[unit]
+                bits = "  ".join(
+                    f"{k}: -{v['lost_inclusion']:,}/+{v['gained_inclusion']:,}"
+                    for k, v in e.items() if isinstance(v, dict))
+                print(f"  T={t_min:>2} {unit:6s} included {e['included_as_published']:,}   {bits}")
     print(f"\nwrote {args.out}")
 
 
