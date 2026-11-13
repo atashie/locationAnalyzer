@@ -1,5 +1,15 @@
 """Export REAL travel-time layers for the G3 browser-rendering spike.
 
+**Superseded for the product path, 2026-11-13 (S3.5).** `app.js` and `worker.js` now read
+`fixtures/published/` in the `published-v2` format, which carries a status plane beside the
+minutes. This exporter cannot produce one: it reads minute GeoTIFFs, and the reason and the bound
+were discarded before those were written, so every missing value it can emit is a bare `NODATA`.
+Its output is still the right artifact for the G1 engine comparison it was built for -- six
+engine/mode layers side by side -- and it is kept for that. It is **not** the product export;
+`scripts/export_published_layers.py` is. Two of this file's defects are therefore retired rather
+than fixed here: the `<engine>_<category>_<mode>` discovery rule that omitted
+`own_triangle_grocery_walk.tif`, and the 401 x 550 slice target.
+
 Reads the uint8 minutes-to-nearest-grocery GeoTIFFs already on disk under
 ``v2/data/layers/`` (grid contract: ``v2/locfinder/grid.py``, UTM 17N, 100 m
 cells, 550 x 401, NODATA=255), reprojects each to a regular WGS84 lon/lat

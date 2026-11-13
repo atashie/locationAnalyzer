@@ -1,0 +1,594 @@
+{
+  "encoding": "published-v2",
+  "generated_by": "v2/scripts/make_wire_vectors.py",
+  "why": "a Python round trip cannot protect the browser; these are replayed through the real worker by worker_conformance.mjs",
+  "status_codes": {
+    "0": "OK",
+    "1": "OFF_NETWORK",
+    "2": "BEYOND_HORIZON",
+    "3": "NO_PATH",
+    "4": "LAYER_UNKNOWN",
+    "5": "OUTSIDE",
+    "6": "UNKNOWN_CAUSE"
+  },
+  "groups": [
+    {
+      "name": "hand-built statuses",
+      "nrows": 1,
+      "ncols": 9,
+      "layers": [
+        {
+          "id": "hand",
+          "horizon_s": 15240.0,
+          "value_file": "hand.value.bin",
+          "status_file": "hand.status.bin"
+        }
+      ],
+      "cases": [
+        {
+          "name": "hand T=1",
+          "thresholds": [
+            1
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=3",
+          "thresholds": [
+            3
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            1,
+            1,
+            1,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=5",
+          "thresholds": [
+            5
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            1,
+            1,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=10",
+          "thresholds": [
+            10
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            1,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=11",
+          "thresholds": [
+            11
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=39",
+          "thresholds": [
+            39
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=40",
+          "thresholds": [
+            40
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=41",
+          "thresholds": [
+            41
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=120",
+          "thresholds": [
+            120
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "hand T=251",
+          "thresholds": [
+            251
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "hand T=252",
+          "thresholds": [
+            252
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "hand T=254",
+          "thresholds": [
+            254
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            0,
+            0,
+            2,
+            2,
+            1,
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "known failure beats unknown",
+      "nrows": 1,
+      "ncols": 2,
+      "layers": [
+        {
+          "id": "twoA",
+          "horizon_s": 7200.0,
+          "value_file": "twoA.value.bin",
+          "status_file": "twoA.status.bin"
+        },
+        {
+          "id": "twoB",
+          "horizon_s": 7200.0,
+          "value_file": "twoB.value.bin",
+          "status_file": "twoB.status.bin"
+        }
+      ],
+      "cases": [
+        {
+          "name": "both layers, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            true,
+            true
+          ],
+          "verdicts": [
+            1,
+            2
+          ]
+        },
+        {
+          "name": "layer A only, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            true,
+            false
+          ],
+          "verdicts": [
+            2,
+            0
+          ]
+        },
+        {
+          "name": "no criteria includes everything",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            false,
+            false
+          ],
+          "verdicts": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "every status code, including those no Surface can hold",
+      "nrows": 1,
+      "ncols": 5,
+      "layers": [
+        {
+          "id": "codes",
+          "horizon_s": 7200.0,
+          "value_file": "codes.value.bin",
+          "status_file": "codes.status.bin"
+        }
+      ],
+      "cases": [
+        {
+          "name": "codes T=1",
+          "thresholds": [
+            1
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            1,
+            2,
+            2,
+            2,
+            1
+          ]
+        },
+        {
+          "name": "codes T=5",
+          "thresholds": [
+            5
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            2,
+            2,
+            2,
+            1
+          ]
+        },
+        {
+          "name": "codes T=10",
+          "thresholds": [
+            10
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            2,
+            2,
+            2,
+            1
+          ]
+        },
+        {
+          "name": "codes T=40",
+          "thresholds": [
+            40
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        {
+          "name": "codes T=41",
+          "thresholds": [
+            41
+          ],
+          "enabled": [
+            true
+          ],
+          "verdicts": [
+            0,
+            2,
+            2,
+            2,
+            2
+          ]
+        }
+      ],
+      "status_codes_present": [
+        0,
+        1,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "published layer window at (0, 0)",
+      "nrows": 200,
+      "ncols": 200,
+      "layers": [
+        {
+          "id": "real",
+          "horizon_s": 7200.0,
+          "value_file": "real.value.bin",
+          "status_file": "real.status.bin"
+        }
+      ],
+      "cases": [
+        {
+          "name": "real window T=1",
+          "thresholds": [
+            1
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 21,
+            "excluded": 39979,
+            "unknown": 0
+          },
+          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473"
+        },
+        {
+          "name": "real window T=5",
+          "thresholds": [
+            5
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 285,
+            "excluded": 33675,
+            "unknown": 6040
+          },
+          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6"
+        },
+        {
+          "name": "real window T=10",
+          "thresholds": [
+            10
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 931,
+            "excluded": 31484,
+            "unknown": 7585
+          },
+          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8"
+        },
+        {
+          "name": "real window T=15",
+          "thresholds": [
+            15
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 1833,
+            "excluded": 30281,
+            "unknown": 7886
+          },
+          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1"
+        },
+        {
+          "name": "real window T=25",
+          "thresholds": [
+            25
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 4308,
+            "excluded": 27771,
+            "unknown": 7921
+          },
+          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577"
+        },
+        {
+          "name": "real window T=45",
+          "thresholds": [
+            45
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 11689,
+            "excluded": 20390,
+            "unknown": 7921
+          },
+          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1"
+        },
+        {
+          "name": "real window T=60",
+          "thresholds": [
+            60
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 18327,
+            "excluded": 13752,
+            "unknown": 7921
+          },
+          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe"
+        },
+        {
+          "name": "real window T=120",
+          "thresholds": [
+            120
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 31312,
+            "excluded": 767,
+            "unknown": 7921
+          },
+          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb"
+        },
+        {
+          "name": "real window T=121",
+          "thresholds": [
+            121
+          ],
+          "enabled": [
+            true
+          ],
+          "counts": {
+            "included": 31312,
+            "excluded": 0,
+            "unknown": 8688
+          },
+          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7"
+        }
+      ],
+      "status_codes_present": [
+        0,
+        1,
+        2
+      ]
+    }
+  ]
+}

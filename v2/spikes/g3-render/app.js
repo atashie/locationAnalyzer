@@ -16,6 +16,10 @@
 'use strict';
 
 (function () {
+  /** Where the published-v2 planes and manifest live. `fixtures/` still holds the v1 engine
+   *  comparison fixtures, which are a different artifact for a different question. */
+  const FIXTURES = 'fixtures/published';
+
   const $ = (id) => document.getElementById(id);
   const nowAbs = () => performance.timeOrigin + performance.now();
   const navStart = performance.now(); // ~0; kept for readability at call sites below
@@ -145,36 +149,47 @@
 
   async function loadFixtures() {
     const t0 = performance.now();
-    const manifestRes = await fetch('fixtures/manifest.json', { cache: 'no-store' });
-    if (!manifestRes.ok) throw new Error(`fixtures/manifest.json: HTTP ${manifestRes.status}`);
+    const manifestRes = await fetch(`${FIXTURES}/manifest.json`, { cache: 'no-store' });
+    if (!manifestRes.ok) throw new Error(`${FIXTURES}/manifest.json: HTTP ${manifestRes.status}`);
     const manifest = await manifestRes.json();
     if (!(manifest.nrows > 0 && manifest.ncols > 0 && Array.isArray(manifest.layers) && manifest.layers.length > 0)) {
       throw new Error('manifest.json missing nrows/ncols/layers');
     }
+    // The decoder refuses an encoding it does not know; say so here too, where the message can
+    // name the file, rather than letting the worker's refusal arrive without a path.
+    if (manifest.encoding !== 'published-v2') {
+      throw new Error(`${FIXTURES}/manifest.json carries encoding "${manifest.encoding}"; this `
+        + 'page decodes published-v2. Run scripts/export_published_layers.py.');
+    }
 
-    const buffers = await Promise.all(
-      manifest.layers.map(async (layer) => {
-        const res = await fetch(`fixtures/${layer.file}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`fixtures/${layer.file}: HTTP ${res.status}`);
-        return res.arrayBuffer();
-      }),
-    );
+    const fetchPlane = async (file) => {
+      const res = await fetch(`${FIXTURES}/${file}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${FIXTURES}/${file}: HTTP ${res.status}`);
+      return res.arrayBuffer();
+    };
+    const values = await Promise.all(manifest.layers.map((l) => fetchPlane(l.value_file)));
+    const statuses = await Promise.all(manifest.layers.map((l) => fetchPlane(l.status_file)));
 
     const expected = manifest.nrows * manifest.ncols;
-    buffers.forEach((buf, i) => {
-      if (buf.byteLength !== expected) {
-        throw new Error(`fixtures/${manifest.layers[i].file}: ${buf.byteLength} bytes, expected nrows*ncols=${expected}`);
-      }
+    [[values, 'value'], [statuses, 'status']].forEach(([bufs, what]) => {
+      bufs.forEach((buf, i) => {
+        if (buf.byteLength !== expected) {
+          throw new Error(`${FIXTURES}/${manifest.layers[i][`${what}_file`]}: ${buf.byteLength} bytes, expected nrows*ncols=${expected}`);
+        }
+      });
     });
 
     const t1 = performance.now();
+    const buffers = values.concat(statuses);
     const decodedBytes = buffers.reduce((a, b) => a + b.byteLength, 0);
 
     // Resource Timing: actual bytes moved over the network (same-origin, so transferSize is
     // populated without needing a Timing-Allow-Origin header). 0 for a cached/opaque response.
     let transferredBytes = 0;
     try {
-      const names = ['fixtures/manifest.json', ...manifest.layers.map((l) => `fixtures/${l.file}`)];
+      const names = [`${FIXTURES}/manifest.json`,
+        ...manifest.layers.flatMap((l) => [`${FIXTURES}/${l.value_file}`,
+          `${FIXTURES}/${l.status_file}`])];
       const entries = performance.getEntriesByType('resource');
       for (const name of names) {
         const entry = entries.find((e) => e.name.endsWith(name));
@@ -249,9 +264,9 @@
         }
       };
 
-      // buffers are listed both in the payload (so worker.js can read msg.buffers) and in the
-      // transfer list (so their memory moves instead of being structured-clone copied).
-      worker.postMessage({ type: 'init', manifest, buffers }, buffers);
+      // Each plane is listed in the payload (so worker.js can read it) and in the transfer list
+      // (so its memory moves instead of being structured-clone copied).
+      worker.postMessage({ type: 'init', manifest, values, statuses }, values.concat(statuses));
     });
   }
 
@@ -448,6 +463,10 @@
 
     state.lastMaskInCount = msg.inCount;
     state.lastNodataCount = msg.nodataCount;
+    // Three outcomes, counted separately. `nodataCount` is now UNKNOWN -- cells nothing in the
+    // published data settles -- and is no longer the same thing as "excluded", which v1 could not
+    // distinguish.
+    state.lastExcludedCount = msg.excludedCount;
 
     if (pending) {
       state.window.push({ totalMs, computeMs, transferMs });

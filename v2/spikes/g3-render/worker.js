@@ -1,20 +1,34 @@
 /* worker.js — G3 raster-algebra Web Worker (classic worker, no imports, no build step).
  *
- * Holds the six uint8 minute layers and, per request, computes
- *     mask[p] = AND over enabled layers k of (layer_k[p] <= threshold_k)
- * where the nodata value (manifest.nodata, 255) always FAILS, and separately counts cells
- * that are nodata in ANY enabled layer. It writes an RGBA buffer (in-region colour,
- * out-of-region transparent, nodata diagonally hatched) and transfers it to the main thread.
+ * Holds the published-v2 layers -- a VALUE plane and a STATUS plane each -- and per request
+ * computes a three-outcome verdict per cell, which is `locfinder/wire.py` transcribed:
+ *
+ *   per layer:  OK             -> value <= T ? PASS : FAIL
+ *               NO_PATH        -> FAIL
+ *               BEYOND_HORIZON -> horizon_s >= 60*T ? FAIL : UNKNOWN
+ *               OFF_NETWORK    -> value > T ? FAIL : UNKNOWN     (value is a LOWER BOUND here)
+ *               LAYER_UNKNOWN / OUTSIDE -> UNKNOWN
+ *   combined:   any FAIL -> EXCLUDED;  else any UNKNOWN -> UNKNOWN;  else INCLUDED
+ *
+ * **One known failure beats any number of unknowns.** The previous version broke out of the layer
+ * loop on the first missing value, which is that rule inverted: a cell unknown in one layer and
+ * excluded in another came out unknown. It also had a single `nodata` code, so a cell past the
+ * built horizon -- a known failure at any threshold below it -- was indistinguishable from a cell
+ * with no road near it. On the published Triangle walk layer that is 18,648 cells at ten minutes.
+ *
+ * It writes an RGBA buffer (included colour, excluded transparent, unknown diagonally hatched)
+ * and transfers it to the main thread.
  *
  * Protocol (main -> worker):
- *   {type:'init', manifest, buffers:[ArrayBuffer x N]}          buffers are transferred
+ *   {type:'init', manifest, values:[ArrayBuffer x N], statuses:[ArrayBuffer x N]}  transferred
  *   {type:'compute', seq, thresholds:[N ints], enabled:[N bools], tEvent}
  *   {type:'recycle', buffer}                                     returns an RGBA buffer to the pool
  *   {type:'mask', reqId}                                         asks for a copy of the current 0/1 mask
  * Protocol (worker -> main):
  *   {type:'ready', nrows, ncols, layerCount, bytes, initMs}
- *   {type:'result', seq, tEvent, rgba, inCount, nodataCount, enabledCount, computeMs,
- *                   tWorkerStartAbs, tWorkerEndAbs}              rgba is transferred
+ *   {type:'result', seq, tEvent, rgba, inCount, nodataCount, excludedCount, enabledCount,
+ *                   computeMs, tWorkerStartAbs, tWorkerEndAbs}   rgba is transferred
+ *                   inCount = INCLUDED, nodataCount = UNKNOWN, excludedCount = EXCLUDED
  *   {type:'mask', reqId, seq, inCount, mask}                     mask (Uint8Array buffer, 1 = in) is transferred
  *   {type:'error', message}
  *
@@ -31,7 +45,18 @@ function packRGBA(r, g, b, a) {
     : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
-const PX_IN = packRGBA(24, 119, 242, 150);     // in-region: translucent blue
+/* The wire codes. These are `locfinder/wire.py`'s, and deliberately NOT `status.Reason`'s --
+ * the layer contract forbids writing the in-memory enum into a raster. `ENCODING` is checked at
+ * init, because a format that changed a code's meaning must be refused, never guessed at. */
+const ENCODING = 'published-v2';
+const S_OK = 0, S_OFF_NETWORK = 1, S_BEYOND_HORIZON = 2, S_NO_PATH = 3;
+const S_LAYER_UNKNOWN = 4, S_OUTSIDE = 5;
+/* Missing with no recorded cause -- what a v1 artifact's single NODATA becomes when it is lifted
+ * into this format. Never a known failure, which is exactly what v1 could assert. */
+const S_UNKNOWN_CAUSE = 6;
+const O_PASS = 0, O_FAIL = 1, O_UNKNOWN = 2;
+
+const PX_IN = packRGBA(24, 119, 242, 150);     // included: translucent blue
 const PX_NODATA = packRGBA(60, 60, 60, 130);   // nodata hatch stripe
 const PX_OUT = 0;                              // fully transparent
 const HATCH_PERIOD_MASK = 7;                   // (row + col) & 7 < HATCH_WIDTH -> stripe
@@ -41,8 +66,9 @@ const state = {
   manifest: null,
   nrows: 0,
   ncols: 0,
-  nodata: 255,
-  layers: [],      // Uint8Array per layer
+  layers: [],      // value plane, Uint8Array per layer
+  statuses: [],    // status plane, Uint8Array per layer
+  horizons: [],    // horizon_s per layer, for the BEYOND_HORIZON rule
   mask: null,      // Uint8Array, 1 = in region
   pool: [],        // recycled RGBA ArrayBuffers
   lastSeq: -1,
@@ -82,20 +108,38 @@ function handleInit(msg) {
   const ncols = manifest.ncols | 0;
   const n = nrows * ncols;
   if (!(nrows > 0 && ncols > 0)) throw new Error('manifest nrows/ncols invalid');
-  if (!Array.isArray(msg.buffers) || msg.buffers.length !== manifest.layers.length) {
-    throw new Error(`expected ${manifest.layers.length} layer buffers, got ${msg.buffers && msg.buffers.length}`);
+  // A versioned format is refused, not reinterpreted. Minute values 251-254 are real answers in
+  // artifacts already on disk, so a decoder that guessed at an unknown encoding would read them
+  // as sentinels and publish a region nobody computed.
+  if (manifest.encoding !== ENCODING) {
+    throw new Error(`manifest encoding ${JSON.stringify(manifest.encoding)} is not ${ENCODING}; `
+      + 'this decoder refuses a format it does not know rather than guessing at its codes');
   }
-  const layers = msg.buffers.map((buf, i) => {
-    if (buf.byteLength !== n) {
-      throw new Error(`layer ${manifest.layers[i].id}: ${buf.byteLength} bytes, expected nrows*ncols = ${n}`);
+  const plane = (bufs, what) => {
+    if (!Array.isArray(bufs) || bufs.length !== manifest.layers.length) {
+      throw new Error(`expected ${manifest.layers.length} ${what} buffers, got ${bufs && bufs.length}`);
     }
-    return new Uint8Array(buf);
+    return bufs.map((buf, i) => {
+      if (buf.byteLength !== n) {
+        throw new Error(`layer ${manifest.layers[i].id} ${what}: ${buf.byteLength} bytes, expected nrows*ncols = ${n}`);
+      }
+      return new Uint8Array(buf);
+    });
+  };
+  const layers = plane(msg.values, 'value');
+  const statuses = plane(msg.statuses, 'status');
+  const horizons = manifest.layers.map((l, i) => {
+    if (typeof l.horizon_s !== 'number' || !(l.horizon_s > 0)) {
+      throw new Error(`layer ${l.id}: manifest has no positive horizon_s, so BEYOND_HORIZON cannot be decided`);
+    }
+    return l.horizon_s;
   });
   state.manifest = manifest;
   state.nrows = nrows;
   state.ncols = ncols;
-  state.nodata = typeof manifest.nodata === 'number' ? manifest.nodata : 255;
   state.layers = layers;
+  state.statuses = statuses;
+  state.horizons = horizons;
   state.mask = new Uint8Array(n);
   state.pool = [];
   self.postMessage({
@@ -110,17 +154,21 @@ function handleInit(msg) {
 
 function handleCompute(msg) {
   const tStart = performance.now();
-  const { nrows, ncols, layers, mask, nodata } = state;
+  const { nrows, ncols, layers, statuses, horizons, mask } = state;
   if (!mask) throw new Error('compute before init');
   const n = nrows * ncols;
 
-  // Hoist enabled layers and their thresholds.
+  // Hoist enabled layers, their status planes, thresholds and horizons.
   const L = [];
+  const S = [];
   const T = [];
+  const H = [];
   for (let k = 0; k < layers.length; k++) {
     if (msg.enabled[k]) {
       L.push(layers[k]);
+      S.push(statuses[k]);
       T.push(msg.thresholds[k] | 0);
+      H.push(horizons[k]);
     }
   }
   const m = L.length;
@@ -130,29 +178,38 @@ function handleCompute(msg) {
   let inCount = 0;
   let nodataCount = 0;
 
+  let excludedCount = 0;
+
   if (m === 0) {
-    mask.fill(0);
-    px.fill(PX_OUT);
+    // No criteria excludes nothing -- `status.combine`'s own rule, and the opposite of the empty
+    // AND returning false. Every cell is included.
+    mask.fill(1);
+    px.fill(PX_IN);
+    inCount = n;
   } else {
     let p = 0;
     for (let r = 0; r < nrows; r++) {
       for (let c = 0; c < ncols; c++, p++) {
-        let inside = 1;
-        let nd = 0;
+        let anyFail = 0;
+        let anyUnknown = 0;
+        // No `break`: a known failure in a later layer must beat an unknown in an earlier one.
         for (let k = 0; k < m; k++) {
-          const v = L[k][p];
-          if (v === nodata) { nd = 1; inside = 0; break; }
-          if (v > T[k]) inside = 0;
+          const o = outcomeFor(S[k][p], L[k][p], T[k], H[k]);
+          if (o === O_FAIL) anyFail = 1;
+          else if (o === O_UNKNOWN) anyUnknown = 1;
         }
-        mask[p] = inside;
-        if (inside) {
-          px[p] = PX_IN;
-          inCount++;
-        } else if (nd) {
+        if (anyFail) {
+          mask[p] = 0;
+          px[p] = PX_OUT;
+          excludedCount++;
+        } else if (anyUnknown) {
+          mask[p] = 0;
           nodataCount++;
           px[p] = (((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH) ? PX_NODATA : PX_OUT;
         } else {
-          px[p] = PX_OUT;
+          mask[p] = 1;
+          px[p] = PX_IN;
+          inCount++;
         }
       }
     }
@@ -168,11 +225,40 @@ function handleCompute(msg) {
     rgba: buffer,
     inCount,
     nodataCount,
+    excludedCount,
     enabledCount: m,
     computeMs: tEnd - tStart,
     tWorkerStartAbs: performance.timeOrigin + tStart,
     tWorkerEndAbs: performance.timeOrigin + tEnd,
   }, [buffer]);
+}
+
+/** One layer's outcome for one cell. This is `locfinder/wire.py:outcome_planes`, cell-wise.
+ *
+ * `value` means two different things and the status plane says which: the travel time where the
+ * status is OK, and a LOWER BOUND on it where the status is OFF_NETWORK, BEYOND_HORIZON or
+ * NO_PATH. A bound above the threshold is a known failure with no route ever computed.
+ *
+ * BEYOND_HORIZON compares against the horizon itself and never against the stored bound, so a
+ * malformed bound cannot change an eligibility answer -- `status.py`'s rule, kept here.
+ */
+function outcomeFor(status, value, thresholdMin, horizonS) {
+  switch (status) {
+    case S_OK:
+      return value <= thresholdMin ? O_PASS : O_FAIL;
+    case S_NO_PATH:
+      return O_FAIL;
+    case S_BEYOND_HORIZON:
+      return horizonS >= 60 * thresholdMin ? O_FAIL : O_UNKNOWN;
+    case S_OFF_NETWORK:
+      return value > thresholdMin ? O_FAIL : O_UNKNOWN;
+    case S_LAYER_UNKNOWN:
+    case S_OUTSIDE:
+    case S_UNKNOWN_CAUSE:
+      return O_UNKNOWN;
+    default:
+      throw new Error(`status plane holds code ${status}, which this decoder does not define`);
+  }
 }
 
 function handleMask(msg) {
