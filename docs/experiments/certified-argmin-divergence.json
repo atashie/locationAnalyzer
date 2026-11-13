@@ -7,6 +7,8 @@
     "utm-like, 1e5 to 1e6 m": {
       "decided_draws": 5000,
       "skipped_zero_cost": 0,
+      "skipped_inadmissible_segment": 0,
+      "draws_where_the_convention_selected_the_full_edge": 5000,
       "agrees": 2429,
       "differs": 2571,
       "unresolved": 0,
@@ -14,11 +16,13 @@
       "unresolved_not_exactly_tied": 0,
       "differs_rate": 0.5142,
       "worst_precision_exponent": 64,
-      "seconds": 2.68
+      "seconds": 2.94
     },
     "toy, single digits": {
       "decided_draws": 5000,
       "skipped_zero_cost": 0,
+      "skipped_inadmissible_segment": 0,
+      "draws_where_the_convention_selected_the_full_edge": 5000,
       "agrees": 2584,
       "differs": 2416,
       "unresolved": 0,
@@ -26,7 +30,7 @@
       "unresolved_not_exactly_tied": 0,
       "differs_rate": 0.4832,
       "worst_precision_exponent": 64,
-      "seconds": 2.78
+      "seconds": 2.97
     }
   },
   "t4_fixtures": {

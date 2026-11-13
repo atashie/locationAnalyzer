@@ -261,3 +261,31 @@ pass found three more of the ordinary kind in the same artifacts: a blanket "eve
 decides something" that swept in two §2.2 predicates it had never been checked against, a counter
 named `parameter_differs` that compared rounded images of the parameters, and a mutation harness
 that counted a crashing mutant as caught.
+
+## An eleventh, and the shape is now specific enough to catch: the summary sentence
+
+Codex passes 38, 39 and 40 each found the same thing in the same place. Not in a measurement, not in
+a guard, not in a rule -- in the **short confident clause written to round off a section**.
+
+| pass | the summary sentence | what the section's own tables said |
+|---|---|---|
+| 38 F1 | "every comparison that decides something made on the exact value" | the caps and the 0.01 m band are compared in binary64, and nobody had enumerated them |
+| 38 F4 | "the adoption changes no candidate set" | true of places and counts; the normative occurrence identity changed on 67.85% of points |
+| 39 R1 | "decided on the correctly-rounded residual, under both the production path and T0's exact path" | production uses GEOS, measured one ulp out |
+| 39 R4 | "a provenance finding, not an answer finding" | an identity difference reaches a reported number, 512 s apart at an admissible weight |
+| 39 R4 | "the largest displacement anywhere is half a nanometre" | the retained candidates move 36 um, three paragraphs further down the same document |
+| 40 F7 | "T4 contains no near tie" | the margin **from the minimum** was measured; a fixture holds pairs 2 ulps apart above it |
+| 40 F8 | "the convention always selects B" | the class had no time field; the selection was supplied, not derived |
+
+Seven instances, three consecutive passes, one grammatical position. The detail was right every
+time. **The generalisation written on top of it was wrong every time.**
+
+**How to apply, and this is cheap enough that there is no excuse.** A sentence that generalises the
+table above it gets checked against that table before the commit, not against the intention that
+produced it. Three questions, in order: what is the subject of this sentence; what did I actually
+vary or enumerate; and is the first wider than the second. If the sentence contains "any", "every",
+"no", "always", "anywhere" or "nothing", assume it is wider until shown otherwise.
+
+Eleven instances now. The first nine were about over-generalising a measurement and the tenth about
+reaching past a sufficient reason; this one is about **where** the error lands, which is the part
+that makes it findable.

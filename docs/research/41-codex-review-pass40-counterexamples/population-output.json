@@ -1,0 +1,98 @@
+{
+  "seed_sweeps_1000_draws": {
+    "utm-like, 1e5 to 1e6 m": {
+      "0": {
+        "DIFFERS": 499,
+        "AGREES": 501
+      },
+      "1": {
+        "DIFFERS": 496,
+        "AGREES": 504
+      },
+      "2": {
+        "AGREES": 502,
+        "DIFFERS": 498
+      },
+      "20261112": {
+        "AGREES": 485,
+        "DIFFERS": 515
+      }
+    },
+    "toy, single digits": {
+      "0": {
+        "AGREES": 494,
+        "DIFFERS": 506
+      },
+      "1": {
+        "AGREES": 484,
+        "DIFFERS": 516
+      },
+      "2": {
+        "AGREES": 542,
+        "DIFFERS": 458
+      },
+      "20261112": {
+        "AGREES": 507,
+        "DIFFERS": 493
+      }
+    }
+  },
+  "precision_sweeps_1000_draws": {
+    "utm-like, 1e5 to 1e6 m": {
+      "32": {
+        "UNRESOLVED": 1000
+      },
+      "48": {
+        "UNRESOLVED": 1000
+      },
+      "63": {
+        "UNRESOLVED": 1000
+      },
+      "64": {
+        "AGREES": 485,
+        "DIFFERS": 515
+      }
+    },
+    "toy, single digits": {
+      "32": {
+        "UNRESOLVED": 1000
+      },
+      "48": {
+        "UNRESOLVED": 1000
+      },
+      "63": {
+        "UNRESOLVED": 1000
+      },
+      "64": {
+        "AGREES": 507,
+        "DIFFERS": 493
+      }
+    }
+  },
+  "independent_direction_5000_draws": {
+    "utm-like, 1e5 to 1e6 m": {
+      "A_above_rounded_B": 2429,
+      "A_below_rounded_B": 2571,
+      "minimum_segment_length": 0.8417806220066122,
+      "all_5000_admissible_positive_cost_distinct_segments": true
+    },
+    "toy, single digits": {
+      "A_above_rounded_B": 2584,
+      "A_below_rounded_B": 2416,
+      "minimum_segment_length": 0.02104451554840028,
+      "all_5000_admissible_positive_cost_distinct_segments": true
+    }
+  },
+  "time_key_is_assumed": {
+    "Journey_fields": [
+      "full_edge_costs",
+      "partials",
+      "connector_sq",
+      "label",
+      "access_speed"
+    ],
+    "A_time_1_B_time_2_selects": "A",
+    "comment": "The reverse time assignment selects B. Neither is recorded by draw()."
+  },
+  "admissibility_not_enforced": "segment (5.0, 5.0) -> (5.00000001, 5.00000001) has length 1.4142135537782532e-08, between zero and the smallest admissible 1e-06 m. Lengths in that gap are outside the declared domain; a segment with a direction must be long enough for the projection to keep it."
+}

@@ -48,6 +48,9 @@ __all__ = [
     "DIFFERS",
     "UNRESOLVED",
     "Certification",
+    "FIRST",
+    "SECOND",
+    "convention_selection",
     "certify_cheaper",
     "certify_selection",
     "ACCESS_SPEED_MPS",
@@ -58,10 +61,16 @@ __all__ = [
 #: notes the independent engine uses a different one.
 ACCESS_SPEED_MPS = Fraction(126, 100)
 
-#: Where refinement stops. 2**-192 is far below any gap a binary64 cost can express, so reaching it
-#: means the two real costs are equal or so close that no reported quantity distinguishes them.
-#: Stated here rather than buried, because the plan's invalidation condition for this phase is about
-#: how often it is reached.
+#: Where refinement stops, stated here rather than buried because the plan's invalidation condition
+#: for this phase is about how often it is reached.
+#:
+#: **It is a budget, not a bound.** The first version of this comment claimed `2**-192` was "far
+#: below any gap a binary64 cost can express", and Codex pass 40 F2 refuted it: binary64's smallest
+#: positive gap is `2**-1074`, and an admissible query such as `(0, 1e-100)` against a unit segment
+#: produces *reported* costs of `7.936507936507937e-101` and `2e-100` that this cap cannot separate
+#: — they resolve at 512. So reaching the cap means **refinement ran out of budget**, which is
+#: exactly why `UNRESOLVED` is a retained status and is never counted as agreement. A caller who
+#: needs more can pass more.
 DEFAULT_MAX_PRECISION = 192
 
 AGREES = "AGREES"
@@ -126,12 +135,26 @@ class Interval:
         return Interval(c * self.lo, c * self.hi) if c >= 0 else Interval(c * self.hi, c * self.lo)
 
     def divided_by(self, other: "Interval") -> "Interval":
-        """Divide by a strictly positive interval. Anything else is a caller error, not a NaN."""
-        if other.lo <= 0:
+        """Divide by an interval that does not contain zero, by the extrema of the four quotients.
+
+        Codex pass 40 F4: the first version returned `[lo/other.hi, hi/other.lo]`, which is only the
+        enclosure when the numerator is non-negative. On `[-1,1] / [1,2]` it returned `[-1/2, 1]`
+        and **excluded the attainable -1**; on `[-2,-1] / [1,4]` it built an inverted interval and
+        raised. Every traversal span this module forms is non-negative, so no published figure went
+        through those cases — but an unsound public primitive is a defect whether or not today's
+        caller reaches it.
+
+        Pass 40 F6 also showed the guard was wrong about its own scope: it rejected only a
+        non-positive *lower* endpoint, so a wholly negative denominator such as `[-2,-1]` passed
+        and divided. The condition is now "contains zero", which is what division cannot survive.
+        """
+        if other.lo <= 0 <= other.hi:
             raise ZeroDivisionError(
-                f"a denominator interval that reaches zero: [{other.lo}, {other.hi}]. A zero-length "
+                f"a denominator interval containing zero: [{other.lo}, {other.hi}]. A zero-length "
                 "record contributes the normative fraction 0 and must not reach a division")
-        return Interval(self.lo / other.hi, self.hi / other.lo)
+        quotients = (self.lo / other.lo, self.lo / other.hi,
+                     self.hi / other.lo, self.hi / other.hi)
+        return Interval(min(quotients), max(quotients))
 
     def contains(self, value: Fraction) -> bool:
         return self.lo <= value <= self.hi
@@ -226,6 +249,10 @@ class Journey:
     connector_sq: tuple[Fraction, ...] = ()
     label: str = ""
     access_speed: Fraction = field(default=ACCESS_SPEED_MPS)
+    #: The journey's reported travel time, which is what §2.4's key uses to break an exact cost tie.
+    #: Codex pass 40 F8: this class had no time at all, so a caller could only **stipulate** which
+    #: journey the convention selects. `convention_selection` below derives it instead.
+    time_s: float = 0.0
 
     def cost_interval(self, k: int) -> Interval:
         exact_part = sum((_exact(c) for c in self.full_edge_costs), Fraction(0))
@@ -275,26 +302,66 @@ class Certification:
         return self.status == AGREES
 
 
+#: What `certify_cheaper` returns: which of its two *arguments* won, never a label.
+FIRST = "FIRST"
+SECOND = "SECOND"
+
+
 def certify_cheaper(a: Journey, b: Journey, *,
                     max_precision: int = DEFAULT_MAX_PRECISION) -> tuple[str | None, int]:
     """Which of two journeys is cheaper in **real** arithmetic, or `None` if undecided.
 
-    Returns the winning journey's label — `a.label` or `b.label` — with the precision reached.
-    `None` means the intervals still overlapped at `max_precision`.
+    Returns `FIRST`, `SECOND` or `None`, with the largest precision **actually evaluated**.
+
+    **It identifies the winner positionally, not by label.** Codex pass 40 F1: the first version
+    returned `a.label` or `b.label` and the caller tested `winner == other.label`, so two journeys
+    sharing a label — and `label` defaults to `""` — made a win for the selected journey read as a
+    win for its alternative. `certify_selection([Journey(cost 1), Journey(cost 2)], chosen=0)`
+    returned **DIFFERS** where the answer is plainly AGREES. A label is for reporting; it must never
+    carry identity.
+
+    **Every precision reported here was evaluated.** Pass 40 F2: the loop used to double past the
+    cap and then report `min(k, max_precision)`, so a default run reported precision 192 having
+    tried only 8, 16, 32, 64 and 128 — and the comparison it declared undecided was in fact decided
+    at 192. The sequence now ends *on* the cap.
     """
-    k = 8
-    while k <= max_precision:
+    k, tried = 8, 0
+    while True:
+        k = min(k, max_precision)
         try:
             ia, ib = a.cost_interval(k), b.cost_interval(k)
+            tried = k
+            if ia.strictly_below(ib):
+                return (FIRST, k)
+            if ib.strictly_below(ia):
+                return (SECOND, k)
         except _NeedsPrecision:
-            k *= 2
-            continue
-        if ia.strictly_below(ib):
-            return (a.label, k)
-        if ib.strictly_below(ia):
-            return (b.label, k)
+            pass
+        if k >= max_precision:
+            return (None, tried)
         k *= 2
-    return (None, min(k, max_precision))
+
+
+def convention_selection(candidates: list[Journey]) -> int:
+    """The index §2.4's convention selects for objective 2: the cost argmin, then smallest time.
+
+    This exists because of Codex pass 40 F8. The divergence measurement used to pass `chosen=1`
+    directly, on the stated ground that the competing journey "is given the smaller travel time, so
+    the convention always selects B" — while `Journey` carried **no time field**, so nothing in the
+    experiment tested that. The claim was a stipulation dressed as a consequence. Deriving the
+    selection here makes it a consequence.
+
+    The rule implemented is §2.4's first two keys on the rounded quantities, which is what
+    `toy.evaluate` computes: `cheapest = min(cost)`, then the smallest `time_s` among journeys of
+    exactly that cost. The destination and route keys are not modelled here — this module compares
+    costs, and a caller needing those must break the remaining tie itself.
+    """
+    if not candidates:
+        raise ValueError("no candidates to select from")
+    costs = [j.rounded_cost() for j in candidates]
+    cheapest = min(costs)
+    tied = [i for i, cost in enumerate(costs) if cost == cheapest]
+    return min(tied, key=lambda i: candidates[i].time_s)
 
 
 def certify_selection(candidates: list[Journey], chosen: int, *,
@@ -312,42 +379,74 @@ def certify_selection(candidates: list[Journey], chosen: int, *,
         raise IndexError(f"selection {chosen} is not among {len(candidates)} candidates")
     picked = candidates[chosen]
     worst_k = 0
-    undecided: Journey | None = None
+    undecided: list[Journey] = []
     for i, other in enumerate(candidates):
         if i == chosen:
             continue
         winner, k = certify_cheaper(picked, other, max_precision=max_precision)
         worst_k = max(worst_k, k)
         if winner is None:
-            undecided = undecided or other
+            undecided.append(other)
             continue
-        if winner == other.label:
+        if winner is SECOND:
             return Certification(DIFFERS, picked.label, other.label, k)
-    if undecided is not None:
-        tied = _exactly_tied(picked, undecided)
+    if undecided:
+        # Every undecided alternative is examined, not only the first. Pass 40 F3: with one
+        # recognisable tie and one unrecognisable unequal pair, the answer used to depend on which
+        # came first in the list -- so a diagnostic treating "tied" as harmless could be handed a
+        # True while an unequal pair sat unresolved behind it. `None` means unknown, and unknown is
+        # the answer whenever any alternative cannot be settled either way.
+        verdicts = [_exactly_tied(picked, other) for other in undecided]
+        tied: bool | None
+        if any(v is None for v in verdicts):
+            tied = None
+        elif all(v for v in verdicts):
+            tied = True
+        else:
+            tied = False
         return Certification(UNRESOLVED, picked.label, None, worst_k, exactly_tied=tied)
     return Certification(AGREES, picked.label, picked.label, worst_k)
 
 
-def _exactly_tied(a: Journey, b: Journey, k: int = DEFAULT_MAX_PRECISION) -> bool:
-    """A best-effort check that two undecided costs really are equal, not merely close.
+def _exactly_tied(a: Journey, b: Journey) -> bool | None:
+    """`True` if two undecided costs are provably equal, `False` if provably unequal, else `None`.
 
     This is what the phase's invalidation condition needs: `UNRESOLVED` on an exact tie is the
-    correct answer, while `UNRESOLVED` on an unequal pair is the failure. The two are distinguished
-    where it is cheap — journeys whose terms are all rational, which covers every exact tie a
-    fixture is likely to construct — and reported as **unknown** otherwise rather than guessed.
+    correct answer, while `UNRESOLVED` on an **unequal** pair is the approach failing. Codex pass 40
+    F3: the first version returned a plain `bool` and answered `False` both for "provably unequal"
+    and for "cannot tell", so the measurement's "NOT tied" column silently included every pair with
+    an irrational term — which is most of them — and the invalidation message could not be relied
+    on. Unknown is now its own answer.
+
+    **What this actually decides, narrowly.** A journey whose every term is rational has a
+    *degenerate* cost interval — a point — so two such journeys separate at the first precision
+    unless their costs are equal. The `ra == rb` below is therefore reached only when both costs are
+    rational **and** the comparison was undecided, which for point intervals means they are equal:
+    it returns `True` every time it is evaluated. So this function's real content is "are both costs
+    recognisably rational", and the equality test records the intent rather than discriminating. The
+    mutation harness proves that by being unable to distinguish `return True`, and says so instead
+    of reporting an uncaught mutation forever.
     """
     ra, rb = _rational_cost(a), _rational_cost(b)
     if ra is None or rb is None:
-        return False
+        return None
     return ra == rb
 
 
 def _rational_cost(j: Journey) -> Fraction | None:
-    """A journey's exact cost when every term happens to be rational, else `None`."""
-    if j.connector_sq:
-        return None
+    """A journey's exact cost when every term happens to be rational, else `None`.
+
+    Pass 40 F3: connectors used to disqualify a journey outright, so two identical journeys with
+    `connector_sq=(Fraction(1),)` — whose costs are both exactly `50/63` — were reported as not
+    tied. A connector's residual is rational exactly when its squared residual is a perfect
+    rational square, which is cheap to test, so those cases are now recognised.
+    """
     total = sum((_exact(c) for c in j.full_edge_costs), Fraction(0))
+    for sq in j.connector_sq:
+        root = _rational_sqrt_exact(Fraction(sq))
+        if root is None:
+            return None
+        total += root / j.access_speed
     for p in j.partials:
         qs = _radicands(p.geometry)
         # Rational only if every length involved is rational, which needs every radicand to be a

@@ -1,0 +1,79 @@
+{
+  "supplied_harness": {
+    "returncode": 0,
+    "stdout": "baseline passes, and its smoke digest is recorded\n\ncaught       report the convention's choice as AGREES when the intervals still overlap\ncaught       treat an undecided comparison as agreement in the status\ncaught       count UNRESOLVED as agreement\nUNSEPARATED  take the ceiling of the scaled radicand instead of the floor: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       take the ceiling of the scaled radicand instead of the floor\ncaught       scale by 2**k instead of 4**k, so the bracket is not on sqrt(q)\ncaught       return the lower bound twice, so an irrational value is claimed exact\nUNSEPARATED  compute the bracket through binary64 instead of exact integers: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       compute the bracket through binary64 instead of exact integers\ncaught       add the endpoints crosswise\ncaught       divide endpoint by matching endpoint instead of crosswise\ncaught       ignore the sign when scaling, so a negative scalar inverts the interval\ncaught       decide a comparison on a non-strict inequality, so touching intervals decide it\nUNSEPARATED  pass a zero-reaching denominator through instead of refusing it: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       pass a zero-reaching denominator through instead of refusing it\ncaught       multiply the connector by the access speed instead of dividing\ncaught       apportion the partial by the fraction of the wrong record total\nUNSEPARATED  drop the whole intermediate segments from the span: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       drop the whole intermediate segments from the span\nUNSEPARATED  do not orient the span, so the two occurrences are not symmetric: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       do not orient the span, so the two occurrences are not symmetric\ncaught       decide the zero-length record on the bracketed total rather than the exact radicands\ncaught       take the span from the start of the origin's segment rather than from the occurrence\nUNSEPARATED  sum the convention's terms from the left instead of with fsum: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       sum the convention's terms from the left instead of with fsum\nUNSEPARATED  accept a non-finite cost instead of refusing it: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       accept a non-finite cost instead of refusing it\nUNSEPARATED  silently clamp a selection index outside the candidate set: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       silently clamp a selection index outside the candidate set\n\nsource restored byte-identically\nall 21 mutations caught",
+    "stderr": ""
+  },
+  "supplied_self_test": {
+    "returncode": 0,
+    "stdout": "clean source: smoke passes\nbroken mutant: reported INVALID as NameError, so a crash cannot be banked as a catch\nsource restored byte-identically",
+    "stderr": ""
+  },
+  "extra_mutants": [
+    {
+      "mutation": "label every unresolved rational pair exactly tied",
+      "returncode": 0,
+      "stdout": "........................................                                 [100%]\n40 passed in 0.09s",
+      "stderr": "",
+      "wrong_behavior": {
+        "returncode": 0,
+        "stdout": "Certification(status='UNRESOLVED', convention='a', certified=None, precision=7, exactly_tied=True)",
+        "stderr": ""
+      }
+    },
+    {
+      "mutation": "accept non-square radicands as rational roots",
+      "returncode": 0,
+      "stdout": "........................................                                 [100%]\n40 passed in 0.10s",
+      "stderr": "",
+      "wrong_behavior": {
+        "returncode": 0,
+        "stdout": "True",
+        "stderr": ""
+      }
+    },
+    {
+      "mutation": "replace insufficient precision by a fictitious zero span",
+      "returncode": 0,
+      "stdout": "........................................                                 [100%]\n40 passed in 0.10s",
+      "stderr": "",
+      "wrong_behavior": {
+        "returncode": 0,
+        "stdout": "Certification(status='AGREES', convention='actual cost 1', certified='actual cost 1', precision=8, exactly_tied=None)",
+        "stderr": ""
+      }
+    },
+    {
+      "mutation": "falsify exhausted precision",
+      "returncode": 0,
+      "stdout": "........................................                                 [100%]\n40 passed in 0.09s",
+      "stderr": "",
+      "wrong_behavior": {
+        "returncode": 0,
+        "stdout": "Certification(status='UNRESOLVED', convention='a', certified=None, precision=315, exactly_tied=True)",
+        "stderr": ""
+      }
+    }
+  ],
+  "invalid_mutant_outside_smoke": {
+    "returncode": 0,
+    "stdout": "baseline passes, and its smoke digest is recorded\n\nUNSEPARATED  NameError outside smoke: the smoke computes the same values as the clean module, so only the suite distinguishes this mutant\ncaught       NameError outside smoke\n\nsource restored byte-identically\nall 1 mutations caught",
+    "stderr": ""
+  },
+  "discarded_failure": {
+    "returncode": 1,
+    "stdout": "..............................F\n================================== FAILURES ===================================\n______________ test_a_full_edge_is_exact_and_needs_no_refinement ______________\n\n    def test_a_full_edge_is_exact_and_needs_no_refinement():\n        j = c.Journey(full_edge_costs=(0.1, 0.2, 0.3), label=\"j\")\n>       interval = j.cost_interval(8)\n                   ^^^^^^^^^^^^^^^^^^\n\ntests\\test_certify.py:234: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = Journey(full_edge_costs=(0.1, 0.2, 0.3), partials=(), connector_sq=(), label='j', access_speed=Fraction(63, 50))\nk = 8\n\n    def cost_interval(self, k: int) -> Interval:\n        if len(self.full_edge_costs) == 3:\n>           return nonexistent_review40_name\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^\nE           NameError: name 'nonexistent_review40_name' is not defined\n\nlocfinder\\measure\\certify.py:232: NameError\n=========================== short test summary info ===========================\nFAILED tests/test_certify.py::test_a_full_edge_is_exact_and_needs_no_refinement\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 30 passed in 0.14s",
+    "stderr": ""
+  },
+  "removed_denominator_guard": {
+    "returncode": 0,
+    "stdout": "Interval(lo=Fraction(-1, 1), hi=Fraction(-1, 1))",
+    "stderr": ""
+  },
+  "removed_index_guard": {
+    "returncode": 0,
+    "stdout": "Certification(status='UNRESOLVED', convention='a', certified=None, precision=192, exactly_tied=True)",
+    "stderr": ""
+  },
+  "copy_restored_byte_identically": true
+}

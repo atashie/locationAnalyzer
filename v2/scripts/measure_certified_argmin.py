@@ -45,7 +45,7 @@ REGIMES = {
 }
 
 
-def draw(rng: random.Random, regime: str) -> tuple[c.Journey, c.Journey]:
+def draw(rng: random.Random, regime: str) -> tuple[c.Journey, c.Journey] | None:
     """One manufactured tie: a partial traversal, and a full edge at exactly its rounded cost."""
     x0, x1, y0, y1, span = REGIMES[regime]
     n = rng.randint(2, 4)
@@ -61,11 +61,24 @@ def draw(rng: random.Random, regime: str) -> tuple[c.Journey, c.Journey]:
     t_d = Fraction(rng.randrange(0, 1000), 1000)
     cost = rng.uniform(1.0, 1e4)
 
+    # Codex pass 40 F8: the admissibility condition is part of the declared population, so it is
+    # enforced rather than assumed. `toy.ToyEdge` rejects a segment under MIN_SEGMENT_M, and the
+    # binary64 uniform support reaches shorter steps, so a draw that violates it is refused here.
+    from locfinder.measure.toy import MIN_SEGMENT_M
+    import math as _m
+    for (ax0, ay0), (bx0, by0) in zip(geometry, geometry[1:]):
+        if _m.hypot(bx0 - ax0, by0 - ay0) < MIN_SEGMENT_M:
+            return None
+
+    # A's time is the larger, B's the smaller, so §2.4's travel-time key prefers B on the cost tie.
+    # `convention_selection` then DERIVES that rather than the caller stipulating it — which is the
+    # other half of F8: this class had no time field, so the claim "the convention always selects B"
+    # was untested when it was published.
     a = c.Journey(partials=(c.Partial(geometry=geometry, seg_o=seg_o, t_o=t_o,
                                       seg_d=seg_d, t_d=t_d, cost=cost),),
-                  label="A, the partial traversal")
+                  label="A, the partial traversal", time_s=1000.0)
     # Exactly A's rounded cost, so the convention ties them and the time key decides.
-    b = c.Journey(full_edge_costs=(a.rounded_cost(),), label="B, the full edge")
+    b = c.Journey(full_edge_costs=(a.rounded_cost(),), label="B, the full edge", time_s=1.0)
     return a, b
 
 
@@ -144,13 +157,22 @@ def main(argv: list[str] | None = None) -> int:
         skipped_degenerate = 0
         worst_k = 0
         started = time.perf_counter()
+        skipped_inadmissible = 0
+        selected_b = 0
         for _ in range(args.draws):
-            a, b = draw(rng, regime)
+            drawn = draw(rng, regime)
+            if drawn is None:
+                skipped_inadmissible += 1
+                continue
+            a, b = drawn
             if a.rounded_cost() == 0.0:
                 skipped_degenerate += 1
                 continue
-            # The convention selects B on the time discriminator, by construction.
-            got = c.certify_selection([a, b], chosen=1, max_precision=args.max_precision)
+            # DERIVED, not stipulated: section 2.4 selects the cost argmin, then the smallest time.
+            chosen = c.convention_selection([a, b])
+            if chosen == 1:
+                selected_b += 1
+            got = c.certify_selection([a, b], chosen=chosen, max_precision=args.max_precision)
             counts[got.status] += 1
             worst_k = max(worst_k, got.precision)
             if got.status == c.UNRESOLVED:
@@ -162,6 +184,8 @@ def main(argv: list[str] | None = None) -> int:
         row = {
             "decided_draws": n,
             "skipped_zero_cost": skipped_degenerate,
+            "skipped_inadmissible_segment": skipped_inadmissible,
+            "draws_where_the_convention_selected_the_full_edge": selected_b,
             "agrees": counts[c.AGREES],
             "differs": counts[c.DIFFERS],
             "unresolved": counts[c.UNRESOLVED],
@@ -189,8 +213,8 @@ def main(argv: list[str] | None = None) -> int:
     t4 = t4_margins()
     report["t4_fixtures"] = t4
     print(f"\nT4's conformance fixtures, measured rather than swept: "
-          f"{t4['cases_with_a_near_tie_under_1e6_ulps']} of {len(t4['cases'])} contain a near tie "
-          f"under 1e6 ulps. The time discriminator fires in "
+          f"{t4['cases_with_a_near_tie_under_1e6_ulps']} of {len(t4['cases'])} have a margin under "
+          f"1e6 ulps FROM THE MINIMUM to the next distinct cost. The time discriminator fires in "
           f"{t4['cases_where_the_time_discriminator_fires']} of them, by an EXACT cost tie, and "
           f"changes the reported time in {t4['cases_where_it_changes_the_reported_time']}.")
     print("  So a certified sweep over them would return AGREES or an exactly-tied UNRESOLVED "

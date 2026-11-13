@@ -162,8 +162,11 @@ hot path.
 >   contains **no arclength interval**, so the terms cannot be recovered from it. Recording them
 >   means threading exact term provenance through the oracle that 112 corpus tests and 14 mutants
 >   stand on. `scripts/measure_certified_argmin.py` measured whether that would buy anything:
->   **0 of 17 fixtures contains a near tie** under 10⁶ ulps, the tightest margin being `0.8` at
->   3.6e15 ulps. A certified sweep would therefore return `AGREES`, or an exactly-tied
+>   **0 of 17 fixtures has a margin under 10⁶ ulps from its minimum cost** to the next distinct
+>   cost, the tightest being `0.8` at 3.6e15 ulps. (Codex pass 40 F7: "contains no near tie" was
+>   broader than the measurement — one fixture holds pairs 2 ulps apart well *above* its minimum,
+>   where a cost-argmin sweep never looks. Pass 40 then reconstructed 222 journeys and found **0**
+>   binary64-equal/real-unequal pairs anywhere in the corpus, which is the stronger check.) A certified sweep would therefore return `AGREES`, or an exactly-tied
 >   `UNRESOLVED`, on every one of them and report no divergence. The plumbing is not bought.
 >
 > **A conformance-coverage finding fell out of that measurement, and it is worth more than the

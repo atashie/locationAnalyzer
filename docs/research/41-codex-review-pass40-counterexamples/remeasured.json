@@ -1,0 +1,227 @@
+{
+  "draws_per_regime": 5000,
+  "seed": 20261112,
+  "max_precision": 192,
+  "population": "a manufactured cost tie: a partial traversal against a full edge at exactly its rounded cost, with the full edge given the smaller time so the convention always selects it",
+  "regimes": {
+    "utm-like, 1e5 to 1e6 m": {
+      "decided_draws": 5000,
+      "skipped_zero_cost": 0,
+      "agrees": 2429,
+      "differs": 2571,
+      "unresolved": 0,
+      "unresolved_exactly_tied": 0,
+      "unresolved_not_exactly_tied": 0,
+      "differs_rate": 0.5142,
+      "worst_precision_exponent": 64,
+      "seconds": 2.53
+    },
+    "toy, single digits": {
+      "decided_draws": 5000,
+      "skipped_zero_cost": 0,
+      "agrees": 2584,
+      "differs": 2416,
+      "unresolved": 0,
+      "unresolved_exactly_tied": 0,
+      "unresolved_not_exactly_tied": 0,
+      "differs_rate": 0.4832,
+      "worst_precision_exponent": 64,
+      "seconds": 2.62
+    }
+  },
+  "t4_fixtures": {
+    "note": "the certified comparator is NOT swept over these fixtures; this measures why. A near-tie is where the convention's argmin can diverge from the real one, and these fixtures have none",
+    "cases": [
+      {
+        "case": "objective_views_are_never_hybrid",
+        "journeys": 36,
+        "journeys_at_the_minimum_cost": 3,
+        "distinct_times_among_them": [
+          15.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 10.0,
+        "cost_gap_in_ulps": 5629499534213120.0
+      },
+      {
+        "case": "geometric_attachment_tie_keeps_every_minimiser",
+        "journeys": 10,
+        "journeys_at_the_minimum_cost": 4,
+        "distinct_times_among_them": [
+          101.58730158730158
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 200.0,
+        "cost_gap_in_ulps": 1.40737488355328e+16
+      },
+      {
+        "case": "equal_cost_alternatives_rank_by_travel_time",
+        "journeys": 26,
+        "journeys_at_the_minimum_cost": 18,
+        "distinct_times_among_them": [
+          1.0,
+          10.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": true,
+        "cost_gap": 100.0,
+        "cost_gap_in_ulps": 1.40737488355328e+16
+      },
+      {
+        "case": "edge_penalties_are_apportioned_not_charged_on_entry",
+        "journeys": 18,
+        "journeys_at_the_minimum_cost": 3,
+        "distinct_times_among_them": [
+          10.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 3.79,
+        "cost_gap_in_ulps": 1.706864258773418e+16
+      },
+      {
+        "case": "oneway_partial_edge_routes_the_long_way_round",
+        "journeys": 1,
+        "journeys_at_the_minimum_cost": 1,
+        "distinct_times_among_them": [
+          240.0
+        ],
+        "discriminator_fires": false,
+        "discriminator_changes_the_reported_time": false
+      },
+      {
+        "case": "oneway_with_no_return_is_no_path_not_off_network",
+        "journeys": 0
+      },
+      {
+        "case": "same_edge_direct_traversal_is_a_candidate_and_loses",
+        "journeys": 29,
+        "journeys_at_the_minimum_cost": 9,
+        "distinct_times_among_them": [
+          201.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 599.0,
+        "cost_gap_in_ulps": 2.107543888121037e+16
+      },
+      {
+        "case": "objective2_is_cost_argmin_then_that_pairs_time",
+        "journeys": 18,
+        "journeys_at_the_minimum_cost": 6,
+        "distinct_times_among_them": [
+          10.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 20.0,
+        "cost_gap_in_ulps": 1.125899906842624e+16
+      },
+      {
+        "case": "adding_a_cheaper_destination_raises_objective2",
+        "journeys": 18,
+        "journeys_at_the_minimum_cost": 6,
+        "distinct_times_among_them": [
+          100.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 5.0,
+        "cost_gap_in_ulps": 5629499534213120.0
+      },
+      {
+        "case": "destination_eligibility_is_the_300_m_cap",
+        "journeys": 5,
+        "journeys_at_the_minimum_cost": 2,
+        "distinct_times_among_them": [
+          248.4126984126984
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 100.00000000000003,
+        "cost_gap_in_ulps": 3518437208883201.0
+      },
+      {
+        "case": "origin_beyond_max_access_m_is_off_network_not_no_path",
+        "journeys": 0
+      },
+      {
+        "case": "fraction_is_measured_along_the_whole_polyline",
+        "journeys": 5,
+        "journeys_at_the_minimum_cost": 2,
+        "distinct_times_among_them": [
+          150.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 100.0,
+        "cost_gap_in_ulps": 3518437208883200.0
+      },
+      {
+        "case": "connectors_enter_objective_2s_selection_cost",
+        "journeys": 18,
+        "journeys_at_the_minimum_cost": 6,
+        "distinct_times_among_them": [
+          650.0
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 20.0,
+        "cost_gap_in_ulps": 5629499534213120.0
+      },
+      {
+        "case": "two_occurrences_at_one_position_are_two_candidates",
+        "journeys": 2,
+        "journeys_at_the_minimum_cost": 1,
+        "distinct_times_among_them": [
+          166.66666666666663
+        ],
+        "discriminator_fires": false,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 666.6666666666667,
+        "cost_gap_in_ulps": 2.3456248059221336e+16
+      },
+      {
+        "case": "the_two_directions_of_a_closed_edge_are_distinct",
+        "journeys": 5,
+        "journeys_at_the_minimum_cost": 1,
+        "distinct_times_among_them": [
+          200.00000000000009
+        ],
+        "discriminator_fires": false,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 3600.0,
+        "cost_gap_in_ulps": 1.266637395197952e+17
+      },
+      {
+        "case": "same_identity_alternatives_still_compete_on_weights",
+        "journeys": 26,
+        "journeys_at_the_minimum_cost": 1,
+        "distinct_times_among_them": [
+          1.2000000000000002
+        ],
+        "discriminator_fires": false,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 0.7999999999999998,
+        "cost_gap_in_ulps": 3602879701896396.0
+      },
+      {
+        "case": "a_destination_exactly_at_the_cap_is_eligible",
+        "journeys": 5,
+        "journeys_at_the_minimum_cost": 4,
+        "distinct_times_among_them": [
+          338.0952380952381
+        ],
+        "discriminator_fires": true,
+        "discriminator_changes_the_reported_time": false,
+        "cost_gap": 200.0,
+        "cost_gap_in_ulps": 3518437208883200.0
+      }
+    ],
+    "cases_with_a_near_tie_under_1e6_ulps": 0,
+    "cases_where_the_time_discriminator_fires": 11,
+    "cases_where_it_changes_the_reported_time": 1
+  }
+}

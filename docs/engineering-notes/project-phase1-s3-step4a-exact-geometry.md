@@ -326,9 +326,14 @@ fixture spanned **more than two segments**, so deleting the whole middle segment
 nothing anywhere. Both are the same lesson as pass 38 F3's midpoint destination: *fixtures drawn
 from the easy part of the input space test the easy part of the code.*
 
-Two further survivors were **equivalent** mutants — removing the zero-denominator guard still raises
+Two further survivors looked **equivalent** — removing the zero-denominator guard still raises
 `ZeroDivisionError` from the next statement, and removing the index guard still raises `IndexError`
-from the list — so both now mutate to *swallow* the condition instead. And one anchor matched twice,
+from the list — so both now mutate to *swallow* the condition instead. **Codex pass 40 F6 showed
+the equivalence claim was itself too broad**: it held only for the examples I happened to try. The
+denominator guard also covers a *wholly negative* interval, which the next statement divides by
+happily — `[1,2] / [-2,-1]` returned `[-1,-1]` — and the index guard also covers a *negative* index,
+which Python accepts, so `chosen=-1` on a one-candidate set compared the candidate against itself
+and returned `UNRESOLVED`. Equivalence over the cases you tried is not equivalence. And one anchor matched twice,
 because `_rational_cost` carries the same orientation lines, so that mutation had been reporting
 SKIP and testing nothing. **That is pass 38 F3's defect again, found by the harness itself this time
 rather than by a reviewer** — which is what the SKIP report is for.
@@ -338,10 +343,20 @@ this phase I would keep if I kept nothing else:
 
 * the rate "over T2's frames" needs a router, and the router is a *later* phase — the plan had a
   dependency after its dependent;
-* the rate "over T4's fixtures" would measure nothing: **0 of 17** fixtures has a near tie, the
-  tightest margin being `0.8` at 3.6e15 ulps. Threading exact term provenance through the oracle to
-  sweep them would have been a day spent certifying foregone conclusions. **Measuring the margins
-  first cost four minutes.**
+* the rate "over T4's fixtures" would measure nothing: **0 of 17** fixtures has a margin under
+  10⁶ ulps **from its minimum cost** to the next distinct cost, the tightest being `0.8` at 3.6e15
+  ulps. Threading exact term provenance through the oracle to sweep them would have been a day spent
+  certifying foregone conclusions. **Measuring the margins first cost four minutes.**
+
+  *Pass 40 F7 corrected how I had stated that.* I wrote "contains no near tie", which is broader
+  than what was measured: `same_identity_alternatives_still_compete_on_weights` holds pairs **2
+  ulps** apart — `401.5999999999999/401.6` and `402.39999999999986/402.4` — both well above that
+  case's minimum, so a cost-argmin sweep never reaches them. The decision rests on the margin **at
+  the argmin**, and that is what the figure now says. Pass 40 also ran the audit I could not:
+  reconstructing **222** journeys across the corpus it found **0** pairs that are equal in binary64
+  and unequal in reality, every case with journeys selecting a real minimum, and — checking the
+  consequence test I had left incomplete — all ten equal-time tie cases sharing one destination and
+  one route identity too. The decision survives on better evidence than I had for it.
 
 **And that measurement found something better than the sweep.** §2.4's travel-time discriminator
 fires in **11 of 17** fixtures, always on an exact tie, and in **10** of those 11 every tied journey
@@ -349,6 +364,73 @@ carries the same travel time — so the choice cannot move a reported number. Th
 is covered by **one** fixture. Against a measured ~50% wrong-selection rate when a tie is
 manufactured, that is thin cover for a load-bearing rule. **A rule can be exercised often and tested
 once.**
+
+## 9. Codex pass 40 on 4a.2: one High, four Medium, three Low
+
+The comparator was reviewed the same day it was published. The published rates reproduce **exactly**
+and every draw resolves by `2**-64`, so no figure moved — but the comparator had a **soundness** bug,
+and two more of my summary sentences were wider than their evidence.
+
+**A label is not an identity.** `certify_cheaper` returned the winning journey's *label* and the
+caller tested `winner == other.label`. `Journey.label` defaults to `""`, so two journeys built
+without one shared it, and a win for the selected journey was read as a win for its alternative:
+`certify_selection([cost 1, cost 2], chosen=0)` returned **`DIFFERS`** where the answer is plainly
+`AGREES`. The published population uses distinct labels, which is the only reason the measured rate
+is untouched. The winner is now positional. **A field whose purpose is reporting must never be load-
+bearing for a decision**, and "the caller will pass distinct labels" was a precondition I never
+wrote down, let alone checked.
+
+**A reported precision that was never evaluated.** The refinement loop doubled 8, 16, 32, 64, 128
+and then past the cap, reporting `min(k, max_precision)` — so a default run announced
+`UNRESOLVED` at precision 192 having never tried 192, and the comparison it gave up on *is decided*
+there. The sequence now ends on the cap and reports only what it evaluated. The justification for
+the cap was wrong too: I wrote that `2**-192` is "far below any gap a binary64 cost can express",
+and binary64's smallest positive gap is `2**-1074` — an admissible query produces reported costs the
+cap cannot separate. It is a **budget**, not a bound, and that is why `UNRESOLVED` is retained
+rather than treated as agreement.
+
+**Unknown is not the same as unequal, and `False` was doing both jobs.** `_exactly_tied` returned a
+plain boolean, so "provably unequal" and "cannot tell" were indistinguishable, and the measurement's
+"NOT tied" column silently contained every pair with an irrational term. Worse, only the *first*
+undecided alternative was examined, so the verdict depended on candidate order. Tri-state now, and
+every alternative is examined. This is the F4-of-pass-38 lesson again: **a column named after one
+thing was counting another.**
+
+**An unsound primitive nobody had reached.** Interval division used `[lo/other.hi, hi/other.lo]`,
+which is the enclosure only for a non-negative numerator; `[-1,1] / [1,2]` returned `[-1/2, 1]` and
+excluded the attainable `-1`. Every span this module forms is non-negative, so no published figure
+went through it — but "no current caller reaches it" is exactly what I said about `exact_segment_sq`
+and the caps two passes ago, and it was wrong then too.
+
+**The harness could not see a crash it did not cause.** Pass 38 taught me to smoke-run each mutant
+so a crash is not banked as a catch. Pass 40 showed the fix stops at the smoke's own inputs:
+`run_tests()` reduced every pytest failure to a boolean, so a mutant raising `NameError` *inside the
+suite*, on an input the smoke never reaches, printed as `caught`. The error name is now carried out
+and such a run reports `CRASHED`. **The same defect, one level further out, found by a reviewer
+rather than by the fix.**
+
+**Four rules had no mutation**, each of them a way for a diagnostic to look clean while lying:
+equality recognition, the rational-root test, the too-loose-denominator branch, and precision
+accounting. All four added. One of them then proved **equivalent on the reachable domain** — a
+journey whose terms are all rational has a *degenerate* cost interval, so two of them always resolve
+unless equal, which means `_exactly_tied`'s equality test is reached only when it must return
+`True`. Retired with the reason, because a permanently uncaught mutation trains whoever reads the
+list to discount it.
+
+**And the summary sentences, a third pass running.** I wrote that T4 "contains no near tie" when I
+had measured the margin *from the minimum*; one fixture holds pairs 2 ulps apart well above its
+minimum, where a cost-argmin sweep never looks. And I wrote that the competing journey "is given the
+smaller travel time, so the convention always selects B" — while `Journey` had **no time field at
+all**, so nothing in the experiment tested it; `chosen=1` was supplied directly. The claim was a
+stipulation dressed as a consequence. `Journey` now carries a time, `convention_selection` derives
+the choice from §2.4's rule, and the admissibility condition the population declares is enforced
+rather than assumed. The rate is unchanged at 51.42% and 48.32%, and is now a measurement of what it
+said it measured.
+
+Pass 40 also did the audit I had decided was too expensive: it reconstructed **222** journeys across
+the T4 corpus and found **zero** pairs equal in binary64 and unequal in reality, every case with
+journeys selecting a real minimum, and all ten equal-time tie cases sharing one destination and one
+route identity. **The decision to skip the sweep survives on better evidence than I had for it.**
 
 ## What this phase does not do
 

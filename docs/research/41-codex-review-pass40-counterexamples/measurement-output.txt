@@ -1,0 +1,19 @@
+
+utm-like, 1e5 to 1e6 m: 5000 decided draws in 2.53s
+  AGREES        2,429
+  DIFFERS       2,571   (51.42% of decided draws)
+  UNRESOLVED        0   of which exactly tied 0, NOT tied 0
+  worst refinement reached 2**-64
+
+toy, single digits: 5000 decided draws in 2.62s
+  AGREES        2,584
+  DIFFERS       2,416   (48.32% of decided draws)
+  UNRESOLVED        0   of which exactly tied 0, NOT tied 0
+  worst refinement reached 2**-64
+
+T4's conformance fixtures, measured rather than swept: 0 of 17 contain a near tie under 1e6 ulps. The time discriminator fires in 11 of them, by an EXACT cost tie, and changes the reported time in 1.
+  So a certified sweep over them would return AGREES or an exactly-tied UNRESOLVED throughout and measure no divergence. That is why the terms are not threaded through the oracle for it.
+
+What this does and does not say. The rate is over a MANUFACTURED tie, which is the case section 2.4's tie rule exists for and not the frequency of that case on a real graph. It bounds nothing about T2's frames; it says what happens when the rule fires.
+
+wrote C:\Users\arikt\Documents\GitHub\distanceFinder\docs\research\41-codex-review-pass40-counterexamples\remeasured.json

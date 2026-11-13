@@ -326,3 +326,132 @@ def test_a_non_finite_cost_is_refused_rather_than_propagated():
     j = c.Journey(full_edge_costs=(math.inf,), label="j")
     with pytest.raises(ValueError):
         j.cost_interval(8)
+
+
+# ------------------------------------------------------------------ Codex pass 40
+
+def test_a_duplicate_or_default_label_cannot_fake_a_differs():
+    """Pass 40 F1, a soundness defect: the winner was identified BY LABEL.
+
+    `label` defaults to `""`, so two journeys constructed without one shared it, and a win for the
+    selected journey was read as a win for its alternative. Cost 1 selected against cost 2 returned
+    `DIFFERS`. The winner is now positional, and a label is for reporting only.
+    """
+    a, b = c.Journey(full_edge_costs=(1.0,)), c.Journey(full_edge_costs=(2.0,))
+    assert c.certify_selection([a, b], chosen=0).status == c.AGREES
+    assert c.certify_selection([a, b], chosen=1).status == c.DIFFERS
+    x = c.Journey(full_edge_costs=(1.0,), label="same")
+    y = c.Journey(full_edge_costs=(2.0,), label="same")
+    assert c.certify_selection([x, y], chosen=0).status == c.AGREES
+
+
+def test_certify_cheaper_reports_only_a_precision_it_evaluated():
+    """Pass 40 F2: the loop doubled past the cap and reported a precision it never tried.
+
+    A full traversal of the unit segment at cost 1 against `1 + 2**-150`: the sequence 8, 16, 32,
+    64, 128 skipped straight over 192, so the default run reported `UNRESOLVED` at precision 192
+    while 192 in fact decides it. The sequence now ends on the cap.
+    """
+    a = c.Journey(partials=(c.Partial(geometry=((0.0, 0.0), (1.0, 0.0)), seg_o=0, t_o=Fraction(0),
+                                      seg_d=0, t_d=Fraction(1), cost=1.0),), label="A")
+    b = c.Journey(full_edge_costs=(1.0, 2.0 ** -150), label="B")
+    got = c.certify_selection([a, b], chosen=1)
+    assert got.status == c.DIFFERS and got.certified == "A"
+    assert got.precision == 192, "the declared cap must itself be evaluated"
+    tight = c.certify_selection([a, b], chosen=1, max_precision=7)
+    assert tight.precision == 7
+
+
+def test_signed_interval_division_encloses_the_attainable_values():
+    """Pass 40 F4: the quotient was `[lo/other.hi, hi/other.lo]`, right only for a non-negative
+    numerator. `[-1,1] / [1,2]` returned `[-1/2, 1]` and excluded the attainable -1.
+    """
+    one = c.Interval(Fraction(-1), Fraction(1))
+    assert one.divided_by(c.Interval(Fraction(1), Fraction(2))) == c.Interval(Fraction(-1),
+                                                                              Fraction(1))
+    two = c.Interval(Fraction(-2), Fraction(-1))
+    assert two.divided_by(c.Interval(Fraction(1), Fraction(4))) == c.Interval(Fraction(-2),
+                                                                             Fraction(-1, 4))
+
+
+def test_a_denominator_is_refused_when_it_contains_zero_not_merely_touches_it():
+    """Pass 40 F6: the guard tested `other.lo <= 0`, so a wholly NEGATIVE denominator passed."""
+    num = c.Interval(Fraction(1), Fraction(2))
+    with pytest.raises(ZeroDivisionError):
+        num.divided_by(c.Interval(Fraction(0), Fraction(1)))
+    with pytest.raises(ZeroDivisionError):
+        num.divided_by(c.Interval(Fraction(-1), Fraction(1)))
+    assert num.divided_by(c.Interval(Fraction(-2), Fraction(-1))) == c.Interval(Fraction(-2),
+                                                                               Fraction(-1, 2))
+
+
+def test_exactly_tied_is_three_valued_and_unknown_is_not_unequal():
+    """Pass 40 F3: `False` meant both "provably unequal" and "cannot tell"."""
+    t1 = c.Journey(connector_sq=(Fraction(1),), label="t1")
+    t2 = c.Journey(connector_sq=(Fraction(1),), label="t2")
+    got = c.certify_selection([t1, t2], chosen=0, max_precision=64)
+    assert got.status == c.UNRESOLVED and got.exactly_tied is True
+    g = ((0.0, 0.0), (1.0, 2.0))
+    p = c.Partial(geometry=g, seg_o=0, t_o=Fraction(0), seg_d=0, t_d=Fraction(1, 3), cost=1.0)
+    u1 = c.Journey(partials=(p,), label="u1")
+    u2 = c.Journey(full_edge_costs=(u1.rounded_cost(),), label="u2")
+    unknown = c.certify_selection([u1, u2], chosen=0, max_precision=8)
+    if unknown.status == c.UNRESOLVED:
+        assert unknown.exactly_tied is None
+
+
+def test_an_unresolved_verdict_examines_every_alternative_not_only_the_first():
+    """Pass 40 F3's second half: the answer depended on candidate ORDER."""
+    picked = c.Journey(full_edge_costs=(1.0,), label="picked")
+    rational_tie = c.Journey(full_edge_costs=(1.0,), label="tie")
+    g = ((0.0, 0.0), (1.0, 2.0))
+    near = c.Journey(partials=(c.Partial(geometry=g, seg_o=0, t_o=Fraction(0), seg_d=0,
+                                         t_d=Fraction(1), cost=1.0),), label="irrational")
+    first = c.certify_selection([picked, rational_tie, near], chosen=0, max_precision=8)
+    second = c.certify_selection([picked, near, rational_tie], chosen=0, max_precision=8)
+    assert first.status == second.status
+    assert first.exactly_tied == second.exactly_tied, "the verdict must not depend on list order"
+
+
+def test_the_convention_selection_is_derived_from_the_rule_not_supplied():
+    """Pass 40 F8: the measurement stipulated which journey the convention picks.
+
+    `Journey` had no time at all, so "the convention always selects B" was untested. §2.4 selects
+    the cost argmin, then the smallest travel time among journeys of exactly that cost.
+    """
+    cheap_slow = c.Journey(full_edge_costs=(1.0,), time_s=1000.0, label="cheap but slow")
+    cheap_fast = c.Journey(full_edge_costs=(1.0,), time_s=1.0, label="cheap and fast")
+    dear_fast = c.Journey(full_edge_costs=(9.0,), time_s=0.5, label="dearer but fastest")
+    assert c.convention_selection([cheap_slow, cheap_fast, dear_fast]) == 1
+    assert c.convention_selection([dear_fast, cheap_slow]) == 1
+    with pytest.raises(ValueError):
+        c.convention_selection([])
+
+
+def test_a_negative_selection_index_is_refused():
+    """Pass 40 F6: Python accepts `candidates[-1]`, so the guard has to reject it explicitly."""
+    j = c.Journey(full_edge_costs=(1.0,), label="j")
+    with pytest.raises(IndexError):
+        c.certify_selection([j], chosen=-1)
+
+
+def test_rational_sqrt_exact_rejects_a_non_square():
+    """Pass 40 F5 named this as unattacked: an approximate root would declare false ties."""
+    assert c._rational_sqrt_exact(Fraction(4)) == 2
+    assert c._rational_sqrt_exact(Fraction(9, 16)) == Fraction(3, 4)
+    assert c._rational_sqrt_exact(Fraction(2)) is None
+    assert c._rational_sqrt_exact(Fraction(8, 9)) is None
+    assert c._rational_sqrt_exact(Fraction(0)) == 0
+
+
+def test_a_too_loose_positive_denominator_refines_instead_of_returning_zero():
+    """Pass 40 F5: the `_NeedsPrecision` branch had no fixture, and returning a zero interval there
+    would certify a positive-cost journey as agreeing against a strictly cheaper one.
+    """
+    tiny = 1e-160
+    p = c.Partial(geometry=((0.0, 0.0), (tiny, 0.0)), seg_o=0, t_o=Fraction(0), seg_d=0,
+                  t_d=Fraction(1), cost=1.0)
+    a = c.Journey(partials=(p,), label="a full traversal of a tiny segment, cost 1")
+    b = c.Journey(full_edge_costs=(0.5,), label="cheaper")
+    got = c.certify_selection([a, b], chosen=0, max_precision=4096)
+    assert got.status == c.DIFFERS and got.certified == "cheaper"

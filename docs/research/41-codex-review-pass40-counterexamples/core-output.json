@@ -1,0 +1,129 @@
+{
+  "brackets_width_nesting_checked": 7028,
+  "signed_division": {
+    "straddling_result": "Interval(lo=Fraction(-1, 2), hi=Fraction(1, 1))",
+    "contains_attainable_minus_one": false,
+    "negative_result": "Interval(lo=Fraction(-1, 1), hi=Fraction(-1, 1))",
+    "contains_attainable_minus_two": false,
+    "valid_division_raises": "an inverted interval: [-1/2, -1]"
+  },
+  "duplicate_default_labels": {
+    "status": "DIFFERS",
+    "convention": "",
+    "certified": "",
+    "precision": 8,
+    "exactly_tied": null
+  },
+  "precision_limit": {
+    "default_result": {
+      "status": "UNRESOLVED",
+      "convention": "B",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    },
+    "actually_tried": [
+      8,
+      16,
+      32,
+      64,
+      128
+    ],
+    "separates_at_192": true,
+    "limit_256_result": {
+      "status": "DIFFERS",
+      "convention": "B",
+      "certified": "A",
+      "precision": 256,
+      "exactly_tied": null
+    },
+    "limit_7_result": {
+      "status": "UNRESOLVED",
+      "convention": "B",
+      "certified": null,
+      "precision": 7,
+      "exactly_tied": false
+    }
+  },
+  "equal_but_not_exactly_tied": [
+    {
+      "status": "UNRESOLVED",
+      "convention": "connector",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    },
+    {
+      "status": "UNRESOLVED",
+      "convention": "sqrt2/sqrt2",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    }
+  ],
+  "first_unresolved_masks_unequal": {
+    "tie_first": {
+      "status": "UNRESOLVED",
+      "convention": "B",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": true
+    },
+    "unequal_first": {
+      "status": "UNRESOLVED",
+      "convention": "B",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    }
+  },
+  "needs_precision": {
+    "default": {
+      "status": "UNRESOLVED",
+      "convention": "tiny length, cost 1",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    },
+    "at_256": {
+      "status": "AGREES",
+      "convention": "tiny length, cost 1",
+      "certified": "tiny length, cost 1",
+      "precision": 256,
+      "exactly_tied": null
+    }
+  },
+  "absolute_width_is_not_a_binary64_gap_bound": {
+    "rounded_costs": [
+      7.936507936507937e-101,
+      2e-100
+    ],
+    "default": {
+      "status": "UNRESOLVED",
+      "convention": "tiny residual",
+      "certified": null,
+      "precision": 192,
+      "exactly_tied": false
+    },
+    "at_512": {
+      "status": "AGREES",
+      "convention": "tiny residual",
+      "certified": "tiny residual",
+      "precision": 512,
+      "exactly_tied": null
+    },
+    "minimum_subnormal_gap_less_than_2_to_minus_192": true
+  },
+  "independent_decimal_cost_containment": 400,
+  "w5": {
+    "exact_squared_gap": "37781456166601769/324518553658426726783156020576256",
+    "real_cost_gap_100_digit_decimal": "4.1161781903271303350690105193714848801823320262009267521537892961149612465672358427E-17"
+  },
+  "reported_certified_is_first_witness_not_argmin": {
+    "status": "DIFFERS",
+    "convention": "picked 5",
+    "certified": "first cheaper 4",
+    "precision": 8,
+    "exactly_tied": null
+  }
+}

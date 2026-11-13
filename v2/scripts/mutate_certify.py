@@ -70,14 +70,14 @@ BROKEN = ("NameError", "ImportError", "SyntaxError", "IndentationError", "Unboun
 MUTATIONS: list[tuple[str, str, str]] = [
     # --- the one this phase exists for.
     (
-        "report the convention's choice as AGREES when the intervals still overlap",
-        "    return (None, min(k, max_precision))",
-        "    return (a.label, min(k, max_precision))",
+        "report the convention's choice as decided when the intervals still overlap",
+        "            return (None, tried)",
+        "            return (FIRST, tried)",
     ),
     (
         "treat an undecided comparison as agreement in the status",
-        "    if undecided is not None:",
-        "    if False:",
+        "    if undecided:\n",
+        "    if False:\n",
     ),
     (
         "count UNRESOLVED as agreement",
@@ -112,9 +112,11 @@ MUTATIONS: list[tuple[str, str, str]] = [
         "        return Interval(self.lo + other.hi, self.hi + other.lo)",
     ),
     (
-        "divide endpoint by matching endpoint instead of crosswise",
+        "take only two of the four endpoint quotients, as the unsigned formula did",
+        "        quotients = (self.lo / other.lo, self.lo / other.hi,\n"
+        "                     self.hi / other.lo, self.hi / other.hi)\n"
+        "        return Interval(min(quotients), max(quotients))",
         "        return Interval(self.lo / other.hi, self.hi / other.lo)",
-        "        return Interval(self.lo / other.lo, self.hi / other.hi)",
     ),
     (
         "ignore the sign when scaling, so a negative scalar inverts the interval",
@@ -131,9 +133,9 @@ MUTATIONS: list[tuple[str, str, str]] = [
     # division by zero raises `ZeroDivisionError` from the very next statement, so a test asserting
     # that exception still passes. The detectable mutation is one that SWALLOWS the condition.
     (
-        "pass a zero-reaching denominator through instead of refusing it",
-        "        if other.lo <= 0:\n            raise ZeroDivisionError(",
-        "        if other.lo <= 0:\n            return self\n        if False:\n"
+        "pass a denominator containing zero through instead of refusing it",
+        "        if other.lo <= 0 <= other.hi:\n            raise ZeroDivisionError(",
+        "        if other.lo <= 0 <= other.hi:\n            return self\n        if False:\n"
         "            raise ZeroDivisionError(",
     ),
     # --- the terms §2.4 item 6 names.
@@ -174,6 +176,30 @@ MUTATIONS: list[tuple[str, str, str]] = [
         "sum the convention's terms from the left instead of with fsum",
         "        return math.fsum(terms)",
         "        run = 0.0\n        for term in terms:\n            run += term\n        return run",
+    ),
+    # --- four rules pass 40 F5 found with NO mutation attacking them. Each of these left all 40
+    # fixtures of the time passing, and each is a way for a diagnostic to look clean while lying.
+    # RETIRED as an equivalent mutation, with the reason, rather than left reported as
+    # uncaught. A journey whose every term is rational has a DEGENERATE cost interval -- a point --
+    # so two such journeys always separate at the first precision unless their costs are equal.
+    # `_exactly_tied` is therefore reached with two rational costs only when those costs are equal,
+    # and `ra == rb` is `True` every time it is evaluated. Replacing it with `True` cannot be
+    # detected because the discriminating case does not exist. What the function actually decides is
+    # "are both costs recognisably rational", and its docstring now says so.
+    (
+        "accept a non-square as having a rational root, using an integer approximation",
+        "    return Fraction(rn, rd) if rn * rn == n and rd * rd == d else None",
+        "    return Fraction(rn, rd)",
+    ),
+    (
+        "return a zero interval where the denominator bracket is too loose, instead of refining",
+        "            raise _NeedsPrecision(k)",
+        "            return Interval(Fraction(0), Fraction(0))",
+    ),
+    (
+        "report a precision beyond the one actually evaluated",
+        "            return (None, tried)",
+        "            return (None, tried + 123)",
     ),
     # --- the guards.
     (
@@ -219,12 +245,26 @@ def smoke() -> tuple[str | None, str | None]:
     return (None, None)
 
 
-def run_tests() -> bool:
+def run_tests() -> tuple[bool, str | None]:
+    """`(passed, crash_error_name)`. A failing suite is not automatically a caught defect.
+
+    Codex pass 40 F5: this returned a bare boolean and threw the exception information away, so a
+    mutation that raised `NameError` *inside the suite* — on an input the smoke does not reach —
+    stopped the run and was printed as `caught`. That is pass 38 F3's defect surviving one level
+    further out: the smoke catches a crash on the smoke's own inputs and nothing caught a crash
+    beyond them. The error name is now carried out so a crash can be named as a crash.
+    """
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", TESTS, "-x", "-q", "-p", "no:cacheprovider"],
         cwd=ROOT, capture_output=True, text=True,
     )
-    return proc.returncode == 0
+    if proc.returncode == 0:
+        return (True, None)
+    blob = proc.stdout + proc.stderr
+    for name in BROKEN:
+        if name in blob:
+            return (False, name)
+    return (False, None)
 
 
 def self_test() -> int:
@@ -271,7 +311,7 @@ def main() -> int:
     survived: list[str] = []
 
     try:
-        if not run_tests():
+        if not run_tests()[0]:
             print("FAIL: the unmutated tests do not pass; nothing below would mean anything")
             return 1
         broken, baseline_digest = smoke()
@@ -300,8 +340,14 @@ def main() -> int:
                 if digest_now is not None and digest_now == baseline_digest:
                     print(f"UNSEPARATED  {label}: the smoke computes the same values as the clean "
                           "module, so only the suite distinguishes this mutant")
-                if run_tests():
+                passed, crash = run_tests()
+                if passed:
                     print(f"NOT CAUGHT   {label}  <-- no test sees this")
+                    survived.append(label)
+                elif crash is not None:
+                    print(f"CRASHED      {label}: the suite stopped with {crash} rather than on an "
+                          "assertion, so this is evidence of a broken mutant and not of a caught "
+                          "defect")
                     survived.append(label)
                 else:
                     print(f"caught       {label}")
