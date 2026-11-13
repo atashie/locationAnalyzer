@@ -83,3 +83,33 @@ def test_a_beyond_horizon_cell_in_the_export_matches_the_manifest_horizon():
             continue
         expected = min(int(math.ceil(layer["horizon_s"] / 60.0)), wire.VALUE_MAX)
         assert (value[bh] == expected).all()
+
+
+def test_the_regrid_measurement_indexes_pixels_the_way_rasterio_does():
+    """`measure_export_regrid.py` re-implements the exported raster's tiling as
+    `floor((lon - west) / (east - west) * ncols)`, while the exporter builds its destination with
+    `rasterio.transform.from_bounds`. If those two tilings differ, every number in that
+    measurement is an artifact of the arithmetic rather than of the reprojection.
+
+    They agree on all 512,633 structures; this checks the same property on a dense synthetic grid
+    that includes the edges and the half-open boundaries, which the structure population does not
+    reach.
+    """
+    from rasterio.transform import from_bounds, rowcol
+
+    west, south, east, north = -79.20, 35.70, -78.50, 36.15
+    nrows, ncols = 514, 643
+    transform = from_bounds(west, south, east, north, ncols, nrows)
+
+    rng = np.random.default_rng(3)
+    lon = np.concatenate([rng.uniform(west, east, 20000),
+                          np.full(64, west), np.full(64, east),
+                          np.linspace(west, east, 2000)])
+    lat = np.concatenate([rng.uniform(south, north, 20000),
+                          np.linspace(south, north, 64), np.linspace(north, south, 64),
+                          np.full(2000, north)])
+    mine_col = np.floor((lon - west) / (east - west) * ncols).astype(np.int64)
+    mine_row = np.floor((north - lat) / (north - south) * nrows).astype(np.int64)
+    rr, cc = rowcol(transform, lon, lat, op=np.floor)
+    assert np.array_equal(mine_col, np.asarray(cc, dtype=np.int64))
+    assert np.array_equal(mine_row, np.asarray(rr, dtype=np.int64))

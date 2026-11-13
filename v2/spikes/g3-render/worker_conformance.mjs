@@ -26,6 +26,16 @@ const FIXTURES = path.join(__dirname, 'fixtures', 'conformance');
 
 const V_INCLUDED = 0, V_EXCLUDED = 1, V_UNKNOWN = 2;
 
+// worker.js's own palette, recomputed here rather than imported, so a change to one side has to
+// be made deliberately on the other.
+const LITTLE_ENDIAN = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+const packRGBA = (r, g, b, a) => (LITTLE_ENDIAN
+  ? ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
+  : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0);
+const PX_IN = packRGBA(24, 119, 242, 150);
+const PX_NODATA = packRGBA(60, 60, 60, 130);
+const PX_OUT = 0;
+
 let failures = 0;
 function check(name, fn) {
   try {
@@ -166,6 +176,23 @@ for (const group of vectors.groups) {
         for (let i = 0; i < n; i++) {
           assert(verdicts[i] === c.verdicts[i],
             `cell ${i}: worker ${verdicts[i]}, python ${c.verdicts[i]}`);
+        }
+      }
+
+      // The verdict plane is what the harness compares, so on its own it would let a defect
+      // corrupt what a VIEWER sees while leaving the plane right. Every pixel is therefore
+      // checked against the verdict it claims to render.
+      const px = new Uint32Array(res.rgba);
+      let p2 = 0;
+      for (let r = 0; r < group.nrows; r++) {
+        for (let col = 0; col < group.ncols; col++, p2++) {
+          const onStripe = ((r + col) & 7) < 2;
+          let want;
+          if (verdicts[p2] === V_INCLUDED) want = PX_IN;
+          else if (verdicts[p2] === V_UNKNOWN) want = onStripe ? PX_NODATA : PX_OUT;
+          else want = PX_OUT;
+          assert(px[p2] === want,
+            `cell ${p2} verdict ${verdicts[p2]}: pixel ${px[p2]} but ${want} renders it`);
         }
       }
       if (c.verdict_sha256_32) {

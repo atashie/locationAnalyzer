@@ -74,6 +74,17 @@ const MUTATIONS = [
       'mask[p] = (p % 1000 === 0) ? 0 : 1;\n          verdict[p] = V_INCLUDED;'),
   },
   {
+    name: 'excluded cells are painted with the included colour',
+    apply: (s) => s.replace(/verdict\[p\] = V_EXCLUDED;\r?\n\s*px\[p\] = PX_OUT;/,
+      'verdict[p] = V_EXCLUDED;\n          px[p] = PX_IN;'),
+  },
+  {
+    name: 'the unknown hatch is dropped, so unknown renders as excluded',
+    apply: (s) => s.replace(
+      "px[p] = (((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH) ? PX_NODATA : PX_OUT;",
+      'px[p] = PX_OUT;'),
+  },
+  {
     name: 'the counts no longer describe the plane',
     apply: (s) => s.replace('          excludedCount++;', '          if (p % 7) excludedCount++;'),
   },
