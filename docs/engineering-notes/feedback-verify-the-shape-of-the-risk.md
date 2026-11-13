@@ -545,3 +545,36 @@ instrument exists, say which one is missing rather than supplying a verdict in i
 predeclared rule may already say what this much data concludes.
 
 Twenty-three instances now.
+
+## Twenty-fourth, 2026-11-13 — a scorer running is not a scorer applying
+
+Instance twenty-three was writing a verdict by argument while a predeclared instrument for it sat
+in the repository. The repair was to consult the instrument. I consulted it, fed it the one
+observation we have, and reported its output — `FAILED` — as the report's headline. Pass 47:
+**the scorer cannot be applied to that observation.** No recorded start door, no confirmed
+destination, the private-approach question explicitly unresolved, and a duration recorded as
+"closer to 25 mins" rather than timed. The audit README lists those gaps itself.
+
+So the same sentence was corrected twice in opposite directions inside one day, and **both of my
+versions were the same error in different clothes: supplying a verdict where the honest answer was
+"this cannot be scored yet, and here is what would make it scorable".** First I supplied
+"unverified" from an argument about sample size. Then I supplied "failed" from a function call. The
+function call felt like rigour because it produced a number with a provenance, and a number with a
+provenance is not the same as a measurement of the thing the number is named after.
+
+**What I did next made it worse, which is the part worth remembering.** Challenged on
+admissibility, I built an argument *for* it — the owner must have walked the detour because the
+track is private — and that argument establishes what the **model** routes through and nothing
+about what the owner walked. Asked to check a claim, I went looking for support for it. The
+sensitivity sweep was the same reflex: it defends the conclusion against one objection (the
+duration is approximate) while the actual objection was a different one (the journey is not
+identified), and a sweep over the wrong axis reads as diligence.
+
+**How to apply.** Before reporting any instrument's output as a result, state its input contract
+and check the record against it, field by field — `E3` wants a reported time, an observed time, and
+implicitly the same journey, and the third is the one no type signature enforces. When a reviewer
+questions admissibility, the first move is to list what the instrument needs and mark each item
+present or absent, **not** to construct a reason the comparison is fair. And a robustness check is
+only evidence if it varies the axis the objection is actually about.
+
+Twenty-four instances now.

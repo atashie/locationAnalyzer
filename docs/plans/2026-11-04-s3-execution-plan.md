@@ -318,6 +318,34 @@ destination actually used, date, and outcome.
 > **Corrected after Codex pass 46, which said the decision report should not be handed to the owner
 > as written. It was right, and the most serious finding was not a number.**
 >
+>
+> **Corrected again after Codex pass 47, which reversed the direction of the previous correction.**
+> Pass 46 said my "UNVERIFIED" bypassed the predeclared scorer and understated the evidence. Pass
+> 47 says the resulting **`FAILED` overstates it: the scorer cannot be applied to this observation
+> at all.** The audit record does not document what E3 compares — no start door, no confirmed
+> destination, the private-approach question **unresolved**, and a duration recorded as "closer to
+> 25 mins" rather than timed. The audit README says so itself, and the diagnosis note calls the two
+> journeys "potentially different journeys".
+>
+> My own admissibility argument was refuted too: I reasoned that the owner must have walked the
+> detour *because* the track is private, which establishes what the **model** routes through and
+> nothing about what the owner walked.
+>
+> The sensitivity paragraph was wrong twice over: `E3`'s `reported_s` is **what the product said**,
+> the encoded **840 s**, not the raw 810.8185424804688 — and against 840 s the binding boundary is
+> **17.5 minutes**, not 16.9, with 17 minutes returning `UNVERIFIED`. 16.9 was also only the median
+> limb's boundary, never both.
+>
+> **So the status is a third thing: "no admissible observation".** The report now says what would
+> make this one scorable — a repeat walk from a recorded door inside the cell, to the selected
+> destination, timed, with the approach noted. One walk.
+>
+> Two further claims withdrawn. "More walks can move the FAILED verdict" is **false**: a thousand
+> accurate journeys leave an offending one in the set, so what changes a verdict is resolving that
+> observation or changing the model. And "engine disagreement: not measured" omitted real evidence
+> — **G1 measured 600 stratified walk cells on the old 401 × 550 slice**, 599 finite, signed median
+> **+12.05 s**, median absolute **30.75 s**, p90 absolute **173.45 s**, which the report now cites
+> with its qualifications rather than ignoring.
 > **The report said real-world accuracy was "UNVERIFIED, the owner's call". This project's own
 > predeclared scorer says FAILED.** `locfinder/measure/e3.py` on the one walked journey —
 > 1,500 s observed against 810.8186 s reported — trips both limbs: 1.85× and 11.5 minutes over,
