@@ -442,3 +442,43 @@ artifact exists. And never write "peaks at X" from a list of four; either sweep 
 "largest of the four reported".
 
 Twenty instances now.
+
+## Twenty-first, 2026-11-13 — pass 44, and the same failure three times running
+
+The eighteenth instance was a conformance harness that could not fail. The repair for it was a
+mutation guard — thirteen wrong decoders that each have to be caught — and **the guard could not
+fail either**. It counted every non-zero outcome as a catch, including `status: null` from a spawn
+error. In the reviewer's session `spawnSync` returned `EPERM`, and the gate printed *"9 of 9
+mutations caught"* having executed **no mutated decoder at all**.
+
+So in three consecutive passes I built: a check that compared nothing on most of its cells (18th),
+a guard for that check that was green when it did not run (21st), and in between, a mask assertion
+so weak that `mask[p] = 2` satisfied it while putting 225,520 excluded pixels inside the published
+polygon.
+
+**The pattern is specific and it is not carelessness.** Each time, the check was written to confirm
+the thing I had just fixed, and its *own* failure modes were never considered. A check is a program.
+It has inputs it mishandles, exits it misreads, and outputs it does not look at. I was treating the
+check as the place where scrutiny ends rather than as one more thing to attack.
+
+**What the three have in common, concretely:**
+
+* the harness read the RGBA buffer, which cannot express the distinction it was testing;
+* the guard read an exit status, which cannot distinguish "the mutant was rejected" from "nothing
+  ran";
+* the mask assertion read a truthiness comparison, which cannot distinguish `1` from `2` — and the
+  consumer thresholds at `0.5`.
+
+In every case a *weaker* reading of a stronger signal was available and I took it.
+
+**How to apply.** Three questions before a check is allowed to count as evidence, and they are
+cheap:
+
+1. **What does a pass actually prove?** Name the cells, bytes or rows compared, as a number. "Every
+   cell" has to mean every cell; if three quarters are skipped, the check establishes a quarter.
+2. **What does a failure of the harness itself look like?** Make the not-run case a distinguishable
+   outcome — `ERROR`, not a catch — and prove it by forcing one.
+3. **Is the signal I am reading the one the consumer reads?** `app.js` thresholds the mask at 0.5;
+   my assertion compared it to 1. The consumer's rule is the specification, not mine.
+
+Twenty-one instances now.

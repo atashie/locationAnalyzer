@@ -11,8 +11,9 @@ was a property of the four thresholds I happened to report, and wording that rea
 between two versions of our own model as a household being told the wrong thing.
 
 **The decision S3 exists to make, and it is now made by measurement: keep the 100 m grid.** The
-200 m candidate saves four fifths of the cells and roughly doubles the error at a household's
-address.
+200 m candidate saves about three quarters of the source cells (74.9%, 83,076 against 330,502)
+and roughly doubles the rate at which the published cell answer differs from the answer at the
+structure's own coordinate.
 
 ## How it was measured, and why not the obvious way
 
@@ -28,7 +29,7 @@ one graph, one destination set and one multi-source Dijkstra:
 | value | what it is |
 |---|---|
 | `address` | the answer at the structure's own centroid — what the pipeline would say if it answered per address |
-| `cell100` | the answer at the centre of the 100 m cell containing it — **what the product ships today** |
+| `cell100` | the answer at the centre of the 100 m cell containing it — **the source-grid answer**. It is not quite what ships: the browser receives a reprojected raster, measured separately below |
 | `cell200` | the answer at the centre of the 200 m cell containing it |
 
 Only the grid varies between the last two. The first is the reference: `cell100 − address` is what

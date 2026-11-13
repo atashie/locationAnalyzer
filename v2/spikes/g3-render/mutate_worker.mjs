@@ -74,6 +74,21 @@ const MUTATIONS = [
       'mask[p] = (p % 1000 === 0) ? 0 : 1;\n          verdict[p] = V_INCLUDED;'),
   },
   {
+    // Pass 44 F1. The RGBA buffer is wiped AFTER every per-cell write, so the verdict plane, the
+    // mask and the counts are all correct and the overlay shows nothing at all.
+    name: 'the overlay is blanked just before it is posted',
+    apply: (s) => s.replace('const tEnd = performance.now();',
+      'px.fill(0); const tEnd = performance.now();'),
+  },
+  {
+    // Pass 44 F1. `mask[p] = 2` satisfies `(mask[i] === 1) === (verdict === INCLUDED)` at an
+    // excluded cell, and app.js polygonizes at 0.5 -- so 225,520 excluded pixels at 15 minutes
+    // enter the polygon's included set. The mask is a consumer output, not a debug aid.
+    name: 'excluded mask cells carry 2 instead of 0',
+    apply: (s) => s.replace(/mask\[p\] = 0;\r?\n\s*verdict\[p\] = V_EXCLUDED;/,
+      'mask[p] = 2;\n          verdict[p] = V_EXCLUDED;'),
+  },
+  {
     name: 'excluded cells are painted with the included colour',
     apply: (s) => s.replace(/verdict\[p\] = V_EXCLUDED;\r?\n\s*px\[p\] = PX_OUT;/,
       'verdict[p] = V_EXCLUDED;\n          px[p] = PX_IN;'),
@@ -94,6 +109,7 @@ const original = fs.readFileSync(WORKER, 'utf8');
 let caught = 0;
 const survived = [];
 const inert = [];
+const errored = [];
 
 // A mutation that does not change the source is a broken mutation, not a passing decoder.
 for (const m of MUTATIONS) {
@@ -110,21 +126,38 @@ for (const m of MUTATIONS) {
   } finally {
     fs.writeFileSync(WORKER, original, 'utf8');
   }
-  if (out.status === 0) {
+  // Pass 44 F2: this used to count EVERY non-zero outcome as a catch, including `status: null`
+  // from a spawn error. In the reviewer's session `spawnSync` returned EPERM and the runner
+  // reported "9 of 9 mutations caught" with ZERO mutated decoders ever executed. A gate that is
+  // green when it did not run is worse than no gate, so the only accepted catch is the harness
+  // exiting 1 having printed a FAIL line -- a crash, a signal, a timeout or a syntax error is an
+  // ERROR, and is reported as one.
+  const text = `${out.stdout || ''}\n${out.stderr || ''}`;
+  const failLine = text.split('\n').find((l) => l.trim().startsWith('FAIL')) || '';
+  if (out.error || out.signal || out.status === null) {
+    errored.push(`${m.name} (${out.error ? out.error.code || out.error.message : out.signal})`);
+    console.error(`ERROR    ${m.name}  (the harness did not run: `
+      + `${out.error ? out.error.code || out.error.message : `signal ${out.signal}`})`);
+  } else if (out.status === 0) {
     survived.push(m.name);
     console.error(`SURVIVED ${m.name}`);
+  } else if (out.status !== 1 || !failLine) {
+    errored.push(`${m.name} (exit ${out.status}, no FAIL line)`);
+    console.error(`ERROR    ${m.name}  (exit ${out.status} without a FAIL line: the harness `
+      + 'crashed rather than rejecting the mutant)');
   } else {
     caught++;
-    const first = (out.stdout || '').split('\n').find((l) => l.startsWith('FAIL')) || '';
-    console.log(`caught   ${m.name}\n           ${first.trim()}`);
+    console.log(`caught   ${m.name}\n           ${failLine.trim()}`);
   }
 }
 
 console.log(`\n${caught} of ${MUTATIONS.length} mutations caught`
   + (inert.length ? `, ${inert.length} INERT` : '')
-  + (survived.length ? `, ${survived.length} SURVIVED` : ''));
+  + (survived.length ? `, ${survived.length} SURVIVED` : '')
+  + (errored.length ? `, ${errored.length} ERRORED` : ''));
 if (fs.readFileSync(WORKER, 'utf8') !== original) {
   console.error('worker.js was left mutated');
   process.exit(2);
 }
-process.exit(survived.length === 0 && inert.length === 0 ? 0 : 1);
+process.exit(survived.length === 0 && inert.length === 0 && errored.length === 0
+  && caught === MUTATIONS.length ? 0 : 1);

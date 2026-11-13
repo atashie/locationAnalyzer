@@ -144,9 +144,14 @@ function handleInit(msg) {
   const statuses = plane(msg.statuses, 'status');
   // `Surface.validate` forces a BEYOND_HORIZON cell's bound to equal the horizon exactly, so its
   // value byte is `ceil(horizon_s / 60)` and is otherwise redundant -- the decoder compares
-  // against the manifest, never against the stored bound. That redundancy is a CHECKSUM: if the
-  // manifest's horizon disagrees with the planes it claims to describe, a wrong horizon can turn
-  // an unknown into an exclusion, and pass 43 noted the decoder did not establish they agree.
+  // against the manifest, never against the stored bound. That redundancy is a LIMITED
+  // CONSISTENCY CHECK, and pass 44 F5 is clear about what it is not: a quantized byte cannot
+  // recover an exact horizon. A 601-second horizon encodes as 11, so a manifest claiming 660
+  // seconds passes and still turns UNKNOWN into EXCLUDED at eleven minutes; and 15,300 and
+  // 72,000 both saturate to 254. What it does catch is a manifest off by a whole minute or more
+  // at these magnitudes, and planes that are internally inconsistent -- which is why it scans
+  // every cell rather than breaking at the first, as it did when pass 44 found values [120, 10]
+  // with statuses [2, 2] initialising happily.
   const horizons = manifest.layers.map((l, i) => {
     if (typeof l.horizon_s !== 'number' || !(l.horizon_s > 0)) {
       throw new Error(`layer ${l.id}: manifest has no positive horizon_s, so BEYOND_HORIZON cannot be decided`);
@@ -157,13 +162,11 @@ function handleInit(msg) {
     const expectedByte = Math.ceil(horizons[k] / 60);
     const n2 = layers[k].length;
     for (let p = 0; p < n2; p++) {
-      if (statuses[k][p] === S_BEYOND_HORIZON) {
-        if (layers[k][p] !== Math.min(expectedByte, 254)) {
-          throw new Error(`layer ${manifest.layers[k].id}: a BEYOND_HORIZON cell carries bound `
-            + `${layers[k][p]} but the manifest horizon ${horizons[k]}s implies ${expectedByte}; `
-            + 'the manifest does not describe these planes');
-        }
-        break;
+      if (statuses[k][p] === S_BEYOND_HORIZON
+          && layers[k][p] !== Math.min(expectedByte, 254)) {
+        throw new Error(`layer ${manifest.layers[k].id}: the BEYOND_HORIZON cell at ${p} carries `
+          + `bound ${layers[k][p]} but the manifest horizon ${horizons[k]}s implies `
+          + `${expectedByte}; the manifest does not describe these planes`);
       }
     }
   }

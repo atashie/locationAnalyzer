@@ -63,11 +63,19 @@ known failure into an unknown. An `OK` minute above 254 would do the reverse, so
 refuses rather than capping. Legacy minute values 251–254 stay ordinary minutes; the sentinels live
 in the status plane, which is what "version the format, do not reinterpret the codes" means.
 
-**The value plane is redundant for `BEYOND_HORIZON`, and that makes it a checksum.**
+**The value plane is redundant for `BEYOND_HORIZON`, which makes it a limited consistency check.**
 `Surface.validate` forces such a cell's bound to equal the horizon exactly, so its byte is
 `ceil(horizon_s/60)`, while the decoder compares against the manifest's horizon and never against
 the stored bound. Pass 43 noted a wrong manifest horizon could therefore turn an unknown into an
-exclusion with nothing to catch it. `worker.js` now refuses at init when the two disagree.
+exclusion with nothing to catch it, and `worker.js` now scans **every** cell at init and refuses
+when one disagrees.
+
+> **Qualified (pass 44 F5).** It is not a checksum and the earlier wording overclaimed. A quantized
+> byte cannot recover an exact horizon: 601 s and 660 s both encode as `11`, so a manifest claiming
+> 660 passes and still turns UNKNOWN into EXCLUDED at eleven minutes; 15,300 and 72,000 both
+> saturate to `254`. It catches a manifest wrong by a whole minute or more at these magnitudes, and
+> planes that are internally inconsistent — the first version checked only the **first**
+> `BEYOND_HORIZON` cell and accepted values `[120, 10]` with statuses `[2, 2]`.
 
 ## It costs 18%, not 9%
 
@@ -105,36 +113,82 @@ exclusion with nothing to catch it. `worker.js` now refuses at init when the two
 > compares every cell, cross-checks the mask against the plane, cross-checks the counts against the
 > plane, and compares the same digest over the same bytes. A case that asserts nothing about the
 > arrangement of its verdicts now fails rather than passing.
+>
+> **That repair was itself incomplete (pass 44 F1).** It left the consumer outputs unchecked. Two
+> more wrong decoders passed: one blanking the RGBA buffer just before posting it, so the overlay
+> showed nothing while every count stayed right; and one writing `2` instead of `0` to excluded
+> mask cells, which satisfied `(mask[i] === 1) === (verdict === INCLUDED)` — and `app.js`
+> polygonizes the mask at **0.5**, so that promotes **225,520 excluded pixels** into the polygon at
+> fifteen minutes. Every pixel is now compared against the verdict it renders, and the mask byte is
+> compared exactly rather than for truthiness.
 
-**And the harness is itself checked now.** `mutate_worker.mjs` applies nine known-wrong decoders —
-including both of pass 43's — and requires each to be caught; **9 of 9 are**. A mutation whose edit
-matches nothing is reported `INERT` rather than banked as a catch, which immediately caught three
-of my own anchors failing against a CRLF working tree.
+**And the harness is itself checked now.** `mutate_worker.mjs` applies thirteen known-wrong
+decoders — including both of pass 43's and both of pass 44's — and requires each to be caught;
+**13 of 13 are**. A mutation whose edit matches nothing is reported `INERT` rather than banked as a
+catch, which immediately caught three of my own anchors failing against a CRLF working tree.
+
+> **Corrected (pass 44 F2), and it is the same failure a third time.** The runner counted **every**
+> non-zero outcome as a catch, including `status: null` from a spawn error. In the reviewer's
+> session `spawnSync` returned `EPERM` and the gate reported "9 of 9 mutations caught" with **zero
+> mutated decoders executed**. It now accepts only exit 1 accompanied by a real `FAIL` line, and
+> reports `ERROR` for a crash, a signal, a timeout or a missing failure message.
 
 The decoder refuses rather than guesses: an unknown encoding, a layer with no `horizon_s`, a
 horizon that disagrees with the planes, a plane of the wrong size, a fractional threshold, and an
 undefined status code are each rejected with a message naming the problem.
 
-## The export ships a third grid, and it costs as much again
+## The export ships a third grid, and the browser adds a fourth transform
 
-> **New, from pass 43 F3.** S3.1 compared two **UTM** grids and chose 100 m. The browser receives
-> neither: it receives a 514 × 643 **WGS84** raster, reprojected with nearest. Nearest preserves
-> every source code — the exported planes reproduce byte for byte — but it does **not** preserve
-> each address's cell assignment, because the two tilings are not aligned.
+> **New, from pass 43 F3; corrected after pass 44 F3 and F4.** S3.1 compared two **UTM** grids and
+> chose 100 m. The browser receives neither: it receives a 514 × 643 **WGS84** raster, reprojected
+> with nearest. Nearest preserves every source code — the exported planes reproduce byte for byte —
+> but it does **not** preserve each address's cell assignment, because the two tilings are not
+> aligned.
 
-`scripts/measure_export_regrid.py`, over the 500,451 structures inside the exported bounds:
+`scripts/measure_export_regrid.py`, over the 500,451 structures inside the exported bounds. The
+pixel index it computes by hand agrees with `rasterio.transform.rowcol` on **every** structure, and
+`tests/test_export_published.py` pins that on a dense synthetic grid including the edges, so what
+follows is the reprojection and not the arithmetic.
 
-| *T* | structures whose verdict moves between the source grid and the shipped raster |
+| *T* | source grid → exported raster |
 |---|---|
 | 10 min | 10,759 (2.15%) |
 | 15 min | **12,098 (2.42%)** |
 | 25 min | 7,926 (1.58%) |
 | 45 min | 3,253 (0.65%) |
 
-That is **about as large as the cell-centre error S3.1 measured** (2.52% at 15 minutes), so the
-shipped answer carries roughly twice the discretisation error the grid decision reported. It is not
-a reason to prefer the 200 m grid — the same re-tiling applies to both — but the grid comparison
-describes the source layers, not the bytes a browser decodes, and that distinction was missing.
+> **Withdrawn (pass 44 F4): "the shipped answer carries roughly twice the discretisation error".**
+> That added two similarly sized disagreement counts, and they do not add — re-tiling can
+> **correct** a source-grid disagreement as readily as cause one. Measured against the address
+> answer on the same population, with a graph load (`--with-address`):
+
+| *T* | source vs address | export vs address | re-tiling corrected | broke | net |
+|---|---|---|---|---|---|
+| 10 min | 11,126 | 13,905 | 3,990 | 6,769 | **+25.0%** |
+| 15 min | 12,687 | **15,684** | 4,549 | 7,546 | **+23.6%** |
+| 25 min | 7,990 | 10,428 | 2,738 | 5,176 | +30.5% |
+| 45 min | 3,252 | 4,216 | 1,141 | 2,105 | +29.6% |
+
+So the export's re-tiling makes the answer **about a quarter worse**, not twice as bad: 2.54% → 3.13%
+of structures at fifteen minutes.
+
+**And the browser applies one more transform that none of that measures.** A MapLibre canvas source
+inherits image-source placement, which converts its corners to **Mercator** and interpolates the
+texture between them — while the raster's rows are linear in **latitude**. The two disagree away
+from the middle of the image:
+
+| | |
+|---|---|
+| structures sampling a different texture row | **131,571** |
+| largest row shift | 1 |
+| verdicts differing at *T* = 15 | **6,866** |
+
+This is an **analytical calculation from the pinned MapLibre 5.24.0 sources, not a screenshot**, and
+MapLibre additionally rounds corner coordinates, so it is an estimate of the effect rather than a
+measurement of the display. The same objection applies to `app.js`'s polygon conversion, whose
+linear latitude mapping does not match canvas placement either. What it establishes is that **2.42%
+is the source-versus-raster figure and not the complete browser spatial result**, which remains
+unmeasured.
 
 The exported bounds also **omit 12,182 structures** that have a published answer in the source
 grid: the UTM grid is the bounding box of the lon/lat box's projected corners and is strictly

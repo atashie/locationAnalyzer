@@ -78,12 +78,15 @@ def source_transform(build: dict, shape: tuple[int, int]):
         # Pass 43 F8: this branch used to take the origin on trust. A transposed 83,076-cell
         # triple passed and would have exported under the wrong footprint -- silently, because a
         # transform that disagrees with its array moves every cell rather than failing.
-        recorded = (build.get("nrows"), build.get("ncols"))
-        if None not in recorded and tuple(recorded) != tuple(shape):
-            raise SystemExit(
-                f"the build record says {recorded[0]}x{recorded[1]} and the array is "
-                f"{shape[0]}x{shape[1]}; refusing to export it under a transform that does not "
-                "describe it")
+        # Pass 44 F6: `None not in recorded` skipped the WHOLE guard when either dimension was
+        # missing, so a record explicitly saying `nrows=258` accepted a 322-row array once
+        # `ncols` was lost. Each supplied dimension is now checked on its own.
+        for key, got in (("nrows", shape[0]), ("ncols", shape[1])):
+            recorded = build.get(key)
+            if recorded is not None and int(recorded) != int(got):
+                raise SystemExit(
+                    f"the build record says {key}={recorded} and the array has {got}; refusing "
+                    "to export it under a transform that does not describe it")
     else:
         grid = METRO.grid()
         x_min, y_max, cell_m, crs = grid.x_min, grid.y_max, grid.cell_m, grid.crs

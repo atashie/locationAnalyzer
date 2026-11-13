@@ -157,10 +157,16 @@ for (const group of vectors.groups) {
       assert(maskMsg, 'no mask message');
       const mask = new Uint8Array(maskMsg.mask);
 
-      // The mask and the verdict plane must agree, or one of the two outputs is lying.
+      // The mask is a CONSUMER OUTPUT, not a debug aid: app.js polygonizes it at a 0.5
+      // threshold, so any non-zero byte lands inside the polygon. Pass 44 F1: asserting only
+      // `(mask[i] === 1) === (verdict === INCLUDED)` let `mask[p] = 2` through at excluded
+      // cells, which promotes 225,520 excluded pixels into the polygon's included set at 15
+      // minutes. The byte is checked exactly, not for truthiness.
+      assert(mask.length === n, `mask is ${mask.length} bytes, expected ${n}`);
       for (let i = 0; i < n; i++) {
-        assert((mask[i] === 1) === (verdicts[i] === V_INCLUDED),
-          `cell ${i}: mask ${mask[i]} against verdict ${verdicts[i]}`);
+        const want = verdicts[i] === V_INCLUDED ? 1 : 0;
+        assert(mask[i] === want,
+          `cell ${i}: mask byte ${mask[i]}, expected exactly ${want} for verdict ${verdicts[i]}`);
       }
       // And the counts must match the plane they claim to summarise.
       let ci = 0, ce = 0, cu = 0;

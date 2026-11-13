@@ -64,5 +64,24 @@
         "UNKNOWN->FAIL": 119
       }
     }
+  },
+  "maplibre_placement": {
+    "what_this_is": "an analytical calculation from the pinned MapLibre 5.24.0 canvas/image source placement, NOT a screenshot: a canvas source converts its corners to Mercator and interpolates the texture between them, while the raster's rows are linear in latitude",
+    "structures_sampling_a_different_row": 131571,
+    "max_row_shift": 1,
+    "thresholds": {
+      "10": {
+        "verdicts_differing_between_raster_row_and_placed_row": 6403
+      },
+      "15": {
+        "verdicts_differing_between_raster_row_and_placed_row": 6866
+      },
+      "25": {
+        "verdicts_differing_between_raster_row_and_placed_row": 4607
+      },
+      "45": {
+        "verdicts_differing_between_raster_row_and_placed_row": 1946
+      }
+    }
   }
 }
