@@ -176,12 +176,21 @@ def _ceiling(values, extra: float) -> float:
 
 
 def band_widths(sigma: dict[int, F], ceiling: float) -> dict[int, float]:
-    """`W(v) = ulp(an upper bound on every total reachable through v)`.
+    """`W(v) = ulp(2 * (an upper bound on every total reachable through v))`.
 
-    `ulp` is non-decreasing in magnitude, so a bound on the total gives a bound on the ulp, and the
-    band is therefore sound for every suffix and not only for the longest one.
+    `ulp` is non-decreasing in magnitude, so a bound on the total bounds the ulp, and the band is
+    sound for every suffix rather than only for the longest.
+
+    **The factor of two is a binade of headroom, and it is not decoration.** The bound is
+    `sigma(v) + ceiling`, while a *retained* label's prefix may exceed `sigma(v)` by up to `W`
+    itself, so the total it completes to can be a shade above the bound. One `nextafter` does not
+    cover that -- on this witness `W` is 1.8e-12 against an ulp of 2.3e-13 at the bound -- and if
+    the gap straddles a power of two then `ulp(bound) < ulp(total)` and the band is too narrow.
+    Too narrow is the one failure a band must not have. Widening is always safe: it retains more,
+    never fewer, and doubling costs one binade of width and nothing measurable in labels.
     """
-    return {v: math.ulp(math.nextafter(float(c) + ceiling, math.inf)) for v, c in sigma.items()}
+    return {v: math.ulp(2.0 * math.nextafter(float(c) + ceiling, math.inf))
+            for v, c in sigma.items()}
 
 
 class LabelExplosion(RuntimeError):
@@ -337,7 +346,10 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
                                                  max(float(x.cost) for x in ends)))
         else:
             # A bound on the TOTAL, not on the suffix, so it is not added to the node minimum.
-            widths = {v: math.ulp(cost_ceiling) for v in sigma}
+            # The same binade of headroom applies: this variant is sound for journeys whose total
+            # is at most twice the bound supplied, which is the contract a caller passing its own
+            # threshold is asking for.
+            widths = {v: math.ulp(2.0 * cost_ceiling) for v in sigma}
         tau, p1 = band_labels(arcs, starts, sigma, widths, cap=cap)
         pops += p1
         if both_bands:

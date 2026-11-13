@@ -20,7 +20,10 @@ most `ulp(T)` wide. So:
 > can never share a final cost, whatever the suffix follows.
 
 That is the band. At node `v`, retain any label whose exact prefix cost exceeds the node's exact
-minimum by at most `W(v) = ulp(U(v))`, and discard the rest. The width comes from the **suffix**,
+minimum by at most `W(v) = ulp(2 · U(v))`, and discard the rest. The factor of two is a binade of
+headroom: a retained label's prefix may itself sit up to `W` above the node minimum, so `U` can be
+a shade below the total that label completes to, and a binade crossing there would make the band
+**too narrow** — the one failure a band must not have. Widening is always safe. The width comes from the **suffix**,
 which is what lets it keep a **strictly more expensive** prefix — the thing item 6 is about, and
 the thing the first spike's band could not do.
 
@@ -81,15 +84,15 @@ of cost apart:
 Growth is linear per node and the work is proportional — the search is label-setting, ordered by
 `(cost, time, route)`, which is non-decreasing along any path. The retained count at a node is
 bounded by `W / g`, the width over the smallest non-zero gap between distinct prefix costs. On this
-family that bound — `capacity` in the artifact — is **8,192**, and the measured counts are small
-only because the family supplies `k` distinct costs rather than 8,192.
+family that bound — `capacity` in the artifact — is **16,384**, and the measured counts are small
+only because the family supplies `k` distinct costs rather than 16,384.
 
 ## The width depends on what bounds the suffix, and the difference is large
 
 | bound on the total | width | in ulps of the total | selects the normative answer |
 |---|---|---|---|
-| the graph's own total (twice every edge cost) | 1.82e-12 s | 8 | yes |
-| the query's own ceiling | 2.27e-13 s | 1 | yes |
+| the graph's own total (twice every edge cost) | 3.64e-12 s | 16 | yes |
+| the query's own ceiling | 4.55e-13 s | 2 | yes |
 
 A search that is told nothing about the query can only use the graph. On a city graph of 10⁷
 seconds of edge cost against a 2,000-second journey that ratio is **16,384×** — arithmetic, not a

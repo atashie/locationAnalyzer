@@ -2122,7 +2122,7 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
 
    Three repairs were available. **One of them is now built and priced** — phase 4b.0 part two,
    `v2/scripts/spike_suffix_band.py` and `docs/experiments/suffix-band.md`. A label is retained at
-   a node when its exact prefix cost exceeds the node's exact minimum by at most `ulp(U)`, for an
+   a node when its exact prefix cost exceeds the node's exact minimum by at most `ulp(2U)`, for an
    upper bound `U` on every total reachable through it; two prefixes can share a final cost only if
    they lie within one rounding interval, so a wider gap than that can never rejoin the tie. It
    selects the witness above (5 s, against the pair label's 1,004 s), agrees with the exhaustive
@@ -2133,7 +2133,10 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
 
    Two costs are real and are stated rather than discovered later. The width must be taken from a
    bound on the **total**: the graph's own cost sum is sound and loose, by a factor of 16,384 on a
-   10⁷-second graph carrying a 2,000-second journey, where the query's own ceiling is exact. And a
+   10⁷-second graph carrying a 2,000-second journey, where the query's own ceiling is as tight as
+   the rule permits. The factor of two is a binade of headroom, because a retained label's own
+   excess can push its total a shade past the bound and a band that is too narrow is the one
+   failure mode a band must not have. And a
    single band settles cost and travel time but **not route identity** — the dominance that bounds
    the label count keeps the smallest exact prefix time per exact cost, and two prefix times under
    an ulp apart round to one reported time, after which this section decides on the route. A second

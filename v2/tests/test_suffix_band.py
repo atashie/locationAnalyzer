@@ -51,8 +51,8 @@ def test_the_band_width_narrows_with_the_bound_it_is_taken_from():
     loose; a query ceiling is sound and tight. Both must still select the normative answer — a
     narrower band that lost the witness would be no band at all."""
     ws = band.width_sources()
-    assert ws["query_ceiling_bound_width_in_ulps_of_the_total"] == 1.0
-    assert ws["graph_total_bound_width_in_ulps_of_the_total"] == 8.0
+    assert ws["query_ceiling_bound_width_in_ulps_of_the_total"] == 2.0
+    assert ws["graph_total_bound_width_in_ulps_of_the_total"] == 16.0
     assert ws["both_still_select_the_normative_answer"]
 
 

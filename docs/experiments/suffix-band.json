@@ -10,8 +10,8 @@
     "scalar_agrees": false,
     "band_labels_retained": 7,
     "labels_per_node": 1.4,
-    "widest_band_s": 1.8189894035458565e-12,
-    "band_width_in_ulps_of_the_total": 8.0,
+    "widest_band_s": 3.637978807091713e-12,
+    "band_width_in_ulps_of_the_total": 16.0,
     "precondition_holds": true,
     "verdict_at_600s": {
       "normative": "PASS",
@@ -20,10 +20,10 @@
     }
   },
   "width_sources": {
-    "graph_total_bound_width_s": 1.8189894035458565e-12,
-    "graph_total_bound_width_in_ulps_of_the_total": 8.0,
-    "query_ceiling_bound_width_s": 2.2737367544323206e-13,
-    "query_ceiling_bound_width_in_ulps_of_the_total": 1.0,
+    "graph_total_bound_width_s": 3.637978807091713e-12,
+    "graph_total_bound_width_in_ulps_of_the_total": 16.0,
+    "query_ceiling_bound_width_s": 4.547473508864641e-13,
+    "query_ceiling_bound_width_in_ulps_of_the_total": 2.0,
     "both_still_select_the_normative_answer": true,
     "labels_retained_loose": 7,
     "labels_retained_tight": 7,
@@ -50,8 +50,8 @@
         "one_band": {},
         "two_band": {},
         "pair_label": {
-          "time": 22,
-          "cost": 22
+          "cost": 22,
+          "time": 22
         }
       },
       "returned_a_journey_the_model_cannot_form": {
@@ -132,7 +132,7 @@
       "labels_per_node": 1.4,
       "pops": 14,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     },
     {
       "diamonds": 2,
@@ -141,7 +141,7 @@
       "labels_per_node": 1.875,
       "pops": 30,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     },
     {
       "diamonds": 4,
@@ -150,7 +150,7 @@
       "labels_per_node": 2.857,
       "pops": 80,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     },
     {
       "diamonds": 8,
@@ -159,7 +159,7 @@
       "labels_per_node": 4.846,
       "pops": 252,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     },
     {
       "diamonds": 12,
@@ -168,7 +168,7 @@
       "labels_per_node": 6.842,
       "pops": 520,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     },
     {
       "diamonds": 16,
@@ -177,7 +177,7 @@
       "labels_per_node": 8.84,
       "pops": 884,
       "agrees": true,
-      "capacity": 8192
+      "capacity": 16384
     }
   ],
   "soundness_argument": "two prefixes with exact costs a < b round to one total only if b - a <= ulp(T); ulp is non-decreasing in magnitude, so a width of ulp(U) for an upper bound U on every reachable total retains every prefix that could rejoin the final cost tie, including prefixes that are STRICTLY more expensive, which is what item 6 is about",

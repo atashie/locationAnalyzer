@@ -316,7 +316,7 @@ an argument. **Box: 1 day, and 4b's own box does not start until this reports.**
 > `v2/tests/test_suffix_band.py` (11 fixtures).
 >
 > This is the first option above, built as this plan described it and not as the first spike
-> measured it: the width is `ulp(U)` for an upper bound `U` on every reachable total, so the band
+> measured it: the width is `ulp(2U)` for an upper bound `U` on every reachable total, so the band
 > can retain a **strictly more expensive** prefix. The soundness argument is one line — two
 > prefixes share a final cost only if they lie in one rounding interval, which is at most `ulp(T)`
 > wide — and it is the suffix, not the prefix, that sets the scale.
