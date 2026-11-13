@@ -20,6 +20,12 @@ score_e3([Journey("band15min_pass-03", reported=810.8186, walked=1500)])
        time (3.38 min)
 ```
 
+**The observation is approximate and the verdict is robust to that.** The owner recorded "~25
+minutes", and a hard-edged scorer fed an approximate number needs its sensitivity stated: the
+outcome flips to `FAILED` at **16.9 minutes** and stays there above it. It would take the real walk
+being under 17 minutes — a third less than what was recorded — to return `UNVERIFIED`. The
+reproducer sweeps 14 to 30 minutes.
+
 So of §S3.4's three outcomes:
 
 | outcome | status |
