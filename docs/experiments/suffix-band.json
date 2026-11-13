@@ -10,8 +10,8 @@
     "scalar_agrees": false,
     "band_labels_retained": 7,
     "labels_per_node": 1.4,
-    "widest_band_s": 3.637978807091713e-12,
-    "band_width_in_ulps_of_the_total": 16.0,
+    "widest_band_s": 1.8189894035458565e-12,
+    "band_width_in_ulps_of_the_total": 8.0,
     "precondition_holds": true,
     "verdict_at_600s": {
       "normative": "PASS",
@@ -20,13 +20,21 @@
     }
   },
   "width_sources": {
-    "graph_total_bound_width_s": 3.637978807091713e-12,
-    "graph_total_bound_width_in_ulps_of_the_total": 16.0,
-    "query_ceiling_bound_width_s": 4.547473508864641e-13,
-    "query_ceiling_bound_width_in_ulps_of_the_total": 2.0,
-    "both_still_select_the_normative_answer": true,
+    "graph_total_bound_width_s": 1.8189894035458565e-12,
+    "graph_total_bound_width_in_ulps_of_the_total": 8.0,
+    "feasible_journey_bound": 2003.0,
+    "feasible_bound_width_s": 2.2737367544323206e-13,
+    "feasible_bound_width_in_ulps_of_the_total": 1.0,
+    "both_sound_bounds_select_the_normative_answer": true,
     "labels_retained_loose": 7,
     "labels_retained_tight": 7,
+    "a_600s_time_threshold_used_as_a_cost_bound": {
+      "oracle_cost": 32018.0,
+      "oracle_seconds": 5.0,
+      "band_seconds": 1004.0,
+      "verdict_normative": "PASS",
+      "verdict_from_the_unsound_bound": "FAIL"
+    },
     "projection_is_arithmetic_not_a_measurement": true,
     "projected_ratio_on_a_graph_of_1e7_s_against_a_2000_s_journey": 16384.0
   },
@@ -84,8 +92,8 @@
         "one_band": {},
         "two_band": {},
         "pair_label": {
-          "route": 46,
-          "time": 86
+          "time": 86,
+          "route": 46
         }
       },
       "returned_a_journey_the_model_cannot_form": {
@@ -118,11 +126,12 @@
     "first_arrival_control_distinct_answers": 2
   },
   "precondition_violated": {
-    "graphs_compared": 363,
-    "flagged_by_the_precondition_check": 363,
+    "graphs_compared": 371,
+    "flagged_by_the_precondition_check": 371,
     "band_wrong_numbers": 0,
-    "band_wrong_route": 8,
-    "band_returned_an_unformable_journey": 0
+    "band_wrong_route": 1,
+    "band_returned_an_unformable_journey": 0,
+    "half_the_planted_edges_carry_a_small_positive_time": true
   },
   "adversarial_price": [
     {
@@ -132,7 +141,7 @@
       "labels_per_node": 1.4,
       "pops": 14,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
     },
     {
       "diamonds": 2,
@@ -141,7 +150,7 @@
       "labels_per_node": 1.875,
       "pops": 30,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
     },
     {
       "diamonds": 4,
@@ -150,7 +159,7 @@
       "labels_per_node": 2.857,
       "pops": 80,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
     },
     {
       "diamonds": 8,
@@ -159,7 +168,7 @@
       "labels_per_node": 4.846,
       "pops": 252,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
     },
     {
       "diamonds": 12,
@@ -168,7 +177,7 @@
       "labels_per_node": 6.842,
       "pops": 520,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
     },
     {
       "diamonds": 16,
@@ -177,10 +186,74 @@
       "labels_per_node": 8.84,
       "pops": 884,
       "agrees": true,
-      "capacity": 16384
+      "capacity": 8192
+    }
+  ],
+  "route_repair_price_on_exact_cost_ties": [
+    {
+      "diamonds": 2,
+      "one_band_labels": 8,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 17,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 4
+    },
+    {
+      "diamonds": 4,
+      "one_band_labels": 14,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 77,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 16
+    },
+    {
+      "diamonds": 6,
+      "one_band_labels": 20,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 317,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 64
+    },
+    {
+      "diamonds": 8,
+      "one_band_labels": 26,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 1277,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 256
+    },
+    {
+      "diamonds": 10,
+      "one_band_labels": 32,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 5117,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 1024
+    },
+    {
+      "diamonds": 12,
+      "one_band_labels": 38,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 20477,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 4096
     }
   ],
   "soundness_argument": "two prefixes with exact costs a < b round to one total only if b - a <= ulp(T); ulp is non-decreasing in magnitude, so a width of ulp(U) for an upper bound U on every reachable total retains every prefix that could rejoin the final cost tie, including prefixes that are STRICTLY more expensive, which is what item 6 is about",
   "precondition": "no cycle may cost less than the band width. Checked per graph by the sufficient test that there is no zero-cost edge and the smallest positive edge cost exceeds the width. What a violation costs was measured, not assumed: the ROUTE SEQUENCE only, never the reported cost or time, over 400 graphs with a zero-cost two-way edge planted",
-  "what_it_does_not_settle": "route identity. The per-cost dominance that bounds the label count drops the label with the larger exact prefix time, and two prefix times under an ulp apart can round to one reported time, after which section 2.4 decides on the route. A second band on time, sized the same way, settles it -- see --route-witness"
+  "what_it_does_not_settle": "route identity. The per-cost dominance that bounds the label count drops the label with the larger exact prefix time, and two prefix times under an ulp apart can round to one reported time, after which section 2.4 decides on the route. A second band on time settles it on the hand-built witness and is NOT affordable in general: on k diamonds of equal cost and distinct times it retains 5 * 2**k - 3 labels, 20,477 at k = 12, where one band retains 38 (pass 42 F3)",
+  "withdrawn_after_pass_42": [
+    "sizing the width from the query's travel-time threshold -- it is not a bound on cost",
+    "the binade of headroom -- never necessary, and it was what overflowed",
+    "exact cost ties cost the band nothing -- true for one band, false for two",
+    "W / g bounds the retained count -- it is floor(W/g)+1 for one band, and for two bands the distinct times inside a cost bucket dominate it",
+    "the band is not a prefix-pruning search -- it is one, with a suffix-aware threshold",
+    "the reported max was a maximum of graph AVERAGES, not labels at one node"
+  ]
 }

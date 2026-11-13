@@ -39,8 +39,11 @@ item 6 is about, and the thing the first spike's band could not do.
 
 Exact prefix sums are `fractions.Fraction`, so the comparisons that decide retention are exact, and
 `float(Fraction)` of the whole journey's exact sum is the same binary64 as `math.fsum` over its
-terms — both are the correctly rounded exact sum. `--verify-totals` asserts that against the oracle
-rather than assuming it.
+terms — both are the correctly rounded exact sum.
+`tests/test_suffix_band.py::test_the_exact_sum_of_a_journeys_terms_is_the_same_binary64_as_fsum`
+reconstructs every journey of the witness from its terms and checks that, rather than assuming it.
+Pass 42 F5: an earlier draft of this docstring advertised a `--verify-totals` flag that did not
+exist, left behind when the function it named was replaced by the membership check.
 
     python scripts/spike_suffix_band.py --witness
     python scripts/spike_suffix_band.py --route-witness
@@ -93,7 +96,7 @@ class Candidate:
 
     def journey(self) -> toy.Journey:
         """`float()` of an exact sum is the correctly rounded exact sum, which is what `fsum` of the
-        same terms returns. `--verify-totals` checks that against the oracle instead of asserting it.
+        same terms returns. The exactness test reconstructs every journey and checks it.
         """
         return toy.Journey(time_s=float(self.time), cost=float(self.cost),
                            destination=self.dest, destination_id=self.dest_id, route=self.route)
@@ -170,27 +173,58 @@ def _ceiling(values, extra: float) -> float:
 
     A node-simple suffix can traverse each edge at most once in each direction, so twice the graph
     total bounds it, and the largest terminal term covers the exit and its connector.
+
+    **An admissible graph can overflow this.** Pass 42 F2: `ToyGraph` admits a single edge of cost
+    `7e307` and the oracle answers that query, while twice the graph total is infinite. A finite
+    journey total does not imply a finite *bound*. The bound then saturates at the largest finite
+    binary64, which makes the band as wide as binary64 allows — degenerate, and the right kind of
+    degenerate, because a wider band retains more and never fewer.
     """
-    total = math.fsum(list(values) + list(values) + [extra])
+    try:
+        total = math.fsum(list(values) + list(values) + [extra])
+    except OverflowError:
+        return sys.float_info.max
+    if not math.isfinite(total) or total >= sys.float_info.max:
+        return sys.float_info.max
     return math.nextafter(total, math.inf)
 
 
+def _saturating(x: float) -> float:
+    """Clamp to the largest finite binary64, so a bound is always a number."""
+    if not math.isfinite(x) or x >= sys.float_info.max:
+        return sys.float_info.max
+    return x
+
+
 def band_widths(sigma: dict[int, F], ceiling: float) -> dict[int, float]:
-    """`W(v) = ulp(2 * (an upper bound on every total reachable through v))`.
+    """`W(v) = ulp(B)` for a finite `B` with `B >= sigma(v) + S` for every reachable suffix `S`.
 
-    `ulp` is non-decreasing in magnitude, so a bound on the total bounds the ulp, and the band is
-    sound for every suffix rather than only for the longest.
+    **Why `B` is enough, which is not the reason an earlier version gave.** Suppose a label `Q` at
+    `v` with exact cost `sigma(v) + g` ends up at the final cost argmin `T` through some suffix `S`.
+    The minimum label `P` takes the same suffix to `rnd(sigma(v) + S) <= T`, and it cannot be
+    strictly below `T` without contradicting `T` being the argmin — so both round to `T`, both lie
+    in one rounding interval, and `g <= ulp(T)`. And `sigma(v) + S <= B` with `B` a float gives
+    `T = rnd(sigma(v) + S) <= B`, hence `ulp(T) <= ulp(B)`. The bound is on the **value they tie
+    at**, never on `Q`'s own total.
 
-    **The factor of two is a binade of headroom, and it is not decoration.** The bound is
-    `sigma(v) + ceiling`, while a *retained* label's prefix may exceed `sigma(v)` by up to `W`
-    itself, so the total it completes to can be a shade above the bound. One `nextafter` does not
-    cover that -- on this witness `W` is 1.8e-12 against an ulp of 2.3e-13 at the bound -- and if
-    the gap straddles a power of two then `ulp(bound) < ulp(total)` and the band is too narrow.
-    Too narrow is the one failure a band must not have. Widening is always safe: it retains more,
-    never fewer, and doubling costs one binade of width and nothing measurable in labels.
+    That matters because I got it wrong in the other direction first. Commit `e0c699c` doubled the
+    width, reasoning that a retained label's own excess could push *its* total past `B` and across
+    a binade. Pass 42 F2 pointed out that `Q`'s total is not what needs bounding, so the doubling
+    was never necessary — and it was the direct cause of the overflow above, since `2 * 3e307` is
+    infinite on a graph the oracle answers. Withdrawn, with the argument corrected rather than the
+    conclusion patched.
     """
-    return {v: math.ulp(2.0 * math.nextafter(float(c) + ceiling, math.inf))
-            for v, c in sigma.items()}
+    out: dict[int, float] = {}
+    for v, c in sigma.items():
+        try:
+            bound = float(c) + ceiling
+        except OverflowError:
+            bound = math.inf
+        bound = _saturating(bound)
+        if bound < sys.float_info.max:
+            bound = _saturating(math.nextafter(bound, math.inf))
+        out[v] = math.ulp(bound)
+    return out
 
 
 class LabelExplosion(RuntimeError):
@@ -316,15 +350,50 @@ def precondition(graph: toy.ToyGraph, widths: dict) -> dict:
             "widest_band_s": widest, "holds": zero == 0 and smallest > widest}
 
 
+def feasible_cost_bound(graph: toy.ToyGraph, origin, dest_points, dest_ids) -> float:
+    """The cost of a journey that **exists**, which is therefore an upper bound on the argmin.
+
+    Pass 42 F1 refuted sizing the band from the query's travel-time threshold: cost is travel time
+    plus access penalties, so a threshold on the reported time bounds neither. This is the tight
+    bound that is sound. Every value it minimises over is a real journey's exact cost — the exact
+    minimum prefix at a node, completed by one terminal — so the argmin cannot exceed it, and a
+    width of `ulp` of it covers every tie at the argmin.
+
+    Returns the graph-total fallback when no journey is reachable, so a caller always gets a bound.
+    """
+    origin = toy.require_query_point(origin, "the origin")
+    dest_points = [toy.require_query_point(d, f"destination {i}")
+                   for i, d in enumerate(dest_points)]
+    arcs = arcs_of(graph)
+    best = math.inf
+    for oa in toy.attachments(graph, origin, cap_m=toy.MAX_ACCESS_M):
+        starts, ends, direct = terminals(graph, oa, dest_points, dest_ids)
+        for d in direct:
+            best = min(best, float(d.cost))
+        if not starts:
+            continue
+        sigma = exact_min_costs(arcs, starts)
+        for end in ends:
+            if end.node in sigma:
+                best = min(best, float(sigma[end.node] + end.cost))
+    if math.isfinite(best):
+        return best
+    return _ceiling([e.total_cost for e in graph.edges], 0.0)
+
+
 def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
                 both_bands: bool = False, cap: int = 200_000,
                 cost_ceiling: float = None) -> dict:
     """Section 2.4's answer as the band search computes it, with the price it paid.
 
-    `cost_ceiling` is the upper bound on a reachable total that the width is taken from. The
-    default is the graph's own total, which is sound and **very** loose: a query that already
-    carries a threshold can pass that instead, and the band narrows in proportion. See
-    `width_sources()` for what the difference is worth.
+    `cost_ceiling` is an upper bound on the **cost of the cost argmin**, which is what the width
+    is taken from. The default is the graph's own total: sound, and very loose.
+
+    **It is not a travel-time threshold.** Pass 42 F1: cost is travel time plus access penalties,
+    so a 600-second threshold on the reported time bounds neither. Passing one selects 1,004 s on a
+    witness whose normative answer is 5 s — PASS becomes FAIL, from a band sized by a number that
+    was never a bound. `feasible_cost_bound()` is the tight bound that *is* valid, because it is
+    the cost of a journey that exists.
     """
     origin = toy.require_query_point(origin, "the origin")
     dest_points = [toy.require_query_point(d, f"destination {i}")
@@ -334,6 +403,7 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
     edge_times = [e.time_s for e in graph.edges]
     cands: list[Candidate] = []
     retained = pops = nodes_seen = 0
+    most_at_one_node = 0
     all_widths: dict[int, float] = {}
     for oa in toy.attachments(graph, origin, cap_m=toy.MAX_ACCESS_M):
         starts, ends, direct = terminals(graph, oa, dest_points, dest_ids)
@@ -345,11 +415,9 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
             widths = band_widths(sigma, _ceiling(edge_costs,
                                                  max(float(x.cost) for x in ends)))
         else:
-            # A bound on the TOTAL, not on the suffix, so it is not added to the node minimum.
-            # The same binade of headroom applies: this variant is sound for journeys whose total
-            # is at most twice the bound supplied, which is the contract a caller passing its own
-            # threshold is asking for.
-            widths = {v: math.ulp(2.0 * cost_ceiling) for v in sigma}
+            # A bound on the COST of the cost argmin, not on the suffix, so it is not added
+            # to the node minimum.
+            widths = {v: math.ulp(_saturating(cost_ceiling)) for v in sigma}
         tau, p1 = band_labels(arcs, starts, sigma, widths, cap=cap)
         pops += p1
         if both_bands:
@@ -366,6 +434,9 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
             labels = tau
         retained += sum(len(v) for v in labels.values())
         nodes_seen += len(labels)
+        # Pass 42: the published "max" was the largest graph AVERAGE, not the largest count at any
+        # one node. The witness averages 1.4 and has a node holding 2.
+        most_at_one_node = max([most_at_one_node] + [len(v) for v in labels.values()])
         for v in labels:
             all_widths[v] = max(all_widths.get(v, 0.0), widths[v])
         for end in ends:
@@ -379,7 +450,7 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
     if not cands:
         return {"found": False, "labels_retained": retained, "pops": pops,
                 "precondition": pre, "candidates": 0, "widest_band_s": widest,
-                "labels_per_node": 0.0}
+                "labels_per_node": 0.0, "most_labels_at_one_node": most_at_one_node}
     js = [c.journey() for c in cands]
     cheapest = min(j.cost for j in js)
     at_min = [j for j in js if j.cost == cheapest]
@@ -388,6 +459,7 @@ def band_answer(graph: toy.ToyGraph, origin, dest_points, dest_ids, *,
             "destination_id": winner.destination_id, "route": winner.route,
             "candidates": len(cands), "labels_retained": retained,
             "nodes_with_labels": nodes_seen, "labels_per_node": retained / max(nodes_seen, 1),
+            "most_labels_at_one_node": most_at_one_node,
             "pops": pops, "widest_band_s": widest,
             "journeys_at_the_cost_argmin": len(at_min), "precondition": pre}
 
@@ -586,6 +658,60 @@ def diamond_chain(k: int, *, leg: float = 1.0, tail: float = 4000.0):
     return graph, (-1000.0, 1.26), [xy[last + 1]], ["a"]
 
 
+def equal_cost_chain(k: int, *, step: float = 2.0 ** -20, tail: float = 4000.0):
+    """`k` diamonds whose arms cost **exactly** the same and whose times differ by a tiny amount
+    that is different in every diamond. Pass 42 F3.
+
+    This is the family the published chain concealed. There, each diamond's two arms differed in
+    cost, so a merge held `k + 1` cost buckets each with one time, and the second band added
+    nothing. Here every arm costs the same, so there is **one** cost bucket — and `2**k` distinct
+    exact times inside it, all within the time band. Pass one keeps one label; pass two keeps
+    `2**k`.
+    """
+    xy = {-1: (-2000.0, 0.0), 0: (0.0, 0.0)}
+    rows = [(-1, 0, 2.0, 2.0)]
+    for i in range(k):
+        a, up, down, b = 3 * i, 3 * i + 1, 3 * i + 2, 3 * i + 3
+        xy[up] = (150.0 * (3 * i + 1), 200.0)
+        xy[down] = (150.0 * (3 * i + 1), -200.0)
+        xy[b] = (150.0 * (3 * i + 3), 0.0)
+        bumped = step + 2.0 ** (-45 - i)
+        rows += [(a, up, step, 1.0), (up, b, step, 1.0),
+                 (a, down, step, 1.0), (down, b, bumped, 1.0)]
+    last = 3 * k
+    xy[last + 1] = (150.0 * (3 * k) + 2000.0, 0.0)
+    rows.append((last, last + 1, tail, 2.0))
+    graph = toy.ToyGraph(tuple(toy.ToyEdge(u, v, (xy[u], xy[v]), time_s=tt, cost_base=cc,
+                                           oneway=True)
+                               for u, v, tt, cc in rows))
+    return graph, (-1000.0, 1.26), [xy[last + 1]], ["a"]
+
+
+def price_equal_cost_chain(ks, cap: int = 200_000) -> list:
+    """What the route repair costs when every cost ties exactly. Pass 42 F3.
+
+    The one-band figure stays flat. The two-band figure is `5 * 2**k - 3` while it fits under the
+    cap, and then does not fit. **This is the finding that withdraws the recommendation to carry
+    the second band by default.**
+    """
+    rows = []
+    for k in ks:
+        graph, origin, dests, ids = equal_cost_chain(k)
+        one = band_answer(graph, origin, dests, ids, cap=cap)
+        row = {"diamonds": k, "one_band_labels": one["labels_retained"],
+               "one_band_most_at_one_node": one["most_labels_at_one_node"],
+               "precondition_holds": one["precondition"]["holds"],
+               "two_band_labels": None, "two_band_exploded": False}
+        try:
+            two = band_answer(graph, origin, dests, ids, both_bands=True, cap=cap)
+            row["two_band_labels"] = two["labels_retained"]
+            row["two_band_most_at_one_node"] = two["most_labels_at_one_node"]
+        except LabelExplosion:
+            row["two_band_exploded"] = True
+        rows.append(row)
+    return rows
+
+
 def random_points(rng: random.Random, xy):
     xs = [p[0] for p in xy.values()]
     ys = [p[1] for p in xy.values()]
@@ -609,7 +735,12 @@ def zero_cost_cycles(rng: random.Random, graphs: int = 400, cap: int = 100_000) 
         edges = list(graph.edges)
         i = rng.randrange(len(edges))
         e = edges[i]
-        edges[i] = toy.ToyEdge(e.u, e.v, e.geometry, time_s=0.0, cost_base=0.0, oneway=False)
+        # Pass 42: the first version always planted time 0.0 as well, so a whole class went
+        # untested — a zero-COST edge with a small positive time, which the reviewer showed can
+        # produce an unformable second-band winner. Half the draws now carry one.
+        planted_time = 0.0 if rng.random() < 0.5 else rng.choice([2.0 ** -40, 1e-9, 1e-6])
+        edges[i] = toy.ToyEdge(e.u, e.v, e.geometry, time_s=planted_time, cost_base=0.0,
+                               oneway=False)
         graph = toy.ToyGraph(tuple(edges))
         origin, dests, ids = random_points(rng, pts)
         try:
@@ -631,41 +762,59 @@ def zero_cost_cycles(rng: random.Random, graphs: int = 400, cap: int = 100_000) 
             unformable += 1
     return {"graphs_compared": compared, "flagged_by_the_precondition_check": flagged,
             "band_wrong_numbers": numbers, "band_wrong_route": route,
-            "band_returned_an_unformable_journey": unformable}
+            "band_returned_an_unformable_journey": unformable,
+            "half_the_planted_edges_carry_a_small_positive_time": True}
 
 
 def width_sources() -> dict:
-    """What the suffix bound is worth, measured on item 6's own witness and then projected.
+    """What the bound is worth, and which bounds are actually bounds.
 
-    The band's width is `ulp(U)` for an upper bound `U` on the reachable total. Two bounds are
-    sound and they are not the same size:
+    The width is `ulp(B)` for an upper bound `B` on the cost the argmin can tie at. Three
+    candidates, and only two of them are sound:
 
-    * **the graph's own total** -- twice the sum of every edge cost, which is what a search knows
-      without being told anything about the query. Sound anywhere, and loose by whatever ratio the
-      graph bears to one journey.
-    * **the query's own ceiling** -- a threshold the caller already supplies. `U` is then the
-      largest total anyone will look at, and the band is as narrow as the rule permits.
+    * **the graph's own total** — twice the sum of every edge cost. Sound anywhere, and loose by
+      whatever ratio the graph bears to one journey.
+    * **the cost of a journey that exists** — `feasible_cost_bound()`. The argmin cannot exceed a
+      journey that was found, so this is sound and as tight as the rule permits.
+    * **the query's travel-time threshold** — **not a bound at all**, and pass 42 F1's reproducer
+      is below. Cost is travel time plus access penalties. It is included here so the artifact
+      records the refutation rather than only the repair.
 
-    The projection at the end is arithmetic, not a measurement, and is labelled as such: it is
-    `ulp()` of two numbers, not a run on a city graph.
+    The projection at the end is arithmetic, not a measurement, and is labelled as such.
     """
     graph, origin, dests, ids = witness_graph()
     oracle = oracle_answer(graph, origin, dests, ids)
     loose = band_answer(graph, origin, dests, ids, both_bands=True)
-    tight = band_answer(graph, origin, dests, ids, both_bands=True,
-                        cost_ceiling=oracle["cost"])
+    feasible = feasible_cost_bound(graph, origin, dests, ids)
+    tight = band_answer(graph, origin, dests, ids, both_bands=True, cost_ceiling=feasible)
+
+    # F1's reproducer: costs scaled 16x, times untouched, a 600 s "threshold" used as a bound.
+    import dataclasses
+    scaled = toy.ToyGraph(tuple(dataclasses.replace(e, cost_base=16 * e.cost_base,
+                                                    penalty=16 * e.penalty)
+                                for e in graph.edges))
+    scaled_oracle = oracle_answer(scaled, origin, dests, ids)
+    by_threshold = band_answer(scaled, origin, dests, ids, both_bands=True, cost_ceiling=600.0)
+
     city_total, city_journey = 1.0e7, 2000.0
     return {
         "graph_total_bound_width_s": loose["widest_band_s"],
         "graph_total_bound_width_in_ulps_of_the_total":
             loose["widest_band_s"] / math.ulp(oracle["cost"]),
-        "query_ceiling_bound_width_s": tight["widest_band_s"],
-        "query_ceiling_bound_width_in_ulps_of_the_total":
+        "feasible_journey_bound": feasible,
+        "feasible_bound_width_s": tight["widest_band_s"],
+        "feasible_bound_width_in_ulps_of_the_total":
             tight["widest_band_s"] / math.ulp(oracle["cost"]),
-        "both_still_select_the_normative_answer":
+        "both_sound_bounds_select_the_normative_answer":
             agree(loose, oracle, with_route=True) and agree(tight, oracle, with_route=True),
         "labels_retained_loose": loose["labels_retained"],
         "labels_retained_tight": tight["labels_retained"],
+        "a_600s_time_threshold_used_as_a_cost_bound": {
+            "oracle_cost": scaled_oracle["cost"], "oracle_seconds": scaled_oracle["time_s"],
+            "band_seconds": by_threshold["time_s"],
+            "verdict_normative": "PASS" if scaled_oracle["time_s"] <= 600 else "FAIL",
+            "verdict_from_the_unsound_bound":
+                "PASS" if by_threshold["time_s"] <= 600 else "FAIL"},
         "projection_is_arithmetic_not_a_measurement": True,
         "projected_ratio_on_a_graph_of_1e7_s_against_a_2000_s_journey":
             math.ulp(2 * city_total) / math.ulp(city_journey),
@@ -930,6 +1079,13 @@ def main(argv=None) -> int:
           f"first-arrival control "
           f"{orders['first_arrival_control_distinct_answers']}")
 
+    equal = price_equal_cost_chain([2, 4, 6, 8, 10, 12])
+    print("\nTHE ROUTE REPAIR'S PRICE WHEN EVERY COST TIES EXACTLY (pass 42 F3):")
+    for row in equal:
+        two = "EXPLODED" if row["two_band_exploded"] else row["two_band_labels"]
+        print(f"  k={row['diamonds']:3d}  one band {row['one_band_labels']:5d}  "
+              f"two bands {two}")
+
     chain = price_chain([1, 2, 4, 8, 12, 16])
     print("\nTHE ADVERSARIAL PRICE -- k diamonds, arms one ulp of cost apart:")
     for row in chain:
@@ -948,6 +1104,7 @@ def main(argv=None) -> int:
         "order_independence": orders,
         "precondition_violated": zc,
         "adversarial_price": chain,
+        "route_repair_price_on_exact_cost_ties": equal,
         "soundness_argument": ("two prefixes with exact costs a < b round to one total only if "
                                "b - a <= ulp(T); ulp is non-decreasing in magnitude, so a width of "
                                "ulp(U) for an upper bound U on every reachable total retains every "
@@ -962,8 +1119,19 @@ def main(argv=None) -> int:
                                     "count drops the label with the larger exact prefix time, and "
                                     "two prefix times under an ulp apart can round to one reported "
                                     "time, after which section 2.4 decides on the route. A second "
-                                    "band on time, sized the same way, settles it -- see "
-                                    "--route-witness"),
+                                    "band on time settles it on the hand-built witness and is NOT "
+                                    "affordable in general: on k diamonds of equal cost and "
+                                    "distinct times it retains 5 * 2**k - 3 labels, 20,477 at "
+                                    "k = 12, where one band retains 38 (pass 42 F3)"),
+        "withdrawn_after_pass_42": [
+            "sizing the width from the query's travel-time threshold -- it is not a bound on cost",
+            "the binade of headroom -- never necessary, and it was what overflowed",
+            "exact cost ties cost the band nothing -- true for one band, false for two",
+            "W / g bounds the retained count -- it is floor(W/g)+1 for one band, and for two "
+            "bands the distinct times inside a cost bucket dominate it",
+            "the band is not a prefix-pruning search -- it is one, with a suffix-aware threshold",
+            "the reported max was a maximum of graph AVERAGES, not labels at one node",
+        ],
     }
     if args.out:
         args.out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")

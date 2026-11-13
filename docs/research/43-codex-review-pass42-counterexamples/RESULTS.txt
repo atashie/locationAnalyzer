@@ -1,0 +1,115 @@
+usage: run_all.py [-h] [--graphs GRAPHS] [--seed SEED] [--cap CAP] [--witness]
+                  [--route-witness] [--out OUT]
+run_all.py: error: unrecognized arguments: --verify-totals
+--- f1_a_time_threshold_is_not_a_cost_bound
+{
+  "oracle_cost": 32018.0,
+  "oracle_seconds": 5.0,
+  "graph_bound_seconds": 5.0,
+  "feasible_cost_bound": 32018.0,
+  "feasible_bound_seconds": 5.0,
+  "unsound_600s_threshold_seconds": 1004.0,
+  "verdicts": {
+    "normative": "PASS",
+    "from_the_threshold": "FAIL"
+  }
+}
+--- f2_an_admissible_graph_overflows_the_bound
+{
+  "cases": [
+    {
+      "edge_cost": 3e+307,
+      "oracle_cost": 3e+307,
+      "band_cost": 3e+307,
+      "agrees": true,
+      "raised": null
+    },
+    {
+      "edge_cost": 7e+307,
+      "oracle_cost": 7e+307,
+      "band_cost": 7e+307,
+      "agrees": true,
+      "raised": null
+    }
+  ]
+}
+--- f3_the_route_repair_is_exponential
+{
+  "rows": [
+    {
+      "diamonds": 2,
+      "one_band_labels": 8,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 17,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 4
+    },
+    {
+      "diamonds": 4,
+      "one_band_labels": 14,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 77,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 16
+    },
+    {
+      "diamonds": 6,
+      "one_band_labels": 20,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 317,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 64
+    },
+    {
+      "diamonds": 8,
+      "one_band_labels": 26,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 1277,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 256
+    },
+    {
+      "diamonds": 10,
+      "one_band_labels": 32,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 5117,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 1024
+    },
+    {
+      "diamonds": 12,
+      "one_band_labels": 38,
+      "one_band_most_at_one_node": 1,
+      "precondition_holds": true,
+      "two_band_labels": 20477,
+      "two_band_exploded": false,
+      "two_band_most_at_one_node": 4096
+    }
+  ],
+  "closed_form_matches": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ]
+}
+--- f4_the_band_is_a_prefix_pruning_search
+{
+  "labels_at_the_merge": [
+    "1"
+  ],
+  "the_cost_2_prefix_was_pruned": true
+}
+--- f5_the_advertised_flag_did_not_exist
+{
+  "argparse_rejects_it": true,
+  "docstring_records_the_removal": true,
+  "exit_code": 2
+}

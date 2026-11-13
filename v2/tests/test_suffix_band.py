@@ -47,13 +47,50 @@ def test_one_band_reports_the_right_numbers_and_the_wrong_route():
 
 
 def test_the_band_width_narrows_with_the_bound_it_is_taken_from():
-    """`ulp(U)` for an upper bound `U` on the reachable total. The graph's own total is sound and
-    loose; a query ceiling is sound and tight. Both must still select the normative answer — a
-    narrower band that lost the witness would be no band at all."""
+    """`ulp(B)` for a bound `B` on the cost the argmin can tie at. The graph's own total is sound
+    and loose; the cost of a journey that exists is sound and tight. Both must still select the
+    normative answer — a narrower band that lost the witness would be no band at all."""
     ws = band.width_sources()
-    assert ws["query_ceiling_bound_width_in_ulps_of_the_total"] == 2.0
-    assert ws["graph_total_bound_width_in_ulps_of_the_total"] == 16.0
-    assert ws["both_still_select_the_normative_answer"]
+    assert ws["feasible_bound_width_in_ulps_of_the_total"] == 1.0
+    assert ws["graph_total_bound_width_in_ulps_of_the_total"] == 8.0
+    assert ws["both_sound_bounds_select_the_normative_answer"]
+
+
+def test_a_travel_time_threshold_is_not_a_bound_on_cost():
+    """Pass 42 F1, which refuted this phase's recommendation. Cost is travel time plus access
+    penalties, so a threshold on the reported time bounds neither. Sizing the band from one selects
+    1,004 s where the rule says 5 s — PASS becomes FAIL at ten minutes."""
+    bad = band.width_sources()["a_600s_time_threshold_used_as_a_cost_bound"]
+    assert bad["oracle_seconds"] == 5.0
+    assert bad["band_seconds"] == 1004.0
+    assert (bad["verdict_normative"], bad["verdict_from_the_unsound_bound"]) == ("PASS", "FAIL")
+    assert bad["oracle_cost"] > 600.0, "the point is that the cost is nowhere near the threshold"
+
+
+def test_a_graph_whose_bound_overflows_still_gets_an_answer():
+    """Pass 42 F2. `ToyGraph` admits an edge of cost 7e307 and the oracle answers it, while twice
+    the graph total is infinite. A finite journey total does not imply a finite bound; the bound
+    saturates instead of raising."""
+    for cost in (3e307, 7e307):
+        graph = toy.ToyGraph((toy.ToyEdge(0, 1, ((0.0, 0.0), (1000.0, 0.0)),
+                                          time_s=1.0, cost_base=cost, oneway=True),))
+        args = (graph, (0.0, 0.0), [(1000.0, 0.0)], ["a"])
+        oracle = band.oracle_answer(*args)
+        got = band.band_answer(*args, both_bands=True)
+        assert band.agree(got, oracle, with_route=True)
+
+
+def test_the_route_repair_is_exponential_when_every_cost_ties_exactly():
+    """Pass 42 F3, the finding that withdraws "carry the second band by default".
+
+    One cost bucket, `2**k` distinct exact times inside it, all within the time band. Pass one
+    keeps one label per node; pass two keeps `5 * 2**k - 3` in total. The published diamond chain
+    concealed this by giving every bucket a single time."""
+    rows = band.price_equal_cost_chain([2, 4, 6, 8])
+    assert all(r["precondition_holds"] for r in rows)
+    assert [r["two_band_labels"] for r in rows] == [5 * 2 ** k - 3 for k in (2, 4, 6, 8)]
+    one = [r["one_band_labels"] for r in rows]
+    assert one == [8, 14, 20, 26], "the one-band cost must stay linear while the two-band explodes"
 
 
 def test_the_band_does_not_move_when_the_edge_list_is_permuted():
@@ -98,6 +135,7 @@ def test_the_band_is_free_when_there_is_nothing_to_retain():
     **not** generalise to a real graph without being run there."""
     out = band.sweep(random.Random(9), 25, population="generic", cap=50_000, permutations=1)
     assert out["two_band_labels_per_node"]["max"] == 1.0
+    # And "free" is a statement about retained labels, not about runtime or memory -- pass 42.
 
 
 def test_the_retained_count_is_bounded_by_the_width_over_the_smallest_gap():
@@ -107,6 +145,8 @@ def test_the_retained_count_is_bounded_by_the_width_over_the_smallest_gap():
     8,192."""
     rows = band.price_chain([1, 2, 4, 8])
     assert all(r["agrees"] for r in rows)
+    # Pass 42: the inclusive band test makes this floor(W/g) + 1, not W/g, and this family is the
+    # easy case -- it gives each merge k + 1 cost buckets each holding one time.
     per_node = [r["labels_per_node"] for r in rows]
     assert per_node == sorted(per_node) and per_node[-1] > per_node[0]
     assert rows[0]["capacity"] >= 1024

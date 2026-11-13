@@ -311,45 +311,48 @@ an argument. **Box: 1 day, and 4b's own box does not start until this reports.**
 > What is owed before 4b: build the plan's suffix-aware band and measure it, or specify an amendment
 > that settles both keys, and say which on the evidence.
 
-> **OUTCOME, 2026-11-13: the band is built, and the evidence recommends taking it.**
+> **OUTCOME, 2026-11-13: the band is built; Codex pass 42 then refuted its recommendation and
+> three of its claims, and the repaired recommendation is narrower.**
 > `v2/scripts/spike_suffix_band.py`, `docs/experiments/suffix-band.md` and `.json`,
-> `v2/tests/test_suffix_band.py` (11 fixtures).
+> `v2/tests/test_suffix_band.py` (14 fixtures), `docs/research/43-codex-review-pass42-*`.
 >
-> This is the first option above, built as this plan described it and not as the first spike
-> measured it: the width is `ulp(2U)` for an upper bound `U` on every reachable total, so the band
-> can retain a **strictly more expensive** prefix. The soundness argument is one line — two
-> prefixes share a final cost only if they lie in one rounding interval, which is at most `ulp(T)`
-> wide — and it is the suffix, not the prefix, that sets the scale.
+> This is the first option above, built as this plan described it: the width is `ulp(B)` for a
+> float bound `B` on the cost the argmin can tie at, so the band can retain a **strictly more
+> expensive** prefix. **It selects item 6's own witness** — 5 s where a `(cost, time)` pair label
+> reports 1,004 s, PASS against FAIL at ten minutes. Against the exhaustive oracle over 294 graphs,
+> 144 generic and 150 with ulp-scale near-ties planted, **no quantity was wrong** in either
+> variant and no answer was a journey the model cannot form; the pair label was wrong on the
+> reported time in 22 of 144 and 86 of 150 and returned totals no journey has in 28 and 40. On
+> generic weights the band keeps exactly one label per node.
 >
-> **It selects item 6's own witness**: 5 s where a `(cost, time)` pair label reports 1,004 s, PASS
-> against FAIL at ten minutes. Against the exhaustive oracle over 294 graphs — 144 generic, 150
-> with ulp-scale near-ties planted — **no quantity was wrong**, in either the one-band or the
-> two-band variant, and no answer was a journey the model cannot form. The pair label was wrong on
-> the reported time in 22 of 144 and 86 of 150, and returned totals no journey has in 28 and 40,
-> because it left-accumulates.
+> **What pass 42 took away.** Four claims, all reproduced here before they were acted on:
 >
-> **The price is small and its bound is not.** On generic weights the band keeps exactly one label
-> per node — it is free, because exactly equal prefix costs share a key and only sub-ulp
-> differences buy a second label. On a planted population it keeps 1.30 per node. But the retained
-> count at a node is bounded by `W / g`, width over the smallest non-zero gap, and on a family of
-> `k` one-ulp diamonds that capacity is 8,192. The measured counts are small because the family
-> supplies `k` distinct costs, not because the band is intrinsically cheap.
+> * **the recommendation to size the width from the query's threshold is wrong.** Cost is travel
+>   time plus access penalties, so a time threshold bounds neither. On the witness with costs
+>   scaled 16× it returns 1,004 s against a normative 5 s — PASS becomes FAIL. The sound tight
+>   bound is `feasible_cost_bound()`, the cost of a journey that exists.
+> * **the second band — the only thing that settles route identity — is exponential.** On `k`
+>   diamonds of equal cost and distinct times it retains `5·2ᵏ − 3` labels: 20,477 at `k = 12`
+>   where one band holds 38, on a graph that is acyclic, positive and within the precondition. So
+>   "exact cost ties cost nothing" is true of the one band and false of the two, and `W / g` does
+>   not bound the two-band count. **Do not carry it by default.**
+> * **the band is a prefix-pruning search.** It prunes prefixes on a suffix-aware threshold.
+>   "Item 6 stands exactly as written" was wrong; the item is restated as a requirement rather than
+>   an impossibility, and the design now carries that wording.
+> * **the binade of headroom was never necessary** — the bound is on the value two labels tie at,
+>   not on the costlier label's own total — and it was what overflowed on an admissible graph the
+>   oracle answers.
 >
-> **Two things it does not give for free.** The width must be sized from a bound on the total, and
-> the graph's own cost sum is loose by 16,384× against a realistic journey, so a comparator should
-> size it from the query's threshold. And the single band settles the reported **numbers** but not
-> **route identity**: `--route-witness` is a graph where it reports the right 1,004 s and names the
-> wrong route, which a second band on time fixes at 5 labels becoming 7.
+> **What survived.** The rounding-interval lemma, independently checked over 240,000 exact pairs
+> across binades and subnormals at a worst ratio of exactly 1.000000; the suffix ceiling's
+> conservatism; the numerical dominance at fixed exact cost; order independence against a control;
+> the sufficiency of the cycle check; the exactness of `float(Fraction)` against `fsum`; and both
+> self-corrections this phase reported, re-derived by the reviewer at 655,354 against 884
+> expansions for an identical retained set.
 >
-> **The precondition is checkable in one pass**: no cycle may cost less than the band width.
-> Violating it on purpose, over 363 graphs with a zero-cost two-way edge, cost the **route
-> sequence 8 times and a reported number never** — and that asymmetry has a reason, not just a
-> count, because a zero-cost cycle cannot lower a time.
->
-> **Status: 4b.0 has reported and now recommends.** Take the band, size its width from the query
-> ceiling, carry the second band only if the manifest's named route must be normative. Item 6 is
-> **not** repealed by this — the band is not a prefix-pruning search — and the design still has to
-> choose, which is why T3's gate stays where it is.
+> **Status: take the one band, size it from a cost bound, leave route identity open.** The other
+> two repairs are still unpriced and nothing here ran on a real road graph, so T3's gate stays
+> where it is until the design chooses.
 
 
 

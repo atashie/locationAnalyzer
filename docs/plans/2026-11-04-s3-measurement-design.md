@@ -2121,34 +2121,49 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
    which is what an amendment would have to change.
 
    Three repairs were available. **One of them is now built and priced** — phase 4b.0 part two,
-   `v2/scripts/spike_suffix_band.py` and `docs/experiments/suffix-band.md`. A label is retained at
-   a node when its exact prefix cost exceeds the node's exact minimum by at most `ulp(2U)`, for an
-   upper bound `U` on every total reachable through it; two prefixes can share a final cost only if
-   they lie within one rounding interval, so a wider gap than that can never rejoin the tie. It
-   selects the witness above (5 s, against the pair label's 1,004 s), agrees with the exhaustive
+   `v2/scripts/spike_suffix_band.py` and `docs/experiments/suffix-band.md`, reviewed as Codex pass
+   42. A label is retained at a node when its exact prefix cost exceeds the node's exact minimum by
+   at most `ulp(B)`, for a float bound `B` on the cost the argmin can tie at. The argument bounds
+   the value two labels **tie at**, not the costlier one's own total: if `Q` reaches the argmin `T`
+   through a suffix `S`, the minimum label reaches `rnd(σ(v) + S) ≤ T` and cannot be below it
+   without contradicting the argmin, so both lie in one rounding interval and their gap is at most
+   `ulp(T) ≤ ulp(B)`.
+
+   It selects the witness above (5 s, against the pair label's 1,004 s), agrees with the exhaustive
    oracle on 294 graphs across a generic and a planted-near-tie population with **no** quantity
-   wrong, is order-independent against a positive control, and keeps exactly **one** label per node
-   on generic weights — the retained set grows only for prefixes differing by *less than an ulp of
-   the total*, never for prefixes that tie exactly.
+   wrong and no unformable answer, is order-independent against a positive control, and keeps
+   exactly **one** label per node on generic weights.
 
-   Two costs are real and are stated rather than discovered later. The width must be taken from a
-   bound on the **total**: the graph's own cost sum is sound and loose, by a factor of 16,384 on a
-   10⁷-second graph carrying a 2,000-second journey, where the query's own ceiling is as tight as
-   the rule permits. The factor of two is a binade of headroom, because a retained label's own
-   excess can push its total a shade past the bound and a band that is too narrow is the one
-   failure mode a band must not have. And a
-   single band settles cost and travel time but **not route identity** — the dominance that bounds
-   the label count keeps the smallest exact prefix time per exact cost, and two prefix times under
-   an ulp apart round to one reported time, after which this section decides on the route. A second
-   band on time, sized the same way, settles that key too. The band's argument also needs **no
-   cycle costing less than the width**; violating it was measured to cost the route sequence only,
-   never a reported number, over 363 graphs with a zero-cost two-way edge planted.
+   **The wording of this item was wrong and pass 42 F4 corrected it.** The band *is* a
+   prefix-pruning search — it prunes prefixes on a threshold that is suffix-aware, and retaining
+   some strictly costlier prefixes does not change that. The defensible statement is narrower and
+   more useful than an impossibility:
 
-   **This does not repeal the item.** The band is not a prefix-pruning search — it retains prefixes
-   that are strictly more expensive, which is exactly what pruning on a prefix order cannot do. The
-   other two repairs (an amendment that settles *both* keys or adopts an exactly-additive primary
-   order; accepting the gap and measuring its frequency on the real graph) remain unpriced. T3
-   stays gated until this design **chooses** one, and 4b.0's evidence recommends the band.
+   > §2.4's ranking cannot be implemented by a search that keeps **one** label per node, nor by any
+   > search whose pruning uses prefix information alone, because the final rounding can make a
+   > strictly costlier prefix tie at the argmin. It **can** be implemented by a search that prunes
+   > on a threshold derived from a bound on the suffix.
+
+   So this item is a **requirement**, not a wall. Three things it requires, all measured:
+
+   * **the bound must bound cost.** Pass 42 F1: cost is travel time plus access penalties, so a
+     query's travel-time threshold bounds neither. Sizing the band from a 600 s threshold on a
+     witness whose costs are 32,018 returns 1,004 s where the rule says 5 s — PASS becomes FAIL.
+     The sound tight bound is the cost of a journey that was actually found; the graph's own total
+     is sound and loose, by 16,384× on a 10⁷-second graph carrying a 2,000-second journey, and it
+     can overflow on an admissible graph (F2), so it saturates rather than raising.
+   * **no cycle may cost less than the width.** This also delivers node-simplicity, which the
+     search would otherwise assume. Positive costs alone do not: a two-way edge costing `2⁻⁴⁶`
+     produced a winner containing two out-and-back cycles. Violating the precondition was measured
+     to cost the route sequence and **never** a reported number, over 371 graphs.
+   * **route identity stays open.** A single band settles cost and travel time. The second band
+     that settles the route key costs `5·2ᵏ − 3` labels on `k` diamonds of equal cost and distinct
+     times — 20,477 at `k = 12` where one band holds 38 — on a graph that is acyclic, positive and
+     within the precondition (F3). It is not affordable by default.
+
+   The other two repairs (an amendment that settles *both* keys or adopts an exactly-additive
+   primary order; accepting the gap and measuring its frequency on the real graph) remain unpriced,
+   and nothing here ran on a real road graph. T3 stays gated until this design **chooses**.
 
 Pass 22 also **qualified** two revision-8 statements without refuting them. A palindrome's two
 directions share one identity only for a **closed** palindrome: an open edge whose endpoint node ids

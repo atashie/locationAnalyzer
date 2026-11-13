@@ -364,3 +364,38 @@ down. A docstring is not a safe place to put an untested claim. It is the place 
 believe one.
 
 Fourteen instances now.
+
+## Fifteenth to seventeenth, 2026-11-13 — pass 42 on the band
+
+**Fifteenth, and the worst of the three: the recommendation broke the design's own central
+distinction.** I recommended sizing the band's width from "the query's own ceiling", meaning the
+travel-time threshold a query carries. The design's first principle is *selection is by cost,
+reporting is by time*, and `cost = travel_time + access penalty`. A threshold on the reported time
+is therefore not a bound on cost, and a band sized from one is not sound. Scale the witness's costs
+by sixteen and leave its times alone: the rule says 5 s, the band sized from 600 s says 1,004 s,
+and PASS becomes FAIL. The repair was easy — use the cost of a journey that exists, which the
+argmin cannot exceed — but the mistake is not a slip. **It is the one conflation this whole design
+exists to prevent, made in the sentence that told someone what to build.**
+
+**Sixteenth: a classification asserted rather than checked.** I wrote that item 6 "stands exactly
+as written" because the band "is not a prefix-pruning search". It is one: it prunes prefixes on a
+threshold that happens to be suffix-aware, and two lines of its own code drop a cost-2 prefix
+beside a cost-1 one. Retaining *some* strictly costlier prefixes does not change what the search
+is. Note what the wrong classification bought me: it let the design stand unchanged. A claim that
+conveniently removes work is the one to check first, and this one took a four-line reproducer.
+
+**Seventeenth: the adversarial family was adversarial in only one direction.** I priced the band on
+diamonds whose arms differ in *cost*, which gives each merge `k + 1` cost buckets each holding one
+time — a family in which the second band provably cannot cost anything. Give the arms **equal**
+costs and distinct times and the same construction retains `5·2ᵏ − 3` labels: 20,477 at `k = 12`
+where one band holds 38. "Exact cost ties cost the band nothing" was true of what I measured and
+false of what I claimed. A worst case has as many dimensions as the thing has keys, and I varied
+one of two.
+
+**How to apply.** Two habits, both cheap. Before recommending a quantity as a bound, write down
+what it is a bound **on**, in the design's own units, and check that against the design's defining
+equation — not against your sense of what the quantity means. And when a result says a cost is
+zero, ask which key the family varied; if the mechanism has two keys and the family varies one,
+the zero is about the family.
+
+Seventeen instances now.
