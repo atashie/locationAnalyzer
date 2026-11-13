@@ -1,4 +1,10 @@
-"""Export the **published** layers in `published-v2` for the browser — S3.5's export half.
+"""Export the **published** layers in `published-v3` for the browser — S3.5's export half.
+
+**The route-flag plane is optional and its absence means "this layer does not disclose".** A layer
+carries one only when `<stem>_restricted_route.npy` sits beside its surface triple, written by
+`scripts/flag_restricted_routes.py --write-raster`. A manifest that declares no `flag_file`
+discloses nothing about routes, which is a different statement from "no route is restricted" — and
+the decoder reports `restrictedIncludedCount: null` rather than 0 so a reader cannot confuse them.
 
 `spikes/g3-render/export_layers.py` exports the G1 engine-comparison tifs and has two defects S3.5
 names: it discovers layers by `<engine>_<category>_<mode>`, so it **omits**
@@ -50,6 +56,23 @@ SOURCES = [
     ("own_triangle_grocery_walk", "Grocery, walk (100 m)", 100.0),
     ("own_triangle_grocery_walk_cell200", "Grocery, walk (200 m candidate)", 200.0),
 ]
+
+
+def load_route_flag(stem: str, shape) -> np.ndarray | None:
+    """The per-cell route flag, if this layer bundle carries one.
+
+    Returning `None` is meaningful: it is "this layer does not disclose", and every consumer has to
+    keep it distinct from a plane of zeros.
+    """
+    path = LAYERS / f"{stem}_restricted_route.npy"
+    if not path.exists():
+        return None
+    flag = np.load(path)
+    if flag.shape != tuple(shape):
+        raise SystemExit(
+            f"{path.name} is {flag.shape} and the surface is {tuple(shape)}; refusing to publish a "
+            "disclosure that does not describe this layer")
+    return flag
 
 
 def load_surface(stem: str) -> tuple[Surface, dict]:
@@ -149,6 +172,8 @@ def main(argv: list[str] | None = None) -> int:
             continue
         surf, build = load_surface(stem)
         value, status = wire.encode_planes(surf)
+        raw_flag = load_route_flag(stem, value.shape)
+        flag = None if raw_flag is None else wire.encode_route_flag(raw_flag, status)
         transform, crs = source_transform(build, value.shape)
 
         # The value plane's fill is VALUE_NONE, which carries no time and no bound. The status
@@ -169,18 +194,37 @@ def main(argv: list[str] | None = None) -> int:
         vb, sb = v.tobytes(), s.tobytes()
         (args.out / f"{stem}.value.bin").write_bytes(vb)
         (args.out / f"{stem}.status.bin").write_bytes(sb)
-        entries.append({
+        entry = {
             "id": stem, "label": label, "engine": build["engine"], "mode": build["mode"],
             "category": build["category"], "cell_m": cell_m,
             "horizon_s": surf.horizon_s,
             "value_file": f"{stem}.value.bin", "status_file": f"{stem}.status.bin",
             "source_shape": list(value.shape),
-        })
+        }
+        fb = None
+        if flag is not None:
+            # Uncovered pixels become ROUTE_CLEAR, which is safe only because the status plane
+            # marks them OUTSIDE: a zero flag at a cell with no published answer discloses
+            # nothing, and `wire.encode_route_flag` enforces that a SET flag implies status OK.
+            fplane = reproject_plane(flag, transform, crs, src_fill=wire.ROUTE_CLEAR,
+                                     dst_fill=wire.ROUTE_CLEAR, bounds=bounds,
+                                     nrows=args.nrows, ncols=args.ncols)
+            bad = (fplane == wire.ROUTE_RESTRICTED) & (s != wire.OK)
+            if bad.any():
+                raise SystemExit(
+                    f"{stem}: {int(bad.sum())} reprojected cells carry a route flag where the "
+                    "status is not OK; nearest resampling moved the two planes apart")
+            fb = fplane.tobytes()
+            (args.out / f"{stem}.flag.bin").write_bytes(fb)
+            entry["flag_file"] = f"{stem}.flag.bin"
+            entry["flagged_cells"] = int((fplane == wire.ROUTE_RESTRICTED).sum())
+        entries.append(entry)
         sizes.append({
             "id": stem,
-            "raw_bytes": len(vb) + len(sb),
+            "raw_bytes": len(vb) + len(sb) + (len(fb) if fb else 0),
             "deflated_value": deflated(vb), "deflated_status": deflated(sb),
-            "deflated_total": deflated(vb) + deflated(sb),
+            "deflated_flag": deflated(fb) if fb else None,
+            "deflated_total": deflated(vb) + deflated(sb) + (deflated(fb) if fb else 0),
             "v1_raw_bytes": len(vb),
             "v1_deflated": deflated(v1_plane(v, s).tobytes()),
             "status_counts": {wire.STATUS_CODES[int(c)]: int(n)
@@ -192,6 +236,11 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = {
         "encoding": wire.ENCODING,
+        "discloses_restricted_routes": any("flag_file" in e for e in entries),
+        "what_an_absent_flag_plane_means": (
+            "that the layer does not disclose, NOT that no route is restricted. A decoder must "
+            "report that distinction rather than defaulting to clean"),
+        "route_flag_codes": {str(k): v for k, v in wire.ROUTE_FLAG_CODES.items()},
         "nrows": args.nrows, "ncols": args.ncols,
         "bounds_wgs84": list(bounds),
         "units": "minutes",
@@ -211,9 +260,11 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     print(f"wrote {len(entries)} layers to {args.out}")
-    print(f"\n{'layer':38s} {'raw':>10s} {'deflated':>10s} {'v1 defl.':>10s} {'ratio':>6s}")
+    print(f"\n{'layer':34s} {'raw':>10s} {'deflated':>10s} {'of which flag':>14s} "
+          f"{'v1 defl.':>10s} {'ratio':>6s}")
     for s in sizes:
-        print(f"{s['id']:38s} {s['raw_bytes']:>10,} {s['deflated_total']:>10,} "
+        fl = f"{s['deflated_flag']:,}" if s["deflated_flag"] is not None else "-"
+        print(f"{s['id']:34s} {s['raw_bytes']:>10,} {s['deflated_total']:>10,} {fl:>14s} "
               f"{s['v1_deflated']:>10,} {s['deflated_total'] / s['v1_deflated']:>6.2f}x")
     for s in sizes:
         print(f"\n{s['id']} status plane: {s['status_counts']}")

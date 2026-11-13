@@ -99,11 +99,21 @@ def real_window():
     return surf, (best[0].start, best[1].start)
 
 
-def layer_entry(name: str, surf: Surface) -> tuple[dict, np.ndarray, np.ndarray]:
+def layer_entry(name: str, surf: Surface, flagged=None):
+    """`(manifest entry, value, status, flag or None)`.
+
+    A layer carries a flag plane only when one is supplied, and the entry declares `flag_file` only
+    then — because an absent plane means "this layer does not disclose", which a decoder has to
+    keep distinct from a plane of zeros.
+    """
     value, status = wire.encode_planes(surf)
-    return ({"id": name, "horizon_s": surf.horizon_s,
-             "value_file": f"{name}.value.bin", "status_file": f"{name}.status.bin"},
-            value, status)
+    entry = {"id": name, "horizon_s": surf.horizon_s,
+             "value_file": f"{name}.value.bin", "status_file": f"{name}.status.bin"}
+    flag = None
+    if flagged is not None:
+        flag = wire.encode_route_flag(flagged, status)
+        entry["flag_file"] = f"{name}.flag.bin"
+    return entry, value, status, flag
 
 
 def main() -> int:
@@ -112,7 +122,10 @@ def main() -> int:
 
     # ---------------------------------------------------------------- hand-built, one layer
     surf = hand_built()
-    entry, value, status = layer_entry("hand", surf)
+    # Flag the first OK cell, so the group exercises a disclosure alongside every status code.
+    hand_flags = np.zeros(len(surf.seconds), dtype=bool)
+    hand_flags[0] = True
+    entry, value, status, flag = layer_entry("hand", surf, flagged=hand_flags)
     cases = []
     for t in (1, 3, 5, 10, 11, 39, 40, 41, 120, 251, 252, 254):
         expected = evaluate(
@@ -125,20 +138,22 @@ def main() -> int:
         cases.append({"name": f"hand T={t}", "thresholds": [t], "enabled": [True],
                       "verdicts": [int(v) for v in verdict]})
     groups.append({"name": "hand-built statuses", "nrows": 1, "ncols": len(value),
-                   "layers": [entry], "planes": [(value, status)], "cases": cases})
+                   "layers": [entry], "planes": [(value, status, flag)], "cases": cases,
+                   "expect_discloses_routes": True})
 
     # ---------------------------------------------------------------- two layers
     # Layer A is unknown on the cell where layer B is a known failure. The combined verdict must be
     # EXCLUDED. The old worker broke out of its loop at A and reported unknown.
     a = surface_from([np.inf, 300.0], [Reason.OFF_NETWORK, Reason.OK], [60.0, 300.0])
     b = surface_from([1800.0, np.inf], [Reason.OK, Reason.OFF_NETWORK], [1800.0, 60.0])
-    ea, va, sa = layer_entry("twoA", a)
-    eb, vb, sb = layer_entry("twoB", b)
+    ea, va, sa, _fa = layer_entry("twoA", a)
+    eb, vb, sb, _fb = layer_entry("twoB", b)
     oa = wire.outcome_planes(va, sa, threshold_min=10, horizon_s=a.horizon_s)
     ob = wire.outcome_planes(vb, sb, threshold_min=10, horizon_s=b.horizon_s)
     groups.append({
         "name": "known failure beats unknown", "nrows": 1, "ncols": 2,
-        "layers": [ea, eb], "planes": [(va, sa), (vb, sb)],
+        "layers": [ea, eb], "planes": [(va, sa, None), (vb, sb, None)],
+        "expect_discloses_routes": False,
         "cases": [
             {"name": "both layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
              "verdicts": [int(v) for v in wire.combine_planes([oa, ob])]},
@@ -168,12 +183,20 @@ def main() -> int:
                    "layers": [{"id": "codes", "horizon_s": 7200.0,
                                "value_file": "codes.value.bin",
                                "status_file": "codes.status.bin"}],
-                   "planes": [(vals, codes)], "cases": code_cases,
+                   "planes": [(vals, codes, None)], "cases": code_cases,
+                   "expect_discloses_routes": False,
                    "status_codes_present": sorted(int(c) for c in np.unique(codes))})
 
     # ---------------------------------------------------------------- the real window
     surf, origin = real_window()
-    entry, value, status = layer_entry("real", surf)
+    # A deterministic sixth of the OK cells flagged: enough to make the count meaningful, and
+    # shaped so an off-by-one in the loop would move it.
+    ok = np.asarray(surf.reason) == int(Reason.OK)
+    idxs = np.flatnonzero(ok.ravel())
+    real_flags = np.zeros(ok.size, dtype=bool)
+    real_flags[idxs[::6]] = True
+    real_flags = real_flags.reshape(ok.shape)
+    entry, value, status, flag = layer_entry("real", surf, flagged=real_flags)
     cases = []
     for t in THRESHOLDS:
         expected = evaluate(
@@ -184,25 +207,38 @@ def main() -> int:
         assert np.array_equal(expected, from_wire), f"python disagrees with itself at T={t}"
         verdict = wire.combine_planes([from_wire])
         counts = [int((verdict == v).sum()) for v in (0, 1, 2)]
+        disclosed = wire.disclosed_restricted(flag, from_wire)
         cases.append({"name": f"real window T={t}", "thresholds": [t], "enabled": [True],
                       "counts": {"included": counts[0], "excluded": counts[1],
                                  "unknown": counts[2]},
+                      "restricted_included": int(disclosed.sum()),
+                      "verdict_sha256_32": digest(verdict)})
+        # The plane must not move a verdict. Same planes, same thresholds, flags withheld: the
+        # verdict digest has to be identical, and the harness checks both cases against it.
+        cases.append({"name": f"real window T={t}, flags withheld", "thresholds": [t],
+                      "enabled": [True], "withhold_flags": True,
+                      "counts": {"included": counts[0], "excluded": counts[1],
+                                 "unknown": counts[2]},
+                      "restricted_included": None,
                       "verdict_sha256_32": digest(verdict)})
     groups.append({"name": f"published layer window at {origin}", "nrows": WINDOW,
-                   "ncols": WINDOW, "layers": [entry], "planes": [(value, status)],
-                   "cases": cases,
+                   "ncols": WINDOW, "layers": [entry], "planes": [(value, status, flag)],
+                   "cases": cases, "expect_discloses_routes": True,
                    "status_codes_present": sorted(int(c) for c in np.unique(status))})
 
     out = {"encoding": wire.ENCODING,
+           "route_flag_codes": {str(k): v for k, v in wire.ROUTE_FLAG_CODES.items()},
            "generated_by": "v2/scripts/make_wire_vectors.py",
            "why": ("a Python round trip cannot protect the browser; these are replayed through "
                    "the real worker by worker_conformance.mjs"),
            "status_codes": {str(k): v for k, v in wire.STATUS_CODES.items()},
            "groups": []}
     for g in groups:
-        for (value, status), entry in zip(g["planes"], g["layers"]):
+        for (value, status, flag), entry in zip(g["planes"], g["layers"]):
             (OUT / entry["value_file"]).write_bytes(np.ascontiguousarray(value).tobytes())
             (OUT / entry["status_file"]).write_bytes(np.ascontiguousarray(status).tobytes())
+            if flag is not None:
+                (OUT / entry["flag_file"]).write_bytes(np.ascontiguousarray(flag).tobytes())
         out["groups"].append({k: v for k, v in g.items() if k != "planes"})
     (OUT / "vectors.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
 

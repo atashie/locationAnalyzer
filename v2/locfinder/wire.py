@@ -56,7 +56,30 @@ import numpy as np
 from .status import LAYER_REASONS, Outcome, Reason, Verdict
 
 #: Bumped whenever a code's meaning changes. The browser refuses a manifest it does not know.
-ENCODING = "published-v2"
+#:
+#: v3 adds an **optional third plane**, the route flag. Optional is load-bearing: a layer without
+#: one does not disclose, which is a different statement from "no route is restricted", and the
+#: decoder must not be able to confuse them. Existing v2 bundles stay readable and simply disclose
+#: nothing, so this is an additive version rather than a reinterpretation of anything.
+ENCODING = "published-v3"
+
+#: Encodings this decoder reads. v2 differs from v3 only by the absence of the route-flag plane.
+READABLE_ENCODINGS = ("published-v2", "published-v3")
+
+# --------------------------------------------------------------------------- the route flag
+#: The cost-optimal route behind this cell's published answer uses no access-restricted way.
+ROUTE_CLEAR = 0
+#: It uses at least one. Step 8's disclosure: the owner's 2026-11-10 decision to keep the
+#: restricted-walk penalty at 120 s was conditional on this gap being disclosed, not priced away.
+ROUTE_RESTRICTED = 1
+
+#: **Why this is a plane and not a bit in the status byte.** The layer contract says wire codes are
+#: assigned explicitly and may not be reinterpreted -- the same rule that forbade reading minute
+#: values 251-254 as sentinels. Overloading the status byte's high bit would be that reinterpretation
+#: with extra steps. It is also the wrong shape: the status answers *why there is no time* and the
+#: flag answers *what the route used*, and those are orthogonal. Folding orthogonal facts into one
+#: byte is exactly what made v1 unable to express 18,648 known failures.
+ROUTE_FLAG_CODES = {ROUTE_CLEAR: "ROUTE_CLEAR", ROUTE_RESTRICTED: "ROUTE_RESTRICTED"}
 
 # --------------------------------------------------------------------------- the wire codes
 OK = 0
@@ -140,6 +163,51 @@ def encode_planes(surface) -> tuple[np.ndarray, np.ndarray]:
     return value, status
 
 
+def encode_route_flag(flagged, status: np.ndarray) -> np.ndarray:
+    """A uint8 0/1 plane from a boolean route flag, checked against the status plane.
+
+    **A flag may only be set where the status is `OK`.** Only then is there a published journey,
+    and only a published journey has a route to describe. A set flag anywhere else would assert
+    something about a route the format says does not exist, so this refuses rather than publishing
+    it.
+
+    **A zero means two different things and the status plane distinguishes them.** Where the status
+    is `OK`, a zero asserts the route uses no restricted way. Where it is not, the cell discloses
+    nothing — and a reader must not take the zero as a clean route. That is why the plane is
+    optional at the manifest level: a layer that omits it discloses nothing *anywhere*, which is
+    again different from a plane of zeros.
+    """
+    flag = np.asarray(flagged)
+    status = np.asarray(status)
+    if flag.shape != status.shape:
+        raise ValueError(f"flag {flag.shape} and status {status.shape} planes must match")
+    out = np.where(flag.astype(bool), ROUTE_RESTRICTED, ROUTE_CLEAR).astype(np.uint8)
+    bad = (out == ROUTE_RESTRICTED) & (status != OK)
+    if bad.any():
+        raise ValueError(
+            f"{int(bad.sum())} cells carry a route flag where the status is not OK. A cell with no "
+            "published time has no route, so a flag there asserts something the format denies.")
+    return out
+
+
+def disclosed_restricted(flag_plane, outcomes) -> np.ndarray:
+    """Which cells both **pass** a criterion and carry a restricted route.
+
+    The flag is a disclosure and **never** an eligibility input: it is not consulted by
+    `outcome_planes` or `combine_planes`, and adding it to a layer changes no verdict. This
+    function is the only place the two meet, and it reads the flag strictly where the outcome is
+    already a pass.
+    """
+    if flag_plane is None:
+        raise ValueError("this layer carries no route-flag plane, so it discloses nothing; that "
+                         "is not the same as no route being restricted")
+    flag = np.asarray(flag_plane)
+    out = np.asarray(outcomes)
+    if flag.shape != out.shape:
+        raise ValueError(f"flag {flag.shape} and outcome {out.shape} planes must match")
+    return (flag == ROUTE_RESTRICTED) & (out == np.int8(Outcome.PASS))
+
+
 def outcome_planes(value: np.ndarray, status: np.ndarray, *, threshold_min: int,
                    horizon_s: float) -> np.ndarray:
     """`status.Outcome` per cell, from the wire planes alone.
@@ -151,6 +219,9 @@ def outcome_planes(value: np.ndarray, status: np.ndarray, *, threshold_min: int,
     """
     value = np.asarray(value)
     status = np.asarray(status)
+    # The route flag is deliberately absent from this function's signature. A disclosure must not
+    # be able to change an eligibility answer, and the cheapest way to guarantee that is for the
+    # decoder never to see it.
     unknown_codes = np.isin(status, list(UNKNOWN_CODES))
     if not np.isin(status, list(STATUS_CODES)).all():
         raise ValueError("the status plane holds a code this decoder does not define")

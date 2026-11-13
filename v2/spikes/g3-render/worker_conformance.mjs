@@ -101,28 +101,58 @@ function planeBytes(file) {
 const vectors = JSON.parse(fs.readFileSync(path.join(FIXTURES, 'vectors.json'), 'utf8'));
 
 for (const group of vectors.groups) {
+  // Two workers per group when the group discloses: one initialised WITH the flag planes and one
+  // WITHOUT, so "the plane moves no verdict" is checked against the same expectations rather than
+  // argued. A `withhold_flags` case runs on the second.
+  const discloses = group.layers.some((l) => l.flag_file);
   const worker = loadWorker();
+  const plainWorker = discloses ? loadWorker() : null;
+  const entry = (l) => ({ id: l.id, horizon_s: l.horizon_s,
+    ...(l.flag_file ? { flag_file: l.flag_file } : {}) });
   const manifest = {
     nrows: group.nrows,
     ncols: group.ncols,
     encoding: vectors.encoding,
+    layers: group.layers.map(entry),
+  };
+  // The same bundle with every disclosure removed, which must still be readable.
+  const plainManifest = {
+    nrows: group.nrows, ncols: group.ncols, encoding: vectors.encoding,
     layers: group.layers.map((l) => ({ id: l.id, horizon_s: l.horizon_s })),
   };
+  const initArgs = (m) => ({
+    type: 'init',
+    manifest: m,
+    values: group.layers.map((l) => planeBytes(l.value_file)),
+    statuses: group.layers.map((l) => planeBytes(l.status_file)),
+    routeFlags: group.layers.map((l) => (l.flag_file ? planeBytes(l.flag_file) : null)),
+  });
   check(`${group.name}: init`, () => {
-    const out = worker.send({
-      type: 'init',
-      manifest,
-      values: group.layers.map((l) => planeBytes(l.value_file)),
-      statuses: group.layers.map((l) => planeBytes(l.status_file)),
-    });
+    const out = worker.send(initArgs(manifest));
     const ready = out.find((m) => m.type === 'ready');
     assert(ready, 'no ready message');
     assert(ready.layerCount === group.layers.length, 'wrong layer count');
+    assert(ready.disclosesRoutes === discloses,
+      `disclosesRoutes ${ready.disclosesRoutes}, expected ${discloses}`);
+    if (group.expect_discloses_routes !== undefined) {
+      assert(ready.disclosesRoutes === group.expect_discloses_routes,
+        'the vectors and the worker disagree about whether this group discloses');
+    }
+    if (plainWorker) {
+      const p = plainWorker.send({ ...initArgs(plainManifest), routeFlags: undefined });
+      const pr = p.find((m) => m.type === 'ready');
+      assert(pr && pr.disclosesRoutes === false,
+        'a bundle with no flag_file must report that it does not disclose');
+    }
   });
 
   for (const c of group.cases) {
     check(`${group.name}: ${c.name}`, () => {
-      const out = worker.send({
+      // A withheld-flags case runs on the worker that never received the planes, so the verdict
+      // expectations below are met by a decoder that cannot see a disclosure at all.
+      const w = c.withhold_flags ? plainWorker : worker;
+      assert(w, 'this case needs a non-disclosing worker and the group has none');
+      const out = w.send({
         type: 'compute', seq: 1, tEvent: 0,
         thresholds: c.thresholds, enabled: c.enabled,
       });
@@ -146,13 +176,25 @@ for (const group of vectors.groups) {
       // were compared against nothing — and the real-layer window, which has no inline expected
       // array, was compared against nothing at all. A worker that returned UNKNOWN for NO_PATH,
       // and one that rotated the entire raster by 10,007 cells, both passed all 37 checks.
-      const vOut = worker.send({ type: 'verdicts', reqId: 1 });
+      // A disclosure must never be an eligibility input: whichever worker ran, the counts and
+      // the verdict plane below are compared against the same expectations.
+      if (c.restricted_included === null) {
+        assert(res.restrictedIncludedCount === null,
+          `restrictedIncludedCount ${res.restrictedIncludedCount}, expected null when nothing `
+          + 'discloses -- "not telling you" must not read as "none"');
+      } else if (c.restricted_included !== undefined) {
+        assert(res.restrictedIncludedCount === c.restricted_included,
+          `restrictedIncludedCount ${res.restrictedIncludedCount}, expected `
+          + `${c.restricted_included}`);
+      }
+
+      const vOut = w.send({ type: 'verdicts', reqId: 1 });
       const vMsg = vOut.find((m) => m.type === 'verdicts');
       assert(vMsg, 'no verdicts message');
       const verdicts = new Int8Array(vMsg.verdicts);
       assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
 
-      const maskOut = worker.send({ type: 'mask', reqId: 1 });
+      const maskOut = w.send({ type: 'mask', reqId: 1 });
       const maskMsg = maskOut.find((m) => m.type === 'mask');
       assert(maskMsg, 'no mask message');
       const mask = new Uint8Array(maskMsg.mask);
@@ -224,12 +266,12 @@ check('a manifest in an unknown encoding is refused, not guessed at', () => {
   try {
     worker.send({
       type: 'init',
-      manifest: { nrows: 1, ncols: 2, encoding: 'uint8-minutes-ceil-v1',
+      manifest: { nrows: 1, ncols: 2, encoding: 'uint8-minutes-ceil-v0',
                   layers: [{ id: 'x', horizon_s: 7200 }] },
       values: [new ArrayBuffer(2)], statuses: [new ArrayBuffer(2)],
     });
   } catch (err) {
-    threw = /is not published-v2/.test(err.message);
+    threw = /is not one of/.test(err.message);
   }
   assert(threw, 'the worker accepted a v1 manifest');
 });
@@ -281,6 +323,71 @@ check('an undefined status code is refused rather than rendered', () => {
     threw = /does not define/.test(err.message);
   }
   assert(threw, 'the worker rendered an undefined status code');
+});
+
+
+check('a v2 bundle is still readable and reports that it does not disclose', () => {
+  const worker = loadWorker();
+  const out = worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v2',
+                layers: [{ id: 'x', horizon_s: 7200 }] },
+    values: [new ArrayBuffer(1)],
+    statuses: [new ArrayBuffer(1)],
+  });
+  const ready = out.find((m) => m.type === 'ready');
+  assert(ready, 'no ready message');
+  assert(ready.disclosesRoutes === false, 'a v2 bundle cannot disclose');
+});
+
+check('a declared flag plane that does not arrive is refused, not treated as absent', () => {
+  const worker = loadWorker();
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                  layers: [{ id: 'x', horizon_s: 7200, flag_file: 'x.flag.bin' }] },
+      values: [new ArrayBuffer(1)], statuses: [new ArrayBuffer(1)],
+    });
+  } catch (err) {
+    threw = /route flag/.test(err.message);
+  }
+  assert(threw, 'a missing declared plane became "no route is restricted"');
+});
+
+check('a route flag set where the status is not OK is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                  layers: [{ id: 'x', horizon_s: 7200, flag_file: 'x.flag.bin' }] },
+      values: [one(255)], statuses: [one(1)], routeFlags: [one(1)],
+    });
+  } catch (err) {
+    threw = /no route for it to describe/.test(err.message);
+  }
+  assert(threw, 'a flag was accepted where the format says there is no journey');
+});
+
+check('an undefined route-flag byte is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                  layers: [{ id: 'x', horizon_s: 7200, flag_file: 'x.flag.bin' }] },
+      values: [one(5)], statuses: [one(0)], routeFlags: [one(2)],
+    });
+  } catch (err) {
+    threw = /does not define/.test(err.message);
+  }
+  assert(threw, 'an undefined flag byte was accepted');
 });
 
 console.log(failures === 0

@@ -31,7 +31,7 @@ def test_the_browser_decoder_agrees_with_the_python_one():
     assert out.returncode == 0, f"{out.stdout}\n{out.stderr}"
     assert "all browser conformance checks passed" in out.stdout
     # A harness that silently ran nothing would also exit 0.
-    assert out.stdout.count("PASS  ") >= 25, out.stdout
+    assert out.stdout.count("PASS  ") >= 30, out.stdout
 
 
 @pytest.mark.skipif(not VECTORS.exists(), reason="vectors not generated")
@@ -40,7 +40,7 @@ def test_the_vectors_cover_every_status_code_the_published_layer_produces():
     generator refuses to write one that does not; this asserts the artifact on disk kept that
     property, so a stale regeneration cannot quietly weaken the check."""
     data = json.loads(VECTORS.read_text(encoding="utf-8"))
-    assert data["encoding"] == "published-v2"
+    assert data["encoding"] in ("published-v2", "published-v3")
     real = [g for g in data["groups"] if "published layer window" in g["name"]]
     assert real, "no real-layer group in the vectors"
     present = set(real[0]["status_codes_present"])

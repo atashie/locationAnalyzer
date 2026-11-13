@@ -1,6 +1,7 @@
 /* worker.js — G3 raster-algebra Web Worker (classic worker, no imports, no build step).
  *
- * Holds the published-v2 layers -- a VALUE plane and a STATUS plane each -- and per request
+ * Holds the published layers -- a VALUE plane, a STATUS plane, and an OPTIONAL ROUTE-FLAG
+ * plane each -- and per request
  * computes a three-outcome verdict per cell, which is `locfinder/wire.py` transcribed:
  *
  *   per layer:  OK             -> value <= T ? PASS : FAIL
@@ -20,16 +21,20 @@
  * and transfers it to the main thread.
  *
  * Protocol (main -> worker):
- *   {type:'init', manifest, values:[ArrayBuffer x N], statuses:[ArrayBuffer x N]}  transferred
+ *   {type:'init', manifest, values:[ArrayBuffer x N], statuses:[ArrayBuffer x N],
+ *          routeFlags:[ArrayBuffer x N]}                        transferred; routeFlags optional
  *   {type:'compute', seq, thresholds:[N ints], enabled:[N bools], tEvent}
  *   {type:'recycle', buffer}                                     returns an RGBA buffer to the pool
  *   {type:'mask', reqId}                                         asks for a copy of the current 0/1 mask
  *   {type:'verdicts', reqId}                                     asks for the three-way verdict plane
  * Protocol (worker -> main):
  *   {type:'ready', nrows, ncols, layerCount, bytes, initMs}
- *   {type:'result', seq, tEvent, rgba, inCount, nodataCount, excludedCount, enabledCount,
- *                   computeMs, tWorkerStartAbs, tWorkerEndAbs}   rgba is transferred
- *                   inCount = INCLUDED, nodataCount = UNKNOWN, excludedCount = EXCLUDED
+ *   {type:'result', seq, tEvent, rgba, inCount, nodataCount, excludedCount,
+ *                   restrictedIncludedCount, enabledCount, computeMs, tWorkerStartAbs,
+ *                   tWorkerEndAbs}                              rgba is transferred
+ *                   inCount = INCLUDED, nodataCount = UNKNOWN, excludedCount = EXCLUDED,
+ *                   restrictedIncludedCount = included cells whose route uses a restricted way,
+ *                   or NULL when no enabled layer discloses one -- which is not the same as zero
  *   {type:'mask', reqId, seq, inCount, mask}                     mask (Uint8Array buffer, 1 = in) is transferred
  *   {type:'verdicts', reqId, seq, verdicts}                      Int8Array buffer, 0/1/2 = INCLUDED/EXCLUDED/UNKNOWN
  *
@@ -56,7 +61,13 @@ function packRGBA(r, g, b, a) {
 /* The wire codes. These are `locfinder/wire.py`'s, and deliberately NOT `status.Reason`'s --
  * the layer contract forbids writing the in-memory enum into a raster. `ENCODING` is checked at
  * init, because a format that changed a code's meaning must be refused, never guessed at. */
-const ENCODING = 'published-v2';
+/* v2 and v3 differ only by the optional route-flag plane, so both are readable. A v2 bundle
+ * discloses nothing about routes, which is NOT the same as no route being restricted -- the
+ * worker reports `disclosesRoutes` so a caller cannot read silence as a clean answer. */
+const READABLE_ENCODINGS = ['published-v2', 'published-v3'];
+/* The route flag is a DISCLOSURE and never an eligibility input. `outcomeFor` does not receive
+ * it, which is the cheapest guarantee that adding the plane cannot move a verdict. */
+const ROUTE_RESTRICTED = 1;
 const S_OK = 0, S_OFF_NETWORK = 1, S_BEYOND_HORIZON = 2, S_NO_PATH = 3;
 const S_LAYER_UNKNOWN = 4, S_OUTSIDE = 5;
 /* Missing with no recorded cause -- what a v1 artifact's single NODATA becomes when it is lifted
@@ -78,6 +89,7 @@ const state = {
   ncols: 0,
   layers: [],      // value plane, Uint8Array per layer
   statuses: [],    // status plane, Uint8Array per layer
+  routeFlags: [],  // route-flag plane per layer, or null where the layer does not disclose
   horizons: [],    // horizon_s per layer, for the BEYOND_HORIZON rule
   mask: null,      // Uint8Array, 1 = in region
   verdict: null,   // Int8Array, 0 INCLUDED / 1 EXCLUDED / 2 UNKNOWN -- the whole algebra
@@ -125,9 +137,10 @@ function handleInit(msg) {
   // A versioned format is refused, not reinterpreted. Minute values 251-254 are real answers in
   // artifacts already on disk, so a decoder that guessed at an unknown encoding would read them
   // as sentinels and publish a region nobody computed.
-  if (manifest.encoding !== ENCODING) {
-    throw new Error(`manifest encoding ${JSON.stringify(manifest.encoding)} is not ${ENCODING}; `
-      + 'this decoder refuses a format it does not know rather than guessing at its codes');
+  if (!READABLE_ENCODINGS.includes(manifest.encoding)) {
+    throw new Error(`manifest encoding ${JSON.stringify(manifest.encoding)} is not one of `
+      + `${READABLE_ENCODINGS.join(', ')}; this decoder refuses a format it does not know rather `
+      + 'than guessing at its codes');
   }
   const plane = (bufs, what) => {
     if (!Array.isArray(bufs) || bufs.length !== manifest.layers.length) {
@@ -142,6 +155,30 @@ function handleInit(msg) {
   };
   const layers = plane(msg.values, 'value');
   const statuses = plane(msg.statuses, 'status');
+  // A layer declares a route-flag plane by carrying `flag_file`. If any does, the buffers must
+  // arrive: silently treating a declared-but-missing plane as absent would turn a delivery bug
+  // into "no route is restricted", which is the one reading this format must never permit.
+  const declaresFlags = manifest.layers.some((l) => !!l.flag_file);
+  let routeFlags = manifest.layers.map(() => null);
+  if (declaresFlags) {
+    const planes = plane(msg.routeFlags, 'route flag');
+    routeFlags = manifest.layers.map((l, i) => (l.flag_file ? planes[i] : null));
+    for (let k = 0; k < routeFlags.length; k++) {
+      if (!routeFlags[k]) continue;
+      for (let p = 0; p < routeFlags[k].length; p++) {
+        const v = routeFlags[k][p];
+        if (v > ROUTE_RESTRICTED) {
+          throw new Error(`layer ${manifest.layers[k].id}: route-flag plane holds ${v} at ${p}, `
+            + 'which this decoder does not define');
+        }
+        // A flag may only be set where there is a published journey to describe.
+        if (v === ROUTE_RESTRICTED && statuses[k][p] !== S_OK) {
+          throw new Error(`layer ${manifest.layers[k].id}: a route flag is set at ${p} where the `
+            + `status is ${statuses[k][p]}, so there is no route for it to describe`);
+        }
+      }
+    }
+  }
   // `Surface.validate` forces a BEYOND_HORIZON cell's bound to equal the horizon exactly, so its
   // value byte is `ceil(horizon_s / 60)` and is otherwise redundant -- the decoder compares
   // against the manifest, never against the stored bound. That redundancy is a LIMITED
@@ -175,6 +212,7 @@ function handleInit(msg) {
   state.ncols = ncols;
   state.layers = layers;
   state.statuses = statuses;
+  state.routeFlags = routeFlags;
   state.horizons = horizons;
   state.mask = new Uint8Array(n);
   state.verdict = new Int8Array(n);
@@ -184,26 +222,29 @@ function handleInit(msg) {
     nrows,
     ncols,
     layerCount: layers.length,
-    bytes: n * layers.length,
+    disclosesRoutes: declaresFlags,
+    bytes: n * layers.length * (declaresFlags ? 3 : 2),
     initMs: performance.now() - t0,
   });
 }
 
 function handleCompute(msg) {
   const tStart = performance.now();
-  const { nrows, ncols, layers, statuses, horizons, mask, verdict } = state;
+  const { nrows, ncols, layers, statuses, routeFlags, horizons, mask, verdict } = state;
   if (!mask) throw new Error('compute before init');
   const n = nrows * ncols;
 
   // Hoist enabled layers, their status planes, thresholds and horizons.
   const L = [];
   const S = [];
+  const F = [];
   const T = [];
   const H = [];
   for (let k = 0; k < layers.length; k++) {
     if (msg.enabled[k]) {
       L.push(layers[k]);
       S.push(statuses[k]);
+      F.push(routeFlags[k]);
       const t = msg.thresholds[k];
       // Pass 43 F7: `| 0` truncates, and at 10.5 minutes a 610-second OK cell decoded as a
       // failure where the rule passes it. The minute planes cannot answer a fractional
@@ -224,6 +265,11 @@ function handleCompute(msg) {
   let nodataCount = 0;
 
   let excludedCount = 0;
+  // Included cells whose route, in at least one enabled layer that discloses, uses a restricted
+  // way. Counted beside the verdict and never inside it.
+  let restrictedIncludedCount = 0;
+  let disclosingLayers = 0;
+  for (let k = 0; k < F.length; k++) if (F[k]) disclosingLayers++;
 
   if (m === 0) {
     // No criteria excludes nothing -- `status.combine`'s own rule, and the opposite of the empty
@@ -259,6 +305,11 @@ function handleCompute(msg) {
           verdict[p] = V_INCLUDED;
           px[p] = PX_IN;
           inCount++;
+          if (disclosingLayers) {
+            for (let k = 0; k < m; k++) {
+              if (F[k] && F[k][p] === ROUTE_RESTRICTED) { restrictedIncludedCount++; break; }
+            }
+          }
         }
       }
     }
@@ -275,6 +326,8 @@ function handleCompute(msg) {
     inCount,
     nodataCount,
     excludedCount,
+    // null, not 0, when nothing discloses: "we are not telling you" must not read as "none".
+    restrictedIncludedCount: disclosingLayers ? restrictedIncludedCount : null,
     enabledCount: m,
     computeMs: tEnd - tStart,
     tWorkerStartAbs: performance.timeOrigin + tStart,

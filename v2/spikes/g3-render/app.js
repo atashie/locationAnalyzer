@@ -157,9 +157,10 @@
     }
     // The decoder refuses an encoding it does not know; say so here too, where the message can
     // name the file, rather than letting the worker's refusal arrive without a path.
-    if (manifest.encoding !== 'published-v2') {
+    const READABLE = ['published-v2', 'published-v3'];
+    if (!READABLE.includes(manifest.encoding)) {
       throw new Error(`${FIXTURES}/manifest.json carries encoding "${manifest.encoding}"; this `
-        + 'page decodes published-v2. Run scripts/export_published_layers.py.');
+        + `page decodes ${READABLE.join(' or ')}. Run scripts/export_published_layers.py.`);
     }
 
     const fetchPlane = async (file) => {
@@ -169,6 +170,9 @@
     };
     const values = await Promise.all(manifest.layers.map((l) => fetchPlane(l.value_file)));
     const statuses = await Promise.all(manifest.layers.map((l) => fetchPlane(l.status_file)));
+    // Optional: a layer discloses its restricted routes only if it says so.
+    const routeFlags = await Promise.all(manifest.layers.map(
+      (l) => (l.flag_file ? fetchPlane(l.flag_file) : Promise.resolve(null))));
 
     const expected = manifest.nrows * manifest.ncols;
     [[values, 'value'], [statuses, 'status']].forEach(([bufs, what]) => {
@@ -225,12 +229,12 @@
       `source="${manifest.source || 'unknown'}"`,
     );
 
-    return { manifest, values, statuses };
+    return { manifest, values, statuses, routeFlags };
   }
 
   // ---- 3. worker ------------------------------------------------------------------------------
 
-  function initWorker(manifest, values, statuses) {
+  function initWorker(manifest, values, statuses, routeFlags) {
     return new Promise((resolve, reject) => {
       const worker = new Worker('worker.js');
       state.worker = worker;
@@ -266,7 +270,9 @@
 
       // Each plane is listed in the payload (so worker.js can read it) and in the transfer list
       // (so its memory moves instead of being structured-clone copied).
-      worker.postMessage({ type: 'init', manifest, values, statuses }, values.concat(statuses));
+      const flagBuffers = routeFlags.filter((b) => b);
+      worker.postMessage({ type: 'init', manifest, values, statuses, routeFlags },
+        values.concat(statuses).concat(flagBuffers));
     });
   }
 
@@ -467,6 +473,8 @@
     // published data settles -- and is no longer the same thing as "excluded", which v1 could not
     // distinguish.
     state.lastExcludedCount = msg.excludedCount;
+    // null means no enabled layer discloses, which the UI must not render as "none".
+    state.lastRestrictedIncludedCount = msg.restrictedIncludedCount;
 
     if (pending) {
       state.window.push({ totalMs, computeMs, transferMs });
@@ -679,7 +687,8 @@
 
       const [map] = await Promise.all([
         initMap(versions),
-        initWorker(fixtures.manifest, fixtures.values, fixtures.statuses),
+        initWorker(fixtures.manifest, fixtures.values, fixtures.statuses,
+          fixtures.routeFlags),
       ]);
 
       addMaskSource(map);

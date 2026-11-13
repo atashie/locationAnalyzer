@@ -59,6 +59,10 @@ POI_SNAP_MAX_M = 300.0
 MAX_ACCESS_M = 200.0
 HORIZON_S = 7200.0
 THRESHOLDS_MIN = (10, 15, 25, 45)
+#: The published layer this flag belongs to. The raster is written beside its surface triple,
+#: because that bundle is what "published in the layer bundle" means and what the graph-free
+#: exporter reads.
+STEM = "own_triangle_grocery_walk"
 
 V2 = pathlib.Path(__file__).resolve().parents[1]
 ARTIFACT = V2.parent / "docs" / "experiments" / "s3-8-restricted-routes.json"
@@ -68,6 +72,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=pathlib.Path, default=ARTIFACT)
+    ap.add_argument("--write-raster", action="store_true",
+                    help="persist the per-cell flag beside the layer's surface triple, which is "
+                         "what 'published in the layer bundle' means. The exporter is graph-free "
+                         "and reads it from there")
     args = ap.parse_args(argv)
 
     grid = METRO.grid()
@@ -144,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
         grid.y_max - (row + 0.5) * grid.cell_m,
         len(pts))
 
+    secs_grid = None
     for name, (px, py, count) in populations.items():
         secs, reason, lower = cell_arrival_with_provenance(
             idx, seconds_n, px, py, mode=MODE, max_access_m=MAX_ACCESS_M, horizon_s=HORIZON_S,
@@ -152,7 +161,11 @@ def main(argv: list[str] | None = None) -> int:
         # from -- matched edge and network path both -- rather than from the nearest node.
         att_flag = cell_route_flag(
             idx, seconds_n, px, py, mode=MODE, max_access_m=MAX_ACCESS_M,
-            node_flag=flagged_n, node_cost=node_cost, cutoff_s=None)
+            # The SAME horizon the surface applies. With `cutoff_s=None` a cell past the
+            # horizon kept a flag while its reason became BEYOND_HORIZON, so the disclosure
+            # described a journey the layer does not publish -- 5,145 cells, caught by
+            # `wire.encode_route_flag`'s invariant rather than by inspection.
+            node_flag=flagged_n, node_cost=node_cost, cutoff_s=HORIZON_S)
         surf = Surface(mode=MODE, engine="own-graph", target=CATEGORY,
                        aggregation=CATEGORY_COST_SELECTED, horizon_s=HORIZON_S,
                        seconds=secs, reason=reason, min_possible_s=lower).validate()
@@ -167,9 +180,37 @@ def main(argv: list[str] | None = None) -> int:
                 "share_of_included": (float((included & att_flag).sum()) / float(included.sum())
                                       if included.sum() else None),
             }
+        if name == "grid_cells":
+            secs_grid = secs
         entry["answered_at_all"] = int(np.isfinite(secs).sum())
         entry["answered_on_a_restricted_route"] = int((np.isfinite(secs) & att_flag).sum())
         report["units"][name] = entry
+
+    if args.write_raster:
+        grid_flag = cell_route_flag(
+            idx, seconds_n, xs.ravel(), ys.ravel(), mode=MODE, max_access_m=MAX_ACCESS_M,
+            node_flag=flagged_n, node_cost=node_cost, cutoff_s=HORIZON_S
+        ).reshape(grid.nrows, grid.ncols)
+        path = V2 / "data" / "layers" / f"{STEM}_restricted_route.npy"
+        np.save(path, np.asarray(grid_flag, dtype=np.uint8))
+        meta = {
+            "built": stamp(), "mode": MODE, "category": CATEGORY,
+            "cells": int(grid_flag.size), "flagged": int(grid_flag.sum()),
+            "answered": int(np.isfinite(secs_grid).sum()) if secs_grid is not None else None,
+            "what_it_means": ("1 where the cost-optimal route behind this cell's published answer "
+                              "uses an access-restricted way, counting both the matched edge the "
+                              "point walks along and the network path beyond it. 0 where it does "
+                              "not, AND where the cell has no published answer at all -- a zero "
+                              "is not an assertion that a route is unrestricted, only that this "
+                              "cell discloses nothing"),
+            "restricted_edges_in_the_graph": restricted_edges,
+            "why_the_edge_count_is_not_this": ("123,756 of 1,436,992 walk edges are restricted, "
+                                               "so an edge count is true everywhere and discloses "
+                                               "nothing about any particular answer"),
+        }
+        pathlib.Path(str(path).replace(".npy", "_build.json")).write_text(
+            json.dumps(meta, indent=2, default=str), encoding="utf-8")
+        print(f"\nwrote {path.name}: {meta['flagged']:,} of {meta['cells']:,} cells flagged")
 
     args.out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     print_summary(report)

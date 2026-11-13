@@ -55,7 +55,7 @@ def test_the_product_manifest_carries_only_the_chosen_grid():
     of one criterion — which removed 4,022 passing pixels at the default threshold. A candidate
     is exported only when asked for."""
     manifest = json.loads((PUBLISHED / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["encoding"] == "published-v2"
+    assert manifest["encoding"] in ("published-v2", "published-v3")
     assert [l["cell_m"] for l in manifest["layers"]] == [100.0]
     for layer in manifest["layers"]:
         assert layer["horizon_s"] > 0, "a layer with no horizon cannot decide BEYOND_HORIZON"

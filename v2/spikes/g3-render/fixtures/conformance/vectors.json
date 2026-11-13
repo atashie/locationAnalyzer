@@ -1,5 +1,9 @@
 {
-  "encoding": "published-v2",
+  "encoding": "published-v3",
+  "route_flag_codes": {
+    "0": "ROUTE_CLEAR",
+    "1": "ROUTE_RESTRICTED"
+  },
   "generated_by": "v2/scripts/make_wire_vectors.py",
   "why": "a Python round trip cannot protect the browser; these are replayed through the real worker by worker_conformance.mjs",
   "status_codes": {
@@ -21,7 +25,8 @@
           "id": "hand",
           "horizon_s": 15240.0,
           "value_file": "hand.value.bin",
-          "status_file": "hand.status.bin"
+          "status_file": "hand.status.bin",
+          "flag_file": "hand.flag.bin"
         }
       ],
       "cases": [
@@ -265,7 +270,8 @@
             0
           ]
         }
-      ]
+      ],
+      "expect_discloses_routes": true
     },
     {
       "name": "known failure beats unknown",
@@ -285,6 +291,7 @@
           "status_file": "twoB.status.bin"
         }
       ],
+      "expect_discloses_routes": false,
       "cases": [
         {
           "name": "both layers, T=10",
@@ -427,6 +434,7 @@
           ]
         }
       ],
+      "expect_discloses_routes": false,
       "status_codes_present": [
         0,
         1,
@@ -444,7 +452,8 @@
           "id": "real",
           "horizon_s": 7200.0,
           "value_file": "real.value.bin",
-          "status_file": "real.status.bin"
+          "status_file": "real.status.bin",
+          "flag_file": "real.flag.bin"
         }
       ],
       "cases": [
@@ -461,6 +470,24 @@
             "excluded": 39979,
             "unknown": 0
           },
+          "restricted_included": 3,
+          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473"
+        },
+        {
+          "name": "real window T=1, flags withheld",
+          "thresholds": [
+            1
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 21,
+            "excluded": 39979,
+            "unknown": 0
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473"
         },
         {
@@ -476,6 +503,24 @@
             "excluded": 33675,
             "unknown": 6040
           },
+          "restricted_included": 49,
+          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6"
+        },
+        {
+          "name": "real window T=5, flags withheld",
+          "thresholds": [
+            5
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 285,
+            "excluded": 33675,
+            "unknown": 6040
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6"
         },
         {
@@ -491,6 +536,24 @@
             "excluded": 31484,
             "unknown": 7585
           },
+          "restricted_included": 156,
+          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8"
+        },
+        {
+          "name": "real window T=10, flags withheld",
+          "thresholds": [
+            10
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 931,
+            "excluded": 31484,
+            "unknown": 7585
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8"
         },
         {
@@ -506,6 +569,24 @@
             "excluded": 30281,
             "unknown": 7886
           },
+          "restricted_included": 310,
+          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1"
+        },
+        {
+          "name": "real window T=15, flags withheld",
+          "thresholds": [
+            15
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 1833,
+            "excluded": 30281,
+            "unknown": 7886
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1"
         },
         {
@@ -521,6 +602,24 @@
             "excluded": 27771,
             "unknown": 7921
           },
+          "restricted_included": 713,
+          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577"
+        },
+        {
+          "name": "real window T=25, flags withheld",
+          "thresholds": [
+            25
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 4308,
+            "excluded": 27771,
+            "unknown": 7921
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "b313af8da242baf6d2121acba6703577"
         },
         {
@@ -536,6 +635,24 @@
             "excluded": 20390,
             "unknown": 7921
           },
+          "restricted_included": 1925,
+          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1"
+        },
+        {
+          "name": "real window T=45, flags withheld",
+          "thresholds": [
+            45
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 11689,
+            "excluded": 20390,
+            "unknown": 7921
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1"
         },
         {
@@ -551,6 +668,24 @@
             "excluded": 13752,
             "unknown": 7921
           },
+          "restricted_included": 3067,
+          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe"
+        },
+        {
+          "name": "real window T=60, flags withheld",
+          "thresholds": [
+            60
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 18327,
+            "excluded": 13752,
+            "unknown": 7921
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe"
         },
         {
@@ -566,6 +701,24 @@
             "excluded": 767,
             "unknown": 7921
           },
+          "restricted_included": 5219,
+          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb"
+        },
+        {
+          "name": "real window T=120, flags withheld",
+          "thresholds": [
+            120
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 31312,
+            "excluded": 767,
+            "unknown": 7921
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb"
         },
         {
@@ -581,9 +734,28 @@
             "excluded": 0,
             "unknown": 8688
           },
+          "restricted_included": 5219,
+          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7"
+        },
+        {
+          "name": "real window T=121, flags withheld",
+          "thresholds": [
+            121
+          ],
+          "enabled": [
+            true
+          ],
+          "withhold_flags": true,
+          "counts": {
+            "included": 31312,
+            "excluded": 0,
+            "unknown": 8688
+          },
+          "restricted_included": null,
           "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7"
         }
       ],
+      "expect_discloses_routes": true,
       "status_codes_present": [
         0,
         1,

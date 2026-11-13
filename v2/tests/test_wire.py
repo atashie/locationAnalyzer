@@ -252,3 +252,47 @@ def test_a_beyond_horizon_cell_carries_the_horizon_as_its_bound():
     bh = status == wire.BEYOND_HORIZON
     assert bh.any()
     assert (value[bh] == min(int(math.ceil(surf.horizon_s / 60.0)), wire.VALUE_MAX)).all()
+
+
+# --------------------------------------------------------------------------- the route flag
+
+
+def test_a_route_flag_may_only_be_set_where_there_is_a_published_journey():
+    """Step 8's disclosure. Only an `OK` cell has a route to describe, so a flag anywhere else
+    asserts something the format denies — and this invariant caught a real defect before the plane
+    shipped: the flag had been computed without the surface's horizon, so 5,145 cells disclosed a
+    route for a journey that had become BEYOND_HORIZON."""
+    status = np.array([wire.OK, wire.OFF_NETWORK, wire.BEYOND_HORIZON], dtype=np.uint8)
+    good = wire.encode_route_flag(np.array([True, False, False]), status)
+    assert list(good) == [wire.ROUTE_RESTRICTED, wire.ROUTE_CLEAR, wire.ROUTE_CLEAR]
+    for bad in ([False, True, False], [False, False, True]):
+        with pytest.raises(ValueError, match="no route"):
+            wire.encode_route_flag(np.array(bad), status)
+
+
+def test_the_flag_is_never_an_eligibility_input():
+    """A disclosure must not be able to move a verdict, and the guarantee is structural:
+    `outcome_planes` does not take the flag as an argument at all."""
+    import inspect
+    assert "flag" not in inspect.signature(wire.outcome_planes).parameters
+    assert "flag" not in inspect.signature(wire.combine_planes).parameters
+
+
+def test_disclosed_restricted_reads_the_flag_only_where_the_outcome_passes():
+    outcomes = np.array([int(Outcome.PASS), int(Outcome.FAIL), int(Outcome.UNKNOWN)],
+                        dtype=np.int8)
+    flag = np.array([wire.ROUTE_RESTRICTED] * 3, dtype=np.uint8)
+    got = wire.disclosed_restricted(flag, outcomes)
+    assert list(got) == [True, False, False]
+
+
+def test_a_layer_with_no_flag_plane_discloses_nothing_rather_than_being_clean():
+    """The `UNKNOWN_CAUSE` lesson again: absence of provenance is not evidence of cleanliness. A
+    caller asking about a layer that carries no plane gets an error, not a `False`."""
+    with pytest.raises(ValueError, match="discloses nothing"):
+        wire.disclosed_restricted(None, np.array([int(Outcome.PASS)], dtype=np.int8))
+
+
+def test_both_encodings_are_readable_and_v3_is_the_one_written():
+    assert wire.ENCODING == "published-v3"
+    assert set(wire.READABLE_ENCODINGS) == {"published-v2", "published-v3"}

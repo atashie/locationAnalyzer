@@ -100,6 +100,40 @@ const MUTATIONS = [
       'px[p] = PX_OUT;'),
   },
   {
+    // The disclosure must never be an eligibility input. If the flag can move a verdict, the
+    // flags-withheld control in the harness diverges from the same expectations.
+    name: 'a restricted route is treated as an exclusion',
+    apply: (s) => s.replace(
+      'if (o === O_FAIL) anyFail = 1;',
+      'if (o === O_FAIL || (F[k] && F[k][p] === ROUTE_RESTRICTED)) anyFail = 1;'),
+  },
+  {
+    // The disclosure stops being counted at all, while every verdict stays correct -- which
+    // is the shape of a silent disclosure failure: nothing looks broken.
+    name: 'the disclosure is never counted',
+    apply: (s) => s.replace(/if \(disclosingLayers\) \{\r?\n/, 'if (false) {\n'),
+  },
+  {
+    // Counting the flag on EXCLUDED cells too, rather than only where the verdict is
+    // INCLUDED. The verdicts stay correct and only the disclosure count is wrong.
+    name: 'the disclosure counts cells that were not included',
+    apply: (s) => s.replace(
+      'verdict[p] = V_EXCLUDED;',
+      'verdict[p] = V_EXCLUDED; if (F[0] && F[0][p] === 1) restrictedIncludedCount++;'),
+  },
+  {
+    name: 'a missing flag plane reports zero instead of null',
+    apply: (s) => s.replace(
+      'restrictedIncludedCount: disclosingLayers ? restrictedIncludedCount : null,',
+      'restrictedIncludedCount: restrictedIncludedCount,'),
+  },
+  {
+    name: 'the flag-versus-status invariant is not checked at init',
+    apply: (s) => s.replace(
+      'if (v === ROUTE_RESTRICTED && statuses[k][p] !== S_OK) {',
+      'if (false) {'),
+  },
+  {
     name: 'the counts no longer describe the plane',
     apply: (s) => s.replace('          excludedCount++;', '          if (p % 7) excludedCount++;'),
   },
