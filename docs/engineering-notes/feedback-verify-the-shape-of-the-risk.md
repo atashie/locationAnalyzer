@@ -289,3 +289,47 @@ vary or enumerate; and is the first wider than the second. If the sentence conta
 Eleven instances now. The first nine were about over-generalising a measurement and the tenth about
 reaching past a sufficient reason; this one is about **where** the error lands, which is the part
 that makes it findable.
+
+## A twelfth, 2026-11-12: an abstraction asserted to be faithful, and a plan I did not reread
+
+Codex pass 41 F1. Phase 4b.0 had to decide whether section 2.4's ranking is implementable by a
+label-setting search. I built the experiment on a plain weighted digraph and wrote, as the reason it
+was legitimate:
+
+> "The geometry, attachment and connector layers contribute terms to a journey's totals and nothing
+> to how a search prunes."
+
+That sentence is the whole load-bearing structure of the spike, and it is false. Section 2.4 ranks
+the **once-rounded total of all formed terms**, so the constants added at the ends decide *which
+prefix differences survive*. Two prefixes differing strictly in cost can land on the same final
+binary64 cost once the entry, exit and connector terms are added, and the travel-time key then picks
+between them -- on a prefix any pruning search has already discarded. The reviewer built it from real
+`ToyGraph` objects: both journeys cost exactly 2003, one takes 1,004 s and the other 5 s, and at a
+600 s threshold that is PASS against FAIL.
+
+**The part that stings is that my own plan said so.** Its 4b.0 paragraph reads: *"A prefix that is
+strictly more expensive at a merge can join the final rounded-cost tie after a shared suffix and win
+it on time; once pruned it cannot be recovered."* I then built an experiment about **equal-cost**
+prefixes -- a tie-break problem -- and reported that the gate was too strong. The plan was right, the
+spike contradicted it on a weaker model, and the review restored the plan.
+
+**A second defect of the same kind, one layer down.** The spike's "exhaustive oracle" accumulated
+`c + ec` edge by edge, which is the rule the searches under test also used -- so oracle and search
+agreed with each other while both departed from the design. On costs `(2**53, 1, 1)` repeated
+addition gives 9007199254740992 and the whole-journey `fsum` gives 9007199254740994, and the
+normative winner changes. **An oracle that shares the defect it is checking is not an oracle.**
+
+**What distinguishes this from the previous eleven.** Those were claims stated wider than the
+evidence -- mostly in summary sentences. This one is a **modelling assumption asserted as a fact**,
+and it is more dangerous, because every number the experiment produced was correct *about the model*
+and the model was the error. The 3.64% reproduces exactly. It simply measures the additive problem,
+which is not the rule.
+
+**How to apply.** When an experiment replaces the real object with a simpler one, the sentence
+justifying the substitution is a claim that needs evidence like any other -- and the cheapest
+evidence is to reread the document that defined the problem, because it may already contain the
+counterexample. Before building a spike: quote the gate's own wording into the spike, and check the
+experiment against that wording rather than against your summary of it. Had I pasted the plan's
+sentence into the script, the mismatch would have been visible before the first run.
+
+Twelve instances now.

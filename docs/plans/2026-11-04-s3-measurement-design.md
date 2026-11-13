@@ -2098,15 +2098,33 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
    This item exists because the step 4 plan wrote its own first invalidation condition — *"if an
    exact projection still produces a wrong argmin on some witness, the item is wider than
    arithmetic"* — and did not run it. Pass 37 produced the witness on the first attempt.
-6. **§2.4's ranking is not implementable by a scalar-label search — OPEN, from Codex pass 37 F3.**
-   The ranking is lexicographic over cost and then travel time, and a label-setting search that
-   prunes on cost alone can discard a prefix that would rejoin the final cost tie and win it on
-   **time**. The rule is therefore not a property any single-scalar shortest-path implementation has,
-   whatever its arithmetic, and §2.4 item 7 does not touch it. Three repairs are available and none
-   is free: carry a band of cost-equivalent labels, amend the rule to what a scalar search can
-   deliver, or accept the gap and measure it. Step 4's phase 4b.0 decides between them **before** any
-   comparator claims to implement this section; its recommendation is to measure first, because the
-   frequency of a rejoining tie on the real graph is unmeasured.
+6. **§2.4's ranking is not implementable by any prefix-pruning search — OPEN, from Codex pass 37
+   F3, and STRENGTHENED after pass 41.** The ranking is lexicographic over cost and then travel
+   time, and this section ranks the **once-rounded total of all formed terms** (item 6 above: one
+   exactly-rounded sum per journey). So two prefixes whose costs differ **strictly** can produce the
+   *same* final binary64 cost once the entry, exit and connector terms are added — and the
+   travel-time key then decides between them, on a prefix the search has already discarded.
+
+   **Measured witness** (`v2/scripts/spike_search_semantics.py --witness`): prefixes `500 + 500`
+   and `500 + nextafter(nextafter(500))` merging at one node, so the second is strictly costlier.
+   After the shared suffix both journeys cost exactly **2003**, and their times are **1,004 s** and
+   **5 s**. The normative answer is 5 s. At *T* = 600 s that is **PASS against FAIL**, and §9's
+   encoding turns **1 minute into 17**.
+
+   **This is wider than the original wording.** It defeats a cost-only label, a `(cost, time)` pair
+   label, and **exact rational prefix accumulation** alike, because the final rounding *creates* a
+   tie that no prefix order can anticipate. The first attempt at phase 4b.0 proposed the pair label
+   as a repair and was refuted on exactly this. The converse is what holds: under an
+   **exactly-additive** primary order the pair label is sound, over 500 multi-entry,
+   three-destination graphs with unequal connectors and partial terms. The obstruction is the
+   rounding of whole totals, not multiple destinations, unequal connectors or partial traversals —
+   which is what an amendment would have to change.
+
+   Three repairs remain available and **none is yet priced**: a band of labels within a
+   neighbourhood sized from the largest reachable suffix ulp (not merely the cost-minimal labels,
+   which cannot cover the witness); an amendment that settles *both* keys or adopts an
+   exactly-additive primary order; or accepting the gap and measuring it. Phase 4b.0 has reported
+   **without choosing**, and T3 stays gated on this.
 
 Pass 22 also **qualified** two revision-8 statements without refuting them. A palindrome's two
 directions share one identity only for a **closed** palindrome: an open edge whose endpoint node ids

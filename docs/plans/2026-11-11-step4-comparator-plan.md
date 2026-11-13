@@ -261,6 +261,57 @@ on random graphs at realistic weights, "accept and measure" is honest and cheap,
 over-engineering. If it is observable, the band is required. Either way the answer is a number, not
 an argument. **Box: 1 day, and 4b's own box does not start until this reports.**
 
+> **OUTCOME, 2026-11-12: the spike ran, its recommendation was refuted, and the gate is retained.**
+> `v2/scripts/spike_search_semantics.py`, `docs/experiments/search-semantics-spike.json`.
+>
+> **The paragraph above was right and the spike contradicted it.** It says the mechanism is a prefix
+> *strictly more expensive* at the merge. The spike instead measured what happens when equal-cost
+> prefixes are dropped — a tie-break problem — on a plain weighted digraph, and concluded that
+> keying one label on `(cost, time)` repairs the rule. Codex pass 41 F1 refuted that with a
+> **journey-level** counterexample on real `ToyGraph` objects, and F2 found the spike's own
+> "exhaustive oracle" accumulating edge by edge rather than taking one `fsum` over the journey's
+> terms — so oracle and search shared a defect and agreed while both departed from §2.4. On costs
+> `(2**53, 1, 1)` the two rules give `9007199254740992` and `9007199254740994`, and the normative
+> winner changes.
+>
+> **The witness, reproducible by `--witness`.** Two prefixes merge at one node; P costs
+> `500 + 500` and Q costs `500 + nextafter(nextafter(500))`, so **Q is strictly costlier**. After
+> the shared suffix and the connector terms, the whole-journey `fsum` makes both journeys cost
+> exactly **2003** — and P takes 1,004 s where Q takes **5 s**. The normative answer is 5 s; any
+> search pruning on a prefix order has discarded Q. At a 600 s threshold that is **PASS against
+> FAIL**, and §9's encoding turns **1 minute into 17**.
+>
+> **So the obstruction is wider than "a scalar-label search", and item 6 is strengthened rather than
+> narrowed.** It defeats a cost-only label, a `(cost, time)` pair label, *and* exact rational prefix
+> accumulation, because the final rounding **creates** a tie no prefix order can anticipate. What
+> pass 41 confirmed is the converse: under an **exactly-additive** primary order the pair label is
+> sound — 500 expanded multi-entry, three-destination graphs with unequal connectors and dyadic
+> partial terms all agreed, destination id included. The problem is the rounding of whole totals,
+> not multiple destinations, unequal connectors or partial traversals.
+>
+> **None of the three options is priced, and two of the spike's figures were wrong as stated.**
+>
+> * The band this spike measured is "every exact cost-minimal label", **not** the neighbourhood
+>   above sized from a reachable suffix ulp — which is the one that could retain a strictly costlier
+>   prefix. Pass 41 F5 also found the spike's implementation **order-dependent**: reversing the input
+>   edge list turns 2 s into 1,001 s on the same graph. Its observed width of 6 prices nothing.
+> * The amendment needs more than "edge-by-edge accumulation": on the same witness even a
+>   left-accumulating oracle selects 2 s while the pair label selects 1,001 s. An amendment must
+>   settle the secondary time rule too, or adopt a genuinely exact-additive primary order.
+> * "Accept and measure" is still available, and the frequency on a real graph is still unmeasured.
+> * The spike's claimed **4.96%** route-identity ambiguity was **0.70%**: the generator admits
+>   parallel arcs and the counter compared node sequences, so 139 of 162 counted ties were the same
+>   route enumerated twice (pass 41 F3). And the non-prefix-decomposability argument was too broad —
+>   two node-simple prefixes from one root to one merge cannot be proper prefixes of each other
+>   (F4) — though pass 41 then supplied a **real** reversal using a zero-weight closed edge with
+>   multiple entry occurrences.
+>
+> **Status: 4b.0 has reported and has NOT chosen.** A spike that discovers the question is harder
+> than its framing is doing its job, but 4b cannot start on the assumption that any repair is free.
+> What is owed before 4b: build the plan's suffix-aware band and measure it, or specify an amendment
+> that settles both keys, and say which on the evidence.
+
+
 ### What T0 and the two reviews require of it, as design requirements rather than preferences
 
 1. **The candidate universe is a parameter, not a constant.** T0's pre-registered rule returned
