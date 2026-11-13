@@ -18,7 +18,7 @@ and the verdict does not generalise to them.
 | **The grid decision** | Keep 100 m. The 200 m candidate roughly doubles the rate at which the published cell answer differs from the answer at the structure's own coordinate — 4.38% against 2.52% at 15 minutes, over all 512,633 structures. [s3-1](experiments/s3-1-candidate-grids.md) |
 | **The encoding** | `published-v2`: two uint8 planes, minutes and a status code. The decoder reproduces `status.evaluate` **cell for cell** on all 330,502 cells at ten thresholds, and the browser's JavaScript reproduces the Python, checked by 37 conformance cases and 13 mutations. Costs 18.2% more bytes (31 KB). [s3-5](experiments/s3-5-browser-path.md) |
 | **Three outcomes reach the browser** | Previously 18,648 cells that the pipeline can **prove** are over the threshold arrived as "unknown", and a known failure in one layer could be overridden by an unknown in another. Both fixed. |
-| **Attachment conventions** | A/B/C/D settled on prevalence by census over 844,685 points; eligibility invariant on every point measured. [t0](experiments/t0-attachment-pilot.md) |
+| **Attachment prevalence** | A/B/C/D's *prevalence* measured by census over 844,685 points, and eligibility is invariant on every point measured. The **choice between them is still open**: the pre-registered rule makes it open on verdict impact, and that stage needs the comparator. [t0](experiments/t0-attachment-pilot.md) |
 
 ## What is not established, and must be said out loud
 
