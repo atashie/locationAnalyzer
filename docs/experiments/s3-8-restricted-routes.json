@@ -1,6 +1,6 @@
 {
   "what_this_is": "step 8's disclosure aggregation: which published answers depend on a restricted way. The owner's 2026-11-10 decision to keep the 120 s penalty was conditional on disclosing this gap rather than pricing it away",
-  "built": "2026-11-13 13:35:53",
+  "built": "2026-11-13 13:54:08",
   "mode": "walk",
   "category": "grocery",
   "graph": {
@@ -18,55 +18,84 @@
       "thresholds": {
         "10": {
           "included": 24255,
-          "included_on_a_restricted_route": 2540,
-          "share_of_included": 0.10472067614924757
+          "included_on_a_restricted_route": 2539,
+          "share_of_included": 0.10467944753659039
         },
         "15": {
           "included": 47509,
-          "included_on_a_restricted_route": 5510,
-          "share_of_included": 0.11597802521627482
+          "included_on_a_restricted_route": 5509,
+          "share_of_included": 0.11595697657285987
         },
         "25": {
           "included": 93575,
-          "included_on_a_restricted_route": 12391,
-          "share_of_included": 0.13241784664707454
+          "included_on_a_restricted_route": 12385,
+          "share_of_included": 0.13235372695698638
         },
         "45": {
           "included": 161670,
-          "included_on_a_restricted_route": 26887,
-          "share_of_included": 0.16630791117708912
+          "included_on_a_restricted_route": 26879,
+          "share_of_included": 0.16625842766128535
         }
       },
       "answered_at_all": 256752,
-      "answered_on_a_restricted_route": 57194
+      "answered_on_a_restricted_route": 57175
     },
-    "structures": {
+    "structures_at_their_own_coordinate": {
       "population": 512633,
       "thresholds": {
         "10": {
           "included": 78627,
-          "included_on_a_restricted_route": 8033,
-          "share_of_included": 0.10216592264743662
+          "included_on_a_restricted_route": 8029,
+          "share_of_included": 0.10211504953769061
         },
         "15": {
           "included": 162699,
-          "included_on_a_restricted_route": 16871,
-          "share_of_included": 0.10369455251722506
+          "included_on_a_restricted_route": 16867,
+          "share_of_included": 0.10366996724011826
         },
         "25": {
           "included": 298236,
-          "included_on_a_restricted_route": 33413,
-          "share_of_included": 0.11203543502461139
+          "included_on_a_restricted_route": 33405,
+          "share_of_included": 0.11200861063050738
         },
         "45": {
           "included": 424650,
-          "included_on_a_restricted_route": 50197,
-          "share_of_included": 0.11820793594725068
+          "included_on_a_restricted_route": 50185,
+          "share_of_included": 0.11817967738137289
         }
       },
       "answered_at_all": 499031,
-      "answered_on_a_restricted_route": 70864
+      "answered_on_a_restricted_route": 70842
+    },
+    "structures_at_their_published_cell": {
+      "population": 512633,
+      "thresholds": {
+        "10": {
+          "included": 80067,
+          "included_on_a_restricted_route": 7271,
+          "share_of_included": 0.09081144541446538
+        },
+        "15": {
+          "included": 163875,
+          "included_on_a_restricted_route": 15294,
+          "share_of_included": 0.09332723112128147
+        },
+        "25": {
+          "included": 298716,
+          "included_on_a_restricted_route": 30971,
+          "share_of_included": 0.10368041885938484
+        },
+        "45": {
+          "included": 424886,
+          "included_on_a_restricted_route": 47236,
+          "share_of_included": 0.11117335002800752
+        }
+      },
+      "answered_at_all": 499009,
+      "answered_on_a_restricted_route": 67484
     }
   },
+  "which_unit_a_disclosure_figure_may_use": "structures_at_their_published_cell. The product answers for a cell, so that is what a household is told; the coordinate figures are model sensitivity. Pass 46 F2 found the first version's headline built on the coordinate unit -- 8,033 of 78,627 at T=10 -- where the published cell gives 7,276 of 80,067, and 23,330 structures carry a different flag between the two",
+  "what_is_still_not_the_shipped_answer": "even the published-cell figure is the SOURCE grid's. The browser receives a WGS84 re-tiling and MapLibre places it in Mercator, each of which moves the lookup again (see s3-5-browser-path). And no flag plane is shipped at all, so every count here is a CANDIDATE disclosure rather than one any household can currently receive",
   "the_statistic_this_does_not_compute": "the SIGNED ERROR on restricted-route journeys. That needs walked journeys: this computes the denominator -- which answers are in the class -- and leaves the numerator empty. One walked journey found about 25 minutes against a published 13.5, so the known direction of the bias is OPTIMISTIC, but one journey is existence evidence and not a rate"
 }

@@ -515,3 +515,33 @@ directions regardless of what the argument says, because the count costs nothing
 has now been wrong twice.
 
 Twenty-two instances now.
+
+## Twenty-third, 2026-11-13 — I wrote a verdict the project already had an instrument for
+
+The decision report's job was to tell the owner whether real-world accuracy is supported. I wrote
+**"UNVERIFIED, the owner's call"**. `locfinder/measure/e3.py` had been sitting in the repository the
+whole time, predeclared for exactly this question, and on the evidence we have it returns
+**FAILED** — 1.85× and 11.5 minutes over, past both of its bounds, plus a median difference past
+its third.
+
+**This is not the same mistake as the previous twenty-two.** Those were claims stated wider than
+their evidence. This is a claim stated **narrower** than the evidence, and in a document whose
+entire purpose was to carry that evidence to a person. I reasoned from the sample size — one
+journey cannot establish a rate, therefore nothing is established — without checking whether the
+project had already decided what one journey establishes. It had: the scorer is deliberately
+asymmetric, because one observation can refute a claim it cannot confirm.
+
+So the failure is: **writing a verdict by argument when a predeclared instrument for that verdict
+existed.** Every adversarial pass in this project has been about not reaching conclusions the
+evidence does not support; this was reaching a conclusion while walking past the thing built to
+reach it. And the direction matters — "unverified" sounds cautious and is not, because it converts
+a measured failure into an open question.
+
+**How to apply.** Before writing any verdict, status or outcome into a document, grep for the
+scorer. `E0`, `E1`, `E1b`, `E1c`, `E2`, `E3` and the four diagnostics all have or will have code;
+if a sentence is about one of them, the sentence belongs to that code and not to me. Where no
+instrument exists, say which one is missing rather than supplying a verdict in its place. And treat
+"not enough data to conclude anything" as a claim needing the same check as any other — a
+predeclared rule may already say what this much data concludes.
+
+Twenty-three instances now.

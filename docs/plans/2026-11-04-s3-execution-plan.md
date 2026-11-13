@@ -279,7 +279,7 @@ destination actually used, date, and outcome.
 > **Still owed on step 7:** the **geocoding** half — whether a household's address resolves to the
 > right cell — is not started. And nothing here measures whether an *open* store is usable on
 > arrival; that remains the walked audit, the only check that consults the world.
-| 8 | **REPORT AND FLAG DONE 2026-11-13; the release is the owner's.** **The one-page decision report** (`docs/s3-decision-report.md`), then a bounded household release. The **restricted-route flag is computed** — `arrival_with_route_flag` and `cell_route_flag`, 13 fixtures — and **about one household in ten is exposed**: the route depends on a restricted way for 8,033 of the 78,627 structures included at *T* = 10 and 16,871 of 162,699 at *T* = 15. The flag is **not yet published in the layer bundle**, which is the remaining piece | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
+| 8 | **REPORT AND FLAG DONE 2026-11-13; the release is the owner's.** **The one-page decision report** (`docs/s3-decision-report.md`), then a bounded household release. The **restricted-route flag is computed** — `arrival_with_route_flag` and `cell_route_flag`, 13 fixtures — and about **one in eleven of the structures** the product includes is exposed: measured at each structure's **published cell**, the route depends on a restricted way for 7,271 of 80,067 at *T* = 10 (9.1%) and 15,294 of 163,875 at *T* = 15. The flag is **not published in the layer bundle**, and nor is the selected destination, so **no disclosure can reach a household today** | 1/2 day + sessions | misunderstanding and overgeneralisation, and a known optimistic bias the model cannot self-detect |
 
 > **OUTCOME, 2026-11-13: the report exists and the disclosure is computed. The release decision is
 > the owner's and this does not pre-empt it.** `docs/s3-decision-report.md`,
@@ -313,6 +313,50 @@ destination actually used, date, and outcome.
 > denominator — which answers are in the class — and leaves the numerator empty. One walked journey
 > found ≈25 minutes against a published 13.5, so the known direction is **optimistic**, and one
 > journey is existence evidence rather than a rate.
+>
+>
+> **Corrected after Codex pass 46, which said the decision report should not be handed to the owner
+> as written. It was right, and the most serious finding was not a number.**
+>
+> **The report said real-world accuracy was "UNVERIFIED, the owner's call". This project's own
+> predeclared scorer says FAILED.** `locfinder/measure/e3.py` on the one walked journey —
+> 1,500 s observed against 810.8186 s reported — trips both limbs: 1.85× and 11.5 minutes over,
+> past both the 1.5× and 5-minute bounds, and a median signed difference of 11.49 minutes against a
+> 3.38-minute limit. One observation cannot establish a rate, but the scorer was built so that one
+> *can* establish failure, which is exactly §S3.4's honesty mechanism. The first draft bypassed the
+> instrument the project built for this decision, in the direction that understates a failure. The
+> report now leads with the scorer's own words. "Engine disagreement is reported" is corrected to
+> **not measured**, since no magnitude is given and the comparator does not exist.
+>
+> **The disclosure figure measured the wrong unit, for the third pass running.** Passes 44, 45 and
+> 46 each found a claim resting on the structure's own coordinate where the **published cell** was
+> meant: 8,033 of 78,627 (10.2%) becomes **7,271 of 80,067 (9.1%)**, and 23,330 structures carry a
+> different flag between the two. The script now always computes both and labels the published one
+> as the only unit a disclosure figure may use. Even that is the *source* grid's: the WGS84
+> re-tiling and MapLibre's Mercator placement each move the lookup again, and **no flag plane
+> ships**, so every count is a candidate disclosure.
+>
+> **A real defect in the flag**: a point sitting *on* a node was flagged for the edge leading to
+> it, which it never walks. `_snap_network` already permits zero on-edge travel at an endpoint and
+> the flag ignored that convention. Fixed and pinned.
+>
+> **Three claims withdrawn from the report**: "nearest qualifying grocery" (the rule selects on
+> cost — with costs (700, 650) and times (500, 650) it reports 650 s while a 500 s walk exists);
+> "about one household in ten" (frame B is a frame of **structures**); and the attachment row,
+> which still credited **convention B, which is not implemented** — the artifact holds A, C and D,
+> over **843,685** census points rather than 844,685, a total that included two 500-point samples.
+>
+> **And the release prerequisites are longer than "publish the flag".** None of the three
+> disclosures a household is owed can be delivered: the flag is not persisted, the selected
+> destination is not persisted and a node does not identify a shop (550 places on 510 nodes, 75
+> sharing one), and the per-criterion card is unbuilt. Phone latency is unmeasured, the
+> recomputation UI is absent, and the browser implementation is `v2/spikes/g3-render` — **a spike,
+> not a product**. The report now carries that list.
+>
+> **What survived**: the refactored arrival sweep matched the old implementation exactly on 1,000
+> seeded random multigraphs including ties, parallel edges, unreachable nodes and cutoffs; the flag
+> rides the same predecessor forest as the reported time, with ties moving them together; and all
+> four published rows reproduced — the failure was their attribution, not their arithmetic.
 >
 > **Still owed on step 8:** the flag is **not published in the layer bundle**. Adding it is a wire
 > format change — a third plane or a status bit — and therefore a design question rather than a

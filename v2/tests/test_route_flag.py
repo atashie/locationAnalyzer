@@ -192,3 +192,25 @@ def test_a_node_flag_of_the_wrong_length_is_refused():
     with pytest.raises(ValueError, match="to match the node"):
         cell_route_flag(idx, seconds, np.array([50.0]), np.array([5.0]), mode="walk",
                         max_access_m=200.0, node_flag=np.zeros(2, dtype=bool))
+
+
+def test_a_point_at_an_endpoint_walks_none_of_the_matched_edge_and_discloses_none_of_it():
+    """Pass 46 F3. A journey existing is not the same as any of the matched edge being walked.
+    `_snap_network` permits zero on-edge travel at an endpoint — walking toward `e_idx` covers
+    `1 - frac`, which is nothing when the point *is* `e_idx` — so a household standing on its
+    destination node must not be told its route depends on the way leading to it."""
+    from locfinder.traveltime.snap import (EdgeIndex, cell_route_flag,
+                                           cell_seconds_from_arrival)
+    G = nx.MultiDiGraph()
+    G.add_node(0, x=0.0, y=0.0)
+    G.add_node(1, x=100.0, y=0.0)
+    G.add_edge(0, 1, travel_time=100.0, cost=220.0, access_restricted=True)
+    idx = EdgeIndex.from_graph(G, {0: 0, 1: 1})
+    x, y = np.array([0.0, 50.0, 100.0]), np.zeros(3)
+    kw = dict(mode="walk", max_access_m=200.0, node_cost=np.array([220.0, 0.0]))
+    seconds = cell_seconds_from_arrival(idx, np.array([100.0, 0.0]), x, y, **kw)
+    flags = cell_route_flag(idx, np.array([100.0, 0.0]), x, y,
+                            node_flag=np.array([True, False]), **kw)
+    assert list(seconds) == [100.0, 50.0, 0.0]
+    # At x=0 the whole restricted edge is walked; mid-edge, half of it; at x=100, none of it.
+    assert [bool(f) for f in flags] == [True, True, False]

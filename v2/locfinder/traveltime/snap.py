@@ -146,6 +146,8 @@ class _Snapped:
     chosen_idx: np.ndarray   # the endpoint whose arrival time was actually taken, -1 if neither
     matched_idx: np.ndarray  # the geometry the point snapped to, an index into EdgeIndex.geoms
     took_end: np.ndarray     # whether the journey walked toward `e_idx`, which fixes the direction
+    at_start: np.ndarray     # the point sits on `s_idx` within _NODE_EPS: no on-edge travel to it
+    at_end: np.ndarray       # the point sits on `e_idx` within _NODE_EPS
 
 
 def _snap_network(
@@ -221,6 +223,8 @@ def _snap_network(
         network=network,
         matched_idx=nearest,
         took_end=take_end,
+        at_start=at_start,
+        at_end=at_end,
         s_idx=s_idx,
         e_idx=e_idx,
         relevant_s=np.isfinite(rev_t) | at_start,
@@ -364,6 +368,14 @@ def cell_route_flag(
         # disclosure.
         loop = snapped.s_idx == snapped.e_idx
         edge_flag = np.where(loop, fwd | rev, np.where(snapped.took_end, fwd, rev)) & have
+        # Pass 46 F3: a journey existing is not the same as any of the matched edge being walked.
+        # `_snap_network` already permits zero on-edge travel at an endpoint -- walking toward
+        # `e_idx` covers `1 - frac` of the geometry, which is nothing when the point IS `e_idx` --
+        # and the flag must use the same convention, or a household standing on its destination
+        # node is told its route depends on a way it never sets foot on. The same `_NODE_EPS`
+        # override that governs the seconds governs membership.
+        walks_none = np.where(snapped.took_end, snapped.at_end, snapped.at_start)
+        edge_flag = edge_flag & ~walks_none
 
     return ((onward | edge_flag) & np.isfinite(total)).reshape(np.shape(xs))
 

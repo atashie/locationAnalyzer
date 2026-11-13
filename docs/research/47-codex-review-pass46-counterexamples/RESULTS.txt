@@ -1,0 +1,92 @@
+--- f1_the_predeclared_scorer_says_failed
+{
+  "outcome": "E3Outcome.FAILED",
+  "reasons": [
+    "band15min_pass-03: observed 1500 s against 811 s reported \u2014 1.85x and 11.5 min over, past both 1.5x and 5 min",
+    "median signed difference 11.49 min exceeds 25% of the median reported time (3.38 min)"
+  ],
+  "median_difference_s": 689.1814,
+  "median_limit_s": 202.70465,
+  "one_observation_can_refute_what_it_cannot_confirm": true
+}
+--- f2_the_published_cell_is_a_different_unit
+{
+  "structures_at_their_own_coordinate": {
+    "10": {
+      "included": 78627,
+      "flagged": 8029,
+      "share": 0.1021
+    },
+    "15": {
+      "included": 162699,
+      "flagged": 16867,
+      "share": 0.1037
+    },
+    "25": {
+      "included": 298236,
+      "flagged": 33405,
+      "share": 0.112
+    },
+    "45": {
+      "included": 424650,
+      "flagged": 50185,
+      "share": 0.1182
+    }
+  },
+  "structures_at_their_published_cell": {
+    "10": {
+      "included": 80067,
+      "flagged": 7271,
+      "share": 0.0908
+    },
+    "15": {
+      "included": 163875,
+      "flagged": 15294,
+      "share": 0.0933
+    },
+    "25": {
+      "included": 298716,
+      "flagged": 30971,
+      "share": 0.1037
+    },
+    "45": {
+      "included": 424886,
+      "flagged": 47236,
+      "share": 0.1112
+    }
+  }
+}
+--- f3_a_point_at_an_endpoint_discloses_nothing
+{
+  "seconds": [
+    100.0,
+    50.0,
+    0.0
+  ],
+  "flags": [
+    true,
+    true,
+    false
+  ],
+  "the_point_at_its_destination_is_not_flagged": true
+}
+--- f6_the_rule_selects_on_cost_not_on_walking_time
+{
+  "reported_seconds": 650.0,
+  "selected": "slow",
+  "a_faster_journey_existed": 500.0
+}
+--- the_flag_rides_the_same_forest_as_the_time
+{
+  "both_orders": [
+    {
+      "reported_seconds": 11.0,
+      "flagged": true
+    },
+    {
+      "reported_seconds": 91.0,
+      "flagged": false
+    }
+  ],
+  "time_and_flag_agree_in_each_order": true
+}

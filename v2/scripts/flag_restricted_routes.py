@@ -107,6 +107,17 @@ def main(argv: list[str] | None = None) -> int:
         "nodes": {"reachable": int(np.isfinite(seconds_n).sum()),
                   "reachable_with_a_restricted_route": int(flagged_n.sum())},
         "units": {},
+        "which_unit_a_disclosure_figure_may_use": (
+            "structures_at_their_published_cell. The product answers for a cell, so that is what a "
+            "household is told; the coordinate figures are model sensitivity. Pass 46 F2 found the "
+            "first version's headline built on the coordinate unit -- 8,033 of 78,627 at T=10 -- "
+            "where the published cell gives 7,276 of 80,067, and 23,330 structures carry a "
+            "different flag between the two"),
+        "what_is_still_not_the_shipped_answer": (
+            "even the published-cell figure is the SOURCE grid's. The browser receives a WGS84 "
+            "re-tiling and MapLibre places it in Mercator, each of which moves the lookup again "
+            "(see s3-5-browser-path). And no flag plane is shipped at all, so every count here is "
+            "a CANDIDATE disclosure rather than one any household can currently receive"),
         "the_statistic_this_does_not_compute": (
             "the SIGNED ERROR on restricted-route journeys. That needs walked journeys: this "
             "computes the denominator -- which answers are in the class -- and leaves the "
@@ -115,15 +126,23 @@ def main(argv: list[str] | None = None) -> int:
             "evidence and not a rate"),
     }
 
-    # Two populations, because they answer different questions: the grid is what the layer
-    # publishes, and the structures are who is affected.
+    # THREE populations, because they answer three different questions, and pass 46 F2 found the
+    # headline answering the wrong one. `structures_at_their_own_coordinate` is model sensitivity;
+    # `structures_at_their_published_cell` is what the product actually tells that household, and
+    # is the only one a disclosure figure may be built on. Passes 44, 45 and 46 each found a claim
+    # resting on the coordinate unit where the published unit was meant, so both are now always
+    # computed and the published one leads.
     xs, ys = grid.cell_centers_xy()
-    populations = {
-        "grid_cells": (xs.ravel(), ys.ravel(), None),
-    }
+    populations = {"grid_cells": (xs.ravel(), ys.ravel(), None)}
     ids, pts, _total = structure_population(
         METRO_DIR / "overture_buildings_accepted.parquet", grid)
-    populations["structures"] = (pts[:, 0], pts[:, 1], len(pts))
+    populations["structures_at_their_own_coordinate"] = (pts[:, 0], pts[:, 1], len(pts))
+    col = np.clip(np.floor((pts[:, 0] - grid.x_min) / grid.cell_m), 0, grid.ncols - 1)
+    row = np.clip(np.floor((grid.y_max - pts[:, 1]) / grid.cell_m), 0, grid.nrows - 1)
+    populations["structures_at_their_published_cell"] = (
+        grid.x_min + (col + 0.5) * grid.cell_m,
+        grid.y_max - (row + 0.5) * grid.cell_m,
+        len(pts))
 
     for name, (px, py, count) in populations.items():
         secs, reason, lower = cell_arrival_with_provenance(
