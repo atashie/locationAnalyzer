@@ -2120,11 +2120,32 @@ revision-9 row above, which adopted the exact-per-record reading on the strength
    rounding of whole totals, not multiple destinations, unequal connectors or partial traversals —
    which is what an amendment would have to change.
 
-   Three repairs remain available and **none is yet priced**: a band of labels within a
-   neighbourhood sized from the largest reachable suffix ulp (not merely the cost-minimal labels,
-   which cannot cover the witness); an amendment that settles *both* keys or adopts an
-   exactly-additive primary order; or accepting the gap and measuring it. Phase 4b.0 has reported
-   **without choosing**, and T3 stays gated on this.
+   Three repairs were available. **One of them is now built and priced** — phase 4b.0 part two,
+   `v2/scripts/spike_suffix_band.py` and `docs/experiments/suffix-band.md`. A label is retained at
+   a node when its exact prefix cost exceeds the node's exact minimum by at most `ulp(U)`, for an
+   upper bound `U` on every total reachable through it; two prefixes can share a final cost only if
+   they lie within one rounding interval, so a wider gap than that can never rejoin the tie. It
+   selects the witness above (5 s, against the pair label's 1,004 s), agrees with the exhaustive
+   oracle on 294 graphs across a generic and a planted-near-tie population with **no** quantity
+   wrong, is order-independent against a positive control, and keeps exactly **one** label per node
+   on generic weights — the retained set grows only for prefixes differing by *less than an ulp of
+   the total*, never for prefixes that tie exactly.
+
+   Two costs are real and are stated rather than discovered later. The width must be taken from a
+   bound on the **total**: the graph's own cost sum is sound and loose, by a factor of 16,384 on a
+   10⁷-second graph carrying a 2,000-second journey, where the query's own ceiling is exact. And a
+   single band settles cost and travel time but **not route identity** — the dominance that bounds
+   the label count keeps the smallest exact prefix time per exact cost, and two prefix times under
+   an ulp apart round to one reported time, after which this section decides on the route. A second
+   band on time, sized the same way, settles that key too. The band's argument also needs **no
+   cycle costing less than the width**; violating it was measured to cost the route sequence only,
+   never a reported number, over 363 graphs with a zero-cost two-way edge planted.
+
+   **This does not repeal the item.** The band is not a prefix-pruning search — it retains prefixes
+   that are strictly more expensive, which is exactly what pruning on a prefix order cannot do. The
+   other two repairs (an amendment that settles *both* keys or adopts an exactly-additive primary
+   order; accepting the gap and measuring its frequency on the real graph) remain unpriced. T3
+   stays gated until this design **chooses** one, and 4b.0's evidence recommends the band.
 
 Pass 22 also **qualified** two revision-8 statements without refuting them. A palindrome's two
 directions share one identity only for a **closed** palindrome: an open edge whose endpoint node ids

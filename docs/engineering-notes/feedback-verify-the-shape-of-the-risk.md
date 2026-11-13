@@ -333,3 +333,34 @@ experiment against that wording rather than against your summary of it. Had I pa
 sentence into the script, the mismatch would have been visible before the first run.
 
 Twelve instances now.
+
+## Thirteenth and fourteenth, 2026-11-13 -- the first two caught before publication
+
+Building the suffix-aware band produced two claims of exactly the twelfth instance's shape, and
+both were caught before they reached a document.
+
+**The band's price was about to be an artifact of my queue.** The first implementation used a DFS
+stack and re-expanded a node on every improvement. On 16 diamonds it reported 655,354 expansions
+for 442 retained labels, and the shape of that series is exponential. I was one paragraph from
+writing "the band's retained set is cheap but its work explodes". Ordering the queue by
+`(cost, time, route)` -- which is non-decreasing along any path, so a key is final when first
+popped -- gives 884 expansions for the same 442 labels. **The retained set was identical.** The
+exponent belonged to the queue discipline, not to the band, and an exponential figure that an
+ordinary fix removes is not a property of the thing being measured.
+
+**The precondition's docstring asserted a mechanism that measurement contradicted.** I wrote that a
+cycle costing less than the band width makes "the retained set not finite". Planting a zero-cost
+two-way edge in 400 graphs showed otherwise: 363 answers, all flagged by the check, **zero** wrong
+on cost, time or destination, 8 wrong on the route sequence, and nothing unformable. The real
+mechanism is narrower and more interesting -- a zero-cost cycle makes one route a proper prefix of
+another at a merge, which is the one condition pass 41 F4's dominance argument forbids -- and the
+numbers are safe for a reason rather than by luck, since a zero-cost cycle cannot lower a time.
+
+**What is different about these two.** Both were asserted in a docstring before anything was run,
+and in each case running the thing took minutes. The twelfth instance's habit -- quote the claim
+into the experiment and check it -- works, and it works earlier than I had been applying it: not
+only for the gate the spike is about, but for every mechanism sentence the spike itself writes
+down. A docstring is not a safe place to put an untested claim. It is the place a reader will
+believe one.
+
+Fourteen instances now.

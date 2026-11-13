@@ -174,11 +174,11 @@ def pair_label(adj, start: int, goal: int):
     return (best[goal][0], best[goal][1], nodes[goal])
 
 
-def witness() -> dict:
-    """The journey-level counterexample, on real `ToyGraph` objects. Pass 41 F1.
+def witness_graph():
+    """The journey-level counterexample's graph, as `(graph, origin, destinations, ids)`.
 
-    Reproduced from our own script rather than only from the reviewer's, because this is the finding
-    that retains the gate and it must not depend on their checkout.
+    Separated from `witness()` so that `spike_suffix_band.py` measures the band against **this**
+    graph rather than a second copy of it. One definition, two consumers.
     """
     from locfinder.measure import toy
 
@@ -198,9 +198,18 @@ def witness() -> dict:
     graph = toy.ToyGraph(tuple(toy.ToyEdge(u, v, (xy[u], xy[v]), time_s=tt, cost_base=cc,
                                            oneway=True)
                                for u, v, tt, cc in rows))
-    origin = (-1000.0, 1.26)
-    destinations = [(1200.0, 1.26), (2200.0, 0.0)]
-    ids = ["z", "a"]
+    return graph, (-1000.0, 1.26), [(1200.0, 1.26), (2200.0, 0.0)], ["z", "a"]
+
+
+def witness() -> dict:
+    """The journey-level counterexample, on real `ToyGraph` objects. Pass 41 F1.
+
+    Reproduced from our own script rather than only from the reviewer's, because this is the finding
+    that retains the gate and it must not depend on their checkout.
+    """
+    from locfinder.measure import toy
+
+    graph, origin, destinations, ids = witness_graph()
     js = toy.journeys(graph, origin, destinations, ids)
     if not js:
         return {"reproduced": False, "why": "the oracle enumerated no journeys"}

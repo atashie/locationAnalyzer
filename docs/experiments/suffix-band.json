@@ -1,0 +1,186 @@
+{
+  "what_this_is": "the comparator plan's FIRST option for section 12 amendment item 6 -- a band of labels whose width is sized from the largest reachable suffix ulp -- built on the JOURNEY model and measured",
+  "witness": {
+    "oracle_seconds": 5.0,
+    "band_seconds": 5.0,
+    "scalar_seconds": 1004.0,
+    "cost_argmin": 2003.0,
+    "band_agrees_on_the_numbers": true,
+    "band_agrees_on_the_route": true,
+    "scalar_agrees": false,
+    "band_labels_retained": 7,
+    "labels_per_node": 1.4,
+    "widest_band_s": 1.8189894035458565e-12,
+    "band_width_in_ulps_of_the_total": 8.0,
+    "precondition_holds": true,
+    "verdict_at_600s": {
+      "normative": "PASS",
+      "band": "PASS",
+      "scalar": "FAIL"
+    }
+  },
+  "width_sources": {
+    "graph_total_bound_width_s": 1.8189894035458565e-12,
+    "graph_total_bound_width_in_ulps_of_the_total": 8.0,
+    "query_ceiling_bound_width_s": 2.2737367544323206e-13,
+    "query_ceiling_bound_width_in_ulps_of_the_total": 1.0,
+    "both_still_select_the_normative_answer": true,
+    "labels_retained_loose": 7,
+    "labels_retained_tight": 7,
+    "projection_is_arithmetic_not_a_measurement": true,
+    "projected_ratio_on_a_graph_of_1e7_s_against_a_2000_s_journey": 16384.0
+  },
+  "route_key": {
+    "oracle_seconds": 1004.0,
+    "cost_argmin": 3002.0,
+    "journeys_at_the_cost_argmin": 2,
+    "one_band_numbers_agree": true,
+    "one_band_route_agrees": false,
+    "two_band_route_agrees": true,
+    "one_band_labels": 5,
+    "two_band_labels": 7,
+    "demonstrated": true
+  },
+  "sweeps": [
+    {
+      "population": "generic",
+      "graphs_tried": 150,
+      "graphs_compared": 144,
+      "wrong_quantities": {
+        "one_band": {},
+        "two_band": {},
+        "pair_label": {
+          "time": 22,
+          "cost": 22
+        }
+      },
+      "returned_a_journey_the_model_cannot_form": {
+        "one_band": 0,
+        "two_band": 0,
+        "pair_label": 28
+      },
+      "answers_that_moved_when_the_edge_list_was_permuted": {
+        "two_band": 0,
+        "pair_label": 0
+      },
+      "permutations_per_graph": 3,
+      "graphs_with_more_than_one_journey_at_the_cost_argmin": 44,
+      "label_explosions": 0,
+      "precondition_failures": 0,
+      "one_band_labels_per_node": {
+        "mean": 1.0,
+        "max": 1.0
+      },
+      "two_band_labels_per_node": {
+        "mean": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "population": "planted",
+      "graphs_tried": 150,
+      "graphs_compared": 150,
+      "wrong_quantities": {
+        "one_band": {},
+        "two_band": {},
+        "pair_label": {
+          "route": 46,
+          "time": 86
+        }
+      },
+      "returned_a_journey_the_model_cannot_form": {
+        "one_band": 0,
+        "two_band": 0,
+        "pair_label": 40
+      },
+      "answers_that_moved_when_the_edge_list_was_permuted": {
+        "two_band": 0,
+        "pair_label": 0
+      },
+      "permutations_per_graph": 3,
+      "graphs_with_more_than_one_journey_at_the_cost_argmin": 129,
+      "label_explosions": 0,
+      "precondition_failures": 0,
+      "one_band_labels_per_node": {
+        "mean": 1.2987,
+        "max": 1.4
+      },
+      "two_band_labels_per_node": {
+        "mean": 1.2987,
+        "max": 1.4
+      }
+    }
+  ],
+  "order_independence": {
+    "permutations": 6,
+    "band_distinct_answers": 1,
+    "pair_label_distinct_answers": 1,
+    "first_arrival_control_distinct_answers": 2
+  },
+  "precondition_violated": {
+    "graphs_compared": 363,
+    "flagged_by_the_precondition_check": 363,
+    "band_wrong_numbers": 0,
+    "band_wrong_route": 8,
+    "band_returned_an_unformable_journey": 0
+  },
+  "adversarial_price": [
+    {
+      "diamonds": 1,
+      "oracle_journeys": 2,
+      "band_labels": 7,
+      "labels_per_node": 1.4,
+      "pops": 14,
+      "agrees": true,
+      "capacity": 8192
+    },
+    {
+      "diamonds": 2,
+      "oracle_journeys": 4,
+      "band_labels": 15,
+      "labels_per_node": 1.875,
+      "pops": 30,
+      "agrees": true,
+      "capacity": 8192
+    },
+    {
+      "diamonds": 4,
+      "oracle_journeys": 16,
+      "band_labels": 40,
+      "labels_per_node": 2.857,
+      "pops": 80,
+      "agrees": true,
+      "capacity": 8192
+    },
+    {
+      "diamonds": 8,
+      "oracle_journeys": 256,
+      "band_labels": 126,
+      "labels_per_node": 4.846,
+      "pops": 252,
+      "agrees": true,
+      "capacity": 8192
+    },
+    {
+      "diamonds": 12,
+      "oracle_journeys": 4096,
+      "band_labels": 260,
+      "labels_per_node": 6.842,
+      "pops": 520,
+      "agrees": true,
+      "capacity": 8192
+    },
+    {
+      "diamonds": 16,
+      "oracle_journeys": 65536,
+      "band_labels": 442,
+      "labels_per_node": 8.84,
+      "pops": 884,
+      "agrees": true,
+      "capacity": 8192
+    }
+  ],
+  "soundness_argument": "two prefixes with exact costs a < b round to one total only if b - a <= ulp(T); ulp is non-decreasing in magnitude, so a width of ulp(U) for an upper bound U on every reachable total retains every prefix that could rejoin the final cost tie, including prefixes that are STRICTLY more expensive, which is what item 6 is about",
+  "precondition": "no cycle may cost less than the band width. Checked per graph by the sufficient test that there is no zero-cost edge and the smallest positive edge cost exceeds the width. What a violation costs was measured, not assumed: the ROUTE SEQUENCE only, never the reported cost or time, over 400 graphs with a zero-cost two-way edge planted",
+  "what_it_does_not_settle": "route identity. The per-cost dominance that bounds the label count drops the label with the larger exact prefix time, and two prefix times under an ulp apart can round to one reported time, after which section 2.4 decides on the route. A second band on time, sized the same way, settles it -- see --route-witness"
+}
