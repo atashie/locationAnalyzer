@@ -24,12 +24,20 @@
  *   {type:'compute', seq, thresholds:[N ints], enabled:[N bools], tEvent}
  *   {type:'recycle', buffer}                                     returns an RGBA buffer to the pool
  *   {type:'mask', reqId}                                         asks for a copy of the current 0/1 mask
+ *   {type:'verdicts', reqId}                                     asks for the three-way verdict plane
  * Protocol (worker -> main):
  *   {type:'ready', nrows, ncols, layerCount, bytes, initMs}
  *   {type:'result', seq, tEvent, rgba, inCount, nodataCount, excludedCount, enabledCount,
  *                   computeMs, tWorkerStartAbs, tWorkerEndAbs}   rgba is transferred
  *                   inCount = INCLUDED, nodataCount = UNKNOWN, excludedCount = EXCLUDED
  *   {type:'mask', reqId, seq, inCount, mask}                     mask (Uint8Array buffer, 1 = in) is transferred
+ *   {type:'verdicts', reqId, seq, verdicts}                      Int8Array buffer, 0/1/2 = INCLUDED/EXCLUDED/UNKNOWN
+ *
+ * The verdict plane exists because the mask cannot carry three outcomes and the RGBA buffer can
+ * only be read back where the hatch stripe falls. Codex pass 43 F2: without it the conformance
+ * harness compared nothing on 3/4 of the cells and nothing at all on the real-layer window, and
+ * an implementation that returned UNKNOWN for NO_PATH -- or that rotated the whole raster by
+ * 10,007 cells -- passed all 37 of its checks.
  *   {type:'error', message}
  *
  * Absolute times are performance.timeOrigin + performance.now(), comparable across threads.
@@ -55,6 +63,8 @@ const S_LAYER_UNKNOWN = 4, S_OUTSIDE = 5;
  * into this format. Never a known failure, which is exactly what v1 could assert. */
 const S_UNKNOWN_CAUSE = 6;
 const O_PASS = 0, O_FAIL = 1, O_UNKNOWN = 2;
+/* `status.Verdict`'s order, which the verdict plane is reported in. */
+const V_INCLUDED = 0, V_EXCLUDED = 1, V_UNKNOWN = 2;
 
 const PX_IN = packRGBA(24, 119, 242, 150);     // included: translucent blue
 const PX_NODATA = packRGBA(60, 60, 60, 130);   // nodata hatch stripe
@@ -70,6 +80,7 @@ const state = {
   statuses: [],    // status plane, Uint8Array per layer
   horizons: [],    // horizon_s per layer, for the BEYOND_HORIZON rule
   mask: null,      // Uint8Array, 1 = in region
+  verdict: null,   // Int8Array, 0 INCLUDED / 1 EXCLUDED / 2 UNKNOWN -- the whole algebra
   pool: [],        // recycled RGBA ArrayBuffers
   lastSeq: -1,
   lastInCount: 0,
@@ -92,6 +103,9 @@ self.onmessage = (ev) => {
         break;
       case 'mask':
         handleMask(msg);
+        break;
+      case 'verdicts':
+        handleVerdicts(msg);
         break;
       default:
         self.postMessage({ type: 'error', message: `worker: unknown message type ${String(msg.type)}` });
@@ -128,12 +142,31 @@ function handleInit(msg) {
   };
   const layers = plane(msg.values, 'value');
   const statuses = plane(msg.statuses, 'status');
+  // `Surface.validate` forces a BEYOND_HORIZON cell's bound to equal the horizon exactly, so its
+  // value byte is `ceil(horizon_s / 60)` and is otherwise redundant -- the decoder compares
+  // against the manifest, never against the stored bound. That redundancy is a CHECKSUM: if the
+  // manifest's horizon disagrees with the planes it claims to describe, a wrong horizon can turn
+  // an unknown into an exclusion, and pass 43 noted the decoder did not establish they agree.
   const horizons = manifest.layers.map((l, i) => {
     if (typeof l.horizon_s !== 'number' || !(l.horizon_s > 0)) {
       throw new Error(`layer ${l.id}: manifest has no positive horizon_s, so BEYOND_HORIZON cannot be decided`);
     }
     return l.horizon_s;
   });
+  for (let k = 0; k < layers.length; k++) {
+    const expectedByte = Math.ceil(horizons[k] / 60);
+    const n2 = layers[k].length;
+    for (let p = 0; p < n2; p++) {
+      if (statuses[k][p] === S_BEYOND_HORIZON) {
+        if (layers[k][p] !== Math.min(expectedByte, 254)) {
+          throw new Error(`layer ${manifest.layers[k].id}: a BEYOND_HORIZON cell carries bound `
+            + `${layers[k][p]} but the manifest horizon ${horizons[k]}s implies ${expectedByte}; `
+            + 'the manifest does not describe these planes');
+        }
+        break;
+      }
+    }
+  }
   state.manifest = manifest;
   state.nrows = nrows;
   state.ncols = ncols;
@@ -141,6 +174,7 @@ function handleInit(msg) {
   state.statuses = statuses;
   state.horizons = horizons;
   state.mask = new Uint8Array(n);
+  state.verdict = new Int8Array(n);
   state.pool = [];
   self.postMessage({
     type: 'ready',
@@ -154,7 +188,7 @@ function handleInit(msg) {
 
 function handleCompute(msg) {
   const tStart = performance.now();
-  const { nrows, ncols, layers, statuses, horizons, mask } = state;
+  const { nrows, ncols, layers, statuses, horizons, mask, verdict } = state;
   if (!mask) throw new Error('compute before init');
   const n = nrows * ncols;
 
@@ -167,7 +201,15 @@ function handleCompute(msg) {
     if (msg.enabled[k]) {
       L.push(layers[k]);
       S.push(statuses[k]);
-      T.push(msg.thresholds[k] | 0);
+      const t = msg.thresholds[k];
+      // Pass 43 F7: `| 0` truncates, and at 10.5 minutes a 610-second OK cell decoded as a
+      // failure where the rule passes it. The minute planes cannot answer a fractional
+      // threshold exactly, so this refuses rather than manufacturing an exclusion.
+      if (!Number.isInteger(t)) {
+        throw new Error(`threshold ${t} for layer ${k} is not a whole number of minutes; `
+          + 'this format stores whole minutes and cannot answer a fractional threshold exactly');
+      }
+      T.push(t);
       H.push(horizons[k]);
     }
   }
@@ -184,6 +226,7 @@ function handleCompute(msg) {
     // No criteria excludes nothing -- `status.combine`'s own rule, and the opposite of the empty
     // AND returning false. Every cell is included.
     mask.fill(1);
+    verdict.fill(V_INCLUDED);
     px.fill(PX_IN);
     inCount = n;
   } else {
@@ -200,14 +243,17 @@ function handleCompute(msg) {
         }
         if (anyFail) {
           mask[p] = 0;
+          verdict[p] = V_EXCLUDED;
           px[p] = PX_OUT;
           excludedCount++;
         } else if (anyUnknown) {
           mask[p] = 0;
+          verdict[p] = V_UNKNOWN;
           nodataCount++;
           px[p] = (((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH) ? PX_NODATA : PX_OUT;
         } else {
           mask[p] = 1;
+          verdict[p] = V_INCLUDED;
           px[p] = PX_IN;
           inCount++;
         }
@@ -259,6 +305,17 @@ function outcomeFor(status, value, thresholdMin, horizonS) {
     default:
       throw new Error(`status plane holds code ${status}, which this decoder does not define`);
   }
+}
+
+function handleVerdicts(msg) {
+  if (!state.verdict) throw new Error('verdicts requested before init');
+  const copy = state.verdict.slice();
+  self.postMessage({
+    type: 'verdicts',
+    reqId: msg.reqId,
+    seq: state.lastSeq,
+    verdicts: copy.buffer,
+  }, [copy.buffer]);
 }
 
 function handleMask(msg) {

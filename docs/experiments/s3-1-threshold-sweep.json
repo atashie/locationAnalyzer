@@ -1,0 +1,4385 @@
+{
+  "what_this_is": "S3.1, the matched candidate-grid comparison: one population of structure centroids evaluated at its own coordinate and at the centre of the cell containing it in each candidate grid, from one graph and one Dijkstra, so that only the grid varies",
+  "built": "2026-11-13 09:51:49",
+  "profile": "speeds-v0+7bd6d52dbf33d8fe",
+  "graph": {
+    "edges": 1436992,
+    "nodes": 539814,
+    "components": "3046 components; kept 539814 nodes (97.5%), dropped 13608",
+    "places_selected": 550,
+    "destination_nodes": 510,
+    "prepared_s": 110.8
+  },
+  "population": {
+    "structures": 512633,
+    "overture_rows": 522160,
+    "covered_by_both_grids": 512633,
+    "limited_to": null
+  },
+  "grids": {
+    "100": {
+      "nrows": 514,
+      "ncols": 643,
+      "x_min": 661900.0,
+      "y_max": 4003500.0,
+      "cell_m": 100.0,
+      "cells": 330502,
+      "distinct_cells_touched": 134477,
+      "structures_outside": 0,
+      "centroid_to_centre_offset_m": {
+        "median": 39.8644567635261,
+        "p95": 59.8669261826661,
+        "max": 70.53432683132483
+      }
+    },
+    "200": {
+      "nrows": 258,
+      "ncols": 322,
+      "x_min": 661800.0,
+      "y_max": 4003600.0,
+      "cell_m": 200.0,
+      "cells": 83076,
+      "distinct_cells_touched": 50641,
+      "structures_outside": 0,
+      "centroid_to_centre_offset_m": {
+        "median": 79.79413206732471,
+        "p95": 119.89130525339291,
+        "max": 141.17836706669925
+      }
+    }
+  },
+  "nested": false,
+  "signed_paired_seconds": {
+    "cell100_minus_address": {
+      "n": 498731,
+      "min_s": -4577.517333282061,
+      "max_s": 4310.093200548302,
+      "p01_s": -263.91232632000884,
+      "p05_s": -90.57705715897225,
+      "p25_s": -27.369442168175794,
+      "median_s": -2.82728170903232,
+      "p75_s": 20.344400112137123,
+      "p95_s": 81.88048934017172,
+      "p99_s": 246.8938452326214,
+      "mean_abs_s": 42.8638205360873,
+      "within_30s": 296904,
+      "over_120s": 32094
+    },
+    "cell200_minus_address": {
+      "n": 498480,
+      "min_s": -5787.150439698325,
+      "max_s": 5196.756094871143,
+      "p01_s": -394.277955101002,
+      "p05_s": -165.2000054343393,
+      "p25_s": -51.88656183073458,
+      "median_s": -1.7125764599059607,
+      "p75_s": 45.11671722000921,
+      "p95_s": 152.42120435683108,
+      "p99_s": 383.751270790302,
+      "mean_abs_s": 77.01109768094926,
+      "within_30s": 164119,
+      "over_120s": 76777
+    },
+    "cell200_minus_cell100": {
+      "n": 498461,
+      "min_s": -5305.366664298752,
+      "max_s": 5175.1452078070715,
+      "p01_s": -385.97789929682403,
+      "p05_s": -156.2065754770657,
+      "p25_s": -50.34238936860072,
+      "median_s": 1.5385784200337866,
+      "p75_s": 51.833442025447994,
+      "p95_s": 148.1678210619208,
+      "p99_s": 381.89395591905213,
+      "mean_abs_s": 75.72477095891516,
+      "within_30s": 147498,
+      "over_120s": 70174
+    }
+  },
+  "verdicts": {
+    "1": {
+      "cell100_against_address": {
+        "same": 512015,
+        "moved": 618,
+        "moved_rate": 0.0012055408059957124,
+        "transitions": {
+          "INCLUDED->INCLUDED": 307,
+          "INCLUDED->EXCLUDED": 300,
+          "EXCLUDED->INCLUDED": 318,
+          "EXCLUDED->EXCLUDED": 511708
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 499009,
+        "moved": 13624,
+        "moved_rate": 0.026576517703698357,
+        "transitions": {
+          "INCLUDED->INCLUDED": 625,
+          "EXCLUDED->EXCLUDED": 498384,
+          "EXCLUDED->UNKNOWN": 13624
+        }
+      },
+      "cell200_against_address": {
+        "same": 511555,
+        "moved": 1078,
+        "moved_rate": 0.002102868914018411,
+        "transitions": {
+          "INCLUDED->INCLUDED": 149,
+          "INCLUDED->EXCLUDED": 458,
+          "EXCLUDED->INCLUDED": 620,
+          "EXCLUDED->EXCLUDED": 511406
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 499025,
+        "moved": 13608,
+        "moved_rate": 0.026545306291245394,
+        "transitions": {
+          "INCLUDED->INCLUDED": 769,
+          "EXCLUDED->EXCLUDED": 498256,
+          "EXCLUDED->UNKNOWN": 13608
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 511507,
+        "moved": 1126,
+        "moved_rate": 0.002196503151377301,
+        "transitions": {
+          "INCLUDED->INCLUDED": 134,
+          "INCLUDED->EXCLUDED": 491,
+          "EXCLUDED->INCLUDED": 635,
+          "EXCLUDED->EXCLUDED": 511373
+        }
+      }
+    },
+    "2": {
+      "cell100_against_address": {
+        "same": 511046,
+        "moved": 1587,
+        "moved_rate": 0.00309578197267831,
+        "transitions": {
+          "INCLUDED->INCLUDED": 1722,
+          "INCLUDED->EXCLUDED": 689,
+          "EXCLUDED->INCLUDED": 898,
+          "EXCLUDED->EXCLUDED": 509324
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 499009,
+        "moved": 13624,
+        "moved_rate": 0.026576517703698357,
+        "transitions": {
+          "INCLUDED->INCLUDED": 2620,
+          "EXCLUDED->EXCLUDED": 496389,
+          "EXCLUDED->UNKNOWN": 13624
+        }
+      },
+      "cell200_against_address": {
+        "same": 509848,
+        "moved": 2785,
+        "moved_rate": 0.005432736480093946,
+        "transitions": {
+          "INCLUDED->INCLUDED": 1206,
+          "INCLUDED->EXCLUDED": 1205,
+          "EXCLUDED->INCLUDED": 1580,
+          "EXCLUDED->EXCLUDED": 508642
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 499025,
+        "moved": 13608,
+        "moved_rate": 0.026545306291245394,
+        "transitions": {
+          "INCLUDED->INCLUDED": 2786,
+          "EXCLUDED->EXCLUDED": 496239,
+          "EXCLUDED->UNKNOWN": 13608
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 509861,
+        "moved": 2772,
+        "moved_rate": 0.005407377207475914,
+        "transitions": {
+          "INCLUDED->INCLUDED": 1317,
+          "INCLUDED->EXCLUDED": 1303,
+          "EXCLUDED->INCLUDED": 1469,
+          "EXCLUDED->EXCLUDED": 508544
+        }
+      }
+    },
+    "3": {
+      "cell100_against_address": {
+        "same": 509236,
+        "moved": 3397,
+        "moved_rate": 0.006626573006419797,
+        "transitions": {
+          "INCLUDED->INCLUDED": 4555,
+          "INCLUDED->EXCLUDED": 1036,
+          "INCLUDED->UNKNOWN": 4,
+          "EXCLUDED->INCLUDED": 1593,
+          "EXCLUDED->EXCLUDED": 504259,
+          "EXCLUDED->UNKNOWN": 378,
+          "UNKNOWN->INCLUDED": 6,
+          "UNKNOWN->EXCLUDED": 380,
+          "UNKNOWN->UNKNOWN": 422
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 499813,
+        "moved": 12820,
+        "moved_rate": 0.025008144227936947,
+        "transitions": {
+          "INCLUDED->INCLUDED": 6154,
+          "EXCLUDED->EXCLUDED": 492855,
+          "EXCLUDED->UNKNOWN": 12820,
+          "UNKNOWN->UNKNOWN": 804
+        }
+      },
+      "cell200_against_address": {
+        "same": 506585,
+        "moved": 6048,
+        "moved_rate": 0.011797913907220176,
+        "transitions": {
+          "INCLUDED->INCLUDED": 3795,
+          "INCLUDED->EXCLUDED": 1800,
+          "EXCLUDED->INCLUDED": 3115,
+          "EXCLUDED->EXCLUDED": 502560,
+          "EXCLUDED->UNKNOWN": 555,
+          "UNKNOWN->INCLUDED": 2,
+          "UNKNOWN->EXCLUDED": 576,
+          "UNKNOWN->UNKNOWN": 230
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 499810,
+        "moved": 12823,
+        "moved_rate": 0.025013996367771876,
+        "transitions": {
+          "INCLUDED->INCLUDED": 6912,
+          "EXCLUDED->EXCLUDED": 492113,
+          "EXCLUDED->UNKNOWN": 12823,
+          "UNKNOWN->UNKNOWN": 785
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506571,
+        "moved": 6062,
+        "moved_rate": 0.011825223893116518,
+        "transitions": {
+          "INCLUDED->INCLUDED": 4113,
+          "INCLUDED->EXCLUDED": 2041,
+          "EXCLUDED->INCLUDED": 2798,
+          "EXCLUDED->EXCLUDED": 502275,
+          "EXCLUDED->UNKNOWN": 602,
+          "UNKNOWN->INCLUDED": 1,
+          "UNKNOWN->EXCLUDED": 620,
+          "UNKNOWN->UNKNOWN": 183
+        }
+      }
+    },
+    "4": {
+      "cell100_against_address": {
+        "same": 508009,
+        "moved": 4624,
+        "moved_rate": 0.00902009819890643,
+        "transitions": {
+          "INCLUDED->INCLUDED": 9348,
+          "INCLUDED->EXCLUDED": 1518,
+          "INCLUDED->UNKNOWN": 4,
+          "EXCLUDED->INCLUDED": 2492,
+          "EXCLUDED->EXCLUDED": 497291,
+          "EXCLUDED->UNKNOWN": 303,
+          "UNKNOWN->INCLUDED": 11,
+          "UNKNOWN->EXCLUDED": 296,
+          "UNKNOWN->UNKNOWN": 1370
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 500686,
+        "moved": 11947,
+        "moved_rate": 0.023305171535972127,
+        "transitions": {
+          "INCLUDED->INCLUDED": 11851,
+          "EXCLUDED->EXCLUDED": 487158,
+          "EXCLUDED->UNKNOWN": 11947,
+          "UNKNOWN->UNKNOWN": 1677
+        }
+      },
+      "cell200_against_address": {
+        "same": 504745,
+        "moved": 7888,
+        "moved_rate": 0.015387226339310969,
+        "transitions": {
+          "INCLUDED->INCLUDED": 8233,
+          "INCLUDED->EXCLUDED": 2631,
+          "INCLUDED->UNKNOWN": 6,
+          "EXCLUDED->INCLUDED": 4062,
+          "EXCLUDED->EXCLUDED": 495456,
+          "EXCLUDED->UNKNOWN": 568,
+          "UNKNOWN->INCLUDED": 6,
+          "UNKNOWN->EXCLUDED": 615,
+          "UNKNOWN->UNKNOWN": 1056
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 500655,
+        "moved": 11978,
+        "moved_rate": 0.023365643647599747,
+        "transitions": {
+          "INCLUDED->INCLUDED": 12301,
+          "EXCLUDED->EXCLUDED": 486724,
+          "EXCLUDED->UNKNOWN": 11978,
+          "UNKNOWN->UNKNOWN": 1630
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 505054,
+        "moved": 7579,
+        "moved_rate": 0.014784455936313112,
+        "transitions": {
+          "INCLUDED->INCLUDED": 8860,
+          "INCLUDED->EXCLUDED": 2973,
+          "INCLUDED->UNKNOWN": 18,
+          "EXCLUDED->INCLUDED": 3433,
+          "EXCLUDED->EXCLUDED": 495127,
+          "EXCLUDED->UNKNOWN": 545,
+          "UNKNOWN->INCLUDED": 8,
+          "UNKNOWN->EXCLUDED": 602,
+          "UNKNOWN->UNKNOWN": 1067
+        }
+      }
+    },
+    "5": {
+      "cell100_against_address": {
+        "same": 506822,
+        "moved": 5811,
+        "moved_rate": 0.011335594860260654,
+        "transitions": {
+          "INCLUDED->INCLUDED": 16030,
+          "INCLUDED->EXCLUDED": 1984,
+          "INCLUDED->UNKNOWN": 5,
+          "EXCLUDED->INCLUDED": 3248,
+          "EXCLUDED->EXCLUDED": 488894,
+          "EXCLUDED->UNKNOWN": 276,
+          "UNKNOWN->INCLUDED": 12,
+          "UNKNOWN->EXCLUDED": 286,
+          "UNKNOWN->UNKNOWN": 1898
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 501188,
+        "moved": 11445,
+        "moved_rate": 0.0223259134702604,
+        "transitions": {
+          "INCLUDED->INCLUDED": 19290,
+          "EXCLUDED->EXCLUDED": 479719,
+          "EXCLUDED->UNKNOWN": 11445,
+          "UNKNOWN->UNKNOWN": 2179
+        }
+      },
+      "cell200_against_address": {
+        "same": 502526,
+        "moved": 10107,
+        "moved_rate": 0.019715859103881333,
+        "transitions": {
+          "INCLUDED->INCLUDED": 14353,
+          "INCLUDED->EXCLUDED": 3657,
+          "INCLUDED->UNKNOWN": 9,
+          "EXCLUDED->INCLUDED": 5337,
+          "EXCLUDED->EXCLUDED": 486546,
+          "EXCLUDED->UNKNOWN": 535,
+          "UNKNOWN->INCLUDED": 7,
+          "UNKNOWN->EXCLUDED": 562,
+          "UNKNOWN->UNKNOWN": 1627
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 501196,
+        "moved": 11437,
+        "moved_rate": 0.022310307764033917,
+        "transitions": {
+          "INCLUDED->INCLUDED": 19697,
+          "EXCLUDED->EXCLUDED": 479328,
+          "EXCLUDED->UNKNOWN": 11437,
+          "UNKNOWN->UNKNOWN": 2171
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 502867,
+        "moved": 9766,
+        "moved_rate": 0.019050665875977552,
+        "transitions": {
+          "INCLUDED->INCLUDED": 15148,
+          "INCLUDED->EXCLUDED": 4124,
+          "INCLUDED->UNKNOWN": 18,
+          "EXCLUDED->INCLUDED": 4540,
+          "EXCLUDED->EXCLUDED": 486095,
+          "EXCLUDED->UNKNOWN": 529,
+          "UNKNOWN->INCLUDED": 9,
+          "UNKNOWN->EXCLUDED": 546,
+          "UNKNOWN->UNKNOWN": 1624
+        }
+      }
+    },
+    "6": {
+      "cell100_against_address": {
+        "same": 505621,
+        "moved": 7012,
+        "moved_rate": 0.013678401507511222,
+        "transitions": {
+          "INCLUDED->INCLUDED": 24193,
+          "INCLUDED->EXCLUDED": 2530,
+          "INCLUDED->UNKNOWN": 8,
+          "EXCLUDED->INCLUDED": 3930,
+          "EXCLUDED->EXCLUDED": 479072,
+          "EXCLUDED->UNKNOWN": 267,
+          "UNKNOWN->INCLUDED": 12,
+          "UNKNOWN->EXCLUDED": 265,
+          "UNKNOWN->UNKNOWN": 2356
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 501640,
+        "moved": 10993,
+        "moved_rate": 0.021444191068464184,
+        "transitions": {
+          "INCLUDED->INCLUDED": 28135,
+          "EXCLUDED->EXCLUDED": 470874,
+          "EXCLUDED->UNKNOWN": 10993,
+          "UNKNOWN->UNKNOWN": 2631
+        }
+      },
+      "cell200_against_address": {
+        "same": 500542,
+        "moved": 12091,
+        "moved_rate": 0.0235860742480488,
+        "transitions": {
+          "INCLUDED->INCLUDED": 22292,
+          "INCLUDED->EXCLUDED": 4429,
+          "INCLUDED->UNKNOWN": 10,
+          "EXCLUDED->INCLUDED": 6591,
+          "EXCLUDED->EXCLUDED": 476166,
+          "EXCLUDED->UNKNOWN": 512,
+          "UNKNOWN->INCLUDED": 8,
+          "UNKNOWN->EXCLUDED": 541,
+          "UNKNOWN->UNKNOWN": 2084
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 501631,
+        "moved": 11002,
+        "moved_rate": 0.021461747487968977,
+        "transitions": {
+          "INCLUDED->INCLUDED": 28891,
+          "EXCLUDED->EXCLUDED": 470134,
+          "EXCLUDED->UNKNOWN": 11002,
+          "UNKNOWN->UNKNOWN": 2606
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 500782,
+        "moved": 11851,
+        "moved_rate": 0.023117903061254347,
+        "transitions": {
+          "INCLUDED->INCLUDED": 23096,
+          "INCLUDED->EXCLUDED": 5020,
+          "INCLUDED->UNKNOWN": 19,
+          "EXCLUDED->INCLUDED": 5784,
+          "EXCLUDED->EXCLUDED": 475591,
+          "EXCLUDED->UNKNOWN": 492,
+          "UNKNOWN->INCLUDED": 11,
+          "UNKNOWN->EXCLUDED": 525,
+          "UNKNOWN->UNKNOWN": 2095
+        }
+      }
+    },
+    "7": {
+      "cell100_against_address": {
+        "same": 504426,
+        "moved": 8207,
+        "moved_rate": 0.016009503875091927,
+        "transitions": {
+          "INCLUDED->INCLUDED": 34149,
+          "INCLUDED->EXCLUDED": 3131,
+          "INCLUDED->UNKNOWN": 10,
+          "EXCLUDED->INCLUDED": 4565,
+          "EXCLUDED->EXCLUDED": 467622,
+          "EXCLUDED->UNKNOWN": 235,
+          "UNKNOWN->INCLUDED": 12,
+          "UNKNOWN->EXCLUDED": 254,
+          "UNKNOWN->UNKNOWN": 2655
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 501909,
+        "moved": 10724,
+        "moved_rate": 0.020919449196598737,
+        "transitions": {
+          "INCLUDED->INCLUDED": 38726,
+          "EXCLUDED->EXCLUDED": 460283,
+          "EXCLUDED->UNKNOWN": 10724,
+          "UNKNOWN->UNKNOWN": 2900
+        }
+      },
+      "cell200_against_address": {
+        "same": 498349,
+        "moved": 14284,
+        "moved_rate": 0.0278639884673831,
+        "transitions": {
+          "INCLUDED->INCLUDED": 31576,
+          "INCLUDED->EXCLUDED": 5703,
+          "INCLUDED->UNKNOWN": 11,
+          "EXCLUDED->INCLUDED": 7600,
+          "EXCLUDED->EXCLUDED": 464370,
+          "EXCLUDED->UNKNOWN": 452,
+          "UNKNOWN->INCLUDED": 8,
+          "UNKNOWN->EXCLUDED": 510,
+          "UNKNOWN->UNKNOWN": 2403
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 501891,
+        "moved": 10742,
+        "moved_rate": 0.02095456203560832,
+        "transitions": {
+          "INCLUDED->INCLUDED": 39184,
+          "EXCLUDED->EXCLUDED": 459841,
+          "EXCLUDED->UNKNOWN": 10742,
+          "UNKNOWN->UNKNOWN": 2866
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 498784,
+        "moved": 13849,
+        "moved_rate": 0.027015428191318157,
+        "transitions": {
+          "INCLUDED->INCLUDED": 32498,
+          "INCLUDED->EXCLUDED": 6208,
+          "INCLUDED->UNKNOWN": 20,
+          "EXCLUDED->INCLUDED": 6675,
+          "EXCLUDED->EXCLUDED": 463886,
+          "EXCLUDED->UNKNOWN": 446,
+          "UNKNOWN->INCLUDED": 11,
+          "UNKNOWN->EXCLUDED": 489,
+          "UNKNOWN->UNKNOWN": 2400
+        }
+      }
+    },
+    "8": {
+      "cell100_against_address": {
+        "same": 503260,
+        "moved": 9373,
+        "moved_rate": 0.018284035557601636,
+        "transitions": {
+          "INCLUDED->INCLUDED": 46091,
+          "INCLUDED->EXCLUDED": 3760,
+          "INCLUDED->UNKNOWN": 10,
+          "EXCLUDED->INCLUDED": 5121,
+          "EXCLUDED->EXCLUDED": 454283,
+          "EXCLUDED->UNKNOWN": 237,
+          "UNKNOWN->INCLUDED": 14,
+          "UNKNOWN->EXCLUDED": 231,
+          "UNKNOWN->UNKNOWN": 2886
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502142,
+        "moved": 10491,
+        "moved_rate": 0.020464933002752456,
+        "transitions": {
+          "INCLUDED->INCLUDED": 51226,
+          "EXCLUDED->EXCLUDED": 447783,
+          "EXCLUDED->UNKNOWN": 10491,
+          "UNKNOWN->UNKNOWN": 3133
+        }
+      },
+      "cell200_against_address": {
+        "same": 496319,
+        "moved": 16314,
+        "moved_rate": 0.03182393642235283,
+        "transitions": {
+          "INCLUDED->INCLUDED": 43104,
+          "INCLUDED->EXCLUDED": 6744,
+          "INCLUDED->UNKNOWN": 13,
+          "EXCLUDED->INCLUDED": 8641,
+          "EXCLUDED->EXCLUDED": 450558,
+          "EXCLUDED->UNKNOWN": 442,
+          "UNKNOWN->INCLUDED": 9,
+          "UNKNOWN->EXCLUDED": 465,
+          "UNKNOWN->UNKNOWN": 2657
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502137,
+        "moved": 10496,
+        "moved_rate": 0.02047468656914401,
+        "transitions": {
+          "INCLUDED->INCLUDED": 51754,
+          "EXCLUDED->EXCLUDED": 447271,
+          "EXCLUDED->UNKNOWN": 10496,
+          "UNKNOWN->UNKNOWN": 3112
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 496722,
+        "moved": 15911,
+        "moved_rate": 0.031037798971193818,
+        "transitions": {
+          "INCLUDED->INCLUDED": 43968,
+          "INCLUDED->EXCLUDED": 7238,
+          "INCLUDED->UNKNOWN": 20,
+          "EXCLUDED->INCLUDED": 7774,
+          "EXCLUDED->EXCLUDED": 450081,
+          "EXCLUDED->UNKNOWN": 419,
+          "UNKNOWN->INCLUDED": 12,
+          "UNKNOWN->EXCLUDED": 448,
+          "UNKNOWN->UNKNOWN": 2673
+        }
+      }
+    },
+    "9": {
+      "cell100_against_address": {
+        "same": 502359,
+        "moved": 10274,
+        "moved_rate": 0.02004162822135914,
+        "transitions": {
+          "INCLUDED->INCLUDED": 59351,
+          "INCLUDED->EXCLUDED": 4229,
+          "INCLUDED->UNKNOWN": 10,
+          "EXCLUDED->INCLUDED": 5564,
+          "EXCLUDED->EXCLUDED": 440001,
+          "EXCLUDED->UNKNOWN": 229,
+          "UNKNOWN->INCLUDED": 14,
+          "UNKNOWN->EXCLUDED": 228,
+          "UNKNOWN->UNKNOWN": 3007
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502255,
+        "moved": 10378,
+        "moved_rate": 0.020244502402303403,
+        "transitions": {
+          "INCLUDED->INCLUDED": 64929,
+          "EXCLUDED->EXCLUDED": 434080,
+          "EXCLUDED->UNKNOWN": 10378,
+          "UNKNOWN->UNKNOWN": 3246
+        }
+      },
+      "cell200_against_address": {
+        "same": 494606,
+        "moved": 18027,
+        "moved_rate": 0.03516550826809823,
+        "transitions": {
+          "INCLUDED->INCLUDED": 55807,
+          "INCLUDED->EXCLUDED": 7767,
+          "INCLUDED->UNKNOWN": 16,
+          "EXCLUDED->INCLUDED": 9331,
+          "EXCLUDED->EXCLUDED": 436035,
+          "EXCLUDED->UNKNOWN": 428,
+          "UNKNOWN->INCLUDED": 9,
+          "UNKNOWN->EXCLUDED": 476,
+          "UNKNOWN->UNKNOWN": 2764
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502233,
+        "moved": 10400,
+        "moved_rate": 0.020287418094426225,
+        "transitions": {
+          "INCLUDED->INCLUDED": 65147,
+          "EXCLUDED->EXCLUDED": 433878,
+          "EXCLUDED->UNKNOWN": 10400,
+          "UNKNOWN->UNKNOWN": 3208
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 495013,
+        "moved": 17620,
+        "moved_rate": 0.034371567963825976,
+        "transitions": {
+          "INCLUDED->INCLUDED": 56671,
+          "INCLUDED->EXCLUDED": 8235,
+          "INCLUDED->UNKNOWN": 23,
+          "EXCLUDED->INCLUDED": 8463,
+          "EXCLUDED->EXCLUDED": 435576,
+          "EXCLUDED->UNKNOWN": 419,
+          "UNKNOWN->INCLUDED": 13,
+          "UNKNOWN->EXCLUDED": 467,
+          "UNKNOWN->UNKNOWN": 2766
+        }
+      }
+    },
+    "10": {
+      "cell100_against_address": {
+        "same": 501387,
+        "moved": 11246,
+        "moved_rate": 0.02193772152787667,
+        "transitions": {
+          "INCLUDED->INCLUDED": 73954,
+          "INCLUDED->EXCLUDED": 4662,
+          "INCLUDED->UNKNOWN": 11,
+          "EXCLUDED->INCLUDED": 6098,
+          "EXCLUDED->EXCLUDED": 424302,
+          "EXCLUDED->UNKNOWN": 229,
+          "UNKNOWN->INCLUDED": 15,
+          "UNKNOWN->EXCLUDED": 231,
+          "UNKNOWN->UNKNOWN": 3131
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502380,
+        "moved": 10253,
+        "moved_rate": 0.020000663242514625,
+        "transitions": {
+          "INCLUDED->INCLUDED": 80067,
+          "EXCLUDED->EXCLUDED": 418942,
+          "EXCLUDED->UNKNOWN": 10253,
+          "UNKNOWN->UNKNOWN": 3371
+        }
+      },
+      "cell200_against_address": {
+        "same": 493106,
+        "moved": 19527,
+        "moved_rate": 0.03809157818556355,
+        "transitions": {
+          "INCLUDED->INCLUDED": 70070,
+          "INCLUDED->EXCLUDED": 8539,
+          "INCLUDED->UNKNOWN": 18,
+          "EXCLUDED->INCLUDED": 10090,
+          "EXCLUDED->EXCLUDED": 420120,
+          "EXCLUDED->UNKNOWN": 419,
+          "UNKNOWN->INCLUDED": 9,
+          "UNKNOWN->EXCLUDED": 452,
+          "UNKNOWN->UNKNOWN": 2916
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502378,
+        "moved": 10255,
+        "moved_rate": 0.020004564669071245,
+        "transitions": {
+          "INCLUDED->INCLUDED": 80169,
+          "EXCLUDED->EXCLUDED": 418856,
+          "EXCLUDED->UNKNOWN": 10255,
+          "UNKNOWN->UNKNOWN": 3353
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 493388,
+        "moved": 19245,
+        "moved_rate": 0.037541477041080074,
+        "transitions": {
+          "INCLUDED->INCLUDED": 70923,
+          "INCLUDED->EXCLUDED": 9117,
+          "INCLUDED->UNKNOWN": 27,
+          "EXCLUDED->INCLUDED": 9232,
+          "EXCLUDED->EXCLUDED": 419551,
+          "EXCLUDED->UNKNOWN": 412,
+          "UNKNOWN->INCLUDED": 14,
+          "UNKNOWN->EXCLUDED": 443,
+          "UNKNOWN->UNKNOWN": 2914
+        }
+      }
+    },
+    "11": {
+      "cell100_against_address": {
+        "same": 500711,
+        "moved": 11922,
+        "moved_rate": 0.023256403704014373,
+        "transitions": {
+          "INCLUDED->INCLUDED": 89184,
+          "INCLUDED->EXCLUDED": 4902,
+          "INCLUDED->UNKNOWN": 11,
+          "EXCLUDED->INCLUDED": 6540,
+          "EXCLUDED->EXCLUDED": 408318,
+          "EXCLUDED->UNKNOWN": 222,
+          "UNKNOWN->INCLUDED": 15,
+          "UNKNOWN->EXCLUDED": 232,
+          "UNKNOWN->UNKNOWN": 3209
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502451,
+        "moved": 10182,
+        "moved_rate": 0.0198621625997546,
+        "transitions": {
+          "INCLUDED->INCLUDED": 95739,
+          "EXCLUDED->EXCLUDED": 403270,
+          "EXCLUDED->UNKNOWN": 10182,
+          "UNKNOWN->UNKNOWN": 3442
+        }
+      },
+      "cell200_against_address": {
+        "same": 491884,
+        "moved": 20749,
+        "moved_rate": 0.04047534981165863,
+        "transitions": {
+          "INCLUDED->INCLUDED": 84638,
+          "INCLUDED->EXCLUDED": 9438,
+          "INCLUDED->UNKNOWN": 21,
+          "EXCLUDED->INCLUDED": 10434,
+          "EXCLUDED->EXCLUDED": 404243,
+          "EXCLUDED->UNKNOWN": 403,
+          "UNKNOWN->INCLUDED": 9,
+          "UNKNOWN->EXCLUDED": 444,
+          "UNKNOWN->UNKNOWN": 3003
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502452,
+        "moved": 10181,
+        "moved_rate": 0.01986021188647629,
+        "transitions": {
+          "INCLUDED->INCLUDED": 95081,
+          "EXCLUDED->EXCLUDED": 403944,
+          "EXCLUDED->UNKNOWN": 10181,
+          "UNKNOWN->UNKNOWN": 3427
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 492166,
+        "moved": 20467,
+        "moved_rate": 0.03992524866717515,
+        "transitions": {
+          "INCLUDED->INCLUDED": 85590,
+          "INCLUDED->EXCLUDED": 10121,
+          "INCLUDED->UNKNOWN": 28,
+          "EXCLUDED->INCLUDED": 9477,
+          "EXCLUDED->EXCLUDED": 403576,
+          "EXCLUDED->UNKNOWN": 399,
+          "UNKNOWN->INCLUDED": 14,
+          "UNKNOWN->EXCLUDED": 428,
+          "UNKNOWN->UNKNOWN": 3000
+        }
+      }
+    },
+    "12": {
+      "cell100_against_address": {
+        "same": 499945,
+        "moved": 12688,
+        "moved_rate": 0.024750650075199998,
+        "transitions": {
+          "INCLUDED->INCLUDED": 105303,
+          "INCLUDED->EXCLUDED": 5234,
+          "INCLUDED->UNKNOWN": 16,
+          "EXCLUDED->INCLUDED": 6985,
+          "EXCLUDED->EXCLUDED": 391370,
+          "EXCLUDED->UNKNOWN": 213,
+          "UNKNOWN->INCLUDED": 19,
+          "UNKNOWN->EXCLUDED": 221,
+          "UNKNOWN->UNKNOWN": 3272
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502510,
+        "moved": 10123,
+        "moved_rate": 0.019747070516334297,
+        "transitions": {
+          "INCLUDED->INCLUDED": 112307,
+          "EXCLUDED->EXCLUDED": 386702,
+          "EXCLUDED->UNKNOWN": 10123,
+          "UNKNOWN->UNKNOWN": 3501
+        }
+      },
+      "cell200_against_address": {
+        "same": 490862,
+        "moved": 21771,
+        "moved_rate": 0.042468978782091674,
+        "transitions": {
+          "INCLUDED->INCLUDED": 101089,
+          "INCLUDED->EXCLUDED": 9433,
+          "INCLUDED->UNKNOWN": 31,
+          "EXCLUDED->INCLUDED": 11457,
+          "EXCLUDED->EXCLUDED": 386707,
+          "EXCLUDED->UNKNOWN": 404,
+          "UNKNOWN->INCLUDED": 24,
+          "UNKNOWN->EXCLUDED": 422,
+          "UNKNOWN->UNKNOWN": 3066
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502526,
+        "moved": 10107,
+        "moved_rate": 0.019715859103881333,
+        "transitions": {
+          "INCLUDED->INCLUDED": 112570,
+          "EXCLUDED->EXCLUDED": 386455,
+          "EXCLUDED->UNKNOWN": 10107,
+          "UNKNOWN->UNKNOWN": 3501
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 491015,
+        "moved": 21618,
+        "moved_rate": 0.04217051965051021,
+        "transitions": {
+          "INCLUDED->INCLUDED": 102026,
+          "INCLUDED->EXCLUDED": 10239,
+          "INCLUDED->UNKNOWN": 42,
+          "EXCLUDED->INCLUDED": 10503,
+          "EXCLUDED->EXCLUDED": 385926,
+          "EXCLUDED->UNKNOWN": 396,
+          "UNKNOWN->INCLUDED": 41,
+          "UNKNOWN->EXCLUDED": 397,
+          "UNKNOWN->UNKNOWN": 3063
+        }
+      }
+    },
+    "13": {
+      "cell100_against_address": {
+        "same": 499501,
+        "moved": 13132,
+        "moved_rate": 0.025616766770769732,
+        "transitions": {
+          "INCLUDED->INCLUDED": 121862,
+          "INCLUDED->EXCLUDED": 5632,
+          "INCLUDED->UNKNOWN": 28,
+          "EXCLUDED->INCLUDED": 7029,
+          "EXCLUDED->EXCLUDED": 374324,
+          "EXCLUDED->UNKNOWN": 204,
+          "UNKNOWN->INCLUDED": 26,
+          "UNKNOWN->EXCLUDED": 213,
+          "UNKNOWN->UNKNOWN": 3315
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502556,
+        "moved": 10077,
+        "moved_rate": 0.01965733770553203,
+        "transitions": {
+          "INCLUDED->INCLUDED": 128917,
+          "EXCLUDED->EXCLUDED": 370092,
+          "EXCLUDED->UNKNOWN": 10077,
+          "UNKNOWN->UNKNOWN": 3547
+        }
+      },
+      "cell200_against_address": {
+        "same": 490028,
+        "moved": 22605,
+        "moved_rate": 0.04409587365620239,
+        "transitions": {
+          "INCLUDED->INCLUDED": 117604,
+          "INCLUDED->EXCLUDED": 9885,
+          "INCLUDED->UNKNOWN": 33,
+          "EXCLUDED->INCLUDED": 11844,
+          "EXCLUDED->EXCLUDED": 369320,
+          "EXCLUDED->UNKNOWN": 393,
+          "UNKNOWN->INCLUDED": 27,
+          "UNKNOWN->EXCLUDED": 423,
+          "UNKNOWN->UNKNOWN": 3104
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502555,
+        "moved": 10078,
+        "moved_rate": 0.019659288418810338,
+        "transitions": {
+          "INCLUDED->INCLUDED": 129475,
+          "EXCLUDED->EXCLUDED": 369550,
+          "EXCLUDED->UNKNOWN": 10078,
+          "UNKNOWN->UNKNOWN": 3530
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 490446,
+        "moved": 22187,
+        "moved_rate": 0.04328047550586872,
+        "transitions": {
+          "INCLUDED->INCLUDED": 118488,
+          "INCLUDED->EXCLUDED": 10381,
+          "INCLUDED->UNKNOWN": 48,
+          "EXCLUDED->INCLUDED": 10943,
+          "EXCLUDED->EXCLUDED": 368851,
+          "EXCLUDED->UNKNOWN": 375,
+          "UNKNOWN->INCLUDED": 44,
+          "UNKNOWN->EXCLUDED": 396,
+          "UNKNOWN->UNKNOWN": 3107
+        }
+      }
+    },
+    "14": {
+      "cell100_against_address": {
+        "same": 499408,
+        "moved": 13225,
+        "moved_rate": 0.025798183105652583,
+        "transitions": {
+          "INCLUDED->INCLUDED": 139494,
+          "INCLUDED->EXCLUDED": 5671,
+          "INCLUDED->UNKNOWN": 31,
+          "EXCLUDED->INCLUDED": 7090,
+          "EXCLUDED->EXCLUDED": 356551,
+          "EXCLUDED->UNKNOWN": 199,
+          "UNKNOWN->INCLUDED": 26,
+          "UNKNOWN->EXCLUDED": 208,
+          "UNKNOWN->UNKNOWN": 3363
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502602,
+        "moved": 10031,
+        "moved_rate": 0.019567604894729758,
+        "transitions": {
+          "INCLUDED->INCLUDED": 146610,
+          "EXCLUDED->EXCLUDED": 352399,
+          "EXCLUDED->UNKNOWN": 10031,
+          "UNKNOWN->UNKNOWN": 3593
+        }
+      },
+      "cell200_against_address": {
+        "same": 489839,
+        "moved": 22794,
+        "moved_rate": 0.04446455846580302,
+        "transitions": {
+          "INCLUDED->INCLUDED": 135258,
+          "INCLUDED->EXCLUDED": 9902,
+          "INCLUDED->UNKNOWN": 36,
+          "EXCLUDED->INCLUDED": 12023,
+          "EXCLUDED->EXCLUDED": 351427,
+          "EXCLUDED->UNKNOWN": 390,
+          "UNKNOWN->INCLUDED": 28,
+          "UNKNOWN->EXCLUDED": 415,
+          "UNKNOWN->UNKNOWN": 3154
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502605,
+        "moved": 10028,
+        "moved_rate": 0.01956175275489483,
+        "transitions": {
+          "INCLUDED->INCLUDED": 147309,
+          "EXCLUDED->EXCLUDED": 351716,
+          "EXCLUDED->UNKNOWN": 10028,
+          "UNKNOWN->UNKNOWN": 3580
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 490685,
+        "moved": 21948,
+        "moved_rate": 0.04281425503235258,
+        "transitions": {
+          "INCLUDED->INCLUDED": 136371,
+          "INCLUDED->EXCLUDED": 10191,
+          "INCLUDED->UNKNOWN": 48,
+          "EXCLUDED->INCLUDED": 10892,
+          "EXCLUDED->EXCLUDED": 351160,
+          "EXCLUDED->UNKNOWN": 378,
+          "UNKNOWN->INCLUDED": 46,
+          "UNKNOWN->EXCLUDED": 393,
+          "UNKNOWN->UNKNOWN": 3154
+        }
+      }
+    },
+    "15": {
+      "cell100_against_address": {
+        "same": 499698,
+        "moved": 12935,
+        "moved_rate": 0.02523247625494262,
+        "transitions": {
+          "INCLUDED->INCLUDED": 157021,
+          "INCLUDED->EXCLUDED": 5646,
+          "INCLUDED->UNKNOWN": 32,
+          "EXCLUDED->INCLUDED": 6827,
+          "EXCLUDED->EXCLUDED": 339285,
+          "EXCLUDED->UNKNOWN": 197,
+          "UNKNOWN->INCLUDED": 27,
+          "UNKNOWN->EXCLUDED": 206,
+          "UNKNOWN->UNKNOWN": 3392
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502630,
+        "moved": 10003,
+        "moved_rate": 0.01951298492293707,
+        "transitions": {
+          "INCLUDED->INCLUDED": 163875,
+          "EXCLUDED->EXCLUDED": 335134,
+          "EXCLUDED->UNKNOWN": 10003,
+          "UNKNOWN->UNKNOWN": 3621
+        }
+      },
+      "cell200_against_address": {
+        "same": 490203,
+        "moved": 22430,
+        "moved_rate": 0.0437544988324981,
+        "transitions": {
+          "INCLUDED->INCLUDED": 152711,
+          "INCLUDED->EXCLUDED": 9951,
+          "INCLUDED->UNKNOWN": 37,
+          "EXCLUDED->INCLUDED": 11620,
+          "EXCLUDED->EXCLUDED": 334304,
+          "EXCLUDED->UNKNOWN": 385,
+          "UNKNOWN->INCLUDED": 29,
+          "UNKNOWN->EXCLUDED": 408,
+          "UNKNOWN->UNKNOWN": 3188
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502635,
+        "moved": 9998,
+        "moved_rate": 0.01950323135654552,
+        "transitions": {
+          "INCLUDED->INCLUDED": 164360,
+          "EXCLUDED->EXCLUDED": 334665,
+          "EXCLUDED->UNKNOWN": 9998,
+          "UNKNOWN->UNKNOWN": 3610
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 490635,
+        "moved": 21998,
+        "moved_rate": 0.04291179069626809,
+        "transitions": {
+          "INCLUDED->INCLUDED": 153495,
+          "INCLUDED->EXCLUDED": 10331,
+          "INCLUDED->UNKNOWN": 49,
+          "EXCLUDED->INCLUDED": 10816,
+          "EXCLUDED->EXCLUDED": 333950,
+          "EXCLUDED->UNKNOWN": 371,
+          "UNKNOWN->INCLUDED": 49,
+          "UNKNOWN->EXCLUDED": 382,
+          "UNKNOWN->UNKNOWN": 3190
+        }
+      }
+    },
+    "16": {
+      "cell100_against_address": {
+        "same": 500093,
+        "moved": 12540,
+        "moved_rate": 0.024461944510010086,
+        "transitions": {
+          "INCLUDED->INCLUDED": 174191,
+          "INCLUDED->EXCLUDED": 5474,
+          "INCLUDED->UNKNOWN": 35,
+          "EXCLUDED->INCLUDED": 6603,
+          "EXCLUDED->EXCLUDED": 322493,
+          "EXCLUDED->UNKNOWN": 196,
+          "UNKNOWN->INCLUDED": 32,
+          "UNKNOWN->EXCLUDED": 200,
+          "UNKNOWN->UNKNOWN": 3409
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502649,
+        "moved": 9984,
+        "moved_rate": 0.019475921370649178,
+        "transitions": {
+          "INCLUDED->INCLUDED": 180826,
+          "EXCLUDED->EXCLUDED": 318183,
+          "EXCLUDED->UNKNOWN": 9984,
+          "UNKNOWN->UNKNOWN": 3640
+        }
+      },
+      "cell200_against_address": {
+        "same": 490522,
+        "moved": 22111,
+        "moved_rate": 0.04313222129671714,
+        "transitions": {
+          "INCLUDED->INCLUDED": 169667,
+          "INCLUDED->EXCLUDED": 9991,
+          "INCLUDED->UNKNOWN": 42,
+          "EXCLUDED->INCLUDED": 11263,
+          "EXCLUDED->EXCLUDED": 317654,
+          "EXCLUDED->UNKNOWN": 375,
+          "UNKNOWN->INCLUDED": 30,
+          "UNKNOWN->EXCLUDED": 410,
+          "UNKNOWN->UNKNOWN": 3201
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502643,
+        "moved": 9990,
+        "moved_rate": 0.01948762565031904,
+        "transitions": {
+          "INCLUDED->INCLUDED": 180960,
+          "EXCLUDED->EXCLUDED": 318065,
+          "EXCLUDED->UNKNOWN": 9990,
+          "UNKNOWN->UNKNOWN": 3618
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 491024,
+        "moved": 21609,
+        "moved_rate": 0.04215296323100542,
+        "transitions": {
+          "INCLUDED->INCLUDED": 170460,
+          "INCLUDED->EXCLUDED": 10307,
+          "INCLUDED->UNKNOWN": 59,
+          "EXCLUDED->INCLUDED": 10448,
+          "EXCLUDED->EXCLUDED": 317362,
+          "EXCLUDED->UNKNOWN": 357,
+          "UNKNOWN->INCLUDED": 52,
+          "UNKNOWN->EXCLUDED": 386,
+          "UNKNOWN->UNKNOWN": 3202
+        }
+      }
+    },
+    "17": {
+      "cell100_against_address": {
+        "same": 500567,
+        "moved": 12066,
+        "moved_rate": 0.023537306416091044,
+        "transitions": {
+          "INCLUDED->INCLUDED": 190719,
+          "INCLUDED->EXCLUDED": 5238,
+          "INCLUDED->UNKNOWN": 41,
+          "EXCLUDED->INCLUDED": 6368,
+          "EXCLUDED->EXCLUDED": 306422,
+          "EXCLUDED->UNKNOWN": 188,
+          "UNKNOWN->INCLUDED": 33,
+          "UNKNOWN->EXCLUDED": 198,
+          "UNKNOWN->UNKNOWN": 3426
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 197120,
+          "EXCLUDED->EXCLUDED": 301889,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3655
+        }
+      },
+      "cell200_against_address": {
+        "same": 491437,
+        "moved": 21196,
+        "moved_rate": 0.0413473186470633,
+        "transitions": {
+          "INCLUDED->INCLUDED": 186406,
+          "INCLUDED->EXCLUDED": 9548,
+          "INCLUDED->UNKNOWN": 44,
+          "EXCLUDED->INCLUDED": 10795,
+          "EXCLUDED->EXCLUDED": 301811,
+          "EXCLUDED->UNKNOWN": 372,
+          "UNKNOWN->INCLUDED": 41,
+          "UNKNOWN->EXCLUDED": 396,
+          "UNKNOWN->UNKNOWN": 3220
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502661,
+        "moved": 9972,
+        "moved_rate": 0.019452512811309455,
+        "transitions": {
+          "INCLUDED->INCLUDED": 197242,
+          "EXCLUDED->EXCLUDED": 301783,
+          "EXCLUDED->UNKNOWN": 9972,
+          "UNKNOWN->UNKNOWN": 3636
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 491889,
+        "moved": 20744,
+        "moved_rate": 0.040465596245267084,
+        "transitions": {
+          "INCLUDED->INCLUDED": 187169,
+          "INCLUDED->EXCLUDED": 9891,
+          "INCLUDED->UNKNOWN": 60,
+          "EXCLUDED->INCLUDED": 10008,
+          "EXCLUDED->EXCLUDED": 301497,
+          "EXCLUDED->UNKNOWN": 353,
+          "UNKNOWN->INCLUDED": 65,
+          "UNKNOWN->EXCLUDED": 367,
+          "UNKNOWN->UNKNOWN": 3223
+        }
+      }
+    },
+    "18": {
+      "cell100_against_address": {
+        "same": 501011,
+        "moved": 11622,
+        "moved_rate": 0.022671189720521307,
+        "transitions": {
+          "INCLUDED->INCLUDED": 206491,
+          "INCLUDED->EXCLUDED": 5106,
+          "INCLUDED->UNKNOWN": 42,
+          "EXCLUDED->INCLUDED": 6060,
+          "EXCLUDED->EXCLUDED": 291089,
+          "EXCLUDED->UNKNOWN": 184,
+          "UNKNOWN->INCLUDED": 34,
+          "UNKNOWN->EXCLUDED": 196,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 212585,
+          "EXCLUDED->EXCLUDED": 286424,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 492174,
+        "moved": 20459,
+        "moved_rate": 0.03990964296094867,
+        "transitions": {
+          "INCLUDED->INCLUDED": 202261,
+          "INCLUDED->EXCLUDED": 9334,
+          "INCLUDED->UNKNOWN": 44,
+          "EXCLUDED->INCLUDED": 10274,
+          "EXCLUDED->EXCLUDED": 286689,
+          "EXCLUDED->UNKNOWN": 370,
+          "UNKNOWN->INCLUDED": 54,
+          "UNKNOWN->EXCLUDED": 383,
+          "UNKNOWN->UNKNOWN": 3224
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502663,
+        "moved": 9970,
+        "moved_rate": 0.019448611384752835,
+        "transitions": {
+          "INCLUDED->INCLUDED": 212589,
+          "EXCLUDED->EXCLUDED": 286436,
+          "EXCLUDED->UNKNOWN": 9970,
+          "UNKNOWN->UNKNOWN": 3638
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 492529,
+        "moved": 20104,
+        "moved_rate": 0.03921713974714854,
+        "transitions": {
+          "INCLUDED->INCLUDED": 202887,
+          "INCLUDED->EXCLUDED": 9636,
+          "INCLUDED->UNKNOWN": 62,
+          "EXCLUDED->INCLUDED": 9623,
+          "EXCLUDED->EXCLUDED": 286417,
+          "EXCLUDED->UNKNOWN": 351,
+          "UNKNOWN->INCLUDED": 79,
+          "UNKNOWN->EXCLUDED": 353,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      }
+    },
+    "19": {
+      "cell100_against_address": {
+        "same": 501387,
+        "moved": 11246,
+        "moved_rate": 0.02193772152787667,
+        "transitions": {
+          "INCLUDED->INCLUDED": 221254,
+          "INCLUDED->EXCLUDED": 5007,
+          "INCLUDED->UNKNOWN": 42,
+          "EXCLUDED->INCLUDED": 5783,
+          "EXCLUDED->EXCLUDED": 276702,
+          "EXCLUDED->UNKNOWN": 184,
+          "UNKNOWN->INCLUDED": 38,
+          "UNKNOWN->EXCLUDED": 192,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 227075,
+          "EXCLUDED->EXCLUDED": 271934,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 492758,
+        "moved": 19875,
+        "moved_rate": 0.03877042640641551,
+        "transitions": {
+          "INCLUDED->INCLUDED": 217467,
+          "INCLUDED->EXCLUDED": 8789,
+          "INCLUDED->UNKNOWN": 47,
+          "EXCLUDED->INCLUDED": 10236,
+          "EXCLUDED->EXCLUDED": 272066,
+          "EXCLUDED->UNKNOWN": 367,
+          "UNKNOWN->INCLUDED": 55,
+          "UNKNOWN->EXCLUDED": 381,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 227758,
+          "EXCLUDED->EXCLUDED": 271267,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 493141,
+        "moved": 19492,
+        "moved_rate": 0.038023303220822695,
+        "transitions": {
+          "INCLUDED->INCLUDED": 218019,
+          "INCLUDED->EXCLUDED": 8988,
+          "INCLUDED->UNKNOWN": 68,
+          "EXCLUDED->INCLUDED": 9660,
+          "EXCLUDED->EXCLUDED": 271896,
+          "EXCLUDED->UNKNOWN": 345,
+          "UNKNOWN->INCLUDED": 79,
+          "UNKNOWN->EXCLUDED": 352,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "20": {
+      "cell100_against_address": {
+        "same": 502148,
+        "moved": 10485,
+        "moved_rate": 0.020453228723082594,
+        "transitions": {
+          "INCLUDED->INCLUDED": 235425,
+          "INCLUDED->EXCLUDED": 4714,
+          "INCLUDED->UNKNOWN": 44,
+          "EXCLUDED->INCLUDED": 5315,
+          "EXCLUDED->EXCLUDED": 263292,
+          "EXCLUDED->UNKNOWN": 182,
+          "UNKNOWN->INCLUDED": 41,
+          "UNKNOWN->EXCLUDED": 189,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 240781,
+          "EXCLUDED->EXCLUDED": 258228,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 494115,
+        "moved": 18518,
+        "moved_rate": 0.03612330848774854,
+        "transitions": {
+          "INCLUDED->INCLUDED": 231908,
+          "INCLUDED->EXCLUDED": 8227,
+          "INCLUDED->UNKNOWN": 48,
+          "EXCLUDED->INCLUDED": 9441,
+          "EXCLUDED->EXCLUDED": 258982,
+          "EXCLUDED->UNKNOWN": 366,
+          "UNKNOWN->INCLUDED": 63,
+          "UNKNOWN->EXCLUDED": 373,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 241412,
+          "EXCLUDED->EXCLUDED": 257613,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 494301,
+        "moved": 18332,
+        "moved_rate": 0.03576047581798285,
+        "transitions": {
+          "INCLUDED->INCLUDED": 232274,
+          "INCLUDED->EXCLUDED": 8437,
+          "INCLUDED->UNKNOWN": 70,
+          "EXCLUDED->INCLUDED": 9051,
+          "EXCLUDED->EXCLUDED": 258801,
+          "EXCLUDED->UNKNOWN": 343,
+          "UNKNOWN->INCLUDED": 87,
+          "UNKNOWN->EXCLUDED": 344,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "21": {
+      "cell100_against_address": {
+        "same": 502614,
+        "moved": 10019,
+        "moved_rate": 0.019544196335390035,
+        "transitions": {
+          "INCLUDED->INCLUDED": 248756,
+          "INCLUDED->EXCLUDED": 4542,
+          "INCLUDED->UNKNOWN": 48,
+          "EXCLUDED->INCLUDED": 5021,
+          "EXCLUDED->EXCLUDED": 250427,
+          "EXCLUDED->UNKNOWN": 178,
+          "UNKNOWN->INCLUDED": 51,
+          "UNKNOWN->EXCLUDED": 179,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 253828,
+          "EXCLUDED->EXCLUDED": 245181,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 494978,
+        "moved": 17655,
+        "moved_rate": 0.03443984292856683,
+        "transitions": {
+          "INCLUDED->INCLUDED": 245238,
+          "INCLUDED->EXCLUDED": 8058,
+          "INCLUDED->UNKNOWN": 50,
+          "EXCLUDED->INCLUDED": 8747,
+          "EXCLUDED->EXCLUDED": 246515,
+          "EXCLUDED->UNKNOWN": 364,
+          "UNKNOWN->INCLUDED": 72,
+          "UNKNOWN->EXCLUDED": 364,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 254057,
+          "EXCLUDED->EXCLUDED": 244968,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 494981,
+        "moved": 17652,
+        "moved_rate": 0.0344339907887319,
+        "transitions": {
+          "INCLUDED->INCLUDED": 245453,
+          "INCLUDED->EXCLUDED": 8297,
+          "INCLUDED->UNKNOWN": 78,
+          "EXCLUDED->INCLUDED": 8511,
+          "EXCLUDED->EXCLUDED": 246302,
+          "EXCLUDED->UNKNOWN": 335,
+          "UNKNOWN->INCLUDED": 93,
+          "UNKNOWN->EXCLUDED": 338,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "22": {
+      "cell100_against_address": {
+        "same": 503250,
+        "moved": 9383,
+        "moved_rate": 0.018303542690384738,
+        "transitions": {
+          "INCLUDED->INCLUDED": 261672,
+          "INCLUDED->EXCLUDED": 4007,
+          "INCLUDED->UNKNOWN": 49,
+          "EXCLUDED->INCLUDED": 4920,
+          "EXCLUDED->EXCLUDED": 238147,
+          "EXCLUDED->UNKNOWN": 177,
+          "UNKNOWN->INCLUDED": 55,
+          "UNKNOWN->EXCLUDED": 175,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 266647,
+          "EXCLUDED->EXCLUDED": 232362,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 496281,
+        "moved": 16352,
+        "moved_rate": 0.03189806352692862,
+        "transitions": {
+          "INCLUDED->INCLUDED": 257987,
+          "INCLUDED->EXCLUDED": 7690,
+          "INCLUDED->UNKNOWN": 51,
+          "EXCLUDED->INCLUDED": 7812,
+          "EXCLUDED->EXCLUDED": 235069,
+          "EXCLUDED->UNKNOWN": 363,
+          "UNKNOWN->INCLUDED": 75,
+          "UNKNOWN->EXCLUDED": 361,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 265874,
+          "EXCLUDED->EXCLUDED": 233151,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 496205,
+        "moved": 16428,
+        "moved_rate": 0.032046317736080195,
+        "transitions": {
+          "INCLUDED->INCLUDED": 258381,
+          "INCLUDED->EXCLUDED": 8186,
+          "INCLUDED->UNKNOWN": 80,
+          "EXCLUDED->INCLUDED": 7398,
+          "EXCLUDED->EXCLUDED": 234598,
+          "EXCLUDED->UNKNOWN": 333,
+          "UNKNOWN->INCLUDED": 95,
+          "UNKNOWN->EXCLUDED": 336,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "23": {
+      "cell100_against_address": {
+        "same": 503730,
+        "moved": 8903,
+        "moved_rate": 0.017367200316795835,
+        "transitions": {
+          "INCLUDED->INCLUDED": 273267,
+          "INCLUDED->EXCLUDED": 3817,
+          "INCLUDED->UNKNOWN": 50,
+          "EXCLUDED->INCLUDED": 4630,
+          "EXCLUDED->EXCLUDED": 227032,
+          "EXCLUDED->UNKNOWN": 176,
+          "UNKNOWN->INCLUDED": 56,
+          "UNKNOWN->EXCLUDED": 174,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 277953,
+          "EXCLUDED->EXCLUDED": 221056,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 496785,
+        "moved": 15848,
+        "moved_rate": 0.030914904034660275,
+        "transitions": {
+          "INCLUDED->INCLUDED": 270007,
+          "INCLUDED->EXCLUDED": 7072,
+          "INCLUDED->UNKNOWN": 55,
+          "EXCLUDED->INCLUDED": 7926,
+          "EXCLUDED->EXCLUDED": 223553,
+          "EXCLUDED->UNKNOWN": 359,
+          "UNKNOWN->INCLUDED": 79,
+          "UNKNOWN->EXCLUDED": 357,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 278012,
+          "EXCLUDED->EXCLUDED": 221013,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 496856,
+        "moved": 15777,
+        "moved_rate": 0.03077640339190025,
+        "transitions": {
+          "INCLUDED->INCLUDED": 270427,
+          "INCLUDED->EXCLUDED": 7444,
+          "INCLUDED->UNKNOWN": 82,
+          "EXCLUDED->INCLUDED": 7489,
+          "EXCLUDED->EXCLUDED": 223203,
+          "EXCLUDED->UNKNOWN": 331,
+          "UNKNOWN->INCLUDED": 96,
+          "UNKNOWN->EXCLUDED": 335,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "24": {
+      "cell100_against_address": {
+        "same": 504040,
+        "moved": 8593,
+        "moved_rate": 0.01676247920051967,
+        "transitions": {
+          "INCLUDED->INCLUDED": 284221,
+          "INCLUDED->EXCLUDED": 3680,
+          "INCLUDED->UNKNOWN": 52,
+          "EXCLUDED->INCLUDED": 4457,
+          "EXCLUDED->EXCLUDED": 216388,
+          "EXCLUDED->UNKNOWN": 174,
+          "UNKNOWN->INCLUDED": 62,
+          "UNKNOWN->EXCLUDED": 168,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 288740,
+          "EXCLUDED->EXCLUDED": 210269,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 497619,
+        "moved": 15014,
+        "moved_rate": 0.029288009160549557,
+        "transitions": {
+          "INCLUDED->INCLUDED": 281266,
+          "INCLUDED->EXCLUDED": 6626,
+          "INCLUDED->UNKNOWN": 61,
+          "EXCLUDED->INCLUDED": 7538,
+          "EXCLUDED->EXCLUDED": 213128,
+          "EXCLUDED->UNKNOWN": 353,
+          "UNKNOWN->INCLUDED": 80,
+          "UNKNOWN->EXCLUDED": 356,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 288884,
+          "EXCLUDED->EXCLUDED": 210141,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 497551,
+        "moved": 15082,
+        "moved_rate": 0.02942065766347465,
+        "transitions": {
+          "INCLUDED->INCLUDED": 281598,
+          "INCLUDED->EXCLUDED": 7050,
+          "INCLUDED->UNKNOWN": 92,
+          "EXCLUDED->INCLUDED": 7188,
+          "EXCLUDED->EXCLUDED": 212727,
+          "EXCLUDED->UNKNOWN": 321,
+          "UNKNOWN->INCLUDED": 98,
+          "UNKNOWN->EXCLUDED": 333,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "25": {
+      "cell100_against_address": {
+        "same": 504406,
+        "moved": 8227,
+        "moved_rate": 0.016048518140658132,
+        "transitions": {
+          "INCLUDED->INCLUDED": 294532,
+          "INCLUDED->EXCLUDED": 3649,
+          "INCLUDED->UNKNOWN": 55,
+          "EXCLUDED->INCLUDED": 4122,
+          "EXCLUDED->EXCLUDED": 206443,
+          "EXCLUDED->UNKNOWN": 171,
+          "UNKNOWN->INCLUDED": 62,
+          "UNKNOWN->EXCLUDED": 168,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 298716,
+          "EXCLUDED->EXCLUDED": 200293,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 498067,
+        "moved": 14566,
+        "moved_rate": 0.028414089611866578,
+        "transitions": {
+          "INCLUDED->INCLUDED": 291676,
+          "INCLUDED->EXCLUDED": 6493,
+          "INCLUDED->UNKNOWN": 67,
+          "EXCLUDED->INCLUDED": 7223,
+          "EXCLUDED->EXCLUDED": 203166,
+          "EXCLUDED->UNKNOWN": 347,
+          "UNKNOWN->INCLUDED": 84,
+          "UNKNOWN->EXCLUDED": 352,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 298983,
+          "EXCLUDED->EXCLUDED": 200042,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 498069,
+        "moved": 14564,
+        "moved_rate": 0.028410188185309958,
+        "transitions": {
+          "INCLUDED->INCLUDED": 291889,
+          "INCLUDED->EXCLUDED": 6730,
+          "INCLUDED->UNKNOWN": 97,
+          "EXCLUDED->INCLUDED": 6990,
+          "EXCLUDED->EXCLUDED": 202954,
+          "EXCLUDED->UNKNOWN": 316,
+          "UNKNOWN->INCLUDED": 104,
+          "UNKNOWN->EXCLUDED": 327,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "26": {
+      "cell100_against_address": {
+        "same": 504997,
+        "moved": 7636,
+        "moved_rate": 0.014895646593176794,
+        "transitions": {
+          "INCLUDED->INCLUDED": 304598,
+          "INCLUDED->EXCLUDED": 3189,
+          "INCLUDED->UNKNOWN": 56,
+          "EXCLUDED->INCLUDED": 3991,
+          "EXCLUDED->EXCLUDED": 196968,
+          "EXCLUDED->UNKNOWN": 170,
+          "UNKNOWN->INCLUDED": 62,
+          "UNKNOWN->EXCLUDED": 168,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 308651,
+          "EXCLUDED->EXCLUDED": 190358,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 499181,
+        "moved": 13452,
+        "moved_rate": 0.026240995019829,
+        "transitions": {
+          "INCLUDED->INCLUDED": 301980,
+          "INCLUDED->EXCLUDED": 5792,
+          "INCLUDED->UNKNOWN": 71,
+          "EXCLUDED->INCLUDED": 6810,
+          "EXCLUDED->EXCLUDED": 193976,
+          "EXCLUDED->UNKNOWN": 343,
+          "UNKNOWN->INCLUDED": 86,
+          "UNKNOWN->EXCLUDED": 350,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 308876,
+          "EXCLUDED->EXCLUDED": 190149,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 499579,
+        "moved": 13054,
+        "moved_rate": 0.025464611135061536,
+        "transitions": {
+          "INCLUDED->INCLUDED": 302555,
+          "INCLUDED->EXCLUDED": 5996,
+          "INCLUDED->UNKNOWN": 100,
+          "EXCLUDED->INCLUDED": 6214,
+          "EXCLUDED->EXCLUDED": 193798,
+          "EXCLUDED->UNKNOWN": 313,
+          "UNKNOWN->INCLUDED": 107,
+          "UNKNOWN->EXCLUDED": 324,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "27": {
+      "cell100_against_address": {
+        "same": 505345,
+        "moved": 7288,
+        "moved_rate": 0.01421679837232484,
+        "transitions": {
+          "INCLUDED->INCLUDED": 314152,
+          "INCLUDED->EXCLUDED": 3034,
+          "INCLUDED->UNKNOWN": 58,
+          "EXCLUDED->INCLUDED": 3798,
+          "EXCLUDED->EXCLUDED": 187762,
+          "EXCLUDED->UNKNOWN": 168,
+          "UNKNOWN->INCLUDED": 64,
+          "UNKNOWN->EXCLUDED": 166,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 318014,
+          "EXCLUDED->EXCLUDED": 180995,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 499723,
+        "moved": 12910,
+        "moved_rate": 0.025183708422984865,
+        "transitions": {
+          "INCLUDED->INCLUDED": 311564,
+          "INCLUDED->EXCLUDED": 5606,
+          "INCLUDED->UNKNOWN": 74,
+          "EXCLUDED->INCLUDED": 6454,
+          "EXCLUDED->EXCLUDED": 184934,
+          "EXCLUDED->UNKNOWN": 340,
+          "UNKNOWN->INCLUDED": 88,
+          "UNKNOWN->EXCLUDED": 348,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 318106,
+          "EXCLUDED->EXCLUDED": 180919,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 500065,
+        "moved": 12568,
+        "moved_rate": 0.024516564481802772,
+        "transitions": {
+          "INCLUDED->INCLUDED": 312092,
+          "INCLUDED->EXCLUDED": 5817,
+          "INCLUDED->UNKNOWN": 105,
+          "EXCLUDED->INCLUDED": 5907,
+          "EXCLUDED->EXCLUDED": 184747,
+          "EXCLUDED->UNKNOWN": 308,
+          "UNKNOWN->INCLUDED": 107,
+          "UNKNOWN->EXCLUDED": 324,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "28": {
+      "cell100_against_address": {
+        "same": 505786,
+        "moved": 6847,
+        "moved_rate": 0.013356533816590035,
+        "transitions": {
+          "INCLUDED->INCLUDED": 323045,
+          "INCLUDED->EXCLUDED": 2905,
+          "INCLUDED->UNKNOWN": 59,
+          "EXCLUDED->INCLUDED": 3486,
+          "EXCLUDED->EXCLUDED": 179310,
+          "EXCLUDED->UNKNOWN": 167,
+          "UNKNOWN->INCLUDED": 66,
+          "UNKNOWN->EXCLUDED": 164,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 326597,
+          "EXCLUDED->EXCLUDED": 172412,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 500049,
+        "moved": 12584,
+        "moved_rate": 0.024547775894255736,
+        "transitions": {
+          "INCLUDED->INCLUDED": 320338,
+          "INCLUDED->EXCLUDED": 5597,
+          "INCLUDED->UNKNOWN": 74,
+          "EXCLUDED->INCLUDED": 6137,
+          "EXCLUDED->EXCLUDED": 176486,
+          "EXCLUDED->UNKNOWN": 340,
+          "UNKNOWN->INCLUDED": 90,
+          "UNKNOWN->EXCLUDED": 346,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 326565,
+          "EXCLUDED->EXCLUDED": 172460,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 500302,
+        "moved": 12331,
+        "moved_rate": 0.02405424543484325,
+        "transitions": {
+          "INCLUDED->INCLUDED": 320729,
+          "INCLUDED->EXCLUDED": 5762,
+          "INCLUDED->UNKNOWN": 106,
+          "EXCLUDED->INCLUDED": 5725,
+          "EXCLUDED->EXCLUDED": 176347,
+          "EXCLUDED->UNKNOWN": 307,
+          "UNKNOWN->INCLUDED": 111,
+          "UNKNOWN->EXCLUDED": 320,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "29": {
+      "cell100_against_address": {
+        "same": 506000,
+        "moved": 6633,
+        "moved_rate": 0.01293908117503165,
+        "transitions": {
+          "INCLUDED->INCLUDED": 331651,
+          "INCLUDED->EXCLUDED": 2883,
+          "INCLUDED->UNKNOWN": 60,
+          "EXCLUDED->INCLUDED": 3294,
+          "EXCLUDED->EXCLUDED": 170918,
+          "EXCLUDED->UNKNOWN": 166,
+          "UNKNOWN->INCLUDED": 67,
+          "UNKNOWN->EXCLUDED": 163,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 335012,
+          "EXCLUDED->EXCLUDED": 163997,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 500951,
+        "moved": 11682,
+        "moved_rate": 0.02278823251721992,
+        "transitions": {
+          "INCLUDED->INCLUDED": 329075,
+          "INCLUDED->EXCLUDED": 5439,
+          "INCLUDED->UNKNOWN": 80,
+          "EXCLUDED->INCLUDED": 5393,
+          "EXCLUDED->EXCLUDED": 168651,
+          "EXCLUDED->UNKNOWN": 334,
+          "UNKNOWN->INCLUDED": 94,
+          "UNKNOWN->EXCLUDED": 342,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 334562,
+          "EXCLUDED->EXCLUDED": 164463,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 501215,
+        "moved": 11418,
+        "moved_rate": 0.022273244211746025,
+        "transitions": {
+          "INCLUDED->INCLUDED": 329389,
+          "INCLUDED->EXCLUDED": 5516,
+          "INCLUDED->UNKNOWN": 107,
+          "EXCLUDED->INCLUDED": 5058,
+          "EXCLUDED->EXCLUDED": 168600,
+          "EXCLUDED->UNKNOWN": 306,
+          "UNKNOWN->INCLUDED": 115,
+          "UNKNOWN->EXCLUDED": 316,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "30": {
+      "cell100_against_address": {
+        "same": 506432,
+        "moved": 6201,
+        "moved_rate": 0.012096373038801638,
+        "transitions": {
+          "INCLUDED->INCLUDED": 340038,
+          "INCLUDED->EXCLUDED": 2693,
+          "INCLUDED->UNKNOWN": 63,
+          "EXCLUDED->INCLUDED": 3052,
+          "EXCLUDED->EXCLUDED": 162963,
+          "EXCLUDED->UNKNOWN": 163,
+          "UNKNOWN->INCLUDED": 67,
+          "UNKNOWN->EXCLUDED": 163,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 343157,
+          "EXCLUDED->EXCLUDED": 155852,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 501207,
+        "moved": 11426,
+        "moved_rate": 0.022288849917972507,
+        "transitions": {
+          "INCLUDED->INCLUDED": 337423,
+          "INCLUDED->EXCLUDED": 5288,
+          "INCLUDED->UNKNOWN": 83,
+          "EXCLUDED->INCLUDED": 5288,
+          "EXCLUDED->EXCLUDED": 160559,
+          "EXCLUDED->UNKNOWN": 331,
+          "UNKNOWN->INCLUDED": 95,
+          "UNKNOWN->EXCLUDED": 341,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 342806,
+          "EXCLUDED->EXCLUDED": 156219,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 501127,
+        "moved": 11506,
+        "moved_rate": 0.022444906980237322,
+        "transitions": {
+          "INCLUDED->INCLUDED": 337539,
+          "INCLUDED->EXCLUDED": 5511,
+          "INCLUDED->UNKNOWN": 107,
+          "EXCLUDED->INCLUDED": 5151,
+          "EXCLUDED->EXCLUDED": 160362,
+          "EXCLUDED->UNKNOWN": 306,
+          "UNKNOWN->INCLUDED": 116,
+          "UNKNOWN->EXCLUDED": 315,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "31": {
+      "cell100_against_address": {
+        "same": 506871,
+        "moved": 5762,
+        "moved_rate": 0.011240009909623453,
+        "transitions": {
+          "INCLUDED->INCLUDED": 347893,
+          "INCLUDED->EXCLUDED": 2508,
+          "INCLUDED->UNKNOWN": 70,
+          "EXCLUDED->INCLUDED": 2798,
+          "EXCLUDED->EXCLUDED": 155547,
+          "EXCLUDED->UNKNOWN": 156,
+          "UNKNOWN->INCLUDED": 67,
+          "UNKNOWN->EXCLUDED": 163,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 350758,
+          "EXCLUDED->EXCLUDED": 148251,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 502090,
+        "moved": 10543,
+        "moved_rate": 0.020566370093224588,
+        "transitions": {
+          "INCLUDED->INCLUDED": 345542,
+          "INCLUDED->EXCLUDED": 4838,
+          "INCLUDED->UNKNOWN": 91,
+          "EXCLUDED->INCLUDED": 4855,
+          "EXCLUDED->EXCLUDED": 153323,
+          "EXCLUDED->UNKNOWN": 323,
+          "UNKNOWN->INCLUDED": 100,
+          "UNKNOWN->EXCLUDED": 336,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 350497,
+          "EXCLUDED->EXCLUDED": 148528,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 502316,
+        "moved": 10317,
+        "moved_rate": 0.02012550889232648,
+        "transitions": {
+          "INCLUDED->INCLUDED": 345775,
+          "INCLUDED->EXCLUDED": 4872,
+          "INCLUDED->UNKNOWN": 111,
+          "EXCLUDED->INCLUDED": 4601,
+          "EXCLUDED->EXCLUDED": 153315,
+          "EXCLUDED->UNKNOWN": 302,
+          "UNKNOWN->INCLUDED": 121,
+          "UNKNOWN->EXCLUDED": 310,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "32": {
+      "cell100_against_address": {
+        "same": 507258,
+        "moved": 5375,
+        "moved_rate": 0.010485083870917402,
+        "transitions": {
+          "INCLUDED->INCLUDED": 355122,
+          "INCLUDED->EXCLUDED": 2342,
+          "INCLUDED->UNKNOWN": 74,
+          "EXCLUDED->INCLUDED": 2577,
+          "EXCLUDED->EXCLUDED": 148705,
+          "EXCLUDED->UNKNOWN": 152,
+          "UNKNOWN->INCLUDED": 67,
+          "UNKNOWN->EXCLUDED": 163,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 357766,
+          "EXCLUDED->EXCLUDED": 141243,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 502742,
+        "moved": 9891,
+        "moved_rate": 0.019294505035766327,
+        "transitions": {
+          "INCLUDED->INCLUDED": 352868,
+          "INCLUDED->EXCLUDED": 4574,
+          "INCLUDED->UNKNOWN": 96,
+          "EXCLUDED->INCLUDED": 4467,
+          "EXCLUDED->EXCLUDED": 146649,
+          "EXCLUDED->UNKNOWN": 318,
+          "UNKNOWN->INCLUDED": 107,
+          "UNKNOWN->EXCLUDED": 329,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 357442,
+          "EXCLUDED->EXCLUDED": 141583,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 502856,
+        "moved": 9777,
+        "moved_rate": 0.019072123722038963,
+        "transitions": {
+          "INCLUDED->INCLUDED": 353015,
+          "INCLUDED->EXCLUDED": 4636,
+          "INCLUDED->UNKNOWN": 115,
+          "EXCLUDED->INCLUDED": 4297,
+          "EXCLUDED->EXCLUDED": 146615,
+          "EXCLUDED->UNKNOWN": 298,
+          "UNKNOWN->INCLUDED": 130,
+          "UNKNOWN->EXCLUDED": 301,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "33": {
+      "cell100_against_address": {
+        "same": 507553,
+        "moved": 5080,
+        "moved_rate": 0.009909623453815887,
+        "transitions": {
+          "INCLUDED->INCLUDED": 361880,
+          "INCLUDED->EXCLUDED": 2219,
+          "INCLUDED->UNKNOWN": 75,
+          "EXCLUDED->INCLUDED": 2405,
+          "EXCLUDED->EXCLUDED": 142242,
+          "EXCLUDED->UNKNOWN": 151,
+          "UNKNOWN->INCLUDED": 69,
+          "UNKNOWN->EXCLUDED": 161,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 364354,
+          "EXCLUDED->EXCLUDED": 134655,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 503220,
+        "moved": 9413,
+        "moved_rate": 0.018362064088734045,
+        "transitions": {
+          "INCLUDED->INCLUDED": 359806,
+          "INCLUDED->EXCLUDED": 4267,
+          "INCLUDED->UNKNOWN": 101,
+          "EXCLUDED->INCLUDED": 4296,
+          "EXCLUDED->EXCLUDED": 140189,
+          "EXCLUDED->UNKNOWN": 313,
+          "UNKNOWN->INCLUDED": 108,
+          "UNKNOWN->EXCLUDED": 328,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 364210,
+          "EXCLUDED->EXCLUDED": 134815,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 503387,
+        "moved": 9246,
+        "moved_rate": 0.01803629497125624,
+        "transitions": {
+          "INCLUDED->INCLUDED": 359953,
+          "INCLUDED->EXCLUDED": 4278,
+          "INCLUDED->UNKNOWN": 123,
+          "EXCLUDED->INCLUDED": 4124,
+          "EXCLUDED->EXCLUDED": 140208,
+          "EXCLUDED->UNKNOWN": 290,
+          "UNKNOWN->INCLUDED": 133,
+          "UNKNOWN->EXCLUDED": 298,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "34": {
+      "cell100_against_address": {
+        "same": 507844,
+        "moved": 4789,
+        "moved_rate": 0.009341965889827615,
+        "transitions": {
+          "INCLUDED->INCLUDED": 368270,
+          "INCLUDED->EXCLUDED": 2012,
+          "INCLUDED->UNKNOWN": 77,
+          "EXCLUDED->INCLUDED": 2321,
+          "EXCLUDED->EXCLUDED": 136143,
+          "EXCLUDED->UNKNOWN": 149,
+          "UNKNOWN->INCLUDED": 70,
+          "UNKNOWN->EXCLUDED": 160,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 370661,
+          "EXCLUDED->EXCLUDED": 128348,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 503510,
+        "moved": 9123,
+        "moved_rate": 0.017796357238024082,
+        "transitions": {
+          "INCLUDED->INCLUDED": 366126,
+          "INCLUDED->EXCLUDED": 4128,
+          "INCLUDED->UNKNOWN": 105,
+          "EXCLUDED->INCLUDED": 4145,
+          "EXCLUDED->EXCLUDED": 134159,
+          "EXCLUDED->UNKNOWN": 309,
+          "UNKNOWN->INCLUDED": 111,
+          "UNKNOWN->EXCLUDED": 325,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 370382,
+          "EXCLUDED->EXCLUDED": 128643,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 503701,
+        "moved": 8932,
+        "moved_rate": 0.017423771001866834,
+        "transitions": {
+          "INCLUDED->INCLUDED": 366347,
+          "INCLUDED->EXCLUDED": 4189,
+          "INCLUDED->UNKNOWN": 125,
+          "EXCLUDED->INCLUDED": 3899,
+          "EXCLUDED->EXCLUDED": 134128,
+          "EXCLUDED->UNKNOWN": 288,
+          "UNKNOWN->INCLUDED": 136,
+          "UNKNOWN->EXCLUDED": 295,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "35": {
+      "cell100_against_address": {
+        "same": 507973,
+        "moved": 4660,
+        "moved_rate": 0.009090323876925597,
+        "transitions": {
+          "INCLUDED->INCLUDED": 374141,
+          "INCLUDED->EXCLUDED": 1913,
+          "INCLUDED->UNKNOWN": 77,
+          "EXCLUDED->INCLUDED": 2291,
+          "EXCLUDED->EXCLUDED": 130401,
+          "EXCLUDED->UNKNOWN": 149,
+          "UNKNOWN->INCLUDED": 72,
+          "UNKNOWN->EXCLUDED": 158,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 376504,
+          "EXCLUDED->EXCLUDED": 122505,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 504036,
+        "moved": 8597,
+        "moved_rate": 0.01677028205363291,
+        "transitions": {
+          "INCLUDED->INCLUDED": 372109,
+          "INCLUDED->EXCLUDED": 3914,
+          "INCLUDED->UNKNOWN": 108,
+          "EXCLUDED->INCLUDED": 3833,
+          "EXCLUDED->EXCLUDED": 128702,
+          "EXCLUDED->UNKNOWN": 306,
+          "UNKNOWN->INCLUDED": 118,
+          "UNKNOWN->EXCLUDED": 318,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 376060,
+          "EXCLUDED->EXCLUDED": 122965,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 504157,
+        "moved": 8476,
+        "moved_rate": 0.016534245746957374,
+        "transitions": {
+          "INCLUDED->INCLUDED": 372332,
+          "INCLUDED->EXCLUDED": 4045,
+          "INCLUDED->UNKNOWN": 127,
+          "EXCLUDED->INCLUDED": 3587,
+          "EXCLUDED->EXCLUDED": 128599,
+          "EXCLUDED->UNKNOWN": 286,
+          "UNKNOWN->INCLUDED": 141,
+          "UNKNOWN->EXCLUDED": 290,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "36": {
+      "cell100_against_address": {
+        "same": 508118,
+        "moved": 4515,
+        "moved_rate": 0.008807470451570617,
+        "transitions": {
+          "INCLUDED->INCLUDED": 379961,
+          "INCLUDED->EXCLUDED": 2012,
+          "INCLUDED->UNKNOWN": 79,
+          "EXCLUDED->INCLUDED": 2047,
+          "EXCLUDED->EXCLUDED": 124726,
+          "EXCLUDED->UNKNOWN": 147,
+          "UNKNOWN->INCLUDED": 75,
+          "UNKNOWN->EXCLUDED": 155,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 382083,
+          "EXCLUDED->EXCLUDED": 116926,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 503931,
+        "moved": 8702,
+        "moved_rate": 0.016975106947855482,
+        "transitions": {
+          "INCLUDED->INCLUDED": 377887,
+          "INCLUDED->EXCLUDED": 4052,
+          "INCLUDED->UNKNOWN": 113,
+          "EXCLUDED->INCLUDED": 3800,
+          "EXCLUDED->EXCLUDED": 122819,
+          "EXCLUDED->UNKNOWN": 301,
+          "UNKNOWN->INCLUDED": 127,
+          "UNKNOWN->EXCLUDED": 309,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 381814,
+          "EXCLUDED->EXCLUDED": 117211,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 503928,
+        "moved": 8705,
+        "moved_rate": 0.016980959087690414,
+        "transitions": {
+          "INCLUDED->INCLUDED": 377877,
+          "INCLUDED->EXCLUDED": 4073,
+          "INCLUDED->UNKNOWN": 133,
+          "EXCLUDED->INCLUDED": 3788,
+          "EXCLUDED->EXCLUDED": 122825,
+          "EXCLUDED->UNKNOWN": 280,
+          "UNKNOWN->INCLUDED": 149,
+          "UNKNOWN->EXCLUDED": 282,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "37": {
+      "cell100_against_address": {
+        "same": 508243,
+        "moved": 4390,
+        "moved_rate": 0.00856363129178184,
+        "transitions": {
+          "INCLUDED->INCLUDED": 385646,
+          "INCLUDED->EXCLUDED": 1862,
+          "INCLUDED->UNKNOWN": 79,
+          "EXCLUDED->INCLUDED": 2072,
+          "EXCLUDED->EXCLUDED": 119166,
+          "EXCLUDED->UNKNOWN": 147,
+          "UNKNOWN->INCLUDED": 77,
+          "UNKNOWN->EXCLUDED": 153,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 387795,
+          "EXCLUDED->EXCLUDED": 111214,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 504090,
+        "moved": 8543,
+        "moved_rate": 0.01666494353660416,
+        "transitions": {
+          "INCLUDED->INCLUDED": 383806,
+          "INCLUDED->EXCLUDED": 3663,
+          "INCLUDED->UNKNOWN": 118,
+          "EXCLUDED->INCLUDED": 4030,
+          "EXCLUDED->EXCLUDED": 117059,
+          "EXCLUDED->UNKNOWN": 296,
+          "UNKNOWN->INCLUDED": 129,
+          "UNKNOWN->EXCLUDED": 307,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 387965,
+          "EXCLUDED->EXCLUDED": 111060,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 504231,
+        "moved": 8402,
+        "moved_rate": 0.01638989296436242,
+        "transitions": {
+          "INCLUDED->INCLUDED": 383959,
+          "INCLUDED->EXCLUDED": 3701,
+          "INCLUDED->UNKNOWN": 135,
+          "EXCLUDED->INCLUDED": 3857,
+          "EXCLUDED->EXCLUDED": 117046,
+          "EXCLUDED->UNKNOWN": 278,
+          "UNKNOWN->INCLUDED": 149,
+          "UNKNOWN->EXCLUDED": 282,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "38": {
+      "cell100_against_address": {
+        "same": 508573,
+        "moved": 4060,
+        "moved_rate": 0.007919895909939469,
+        "transitions": {
+          "INCLUDED->INCLUDED": 391130,
+          "INCLUDED->EXCLUDED": 1731,
+          "INCLUDED->UNKNOWN": 79,
+          "EXCLUDED->INCLUDED": 1873,
+          "EXCLUDED->EXCLUDED": 114012,
+          "EXCLUDED->UNKNOWN": 147,
+          "UNKNOWN->INCLUDED": 81,
+          "UNKNOWN->EXCLUDED": 149,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 393084,
+          "EXCLUDED->EXCLUDED": 105925,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 504863,
+        "moved": 7770,
+        "moved_rate": 0.015157042172470363,
+        "transitions": {
+          "INCLUDED->INCLUDED": 389354,
+          "INCLUDED->EXCLUDED": 3464,
+          "INCLUDED->UNKNOWN": 122,
+          "EXCLUDED->INCLUDED": 3456,
+          "EXCLUDED->EXCLUDED": 112284,
+          "EXCLUDED->UNKNOWN": 292,
+          "UNKNOWN->INCLUDED": 133,
+          "UNKNOWN->EXCLUDED": 303,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 392943,
+          "EXCLUDED->EXCLUDED": 106082,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 505000,
+        "moved": 7633,
+        "moved_rate": 0.014889794453341864,
+        "transitions": {
+          "INCLUDED->INCLUDED": 389468,
+          "INCLUDED->EXCLUDED": 3466,
+          "INCLUDED->UNKNOWN": 150,
+          "EXCLUDED->INCLUDED": 3323,
+          "EXCLUDED->EXCLUDED": 112306,
+          "EXCLUDED->UNKNOWN": 263,
+          "UNKNOWN->INCLUDED": 152,
+          "UNKNOWN->EXCLUDED": 279,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "39": {
+      "cell100_against_address": {
+        "same": 508687,
+        "moved": 3946,
+        "moved_rate": 0.007697514596212105,
+        "transitions": {
+          "INCLUDED->INCLUDED": 396268,
+          "INCLUDED->EXCLUDED": 1664,
+          "INCLUDED->UNKNOWN": 89,
+          "EXCLUDED->INCLUDED": 1826,
+          "EXCLUDED->EXCLUDED": 108988,
+          "EXCLUDED->UNKNOWN": 137,
+          "UNKNOWN->INCLUDED": 81,
+          "UNKNOWN->EXCLUDED": 149,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 398175,
+          "EXCLUDED->EXCLUDED": 100834,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 504681,
+        "moved": 7952,
+        "moved_rate": 0.015512071989122822,
+        "transitions": {
+          "INCLUDED->INCLUDED": 394313,
+          "INCLUDED->EXCLUDED": 3576,
+          "INCLUDED->UNKNOWN": 132,
+          "EXCLUDED->INCLUDED": 3526,
+          "EXCLUDED->EXCLUDED": 107143,
+          "EXCLUDED->UNKNOWN": 282,
+          "UNKNOWN->INCLUDED": 137,
+          "UNKNOWN->EXCLUDED": 299,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 397976,
+          "EXCLUDED->EXCLUDED": 101049,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 504832,
+        "moved": 7801,
+        "moved_rate": 0.015217514284097981,
+        "transitions": {
+          "INCLUDED->INCLUDED": 394441,
+          "INCLUDED->EXCLUDED": 3580,
+          "INCLUDED->UNKNOWN": 154,
+          "EXCLUDED->INCLUDED": 3377,
+          "EXCLUDED->EXCLUDED": 107165,
+          "EXCLUDED->UNKNOWN": 259,
+          "UNKNOWN->INCLUDED": 158,
+          "UNKNOWN->EXCLUDED": 273,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "40": {
+      "cell100_against_address": {
+        "same": 508870,
+        "moved": 3763,
+        "moved_rate": 0.007340534066281336,
+        "transitions": {
+          "INCLUDED->INCLUDED": 401348,
+          "INCLUDED->EXCLUDED": 1555,
+          "INCLUDED->UNKNOWN": 92,
+          "EXCLUDED->INCLUDED": 1752,
+          "EXCLUDED->EXCLUDED": 104091,
+          "EXCLUDED->UNKNOWN": 134,
+          "UNKNOWN->INCLUDED": 83,
+          "UNKNOWN->EXCLUDED": 147,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 403183,
+          "EXCLUDED->EXCLUDED": 95826,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 505211,
+        "moved": 7422,
+        "moved_rate": 0.01447819395161841,
+        "transitions": {
+          "INCLUDED->INCLUDED": 399640,
+          "INCLUDED->EXCLUDED": 3219,
+          "INCLUDED->UNKNOWN": 136,
+          "EXCLUDED->INCLUDED": 3353,
+          "EXCLUDED->EXCLUDED": 102346,
+          "EXCLUDED->UNKNOWN": 278,
+          "UNKNOWN->INCLUDED": 145,
+          "UNKNOWN->EXCLUDED": 291,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 403138,
+          "EXCLUDED->EXCLUDED": 95887,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 505314,
+        "moved": 7319,
+        "moved_rate": 0.014277270483952458,
+        "transitions": {
+          "INCLUDED->INCLUDED": 399758,
+          "INCLUDED->EXCLUDED": 3268,
+          "INCLUDED->UNKNOWN": 157,
+          "EXCLUDED->INCLUDED": 3207,
+          "EXCLUDED->EXCLUDED": 102330,
+          "EXCLUDED->UNKNOWN": 256,
+          "UNKNOWN->INCLUDED": 173,
+          "UNKNOWN->EXCLUDED": 258,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "41": {
+      "cell100_against_address": {
+        "same": 508912,
+        "moved": 3721,
+        "moved_rate": 0.007258604108592307,
+        "transitions": {
+          "INCLUDED->INCLUDED": 405938,
+          "INCLUDED->EXCLUDED": 1517,
+          "INCLUDED->UNKNOWN": 93,
+          "EXCLUDED->INCLUDED": 1748,
+          "EXCLUDED->EXCLUDED": 99543,
+          "EXCLUDED->UNKNOWN": 133,
+          "UNKNOWN->INCLUDED": 83,
+          "UNKNOWN->EXCLUDED": 147,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 407769,
+          "EXCLUDED->EXCLUDED": 91240,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 505625,
+        "moved": 7008,
+        "moved_rate": 0.013670598654397981,
+        "transitions": {
+          "INCLUDED->INCLUDED": 404567,
+          "INCLUDED->EXCLUDED": 2844,
+          "INCLUDED->UNKNOWN": 137,
+          "EXCLUDED->INCLUDED": 3314,
+          "EXCLUDED->EXCLUDED": 97833,
+          "EXCLUDED->UNKNOWN": 277,
+          "UNKNOWN->INCLUDED": 145,
+          "UNKNOWN->EXCLUDED": 291,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 408026,
+          "EXCLUDED->EXCLUDED": 90999,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 505795,
+        "moved": 6838,
+        "moved_rate": 0.013338977397085245,
+        "transitions": {
+          "INCLUDED->INCLUDED": 404735,
+          "INCLUDED->EXCLUDED": 2876,
+          "INCLUDED->UNKNOWN": 158,
+          "EXCLUDED->INCLUDED": 3118,
+          "EXCLUDED->EXCLUDED": 97834,
+          "EXCLUDED->UNKNOWN": 255,
+          "UNKNOWN->INCLUDED": 173,
+          "UNKNOWN->EXCLUDED": 258,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "42": {
+      "cell100_against_address": {
+        "same": 508979,
+        "moved": 3654,
+        "moved_rate": 0.007127906318945523,
+        "transitions": {
+          "INCLUDED->INCLUDED": 410566,
+          "INCLUDED->EXCLUDED": 1530,
+          "INCLUDED->UNKNOWN": 93,
+          "EXCLUDED->INCLUDED": 1668,
+          "EXCLUDED->EXCLUDED": 94982,
+          "EXCLUDED->UNKNOWN": 133,
+          "UNKNOWN->INCLUDED": 84,
+          "UNKNOWN->EXCLUDED": 146,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 412318,
+          "EXCLUDED->EXCLUDED": 86691,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 505764,
+        "moved": 6869,
+        "moved_rate": 0.01339944950871286,
+        "transitions": {
+          "INCLUDED->INCLUDED": 409194,
+          "INCLUDED->EXCLUDED": 2858,
+          "INCLUDED->UNKNOWN": 137,
+          "EXCLUDED->INCLUDED": 3161,
+          "EXCLUDED->EXCLUDED": 93345,
+          "EXCLUDED->UNKNOWN": 277,
+          "UNKNOWN->INCLUDED": 147,
+          "UNKNOWN->EXCLUDED": 289,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 412502,
+          "EXCLUDED->EXCLUDED": 86523,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 505663,
+        "moved": 6970,
+        "moved_rate": 0.013596471549822192,
+        "transitions": {
+          "INCLUDED->INCLUDED": 409180,
+          "INCLUDED->EXCLUDED": 2980,
+          "INCLUDED->UNKNOWN": 158,
+          "EXCLUDED->INCLUDED": 3146,
+          "EXCLUDED->EXCLUDED": 93257,
+          "EXCLUDED->UNKNOWN": 255,
+          "UNKNOWN->INCLUDED": 176,
+          "UNKNOWN->EXCLUDED": 255,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "43": {
+      "cell100_against_address": {
+        "same": 509191,
+        "moved": 3442,
+        "moved_rate": 0.006714355103943757,
+        "transitions": {
+          "INCLUDED->INCLUDED": 415092,
+          "INCLUDED->EXCLUDED": 1486,
+          "INCLUDED->UNKNOWN": 94,
+          "EXCLUDED->INCLUDED": 1500,
+          "EXCLUDED->EXCLUDED": 90668,
+          "EXCLUDED->UNKNOWN": 132,
+          "UNKNOWN->INCLUDED": 84,
+          "UNKNOWN->EXCLUDED": 146,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 416676,
+          "EXCLUDED->EXCLUDED": 82333,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 506136,
+        "moved": 6497,
+        "moved_rate": 0.012673784169181461,
+        "transitions": {
+          "INCLUDED->INCLUDED": 413690,
+          "INCLUDED->EXCLUDED": 2842,
+          "INCLUDED->UNKNOWN": 140,
+          "EXCLUDED->INCLUDED": 2805,
+          "EXCLUDED->EXCLUDED": 89221,
+          "EXCLUDED->UNKNOWN": 274,
+          "UNKNOWN->INCLUDED": 151,
+          "UNKNOWN->EXCLUDED": 285,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 416646,
+          "EXCLUDED->EXCLUDED": 82379,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506267,
+        "moved": 6366,
+        "moved_rate": 0.012418240729722823,
+        "transitions": {
+          "INCLUDED->INCLUDED": 413731,
+          "INCLUDED->EXCLUDED": 2785,
+          "INCLUDED->UNKNOWN": 160,
+          "EXCLUDED->INCLUDED": 2737,
+          "EXCLUDED->EXCLUDED": 89310,
+          "EXCLUDED->UNKNOWN": 253,
+          "UNKNOWN->INCLUDED": 178,
+          "UNKNOWN->EXCLUDED": 253,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "44": {
+      "cell100_against_address": {
+        "same": 509237,
+        "moved": 3396,
+        "moved_rate": 0.006624622293141487,
+        "transitions": {
+          "INCLUDED->INCLUDED": 419267,
+          "INCLUDED->EXCLUDED": 1381,
+          "INCLUDED->UNKNOWN": 94,
+          "EXCLUDED->INCLUDED": 1559,
+          "EXCLUDED->EXCLUDED": 86539,
+          "EXCLUDED->UNKNOWN": 132,
+          "UNKNOWN->INCLUDED": 85,
+          "UNKNOWN->EXCLUDED": 145,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 420911,
+          "EXCLUDED->EXCLUDED": 78098,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 506268,
+        "moved": 6365,
+        "moved_rate": 0.012416290016444512,
+        "transitions": {
+          "INCLUDED->INCLUDED": 417752,
+          "INCLUDED->EXCLUDED": 2841,
+          "INCLUDED->UNKNOWN": 149,
+          "EXCLUDED->INCLUDED": 2674,
+          "EXCLUDED->EXCLUDED": 85291,
+          "EXCLUDED->UNKNOWN": 265,
+          "UNKNOWN->INCLUDED": 153,
+          "UNKNOWN->EXCLUDED": 283,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 420579,
+          "EXCLUDED->EXCLUDED": 78446,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506273,
+        "moved": 6360,
+        "moved_rate": 0.012406536450052961,
+        "transitions": {
+          "INCLUDED->INCLUDED": 417813,
+          "INCLUDED->EXCLUDED": 2930,
+          "INCLUDED->UNKNOWN": 168,
+          "EXCLUDED->INCLUDED": 2586,
+          "EXCLUDED->EXCLUDED": 85234,
+          "EXCLUDED->UNKNOWN": 245,
+          "UNKNOWN->INCLUDED": 180,
+          "UNKNOWN->EXCLUDED": 251,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "45": {
+      "cell100_against_address": {
+        "same": 509306,
+        "moved": 3327,
+        "moved_rate": 0.006490023076938083,
+        "transitions": {
+          "INCLUDED->INCLUDED": 423243,
+          "INCLUDED->EXCLUDED": 1313,
+          "INCLUDED->UNKNOWN": 94,
+          "EXCLUDED->INCLUDED": 1558,
+          "EXCLUDED->EXCLUDED": 82632,
+          "EXCLUDED->UNKNOWN": 132,
+          "UNKNOWN->INCLUDED": 85,
+          "UNKNOWN->EXCLUDED": 145,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 424886,
+          "EXCLUDED->EXCLUDED": 74123,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 506536,
+        "moved": 6097,
+        "moved_rate": 0.011893498857857376,
+        "transitions": {
+          "INCLUDED->INCLUDED": 421707,
+          "INCLUDED->EXCLUDED": 2786,
+          "INCLUDED->UNKNOWN": 157,
+          "EXCLUDED->INCLUDED": 2461,
+          "EXCLUDED->EXCLUDED": 81604,
+          "EXCLUDED->UNKNOWN": 257,
+          "UNKNOWN->INCLUDED": 155,
+          "UNKNOWN->EXCLUDED": 281,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 424323,
+          "EXCLUDED->EXCLUDED": 74702,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506656,
+        "moved": 5977,
+        "moved_rate": 0.01165941326446015,
+        "transitions": {
+          "INCLUDED->INCLUDED": 421859,
+          "INCLUDED->EXCLUDED": 2850,
+          "INCLUDED->UNKNOWN": 177,
+          "EXCLUDED->INCLUDED": 2283,
+          "EXCLUDED->EXCLUDED": 81571,
+          "EXCLUDED->UNKNOWN": 236,
+          "UNKNOWN->INCLUDED": 181,
+          "UNKNOWN->EXCLUDED": 250,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "46": {
+      "cell100_against_address": {
+        "same": 509367,
+        "moved": 3266,
+        "moved_rate": 0.00637102956696116,
+        "transitions": {
+          "INCLUDED->INCLUDED": 426971,
+          "INCLUDED->EXCLUDED": 1276,
+          "INCLUDED->UNKNOWN": 95,
+          "EXCLUDED->INCLUDED": 1534,
+          "EXCLUDED->EXCLUDED": 78965,
+          "EXCLUDED->UNKNOWN": 131,
+          "UNKNOWN->INCLUDED": 88,
+          "UNKNOWN->EXCLUDED": 142,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 428593,
+          "EXCLUDED->EXCLUDED": 70416,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 506746,
+        "moved": 5887,
+        "moved_rate": 0.01148384906941223,
+        "transitions": {
+          "INCLUDED->INCLUDED": 425688,
+          "INCLUDED->EXCLUDED": 2492,
+          "INCLUDED->UNKNOWN": 162,
+          "EXCLUDED->INCLUDED": 2545,
+          "EXCLUDED->EXCLUDED": 77833,
+          "EXCLUDED->UNKNOWN": 252,
+          "UNKNOWN->INCLUDED": 158,
+          "UNKNOWN->EXCLUDED": 278,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 428391,
+          "EXCLUDED->EXCLUDED": 70634,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506765,
+        "moved": 5868,
+        "moved_rate": 0.011446785517124336,
+        "transitions": {
+          "INCLUDED->INCLUDED": 425798,
+          "INCLUDED->EXCLUDED": 2612,
+          "INCLUDED->UNKNOWN": 183,
+          "EXCLUDED->INCLUDED": 2412,
+          "EXCLUDED->EXCLUDED": 77741,
+          "EXCLUDED->UNKNOWN": 230,
+          "UNKNOWN->INCLUDED": 181,
+          "UNKNOWN->EXCLUDED": 250,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "47": {
+      "cell100_against_address": {
+        "same": 509547,
+        "moved": 3086,
+        "moved_rate": 0.00601990117686532,
+        "transitions": {
+          "INCLUDED->INCLUDED": 430844,
+          "INCLUDED->EXCLUDED": 1272,
+          "INCLUDED->UNKNOWN": 96,
+          "EXCLUDED->INCLUDED": 1358,
+          "EXCLUDED->EXCLUDED": 75272,
+          "EXCLUDED->UNKNOWN": 130,
+          "UNKNOWN->INCLUDED": 90,
+          "UNKNOWN->EXCLUDED": 140,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 432292,
+          "EXCLUDED->EXCLUDED": 66717,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 506836,
+        "moved": 5797,
+        "moved_rate": 0.011308284874364312,
+        "transitions": {
+          "INCLUDED->INCLUDED": 429424,
+          "INCLUDED->EXCLUDED": 2624,
+          "INCLUDED->UNKNOWN": 164,
+          "EXCLUDED->INCLUDED": 2323,
+          "EXCLUDED->EXCLUDED": 74187,
+          "EXCLUDED->UNKNOWN": 250,
+          "UNKNOWN->INCLUDED": 158,
+          "UNKNOWN->EXCLUDED": 278,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 431905,
+          "EXCLUDED->EXCLUDED": 67120,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 506948,
+        "moved": 5685,
+        "moved_rate": 0.011089804987193568,
+        "transitions": {
+          "INCLUDED->INCLUDED": 429496,
+          "INCLUDED->EXCLUDED": 2613,
+          "INCLUDED->UNKNOWN": 183,
+          "EXCLUDED->INCLUDED": 2228,
+          "EXCLUDED->EXCLUDED": 74226,
+          "EXCLUDED->UNKNOWN": 230,
+          "UNKNOWN->INCLUDED": 181,
+          "UNKNOWN->EXCLUDED": 250,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "48": {
+      "cell100_against_address": {
+        "same": 509875,
+        "moved": 2758,
+        "moved_rate": 0.00538006722157957,
+        "transitions": {
+          "INCLUDED->INCLUDED": 434448,
+          "INCLUDED->EXCLUDED": 1139,
+          "INCLUDED->UNKNOWN": 97,
+          "EXCLUDED->INCLUDED": 1163,
+          "EXCLUDED->EXCLUDED": 71996,
+          "EXCLUDED->UNKNOWN": 129,
+          "UNKNOWN->INCLUDED": 90,
+          "UNKNOWN->EXCLUDED": 140,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 435701,
+          "EXCLUDED->EXCLUDED": 63308,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 507332,
+        "moved": 5301,
+        "moved_rate": 0.010340731088322445,
+        "transitions": {
+          "INCLUDED->INCLUDED": 433238,
+          "INCLUDED->EXCLUDED": 2277,
+          "INCLUDED->UNKNOWN": 169,
+          "EXCLUDED->INCLUDED": 2174,
+          "EXCLUDED->EXCLUDED": 70869,
+          "EXCLUDED->UNKNOWN": 245,
+          "UNKNOWN->INCLUDED": 159,
+          "UNKNOWN->EXCLUDED": 277,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 435571,
+          "EXCLUDED->EXCLUDED": 63454,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 507372,
+        "moved": 5261,
+        "moved_rate": 0.010262702557190036,
+        "transitions": {
+          "INCLUDED->INCLUDED": 433243,
+          "INCLUDED->EXCLUDED": 2273,
+          "INCLUDED->UNKNOWN": 185,
+          "EXCLUDED->INCLUDED": 2144,
+          "EXCLUDED->EXCLUDED": 70903,
+          "EXCLUDED->UNKNOWN": 228,
+          "UNKNOWN->INCLUDED": 184,
+          "UNKNOWN->EXCLUDED": 247,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "49": {
+      "cell100_against_address": {
+        "same": 510003,
+        "moved": 2630,
+        "moved_rate": 0.005130375921955863,
+        "transitions": {
+          "INCLUDED->INCLUDED": 437669,
+          "INCLUDED->EXCLUDED": 1094,
+          "INCLUDED->UNKNOWN": 100,
+          "EXCLUDED->INCLUDED": 1080,
+          "EXCLUDED->EXCLUDED": 68903,
+          "EXCLUDED->UNKNOWN": 126,
+          "UNKNOWN->INCLUDED": 91,
+          "UNKNOWN->EXCLUDED": 139,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 438840,
+          "EXCLUDED->EXCLUDED": 60169,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 507826,
+        "moved": 4807,
+        "moved_rate": 0.0093770787288372,
+        "transitions": {
+          "INCLUDED->INCLUDED": 436755,
+          "INCLUDED->EXCLUDED": 1936,
+          "INCLUDED->UNKNOWN": 172,
+          "EXCLUDED->INCLUDED": 2021,
+          "EXCLUDED->EXCLUDED": 67846,
+          "EXCLUDED->UNKNOWN": 242,
+          "UNKNOWN->INCLUDED": 160,
+          "UNKNOWN->EXCLUDED": 276,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 438936,
+          "EXCLUDED->EXCLUDED": 60089,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 507872,
+        "moved": 4761,
+        "moved_rate": 0.00928734591803493,
+        "transitions": {
+          "INCLUDED->INCLUDED": 436742,
+          "INCLUDED->EXCLUDED": 1909,
+          "INCLUDED->UNKNOWN": 189,
+          "EXCLUDED->INCLUDED": 2008,
+          "EXCLUDED->EXCLUDED": 67904,
+          "EXCLUDED->UNKNOWN": 224,
+          "UNKNOWN->INCLUDED": 186,
+          "UNKNOWN->EXCLUDED": 245,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "50": {
+      "cell100_against_address": {
+        "same": 510204,
+        "moved": 2429,
+        "moved_rate": 0.00473828255301551,
+        "transitions": {
+          "INCLUDED->INCLUDED": 440686,
+          "INCLUDED->EXCLUDED": 1026,
+          "INCLUDED->UNKNOWN": 102,
+          "EXCLUDED->INCLUDED": 947,
+          "EXCLUDED->EXCLUDED": 66087,
+          "EXCLUDED->UNKNOWN": 124,
+          "UNKNOWN->INCLUDED": 91,
+          "UNKNOWN->EXCLUDED": 139,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 441724,
+          "EXCLUDED->EXCLUDED": 57285,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508066,
+        "moved": 4567,
+        "moved_rate": 0.008908907542042748,
+        "transitions": {
+          "INCLUDED->INCLUDED": 439831,
+          "INCLUDED->EXCLUDED": 1804,
+          "INCLUDED->UNKNOWN": 179,
+          "EXCLUDED->INCLUDED": 1913,
+          "EXCLUDED->EXCLUDED": 65010,
+          "EXCLUDED->UNKNOWN": 235,
+          "UNKNOWN->INCLUDED": 164,
+          "UNKNOWN->EXCLUDED": 272,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 441908,
+          "EXCLUDED->EXCLUDED": 57117,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508039,
+        "moved": 4594,
+        "moved_rate": 0.008961576800557123,
+        "transitions": {
+          "INCLUDED->INCLUDED": 439748,
+          "INCLUDED->EXCLUDED": 1782,
+          "INCLUDED->UNKNOWN": 194,
+          "EXCLUDED->INCLUDED": 1968,
+          "EXCLUDED->EXCLUDED": 65065,
+          "EXCLUDED->UNKNOWN": 219,
+          "UNKNOWN->INCLUDED": 192,
+          "UNKNOWN->EXCLUDED": 239,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "51": {
+      "cell100_against_address": {
+        "same": 510307,
+        "moved": 2326,
+        "moved_rate": 0.004537359085349558,
+        "transitions": {
+          "INCLUDED->INCLUDED": 443330,
+          "INCLUDED->EXCLUDED": 956,
+          "INCLUDED->UNKNOWN": 106,
+          "EXCLUDED->INCLUDED": 914,
+          "EXCLUDED->EXCLUDED": 63546,
+          "EXCLUDED->UNKNOWN": 120,
+          "UNKNOWN->INCLUDED": 96,
+          "UNKNOWN->EXCLUDED": 134,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 444340,
+          "EXCLUDED->EXCLUDED": 54669,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508282,
+        "moved": 4351,
+        "moved_rate": 0.008487553473927741,
+        "transitions": {
+          "INCLUDED->INCLUDED": 442540,
+          "INCLUDED->EXCLUDED": 1668,
+          "INCLUDED->UNKNOWN": 184,
+          "EXCLUDED->INCLUDED": 1833,
+          "EXCLUDED->EXCLUDED": 62517,
+          "EXCLUDED->UNKNOWN": 230,
+          "UNKNOWN->INCLUDED": 167,
+          "UNKNOWN->EXCLUDED": 269,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 444540,
+          "EXCLUDED->EXCLUDED": 54485,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508378,
+        "moved": 4255,
+        "moved_rate": 0.008300284999209961,
+        "transitions": {
+          "INCLUDED->INCLUDED": 442538,
+          "INCLUDED->EXCLUDED": 1601,
+          "INCLUDED->UNKNOWN": 201,
+          "EXCLUDED->INCLUDED": 1810,
+          "EXCLUDED->EXCLUDED": 62614,
+          "EXCLUDED->UNKNOWN": 212,
+          "UNKNOWN->INCLUDED": 192,
+          "UNKNOWN->EXCLUDED": 239,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "52": {
+      "cell100_against_address": {
+        "same": 510546,
+        "moved": 2087,
+        "moved_rate": 0.004071138611833417,
+        "transitions": {
+          "INCLUDED->INCLUDED": 445943,
+          "INCLUDED->EXCLUDED": 775,
+          "INCLUDED->UNKNOWN": 107,
+          "EXCLUDED->INCLUDED": 856,
+          "EXCLUDED->EXCLUDED": 61172,
+          "EXCLUDED->UNKNOWN": 119,
+          "UNKNOWN->INCLUDED": 98,
+          "UNKNOWN->EXCLUDED": 132,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 446897,
+          "EXCLUDED->EXCLUDED": 52112,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508533,
+        "moved": 4100,
+        "moved_rate": 0.007997924441071879,
+        "transitions": {
+          "INCLUDED->INCLUDED": 444964,
+          "INCLUDED->EXCLUDED": 1673,
+          "INCLUDED->UNKNOWN": 188,
+          "EXCLUDED->INCLUDED": 1577,
+          "EXCLUDED->EXCLUDED": 60344,
+          "EXCLUDED->UNKNOWN": 226,
+          "UNKNOWN->INCLUDED": 167,
+          "UNKNOWN->EXCLUDED": 269,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 446708,
+          "EXCLUDED->EXCLUDED": 52317,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508600,
+        "moved": 4033,
+        "moved_rate": 0.007867226651425094,
+        "transitions": {
+          "INCLUDED->INCLUDED": 445008,
+          "INCLUDED->EXCLUDED": 1681,
+          "INCLUDED->UNKNOWN": 208,
+          "EXCLUDED->INCLUDED": 1508,
+          "EXCLUDED->EXCLUDED": 60366,
+          "EXCLUDED->UNKNOWN": 205,
+          "UNKNOWN->INCLUDED": 192,
+          "UNKNOWN->EXCLUDED": 239,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "53": {
+      "cell100_against_address": {
+        "same": 510529,
+        "moved": 2104,
+        "moved_rate": 0.004104300737564691,
+        "transitions": {
+          "INCLUDED->INCLUDED": 448193,
+          "INCLUDED->EXCLUDED": 703,
+          "INCLUDED->UNKNOWN": 107,
+          "EXCLUDED->INCLUDED": 945,
+          "EXCLUDED->EXCLUDED": 58905,
+          "EXCLUDED->UNKNOWN": 119,
+          "UNKNOWN->INCLUDED": 100,
+          "UNKNOWN->EXCLUDED": 130,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 449238,
+          "EXCLUDED->EXCLUDED": 49771,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508894,
+        "moved": 3739,
+        "moved_rate": 0.007293716947601891,
+        "transitions": {
+          "INCLUDED->INCLUDED": 447332,
+          "INCLUDED->EXCLUDED": 1476,
+          "INCLUDED->UNKNOWN": 195,
+          "EXCLUDED->INCLUDED": 1413,
+          "EXCLUDED->EXCLUDED": 58337,
+          "EXCLUDED->UNKNOWN": 219,
+          "UNKNOWN->INCLUDED": 169,
+          "UNKNOWN->EXCLUDED": 267,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 448914,
+          "EXCLUDED->EXCLUDED": 50111,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508806,
+        "moved": 3827,
+        "moved_rate": 0.007465379716093189,
+        "transitions": {
+          "INCLUDED->INCLUDED": 447381,
+          "INCLUDED->EXCLUDED": 1644,
+          "INCLUDED->UNKNOWN": 213,
+          "EXCLUDED->INCLUDED": 1339,
+          "EXCLUDED->EXCLUDED": 58199,
+          "EXCLUDED->UNKNOWN": 200,
+          "UNKNOWN->INCLUDED": 194,
+          "UNKNOWN->EXCLUDED": 237,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "54": {
+      "cell100_against_address": {
+        "same": 510677,
+        "moved": 1956,
+        "moved_rate": 0.0038155951723747787,
+        "transitions": {
+          "INCLUDED->INCLUDED": 450414,
+          "INCLUDED->EXCLUDED": 733,
+          "INCLUDED->UNKNOWN": 108,
+          "EXCLUDED->INCLUDED": 767,
+          "EXCLUDED->EXCLUDED": 56832,
+          "EXCLUDED->UNKNOWN": 118,
+          "UNKNOWN->INCLUDED": 102,
+          "UNKNOWN->EXCLUDED": 128,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 451283,
+          "EXCLUDED->EXCLUDED": 47726,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508804,
+        "moved": 3829,
+        "moved_rate": 0.00746928114264981,
+        "transitions": {
+          "INCLUDED->INCLUDED": 449442,
+          "INCLUDED->EXCLUDED": 1618,
+          "INCLUDED->UNKNOWN": 195,
+          "EXCLUDED->INCLUDED": 1361,
+          "EXCLUDED->EXCLUDED": 56137,
+          "EXCLUDED->UNKNOWN": 219,
+          "UNKNOWN->INCLUDED": 170,
+          "UNKNOWN->EXCLUDED": 266,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 450973,
+          "EXCLUDED->EXCLUDED": 48052,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508838,
+        "moved": 3795,
+        "moved_rate": 0.0074029568911872625,
+        "transitions": {
+          "INCLUDED->INCLUDED": 449448,
+          "INCLUDED->EXCLUDED": 1621,
+          "INCLUDED->UNKNOWN": 214,
+          "EXCLUDED->INCLUDED": 1330,
+          "EXCLUDED->EXCLUDED": 56164,
+          "EXCLUDED->UNKNOWN": 199,
+          "UNKNOWN->INCLUDED": 195,
+          "UNKNOWN->EXCLUDED": 236,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "55": {
+      "cell100_against_address": {
+        "same": 510710,
+        "moved": 1923,
+        "moved_rate": 0.0037512216341905416,
+        "transitions": {
+          "INCLUDED->INCLUDED": 452476,
+          "INCLUDED->EXCLUDED": 712,
+          "INCLUDED->UNKNOWN": 108,
+          "EXCLUDED->INCLUDED": 755,
+          "EXCLUDED->EXCLUDED": 54803,
+          "EXCLUDED->UNKNOWN": 118,
+          "UNKNOWN->INCLUDED": 103,
+          "UNKNOWN->EXCLUDED": 127,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 453334,
+          "EXCLUDED->EXCLUDED": 45675,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508893,
+        "moved": 3740,
+        "moved_rate": 0.007295667660880201,
+        "transitions": {
+          "INCLUDED->INCLUDED": 451596,
+          "INCLUDED->EXCLUDED": 1505,
+          "INCLUDED->UNKNOWN": 195,
+          "EXCLUDED->INCLUDED": 1385,
+          "EXCLUDED->EXCLUDED": 54072,
+          "EXCLUDED->UNKNOWN": 219,
+          "UNKNOWN->INCLUDED": 177,
+          "UNKNOWN->EXCLUDED": 259,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 453158,
+          "EXCLUDED->EXCLUDED": 45867,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508948,
+        "moved": 3685,
+        "moved_rate": 0.007188378430573139,
+        "transitions": {
+          "INCLUDED->INCLUDED": 451618,
+          "INCLUDED->EXCLUDED": 1502,
+          "INCLUDED->UNKNOWN": 214,
+          "EXCLUDED->INCLUDED": 1339,
+          "EXCLUDED->EXCLUDED": 54104,
+          "EXCLUDED->UNKNOWN": 199,
+          "UNKNOWN->INCLUDED": 201,
+          "UNKNOWN->EXCLUDED": 230,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "56": {
+      "cell100_against_address": {
+        "same": 510720,
+        "moved": 1913,
+        "moved_rate": 0.0037317145014074396,
+        "transitions": {
+          "INCLUDED->INCLUDED": 454605,
+          "INCLUDED->EXCLUDED": 696,
+          "INCLUDED->UNKNOWN": 109,
+          "EXCLUDED->INCLUDED": 761,
+          "EXCLUDED->EXCLUDED": 52684,
+          "EXCLUDED->UNKNOWN": 117,
+          "UNKNOWN->INCLUDED": 103,
+          "UNKNOWN->EXCLUDED": 127,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 455469,
+          "EXCLUDED->EXCLUDED": 43540,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 508910,
+        "moved": 3723,
+        "moved_rate": 0.007262505535148928,
+        "transitions": {
+          "INCLUDED->INCLUDED": 453774,
+          "INCLUDED->EXCLUDED": 1440,
+          "INCLUDED->UNKNOWN": 196,
+          "EXCLUDED->INCLUDED": 1433,
+          "EXCLUDED->EXCLUDED": 51911,
+          "EXCLUDED->UNKNOWN": 218,
+          "UNKNOWN->INCLUDED": 179,
+          "UNKNOWN->EXCLUDED": 257,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 455386,
+          "EXCLUDED->EXCLUDED": 43639,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 508996,
+        "moved": 3637,
+        "moved_rate": 0.0070947441932142485,
+        "transitions": {
+          "INCLUDED->INCLUDED": 453822,
+          "INCLUDED->EXCLUDED": 1433,
+          "INCLUDED->UNKNOWN": 214,
+          "EXCLUDED->INCLUDED": 1360,
+          "EXCLUDED->EXCLUDED": 51948,
+          "EXCLUDED->UNKNOWN": 199,
+          "UNKNOWN->INCLUDED": 204,
+          "UNKNOWN->EXCLUDED": 227,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "57": {
+      "cell100_against_address": {
+        "same": 510778,
+        "moved": 1855,
+        "moved_rate": 0.0036185731312654472,
+        "transitions": {
+          "INCLUDED->INCLUDED": 456639,
+          "INCLUDED->EXCLUDED": 726,
+          "INCLUDED->UNKNOWN": 109,
+          "EXCLUDED->INCLUDED": 673,
+          "EXCLUDED->EXCLUDED": 50708,
+          "EXCLUDED->UNKNOWN": 117,
+          "UNKNOWN->INCLUDED": 104,
+          "UNKNOWN->EXCLUDED": 126,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 457416,
+          "EXCLUDED->EXCLUDED": 41593,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 509034,
+        "moved": 3599,
+        "moved_rate": 0.007020617088638461,
+        "transitions": {
+          "INCLUDED->INCLUDED": 456009,
+          "INCLUDED->EXCLUDED": 1267,
+          "INCLUDED->UNKNOWN": 198,
+          "EXCLUDED->INCLUDED": 1482,
+          "EXCLUDED->EXCLUDED": 49800,
+          "EXCLUDED->UNKNOWN": 216,
+          "UNKNOWN->INCLUDED": 180,
+          "UNKNOWN->EXCLUDED": 256,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 457671,
+          "EXCLUDED->EXCLUDED": 41354,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 509086,
+        "moved": 3547,
+        "moved_rate": 0.006919179998166329,
+        "transitions": {
+          "INCLUDED->INCLUDED": 455981,
+          "INCLUDED->EXCLUDED": 1218,
+          "INCLUDED->UNKNOWN": 217,
+          "EXCLUDED->INCLUDED": 1485,
+          "EXCLUDED->EXCLUDED": 49879,
+          "EXCLUDED->UNKNOWN": 196,
+          "UNKNOWN->INCLUDED": 205,
+          "UNKNOWN->EXCLUDED": 226,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "58": {
+      "cell100_against_address": {
+        "same": 510848,
+        "moved": 1785,
+        "moved_rate": 0.0034820232017837324,
+        "transitions": {
+          "INCLUDED->INCLUDED": 458599,
+          "INCLUDED->EXCLUDED": 666,
+          "INCLUDED->UNKNOWN": 110,
+          "EXCLUDED->INCLUDED": 663,
+          "EXCLUDED->EXCLUDED": 48818,
+          "EXCLUDED->UNKNOWN": 116,
+          "UNKNOWN->INCLUDED": 104,
+          "UNKNOWN->EXCLUDED": 126,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 459366,
+          "EXCLUDED->EXCLUDED": 39643,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 509326,
+        "moved": 3307,
+        "moved_rate": 0.006451008811371878,
+        "transitions": {
+          "INCLUDED->INCLUDED": 457947,
+          "INCLUDED->EXCLUDED": 1229,
+          "INCLUDED->UNKNOWN": 199,
+          "EXCLUDED->INCLUDED": 1228,
+          "EXCLUDED->EXCLUDED": 48154,
+          "EXCLUDED->UNKNOWN": 215,
+          "UNKNOWN->INCLUDED": 184,
+          "UNKNOWN->EXCLUDED": 252,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 459359,
+          "EXCLUDED->EXCLUDED": 39666,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 509382,
+        "moved": 3251,
+        "moved_rate": 0.006341768867786506,
+        "transitions": {
+          "INCLUDED->INCLUDED": 457945,
+          "INCLUDED->EXCLUDED": 1203,
+          "INCLUDED->UNKNOWN": 218,
+          "EXCLUDED->INCLUDED": 1204,
+          "EXCLUDED->EXCLUDED": 48211,
+          "EXCLUDED->UNKNOWN": 195,
+          "UNKNOWN->INCLUDED": 210,
+          "UNKNOWN->EXCLUDED": 221,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "59": {
+      "cell100_against_address": {
+        "same": 510910,
+        "moved": 1723,
+        "moved_rate": 0.003361078978528499,
+        "transitions": {
+          "INCLUDED->INCLUDED": 460429,
+          "INCLUDED->EXCLUDED": 619,
+          "INCLUDED->UNKNOWN": 110,
+          "EXCLUDED->INCLUDED": 648,
+          "EXCLUDED->EXCLUDED": 47050,
+          "EXCLUDED->UNKNOWN": 116,
+          "UNKNOWN->INCLUDED": 104,
+          "UNKNOWN->EXCLUDED": 126,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 461181,
+          "EXCLUDED->EXCLUDED": 37828,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 509485,
+        "moved": 3148,
+        "moved_rate": 0.006140845400120554,
+        "transitions": {
+          "INCLUDED->INCLUDED": 459758,
+          "INCLUDED->EXCLUDED": 1199,
+          "INCLUDED->UNKNOWN": 201,
+          "EXCLUDED->INCLUDED": 1099,
+          "EXCLUDED->EXCLUDED": 46502,
+          "EXCLUDED->UNKNOWN": 213,
+          "UNKNOWN->INCLUDED": 184,
+          "UNKNOWN->EXCLUDED": 252,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 461041,
+          "EXCLUDED->EXCLUDED": 37984,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 509562,
+        "moved": 3071,
+        "moved_rate": 0.005990640477690668,
+        "transitions": {
+          "INCLUDED->INCLUDED": 459783,
+          "INCLUDED->EXCLUDED": 1179,
+          "INCLUDED->UNKNOWN": 219,
+          "EXCLUDED->INCLUDED": 1048,
+          "EXCLUDED->EXCLUDED": 46553,
+          "EXCLUDED->UNKNOWN": 194,
+          "UNKNOWN->INCLUDED": 210,
+          "UNKNOWN->EXCLUDED": 221,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    },
+    "60": {
+      "cell100_against_address": {
+        "same": 510946,
+        "moved": 1687,
+        "moved_rate": 0.0032908533005093312,
+        "transitions": {
+          "INCLUDED->INCLUDED": 462045,
+          "INCLUDED->EXCLUDED": 626,
+          "INCLUDED->UNKNOWN": 112,
+          "EXCLUDED->INCLUDED": 605,
+          "EXCLUDED->EXCLUDED": 45470,
+          "EXCLUDED->UNKNOWN": 114,
+          "UNKNOWN->INCLUDED": 105,
+          "UNKNOWN->EXCLUDED": 125,
+          "UNKNOWN->UNKNOWN": 3431
+        }
+      },
+      "cell100_encoded_against_float": {
+        "same": 502666,
+        "moved": 9967,
+        "moved_rate": 0.019442759244917906,
+        "transitions": {
+          "INCLUDED->INCLUDED": 462755,
+          "EXCLUDED->EXCLUDED": 36254,
+          "EXCLUDED->UNKNOWN": 9967,
+          "UNKNOWN->UNKNOWN": 3657
+        }
+      },
+      "cell200_against_address": {
+        "same": 509521,
+        "moved": 3112,
+        "moved_rate": 0.006070619722101387,
+        "transitions": {
+          "INCLUDED->INCLUDED": 461462,
+          "INCLUDED->EXCLUDED": 1111,
+          "INCLUDED->UNKNOWN": 210,
+          "EXCLUDED->INCLUDED": 1151,
+          "EXCLUDED->EXCLUDED": 44834,
+          "EXCLUDED->UNKNOWN": 204,
+          "UNKNOWN->INCLUDED": 189,
+          "UNKNOWN->EXCLUDED": 247,
+          "UNKNOWN->UNKNOWN": 3225
+        }
+      },
+      "cell200_encoded_against_float": {
+        "same": 502664,
+        "moved": 9969,
+        "moved_rate": 0.019446660671474526,
+        "transitions": {
+          "INCLUDED->INCLUDED": 462802,
+          "EXCLUDED->EXCLUDED": 36223,
+          "EXCLUDED->UNKNOWN": 9969,
+          "UNKNOWN->UNKNOWN": 3639
+        }
+      },
+      "cell200_against_cell100": {
+        "same": 509532,
+        "moved": 3101,
+        "moved_rate": 0.006049161876039974,
+        "transitions": {
+          "INCLUDED->INCLUDED": 461425,
+          "INCLUDED->EXCLUDED": 1095,
+          "INCLUDED->UNKNOWN": 235,
+          "EXCLUDED->INCLUDED": 1162,
+          "EXCLUDED->EXCLUDED": 44881,
+          "EXCLUDED->UNKNOWN": 178,
+          "UNKNOWN->INCLUDED": 215,
+          "UNKNOWN->EXCLUDED": 216,
+          "UNKNOWN->UNKNOWN": 3226
+        }
+      }
+    }
+  }
+}

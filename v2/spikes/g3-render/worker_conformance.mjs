@@ -119,6 +119,7 @@ for (const group of vectors.groups) {
       const res = out.find((m) => m.type === 'result');
       assert(res, 'no result message');
       const n = group.nrows * group.ncols;
+      assert(res.rgba.byteLength === n * 4, 'rgba buffer is the wrong size');
 
       if (c.counts) {
         assert(res.inCount === c.counts.included,
@@ -129,47 +130,55 @@ for (const group of vectors.groups) {
           `unknown ${res.nodataCount} != ${c.counts.unknown}`);
       }
 
-      // Rebuild the verdict array from the pixels, which is the only output that carries all
-      // three outcomes. Included pixels are PX_IN; unknown pixels are the hatch colour on the
-      // stripe and transparent off it, so the hatch is read with the worker's own rule.
-      const px = new Uint32Array(res.rgba);
-      const counts = [0, 0, 0];
-      const verdicts = new Int8Array(n);
+      // Ask the worker what it decided. Reconstructing this from the RGBA buffer was the
+      // mistake pass 43 F2 found: included is readable from the mask, but EXCLUDED and UNKNOWN
+      // are only distinguishable where the hatch stripe falls, so three quarters of the cells
+      // were compared against nothing — and the real-layer window, which has no inline expected
+      // array, was compared against nothing at all. A worker that returned UNKNOWN for NO_PATH,
+      // and one that rotated the entire raster by 10,007 cells, both passed all 37 checks.
+      const vOut = worker.send({ type: 'verdicts', reqId: 1 });
+      const vMsg = vOut.find((m) => m.type === 'verdicts');
+      assert(vMsg, 'no verdicts message');
+      const verdicts = new Int8Array(vMsg.verdicts);
+      assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
+
       const maskOut = worker.send({ type: 'mask', reqId: 1 });
       const maskMsg = maskOut.find((m) => m.type === 'mask');
       assert(maskMsg, 'no mask message');
       const mask = new Uint8Array(maskMsg.mask);
-      let p = 0;
-      for (let r = 0; r < group.nrows; r++) {
-        for (let col = 0; col < group.ncols; col++, p++) {
-          let v;
-          if (mask[p] === 1) v = V_INCLUDED;
-          else if (((r + col) & 7) < 2) v = (px[p] !== 0) ? V_UNKNOWN : V_EXCLUDED;
-          else v = null;      // off the hatch stripe, unknown and excluded look the same
-          if (v !== null) { verdicts[p] = v; counts[v]++; }
-          else verdicts[p] = -1;
-        }
+
+      // The mask and the verdict plane must agree, or one of the two outputs is lying.
+      for (let i = 0; i < n; i++) {
+        assert((mask[i] === 1) === (verdicts[i] === V_INCLUDED),
+          `cell ${i}: mask ${mask[i]} against verdict ${verdicts[i]}`);
       }
+      // And the counts must match the plane they claim to summarise.
+      let ci = 0, ce = 0, cu = 0;
+      for (let i = 0; i < n; i++) {
+        if (verdicts[i] === V_INCLUDED) ci++;
+        else if (verdicts[i] === V_EXCLUDED) ce++;
+        else cu++;
+      }
+      assert(ci === res.inCount && ce === res.excludedCount && cu === res.nodataCount,
+        `counts ${res.inCount}/${res.excludedCount}/${res.nodataCount} against plane ${ci}/${ce}/${cu}`);
 
       if (c.verdicts) {
         for (let i = 0; i < n; i++) {
-          if (verdicts[i] === -1) continue;
           assert(verdicts[i] === c.verdicts[i],
             `cell ${i}: worker ${verdicts[i]}, python ${c.verdicts[i]}`);
         }
-        // Every cell python calls INCLUDED must be in the mask, and no other.
-        for (let i = 0; i < n; i++) {
-          assert((mask[i] === 1) === (c.verdicts[i] === V_INCLUDED),
-            `cell ${i}: mask ${mask[i]} against python verdict ${c.verdicts[i]}`);
-        }
       }
       if (c.verdict_sha256_32) {
-        // The counts already pinned the totals; this pins the arrangement. Only the hatch-stripe
-        // cells can be read back individually, so the digest is over the mask, which is exactly
-        // the INCLUDED set and is what any consumer of the worker receives.
-        const h = createHash('sha256').update(Buffer.from(mask)).digest('hex').slice(0, 32);
-        assert(typeof h === 'string' && h.length === 32, 'digest failed');
+        // Python hashes the same Int8Array bytes of the same three-way plane. It used to hash
+        // three-way verdicts while this hashed the binary mask, and the result was never
+        // compared to anything — a digest computed and thrown away is not a check.
+        const h = createHash('sha256').update(Buffer.from(verdicts.buffer, 0, n))
+          .digest('hex').slice(0, 32);
+        assert(h === c.verdict_sha256_32,
+          `verdict digest ${h} != python ${c.verdict_sha256_32}`);
       }
+      assert(c.verdicts || c.verdict_sha256_32,
+        'this case asserts nothing about the arrangement of its verdicts');
     });
   }
 }

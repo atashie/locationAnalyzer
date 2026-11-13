@@ -399,3 +399,46 @@ zero, ask which key the family varied; if the mechanism has two keys and the fam
 the zero is about the family.
 
 Seventeen instances now.
+
+## Eighteenth to twentieth, 2026-11-13 — pass 43 on the browser path
+
+**Eighteenth, and it is the sharpest one yet: I wrote the lesson into the review prompt and broke
+it in the same commit.** The prompt for pass 43 says, of the order-independence check, *"a check
+that has never caught anything is not evidence"*. In the same commit I shipped a conformance
+harness that compared **nothing** on three quarters of its cells, nothing at all on the real-layer
+window, and computed a digest it then checked only for being a 32-character string. Two wrong
+decoders passed all 37 of its checks — one returning UNKNOWN for `NO_PATH`, one **rotating the
+entire raster by 10,007 cells**, which moves 13,695 verdicts.
+
+The cause is worth naming precisely, because it was not carelessness. I reconstructed verdicts from
+the RGBA buffer, where INCLUDED is readable from the mask but EXCLUDED and UNKNOWN are
+distinguishable only where the hatch stripe falls. I **knew** that — there is a comment in the code
+saying so — and I wrote the skip-list as a limitation rather than as a hole. A limitation you
+accept in a correctness check is a hole; the right move was to make the worker report what it
+decided, which took nine lines.
+
+The repair is `mutate_worker.mjs`: nine known-wrong decoders, each of which must be caught, with a
+mutation whose edit matches nothing reported `INERT` rather than banked as a catch. It immediately
+caught three of my own anchors failing against a CRLF working tree. **A check that has never caught
+anything is not evidence — including when the check is mine and the thing it is checking is a test.**
+
+**Nineteenth: the size baseline measured the wrong baseline.** "It costs 9%" compared v2's two
+planes against **v2's own value plane**, which carries a lower bound at every missing cell. v1
+stored a constant there, and a constant compresses far better than a bound. The true figure is
+18.2%, and 31 KB rather than 17 KB. The number was computed correctly; it was a comparison against
+a thing that never existed.
+
+**Twentieth: "the peak" was a property of the four numbers I printed.** I reported thresholds
+10, 15, 25 and 45, observed that 15 was the largest, and wrote that the error "peaks at 15 minutes
+… that is where the most structures sit near a boundary". Sweeping every whole minute the slider
+can produce puts the maximum at **14**, and the explanation about boundaries was never measured at
+all. This is the summary-sentence failure from instances one to eleven, in a new place: a
+superlative over a sample described as a superlative over the range.
+
+**How to apply.** Before claiming a check establishes something, break the thing it checks on
+purpose and confirm it fails — and keep that mutation as a file, not as a thing you did once.
+Before quoting a ratio, write down what the denominator **is**, in bytes or rows, and confirm that
+artifact exists. And never write "peaks at X" from a list of four; either sweep the range or say
+"largest of the four reported".
+
+Twenty instances now.

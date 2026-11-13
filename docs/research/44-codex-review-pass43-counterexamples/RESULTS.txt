@@ -1,0 +1,67 @@
+--- f1_the_page_boots
+{
+  "loadFixtures_returns_the_planes": true,
+  "initWorker_takes_them": true,
+  "caller_passes_them": true
+}
+--- f2_the_harness_catches_wrong_decoders
+{
+  "exit": 0,
+  "summary": "9 of 9 mutations caught",
+  "rotation_caught": true,
+  "no_path_caught": true
+}
+--- f5_the_size_baseline
+{
+  "source_grid_planes": [
+    {
+      "cell_m": 100.0,
+      "v2_deflated": 202406,
+      "true_v1_deflated": 170616,
+      "increase": 0.1863
+    },
+    {
+      "cell_m": 200.0,
+      "v2_deflated": 65040,
+      "true_v1_deflated": 53449,
+      "increase": 0.2169
+    }
+  ]
+}
+--- f7_a_fractional_threshold_is_refused
+{
+  "surface_at_10_5_min": [
+    0,
+    2
+  ],
+  "wire_refused": true,
+  "message": "threshold_min=10.5 is not a whole number of minutes. This format stores whole mi"
+}
+--- f8_a_transposed_build_record_is_refused
+{
+  "refused": true,
+  "message": "the build record says 258x322 and the array is 322x258; refusing to export it under a tran"
+}
+--- f3_the_export_regrid
+{
+  "omitted_by_the_exported_bounds": 12182,
+  "moved": {
+    "10": 10759,
+    "15": 12098,
+    "25": 7926,
+    "45": 3253
+  }
+}
+--- f6_the_peak_is_at_fourteen_minutes
+{
+  "cell100_against_address": {
+    "peak_threshold_min": 14,
+    "peak_moved": 13225,
+    "at_15_min": 12935
+  },
+  "cell200_against_address": {
+    "peak_threshold_min": 14,
+    "peak_moved": 22794,
+    "at_15_min": 22430
+  }
+}

@@ -155,6 +155,16 @@ def outcome_planes(value: np.ndarray, status: np.ndarray, *, threshold_min: int,
     if not np.isin(status, list(STATUS_CODES)).all():
         raise ValueError("the status plane holds a code this decoder does not define")
 
+    # Pass 43 F7: `int()` truncates, so a 10.5-minute threshold decided a 610-second OK cell
+    # as FAIL where `evaluate` passes it, and turned a non-strict bound into an exclusion. The
+    # minute planes simply cannot answer a fractional threshold exactly -- `ceil(x/60) > T` is
+    # equivalent to `x > 60T` only for integer `T` -- so this refuses one rather than silently
+    # manufacturing an exclusion. The slider cannot produce one; a caller outside it could.
+    if float(threshold_min) != int(threshold_min):
+        raise ValueError(
+            f"threshold_min={threshold_min!r} is not a whole number of minutes. This format "
+            "stores whole minutes, and its agreement with status.evaluate holds only at integer "
+            "thresholds; answering a fractional one would mean inventing a verdict.")
     t = int(threshold_min)
     ok = status == OK
     out = np.full(status.shape, np.int8(Outcome.UNKNOWN), dtype=np.int8)

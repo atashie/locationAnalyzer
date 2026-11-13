@@ -75,6 +75,15 @@ def source_transform(build: dict, shape: tuple[int, int]):
     if {"x_min", "y_max", "cell_m"} <= build.keys():
         x_min, y_max, cell_m = build["x_min"], build["y_max"], build["cell_m"]
         crs = build.get("crs", METRO.crs)
+        # Pass 43 F8: this branch used to take the origin on trust. A transposed 83,076-cell
+        # triple passed and would have exported under the wrong footprint -- silently, because a
+        # transform that disagrees with its array moves every cell rather than failing.
+        recorded = (build.get("nrows"), build.get("ncols"))
+        if None not in recorded and tuple(recorded) != tuple(shape):
+            raise SystemExit(
+                f"the build record says {recorded[0]}x{recorded[1]} and the array is "
+                f"{shape[0]}x{shape[1]}; refusing to export it under a transform that does not "
+                "describe it")
     else:
         grid = METRO.grid()
         x_min, y_max, cell_m, crs = grid.x_min, grid.y_max, grid.cell_m, grid.crs
@@ -99,9 +108,25 @@ def deflated(data: bytes) -> int:
     return len(zlib.compress(data, 9))
 
 
+def v1_plane(value: np.ndarray, status: np.ndarray) -> np.ndarray:
+    """The single plane v1 would have written: minutes where OK, `255` everywhere else.
+
+    Pass 43 F5: the first version compared v2's two planes against **v2's own value plane**, which
+    carries a lower bound at every missing cell. v1 stored `NODATA` there, and a constant
+    compresses far better than a bound, so the baseline was too large and the reported overhead
+    too small -- 9% where the true figure is 18%.
+    """
+    return np.where(status == wire.OK, value, 255).astype(np.uint8)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--candidates", action="store_true",
+                    help="also export the rejected 200 m candidate. Pass 43 F4: every manifest "
+                         "entry starts enabled in the page, so shipping the candidate beside the "
+                         "product made the default answer the INTERSECTION of two versions of one "
+                         "criterion, which removed 4,022 passing pixels at the default threshold")
     ap.add_argument("--nrows", type=int, default=514)
     ap.add_argument("--ncols", type=int, default=643)
     ap.add_argument("--out", type=pathlib.Path, default=OUT)
@@ -114,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
     entries = []
     sizes = []
     for stem, label, cell_m in SOURCES:
+        if cell_m != 100.0 and not args.candidates:
+            continue
         if not (LAYERS / f"{stem}.npy").exists():
             print(f"  skipping {stem}: not on disk")
             continue
@@ -152,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
             "deflated_value": deflated(vb), "deflated_status": deflated(sb),
             "deflated_total": deflated(vb) + deflated(sb),
             "v1_raw_bytes": len(vb),
-            "v1_deflated": deflated(vb),
+            "v1_deflated": deflated(v1_plane(v, s).tobytes()),
             "status_counts": {wire.STATUS_CODES[int(c)]: int(n)
                               for c, n in zip(*np.unique(s, return_counts=True))},
         })

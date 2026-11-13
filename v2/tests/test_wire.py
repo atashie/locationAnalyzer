@@ -7,6 +7,7 @@ slider can produce. Everything else here exists to stop that claim being true by
 from __future__ import annotations
 
 import json
+import math
 import pathlib
 
 import numpy as np
@@ -223,3 +224,31 @@ def test_every_unknown_code_is_unknown_at_every_threshold():
                                   np.array([code], dtype=np.uint8),
                                   threshold_min=1, horizon_s=7200.0)
         assert got[0] == int(Outcome.UNKNOWN), code
+
+
+def test_a_fractional_threshold_is_refused_rather_than_truncated():
+    """Pass 43 F7. `ceil(x/60) > T` is equivalent to `x > 60T` only for integer `T`, so the minute
+    planes cannot answer a fractional threshold exactly. Truncating one turned a 610-second cell
+    that passes 10.5 minutes into a failure, and turned a non-strict bound into an exclusion —
+    manufacturing the one direction of error this format must not have."""
+    surf = surface_from([610.0, np.inf], [Reason.OK, Reason.OFF_NETWORK], [610.0, 610.0])
+    value, status = wire.encode_planes(surf)
+    assert list(evaluate(Criterion(label="g", mode="walk", target="grocery", kind="category",
+                                   threshold_s=630.0), surf)) == [int(Outcome.PASS),
+                                                                  int(Outcome.UNKNOWN)]
+    with pytest.raises(ValueError, match="whole number of minutes"):
+        wire.outcome_planes(value, status, threshold_min=10.5, horizon_s=surf.horizon_s)
+    # An integer-valued float is still a whole number of minutes and is accepted.
+    assert len(wire.outcome_planes(value, status, threshold_min=10.0,
+                                   horizon_s=surf.horizon_s)) == 2
+
+
+def test_a_beyond_horizon_cell_carries_the_horizon_as_its_bound():
+    """Which makes the value plane redundant for that code — and therefore a checksum. The
+    decoder compares against the manifest's horizon and never against the stored bound, so if the
+    two disagree the manifest is not describing these planes. `worker.js` refuses that at init."""
+    surf = hand_built()
+    value, status = wire.encode_planes(surf)
+    bh = status == wire.BEYOND_HORIZON
+    assert bh.any()
+    assert (value[bh] == min(int(math.ceil(surf.horizon_s / 60.0)), wire.VALUE_MAX)).all()

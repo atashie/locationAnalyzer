@@ -234,8 +234,18 @@ def main(argv: list[str] | None = None) -> int:
                     help="evaluate only the first N structures, in the population's intrinsic "
                          "order; for a smoke run, never for a published figure")
     ap.add_argument("--no-write-layer", action="store_true")
+    ap.add_argument("--thresholds", type=str, default=None,
+                    help="comma-separated whole minutes, or 'sweep' for 1..60. Codex pass 43 F6: "
+                         "reporting four thresholds and calling the largest of them 'the peak' "
+                         "was a claim about the four, not about the slider's range")
     ap.add_argument("--out", type=Path, default=ARTIFACT)
     args = ap.parse_args(argv)
+
+    thresholds = THRESHOLDS_MIN
+    if args.thresholds == "sweep":
+        thresholds = tuple(range(1, 61))
+    elif args.thresholds:
+        thresholds = tuple(int(x) for x in args.thresholds.split(","))
 
     grids = {c: METRO.grid(c) for c in CANDIDATES}
     published = grids[100.0]
@@ -315,7 +325,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Verdicts, which is what a household is actually handed.
     report["verdicts"] = {}
-    for t_min in THRESHOLDS_MIN:
+    for t_min in thresholds:
         v_addr = verdicts(addr[0], addr[1], addr[2], t_min)[covered]
         row = {}
         for c in CANDIDATES:

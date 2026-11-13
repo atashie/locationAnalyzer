@@ -225,12 +225,12 @@
       `source="${manifest.source || 'unknown'}"`,
     );
 
-    return { manifest, buffers };
+    return { manifest, values, statuses };
   }
 
   // ---- 3. worker ------------------------------------------------------------------------------
 
-  function initWorker(manifest, buffers) {
+  function initWorker(manifest, values, statuses) {
     return new Promise((resolve, reject) => {
       const worker = new Worker('worker.js');
       state.worker = worker;
@@ -679,7 +679,7 @@
 
       const [map] = await Promise.all([
         initMap(versions),
-        initWorker(fixtures.manifest, fixtures.buffers),
+        initWorker(fixtures.manifest, fixtures.values, fixtures.statuses),
       ]);
 
       addMaskSource(map);

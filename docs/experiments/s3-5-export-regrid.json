@@ -1,0 +1,68 @@
+{
+  "what_this_is": "the cost of the EXPORT's own grid, which is a third tiling that S3.1 never compared: a WGS84 raster whose pixels are not aligned with the UTM cells the decision was made on",
+  "structures": 512633,
+  "inside_the_exported_bounds": 500451,
+  "omitted_by_the_exported_bounds": 12182,
+  "exported_shape": [
+    514,
+    643
+  ],
+  "source_shape": [
+    514,
+    643
+  ],
+  "thresholds": {
+    "10": {
+      "compared": 500451,
+      "moved": 10759,
+      "moved_rate": 0.02149860825535367,
+      "transitions": {
+        "PASS->FAIL": 5105,
+        "PASS->UNKNOWN": 16,
+        "FAIL->PASS": 5191,
+        "FAIL->UNKNOWN": 229,
+        "UNKNOWN->PASS": 13,
+        "UNKNOWN->FAIL": 205
+      }
+    },
+    "15": {
+      "compared": 500451,
+      "moved": 12098,
+      "moved_rate": 0.024174194876221647,
+      "transitions": {
+        "PASS->FAIL": 5875,
+        "PASS->UNKNOWN": 26,
+        "FAIL->PASS": 5785,
+        "FAIL->UNKNOWN": 205,
+        "UNKNOWN->PASS": 31,
+        "UNKNOWN->FAIL": 176
+      }
+    },
+    "25": {
+      "compared": 500451,
+      "moved": 7926,
+      "moved_rate": 0.01583771438162777,
+      "transitions": {
+        "PASS->FAIL": 3960,
+        "PASS->UNKNOWN": 41,
+        "FAIL->PASS": 3531,
+        "FAIL->UNKNOWN": 189,
+        "UNKNOWN->PASS": 52,
+        "UNKNOWN->FAIL": 153
+      }
+    },
+    "45": {
+      "compared": 500451,
+      "moved": 3253,
+      "moved_rate": 0.006500136876537364,
+      "transitions": {
+        "PASS->FAIL": 1458,
+        "PASS->UNKNOWN": 81,
+        "FAIL->PASS": 1360,
+        "FAIL->UNKNOWN": 149,
+        "UNKNOWN->PASS": 86,
+        "UNKNOWN->FAIL": 119
+      }
+    }
+  }
+}
