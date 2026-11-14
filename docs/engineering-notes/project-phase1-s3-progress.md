@@ -1,6 +1,6 @@
 ---
 name: project-phase1-s3-progress
-description: "S3 resume point as of 2026-11-14: what is done, what is in flight, what decisions the owner owes, and the constraints that live nowhere else"
+description: "S3 resume point as of 2026-11-14: what is done, the ordered queue of what comes next, what decisions the owner owes, and the constraints that live nowhere else"
 metadata:
   type: project
 ---
@@ -195,9 +195,74 @@ And the repeat that will not go away: **a measurement's output must be in the un
 question** — mask agreement is not value agreement, and a share is not a share until its
 denominator is named.
 
-## Not started, deliberately
+## The queue after the card, ordered by product risk retired
 
-* **Step 7's geocoding half** — whether a household's address resolves to the right cell.
-* **S3 4b and 4c** — T3 as a development comparator, about 3+1 days.
-* **The audit sheet's E3 fields** — the harness should *refuse* to record a journey without
-  `start_lon`, `start_lat` and `destination_used`. Now cheap, because the destination is persisted.
+**Laid out 2026-11-14. Nothing below is started.** The order is §0's rule applied to what is left,
+not the order these became known. Each item says what risk it retires, because that is what
+justifies its position.
+
+**Running in parallel, and only the owner can do it: one repeat walk of `band15min_pass-03`**, from
+a recorded door inside the cell, to the selected destination, timed, with the approach noted. The
+E3 record holds no admissible observation, so this is still the cheapest unblock in the project.
+
+### 0. Make the walked record admissible by construction — first, because it is small and the owner's track depends on it
+
+The sheet is not the gap. `triangle-grocery-walk-chapelhill.csv` **already carries** `start_lon`,
+`start_lat`, `destination_used`, `destination_qualifies`, `destination_open`, `route_usable` and
+`walked_seconds`. What is missing is anything that **refuses a row that leaves them blank**, and
+there is no ingestion path from the sheet to the scorer at all — only
+`audit_recommendations.py` and `compare_rebuild_to_stored.py` read those columns.
+
+And the scorer cannot represent the problem. `Journey` in `locfinder/measure/e3.py` has three
+fields — `label`, `reported_s`, `observed_s` — and therefore **two** states: `observed_s is None`
+means not walked, anything else means walked and scorable. Pass 47's verdict on the one journey was
+a *third* thing, "walked but not admissible", and it was reached by a human reading the audit README
+rather than by the instrument. **A binary where a third state is load-bearing** — the same shape as
+the three-outcome algebra and as ledger 32.
+
+So: an admissibility predicate on the record, an ingestion path that applies it, and a refusal
+rather than a silent score. Then the owner's next walk is scorable the moment it is recorded.
+
+### 1. The card
+
+`docs/plans/2026-11-14-per-criterion-card-plan.md`, six steps. Retires the **interface** gap on all
+three owed disclosures at once, which no other item touches.
+
+### 2. Codex pass 51
+
+On the card and on the pass 50 repairs together. The standing cadence requires a pass once results
+land, and the repairs are owed one: passes 49 and 50 each found more in the previous pass's repairs
+than in the work being repaired.
+
+### 3. Where the published raster actually lands in the browser
+
+MapLibre places the raster in Web Mercator while the published rows are linear in latitude, and
+**nothing has measured the result**. If a household reads a cell that is not the cell the answer was
+computed for, every disclosure above it is attached to the wrong place — which makes this a
+wrong-answer risk in the thing actually shown, not a defect in unseen code. Cheap, and it needs no
+new data: compare the cell the page resolves at known coordinates against
+`GridSpec.cell_for_lonlat`, at the footprint corners and far from the origin, because
+[[feedback-a-relative-invariant-cannot-see-an-absence]] applies here too.
+
+### 4. Phone decode latency
+
+Needs a device, so the owner's. Still listed as open on step 6.
+
+### 5. Step 7's geocoding half
+
+Whether a household's address resolves to the right cell. Not started. The destination-screening
+half ran on 2026-11-13.
+
+### 6. Step 4's remaining phases — the long one
+
+The T0 re-run as a labelled refactor-then-adopt, then **4a.2** (a certified cost comparison as a
+diagnostic), **4b.0** (the search-semantics spike, because §2.4's whole-journey tie rule is not
+implementable by a scalar-label search), **4b** (T3 as a development comparator) and **4c** (T0
+stage 3). 4c is what finally makes verdict impact reachable, and it has been explicitly unknown
+since step 3.
+
+### Still blocked on an owner decision, not on work
+
+The grocery definition changes every published number, so items that depend on destination
+eligibility cannot be closed before it. The Apache question blocks publication off this machine and
+nothing internal.
