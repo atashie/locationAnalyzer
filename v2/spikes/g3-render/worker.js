@@ -674,7 +674,6 @@ function handleExplainAt(msg) {
   }
 
   const p = row * ncols + col;
-  const included = verdict[p] === V_INCLUDED;
   const criteria = [];
   // `lastThresholds` is per ENABLED layer in enabled order, so walk the layers and advance a
   // separate index only for the ones the compute used. Indexing it by `k` would silently read
@@ -688,11 +687,21 @@ function handleExplainAt(msg) {
     const raw = layers[k][p];
     const bounded = BOUNDED_STATUSES.indexOf(status) !== -1;
     const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);
-    // A destination only where the region includes the cell and this layer published a time for
-    // it. Outside the region the card must not render a shop; that is `destinationAt`'s rule and
-    // this handler does not get a second one.
+    // A destination wherever THIS criterion published a time, whatever the combined verdict.
+    //
+    // **This used to require the cell to be included, and that was a defect** -- pass 51 finding
+    // B4. `destinationAt` declines outside the region because it answers about the cell's
+    // combined answer, where a destination is not applicable. This handler answers per criterion,
+    // and a criterion that passed did measure a journey to a named shop. Withholding it made the
+    // card print "this criterion does not say which destination the time was measured to" about a
+    // layer whose plane and side table both name one -- a false claim of non-disclosure, which is
+    // the exact confusion the optional planes exist to prevent, produced by the code that exists
+    // to prevent it.
+    //
+    // So: disclose per criterion. The combined verdict is reported beside it and says whether the
+    // place is included; it is not a reason to suppress what a criterion measured.
     let named = null;
-    if (included && destinations[k] && status === S_OK) {
+    if (destinations[k] && status === S_OK) {
       const d = destinations[k][p];
       if (d !== DEST_NONE) {
         const entry = destTables[k].destinations[d];

@@ -42,6 +42,26 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol
 
+#: Mean Earth radius, for the arrival-coordinate check below.
+EARTH_RADIUS_M = 6371008.8
+
+#: How far the recorded arrival may be from the destination the layer selected, in metres.
+#:
+#: **A name is not an identity**, which is pass 51 finding A2. The committed metro sheet holds two
+#: different shops both called `Food Lion`, 11 km apart, and one journey's own
+#: `predicted_destination_alternatives` is *also* `Food Lion` — a second shop of that name on the
+#: same road node. So a string comparison accepts a walk to the wrong branch and cannot tell the
+#: right branch from its namesake.
+#:
+#: 300 m is the acquisition cap from a place to its road node, so every place sharing the selected
+#: node is within 300 m of the node and therefore within 600 m of any other such place. This
+#: tolerance is measured from the **selected place's** coordinate and admits a shared-node
+#: alternative comfortably while refusing a different branch of the same chain.
+DESTINATION_IDENTITY_M = 600.0
+
+#: The separator `recover_audit_destinations.py` writes between alternative place names.
+ALTERNATIVES_SEPARATOR = ";"
+
 #: `docs/s3-decision-report.md`: E3's `reported_s` is **what the product said**, which is the
 #: published whole minute, not the model's float. For `band15min_pass-03` that is 840 s and not
 #: 810.8185424804688 — a distinction that moves the binding boundary from 16.9 to 17.5 minutes, so
@@ -82,6 +102,16 @@ def reported_seconds(encoded_minutes: float | int | None) -> float | None:
     return m * SECONDS_PER_MINUTE
 
 
+def metres_between(lon_a, lat_a, lon_b, lat_b) -> float:
+    """Great-circle metres. Exact enough for a few hundred metres on a 100 m grid."""
+    phi_a, phi_b = math.radians(float(lat_a)), math.radians(float(lat_b))
+    d_phi = phi_b - phi_a
+    d_lam = math.radians(float(lon_b) - float(lon_a))
+    h = (math.sin(d_phi / 2) ** 2
+         + math.cos(phi_a) * math.cos(phi_b) * math.sin(d_lam / 2) ** 2)
+    return 2 * EARTH_RADIUS_M * math.asin(min(1.0, math.sqrt(h)))
+
+
 @dataclass(frozen=True)
 class WalkedRecord:
     """One row of a walked-audit sheet, as the sheet holds it.
@@ -96,22 +126,63 @@ class WalkedRecord:
     col: int
     #: What the product published for this cell, in seconds. `None` = it published nothing.
     reported_s: float | None = None
-    #: The walk. `None` = not walked.
+    #: The walk's duration. `None` = no usable duration was recorded, which is **not** the same as
+    #: "no walk happened" — see `evidence_of_a_walk`.
     walked_seconds: float | None = None
     #: `True` = timed, `False` = recorded as not timed, `None` = the record does not say.
     duration_timed: bool | None = None
     start_lon: float | None = None
     start_lat: float | None = None
     destination_used: str | None = None
+    #: Where the walk actually ended. Required, because a name is not an identity (A2).
+    destination_used_lon: float | None = None
+    destination_used_lat: float | None = None
     predicted_destination: str | None = None
-    #: Free text: which way the walk actually went. Required only to be **on the record**, because
-    #: no predicate can check prose. `docs/s3-decision-report.md` asks for "whether the private
-    #: approach was used or avoided".
+    #: The selected place's own coordinate, from the sheet's `predicted_destination_lat`/`_lon`.
+    predicted_destination_lon: float | None = None
+    predicted_destination_lat: float | None = None
+    #: Other places on the selected node. The audit README explicitly permits walking to any of
+    #: them, so refusing one by name was a defect in the other direction (A2).
+    destination_alternatives: tuple[str, ...] = ()
+    #: Free text: which way the walk actually went. Detail for a reader, not something a predicate
+    #: can check — which is why `route_identified` exists beside it.
     route_followed: str | None = None
+    #: `True` = the walker can say which way they went, `False` = they cannot, `None` = the record
+    #: does not say. Pass 51 A3: "I cannot remember whether I used the private track or avoided
+    #: it" is non-blank prose that admits the approach is unresolved, and a non-blank check
+    #: accepted it.
+    route_identified: bool | None = None
+    #: Columns that record an observation without being the duration. They decide whether a walk
+    #: HAPPENED, which is a separate question from whether it can be scored.
+    walked_date: str | None = None
+    destination_qualifies: str | None = None
+    destination_open: str | None = None
+    route_usable: str | None = None
+    witness_within_10min: str | None = None
+    witness_within_15min: str | None = None
+
+    #: Every field whose presence is evidence that somebody walked this journey.
+    EVIDENCE_FIELDS = ("walked_seconds", "walked_date", "start_lon", "start_lat",
+                       "destination_used", "destination_used_lon", "destination_used_lat",
+                       "destination_qualifies", "destination_open", "route_usable",
+                       "witness_within_10min", "witness_within_15min", "route_followed")
+
+    @property
+    def evidence_of_a_walk(self) -> tuple[str, ...]:
+        """Which columns record that somebody actually walked this journey.
+
+        **`walked_seconds` is not the only one, and treating it as the only one lost a walk.**
+        Pass 51 finding A1: a row dated, with a door, a destination and a route recorded, but no
+        usable duration, was reported as "planned, not walked" — `walked=0, planned=1`, nothing
+        inadmissible, `no_admissible_observation` false. The walk vanished from the record of what
+        could not be scored, which is the one thing this module exists to prevent.
+        """
+        return tuple(name for name in self.EVIDENCE_FIELDS
+                     if not _blank(getattr(self, name, None)))
 
     @property
     def walked(self) -> bool:
-        return self.walked_seconds is not None
+        return bool(self.evidence_of_a_walk)
 
 
 @dataclass(frozen=True)
@@ -150,10 +221,16 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
 
     | what E3 needs | checked here as |
     |---|---|
+    | that a walk happened at all | any of `EVIDENCE_FIELDS` is filled in |
     | the door the walk started from, inside the cell | `start_lon`/`start_lat` place the door in cell `(row, col)` |
-    | the destination actually reached | `destination_used` names the destination the product selected |
-    | whether the private approach was used or avoided | `route_followed` is on the record |
-    | a timed duration | `duration_timed` is `True` |
+    | the destination actually reached | `destination_used` is the selected place or one of its node's others, **and** `destination_used_lon`/`_lat` is within `DESTINATION_IDENTITY_M` of the selected place |
+    | whether the private approach was used or avoided | `route_followed` is on the record **and** `route_identified` is `True` |
+    | a timed duration | `walked_seconds` is present and `duration_timed` is `True` |
+
+    Rows two to four are `docs/s3-decision-report.md`'s table. Row one and the second halves of
+    rows three and four are pass 51's findings A1, A2 and A3: a walk with no duration disappeared
+    into "planned", a name accepted the wrong branch of a chain, and prose admitting the approach
+    was unresolved satisfied a non-blank test.
 
     **Every reason is collected, not the first.** A record missing three things should say so once,
     rather than being fixed and refused three times.
@@ -166,6 +243,14 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
     if record.reported_s is None:
         reasons.append(
             "the product published no time for this cell, so there is nothing to compare"
+        )
+
+    # 0. a walk happened, and its duration is on the record (pass 51 A1)
+    if record.walked_seconds is None:
+        reasons.append(
+            "a walk is recorded ("
+            + ", ".join(record.evidence_of_a_walk)
+            + ") and no duration is, so there is nothing to compare it with"
         )
 
     # 1. the door, inside the cell the published answer is for
@@ -195,19 +280,66 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
                 )
 
     # 2. the destination actually reached, and that it is ours
+    #
+    # **A name is not an identity**, which is pass 51 A2 and is why this takes a coordinate. The
+    # permitted set is the selected place plus the other places on its node, because the audit
+    # README explicitly says to walk to whichever of them you would use — refusing a named
+    # alternative was the same defect pointing the other way.
+    permitted = {str(record.predicted_destination).strip()} if not _blank(
+        record.predicted_destination) else set()
+    permitted |= {str(a).strip() for a in record.destination_alternatives if not _blank(a)}
     if _blank(record.destination_used):
         reasons.append("the destination reached is not recorded")
-    elif _blank(record.predicted_destination):
+    elif not permitted:
         reasons.append("the record does not say which destination the product selected")
-    elif str(record.destination_used).strip() != str(record.predicted_destination).strip():
+    elif str(record.destination_used).strip() not in permitted:
         reasons.append(
             f"walked to {str(record.destination_used).strip()!r}; the product routed to "
-            f"{str(record.predicted_destination).strip()!r}, so this is a different journey"
+            f"{str(record.predicted_destination).strip()!r}"
+            + (f" (or one of {sorted(permitted - {str(record.predicted_destination).strip()})})"
+               if len(permitted) > 1 else "")
+            + ", so this is a different journey"
         )
 
+    if _blank(record.destination_used_lon) or _blank(record.destination_used_lat):
+        reasons.append(
+            "where the walk ended is not recorded, so the shop reached is identified by name "
+            "only and a name does not identify a shop"
+        )
+    elif _blank(record.predicted_destination_lon) or _blank(record.predicted_destination_lat):
+        reasons.append(
+            "the record does not say where the selected destination is, so the arrival cannot be "
+            "checked against it"
+        )
+    else:
+        try:
+            gap = metres_between(record.destination_used_lon, record.destination_used_lat,
+                                 record.predicted_destination_lon,
+                                 record.predicted_destination_lat)
+        except (ValueError, TypeError) as exc:
+            reasons.append(f"the arrival coordinate is not a usable coordinate: {exc}")
+        else:
+            if gap > DESTINATION_IDENTITY_M:
+                reasons.append(
+                    f"the walk ended {gap:.0f} m from the destination the layer selected, past "
+                    f"the {DESTINATION_IDENTITY_M:.0f} m a place on the selected node can be, so "
+                    "this is a different shop whatever it is called"
+                )
+
     # 3. which way the walk went
+    #
+    # `route_followed` is prose and carries the detail; `route_identified` is what a predicate can
+    # check. Pass 51 A3: "I cannot remember whether I used the private track or avoided it" is
+    # non-blank, admits the approach is unresolved, and satisfied a non-blank test.
     if _blank(record.route_followed):
         reasons.append("the route walked is not on the record")
+    if record.route_identified is None:
+        reasons.append("the record does not say whether the route walked could be identified")
+    elif not record.route_identified:
+        reasons.append(
+            "the route walked is recorded as not identifiable, so whether the journey used the "
+            "approach the layer routed through is unresolved"
+        )
 
     # 4. a timed duration
     if record.duration_timed is None:

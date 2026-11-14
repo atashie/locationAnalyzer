@@ -38,7 +38,11 @@ V2 = Path(__file__).resolve().parents[1]
 if str(V2) not in sys.path:
     sys.path.insert(0, str(V2))
 
-from locfinder.measure.admissible import WalkedRecord, reported_seconds  # noqa: E402
+from locfinder.measure.admissible import (  # noqa: E402
+    ALTERNATIVES_SEPARATOR,
+    WalkedRecord,
+    reported_seconds,
+)
 from locfinder.measure.e3 import (  # noqa: E402
     ABSOLUTE_LIMIT_S,
     MEDIAN_SHARE_LIMIT,
@@ -53,6 +57,15 @@ REQUIRED = (
     "journey_id", "row", "col", "encoded_minutes",
     "start_lon", "start_lat", "destination_used", "predicted_destination",
     "route_followed", "walked_seconds", "duration_timed",
+    # Added after Codex pass 51. `walked_date` and the four observation columns say a walk
+    # HAPPENED even when no duration was recorded (A1); the arrival coordinate and the
+    # alternatives identify the shop rather than labelling it (A2); `route_identified` is the
+    # structured half of the approach question, since prose cannot be checked (A3).
+    "walked_date", "destination_qualifies", "destination_open", "route_usable",
+    "witness_within_10min", "witness_within_15min",
+    "destination_used_lon", "destination_used_lat",
+    "predicted_destination_lat", "predicted_destination_lon",
+    "predicted_destination_alternatives", "route_identified",
 )
 
 #: `yes`/`no` as the sheet spells them. Anything else is **not** read as a no: an unrecognised value
@@ -79,6 +92,19 @@ def blank_to_none(value: str | None) -> str | None:
     return text or None
 
 
+def alternatives(value: str | None) -> tuple[str, ...]:
+    """The other places on the selected node, as `recover_audit_destinations.py` joins them.
+
+    It writes `"; ".join(others)`, so split on the semicolon and strip. An empty cell is an empty
+    tuple, which is "this node carries no other place" — the recovery fills the column for every
+    row that names a destination.
+    """
+    text = (value or "").strip()
+    if not text:
+        return ()
+    return tuple(part.strip() for part in text.split(ALTERNATIVES_SEPARATOR) if part.strip())
+
+
 def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
     minutes = blank_to_none(row.get("encoded_minutes"))
     walked = blank_to_none(row.get("walked_seconds"))
@@ -92,8 +118,22 @@ def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
         start_lon=blank_to_none(row.get("start_lon")),
         start_lat=blank_to_none(row.get("start_lat")),
         destination_used=blank_to_none(row.get("destination_used")),
+        destination_used_lon=blank_to_none(row.get("destination_used_lon")),
+        destination_used_lat=blank_to_none(row.get("destination_used_lat")),
         predicted_destination=blank_to_none(row.get("predicted_destination")),
+        predicted_destination_lon=blank_to_none(row.get("predicted_destination_lon")),
+        predicted_destination_lat=blank_to_none(row.get("predicted_destination_lat")),
+        destination_alternatives=alternatives(row.get("predicted_destination_alternatives")),
         route_followed=blank_to_none(row.get("route_followed")),
+        route_identified=tri_state(row.get("route_identified")),
+        # Evidence that a walk happened, carried so a walk with no duration cannot be filed as
+        # "planned, not walked" (pass 51 A1).
+        walked_date=blank_to_none(row.get("walked_date")),
+        destination_qualifies=blank_to_none(row.get("destination_qualifies")),
+        destination_open=blank_to_none(row.get("destination_open")),
+        route_usable=blank_to_none(row.get("route_usable")),
+        witness_within_10min=blank_to_none(row.get("witness_within_10min")),
+        witness_within_15min=blank_to_none(row.get("witness_within_15min")),
     )
 
 

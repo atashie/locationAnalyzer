@@ -806,4 +806,88 @@ where the question was about journey *values*. Both are the twenty-eighth instan
 output was not in the units of the question. **Mask agreement is not value agreement, and a share
 is not a share until its denominator is named.**
 
-Thirty-six instances now.
+Thirty-six instances at that point.
+
+## Pass 51, 2026-11-14 — the card, and three more
+
+Pass 51 reviewed the per-criterion card and the walked-record refusal. **Four of the six claims I
+put up for attack failed or were narrowed**, and both of the two suspicions I asked it to settle
+came back as defects rather than questions. Three new instances, and two of the old ones recurred
+in the code written for them.
+
+### Thirty-seventh: a check on the answer is not a check on the explanation of the answer
+
+I built a total check — the per-layer outcomes `explainAt` reports must fold to the verdict
+`compute` wrote, at every cell of every fixture, 720,165 cells — and then recorded Python's own
+per-layer outcomes beside it after finding one blind spot myself. I thought that settled it.
+
+**Five separate corruptions of `handleExplainAt` passed all 79 conformance checks and all 16 card
+checks**: a minute of 42 for every published time, an inverted route flag, a forced `INCLUDED`
+headline, every place name after the first replaced with "Fabricated Shop", and a horizon of 1.
+
+The reason is one sentence. Every assertion I wrote bound the **outcome**: that it folded
+correctly, that it matched Python, that its name matched its code. The explanation *beside* the
+outcome — the minute, the flag, the headline, the destination record, the horizon — was checked
+only for **shape**: that a flag was 0 or 1, that a value was not 255. An inverted flag is 0 or 1.
+A fabricated minute is not 255.
+
+> **Binding the conclusion does not bind the evidence reported with it.** Every field a reader is
+> shown needs comparing with the byte it claims to report, not with a predicate it happens to
+> satisfy.
+
+### Thirty-eighth: one field cannot answer two questions
+
+`WalkedRecord.walked` was `walked_seconds is not None`. That one expression was asked to mean both
+*somebody walked this journey* and *we have a duration to compare*. When they diverged — a row
+dated, with a door, a destination and a route recorded, and no usable duration — the first meaning
+vanished without trace: `walked=0, planned=1`, nothing inadmissible, `no_admissible_observation`
+false. **The walk disappeared from the record of what could not be scored**, which is the one
+thing the module exists to prevent, and it disappeared through the convenience property rather
+than through any rule.
+
+This is the same shape as the three-state problem the module was written to fix, one level down. I
+replaced a two-state scorer with a three-state predicate and then put a two-state property inside
+it.
+
+### Thirty-ninth: a rule borrowed from a different question changes meaning on arrival
+
+`destinationAt` names no destination outside the region, because a destination beside an excluded
+cell is not applicable to the question *that message answers* — the cell's combined answer. I
+reused the rule in `explainAt` without re-deriving it, and recorded the choice in the plan as
+deliberate.
+
+`explainAt` answers **per criterion**. So at a cell where the walk criterion passes with a named
+grocery and the drive criterion fails, the card printed *"this criterion does not say which
+destination the time was measured to"* about a layer whose plane and side table both name one.
+**A false claim of non-disclosure, produced by the optionality discipline that exists to prevent
+exactly that confusion.** The policy was defensible where it came from and became a lie where it
+was copied to.
+
+### And two recurrences, both inside the checks written for them
+
+**Instance 32, allocation is not evaluation — in the digest buffer I added for the real-layer
+window.** The observation buffer was `new Int8Array(n)`, and zero is the `PASS` code, so a cell
+that was never explained already held a plausible answer. Codex skipped real-window cell 5166, an
+`OK` one-minute PASS, and all 79 checks still passed. It is filled with an impossible code now and
+the absence of that code is asserted. I wrote this hole into the check whose whole job is to prove
+a plane was read.
+
+**Instance 30, a control that can pass on the wrong cause — in my own new mutation.** The mutation
+for `explainAt`'s lifecycle guard anchored on `if (!state.computed) {` plus `notComputed: true,`,
+text that `destinationAt` also carries earlier in the file. `String.replace` takes the first
+match, so it mutated `destinationAt`, failed the destination check, and reported **CAUGHT** while
+the guard under test was never touched. I noticed only because the FAIL line named the wrong
+check. The pre-existing `destinationAt` mutation used a bare positional anchor for the same text,
+so it would have retargeted silently the next time a handler was added above it. **A positional
+anchor that can move is how a mutation starts testing something else.**
+
+### And a narrowing worth keeping
+
+"At least 11 minutes" was an overstatement, not a rounding detail. The value byte holds
+`ceil(bound_seconds / 60)`, so a byte of 11 means the bound lies in `(600, 660]` seconds — and a
+journey of 630 seconds is compatible with that evidence while taking **less** than 11 minutes.
+What the byte supports is "more than 10 minutes". The ceiling was chosen so the encoded verdict
+matches the float verdict at integer thresholds; it was never a literal bound in minutes, and
+reading it as one claimed more than the data.
+
+Thirty-nine instances now.

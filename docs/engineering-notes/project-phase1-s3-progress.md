@@ -169,7 +169,11 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **36 instances**. It is the most useful document
+[[feedback-verify-the-shape-of-the-risk]] now holds **39 instances**. The three from pass 51: a
+check on the answer is not a check on the explanation of the answer; one field cannot answer two
+questions; and a rule borrowed from a different question changes meaning on arrival. Plus two
+recurrences **inside the checks written for them** — instance 32 in the digest buffer, instance 30
+in a mutation anchor. It is the most useful document
 in the repository for avoiding repeats. The ones currently live:
 
 * **29** — a fixture is a model of the artifact, and passing on the model does not establish that
@@ -245,16 +249,87 @@ One defect found while doing it: `GridSpec.cell_for_lonlat` **raises** on a non-
 unprojectable coordinate, by design, so one mistyped cell in a hand-filled sheet would have taken
 down the ingestion of every other row. Refused per row now, with its own reason.
 
-### 1. The card
+### 1. The card — **DONE 2026-11-14, all six steps including the Codex pass**
 
-`docs/plans/2026-11-14-per-criterion-card-plan.md`, six steps. Retires the **interface** gap on all
-three owed disclosures at once, which no other item touches.
+`docs/plans/2026-11-14-per-criterion-card-plan.md` carries what was built and what is still not
+verified. **The interface gap on all three owed disclosures is closed in logic.** It is not closed
+in anything anyone has looked at: no browser was reachable from the session that built it.
 
-### 2. Codex pass 51
+`explainAt(row, col)` reports, per enabled layer, the outcome, the status as code and name, the
+minute or `null`, whether that minute is a lower bound, the threshold, the horizon, the route flag
+or `null`, and the destination set. It answers for excluded and unknown cells — why a cell is
+excluded is the question — and it recomputes rather than storing a plane, because a stored plane
+is a second thing that can drift from the verdict it explains. The handler costs 0.0002 ms median
+on the shipped bundle, so recomputing is settled by measurement.
 
-On the card and on the pass 50 repairs together. The standing cadence requires a pass once results
-land, and the repairs are owed one: passes 49 and 50 each found more in the previous pass's repairs
-than in the work being repaired.
+The words live in `card.js` with no DOM, and so does the request lifecycle, because **both of the
+card's presentation defects were in plumbing that could not be tested from a browser-less
+session**. `card_selftest.mjs` drives both: 27 checks, including real worker replies from the
+two-layer fixtures and 40,000 from the shipped bundle.
+
+**Guards: 79 browser conformance checks, 27 card checks, 60 of 60 worker mutations and 21 of 21
+card mutations caught, 0 inert.**
+
+### 2. Codex pass 51 — **INTEGRATED 2026-11-14. Twelve findings, three High.**
+
+Report at `docs/research/52-codex-review-pass51-card/REPORT.md`, prompt at
+`docs/research/52-codex-review-pass51-prompt.md`. **Four of the six claims the prompt put up failed
+or were narrowed, and both suspicions it was asked to settle came back as defects.** Every finding
+was reproduced before being fixed.
+
+The three High:
+
+* **Outcomes do not authenticate the explanation beside them** (B2). The fold check and the
+  recorded per-layer outcomes bound the *outcome*. Everything reported with it was checked for
+  **shape** only — a flag being 0 or 1, a value not being 255 — so five corruptions each passed
+  all 79 conformance checks and all 16 card checks: a minute of 42, an inverted route flag, a
+  forced INCLUDED headline, invented place names, a horizon of 1. Every field is now compared with
+  the fixture byte it reports, against planes read separately from the ones the worker is handed.
+  All five are kept as controls.
+* **A documented walk with no duration vanished into "planned, not walked"** (A1).
+  `WalkedRecord.walked` was `walked_seconds is not None`, one expression asked to mean both *a
+  walk happened* and *we have its duration*. A row dated, with a door, a destination and a route
+  recorded, and no usable duration, returned `walked=0, planned=1`, nothing inadmissible. Nine
+  observation columns are evidence of a walk now, and a walk with no duration is refused with the
+  evidence named.
+* **The card kept an obsolete answer beside a recomputed raster, indefinitely** (B1). Nothing
+  invalidated it when the criteria changed, and the reply check looked only at `reqId`. A cell
+  shown PASS at a 15-minute limit kept saying PASS, "your limit 15 min", after the limit moved to
+  5 and the raster excluded it. Freshness has three dimensions — request, pointer generation
+  (B5), and which compute the screen shows — and all three are checked now.
+
+And the mediums worth carrying forward:
+
+* **A name is not an identity** (A2). The metro sheet holds two different `Food Lion`s 11 km
+  apart, and one journey's own alternatives list is *also* `Food Lion`. The sheet gained an
+  arrival coordinate; the permitted set is now the selected place plus the others on its node,
+  which also stops a **permitted** alternative being refused.
+* **Prose cannot be checked** (A3). "I cannot remember whether I used the private track or avoided
+  it" is non-blank and satisfied a non-blank test, so `route_identified` is the structured half.
+* **"At least 11 min" overstated a rounded-up bound** (B3). The byte is `ceil(bound/60)`, so a
+  byte of 11 means the bound is in `(600, 660]` s and a 630-second journey is compatible with it
+  while taking less than 11 minutes. The card says "more than 10 min".
+* **Suppression masqueraded as non-disclosure** (B4). `destinationAt`'s rule, copied into
+  `explainAt` without re-deriving it, made the card say a layer "does not say which destination"
+  about a layer whose plane names one. Destinations are disclosed per criterion now, whatever the
+  combined verdict.
+* **There was no multi-criterion rendering test at all** (B6) — not even hand-built, so
+  `criteria.slice(0, 1)` passed all 16 checks. There are now three, one driving real worker
+  replies from the two-layer fixtures.
+* **The 0.366-row Mercator figure is the idealised one** (B7). MapLibre also quantises corner
+  positions; Codex's reading of the pinned v5.24.0 source puts the combined maximum at about 0.388
+  rows (~37.8 m) plus ~0.023 columns. Recorded as its figure, not reproduced here.
+* **The benchmark did not support its conclusion** (B8). It establishes that the handler is not
+  the cost, which settles the caching question; it does not establish an end-to-end pointer-move
+  budget, and a whole-raster compute is the wrong denominator for one.
+* **The digest buffer was zero-filled and zero is the PASS code** (B9), so a cell never explained
+  already held a plausible answer — Codex skipped real-window cell 5166 and all 79 checks passed.
+  Ledger instance 32, inside the check written to prove a plane was read.
+
+**Two of my own guards confirmed on the wrong cause.** One new mutation anchored on text
+`destinationAt` also carries, so it mutated the wrong handler and reported CAUGHT while the guard
+under test was never touched; the pre-existing one used a bare positional anchor for the same text
+and would have retargeted silently the next time a handler was added above it.
 
 ### 3. Where the published raster actually lands in the browser
 

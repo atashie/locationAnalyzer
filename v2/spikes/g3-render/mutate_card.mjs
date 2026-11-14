@@ -35,11 +35,11 @@ const MUTATIONS = [
       '} else if (false) {'),
   },
   {
-    // A lower bound printed as a measurement.
+    // A lower bound printed as a measurement. Re-anchored after pass 51 B3 split `minutesText`
+    // into three branches; it was reported INERT on the first run after that change.
     name: 'a lower bound is printed as a measured time',
-    apply: (s) => s.replace(
-      'return crit.valueIsLowerBound ? `at least ${crit.value} min` : `${crit.value} min`;',
-      'return `${crit.value} min`;'),
+    apply: (s) => s.replace('    if (!crit.valueIsLowerBound) return `${crit.value} min`;',
+      '    return `${crit.value} min`;'),
   },
   {
     name: 'the card picks one place from a node that carries several',
@@ -90,6 +90,67 @@ const MUTATIONS = [
     apply: (s) => s.replace('if (!(lon >= W && lon < E && lat > S && lat <= N)) return null;',
       'if (!(lon > W && lon <= E && lat >= S && lat < N)) return null;'),
   },
+  // ------------------------------------------------------------------ Codex pass 51
+  {
+    // B6. This passed all sixteen checks, because before pass 51 there was no multi-criterion
+    // rendering test at all -- not even a hand-built one.
+    name: 'the card renders only the first criterion',
+    apply: (s) => s.replace('for (const crit of msg.criteria) {',
+      'for (const crit of msg.criteria.slice(0, 1)) {'),
+  },
+  {
+    // B3. The value byte is ceil(bound / 60), so "at least 11 min" excludes a 630-second journey
+    // the evidence allows. The honest statement is "more than 10 min".
+    name: 'a rounded-up bound is reported as "at least" that many minutes',
+    apply: (s) => s.replace("    return `more than ${crit.value - 1} min`;",
+      '    return `at least ${crit.value} min`;'),
+  },
+  {
+    name: 'a zero bound becomes "more than -1 min"',
+    apply: (s) => s.replace("    if (crit.value <= 0) return 'no lower bound published';", ''),
+  },
+  // ------------------------------------------------- the request lifecycle (pass 51 B1 and B5)
+  {
+    // B1 restored: without the seq check, an explanation from the previous criteria renders over
+    // the new raster.
+    name: 'a reply is rendered without checking which compute it describes',
+    apply: (s) => s.replace(
+      '          && (msg.seq === undefined || msg.seq === s.displayedSeq);', ';'),
+  },
+  {
+    // B5 restored: without the generation check, a late reply reinstates the old cell's card
+    // after the pointer has left the raster.
+    name: 'a reply is rendered without checking the pointer is still on the data',
+    apply: (s) => s.replace('          && s.sentGen === s.pointerGen', ''),
+  },
+  {
+    name: 'a compute in flight leaves the previous one marked as displayed',
+    apply: (s) => s.replace(/      computeStarted\(\) \{(\r?\n)        s\.displayedSeq = null;/,
+      '      computeStarted() {$1        // left displayed'),
+  },
+  {
+    name: 'an older compute claims the screen after a newer one',
+    apply: (s) => s.replace('        if (seq !== newestSeq) return null;', ''),
+  },
+  {
+    name: 'the inspected cell is not re-asked when the new raster paints',
+    apply: (s) => s.replace('        return sendNow(s.inspected.row, s.inspected.col);',
+      '        return null;'),
+  },
+  {
+    name: 'leaving the data does not invalidate what is in flight',
+    apply: (s) => s.replace(/      pointerLeft\(\) \{(\r?\n)        s\.pointerGen\+\+;/,
+      '      pointerLeft() {$1        // generation not bumped'),
+  },
+  // NOT LISTED, deliberately: the generation check on the QUEUED position in `reply`.
+  //
+  // `pointerLeft` already sets `s.queued = null`, and that is the only way a generation can
+  // change, so by the time `reply` looks at the queue it is empty whenever the generation has
+  // moved. A mutation removing `next.gen === s.pointerGen` therefore SURVIVES every check, which
+  // it did on the first run. The comparison stays as defence in depth should a future path ever
+  // queue a position without clearing it, and it is recorded here as unguarded rather than left
+  // to look like coverage. Same decision, and the same reasoning, as `state.lastInCount` in
+  // `mutate_worker.mjs`.
   {
     name: 'the outside and not-yet-computed states are collapsed into one sentence',
     apply: (s) => s.replace("    if (msg.notComputed) return '<em>Nothing has been computed yet.</em>';",

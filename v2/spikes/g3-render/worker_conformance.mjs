@@ -30,6 +30,9 @@ const V_INCLUDED = 0, V_EXCLUDED = 1, V_UNKNOWN = 2;
 const STATUS_NAMES = ['OK', 'OFF_NETWORK', 'BEYOND_HORIZON', 'NO_PATH', 'LAYER_UNKNOWN',
   'OUTSIDE', 'UNKNOWN_CAUSE'];
 const OUTCOME_NAMES = ['PASS', 'FAIL', 'UNKNOWN'];
+const VERDICT_NAMES = ['INCLUDED', 'EXCLUDED', 'UNKNOWN'];
+const DEST_NONE = 65535;
+const VALUE_NONE = 255;
 
 // worker.js's own palette, recomputed here rather than imported, so a change to one side has to
 // be made deliberately on the other.
@@ -147,6 +150,35 @@ for (const group of vectors.groups) {
     return o;
   };
   deepFreeze(ORACLE);
+
+  // ------------------------------------------------------------------ pass 51 finding B2
+  // **The planes themselves, as an oracle.** The fold check and the recorded per-layer outcomes
+  // bind the OUTCOME each criterion reports. They bound nothing reported beside it, so five
+  // separate corruptions of `handleExplainAt` -- a minute of 42 for every published time, an
+  // inverted route flag, a forced INCLUDED headline, invented place names, a horizon of 1 --
+  // each passed all 79 conformance checks and all 16 card checks. Outcomes do not authenticate
+  // the explanation that accompanies them.
+  //
+  // `planeBytes` returns a fresh ArrayBuffer per call, so these are separate copies from the ones
+  // the worker is handed and it cannot reach them. That is the same defence as ORACLE above.
+  const ORACLE_PLANES = group.layers.map((l) => {
+    const n = group.nrows * group.ncols;
+    let dest = null;
+    if (l.dest_file) {
+      const bytes = new Uint8Array(planeBytes(l.dest_file));
+      dest = new Uint16Array(n);
+      // Little-endian by hand, independently of the worker's reader: a plane decoded by the code
+      // under test is not an expectation about that code.
+      for (let i = 0; i < n; i++) dest[i] = bytes[2 * i] | (bytes[2 * i + 1] << 8);
+    }
+    return {
+      value: new Uint8Array(planeBytes(l.value_file)),
+      status: new Uint8Array(planeBytes(l.status_file)),
+      flag: l.flag_file ? new Uint8Array(planeBytes(l.flag_file)) : null,
+      dest,
+      horizonS: l.horizon_s,
+    };
+  });
   const initArgs = (m) => ({
     type: 'init',
     manifest: m,
@@ -249,14 +281,28 @@ for (const group of vectors.groups) {
       // for the 40,000-cell window.
       const expectedOutcomes = c.outcomes || null;
       const expectedOutcomeDigests = c.outcome_sha256_32 || null;
+      // Pass 51 B9: filled with an impossible code, not zero. A zero-filled buffer already holds
+      // the PASS code at every slot, so skipping a cell that happens to be a PASS left the digest
+      // unchanged -- Codex skipped real-window cell 5166 and all 79 checks still passed. That is
+      // ledger 32, allocation is not evaluation, inside the check written against it.
+      const UNVISITED = 99;
       const seenOutcomes = expectedOutcomeDigests
-        ? expectedOutcomeDigests.map(() => new Int8Array(n)) : null;
+        ? expectedOutcomeDigests.map(() => new Int8Array(n).fill(UNVISITED)) : null;
 
       const enabledIds = group.layers.filter((_l, k) => c.enabled[k]).map((l) => l.id);
       const enabledThresholds = group.layers
         .map((_l, k) => c.thresholds[k]).filter((_t, k) => c.enabled[k]);
       const enabledDiscloses = group.layers.filter((_l, k) => c.enabled[k])
         .map((l) => (c.withhold_flags ? false : !!l.flag_file));
+      // A `withhold_flags` case runs on `plainWorker`, whose manifest declares no `dest_file`
+      // either, so that worker names no destination at all. Expecting one there would fail for a
+      // reason that has nothing to do with the handler.
+      const enabledNames = group.layers.filter((_l, k) => c.enabled[k])
+        .map((l) => (c.withhold_flags ? false : !!l.dest_file));
+      const enabledOracles = group.layers
+        .map((_l, k) => k).filter((k) => c.enabled[k]).map((k) => ORACLE_PLANES[k]);
+      const enabledTables = group.layers
+        .map((_l, k) => k).filter((k) => c.enabled[k]).map((k) => ORACLE[k]);
       for (let p = 0; p < n; p++) {
         const r = Math.floor(p / group.ncols);
         const col = p % group.ncols;
@@ -265,6 +311,12 @@ for (const group of vectors.groups) {
         assert(e, `no explainAt reply for cell ${p}`);
         assert(e.verdict === verdicts[p],
           `cell ${p}: explainAt verdict ${e.verdict}, verdict plane ${verdicts[p]}`);
+        // The HEADLINE, not just the code. Pass 51 B2: `verdictName: 'INCLUDED'` for every cell
+        // passed every check, so the affirmative sentence reached excluded cells while the number
+        // beside it stayed right.
+        assert(e.verdictName === VERDICT_NAMES[verdicts[p]],
+          `cell ${p}: verdictName ${e.verdictName}, expected `
+          + `${VERDICT_NAMES[verdicts[p]]} for verdict ${verdicts[p]}`);
 
         if (enabledIds.length === 0) {
           assert(e.criteria === null,
@@ -297,34 +349,60 @@ for (const group of vectors.groups) {
             `cell ${p} entry ${i}: outcome ${cr.outcome} and name ${cr.outcomeName} disagree`);
           assert(STATUS_NAMES[cr.status] === cr.statusName,
             `cell ${p} entry ${i}: status ${cr.status} and name ${cr.statusName} disagree`);
-          // `null` where the layer ships no flag plane, 0 or 1 where it does. "Not telling you"
-          // must not render as "no restrictions", which is the whole reason the flag exists.
-          if (enabledDiscloses[i]) {
-            assert(cr.routeFlag === 0 || cr.routeFlag === 1,
-              `cell ${p} entry ${i}: routeFlag ${cr.routeFlag} from a disclosing layer`);
-          } else {
-            assert(cr.routeFlag === null,
-              `cell ${p} entry ${i}: routeFlag ${cr.routeFlag}, expected null from a layer that `
-              + 'does not disclose');
-          }
-          // The value byte means a time where OK, a lower bound where bounded, and nothing
-          // otherwise. 255 is the format's "says nothing here" and must never arrive as a number.
+          // ---------------------------------------------------- every field, against the planes
+          // Pass 51 B2. What was here before checked the SHAPE of these fields -- that a flag was
+          // 0 or 1, that a value was not 255 -- which an inverted flag and a fabricated minute
+          // both satisfy. Each one is now compared with the byte it is reporting.
+          const o = enabledOracles[i];
+          assert(cr.status === o.status[p],
+            `cell ${p} entry ${i}: status ${cr.status}, plane holds ${o.status[p]}`);
+          assert(cr.horizonS === o.horizonS,
+            `cell ${p} entry ${i}: horizonS ${cr.horizonS}, manifest says ${o.horizonS}`);
+
+          const raw = o.value[p];
           const bounded = cr.status === 1 || cr.status === 2 || cr.status === 3;
           assert(cr.valueIsLowerBound === bounded,
             `cell ${p} entry ${i}: valueIsLowerBound ${cr.valueIsLowerBound} for status `
             + `${cr.statusName}`);
-          if (cr.status !== 0 && !bounded) {
-            assert(cr.value === null,
-              `cell ${p} entry ${i}: value ${cr.value} where status ${cr.statusName} carries `
-              + 'neither a time nor a bound');
-          }
-          assert(cr.value !== 255,
-            `cell ${p} entry ${i}: VALUE_NONE reached a reader as the number 255`);
-          // No destination outside the region. `destinationAt`'s rule, and this handler does not
-          // get a second one: a card must not render a shop beside a cell we exclude.
-          if (verdicts[p] !== V_INCLUDED) {
+          // A time where OK, a lower bound where bounded, and nothing otherwise. 255 is the
+          // format's "says nothing here" and must never arrive as a number.
+          const wantValue = ((cr.status === 0 || bounded) && raw !== VALUE_NONE) ? raw : null;
+          assert(cr.value === wantValue,
+            `cell ${p} entry ${i}: value ${cr.value}, expected ${wantValue} from plane byte `
+            + `${raw} with status ${cr.statusName}`);
+
+          const wantFlag = enabledDiscloses[i] ? o.flag[p] : null;
+          assert(cr.routeFlag === wantFlag,
+            `cell ${p} entry ${i}: routeFlag ${cr.routeFlag}, expected ${wantFlag}`);
+
+          // The destination, as a whole record, against the snapshot frozen before init.
+          //
+          // **Named wherever this criterion published a time, whatever the combined verdict.**
+          // Pass 51 B4: requiring the cell to be included made the card claim a layer "does not
+          // say which destination" about a layer whose plane names one, which is a false
+          // non-disclosure. `destinationAt` keeps its own rule; it answers a different question.
+          const ordinal = (enabledNames[i] && cr.status === 0) ? o.dest[p] : DEST_NONE;
+          const wantNamed = ordinal !== DEST_NONE;
+          if (!wantNamed) {
             assert(cr.namesDestination === null,
-              `cell ${p} entry ${i}: named a destination at a cell the region does not include`);
+              `cell ${p} entry ${i}: namesDestination `
+              + `${JSON.stringify(cr.namesDestination)}, expected null`);
+          } else {
+            const want = enabledTables[i].destinations[ordinal];
+            const got = cr.namesDestination;
+            assert(got, `cell ${p} entry ${i}: no destination where ordinal ${ordinal} is named`);
+            assert(got.ordinal === ordinal,
+              `cell ${p} entry ${i}: ordinal ${got.ordinal}, plane holds ${ordinal}`);
+            assert(got.nodeIndex === want.node_index,
+              `cell ${p} entry ${i}: nodeIndex ${got.nodeIndex}, table says ${want.node_index}`);
+            assert(got.placeCount === want.place_count,
+              `cell ${p} entry ${i}: placeCount ${got.placeCount}, table says `
+              + `${want.place_count}`);
+            // The whole set, every member, in order. Pass 51 B2 renamed every place after the
+            // first and nothing noticed; pass 49 finding 5 was the same defect in `destinationAt`.
+            assert(JSON.stringify(got.places) === JSON.stringify(want.places),
+              `cell ${p} entry ${i}: places ${JSON.stringify(got.places)}, table says `
+              + `${JSON.stringify(want.places)}`);
           }
           // Against Python, cell by cell or into the digest buffer.
           if (expectedOutcomes) {
@@ -344,6 +422,10 @@ for (const group of vectors.groups) {
       }
       if (seenOutcomes) {
         for (let i = 0; i < seenOutcomes.length; i++) {
+          const missed = seenOutcomes[i].indexOf(UNVISITED);
+          assert(missed === -1,
+            `layer ${enabledIds[i]}: cell ${missed} was never explained, so the digest below `
+            + 'would describe a plane this run did not read');
           const h = createHash('sha256').update(Buffer.from(seenOutcomes[i].buffer, 0, n))
             .digest('hex').slice(0, 32);
           assert(h === expectedOutcomeDigests[i],

@@ -44,9 +44,10 @@ MUTATIONS = {
         r'    if _blank\(record\.destination_used\):',
         '    if False and _blank(record.destination_used):',
     ),
+    # Re-anchored after pass 51 A2 turned the name comparison from `!=` to a permitted-set test.
+    # It was reported DID NOT APPLY on the first run after that change.
     "accept a walk to any destination": (
-        r'    elif str\(record\.destination_used\)\.strip\(\) != '
-        r'str\(record\.predicted_destination\)\.strip\(\):',
+        r'    elif str\(record\.destination_used\)\.strip\(\) not in permitted:',
         '    elif False:',
     ),
     "drop the route check": (
@@ -77,6 +78,37 @@ MUTATIONS = {
         r'compare"\r?\n'
         r'        \)',
         '    if False:\n        pass',
+    ),
+    # ------------------------------------------------------------------ Codex pass 51
+    "a walk is only a walk if its duration was recorded": (
+        r'        return tuple\(name for name in self\.EVIDENCE_FIELDS\r?\n'
+        r'                     if not _blank\(getattr\(self, name, None\)\)\)',
+        "        return () if self.walked_seconds is None else ('walked_seconds',)",
+    ),
+    "drop the missing-duration refusal": (
+        r'    if record\.walked_seconds is None:\r?\n        reasons\.append\(',
+        '    if False:\n        reasons.append(',
+    ),
+    "identify the shop reached by its name alone": (
+        r'    if _blank\(record\.destination_used_lon\) or _blank\(record\.destination_used_lat\):',
+        '    if False:',
+    ),
+    "accept an arrival anywhere": (
+        r'            if gap > DESTINATION_IDENTITY_M:',
+        '            if False:',
+    ),
+    "accept a route the walker cannot identify": (
+        r'    if record\.route_identified is None:',
+        '    if False and record.route_identified is None:',
+    ),
+    "treat an unidentifiable route as identified": (
+        r'    elif not record\.route_identified:',
+        '    elif False:',
+    ),
+    "ignore the permitted alternatives on the selected node": (
+        r'    permitted \|= \{str\(a\)\.strip\(\) for a in record\.destination_alternatives '
+        r'if not _blank\(a\)\}',
+        '    permitted |= set()',
     ),
 }
 

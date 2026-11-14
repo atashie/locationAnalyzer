@@ -389,17 +389,20 @@ const MUTATIONS = [
       "const row = msg.row | 0;$1  const col = msg.col | 0;$2"
       + "  const reply = { type: 'explainAt'"),
   },
-  {
-    name: 'explainAt names a destination at a cell the region excludes',
-    apply: (s) => s.replace('if (included && destinations[k] && status === S_OK) {',
-      'if (destinations[k] && status === S_OK) {'),
-  },
+  // REMOVED, not re-anchored: 'explainAt names a destination at a cell the region excludes'.
+  // It tested the rule pass 51 finding B4 refuted. Suppressing a criterion's destination because
+  // a DIFFERENT criterion failed made the card claim the layer does not disclose one, which is
+  // false, so naming it is now the correct behaviour and the mutation inverted into
+  // 'explainAt withholds a destination because another criterion failed' above. Recorded as
+  // withdrawn rather than deleted silently: a mutation that disappears looks like coverage that
+  // was never there.
   {
     // A reader that writes. Every per-cell assertion would still pass, because the explanation
-    // and the plane would agree -- on the value the reader had just put there.
+    // and the plane would agree -- on the value the reader had just put there. Re-anchored after
+    // B4 removed the `included` local; reported INERT on the first run after that.
     name: 'explainAt writes to the verdict plane while reading it',
-    apply: (s) => s.replace('const included = verdict[p] === V_INCLUDED;',
-      'const included = verdict[p] === V_INCLUDED; verdict[p] = V_INCLUDED;'),
+    apply: (s) => s.replace(/  const criteria = \[\];(\r?\n)  \/\/ `lastThresholds` is per ENABLED/,
+      '  const criteria = []; verdict[p] = V_INCLUDED;$1  // `lastThresholds` is per ENABLED'),
   },
   {
     // **The mutation the fold cannot see, which is why Python's own per-criterion planes are
@@ -411,6 +414,51 @@ const MUTATIONS = [
     apply: (s) => s.replace('const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);',
       'let outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);'
       + ' if (verdict[p] === V_EXCLUDED && outcome === O_UNKNOWN) outcome = O_PASS;'),
+  },
+  // ------------------------------------------------------------------ pass 51 finding B2
+  // **Five corruptions of the explanation that each passed all 79 conformance checks and all 16
+  // card checks.** The fold check and the recorded per-layer outcomes bind the OUTCOME. They did
+  // not bind the fields reported beside it, so an explanation could carry a fabricated minute, an
+  // inverted route flag, a forced INCLUDED headline, invented place names or a wrong horizon, and
+  // every advertised check still passed. Codex pass 51 executed all five.
+  //
+  // "Outcomes do not authenticate the accompanying explanation" is the lesson, and these stay as
+  // controls on the repair rather than being deleted once the repair is in.
+  {
+    name: 'explainAt reports a fabricated minute beside a correct outcome',
+    apply: (s) => s.replace(
+      'value: (status === S_OK || bounded) && raw !== VALUE_NONE ? raw : null,',
+      'value: (status === S_OK || bounded) && raw !== VALUE_NONE ? 42 : null,'),
+  },
+  {
+    name: 'explainAt inverts the route flag it discloses',
+    apply: (s) => s.replace('routeFlag: routeFlags[k] ? routeFlags[k][p] : null,',
+      'routeFlag: routeFlags[k] ? 1 - routeFlags[k][p] : null,'),
+  },
+  {
+    name: 'explainAt gives every cell the INCLUDED headline',
+    apply: (s) => s.replace('    verdictName: VERDICT_NAMES[verdict[p]],',
+      "    verdictName: 'INCLUDED',"),
+  },
+  {
+    name: 'explainAt invents the place names after the first',
+    apply: (s) => s.replace(
+      /        named = \{ ordinal: d, nodeIndex: entry\.node_index, placeCount: entry\.place_count,(\r?\n)          places: entry\.places \};/,
+      "        named = { ordinal: d, nodeIndex: entry.node_index, placeCount: entry.place_count,$1"
+      + "          places: entry.places.map((pl, pi) => (pi ? { ...pl, name: 'Fabricated Shop' } "
+      + ": pl)) };"),
+  },
+  {
+    name: 'explainAt reports the wrong horizon',
+    apply: (s) => s.replace('      horizonS: horizons[k],', '      horizonS: 1,'),
+  },
+  {
+    // Pass 51 B4, restored as a mutation. Suppressing a criterion's destination because some
+    // OTHER criterion failed made the card say the layer "does not say which destination" about
+    // a layer whose plane and side table both name one -- a false non-disclosure.
+    name: 'explainAt withholds a destination because another criterion failed',
+    apply: (s) => s.replace('    if (destinations[k] && status === S_OK) {',
+      '    if (verdict[p] === V_INCLUDED && destinations[k] && status === S_OK) {'),
   },
   {
     // Anchored past the shared `continue` line, which `destinationAt` has verbatim.

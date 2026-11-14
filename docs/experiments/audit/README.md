@@ -77,6 +77,13 @@ Chapel Hill sheet has none of them — see below.
    measurement are different observations and the scorer will not treat one as the other — the
    first walked journey was refused for exactly this.
 
+   **Record where you ended up**, in `destination_used_lon` and `destination_used_lat` — a pin
+   dropped at the door you reached. **A name is not a shop.** The metro sheet holds two different
+   shops both called `Food Lion`, 11 km apart, and one journey's own alternatives list is *also*
+   `Food Lion`: a second shop of that name on the same road node. Without a coordinate nothing can
+   tell the shop we routed you to from its namesake across town, so the scorer refuses a row that
+   identifies the destination by name only.
+
    If `predicted_destination_alternatives` is non-empty, several shops snapped to the same road
    node and our number cannot distinguish them. Walk to whichever you would use and name it.
 
@@ -96,6 +103,12 @@ Chapel Hill sheet has none of them — see below.
      required only to be filled in, because without it nobody can tell afterwards whether you
      walked our route or a different one, and that is the difference between checking our number
      and replacing it.
+   - `route_identified` — `yes` if you can say which way you went, `no` if you genuinely cannot.
+     This is the column a check can read, and it exists because prose cannot be checked: "I
+     cannot remember whether I used the private track or avoided it" is a perfectly good note and
+     a perfectly useless answer, and a blank-or-not test accepted it. **`no` is a legitimate
+     answer** — it records that the approach question is open for this walk, which is more use
+     than a guess.
    - `witness_within_10min` / `witness_within_15min` — `yes` if this walk reached a *qualifying,
      open* destination inside that time, `no` if it did not, `untested` if you did not try.
 5. `unresolved` — say what this walk could **not** settle. This column matters more than it looks;
@@ -115,9 +128,14 @@ now refuses a record that leaves one blank.
 | E3 needs | the column | why a blank is fatal |
 |---|---|---|
 | the door you started from, **inside the cell** | `start_lon`, `start_lat` | the published answer is for one 100 m cell; a walk from the next cell is a different journey |
-| the destination you reached | `destination_used` | walking to a nearer shop checks the town, not our number |
-| which way you went | `route_followed` | otherwise nobody can tell whether you walked our route |
+| the destination you reached | `destination_used`, **and** `destination_used_lon` / `_lat` | walking to a nearer shop checks the town, not our number — and a name does not identify a shop |
+| which way you went | `route_followed`, **and** `route_identified=yes` | otherwise nobody can tell whether you walked our route, and prose that admits you cannot remember reads as an answer |
 | a timed duration | `walked_seconds` **and** `duration_timed=yes` | an estimate is not a measurement |
+
+**A walk with no duration is still a walk.** If you went and could not time it, fill in whatever
+you did observe and leave `walked_seconds` blank. The scorer will refuse the row and say why,
+which is the correct outcome — what it must never do is file the journey as "planned, not
+walked", which is what it did before 2026-11-14 and which loses the fact that anybody went.
 
 Check a filled-in sheet straight away, while you still remember what is missing. From `v2/`:
 
@@ -203,14 +221,17 @@ Note what the row does *not* claim. Per the asymmetry below, a slow walk to one 
 the existential fifteen-minute claim for that cell. `witness_within_15min` is `no` **for this walk**;
 `unresolved` carries the rest.
 
-> **The sheet now says this in a column rather than in prose, 2026-11-14.** The row's
-> `duration_timed` is `no` and its `route_followed` is blank, so
-> `scripts/score_walked_audit.py` refuses it by rule and names all four missing things. Until
-> now the only record of the gap was the sentence "OWNER-REPORTED, APPROXIMATE, NOT
-> STOPWATCH-TIMED" in `notes`, which no check can read — so the journey's status had to be
-> decided by a person each time it came up, and the first two attempts got it wrong in opposite
-> directions (Codex passes 46 and 47). **One repeat walk clears it**: a door inside cell
-> (286, 129), a timer, the shop you reached, and a line saying which way you went.
+> **The sheet now says this in columns rather than in prose, 2026-11-14.** The row's
+> `duration_timed` is `no`; its `route_followed`, `route_identified`, `start_lon`/`start_lat`,
+> `destination_used` and arrival coordinate are all blank. So `scripts/score_walked_audit.py`
+> refuses it by rule and names **six** things the record does not document. Until now the only
+> record of the gap was the sentence "OWNER-REPORTED, APPROXIMATE, NOT STOPWATCH-TIMED" in
+> `notes`, which no check can read — so the journey's status had to be decided by a person each
+> time it came up, and the first two attempts got it wrong in opposite directions (Codex passes
+> 46 and 47).
+>
+> **One repeat walk clears it**: a door inside cell (286, 129), a timer, the shop you reached
+> with a pin on it, and a line saying which way you went.
 
 ## Two limits and one closed question
 

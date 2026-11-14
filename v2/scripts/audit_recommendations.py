@@ -186,10 +186,13 @@ OWNER_COLUMNS = [
     "start_lat",
     "door_offset_m",
     "destination_used",
+    "destination_used_lon",      # where you ACTUALLY ended up; a name does not identify a shop
+    "destination_used_lat",
     "destination_qualifies",     # yes / no  - is it a grocery by our own category rule?
     "destination_open",          # yes / no  - open, in business and usable on arrival
     "route_usable",              # yes / no  - no locked gate, fence, missing crossing
     "route_followed",            # free text - WHICH way you went; see below
+    "route_identified",          # yes / no  - can you say which way you went at all?
     "walked_seconds",
     "duration_timed",            # yes / no  - stopwatch-timed, or an estimate?
     "witness_within_10min",      # yes / no / untested - a qualifying walk inside 10 min

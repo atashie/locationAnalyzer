@@ -39,6 +39,76 @@ function check(name, fn) {
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
+/** Load worker.js with `self` shimmed and return a `send`. One instance per caller: the worker
+ *  keeps its layer state in a module-level object. */
+function loadWorker() {
+  const outbox = [];
+  const selfShim = { postMessage: (m) => outbox.push(m), onmessage: null };
+  const prevSelf = globalThis.self;
+  globalThis.self = selfShim;
+  if (!globalThis.performance) globalThis.performance = { now: () => Date.now(), timeOrigin: 0 };
+  delete require.cache[require.resolve(path.join(__dirname, 'worker.js'))];
+  require(path.join(__dirname, 'worker.js'));
+  const handler = selfShim.onmessage;
+  globalThis.self = prevSelf;
+  return (msg) => {
+    outbox.length = 0;
+    const prev = globalThis.self;
+    globalThis.self = selfShim;
+    try { handler({ data: msg }); } finally { globalThis.self = prev; }
+    const err = outbox.find((m) => m && m.type === 'error');
+    if (err) throw new Error(`worker reported: ${err.message}`);
+    return outbox.slice();
+  };
+}
+
+/** A standalone ArrayBuffer: Node's Buffer is a view into a shared pool. */
+function planeBytes(dir, file) {
+  const buf = fs.readFileSync(path.join(dir, file));
+  const out = new ArrayBuffer(buf.length);
+  new Uint8Array(out).set(buf);
+  return out;
+}
+
+/** Every conformance group with two or more layers, initialised and ready to query.
+ *
+ * The published bundle ships ONE layer, so these fixtures are the only multi-criterion data this
+ * project has. Hand-built planes, but real `explainAt` replies through the real worker, which is
+ * what pass 51 B6 found missing entirely.
+ */
+function multiLayerGroups() {
+  const FIXTURES = path.join(__dirname, 'fixtures', 'conformance');
+  const vectors = JSON.parse(fs.readFileSync(path.join(FIXTURES, 'vectors.json'), 'utf8'));
+  const out = [];
+  for (const group of vectors.groups) {
+    if (group.layers.length < 2) continue;
+    const send = loadWorker();
+    const entry = (l) => ({ id: l.id, horizon_s: l.horizon_s,
+      ...(l.flag_file ? { flag_file: l.flag_file } : {}),
+      ...(l.dest_file ? { dest_file: l.dest_file, dest_table: l.dest_table,
+                          dest_byte_order: l.dest_byte_order, dest_none: l.dest_none } : {}) });
+    const tables = JSON.parse(JSON.stringify(group.dest_tables
+      || group.layers.map(() => null)));
+    send({
+      type: 'init',
+      manifest: {
+        nrows: group.nrows, ncols: group.ncols, encoding: vectors.encoding,
+        destination_plane_byte_order: vectors.destination_plane_byte_order,
+        layers: group.layers.map(entry),
+      },
+      values: group.layers.map((l) => planeBytes(FIXTURES, l.value_file)),
+      statuses: group.layers.map((l) => planeBytes(FIXTURES, l.status_file)),
+      routeFlags: group.layers.map((l) => (l.flag_file
+        ? planeBytes(FIXTURES, l.flag_file) : null)),
+      destinations: group.layers.map((l) => (l.dest_file
+        ? planeBytes(FIXTURES, l.dest_file) : null)),
+      destTables: JSON.parse(JSON.stringify(tables)),
+    });
+    out.push({ group, send, tables });
+  }
+  return out;
+}
+
 const crit = (over) => ({
   layer: 'own_triangle_grocery_walk',
   outcome: 0,
@@ -75,11 +145,43 @@ check('a lower bound is never printed as a measured time', () => {
     outcome: 1, outcomeName: 'FAIL', status: 1, statusName: 'OFF_NETWORK',
     value: 20, valueIsLowerBound: true,
   })], { verdict: 1, verdictName: 'EXCLUDED' }));
-  assert(html.includes('at least 20 min'), `a bound must say so: ${html}`);
-  assert(!/(^|[^a-z])20 min/.test(html.replace('at least 20 min', '')),
+  assert(html.includes('more than 19 min'), `a bound must say so: ${html}`);
+  assert(!/(^|[^a-z0-9])20 min/.test(html),
     `a bare "20 min" survives somewhere: ${html}`);
   assert(html.includes('Ruled out without computing a route'),
     `a known failure from a bound must say no route was computed: ${html}`);
+});
+
+check('a rounded-up bound is not reported as "at least" that many minutes', () => {
+  // **Pass 51 finding B3, with its witness.** The value byte is `ceil(bound_seconds / 60)`, so a
+  // byte of 11 means the bound lies in (600, 660] seconds. A qualifying journey of 630 seconds is
+  // compatible with that evidence and takes LESS than 11 minutes, so "at least 11 min" claims
+  // more than the data supports. What the byte establishes is `bound > 600 s`.
+  const html = C.renderCardHTML(reply([crit({
+    outcome: 2, outcomeName: 'UNKNOWN', status: 2, statusName: 'BEYOND_HORIZON',
+    value: 11, valueIsLowerBound: true, thresholdMin: 10, horizonS: 601,
+  })], { verdict: 2, verdictName: 'UNKNOWN' }));
+  // The criterion block, not the whole card: the UNKNOWN headline legitimately contains the words
+  // "At least one criterion does not know", which is about criteria and not about minutes.
+  const block = html.split('class="crit"')[1];
+  assert(block.includes('more than 10 min'), block);
+  assert(!/at least/i.test(block), `"at least" overstates a rounded-up bound: ${block}`);
+  assert(!/(^|[^a-z0-9])11 min/.test(block),
+    `the ceiling itself was printed as the bound: ${block}`);
+  // A 630-second journey must not be excluded by what the card says.
+  assert(C.minutesText({ value: 11, valueIsLowerBound: true }) === 'more than 10 min');
+});
+
+check('a zero bound is reported as carrying no bound, not as "more than -1 min"', () => {
+  // The audit harness's reconstruction writes a bound of 0 for an OFF_NETWORK cell, and
+  // `outcomeFor` can never turn that into a failure, so the card must not do arithmetic on it.
+  assert(C.minutesText({ value: 0, valueIsLowerBound: true }) === 'no lower bound published');
+  const html = C.renderCardHTML(reply([crit({
+    outcome: 2, outcomeName: 'UNKNOWN', status: 1, statusName: 'OFF_NETWORK',
+    value: 0, valueIsLowerBound: true,
+  })], { verdict: 2, verdictName: 'UNKNOWN' }));
+  assert(!html.includes('-1'), html);
+  assert(html.includes('no lower bound published'), html);
 });
 
 check('a status carrying neither a time nor a bound prints no number at all', () => {
@@ -201,6 +303,228 @@ check('a place name is escaped, not trusted', () => {
   })]));
   assert(!html.includes('<img'), `an upstream name reached the DOM as markup: ${html}`);
   assert(html.includes('&lt;img'), html);
+});
+
+// ------------------------------------------------------------------ more than one criterion
+//
+// **Pass 51 finding B6: before this section there was no multi-criterion rendering test at all**,
+// not even a hand-built one, so changing the renderer's loop to `msg.criteria.slice(0, 1)` passed
+// all sixteen checks. A card that silently discards every criterion after the first was accepted.
+
+check('every criterion is rendered, not just the first', () => {
+  const html = C.renderCardHTML(reply([
+    crit({ layer: 'walk-grocery', value: 2, thresholdMin: 10 }),
+    crit({ layer: 'bike-school', value: 7, thresholdMin: 10 }),
+    crit({ layer: 'drive-work', outcome: 1, outcomeName: 'FAIL', value: 30, thresholdMin: 10 }),
+  ], { verdict: 1, verdictName: 'EXCLUDED' }));
+  for (const layer of ['walk-grocery', 'bike-school', 'drive-work']) {
+    assert(html.includes(layer), `${layer} is missing from the card: ${html}`);
+  }
+  // Each criterion's own number must appear beside its own name, so a renderer that prints three
+  // headings and one body is caught too.
+  const blocks = html.split('class="crit"').slice(1);
+  assert(blocks.length === 3, `${blocks.length} criterion blocks, expected 3`);
+  assert(blocks[0].includes('2 min') && blocks[1].includes('7 min')
+    && blocks[2].includes('30 min'), html);
+});
+
+check('each criterion keeps its own disclosure, outcome and destination', () => {
+  // Mixed everything: one discloses a clear route and names a shop, one does not disclose at all
+  // and names nothing, one is unknown for a reason. A card that associated any of these with the
+  // wrong criterion would still contain all the right words.
+  const html = C.renderCardHTML(reply([
+    crit({ layer: 'walk-grocery', routeFlag: 1, value: 4, thresholdMin: 10,
+      namesDestination: { ordinal: 1, nodeIndex: 9, placeCount: 1,
+        places: [{ name: 'Weaver Street Market' }] } }),
+    crit({ layer: 'bike-school', routeFlag: null, value: 9, thresholdMin: 10,
+      namesDestination: null }),
+    crit({ layer: 'drive-work', outcome: 2, outcomeName: 'UNKNOWN', status: 2,
+      statusName: 'BEYOND_HORIZON', value: null, thresholdMin: 10, routeFlag: 0,
+      namesDestination: null }),
+  ], { verdict: 2, verdictName: 'UNKNOWN' }));
+  const blocks = html.split('class="crit"').slice(1);
+  assert(blocks.length === 3, `${blocks.length} blocks`);
+
+  // walk-grocery: flagged route, named shop, no non-disclosure sentence.
+  assert(blocks[0].includes('not clearly public'), blocks[0]);
+  assert(blocks[0].includes('Weaver Street Market'), blocks[0]);
+  assert(!blocks[0].includes('does not say whether the route'), blocks[0]);
+  // bike-school: does not disclose, and says so; names nothing, and says so.
+  assert(blocks[1].includes('does not say whether the route uses a restricted way'), blocks[1]);
+  assert(blocks[1].includes('does not say which destination'), blocks[1]);
+  assert(!blocks[1].includes('Weaver Street Market'),
+    `another criterion's shop leaked into this one: ${blocks[1]}`);
+  // drive-work: unknown with its cause, a disclosed clear route, no number.
+  assert(blocks[2].includes('We cannot tell you:'), blocks[2]);
+  assert(blocks[2].includes(C.WHY_UNKNOWN.BEYOND_HORIZON), blocks[2]);
+  assert(!blocks[2].includes('does not say whether the route'),
+    `a disclosed clear route was rendered as a non-disclosure: ${blocks[2]}`);
+  assert(blocks[2].includes('no time published'), blocks[2]);
+});
+
+check('real worker replies from the multi-layer fixtures render correctly', () => {
+  // Hand-built replies are my own idea of what the worker sends. These come from the worker
+  // itself, on the conformance groups that have two layers -- the only multi-criterion data this
+  // project has, since the published bundle ships one layer.
+  const groups = multiLayerGroups();
+  assert(groups.length >= 2, `only ${groups.length} multi-layer groups available`);
+  let rendered = 0;
+  let mixedDisclosure = 0;
+  let mixedOutcome = 0;
+  let namedBesideSilent = 0;
+  for (const { group, send, tables } of groups) {
+    for (const c of group.cases) {
+      if (c.withhold_flags) continue;
+      const enabledIds = group.layers.filter((_l, k) => c.enabled[k]).map((l) => l.id);
+      if (enabledIds.length < 2) continue;
+      send({ type: 'compute', seq: 1, thresholds: c.thresholds, enabled: c.enabled });
+      for (let p = 0; p < group.nrows * group.ncols; p++) {
+        const out = send({ type: 'explainAt', reqId: 1,
+          row: Math.floor(p / group.ncols), col: p % group.ncols });
+        const msg = out.find((m) => m.type === 'explainAt');
+        const html = C.renderCardHTML(msg);
+        rendered++;
+        const blocks = html.split('class="crit"').slice(1);
+        assert(blocks.length === msg.criteria.length,
+          `${group.name} cell ${p}: ${blocks.length} blocks for `
+          + `${msg.criteria.length} criteria`);
+        assert(!html.includes('undefined') && !html.includes('null'), html);
+        const flags = msg.criteria.map((cr) => cr.routeFlag);
+        const outcomes = msg.criteria.map((cr) => cr.outcomeName);
+        if (flags.includes(null) && flags.some((f) => f !== null)) mixedDisclosure++;
+        if (new Set(outcomes).size > 1) mixedOutcome++;
+        const named = msg.criteria.filter((cr) => cr.namesDestination).length;
+        if (named && named < msg.criteria.length) namedBesideSilent++;
+        for (let i = 0; i < msg.criteria.length; i++) {
+          const cr = msg.criteria[i];
+          assert(blocks[i].includes(cr.layer),
+            `${group.name} cell ${p}: block ${i} is not about ${cr.layer}`);
+          // Each block carries its OWN disclosure, so a card that attributes one criterion's
+          // flag or shop to another is caught rather than looking complete.
+          if (cr.routeFlag === null) {
+            assert(blocks[i].includes('does not say whether the route'), blocks[i]);
+          } else {
+            assert(!blocks[i].includes('does not say whether the route'), blocks[i]);
+          }
+          if (cr.namesDestination) {
+            const first = cr.namesDestination.places[0];
+            assert(!first || !first.name || blocks[i].includes(first.name), blocks[i]);
+          } else {
+            assert(blocks[i].includes('does not say which destination')
+              || cr.outcomeName !== 'PASS', blocks[i]);
+          }
+        }
+      }
+    }
+  }
+  assert(rendered > 0, 'no multi-criterion cell was rendered');
+  // The sample must reach the combinations that make the check discriminating, rather than the
+  // same two passing layers over and over.
+  assert(mixedDisclosure > 0, 'no cell mixed a disclosing layer with a silent one');
+  assert(mixedOutcome > 0, 'no cell mixed outcomes between criteria');
+  assert(namedBesideSilent > 0, 'no cell named one criterion\'s destination beside a silent one');
+  console.log(`      ${rendered} multi-criterion cells; ${mixedDisclosure} mixed disclosure, `
+    + `${mixedOutcome} mixed outcomes, ${namedBesideSilent} named beside silent`);
+});
+
+// ------------------------------------------------------------------ which replies reach the screen
+//
+// Pass 51's two presentation findings, B1 and B5. Both were in logic that lived inside app.js and
+// could not be tested without a browser, which is why it is a state machine now.
+
+check('a reply from the previous compute is not rendered beside the new raster', () => {
+  // **Pass 51 B1, its witness exactly.** One OK cell holds 12 minutes. Compute at a 15-minute
+  // limit, hover it, change the limit to 5, compute again and let it paint. Before the fix the
+  // card still read PASS with "your limit 15 min" over a raster that excluded the cell, for as
+  // long as the pointer stayed put: nothing invalidated it and the reply check looked only at
+  // `reqId`.
+  const ins = C.createInspector();
+  const first = ins.computePainted(1, 1);
+  assert(first === null, 'nothing is inspected yet, so nothing to refresh');
+
+  const req = ins.pointerAt(10, 20);
+  assert(req && req.row === 10, 'the first hover must send a request');
+  assert(ins.reply({ reqId: req.reqId, seq: 1 }).render, 'a current reply must render');
+
+  // The limit changes: a compute is requested, and its raster has not painted.
+  ins.computeStarted();
+  assert(ins.state.displayedSeq === null, 'the screen shows no settled compute while one runs');
+  // A reply built from compute 1 arrives late. It describes the previous criteria.
+  const stale = ins.pointerAt(10, 20);
+  assert(!ins.reply({ reqId: stale.reqId, seq: 1 }).render,
+    'a reply from compute 1 must not render once compute 2 has been requested');
+
+  // Compute 2 paints, and the inspected cell is re-asked without the pointer moving.
+  const refresh = ins.computePainted(2, 2);
+  assert(refresh && refresh.row === 10 && refresh.col === 20,
+    'the inspected cell must be re-asked when the new raster paints');
+  assert(ins.reply({ reqId: refresh.reqId, seq: 2 }).render, 'the fresh reply must render');
+});
+
+check('an older compute that paints after a newer one does not claim the screen', () => {
+  const ins = C.createInspector();
+  ins.pointerAt(1, 1);
+  ins.reply({ reqId: 1, seq: 1 });
+  ins.computeStarted();
+  // Result 2 is requested, then result 1 arrives late from the paint chain.
+  assert(ins.computePainted(1, 2) === null, 'compute 1 painted after 2 was requested');
+  assert(ins.state.displayedSeq === null, 'it must not mark itself displayed');
+  assert(ins.computePainted(2, 2) !== null, 'compute 2 is the one on screen');
+  assert(ins.state.displayedSeq === 2);
+});
+
+check('a late reply does not restore an inside card after the pointer leaves', () => {
+  // **Pass 51 B5, its witness exactly.** Move inside, creating pending request 1; move outside
+  // the raster; deliver reply 1. With one request in flight the pending request is still the
+  // newest one SENT, so a `reqId` check alone let the old cell's affirmative card replace
+  // "Outside the published area".
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const req = ins.pointerAt(10, 20);
+  ins.pointerLeft();                                  // pointer moves off the raster
+  const { render, send } = ins.reply({ reqId: req.reqId, seq: 1 });
+  assert(!render, 'a reply for a cell the pointer has left must not be rendered');
+  assert(send === null, 'and nothing queued behind it may be sent either');
+  assert(ins.state.inspected === null, 'leaving the data forgets the inspected cell');
+
+  // Coming back works: the generation check must not wedge the card shut.
+  const again = ins.pointerAt(11, 21);
+  assert(again, 'returning to the map must send again');
+  assert(ins.reply({ reqId: again.reqId, seq: 1 }).render, 'and that reply must render');
+});
+
+check('a queued position from before the pointer left is dropped, not sent', () => {
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const first = ins.pointerAt(1, 1);
+  assert(ins.pointerAt(2, 2) === null, 'the second move is coalesced behind the first');
+  ins.pointerLeft();
+  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1 });
+  assert(!render && send === null,
+    'the queued position was recorded before the pointer left and must not be sent');
+});
+
+check('positions are coalesced to one in flight and the newest is the one sent', () => {
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const first = ins.pointerAt(1, 1);
+  assert(ins.pointerAt(2, 2) === null);
+  assert(ins.pointerAt(3, 3) === null, 'only one request is in flight');
+  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1 });
+  assert(render, 'the first reply is current and renders');
+  assert(send && send.row === 3 && send.col === 3,
+    `the newest queued position must be the one sent, got ${JSON.stringify(send)}`);
+});
+
+check('a superseded request is not rendered', () => {
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const first = ins.pointerAt(1, 1);
+  ins.reply({ reqId: first.reqId, seq: 1 });
+  const second = ins.pointerAt(2, 2);
+  assert(!ins.reply({ reqId: first.reqId, seq: 1 }).render,
+    'an older reqId must not render over a newer request');
+  assert(ins.reply({ reqId: second.reqId, seq: 1 }).render);
 });
 
 // ------------------------------------------------------------------ the cell lookup

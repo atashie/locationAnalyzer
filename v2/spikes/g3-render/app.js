@@ -131,11 +131,12 @@
     mapLoadedMs: null,
     workerReadyMs: null,
     // The per-criterion card: one explainAt in flight, the newest pointer position behind it.
-    explainReqSeq: 0,
-    explainPending: false,
-    explainQueued: null,
     explainSentAt: 0,
     explainMs: [],      // round trips, for the cost measurement the card plan asks for
+    // The rest of the card's lifecycle -- which request is outstanding, which cell is being
+    // inspected, which compute the screen shows, and whether the pointer has left since -- lives
+    // in `G3Card.createInspector`, because both of pass 51's presentation findings were in that
+    // logic and it could not be tested while it was spread through this file.
   };
 
   // ---- 1. versions.json: known pinned CDN byte totals -----------------------------------------
@@ -359,40 +360,38 @@
    * unbounded backlog that renders cells the pointer has already left. So: send one, remember the
    * newest position, send that when the reply lands.
    */
+  // Which replies may reach the screen is decided by `G3Card.createInspector`, a state machine
+  // with no DOM: both of pass 51's presentation findings were in this logic and it was not
+  // testable here. `card_selftest.mjs` drives it. This file supplies the messages and the DOM.
+  const inspector = window.G3Card.createInspector();
+
+  function post(req) {
+    if (!req) return;
+    state.explainSentAt = performance.now();
+    state.worker.postMessage({ type: 'explainAt', ...req });
+  }
+
   function explainAt(row, col) {
     if (!state.workerReady) return;
-    if (state.explainPending) {
-      state.explainQueued = { row, col };
-      return;
-    }
-    state.explainPending = true;
-    state.explainQueued = null;
-    state.explainSentAt = performance.now();
-    state.worker.postMessage({ type: 'explainAt', reqId: ++state.explainReqSeq, row, col });
+    post(inspector.pointerAt(row, col));
   }
 
   function handleExplainAt(msg) {
-    state.explainPending = false;
-    // Ignore a reply that is not the newest request: an out-of-order reply would paint a cell the
-    // pointer has already left.
-    if (msg.reqId === state.explainReqSeq) {
+    const { render, send } = inspector.reply(msg);
+    if (render) {
       const ms = performance.now() - state.explainSentAt;
       state.explainMs.push(ms);
       if (state.explainMs.length > 50) state.explainMs.shift();
       // One round trip per pointer move is not free, so the page reports what it actually costs
       // on this device rather than leaving it to be assumed either way. The worker-side handler
       // is about 0.2 microseconds on the shipped bundle (bench_explain.mjs); everything else in
-      // this number is the message.
+      // this number is the message. It stops before `renderCard`, so it excludes the DOM update.
       const sorted = state.explainMs.slice().sort((a, b) => a - b);
       el.stExplain.textContent =
         `${fmtMs(ms)} / ${fmtMs(sorted[Math.floor(sorted.length / 2)])} (n=${sorted.length})`;
       renderCard(msg);
     }
-    const next = state.explainQueued;
-    if (next) {
-      state.explainQueued = null;
-      explainAt(next.row, next.col);
-    }
+    post(send);
   }
 
   function renderCard(msg) {
@@ -401,20 +400,34 @@
     el.card.innerHTML = window.G3Card.renderCardHTML(msg);
   }
 
+  /** The pointer has left the data, so nothing in flight is about anywhere the page is showing. */
+  function clearCard(text) {
+    inspector.pointerLeft();
+    el.cardCell.textContent = '';
+    el.card.innerHTML = text;
+  }
+
+  /** The criteria changed, so whatever the card says is about the previous ones.
+   *
+   * Pass 51 B1: nothing invalidated the card, so a cell shown as PASS at a 15-minute limit kept
+   * saying PASS, with "your limit 15 min", indefinitely after the limit moved to 5 and the raster
+   * excluded it. The card is emptied on the way in and refilled when the new raster has painted.
+   */
+  function cardAwaitingCompute() {
+    el.card.innerHTML = '<em>Recomputing…</em>';
+  }
+
   function wireCardPointer(map) {
     map.on('mousemove', (e) => {
       const at = window.G3Card.cellForLonLat(state.bounds, state.ncols, state.nrows,
         e.lngLat.lng, e.lngLat.lat);
       if (!at) {
-        renderCard({ outside: true });
+        clearCard(window.G3Card.renderCardHTML({ outside: true }));
         return;
       }
       explainAt(at.row, at.col);
     });
-    map.on('mouseout', () => {
-      el.cardCell.textContent = '';
-      el.card.innerHTML = '<em>Move the pointer over the map.</em>';
-    });
+    map.on('mouseout', () => clearCard('<em>Move the pointer over the map.</em>'));
   }
 
   // ---- 4. MapLibre map + canvas source ----------------------------------------------------------
@@ -561,6 +574,10 @@
     const seq = ++state.seq;
     const { thresholds, enabled } = currentThresholdsEnabled();
     state.pending.set(seq, { tEventAbs, source });
+    // The raster on screen is about to stop describing the current criteria, so the card must
+    // stop claiming to as well (pass 51 B1).
+    inspector.computeStarted();
+    if (inspector.state.inspected) cardAwaitingCompute();
     state.worker.postMessage({ type: 'compute', seq, thresholds, enabled, tEvent: tEventAbs });
   }
 
@@ -607,6 +624,11 @@
     }
 
     renderStats({ computeMs, transferMs, totalMs });
+
+    // The raster on screen is now this compute's, so a card built from it is current, and the
+    // inspected cell is re-asked. Only the newest compute may claim the screen: with several
+    // results in flight an older one must not mark itself displayed after a newer one painted.
+    post(inspector.computePainted(msg.seq, state.seq));
 
     if (!state.firstPaintDone) {
       state.firstPaintDone = true;

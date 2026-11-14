@@ -115,7 +115,26 @@ console.log(`  worst         ${sorted[sorted.length - 1].toFixed(4)} ms`);
 console.log(`  mean          ${(total / sorted.length).toFixed(4)} ms`);
 console.log(`  answered with criteria ${withCriteria}, of which named a destination ${named}`);
 console.log(`\nFor scale: at 60 pointer events a second the median handler cost is `
-  + `${(q(0.5) * 60).toFixed(2)} ms of every 1000 ms, or `
-  + `${(q(0.5) * 6).toFixed(2)}% of one core.`);
-console.log('This is a FLOOR. It excludes the structured clone of the reply and the two event-loop '
-  + 'hops a real Worker adds, and it was measured on this machine, not on a phone.');
+  + `${(q(0.5) * 60).toFixed(2)} ms of every 1000 ms.`);
+console.log(`
+WHAT THIS ESTABLISHES, narrowed after Codex pass 51 finding B8.
+
+  It establishes that the HANDLER is not the cost, so there is no case for caching a per-layer
+  outcome plane to avoid recomputing one cell. That was the open design question and it is
+  answered.
+
+  It does NOT establish an end-to-end pointer-move budget, and the comparison against a
+  whole-raster compute above is the wrong denominator for one: the quantities that decide whether
+  one request per pointer move is affordable are the event rate, the frame budget, the latency a
+  person notices, and interference from a compute running at the same time. None of those is
+  measured here.
+
+  Two reasons the figure is optimistic: Node's shim calls the handler synchronously, so the
+  structured clone of the reply and two event-loop hops are missing, and this is a desktop core
+  rather than a phone. The page's own round-trip row also stops before the card is rendered, so it
+  excludes the DOM update and the paint.
+
+  One reason it is pessimistic: the stride is a prime (${STRIDE}), so each step jumps about
+  ${Math.floor(STRIDE / ncols)} rows and ${STRIDE % ncols} columns and loses the locality a
+  pointer moving between neighbouring cells would have. The memory-access component is therefore
+  worse here than in use. The net direction is not settled by either argument.`);

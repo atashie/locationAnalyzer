@@ -24,7 +24,9 @@
       "reasons": [
         "no start door recorded, so the walk's origin is unknown",
         "the destination reached is not recorded",
+        "where the walk ended is not recorded, so the shop reached is identified by name only and a name does not identify a shop",
         "the route walked is not on the record",
+        "the record does not say whether the route walked could be identified",
         "the duration is recorded as not timed, so it is an estimate"
       ]
     }
