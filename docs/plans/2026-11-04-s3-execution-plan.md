@@ -364,6 +364,11 @@ destination actually used, date, and outcome.
 > re-tiling and MapLibre's Mercator placement each move the lookup again, and **no flag plane
 > ships**, so every count is a candidate disclosure.
 >
+> *Superseded 2026-11-13 by `5e5118f`:* the plane ships. The shipped figure is **8.95% at
+> *T* = 10* against the source grid's 9.09%, and 1,316 structures the shipped raster includes
+> were flagged at source and ship unflagged. See
+> [s3-8-shipped](../experiments/s3-8-shipped-disclosure.json).
+>
 > **A real defect in the flag**: a point sitting *on* a node was flagged for the edge leading to
 > it, which it never walks. `_snap_network` already permits zero on-edge travel at an endpoint and
 > the flag ignored that convention. Fixed and pinned.
@@ -375,7 +380,8 @@ destination actually used, date, and outcome.
 > over **843,685** census points rather than 844,685, a total that included two 500-point samples.
 >
 > **And the release prerequisites are longer than "publish the flag".** None of the three
-> disclosures a household is owed can be delivered: the flag is not persisted, the selected
+> disclosures a household is owed can be delivered *(the flag was persisted on 2026-11-13;
+> the rest of this stands)*: the flag is not persisted, the selected
 > destination is not persisted and a node does not identify a shop (550 places on 510 nodes, 75
 > sharing one), and the per-criterion card is unbuilt. Phone latency is unmeasured, the
 > recomputation UI is absent, and the browser implementation is `v2/spikes/g3-render` — **a spike,
@@ -386,9 +392,14 @@ destination actually used, date, and outcome.
 > rides the same predecessor forest as the reported time, with ties moving them together; and all
 > four published rows reproduced — the failure was their attribution, not their arithmetic.
 >
-> **Still owed on step 8:** the flag is **not published in the layer bundle**. Adding it is a wire
-> format change — a third plane or a status bit — and therefore a design question rather than a
-> silent addition. The household sessions are the owner's.
+> **Still owed on step 8, as of 2026-11-13:** the flag **is** published in the layer bundle —
+> `published-v3`, an optional third plane, `5e5118f`. The design question the earlier wording
+> flagged was settled in favour of the plane, and pass 48 established that it was settled on
+> the wrong grounds: a versioned bit field would have been contract-legal and **4,555 bytes
+> cheaper**, so the plane is a choice about *optionality*, not a necessity. What is still owed
+> is **showing** a flagged answer — the per-criterion card is unbuilt, so the decoder counts
+> the disclosure and no interface displays it — and the selected destination. The household
+> sessions are the owner's.
 
 **Step 2 changed what gets reported**, so it was an owner decision: it was drafted as an additive
 §13 amendment and flagged rather than adopted silently, and **the owner adopted it on 2026-11-10**.

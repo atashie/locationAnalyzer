@@ -82,3 +82,47 @@ I did not rewrite the pushed commit for this: the degraded message is `917ea95`,
 is intact in [[project-phase1-s3-soft-way-dependence]] and [[project-phase1-s3-design]], and
 force-pushing to repair a cosmetic message defect is a worse trade than leaving one commit's prose
 thin.
+
+## 2026-11-13: Codex cannot execute anything sandboxed on this machine
+
+Pass 48 had to run **read-only**. Every `exec_command` failed with:
+
+```
+UnsupportedOperation("windows unelevated restricted-token sandbox cannot enforce split
+writable root sets directly; refusing to run unsandboxed")
+```
+
+Codex 0.167.0, Windows 11, unelevated. It is not about which directories were requested. The error
+appeared with `-s workspace-write` alone, with `--add-dir` pointing at the session scratchpad, with
+`-c sandbox_workspace_write.exclude_tmpdir_env_var=true -c
+sandbox_workspace_write.exclude_slash_tmp=true`, and with `--ephemeral`. A one-line probe asking it
+only to run `python -c "print(2+2)"` failed the same way. The restricted-token sandbox apparently
+cannot express the workspace root plus the session directory as one writable set, and it refuses
+rather than widening.
+
+**What still works read-only.** The `node_repl` MCP tool runs JavaScript in-process, outside the
+process sandbox. That turned out to be enough for a real review of the browser decoder: the
+reviewer loaded `worker.js` into a `vm` context with a `self` shim, replayed the whole conformance
+harness in memory, and ran mutations against it — 50 checks and 18 mutations, all executed. What it
+could not do was run Python, pytest, GDAL or a graph load, so its Python reproducers came back
+explicitly marked unexecuted, which is the right way to hand one over.
+
+**So the options for a pass that needs Python are:**
+
+1. `--dangerously-bypass-approvals-and-sandbox`, which is how passes 42–47 ran. Claude Code's auto
+   mode refuses to launch it (`Undermining Oversight`), so it needs the owner to run it with a
+   leading `!` in the prompt, or a permission rule.
+2. Run the Python measurements **before** the pass and hand the reviewer the numbers to attack as
+   *method* rather than to reproduce. Pass 48 did this for its §B and §D, and it worked better than
+   expected — the reviewer broke the method of two of them (the round trip bounds nothing about
+   households; three warped byte planes can recombine into a valid index) which is a harder and
+   more useful kind of finding than a reproduction.
+3. Give it a read-only pass on prose, records and JavaScript, which is where it found four of pass
+   48's seven findings anyway.
+
+Option 2 is worth doing **even when option 1 is available**, because asking "what is wrong with how
+I measured this" is a different question from "reproduce this", and only the first can catch an
+instrument pointed at the wrong quantity.
+
+Note also that a read-only pass cannot write its report to a file. Ask for stdout and save it
+afterwards, or the pass ends with its findings only in a log.

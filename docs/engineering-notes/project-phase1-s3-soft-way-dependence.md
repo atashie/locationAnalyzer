@@ -230,6 +230,13 @@ disclosure owed to households when estimates are delivered. Both are **specified
 `RESTRICTED EDGES` line, so membership is computable one journey at a time, but no per-cell flag is
 recorded in the layer bundle, no aggregation is defined, and nothing computes the statistic. Codex
 pass 35 was right to call the first wording a commitment described as a mechanism.
+
+**Superseded 2026-11-13.** The aggregation exists (`scripts/flag_restricted_routes.py`,
+`arrival_with_route_flag`, `cell_route_flag`) and the per-cell flag **is** recorded in the layer
+bundle and shipped in the wire format as `published-v3`'s optional third plane. The paragraph
+above is kept as the record of what was true when it was written. What it says about the
+*statistic* still holds in full: the signed error on restricted-route journeys needs walked
+journeys, and nothing computes it, because the record holds no admissible observation.
 **Do not quote the 600 s row as a plan.** Marking the cells whose route depends on a restricted way
 is a candidate for step 8 and needs no new data — `access_restricted` is already on the edges and
 the per-cell destination is now recovered.

@@ -35,7 +35,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from locfinder import wire                                      # noqa: E402
 from locfinder.status import (CATEGORY_COST_SELECTED, Criterion,  # noqa: E402
-                              Reason, Surface, evaluate)
+                              Reason, Surface, Verdict, evaluate)
 
 V2 = pathlib.Path(__file__).resolve().parents[1]
 LAYERS = V2 / "data" / "layers"
@@ -161,6 +161,70 @@ def main() -> int:
              "verdicts": [int(v) for v in wire.combine_planes([oa])]},
             {"name": "no criteria includes everything", "thresholds": [10, 10],
              "enabled": [False, False], "verdicts": [0, 0]},
+        ]})
+
+    # ------------------------------------------------- two layers that BOTH disclose
+    # Pass 48: every disclosing fixture had one disclosing layer, so three real mutations passed
+    # all fifty checks -- a flag read from layer 0 instead of layer k, a cell counted once per
+    # flagged layer instead of once, and a flag used as an exclusion only when two layers are
+    # enabled. Four cells, arranged so each of those moves a number:
+    #
+    #   cell 0  both layers flagged, both include   -> counted ONCE
+    #   cell 1  only layer A flagged, both include  -> counted
+    #   cell 2  only layer B flagged, both include  -> counted (a layer-0 index misses this)
+    #   cell 3  layer A flagged, layer B EXCLUDES   -> not counted, the cell is not included
+    da = surface_from([120.0, 120.0, 120.0, 120.0], [Reason.OK] * 4, [120.0] * 4)
+    db = surface_from([180.0, 180.0, 180.0, 1800.0],
+                      [Reason.OK, Reason.OK, Reason.OK, Reason.OK], [180.0, 180.0, 180.0, 1800.0])
+    fa = np.array([True, True, False, True])
+    fb = np.array([True, False, True, False])
+    eda, vda, sda, flda = layer_entry("discA", da, flagged=fa)
+    edb, vdb, sdb, fldb = layer_entry("discB", db, flagged=fb)
+    oda = wire.outcome_planes(vda, sda, threshold_min=10, horizon_s=da.horizon_s)
+    odb = wire.outcome_planes(vdb, sdb, threshold_min=10, horizon_s=db.horizon_s)
+    both = wire.combine_planes([oda, odb])
+    # The disclosure over both enabled layers: a cell counts once if ANY enabled disclosing layer
+    # flags it AND the combined verdict includes it.
+    inc_both = np.asarray(both) == int(Verdict.INCLUDED)
+    disc_both = int((inc_both & (fa | fb)).sum())
+    a_only = wire.combine_planes([oda])
+    disc_a_only = int(((np.asarray(a_only) == int(Verdict.INCLUDED)) & fa).sum())
+    groups.append({
+        "name": "two layers that both disclose", "nrows": 1, "ncols": 4,
+        "layers": [eda, edb], "planes": [(vda, sda, flda), (vdb, sdb, fldb)],
+        "expect_discloses_routes": True,
+        "cases": [
+            {"name": "both disclosing layers, T=10", "thresholds": [10, 10],
+             "enabled": [True, True], "restricted_included": disc_both,
+             "verdicts": [int(v) for v in both]},
+            {"name": "layer A only, T=10", "thresholds": [10, 10], "enabled": [True, False],
+             "restricted_included": disc_a_only,
+             "verdicts": [int(v) for v in a_only]},
+        ]})
+
+    # ------------------------------------- one layer discloses and the other does not
+    # The ordinary shape the moment a household states a second criterion, and the one that
+    # crashed the worker: the app sends a null slot for the plain layer and `plane()` read
+    # `null.byteLength`. A null slot is legal exactly where the manifest declares no plane.
+    ma = surface_from([120.0, 120.0], [Reason.OK, Reason.OK], [120.0, 120.0])
+    mb = surface_from([240.0, 240.0], [Reason.OK, Reason.OK], [240.0, 240.0])
+    ema, vma, sma, flma = layer_entry("mixedDiscloses", ma, flagged=np.array([True, False]))
+    emb, vmb, smb, _flmb = layer_entry("mixedSilent", mb)
+    oma = wire.outcome_planes(vma, sma, threshold_min=10, horizon_s=ma.horizon_s)
+    omb = wire.outcome_planes(vmb, smb, threshold_min=10, horizon_s=mb.horizon_s)
+    mixed = wire.combine_planes([oma, omb])
+    groups.append({
+        "name": "one layer discloses and one does not", "nrows": 1, "ncols": 2,
+        "layers": [ema, emb], "planes": [(vma, sma, flma), (vmb, smb, None)],
+        "expect_discloses_routes": True,
+        "cases": [
+            {"name": "both layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
+             "restricted_included": 1, "verdicts": [int(v) for v in mixed]},
+            # With only the SILENT layer enabled, nothing enabled discloses, so the count must be
+            # null rather than 0 -- the bundle discloses and this selection does not.
+            {"name": "only the silent layer, T=10", "thresholds": [10, 10],
+             "enabled": [False, True], "restricted_included": None,
+             "verdicts": [int(v) for v in wire.combine_planes([omb])]},
         ]})
 
     # ---------------------------------------------------------------- the codes no surface holds

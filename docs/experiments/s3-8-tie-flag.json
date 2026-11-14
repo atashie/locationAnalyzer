@@ -1,0 +1,73 @@
+{
+  "what_this_is": "whether the restricted-route disclosure is a property of the published answer or of the traversal order",
+  "control": {
+    "what_this_is": "the positive control: a four-node construction whose disclosure IS ambiguous, so the instrument's ability to report a moved flag is demonstrated rather than assumed",
+    "published_seconds_at_the_target": 600.0,
+    "baseline_flag_at_the_target": false,
+    "labellings": {
+      "reversed": {
+        "reachable_in_both": 4,
+        "seconds_differing": 0,
+        "flag_moved": 1,
+        "flag_gained": 1,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      },
+      "swap the two legs": {
+        "reachable_in_both": 4,
+        "seconds_differing": 0,
+        "flag_moved": 1,
+        "flag_gained": 1,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      },
+      "rotate": {
+        "reachable_in_both": 4,
+        "seconds_differing": 0,
+        "flag_moved": 0,
+        "flag_gained": 0,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      }
+    },
+    "total_flag_moves": 2,
+    "total_seconds_moves": 0
+  },
+  "real_graph": {
+    "nodes": 539814,
+    "destination_nodes": 510,
+    "horizon_s": 7200.0,
+    "reachable": 514721,
+    "flagged": 69078,
+    "labellings": {
+      "reversed": {
+        "reachable_in_both": 514721,
+        "seconds_differing": 0,
+        "flag_moved": 0,
+        "flag_gained": 0,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      },
+      "random_seed_20261113": {
+        "reachable_in_both": 514721,
+        "seconds_differing": 0,
+        "flag_moved": 0,
+        "flag_gained": 0,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      },
+      "random_seed_20261113_second": {
+        "reachable_in_both": 514721,
+        "seconds_differing": 0,
+        "flag_moved": 0,
+        "flag_gained": 0,
+        "flag_lost": 0,
+        "reachability_changed": 0
+      }
+    },
+    "total_flag_moves": 0
+  },
+  "what_the_real_graph_says": "the flag moved on 0 of 69,078 flagged nodes across three relabellings. Exact bit-level cost ties between differently flagged routes do not occur on this graph, so the disclosure is well defined here",
+  "why_this_still_matters": "the ambiguity is a property of the MODEL, not of this graph. It is latent and it would surface the moment costs are quantised -- integer seconds, a rounded penalty, a deliberately coarse cost unit -- because quantisation manufactures exact ties. Anyone proposing to make the cost integral has to rerun this with --graph first",
+  "and_what_it_does_not_claim": "that the flag is correct. It says the flag does not depend on traversal order on this graph. Whether the route it describes is the route a person can walk is the walked audit's question and remains unanswered"
+}

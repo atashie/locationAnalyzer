@@ -67,7 +67,7 @@ Scope is **walk / grocery / Triangle only**. Drive, bike and transit have no lay
 | | |
 |---|---|
 | **The grid decision** | Keep 100 m. The 200 m candidate roughly doubles the rate at which the published cell answer differs from the answer at the structure's own coordinate — 4.38% against 2.52% at 15 minutes, over 512,633 structures. [s3-1](experiments/s3-1-candidate-grids.md) |
-| **The encoding** | `published-v2`: two uint8 planes. The decoder reproduces `status.evaluate` **cell for cell** on all 330,502 cells at ten thresholds, and the browser's JavaScript reproduces the Python — 37 conformance cases, 13 mutations all caught. Costs 18.2% more bytes. [s3-5](experiments/s3-5-browser-path.md) |
+| **The encoding** | `published-v3`: two uint8 planes, plus an **optional** third carrying the restricted-route flag. The decoder reproduces `status.evaluate` **cell for cell** on all 330,502 cells at ten thresholds, and the browser's JavaScript reproduces the Python. The two planes cost 18.2% more bytes than v1; the flag plane takes the bundle to 1.33×. A bit in the status byte would have been **4,555 bytes cheaper**, and was rejected on contract grounds and not on size — the commit message claimed measurement supported the choice and that claim is withdrawn. [s3-5](experiments/s3-5-browser-path.md), [s3-8-cost](experiments/s3-8-flag-format-cost.json) |
 | **Three outcomes reach the browser** | 18,648 cells the pipeline can *prove* are over the threshold used to arrive as "unknown", and a known failure in one layer could be overridden by an unknown in another. Both fixed. |
 | **Attachment prevalence** | Conventions **A, C and D** measured by census over **843,685** points; eligibility invariant on every point measured. **B is not implemented.** The choice between them is open on verdict impact, which needs the comparator. [t0](experiments/t0-attachment-pilot.md) |
 
@@ -86,10 +86,26 @@ structure falls in** — the answer the product would actually give that househo
 About one in eleven of the **structures** the product includes — this is a structure count, not a
 household count, and frame B is a frame of structures.
 
-**These are candidate disclosures, not deliverable ones.** They are the *source grid's* figures;
-the browser receives a WGS84 re-tiling and MapLibre places it in Mercator, each moving the lookup
-again. And **no flag plane is shipped**, so no household can currently be told any of this.
-[s3-8](experiments/s3-8-restricted-routes.json)
+**The flag now ships, and these are still not the shipped figures.** The layer bundle carries
+the plane as of 2026-11-13, so the format no longer blocks the disclosure. The figures above are
+the *source grid's*: the browser receives a WGS84 re-tiling and MapLibre places that in
+Mercator, and each step moves which pixel a structure reads.
+
+Measured through both steps, the **share** barely moves — 9.09% on the source grid, **8.95%
+at the shipped pixel**, 8.87% at the row MapLibre places, at *T* = 10 — but the **set** does:
+1,608 structures lose the disclosure and 1,502 gain one between the source grid and the shipped
+raster. So the aggregate is robust and the individual answer is not, and the figure a report may
+quote is the shipped one, because the cell the product answers for is now the shipped pixel.
+
+What makes that tolerable rather than alarming is that every shipped pixel's minutes, status and
+flag come from **one** source cell — 0 of 330,502 are mixed — so the re-tiling cannot
+hand a household a time whose disclosure describes a different journey. What it moves is which
+cell answers, which is the 2.1% verdict movement already measured in s3-5.
+
+**And nothing shows a flagged answer to anyone yet.** The decoder counts the disclosure; the
+per-criterion card is unbuilt, so no interface displays one.
+[s3-8](experiments/s3-8-restricted-routes.json),
+[s3-8-shipped](experiments/s3-8-shipped-disclosure.json)
 
 The statistic the owner's 2026-11-10 decision owes is the **signed error on restricted-route
 journeys**. This supplies the denominator and leaves the numerator empty: one journey, in the
@@ -115,8 +131,9 @@ screenshot).
 
 None of the three things a household is owed can be delivered today:
 
-1. **The restricted-route flag** — computed, not persisted in the layer bundle. Adding it is a
-   wire-format change.
+1. ~~**The restricted-route flag** — computed, not persisted in the layer bundle.~~ **DONE
+   2026-11-13**: `published-v3` carries it as an optional third plane. What is *not* done is
+   **showing** it, which is item (3) — now the binding constraint on this item too.
 2. **The destination the time was measured to** — not persisted either, and a destination *node*
    does not identify a shop: 550 places snap to 510 nodes and 75 share one, so presenting an
    identity needs a rule that does not exist yet.

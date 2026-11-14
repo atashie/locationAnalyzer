@@ -113,3 +113,56 @@ def test_the_regrid_measurement_indexes_pixels_the_way_rasterio_does():
     rr, cc = rowcol(transform, lon, lat, op=np.floor)
     assert np.array_equal(mine_col, np.asarray(cc, dtype=np.int64))
     assert np.array_equal(mine_row, np.asarray(rr, dtype=np.int64))
+
+def _write_flag_bundle(tmp_path, monkeypatch, shape, *, horizon_s, flagged=None):
+    """A `<stem>_restricted_route{,_build}` pair in a temporary layer directory."""
+    monkeypatch.setattr(exporter, "LAYERS", tmp_path)
+    flag = np.zeros(shape, dtype=np.uint8) if flagged is None else np.asarray(flagged, np.uint8)
+    np.save(tmp_path / "s_restricted_route.npy", flag)
+    meta = {"built": "2026-11-13", "mode": "walk", "category": "grocery"}
+    if horizon_s is not None:
+        meta["horizon_s"] = horizon_s
+    (tmp_path / "s_restricted_route_build.json").write_text(json.dumps(meta), encoding="utf-8")
+    return flag
+
+
+def test_a_flag_raster_built_under_a_different_horizon_is_refused(tmp_path, monkeypatch):
+    """**The 5,145-cell defect was exactly this.** `encode_route_flag` catches a mismatch only
+    when it runs one way -- a smaller surface horizon leaves flags where the status is no longer
+    OK. A LARGER surface horizon leaves cells newly OK whose flag was never computed, so they ship
+    ROUTE_CLEAR, and a clear flag asserts nothing, which is why nothing downstream can notice. So
+    the horizons are compared where the two artifacts are paired."""
+    _write_flag_bundle(tmp_path, monkeypatch, (2, 3), horizon_s=3600.0)
+    with pytest.raises(SystemExit) as excinfo:
+        exporter.load_route_flag("s", (2, 3), 7200.0)
+    message = str(excinfo.value)
+    assert "3600" in message and "7200" in message
+    # It has to say which direction the disagreement runs, because the two have different
+    # consequences and only one of them is caught anywhere else.
+    assert "unflagged" in message or "no longer publishes" in message
+
+
+def test_a_matching_horizon_is_accepted(tmp_path, monkeypatch):
+    flag = _write_flag_bundle(tmp_path, monkeypatch, (2, 3), horizon_s=7200.0,
+                              flagged=[[1, 0, 0], [0, 0, 1]])
+    got = exporter.load_route_flag("s", (2, 3), 7200.0)
+    assert got is not None
+    assert np.array_equal(got, flag)
+
+
+def test_a_flag_raster_with_no_recorded_horizon_is_accepted_but_named(tmp_path, monkeypatch,
+                                                                     capsys):
+    """The raster in the repository predates the field, so refusing it would make this change a
+    rebuild rather than a check. The gap is printed rather than passed over -- *absence is not
+    evidence of cleanliness* applies to the build record too."""
+    _write_flag_bundle(tmp_path, monkeypatch, (2, 3), horizon_s=None)
+    got = exporter.load_route_flag("s", (2, 3), 7200.0)
+    assert got is not None
+    assert "records no horizon_s" in capsys.readouterr().out
+
+
+def test_an_absent_flag_raster_is_none_rather_than_a_plane_of_zeros(tmp_path, monkeypatch):
+    """`None` means "this layer does not disclose", which is a different statement from "no route
+    is restricted" and no consumer may collapse the two."""
+    monkeypatch.setattr(exporter, "LAYERS", tmp_path)
+    assert exporter.load_route_flag("s", (2, 3), 7200.0) is None

@@ -1,0 +1,45 @@
+{
+  "what_this_is": "the flag plane's cost against the alternatives rather than against nothing. The commit that shipped it reported only its own size and called that a refutation of the bit, which it is not",
+  "cells": 330502,
+  "set_cells": 57193,
+  "set_share": 0.1730488771626193,
+  "encodings": {
+    "separate_uint8_plane_as_shipped": {
+      "raw_bytes": 330502,
+      "deflated_bytes": 25651
+    },
+    "separate_packed_bitmap": {
+      "raw_bytes": 41313,
+      "deflated_bytes": 22022
+    },
+    "separate_runlength_rowmajor": {
+      "raw_bytes": 37995,
+      "deflated_bytes": 22637
+    },
+    "separate_runlength_colmajor": {
+      "raw_bytes": 37157,
+      "deflated_bytes": 22339
+    },
+    "separate_delta_index": {
+      "raw_bytes": 57290,
+      "deflated_bytes": 22673
+    },
+    "a_bit_in_the_status_byte": {
+      "raw_bytes": 0,
+      "deflated_bytes": 21096,
+      "how_this_is_priced": "the GROWTH of the status plane, because this alternative adds no plane: status alone deflates to 17,327 and with the flag in bit 3 to 38,423"
+    }
+  },
+  "bundle": {
+    "value_plane_deflated": 185053,
+    "status_plane_deflated": 17327,
+    "total_as_shipped": 228031,
+    "total_with_the_status_bit": 223476,
+    "total_with_a_packed_bitmap": 224402
+  },
+  "cheapest_encoding": "a_bit_in_the_status_byte",
+  "what_this_settles": "the SIZE argument, against the choice that shipped. The bit is cheaper than the separate plane, and a packed bitmap is cheaper than either of the two separate encodings considered. So 'the byte argument does not survive measurement' must be withdrawn",
+  "the_contract_argument_is_withdrawn": "the commit said the layer contract forbids a bit in the status byte, because wire codes are assigned explicitly and may not be reinterpreted. Pass 48 F6: that is true of v2 and irrelevant here. Setting a bit while still calling it published-v2 would violate the contract, but published-v3 is a new encoding either way, and a new encoding may define `status = byte & 7` and `restricted = byte & 8` as explicitly as it defines a third plane. Old readers refuse an unknown encoding in both designs",
+  "what_actually_decides_it": "OPTIONALITY, which a bit cannot express. An absent plane says THIS LAYER DOES NOT DISCLOSE; a clear bit inside a byte that must be present says NO ROUTE IS RESTRICTED, and those are different statements that no consumer may confuse. Orthogonality is the secondary reason -- the status answers why there is no time and the flag answers what the route used -- and a byte whose meaning is 'a code, or a code plus eight' is harder to validate against a code table. That buys 4,555 bytes, 2.00% of the compressed bundle, and the owner may price it differently",
+  "the_decode_cost_this_does_not_measure": "a packed bitmap or a bit field costs a shift and a mask per cell inside the compute loop, 330,502 times per repaint, where a uint8 plane costs a single byte load. That is a latency measurement and this is a size measurement; the cheaper encodings are not recommended on this evidence alone"
+}

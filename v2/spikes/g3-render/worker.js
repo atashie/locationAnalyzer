@@ -142,13 +142,31 @@ function handleInit(msg) {
       + `${READABLE_ENCODINGS.join(', ')}; this decoder refuses a format it does not know rather `
       + 'than guessing at its codes');
   }
-  const plane = (bufs, what) => {
+  // `declaredFor` is supplied only for an OPTIONAL plane. Pass 48: without it, a bundle that
+  // mixed one disclosing layer with one plain layer crashed here reading `null.byteLength`,
+  // because the app sends a null slot for a layer with no plane. A null is now a legal slot
+  // exactly where the manifest declares no plane, and an arriving plane the manifest does NOT
+  // declare is refused -- a manifest and a payload that disagree cannot both be right.
+  const plane = (bufs, what, declaredFor) => {
     if (!Array.isArray(bufs) || bufs.length !== manifest.layers.length) {
       throw new Error(`expected ${manifest.layers.length} ${what} buffers, got ${bufs && bufs.length}`);
     }
     return bufs.map((buf, i) => {
+      const id = manifest.layers[i].id;
+      const declared = declaredFor ? !!declaredFor(manifest.layers[i]) : true;
+      if (buf === null || buf === undefined) {
+        if (declared) {
+          throw new Error(`layer ${id} declares a ${what} plane and none arrived; refusing to `
+            + 'read a missing plane as "nothing to disclose"');
+        }
+        return null;
+      }
+      if (!declared) {
+        throw new Error(`layer ${id} received a ${what} plane the manifest does not declare; `
+          + 'refusing to publish a disclosure the layer does not claim');
+      }
       if (buf.byteLength !== n) {
-        throw new Error(`layer ${manifest.layers[i].id} ${what}: ${buf.byteLength} bytes, expected nrows*ncols = ${n}`);
+        throw new Error(`layer ${id} ${what}: ${buf.byteLength} bytes, expected nrows*ncols = ${n}`);
       }
       return new Uint8Array(buf);
     });
@@ -160,9 +178,10 @@ function handleInit(msg) {
   // into "no route is restricted", which is the one reading this format must never permit.
   const declaresFlags = manifest.layers.some((l) => !!l.flag_file);
   let routeFlags = manifest.layers.map(() => null);
-  if (declaresFlags) {
-    const planes = plane(msg.routeFlags, 'route flag');
-    routeFlags = manifest.layers.map((l, i) => (l.flag_file ? planes[i] : null));
+  // The planes are validated whenever EITHER side mentions them, so a payload that carries a
+  // plane no layer declares is caught rather than ignored.
+  if (declaresFlags || Array.isArray(msg.routeFlags)) {
+    routeFlags = plane(msg.routeFlags, 'route flag', (l) => !!l.flag_file);
     for (let k = 0; k < routeFlags.length; k++) {
       if (!routeFlags[k]) continue;
       for (let p = 0; p < routeFlags[k].length; p++) {

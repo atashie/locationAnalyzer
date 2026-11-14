@@ -10,6 +10,8 @@ cost-optimal path, and for parallel edges the cost-minimal one — rather than a
 """
 from __future__ import annotations
 
+import itertools
+
 import networkx as nx
 import numpy as np
 import pytest
@@ -214,3 +216,74 @@ def test_a_point_at_an_endpoint_walks_none_of_the_matched_edge_and_discloses_non
     assert list(seconds) == [100.0, 50.0, 0.0]
     # At x=0 the whole restricted edge is walked; mid-edge, half of it; at x=100, none of it.
     assert [bool(f) for f in flags] == [True, True, False]
+
+def equal_cost_diamond(*, restricted_leg: int, order=(0, 1, 2, 3)) -> nx.MultiDiGraph:
+    """`0 -> 1 -> 3` and `0 -> 2 -> 3`, equal cost to the last bit; one leg restricted.
+
+    Node 0 is the destination, so node 3 has two equally cheap routes to it and exactly one of
+    them uses a restricted way.
+
+    `order` is the insertion order of the nodes, which is what `graph_to_cost_time_flag_csr` turns
+    into CSR positions and therefore what the sweep's heap uses to break a tie. Relabelling the
+    nodes does NOT do this: `nx.relabel_nodes` rebuilds the graph in the same iteration order with
+    new names, so the CSR comes out byte-identical and nothing moves.
+    """
+    G = nx.MultiDiGraph()
+    G.add_nodes_from(order)
+    half = 300.0
+    for mid in (1, 2):
+        restricted = mid == restricted_leg
+        G.add_edge(0, mid, travel_time=half, cost=half, access_restricted=restricted)
+        G.add_edge(mid, 0, travel_time=half, cost=half, access_restricted=restricted)
+        G.add_edge(mid, 3, travel_time=half, cost=half)
+        G.add_edge(3, mid, travel_time=half, cost=half)
+    return G
+
+
+def _flag_at_the_tied_node(G: nx.MultiDiGraph) -> tuple[float, bool]:
+    cost, time, flag, index = graph_to_cost_time_flag_csr(G)
+    seconds, _selected, flagged = arrival_with_route_flag(cost, time, flag, dest_idx=[index[0]])
+    return float(seconds[index[3]]), bool(flagged[index[3]])
+
+
+def test_at_an_exact_cost_tie_the_published_time_is_determined_and_the_disclosure_is_not():
+    """**The flag is a function of the traversal order, not of the answer we publish.**
+
+    Two routes of identical cost, one restricted. The published seconds are the same whichever the
+    sweep settles first, so no check on the value plane can tell them apart and
+    `encode_route_flag`'s invariant -- a flag only where the status is OK -- holds for both
+    answers. Changing the node insertion order changes only the heap's tie-break, and the flag follows it:
+    twelve of the twenty-four orderings each way.
+
+    This is pinned, not fixed. Fixing it means deciding WHICH of two equally cheap routes a
+    household is told about, which is the decision S3 item 6's suffix-aware band exists to make
+    and which belongs to the owner. `scripts/measure_tie_flag.py --graph` measures the extent on
+    the real walk graph: 0 of 69,078 flagged nodes, because float travel times do not tie
+    exactly -- so this is latent, and quantising the cost would surface it.
+    """
+    seen = set()
+    for order in itertools.permutations(range(4)):
+        cost, time, flag, index = graph_to_cost_time_flag_csr(
+            equal_cost_diamond(restricted_leg=1, order=order))
+        seconds, _sel, flagged = arrival_with_route_flag(cost, time, flag, dest_idx=[index[0]])
+        seen.add((float(seconds[index[3]]), bool(flagged[index[3]])))
+
+    times = {t for t, _f in seen}
+    flags = {f for _t, f in seen}
+    assert times == {600.0}, f"the published time moved under a reordering: {sorted(times)}"
+    assert flags == {False, True}, (
+        "the disclosure did not move under any of the 24 node orderings, so either the tie is not "
+        f"exact or the sweep breaks ties by something other than CSR position: {sorted(flags)}")
+    # And it is an even split, which rules out one freak ordering doing it.
+    assert len(seen) == 2
+
+
+def test_the_tie_is_exact_so_the_ambiguity_is_not_a_rounding_artefact():
+    """If the two legs differed by one ulp the cheaper would simply win, and there would be no
+    ambiguity to pin. This asserts the two routes cost the same binary64 value."""
+    G = equal_cost_diamond(restricted_leg=1)
+    cost, _time, _flag, index = graph_to_cost_time_flag_csr(G)
+    via_a = cost[index[0], index[1]] + cost[index[1], index[3]]
+    via_b = cost[index[0], index[2]] + cost[index[2], index[3]]
+    assert via_a == via_b
+    assert float(via_a).hex() == float(via_b).hex()

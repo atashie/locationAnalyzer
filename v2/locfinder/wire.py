@@ -51,6 +51,8 @@ this is a guard rather than a live path.
 """
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 
 from .status import LAYER_REASONS, Outcome, Reason, Verdict
@@ -161,6 +163,27 @@ def encode_planes(surface) -> tuple[np.ndarray, np.ndarray]:
         lower = np.where(np.isfinite(lower), lower, float(VALUE_MAX))
         value[bounded] = np.minimum(lower, float(VALUE_MAX)).astype(np.uint8)
     return value, status
+
+
+def surface_fingerprint(seconds, reason) -> str:
+    """A digest of the arrays a derived plane was computed against.
+
+    Pass 48 F3: shape, aggregate count and `flag set implies status OK` cannot establish that a
+    CLEAR flag is true, and they cannot in principle -- a clear flag is not an assertion, which is
+    the property that makes the plane safe to make optional and the same property that makes it
+    unverifiable from its own contents. Codex flipped one flag down and one up on the shipped
+    plane and every check accepted it.
+
+    What is checkable is **provenance**: this records which surface a flag describes, so a flag
+    computed against a different one can be refused. It is a binding, not a proof -- it says
+    nothing about whether the route the flag names is walkable.
+    """
+    h = hashlib.sha256()
+    for arr in (np.ascontiguousarray(seconds, dtype=np.float64),
+                np.ascontiguousarray(reason, dtype=np.int8)):
+        h.update(str(arr.shape).encode("ascii"))
+        h.update(arr.tobytes())
+    return h.hexdigest()[:32]
 
 
 def encode_route_flag(flagged, status: np.ndarray) -> np.ndarray:

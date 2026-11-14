@@ -58,11 +58,19 @@ SOURCES = [
 ]
 
 
-def load_route_flag(stem: str, shape) -> np.ndarray | None:
+def load_route_flag(stem: str, shape, horizon_s: float,
+                    fingerprint: str | None = None) -> np.ndarray | None:
     """The per-cell route flag, if this layer bundle carries one.
 
     Returning `None` is meaningful: it is "this layer does not disclose", and every consumer has to
     keep it distinct from a plane of zeros.
+
+    Pass 48: the horizon is checked here because the 5,145-cell defect WAS a horizon disagreement
+    between this raster and the surface it describes, and `wire.encode_route_flag` catches only one
+    direction of it. A surface horizon SMALLER than the flag's leaves flags where the status is no
+    longer OK, which that invariant refuses. A LARGER one leaves cells newly OK whose flag was
+    never computed, so they ship ROUTE_CLEAR -- and a clear flag asserts nothing, which is exactly
+    why nothing downstream can notice. The pairing is therefore checked where the pairing is made.
     """
     path = LAYERS / f"{stem}_restricted_route.npy"
     if not path.exists():
@@ -72,6 +80,37 @@ def load_route_flag(stem: str, shape) -> np.ndarray | None:
         raise SystemExit(
             f"{path.name} is {flag.shape} and the surface is {tuple(shape)}; refusing to publish a "
             "disclosure that does not describe this layer")
+    meta_path = LAYERS / f"{stem}_restricted_route_build.json"
+    recorded = None
+    if meta_path.exists():
+        recorded = json.loads(meta_path.read_text(encoding="utf-8")).get("horizon_s")
+    if recorded is None:
+        # The raster in the repository predates the field. Accepting it keeps this a check rather
+        # than a rebuild, but the gap is named rather than passed over in silence.
+        print(f"  WARNING: {meta_path.name} records no horizon_s, so the flag cannot be checked "
+              f"against the surface's {horizon_s:g} s. Rebuild it with "
+              f"scripts/flag_restricted_routes.py --write-raster to close this.")
+    elif float(recorded) != float(horizon_s):
+        raise SystemExit(
+            f"{path.name} was computed with horizon {float(recorded):g} s and the surface applies "
+            f"{float(horizon_s):g} s. A smaller surface horizon leaves flags on journeys the layer "
+            "no longer publishes; a larger one leaves newly published journeys silently unflagged. "
+            "Rebuild the flag raster against this surface.")
+    # Pass 48 F3: and WHICH surface. Shape, aggregate count and `flag implies OK` all accepted a
+    # plane with one flag flipped down and one up, because a clear flag is not an assertion and
+    # cannot be checked against anything. Provenance can be.
+    if fingerprint is not None and meta_path.exists():
+        stated = json.loads(meta_path.read_text(encoding="utf-8")).get("surface_fingerprint")
+        if stated is None:
+            print(f"  WARNING: {meta_path.name} records no surface_fingerprint, so this flag "
+                  "cannot be tied to the surface it describes. Rebuild it with "
+                  "scripts/flag_restricted_routes.py --write-raster to close this.")
+        elif stated != fingerprint:
+            raise SystemExit(
+                f"{path.name} was computed against surface {stated} and this surface is "
+                f"{fingerprint}. The flag describes a different layer, or the plane has been "
+                "altered since it was written. A clear flag asserts nothing, so nothing else in "
+                "this pipeline can notice. Rebuild the flag raster against this surface.")
     return flag
 
 
@@ -172,7 +211,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
         surf, build = load_surface(stem)
         value, status = wire.encode_planes(surf)
-        raw_flag = load_route_flag(stem, value.shape)
+        raw_flag = load_route_flag(
+            stem, value.shape, surf.horizon_s,
+            fingerprint=wire.surface_fingerprint(surf.seconds, surf.reason))
         flag = None if raw_flag is None else wire.encode_route_flag(raw_flag, status)
         transform, crs = source_transform(build, value.shape)
 

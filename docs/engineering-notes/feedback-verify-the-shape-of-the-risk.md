@@ -577,4 +577,68 @@ questions admissibility, the first move is to list what the instrument needs and
 present or absent, **not** to construct a reason the comparison is fair. And a robustness check is
 only evidence if it varies the axis the objection is actually about.
 
-Twenty-four instances now.
+## Twenty-fifth to twenty-eighth, 2026-11-13 — pass 48 on publishing the flag
+
+**Twenty-fifth: I cited measurement for a conclusion I had reached on other grounds, without
+running the measurement.** The commit message says *"the byte argument for the bit does not survive
+measurement either: the plane is 17.3% set, spatially clustered, and deflates to 25,651 bytes."*
+That sentence reports a measurement of the option I chose and calls it a refutation of the option I
+rejected. It is not. I never priced the bit. When priced — the flag in bit 3 of the status byte,
+measured as the status plane's growth — it costs **21,096 bytes against the separate plane's
+25,651**, and the whole bundle is **223,476 against 228,031**. The option I rejected is 4,555 bytes
+cheaper. A packed bitmap, which keeps every property I argued for, is **22,022**, so the encoding I
+shipped is the most expensive of five ways to carry the same information.
+
+The format decision still stands, because the contract argument is the one that decides it. But
+"measurement refutes the alternative" and "I did not measure the alternative" are different
+sentences, and I wrote the first while the second was true. The tell was that the number I quoted
+was about my own choice: **a measurement that cannot come out against you is not evidence.**
+
+**Twenty-sixth: I corrected the artifact and not the generator.** Two statements in
+`docs/experiments/s3-8-restricted-routes.json` were falsified the moment the plane shipped. I fixed
+the JSON. Codex found that `flag_restricted_routes.py` still emits both, so the next run would
+restore them — and the repository would then hold a published artifact that disagrees with the
+script that builds it, which is worse than a stale artifact because it looks right and cannot be
+rebuilt. The same block had two edge counts written as literals beside the variables holding them.
+`CLAUDE.md` already says anything needed to rebuild a published artifact is committed beside it;
+what it did not say, and now does, is that **correcting a generated file means correcting the
+generator, and the artifact is then rebuilt or explicitly marked as hand-corrected.**
+
+**Twenty-seventh: my fixtures made a whole class of defect unreachable, for the fourth time.**
+Every conformance group carries exactly one disclosing layer. So the per-layer flag indexing is
+never exercised, and Codex found two mutations that pass all fifty checks: reading every layer's
+flag from layer 0, and counting a cell twice when two enabled layers both disclose. It also found
+that a bundle mixing one disclosing layer with one that does not **crashes the worker**, because
+the app sends `[flagBuffer, null]` and the worker reads the null slot's byte length.
+
+This is the same shape as instances thirteen, fourteen and twenty-one: a check that cannot fail,
+and in each case the reason it cannot fail is the **shape of the fixture**, not the logic of the
+check. Three of those were caught by mutation testing and this one was not, because a mutation
+guard inherits its blind spots from the fixtures it mutates. **A mutation suite proves the checks
+discriminate on the inputs they are given; it says nothing about the inputs they are not.** So the
+fixture question is now explicit: for each dimension the code indexes over — layers, thresholds,
+status codes, planes — does at least one fixture carry more than one distinct value along it?
+
+**Twenty-eighth, and it is the mirror of the twenty-fifth.** Having run two measurements, I
+described both as establishing more than they do. I called a *round trip* -- reproject to the
+shipped grid and back -- an instrument for "what a household reads". It is not: the return applies
+a second nearest lookup that can undo the outward error, add a new one, or miss a disagreement away
+from a cell centre. Codex's counterexample is two source cells re-tiled to three and back, which
+restores every source value exactly while a coordinate at 0.9 still reads the wrong cell. A perfect
+round trip is compatible with a wrong answer, so the figure bounds nothing. And I called "0 of
+330,502 mixed triples" a proof that each shipped cell's three planes come from one source cell,
+when three warped byte planes can in principle recombine into a valid index; the real reason to
+expect coherence is that the three reprojections share geometry, dimensions, resampling and fill,
+which the measurement then confirms.
+
+Both conclusions survived. What did not survive was my account of *why* they hold, and in one case
+the quantity I attached to it. The pattern: **a measurement that is easy to run is not thereby a
+measurement of the thing you want to know**, and the round trip was easy. The forward comparison --
+read each structure's source cell and its shipped pixel and compare them -- is the instrument that
+answers the question, and I had in fact built it in the same script, which is why the household
+figures are unaffected. So the discipline is not "measure more" but **name the question before
+choosing the instrument, then check that the instrument's output is in the units of the question.**
+Round-trip agreement is in units of cells; 1,316 structures silently unflagged is in units of
+households.
+
+Twenty-eight instances now.

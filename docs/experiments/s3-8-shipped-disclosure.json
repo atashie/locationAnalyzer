@@ -1,0 +1,136 @@
+{
+  "what_this_is": "what the SHIPPED disclosure is, as against the source-grid figure step 8 published: the re-tiling and MapLibre's placement each move which pixel a structure reads",
+  "source_shape": [
+    514,
+    643
+  ],
+  "shipped_shape": [
+    514,
+    643
+  ],
+  "reprojection_fidelity": {
+    "what_this_measures": "cells, not households: what the re-tiling does to the planes themselves",
+    "source_cells": 330502,
+    "destination_cells": 330502,
+    "destination_cells_covered": 330502,
+    "distinct_source_cells_sampled": 315512,
+    "source_cells_never_sampled": 14990,
+    "source_cells_sampled_more_than_once": 14898,
+    "largest_duplication": 3,
+    "flagged_source_cells": 57175,
+    "flagged_source_cells_never_sampled": 2691,
+    "ok_source_cells_never_sampled": 9795,
+    "destination_flagged_cells": 57193,
+    "shipped_flagged_cells": 57193,
+    "shipped_plane_matches_recomputed": true,
+    "destination_cells_whose_triple_is_one_source_cell": 330502,
+    "destination_cells_whose_triple_is_mixed": 0,
+    "what_zero_mixed_means": "every shipped cell's minutes, status and flag agree with ONE source cell's, so the re-tiling does not hand a household a time whose disclosure describes a different journey. Pass 48 narrowed the strength of this: three warped byte planes can in principle recombine into a valid index, so a zero here is strong evidence and not a proof. The reason to EXPECT it is that the three reprojections share geometry, dimensions, resampling and fill, which makes a common sampled cell structural rather than lucky; the measurement confirms the expectation holds on this grid pair",
+    "round_trip_value_changed": 15082,
+    "round_trip_status_changed": 15002,
+    "round_trip_flag_changed": 2702,
+    "round_trip_flags_dropped": 2699,
+    "round_trip_flags_raised": 3,
+    "round_trip_flags_dropped_where_status_stayed_ok": 6,
+    "round_trip_flags_raised_where_status_stayed_ok": 3,
+    "round_trip_status_ok_lost": 9803,
+    "round_trip_status_ok_gained": 0,
+    "why_the_round_trip_is_not_a_household_figure": "it bounds nothing. Reprojecting back applies a second nearest lookup, which can undo an outward error, introduce a new one, or miss a disagreement away from a cell centre. Pass 48's counterexample: two source cells re-tiled to three and back restore every source value EXACTLY while a coordinate at 0.9 still reads the wrong cell. So these figures describe the composition of two resamplings at cell centres and nothing about households. The structure figures below are the household ones, and they come from the forward comparison -- source cell against shipped pixel at each structure's own coordinate"
+  },
+  "structures": 512633,
+  "inside_the_shipped_bounds": 500451,
+  "omitted_by_the_shipped_bounds": 12182,
+  "why_the_source_figures_here_differ_from_step_8s": "step 8 counted all 512,633 structures and this counts the 500,451 inside the shipped bounds, because the other 12,182 have no shipped pixel to compare against",
+  "thresholds": {
+    "10": {
+      "on_the_source_grid": {
+        "included": 79472,
+        "disclosed": 7223,
+        "share_of_included": 0.09088735655325146
+      },
+      "at_the_shipped_pixel": {
+        "included": 79555,
+        "disclosed": 7117,
+        "share_of_included": 0.08946012192822575
+      },
+      "at_the_row_maplibre_places": {
+        "included": 79805,
+        "disclosed": 7075,
+        "share_of_included": 0.08865359313326232
+      },
+      "disclosure_lost_source_to_shipped": 1608,
+      "disclosure_gained_source_to_shipped": 1502,
+      "disclosure_lost_shipped_to_placed": 910,
+      "disclosure_gained_shipped_to_placed": 868,
+      "included_as_shipped_flagged_at_source_but_unflagged_as_shipped": 1316
+    },
+    "15": {
+      "on_the_source_grid": {
+        "included": 162200,
+        "disclosed": 15122,
+        "share_of_included": 0.09323057953144266
+      },
+      "at_the_shipped_pixel": {
+        "included": 162115,
+        "disclosed": 15026,
+        "share_of_included": 0.09268728988680874
+      },
+      "at_the_row_maplibre_places": {
+        "included": 162375,
+        "disclosed": 14977,
+        "share_of_included": 0.09223710546574287
+      },
+      "disclosure_lost_source_to_shipped": 2879,
+      "disclosure_gained_source_to_shipped": 2783,
+      "disclosure_lost_shipped_to_placed": 1720,
+      "disclosure_gained_shipped_to_placed": 1671,
+      "included_as_shipped_flagged_at_source_but_unflagged_as_shipped": 2655
+    },
+    "25": {
+      "on_the_source_grid": {
+        "included": 293872,
+        "disclosed": 30337,
+        "share_of_included": 0.10323201938258834
+      },
+      "at_the_shipped_pixel": {
+        "included": 293454,
+        "disclosed": 29802,
+        "share_of_included": 0.10155595084749228
+      },
+      "at_the_row_maplibre_places": {
+        "included": 293507,
+        "disclosed": 29636,
+        "share_of_included": 0.1009720381455979
+      },
+      "disclosure_lost_source_to_shipped": 5560,
+      "disclosure_gained_source_to_shipped": 5025,
+      "disclosure_lost_shipped_to_placed": 3213,
+      "disclosure_gained_shipped_to_placed": 3047,
+      "included_as_shipped_flagged_at_source_but_unflagged_as_shipped": 5275
+    },
+    "45": {
+      "on_the_source_grid": {
+        "included": 416987,
+        "disclosed": 45784,
+        "share_of_included": 0.10979718792192562
+      },
+      "at_the_shipped_pixel": {
+        "included": 416894,
+        "disclosed": 45253,
+        "share_of_included": 0.10854797622417209
+      },
+      "at_the_row_maplibre_places": {
+        "included": 417035,
+        "disclosed": 45087,
+        "share_of_included": 0.10811322790653062
+      },
+      "disclosure_lost_source_to_shipped": 8091,
+      "disclosure_gained_source_to_shipped": 7560,
+      "disclosure_lost_shipped_to_placed": 4723,
+      "disclosure_gained_shipped_to_placed": 4557,
+      "included_as_shipped_flagged_at_source_but_unflagged_as_shipped": 7968
+    }
+  },
+  "which_figure_a_report_may_quote": "at_the_shipped_pixel. Pass 46 F2 settled that the unit is the cell the product answers for; the cell the product answers for is now the SHIPPED pixel, not the source cell. The source figure is model sensitivity and the MapLibre figure is the placement's own cost",
+  "what_this_does_not_say": "that any household receives a disclosure. The plane ships and the decoder counts it; no interface displays a flagged answer, because the per-criterion card is unbuilt"
+}

@@ -40,6 +40,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "spikes"))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from _common import ACCEPTED_PLACES, METRO, METRO_DIR, load_roads_graph, stamp  # noqa: E402
+from locfinder import wire                                        # noqa: E402
 from locfinder.measure.frames import structure_population          # noqa: E402
 from locfinder.places.categories import select_overture            # noqa: E402
 from locfinder.status import (CATEGORY_COST_SELECTED, ENGINES,      # noqa: E402
@@ -63,6 +64,8 @@ THRESHOLDS_MIN = (10, 15, 25, 45)
 #: because that bundle is what "published in the layer bundle" means and what the graph-free
 #: exporter reads.
 STEM = "own_triangle_grocery_walk"
+#: Where the surface triple and the flag raster live together.
+LAYERS_DIR = pathlib.Path(__file__).resolve().parents[1] / "data" / "layers"
 
 V2 = pathlib.Path(__file__).resolve().parents[1]
 ARTIFACT = V2.parent / "docs" / "experiments" / "s3-8-restricted-routes.json"
@@ -119,13 +122,17 @@ def main(argv: list[str] | None = None) -> int:
             "structures_at_their_published_cell. The product answers for a cell, so that is what a "
             "household is told; the coordinate figures are model sensitivity. Pass 46 F2 found the "
             "first version's headline built on the coordinate unit -- 8,033 of 78,627 at T=10 -- "
-            "where the published cell gives 7,276 of 80,067, and 23,330 structures carry a "
+            "where the published cell gives 7,271 of 80,067, and 23,330 structures carry a "
             "different flag between the two"),
         "what_is_still_not_the_shipped_answer": (
             "even the published-cell figure is the SOURCE grid's. The browser receives a WGS84 "
             "re-tiling and MapLibre places it in Mercator, each of which moves the lookup again "
-            "(see s3-5-browser-path). And no flag plane is shipped at all, so every count here is "
-            "a CANDIDATE disclosure rather than one any household can currently receive"),
+            "(see s3-5-browser-path). A flag plane IS now shipped in the layer bundle "
+            "(published-v3, 2026-11-13), so these counts are no longer candidates for want "
+            "of a format. They remain candidates for want of a reprojection: the browser's "
+            "count is taken on the re-tiled plane, not this one, and no interface SHOWS a "
+            "flagged answer yet -- the per-criterion card is unbuilt, so the decoder counts "
+            "the disclosure and nothing displays it"),
         "the_statistic_this_does_not_compute": (
             "the SIGNED ERROR on restricted-route journeys. That needs walked journeys: this "
             "computes the denominator -- which answers are in the class -- and leaves the "
@@ -195,6 +202,15 @@ def main(argv: list[str] | None = None) -> int:
         np.save(path, np.asarray(grid_flag, dtype=np.uint8))
         meta = {
             "built": stamp(), "mode": MODE, "category": CATEGORY,
+            # Pass 48: the 5,145-cell defect WAS a horizon disagreement between this raster
+            # and the surface it describes, and nothing recorded which horizon either used.
+            # `export_published_layers.load_route_flag` now refuses a mismatch.
+            "horizon_s": float(HORIZON_S),
+            # Pass 48 F3: which SURFACE this flag describes. A flag plane cannot be validated
+            # from its own contents -- a clear flag asserts nothing -- so the exporter checks
+            # provenance instead and refuses a flag computed against different arrays.
+            "surface_fingerprint": wire.surface_fingerprint(
+                np.load(LAYERS_DIR / f"{STEM}.npy"), np.load(LAYERS_DIR / f"{STEM}_reason.npy")),
             "cells": int(grid_flag.size), "flagged": int(grid_flag.sum()),
             "answered": int(np.isfinite(secs_grid).sum()) if secs_grid is not None else None,
             "what_it_means": ("1 where the cost-optimal route behind this cell's published answer "
@@ -204,9 +220,13 @@ def main(argv: list[str] | None = None) -> int:
                               "is not an assertion that a route is unrestricted, only that this "
                               "cell discloses nothing"),
             "restricted_edges_in_the_graph": restricted_edges,
-            "why_the_edge_count_is_not_this": ("123,756 of 1,436,992 walk edges are restricted, "
-                                               "so an edge count is true everywhere and discloses "
-                                               "nothing about any particular answer"),
+            # Pass 48: these two counts were literals beside the variables holding them, so
+            # a graph rebuild would have left the prose asserting the old numbers.
+            "why_the_edge_count_is_not_this": (
+                f"{restricted_edges:,} of {G.number_of_edges():,} walk edges are restricted, "
+                "so an "
+                "edge count is true everywhere and discloses nothing about any particular "
+                "answer"),
         }
         pathlib.Path(str(path).replace(".npy", "_build.json")).write_text(
             json.dumps(meta, indent=2, default=str), encoding="utf-8")

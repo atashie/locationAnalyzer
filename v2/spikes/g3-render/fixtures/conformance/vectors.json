@@ -341,6 +341,121 @@
       ]
     },
     {
+      "name": "two layers that both disclose",
+      "nrows": 1,
+      "ncols": 4,
+      "layers": [
+        {
+          "id": "discA",
+          "horizon_s": 7200.0,
+          "value_file": "discA.value.bin",
+          "status_file": "discA.status.bin",
+          "flag_file": "discA.flag.bin"
+        },
+        {
+          "id": "discB",
+          "horizon_s": 7200.0,
+          "value_file": "discB.value.bin",
+          "status_file": "discB.status.bin",
+          "flag_file": "discB.flag.bin"
+        }
+      ],
+      "expect_discloses_routes": true,
+      "cases": [
+        {
+          "name": "both disclosing layers, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            true,
+            true
+          ],
+          "restricted_included": 3,
+          "verdicts": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "layer A only, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            true,
+            false
+          ],
+          "restricted_included": 3,
+          "verdicts": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "one layer discloses and one does not",
+      "nrows": 1,
+      "ncols": 2,
+      "layers": [
+        {
+          "id": "mixedDiscloses",
+          "horizon_s": 7200.0,
+          "value_file": "mixedDiscloses.value.bin",
+          "status_file": "mixedDiscloses.status.bin",
+          "flag_file": "mixedDiscloses.flag.bin"
+        },
+        {
+          "id": "mixedSilent",
+          "horizon_s": 7200.0,
+          "value_file": "mixedSilent.value.bin",
+          "status_file": "mixedSilent.status.bin"
+        }
+      ],
+      "expect_discloses_routes": true,
+      "cases": [
+        {
+          "name": "both layers, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            true,
+            true
+          ],
+          "restricted_included": 1,
+          "verdicts": [
+            0,
+            0
+          ]
+        },
+        {
+          "name": "only the silent layer, T=10",
+          "thresholds": [
+            10,
+            10
+          ],
+          "enabled": [
+            false,
+            true
+          ],
+          "restricted_included": null,
+          "verdicts": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
       "name": "every status code, including those no Surface can hold",
       "nrows": 1,
       "ncols": 5,

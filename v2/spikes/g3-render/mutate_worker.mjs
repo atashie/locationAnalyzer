@@ -134,6 +134,30 @@ const MUTATIONS = [
       'if (false) {'),
   },
   {
+    // Pass 48. Correct whenever a bundle has ONE disclosing layer, which every fixture had.
+    name: 'every layer\'s flag is read from layer 0',
+    apply: (s) => s.replace(
+      'if (F[k] && F[k][p] === ROUTE_RESTRICTED) { restrictedIncludedCount++; break; }',
+      'if (F[0] && F[0][p] === ROUTE_RESTRICTED) { restrictedIncludedCount++; break; }'),
+  },
+  {
+    // Pass 48. Without the break a cell flagged in two enabled layers counts twice, so the
+    // disclosure count exceeds the number of cells disclosed about.
+    name: 'a cell flagged in two layers is counted twice',
+    apply: (s) => s.replace(
+      'if (F[k] && F[k][p] === ROUTE_RESTRICTED) { restrictedIncludedCount++; break; }',
+      'if (F[k] && F[k][p] === ROUTE_RESTRICTED) { restrictedIncludedCount++; }'),
+  },
+  {
+    // Pass 48, and the sharpest of the three: the guarantee that a disclosure cannot move a
+    // verdict, defeated under exactly the condition no fixture created. `m` is the number of
+    // ENABLED layers, so this is inert on every single-layer case.
+    name: 'the flag excludes cells, but only when two layers are enabled',
+    apply: (s) => s.replace(
+      'if (o === O_FAIL) anyFail = 1;',
+      'if (o === O_FAIL || (m > 1 && F[k] && F[k][p] === ROUTE_RESTRICTED)) anyFail = 1;'),
+  },
+  {
     name: 'the counts no longer describe the plane',
     apply: (s) => s.replace('          excludedCount++;', '          if (p % 7) excludedCount++;'),
   },

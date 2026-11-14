@@ -175,8 +175,12 @@
       (l) => (l.flag_file ? fetchPlane(l.flag_file) : Promise.resolve(null))));
 
     const expected = manifest.nrows * manifest.ncols;
-    [[values, 'value'], [statuses, 'status']].forEach(([bufs, what]) => {
+    // Pass 48: the flag plane was not length-checked here, so a short one reached the worker and
+    // failed there with a message about a plane the page had already accepted. A null slot is
+    // legal and means the layer declares no plane.
+    [[values, 'value'], [statuses, 'status'], [routeFlags, 'flag']].forEach(([bufs, what]) => {
       bufs.forEach((buf, i) => {
+        if (buf === null) return;
         if (buf.byteLength !== expected) {
           throw new Error(`${FIXTURES}/${manifest.layers[i][`${what}_file`]}: ${buf.byteLength} bytes, expected nrows*ncols=${expected}`);
         }
@@ -184,7 +188,9 @@
     });
 
     const t1 = performance.now();
-    const buffers = values.concat(statuses);
+    // Pass 48: this summed value and status only, so the page reported 661,004 bytes for a
+    // 991,506-byte payload -- understating the cost of the format change it exists to measure.
+    const buffers = values.concat(statuses).concat(routeFlags.filter((b) => b !== null));
     const decodedBytes = buffers.reduce((a, b) => a + b.byteLength, 0);
 
     // Resource Timing: actual bytes moved over the network (same-origin, so transferSize is
@@ -193,7 +199,8 @@
     try {
       const names = [`${FIXTURES}/manifest.json`,
         ...manifest.layers.flatMap((l) => [`${FIXTURES}/${l.value_file}`,
-          `${FIXTURES}/${l.status_file}`])];
+          `${FIXTURES}/${l.status_file}`,
+          ...(l.flag_file ? [`${FIXTURES}/${l.flag_file}`] : [])])];
       const entries = performance.getEntriesByType('resource');
       for (const name of names) {
         const entry = entries.find((e) => e.name.endsWith(name));
@@ -261,7 +268,11 @@
             handleWorkerMask(msg);
             break;
           case 'error':
+            // Pass 48 F2: this showed the message and left `initWorker`'s promise PENDING, so a
+            // refusal during init hung the page instead of failing it. A protocol error before
+            // ready is a failed start; after ready it is one bad message.
             showError(`worker: ${msg.message}`);
+            if (!state.workerReady) reject(new Error(msg.message || 'worker refused the bundle'));
             break;
           default:
             log(`worker: unknown message type ${msg.type}`);

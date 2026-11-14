@@ -390,6 +390,45 @@ check('an undefined route-flag byte is refused', () => {
   assert(threw, 'an undefined flag byte was accepted');
 });
 
+
+check('a plane that arrives for a layer the manifest does not declare is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                  layers: [{ id: 'declares', horizon_s: 7200, flag_file: 'a.flag.bin' },
+                           { id: 'silent', horizon_s: 7200 }] },
+      values: [one(5), one(5)], statuses: [one(0), one(0)],
+      routeFlags: [one(1), one(1)],
+    });
+  } catch (err) {
+    threw = /does not declare/.test(err.message);
+  }
+  assert(threw, 'a plane the manifest does not declare was accepted, so the payload and the '
+    + 'manifest were allowed to disagree about what the layer discloses');
+});
+
+check('a null slot is legal exactly where the manifest declares no plane', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  // Pass 48: this CRASHED on `null.byteLength`. One disclosing layer beside one plain layer is
+  // the ordinary shape as soon as a second criterion exists.
+  const out = worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                layers: [{ id: 'declares', horizon_s: 7200, flag_file: 'a.flag.bin' },
+                         { id: 'silent', horizon_s: 7200 }] },
+    values: [one(5), one(5)], statuses: [one(0), one(0)],
+    routeFlags: [one(1), null],
+  });
+  const ready = out.find((m) => m.type === 'ready');
+  assert(ready, 'a mixed bundle did not initialise');
+  assert(ready.disclosesRoutes === true, 'a bundle with one disclosing layer discloses');
+});
+
 console.log(failures === 0
   ? `\nall browser conformance checks passed`
   : `\n${failures} browser conformance check(s) FAILED`);
