@@ -239,6 +239,11 @@ def test_the_provenance_check_catches_a_destination_from_another_source_cell():
     transform, crs = _tiny_grid()
     bounds = _bounds_for(transform, value.shape, crs)
     pub = _reproject_all(transform, crs, bounds, value, status, dest)
+    # Establish that the unmodified input PASSES first, so the refusal below is attributable to
+    # the exchange and not to the fixture -- pass 50's note on these controls.
+    exporter.verify_provenance("tiny", transform, crs, bounds, *value.shape,
+                               source={"value": value, "status": status, "destination": dest},
+                               published=pub)
     mixed = pub["destination"].copy()
     mixed[0, 0], mixed[0, 2] = mixed[0, 2], mixed[0, 0]
     assert not np.array_equal(mixed, pub["destination"]), "the control changed nothing"
@@ -258,6 +263,8 @@ def test_the_provenance_check_catches_a_status_from_another_source_cell():
     transform, crs = _tiny_grid()
     bounds = _bounds_for(transform, value.shape, crs)
     pub = _reproject_all(transform, crs, bounds, value, status, None)
+    exporter.verify_provenance("tiny", transform, crs, bounds, *value.shape,
+                               source={"value": value, "status": status}, published=pub)
     shifted = np.roll(pub["status"], 1, axis=1)
     assert not np.array_equal(shifted, pub["status"]), "the control changed nothing"
     with pytest.raises(SystemExit, match="not the status of the source cell"):
@@ -295,7 +302,11 @@ def test_the_licence_bundle_carries_the_text_of_every_licence_it_ships(tmp_path)
     assert "makes available the text of this agreement with the shared Data" in cdla
     attribution = (tmp_path / "ATTRIBUTION.md").read_text(encoding="utf-8")
     assert "These records have been modified." in attribution, (
-        "Apache-2.0 4(b) requires a statement that files were changed, and the date")
+        "Apache-2.0 4(b) requires modified files to carry a notice that they were changed. It "
+        "does NOT require a date -- pass 50 finding B2 corrected that invention -- and this file "
+        "alone does not discharge 4(b) either, which ATTRIBUTION.md now says.")
+    assert "not cleared for redistribution" in attribution.lower(), (
+        "the attribution implies Apache 4 compliance the build has not established")
     assert "Overture 2026-10-21.0" in attribution
     assert "ODbL" in attribution and "OpenStreetMap contributors" in attribution
 
@@ -356,8 +367,13 @@ def test_every_json_artifact_is_strict_json():
         raise ValueError(f"not JSON: the bare token {constant}")
 
     repo = pathlib.Path(__file__).resolve().parents[2]
+    # Pass 50 finding G4: the roots were hand-listed and missed `spikes/g3-render/versions.json`,
+    # which the page parses before it can finish booting -- so the claim to cover "every JSON
+    # artifact a non-Python consumer loads" was false for the one artifact loaded first. The
+    # spike directory is now scanned whole rather than one subdirectory of it, because listing
+    # the places to look is the step that goes stale.
     roots = [repo / "docs" / "experiments", repo / "docs" / "research",
-             repo / "v2" / "spikes" / "g3-render" / "fixtures"]
+             repo / "v2" / "spikes"]
     checked, bad = 0, []
     for root in roots:
         if not root.exists():
@@ -468,3 +484,103 @@ def test_the_provenance_check_works_where_several_source_cells_feed_one_publishe
     with pytest.raises(SystemExit, match="not the flag of the source cell"):
         exporter.verify_provenance("coarse", transform, crs, bounds, nrows, ncols,
                                    source=src, published={**pub, "flag": flipped})
+
+
+# ---------------------------------------------------------------------------------------------
+# Pass 50 finding B1: the allowlist checked two levels out of four. These are the three entrances
+# it did not guard, each one a way to publish a field decision 17 forbids.
+
+
+def _publishable_table():
+    return {
+        "what_this_is": "a table", "built": "now", "mode": "walk", "category": "grocery",
+        "licence": {"this_table": ["CC0-1.0"], "source": "Overture test",
+                    "why_it_is_a_separate_artifact": "because", "redistribution": "see LICENSES",
+                    "fields_deliberately_omitted": ["phones"]},
+        "node_is_not_a_shop": "a node is not a shop",
+        "destinations": [{"ordinal": 0, "node_index": 11, "place_count": 1,
+                          "places": [{"gers_id": "g1", "name": "N", "brand": None,
+                                      "category": "grocery", "operating_status": "open",
+                                      "licence": "CC0-1.0"}]}],
+    }
+
+
+def test_a_publishable_table_passes_the_allowlist(tmp_path):
+    """The baseline. Without this the refusals below could be refusing everything."""
+    exporter.check_table_is_publishable(_publishable_table(), tmp_path / "t.json")
+
+
+def test_a_forbidden_field_at_the_table_root_is_refused(tmp_path):
+    t = _publishable_table()
+    t["phones"] = ["+1-919-555-0100"]
+    with pytest.raises(SystemExit, match=r"the table root carries \['phones'\]"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_a_forbidden_field_inside_the_licence_block_is_refused(tmp_path):
+    t = _publishable_table()
+    t["licence"]["upstream_provider_id"] = "forbidden-provider-id"
+    with pytest.raises(SystemExit, match="the root licence block carries"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_an_object_inside_a_permitted_place_field_is_refused(tmp_path):
+    """A reviewed field holding an unreviewed object is an unreviewed field with a reviewed name.
+
+    This is how a website ships: `brand` is allowed, so `brand = {"website": ...}` passed.
+    """
+    t = _publishable_table()
+    t["destinations"][0]["places"][0]["brand"] = {"website": "https://example.invalid/"}
+    with pytest.raises(SystemExit, match="only scalars are published here"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_a_place_record_with_no_gers_id_is_refused(tmp_path):
+    t = _publishable_table()
+    t["destinations"][0]["places"][0]["gers_id"] = ""
+    with pytest.raises(SystemExit, match="no GERS id"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_an_entry_with_no_places_is_refused(tmp_path):
+    """Pass 50 finding C2's stub table, refused at the exporter as well as in the harness."""
+    t = _publishable_table()
+    t["destinations"][0]["places"] = []
+    t["destinations"][0]["place_count"] = 0
+    with pytest.raises(SystemExit, match="carries no places"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_a_count_that_disagrees_with_its_set_is_refused(tmp_path):
+    t = _publishable_table()
+    t["destinations"][0]["place_count"] = 3
+    with pytest.raises(SystemExit, match="declares 3 places and carries 1"):
+        exporter.check_table_is_publishable(t, tmp_path / "t.json")
+
+
+def test_an_empty_required_notice_is_refused(tmp_path):
+    """Pass 50 finding B2: the gate checked that the pathname existed, so an empty file passed.
+
+    A notice requirement discharged by an empty file is not discharged.
+    """
+    import shutil
+    bare = tmp_path / "licences"
+    bare.mkdir()
+    shutil.copyfile(exporter.LICENCES / "Apache-2.0.txt", bare / "Apache-2.0.txt")
+    (bare / "NOTICE-foursquare.txt").write_text("", encoding="utf-8")
+    t = _publishable_table()
+    t["destinations"][0]["places"][0]["licence"] = "Apache-2.0"
+    import unittest.mock
+    with unittest.mock.patch.object(exporter, "LICENCES", bare):
+        with pytest.raises(SystemExit, match="requires NOTICE-foursquare.txt to carry"):
+            exporter.write_licence_bundle(tmp_path / "out", [t], {"r"})
+    assert not (tmp_path / "out" / "ATTRIBUTION.md").exists(), (
+        "the attribution was written for a bundle that was refused")
+
+
+def test_the_licence_record_does_not_claim_apache_clearance(tmp_path):
+    got = exporter.write_licence_bundle(
+        tmp_path, [_publishable_table()], {"Overture test"})
+    assert got["apache_records_are_cleared_for_redistribution"] is False
+    assert "4(c)" in got["what_this_does_not_establish"]
+    assert "4(d)" in got["what_this_does_not_establish"]

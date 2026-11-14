@@ -62,7 +62,9 @@ from locfinder.traveltime.arrival import (arrival_seconds,               # noqa:
                                           arrival_with_selected_destination)
 from locfinder.traveltime.components import largest_component            # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr              # noqa: E402
-from locfinder.traveltime.snap import EdgeIndex, cell_selected_destination  # noqa: E402
+from locfinder.traveltime.snap import (EdgeIndex,                        # noqa: E402
+                                       cell_seconds_from_arrival,
+                                       cell_selected_destination)
 from locfinder.traveltime.speeds import add_travel_times, symmetrise     # noqa: E402
 
 MODE = "walk"
@@ -102,6 +104,77 @@ def scalar(value):
     except (TypeError, ValueError):
         pass
     return value
+
+
+# The known answer of `destination_tie_control`, named here so the control and the gate that
+# interprets it cannot drift apart. Pass 50 finding G5: movement is only evidence that an
+# instrument works if the answer it moves between is the right one.
+CONTROL_SECONDS = 300.0
+CONTROL_DESTINATIONS = [0, 1]
+
+
+def check_plane_describes_the_surface(ordinals, stored, recomputed, horizon_s: float,
+                                      *, label: str) -> dict:
+    """Refuse to stamp a destination plane with a surface fingerprint it has not earned.
+
+    **Pass 49 finding 1** put this check here at all: the fingerprint was taken of whatever
+    `<stem>.npy` happened to hold, with nothing establishing that the plane and that surface
+    agreed, so a fresh destination computation could be blessed against stale published seconds.
+    Pass 48's F3 lesson was to bind a derived plane to its surface; the binding has to be earned.
+
+    **Pass 50 finding A2** showed the first version did not earn it. It compared only the
+    journey-PRESENCE masks, and 256,276 of this surface's cells can have 60 seconds added while
+    staying finite and within the horizon -- every one of their published minutes changes and the
+    mask does not move. So the values are compared too.
+
+    The surface is stored as `float32` and the recomputation is `float64`. Comparing them directly
+    disagrees at 251,506 cells by at most one float32 ULP, which is 0.00049 s at 7,200 s: storage
+    precision, not disagreement. So the recomputation is cast the way the surface was written and
+    compared **exactly**. A cast is deterministic, which leaves no tolerance to argue about: a
+    surface written from this computation is bit-identical to it, and one differing bit is a real
+    difference.
+
+    It is a function rather than a block inside `main` so it can be given a wrong surface in a
+    test. A gate buried in a 400-line build step cannot be shown to fail, and a gate never shown
+    to fail is decoration.
+    """
+    stored = np.asarray(stored)
+    as_stored = np.asarray(recomputed).astype(stored.dtype)
+    journey = np.isfinite(stored) & (stored <= horizon_s)
+    named = np.asarray(ordinals) != wire.DEST_NONE
+    orphan = int((named & ~journey).sum())
+    missing = int((journey & ~named).sum())
+    if orphan or missing:
+        raise SystemExit(
+            f"this destination plane names {orphan:,} cells the surface gives no journey and "
+            f"leaves {missing:,} of the surface's journeys unnamed, so it does not describe "
+            f"{label} and must not be stamped with its fingerprint. Rebuild the surface and the "
+            "destinations from the same graph")
+    finite_differs = int((np.isfinite(stored) != np.isfinite(as_stored)).sum())
+    both = np.isfinite(stored) & np.isfinite(as_stored)
+    differing = int((stored[both] != as_stored[both]).sum())
+    if differing or finite_differs:
+        worst = (float(np.abs(stored[both].astype(np.float64)
+                              - as_stored[both].astype(np.float64)).max())
+                 if both.any() else float("nan"))
+        raise SystemExit(
+            f"the journey times recomputed here disagree with {label} at {differing:,} cells "
+            f"(worst {worst:g} s) and their reachability differs at {finite_differs:,}. The "
+            "fingerprint would then bind this plane to a surface it does not describe -- pass 50 "
+            "finding A2. Rebuild the surface and the destinations from the same graph")
+    return {
+        "cells_compared": int(both.sum()),
+        "cells_differing": differing,
+        "reachability_differing": finite_differs,
+        "compared_as": str(stored.dtype),
+        "why_this_is_here": (
+            "the fingerprint binds this plane to a surface, and binding it after comparing only "
+            "the journey-PRESENCE mask was not earned: 256,276 cells can have 60 s added while "
+            "that mask holds, changing every one of their published minutes. These are the "
+            "recomputed per-cell seconds against the stored ones, from the same function the "
+            "surface build uses, compared EXACTLY after the cast the surface was written "
+            "through -- pass 50 finding A2"),
+    }
 
 
 def place_record(row) -> dict:
@@ -238,28 +311,13 @@ def main(argv: list[str] | None = None) -> int:
             ordinals[cell_node == node] = ordinal
         if (cell_node >= 0).sum() != int((ordinals != wire.DEST_NONE).sum()):
             raise SystemExit("an ordinal was lost in translation from node ids")
-        # ------------------------------------------------------------ pass 49 finding 1
-        # The fingerprint below binds this plane to a surface. Stamping it proves nothing unless
-        # the plane and that surface actually AGREE, and nothing checked: the fingerprint was
-        # taken of whatever `{STEM}.npy` happened to hold, so a fresh destination computation
-        # could be blessed against stale published seconds and the stamp would say they belong
-        # together. Pass 48's F3 lesson was to bind a derived plane to its surface; the binding
-        # has to be earned.
-        #
-        # So compare the two masks before stamping. This is the same two-directional check the
-        # wire format and the exporter make, applied at the SOURCE, where the surface is still a
-        # float array of seconds rather than a published minute.
-        surf_seconds = np.load(LAYERS / f"{STEM}.npy")
-        journey = np.isfinite(surf_seconds) & (surf_seconds <= HORIZON_S)
-        named_mask = ordinals != wire.DEST_NONE
-        orphan = int((named_mask & ~journey).sum())
-        missing = int((journey & ~named_mask).sum())
-        if orphan or missing:
-            raise SystemExit(
-                f"this destination plane names {orphan:,} cells the surface gives no journey and "
-                f"leaves {missing:,} of the surface's journeys unnamed, so it does not describe "
-                f"{STEM}.npy and must not be stamped with its fingerprint. Rebuild the surface "
-                "and the destinations from the same graph")
+        recomputed = cell_seconds_from_arrival(
+            idx, seconds_n, xs.ravel(), ys.ravel(), mode=MODE, max_access_m=MAX_ACCESS_M,
+            node_cost=node_cost, cutoff_s=HORIZON_S,
+        ).reshape(grid.nrows, grid.ncols)
+        seconds_agreement = check_plane_describes_the_surface(
+            ordinals, np.load(LAYERS / f"{STEM}.npy"), recomputed, HORIZON_S,
+            label=f"{STEM}.npy")
         path = LAYERS / f"{STEM}_selected_destination.npy"
         np.save(path, ordinals)
 
@@ -315,6 +373,7 @@ def main(argv: list[str] | None = None) -> int:
             "dest_none": int(wire.DEST_NONE),
             # Pass 48 F3's lesson, applied at the start this time rather than after a review.
             "horizon_s": float(HORIZON_S),
+            "seconds_agreement_with_the_surface": seconds_agreement,
             "surface_fingerprint": wire.surface_fingerprint(
                 np.load(LAYERS / f"{STEM}.npy"), np.load(LAYERS / f"{STEM}_reason.npy")),
             "what_it_means": (
@@ -390,6 +449,22 @@ def measure_destination_ties(cost_csr, time_csr, dest_idx, selected_n, seconds_n
     if control["total_seconds_moves"] != 0:
         raise SystemExit("the control's published seconds moved under a relabelling, which is a "
                          "different and larger bug than the one this measures")
+    # **Pass 50 finding G5.** The two conditions above are satisfied by an algorithm that never
+    # solves the construction at all. A solver returning zeros everywhere reports one seconds
+    # value (0) and, after the relabelling is mapped back, three different "selected" nodes -- so
+    # it looks like a working instrument detecting movement. Movement is only evidence if the
+    # answer is RIGHT, so the known answer is pinned: 300 s at the target, and the destination is
+    # one of the two candidates and takes both of them.
+    if control["published_seconds_at_the_target"] != [CONTROL_SECONDS]:
+        raise SystemExit(
+            f"the control's target should be {CONTROL_SECONDS} s from either destination and the "
+            f"solver reports {control['published_seconds_at_the_target']}. It is not solving the "
+            "construction, so its movement says nothing about the instrument")
+    if control["destinations_selected_across_relabellings"] != CONTROL_DESTINATIONS:
+        raise SystemExit(
+            f"the control should select each of {CONTROL_DESTINATIONS} and it selected "
+            f"{control['destinations_selected_across_relabellings']}; movement between wrong "
+            "answers is not a demonstration that the instrument works")
     return {
         "what_this_is": ("whether the destination a household would be SHOWN is a property of the "
                          "published answer or of the traversal order"),
@@ -433,7 +508,7 @@ def destination_tie_control() -> dict:
     import scipy.sparse as sp
 
     n = 3
-    half = 300.0
+    half = CONTROL_SECONDS
     # D1 = 0, D2 = 1, T = 2. Equal cost from T to each destination.
     raw = [(0, 2, half), (2, 0, half), (1, 2, half), (2, 1, half)]
     rows_i = np.array([u for u, _v, _c in raw], dtype=np.int64)

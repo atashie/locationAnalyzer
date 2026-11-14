@@ -342,9 +342,12 @@ function handleInit(msg) {
   state.pool = [];
   // A reinitialisation discards whatever the previous compute established, so the lifecycle goes
   // back to "nothing has been evaluated" rather than keeping the old answer's permission.
+  // `lastInCount` belongs in this list: pass 50 finding D1 found a fresh zero mask shipped with
+  // the previous bundle's count, which is two contradictory statements in one message.
   state.computed = false;
   state.lastSeq = -1;
   state.lastEnabled = null;
+  state.lastInCount = 0;
   self.postMessage({
     type: 'ready',
     nrows,
@@ -367,6 +370,14 @@ function handleCompute(msg) {
   const { nrows, ncols, layers, statuses, routeFlags, horizons, mask, verdict } = state;
   if (!mask) throw new Error('compute before init');
   const n = nrows * ncols;
+  // Pass 50 finding D2. This function writes `mask`, `verdict` and the pixels in place. A throw
+  // part-way through -- an undefined status code, a fractional threshold -- used to leave the
+  // planes half rewritten while `lastSeq` and `computed` still described the PREVIOUS compute, so
+  // the next `verdicts` query returned a mixture of two answers labelled as one of them. The
+  // state is marked uncomputed up front and restored only on the way out, so a failure leaves
+  // the planes unreadable rather than plausible.
+  state.computed = false;
+  state.lastSeq = -1;
 
   // Hoist enabled layers, their status planes, thresholds and horizons.
   const L = [];
@@ -524,9 +535,18 @@ function readLittleEndianU16(buf, count) {
 function handleDestinationAt(msg) {
   if (!state.verdict) throw new Error('a destination was requested before init');
   const { nrows, ncols, verdict, destinations, destTables, statuses } = state;
-  const row = msg.row | 0;
-  const col = msg.col | 0;
+  // Pass 50 finding C3: this read `msg.row | 0`, and `| 0` runs BEFORE the bounds check. So
+  // 4294967296 wrapped to 0, 0.9 truncated to 0, and `undefined` and `NaN` both became 0 -- each
+  // of which got a confident destination for a cell nobody asked about. Coercion is not
+  // validation. A coordinate that is not already a whole number in range is not a cell.
+  const row = msg.row;
+  const col = msg.col;
   const reply = { type: 'destinationAt', reqId: msg.reqId, seq: state.lastSeq, row, col };
+  if (!Number.isInteger(row) || !Number.isInteger(col)) {
+    self.postMessage({ ...reply, outside: true, invalidCoordinates: true,
+      namesDestination: null });
+    return;
+  }
   if (row < 0 || row >= nrows || col < 0 || col >= ncols) {
     self.postMessage({ ...reply, outside: true });
     return;
@@ -572,6 +592,12 @@ function handleDestinationAt(msg) {
 
 function handleVerdicts(msg) {
   if (!state.verdict) throw new Error('verdicts requested before init');
+  // Pass 50 finding D1: pass 49 fixed `destinationAt` and left the class. This handler read the
+  // same zero-filled plane and reported every cell INCLUDED before anything was evaluated.
+  if (!state.computed) {
+    throw new Error('verdicts requested before any compute has run; the plane is allocated and '
+      + 'zero-filled, and zero means INCLUDED, so answering would report a region nobody computed');
+  }
   const copy = state.verdict.slice();
   self.postMessage({
     type: 'verdicts',
@@ -583,6 +609,13 @@ function handleVerdicts(msg) {
 
 function handleMask(msg) {
   if (!state.mask) throw new Error('mask requested before init');
+  // The same hole, plus a worse one: `inCount` was carried across a reinitialisation, so a fresh
+  // zero mask arrived beside the previous bundle's count -- two statements that contradict each
+  // other in one message. `lastInCount` is reset at init now, and this refuses until a compute.
+  if (!state.computed) {
+    throw new Error('mask requested before any compute has run; there is no region to report and '
+      + 'the count that would accompany it belongs to no computation');
+  }
   const copy = state.mask.slice();
   self.postMessage({
     type: 'mask',

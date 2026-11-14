@@ -32,34 +32,55 @@ substantial piece of work rather than one of several.
 
 ## In flight right now
 
-Nothing. **Codex pass 49 landed and is integrated**: report at
-`docs/research/50-codex-review-pass49-counterexamples/REPORT.md`, 11 findings and 3 High, all 11
-reproduced. The next thing to start is the card.
+Nothing. **Codex passes 49 and 50 are both integrated.** Reports at
+`docs/research/50-codex-review-pass49-counterexamples/REPORT.md` and
+`docs/research/51-codex-review-pass50-counterexamples/REPORT.md`. The next thing to start is the
+card.
 
-What pass 49 cost, in one line each, because these are the live corrections:
+Pass 49 (11 findings, 3 High) reviewed the destination publication; pass 50 (14 findings, 4 High)
+reviewed pass 49's **repairs** and found more in them than pass 49 had found in the original work.
+The live corrections:
 
-* **A release blocker nothing could see.** The published side table held 85 bare `NaN` tokens, so
-  `JSON.parse` threw and the page could not display a destination at all. Every conformance check
-  built its own fixture; none loaded the artifact. Fixed at the generator, at the serialiser
-  (`allow_nan=False`), and with a check that loads the shipped bundle the way the page does.
+* **A release blocker nothing could see.** 85 bare `NaN` tokens in the published side table, so
+  `JSON.parse` threw and the page could not display a destination. Every conformance check built
+  its own fixture; none loaded the artifact. Fixed at the generator, the serialiser
+  (`allow_nan=False`) and with a check that loads the shipped bundle.
 * **The two-directional invariant does not prove provenance** — it compares answer-presence masks
-  and never reads a value, so exchanging two valid destinations passes it. Replaced for that
-  purpose by `verify_provenance`, which reprojects a source-cell index and requires every plane to
-  match its source at that index: 330,502 of 330,502 cells, 0 uncovered.
-* **A licence identifier is not a licence.** `v2/licences/` now holds the texts and the exporter
-  refuses to finish without them.
-* **The destination cost is 20.6% of the bundle, not 4.1%** — the old figure mixed two grids, used
-  the cheaper option's total as the denominator and left the side table out.
-* **Four defects passed all 71 checks** because the harness compared one member of the place set.
-* Both of the guards I had already fixed in `b37ed59` were confirmed broken, and pass 49 went
-  further on each.
+  and never reads a value. And `verify_provenance`, which replaced it for that purpose, is an
+  output-**value** consistency check, not a proof of source-cell identity: two source cells
+  holding the same value are indistinguishable to it. 330,502 of 330,502 cells agree.
+* **The surface fingerprint was being stamped after comparing masks, not values.** 256,276 cells
+  can have 60 s added while the journey mask holds. The gate now compares the recomputed per-cell
+  seconds exactly, after the `float32` cast the surface was written through.
+* **A licence identifier is not a licence**, and only Apache §4(a) is discharged. The bundle
+  records `apache_records_are_cleared_for_redistribution: false` and says why: §4(b) needs a
+  notice on the modified file, §4(c) needs an inventory of upstream notices, §4(d) needs the real
+  Foursquare `NOTICE`, which is behind a gated repository.
+* **The publication allowlist covered two entrances of four** — not the table root, not the
+  licence block, not the types inside permitted fields, so a website could ship inside `brand`.
+* **The conformance oracle was the object under test.** The worker was handed `group.dest_tables`
+  and the expectation was read back out of it, so a worker that rewrote every `gers_id` in place
+  agreed with itself. Snapshot frozen before init now.
+* **Coercion before validation:** `msg.row | 0` wrapped 4294967296 to 0 and answered confidently.
+* **The lifecycle fix covered one reader of three.** `verdicts` and `mask` had the same hole, and
+  a failed compute left a half-written plane wearing the previous sequence number.
+* **The destination cost is 20.6% of the bundle, not 4.1%** — two grids mixed, the cheaper
+  option's total as denominator, the side table omitted.
+* **Two of my own controls confirmed on the wrong cause**, and four of my five new ledger
+  instances were overstated. Both are recorded in the ledger rather than quietly fixed.
 
-## Verified state at `4685158` + the pass 49 integration
+## Verified state after the pass 50 integration
 
-1,440 tests, 1,416 passed, 24 skipped, 0 failures. 75 browser conformance checks pass. 37 of 37
-mutations caught. `byteswap_control.mjs` confirms that a **recorded expectation**, not a structural
-check, is what catches a big-endian destination plane — and now refuses to confirm anything if its
-own mutation did not apply or its baseline is not exactly right.
+1,460 tests, 1,436 passed, 24 skipped, 0 failures. 79 browser conformance checks. 43 of 43
+mutations caught, 0 inert. `byteswap_control.mjs` confirms that a **recorded expectation**, not a
+structural check, is what catches a big-endian destination plane — and refuses to confirm anything
+unless its own mutation applied, the baseline matches the recorded ordinals, and the mutated
+ordinals are exactly their byte-swaps.
+
+One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: resetting
+`lastInCount` at init is now unreachable through the message protocol, because the reader that
+would expose a stale value refuses until a compute has run. A mutation removing it survives every
+check, so it is listed as absent rather than left to look like an oversight.
 
 ## Decisions the owner owes
 
@@ -122,24 +143,31 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **33 instances**. It is the most useful document
-in the repository for avoiding repeats, and the five most recent are the ones currently live:
+[[feedback-verify-the-shape-of-the-risk]] now holds **36 instances**. It is the most useful document
+in the repository for avoiding repeats. The ones currently live:
 
-* **29** — **a fixture is a model of the artifact; passing on the model says nothing about the
-  artifact.** 71 checks, none of which loaded the real bundle, so a release blocker was invisible.
-  For every artifact a consumer loads, one check must load it the way the consumer does.
+* **29** — a fixture is a model of the artifact, and passing on the model does not establish that
+  the **particular shipped artifact** loads. For every artifact a consumer loads, one check must
+  load it the way the consumer does.
 * **30** — a positive control that can pass on the **wrong cause** is not a control. Require the
-  mutation to have applied, the baseline to be exactly right, and the effect to be the specific
-  predicted one.
-* **31** — checking one member of a set is not checking the set, and a count is not a set.
-* **32** — **allocation is not evaluation.** A default-initialised value that is indistinguishable
-  from a real answer turns "I have not been asked yet" into a confident reply.
-* **33** — a label is not the thing it names, and silence is not confirmation. Both are "absence is
-  not evidence of cleanliness", already written down, and I still wrote the code the other way.
+  mutation to have applied, the baseline to match a **recorded** expectation, and the effect to be
+  the specific predicted one.
+* **31** — compare every field you claim to check; and give **both** halves of a two-sided
+  invariant a refusal case.
+* **32** — **allocation is not evaluation.** A default-initialised value indistinguishable from a
+  real answer turns "I have not been asked yet" into a confident reply. This one generalised
+  correctly and found two more readers with the same hole.
+* **33** — a label is not the thing it names, and silence is not confirmation. Requiring a
+  declaration establishes a *declared* fact, not a verified one.
+* **34** — **the oracle must not be reachable by the code under test.** Snapshot and freeze the
+  expectation before that code can touch it.
+* **35** — **coercion is not validation.** A coercion that maps invalid input onto a valid value
+  destroys the evidence that it was invalid.
+* **36** — an allowlist is a claim about **every** entrance. Two of four is not an allowlist.
 
-And a repeat, not numbered because the shape is in the file twice already: **when a share is
-reported, the next sentence names the denominator.** The destination's cost moved from 4.1% to
-20.6% when the denominator was fixed.
+And the repeat that will not go away: **a measurement's output must be in the units of the
+question** — mask agreement is not value agreement, and a share is not a share until its
+denominator is named.
 
 ## Not started, deliberately
 

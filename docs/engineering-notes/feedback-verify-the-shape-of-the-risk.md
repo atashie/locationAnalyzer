@@ -726,4 +726,84 @@ twenty-fifth again (defending a choice with a figure about the alternative). It 
 rather than numbered because the shape is already in this file twice. **Both times it was a
 denominator.** When a share is reported, the next sentence should name the denominator.
 
-Thirty-three instances now.
+## Pass 50, 2026-11-14 — four of the five instances above were overstated, and three more
+
+Pass 50 reviewed the pass 49 **repairs** and found 14 things, 4 High. The repairs were a bigger
+change than the defects they repaired, and most of the new findings are in them. Before adding
+anything, the corrections to what I had just written:
+
+* **29 said "passing on the model says nothing about the artifact".** Too broad. A fixture test
+  provides algorithmic evidence; what it does not establish is that the *particular shipped
+  artifact* loads. The usable form is the narrower one. The consumer-equivalent check I proposed
+  is also only partly built: it reads files with `fs`, not `fetch`, so it covers parsing and
+  initialisation and not URL resolution, HTTP handling, cross-request staleness, `app.js`'s own
+  manifest checks, or a real Worker's structured cloning. The check is renamed to "parses and
+  initialises" and lists what it does not do.
+* **30 was right in principle and wrong about my own compliance with it.** I claimed the control
+  now enforced all three conditions — mutation applied, baseline correct, effect specific. It did
+  not enforce the second: the baseline check required the ordinal to be *non-null*, not to match
+  the recorded expectation, so a worker whose baseline returns 256 where 1 is expected passed,
+  its mutated run returning 1 — the byte-swap of its own wrong answer. **A relative test anchored
+  on an unverified baseline confirms nothing.** Fixed to pin the absolute recorded ordinals.
+* **31 bundled three omissions into one.** Checking only the first member of a set explains the
+  renamed-places and duplicated-places defects. The uncompared `node_index` and the missing
+  refusal branch for the named-implies-OK half are *separate* omissions that happened to be found
+  in the same place. Collapsing them hid two distinct lessons: compare every field you claim to
+  check, and give both halves of a two-sided invariant a refusal case.
+* **33's second half was imprecise.** Requiring a byte-order declaration establishes a *declared*
+  order, not a verified one. Bytes incorrectly labelled little-endian pass, and nothing in a
+  plane can detect that. The guard closes "silence read as confirmation"; it does not make the
+  order true.
+* **32 survived intact**, and immediately earned its keep: it says the shape is "a
+  default-initialised value indistinguishable from a real answer", and that generalisation is
+  what exposed `verdicts` and `mask` having the same hole that `destinationAt` had.
+
+### Thirty-fourth: the oracle must not be the thing under test
+
+The conformance harness handed the worker `group.dest_tables` and then read the *expected* record
+out of that same object. Node's shim does not structured-clone, so a worker that rewrote every
+`gers_id` and `licence` of the record it returned agreed with itself, and all 75 checks passed.
+The whole-record comparison I added for pass 49 finding 5 was therefore comparing an object with
+itself.
+
+The browser would have cloned, so this was a property of the test harness and not of the product —
+which is exactly why the harness has to defend against it instead of relying on the environment.
+The fix is one line of discipline: **snapshot and freeze the expectation before the code under
+test can touch it**, and hand that code its own copy. `JSON.parse(JSON.stringify(...))` twice,
+`Object.freeze` recursively, and the comparison means something.
+
+The general shape: **a check whose expected value is reachable by the code under test is not a
+check.** Ask of every oracle: could the thing I am testing have written this?
+
+### Thirty-fifth: coercion is not validation
+
+`handleDestinationAt` read `msg.row | 0`, and `| 0` runs *before* the bounds check. So
+`4294967296` wrapped to 0, `0.9` truncated to 0, and `undefined` and `NaN` both became 0 — each of
+them getting a confident destination for a cell nobody had asked about, with `outside` false.
+
+The shape is wider than this function. A coercion that maps invalid input onto a *valid* value
+destroys the evidence that the input was invalid, so every check downstream of it is checking the
+wrong thing. Validate first, then coerce — or never coerce, which is what the fix does:
+`Number.isInteger` or it is not a cell.
+
+### Thirty-sixth: an allowlist has to cover every entrance
+
+The publication gate I wrote for pass 49 checked destination-entry keys and place-record keys. It
+did not check the table's root keys, the keys inside the root `licence` object, or the *types* of
+the values in the fields it did allow. So a phone number could ship as root metadata, an upstream
+provider id inside the licence block, and a website inside an object stored under `brand` — the
+last one being the sharpest, because `brand` is an **allowed** field and an allowed field holding
+an unreviewed object is an unreviewed field with a reviewed name.
+
+"No forbidden field can leave" is a claim about every path out, and I had checked two of four. The
+gate now walks the whole document and refuses a non-scalar anywhere a scalar is expected.
+
+### And the recurring one, for the third time
+
+Pass 49's cost report mixed two grids and divided by the wrong denominator; pass 50 found a
+different version of the same thing in the surface-binding gate, which compared journey *masks*
+where the question was about journey *values*. Both are the twenty-eighth instance: the instrument's
+output was not in the units of the question. **Mask agreement is not value agreement, and a share
+is not a share until its denominator is named.**
+
+Thirty-six instances now.

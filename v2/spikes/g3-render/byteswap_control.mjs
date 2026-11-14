@@ -1,12 +1,16 @@
 // What actually catches a big-endian read of the destination plane?
 //
-// The big-endian mutation is reported caught, but the mutation runner stops at the first failing
-// check -- which is the two-naming-layers group's init, where small ordinals byte-swap out of
-// range and the BOUNDS check fires. That would mean the 300-entry byte-swap group, built for
-// exactly this hazard, is never the thing that catches it, and the group is decoration.
+// Run the big-endian mutation against ONLY the byte-swap group. Ordinals 1 and 256 swap into each
+// other and both index a real destination, so no STRUCTURAL check can notice -- which makes this
+// a focused experiment on what the comparison against a recorded answer is doing.
 //
-// So: run the mutated worker against ONLY the byte-swap group. Ordinals 1 and 256 swap into each
-// other and both index a real destination, so no STRUCTURAL check can notice.
+// **The reason this file originally gave for existing was wrong (pass 50 finding G2).** It said
+// the mutation runner "stops at the first failing check", so the byte-swap group would never be
+// reached and was decoration. It is not: `check()` catches each failure and continues, and under
+// the endian mutation the harness runs all its checks and the byte-swap group fails among them --
+// 8 failures, including `(0, 0) ordinal 256, expected 1`. `mutate_worker.mjs` merely PRINTS the
+// first failure. The group is reached and does its job. This control remains useful as an
+// isolated experiment; the claim that it was load-bearing is withdrawn.
 //
 // **Pass 49 finding 6 corrected the conclusion this file used to draw.** It printed "the name
 // comparison is the only thing that catches a big-endian read", and that is wrong twice over.
@@ -80,6 +84,7 @@ function run(source, label) {
       ordinal: d.namesDestination ? d.namesDestination[0].ordinal : null,
       name: d.namesDestination ? d.namesDestination[0].places[0].name : null,
       expected: q.names ? q.names[0].first_place_name : null,
+      expectedOrdinal: q.names ? q.names[0].ordinal : null,
       // The baseline requirement is "answers correctly", not "answers the two fields this file
       // happens to look at" -- which is the mistake pass 49 finding 5 found in the harness.
       nodeIndex: d.namesDestination ? d.namesDestination[0].nodeIndex : null,
@@ -102,6 +107,12 @@ if (mutatedSrc === src) {
 
 // What a byte swap does to these two ordinals, written down rather than inferred: 1 -> 256 and
 // 256 -> 1. "In range" is not the claim; these exact values are.
+//
+// Pass 50 finding G1: comparing the mutated ordinals against the BASELINE's byte-swaps is a
+// RELATIVE test, and a worker whose baseline already returns 256 where 1 is expected satisfies it
+// -- its mutated run returns 1, which is the swap of its own wrong baseline. So the expectation
+// has to be absolute: the ordinals the VECTORS record, and their swaps.
+const EXPECTED_ORDINALS = [1, 256];
 const SWAPPED = new Map([[1, 256], [256, 1]]);
 
 const base = run(src, 'baseline');
@@ -117,9 +128,20 @@ if (base.refusedAtInit) {
 // The baseline must be exactly right, or a wrong answer under the mutation proves nothing about
 // the mutation.
 const baseOk = base.got.every((r) => r.name === r.expected)
-  && base.got.every((r) => r.ordinal !== null)
+  // The ordinal against what the VECTORS say it is, not merely against "not null". Without this
+  // the whole experiment is relative to a baseline that may already be wrong.
+  && base.got.every((r) => r.ordinal === r.expectedOrdinal)
   && base.got.every((r) => r.nodeIndex === r.expectedNodeIndex)
   && base.got.every((r) => JSON.stringify(r.names) === JSON.stringify(r.expectedNames));
+// And the group really is the one built for this hazard, with the two ordinals named above.
+const rightGroup = JSON.stringify(base.got.map((r) => r.expectedOrdinal))
+  === JSON.stringify(EXPECTED_ORDINALS);
+if (!rightGroup) {
+  console.log('\nNOT CONFIRMED: the byte-swap group no longer expects ordinals '
+    + `${JSON.stringify(EXPECTED_ORDINALS)}, so this file is testing a different fixture than the `
+    + 'one it reasons about.');
+  process.exit(1);
+}
 if (!baseOk) {
   console.log('\nNOT CONFIRMED: the baseline does not already answer correctly, so this cannot '
     + 'attribute a wrong answer to the byte order.');
@@ -132,10 +154,10 @@ if (mut.refusedAtInit) {
   process.exit(1);
 }
 
-// The ordinals must be the SWAPPED ones. This is what ties the observed wrong name to the byte
-// order rather than to any other defect that happens to produce a wrong name.
+// The ordinals must be the swaps of the RECORDED expectations -- absolute, not relative to a
+// baseline that could itself be wrong.
 const swappedOrdinals = mut.got.length === base.got.length
-  && mut.got.every((r, i) => r.ordinal === SWAPPED.get(base.got[i].ordinal));
+  && mut.got.every((r, i) => r.ordinal === SWAPPED.get(base.got[i].expectedOrdinal));
 const wrongName = mut.got.some((r) => r.name !== r.expected);
 const inRange = mut.got.every((r) => r.ordinal !== null);
 const confirmed = swappedOrdinals && wrongName && inRange;

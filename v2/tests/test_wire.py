@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import pathlib
+import re
 
 import numpy as np
 import pytest
@@ -392,64 +393,156 @@ def test_a_layer_with_no_destination_plane_says_nothing_rather_than_having_no_de
         wire.named_destination(None, np.array([int(Outcome.PASS)], dtype=np.int8))
 
 
-def executable_lines(text: str) -> str:
-    """The lines of a JavaScript file that are not commented out.
+def executable_mask(text: str) -> str:
+    """`text` with comments and string/template *contents* blanked, character for character.
 
-    Line-oriented on purpose. A first attempt stripped `/* ... */` with a regex and deleted 200
-    lines of real code, because `fixtures/*.bin` inside a `//` comment opened a block that closed
-    at the next doc comment -- a comment stripper that removes executable code is worse than none.
-    So only comments that BEGIN a line are removed, which is how a declaration actually gets
-    commented out, and a `/*` in the middle of a line is left alone.
+    The output is exactly as long as the input and has newlines in the same places, so a match
+    found here can be read back out of the original text at the same offsets. Use
+    `declarations(text, pattern)` rather than this directly.
+
+    A character scanner, not a line heuristic, because both simpler versions were defeated:
+
+    * A regex for a block comment deleted 200 lines of real code, because `fixtures/*.bin` inside
+      a line comment opened a block that closed at the next doc comment. A comment stripper that
+      removes executable code is worse than none.
+    * Dropping whole lines that *begin* with a comment hid `/* note */ const READABLE = [...]`,
+      whose executable declaration follows the comment on the same line -- and it kept
+      declaration-shaped text inside a template literal, so a decoy string satisfied the check
+      while the real declaration was commented out. Both are pass 50 finding G3.
+
+    This is a scanner, not a JavaScript parser: it does not understand regular-expression
+    literals, which may contain quotes and slashes. Nothing checked here needs it to, and no
+    textual check can establish what the page DOES in any case.
     """
-    out, in_block = [], False
-    for line in text.splitlines():
-        stripped = line.lstrip()
-        if in_block:
-            if "*/" in line:
-                in_block = False
+    out = []
+    i, n = 0, len(text)
+    blank = lambda c: "\n" if c == "\n" else " "        # noqa: E731 - length-preserving
+    while i < n:
+        ch = text[i]
+        two = text[i:i + 2]
+        if two == "//":
+            while i < n and text[i] != "\n":
+                out.append(" ")
+                i += 1
             continue
-        if stripped.startswith("//"):
+        if two == "/*":
+            out.append("  ")
+            i += 2
+            while i < n and text[i:i + 2] != "*/":
+                out.append(blank(text[i]))
+                i += 1
+            if i < n:
+                out.append("  ")
+                i += 2
             continue
-        if stripped.startswith("/*"):
-            if "*/" not in stripped[2:]:
-                in_block = True
+        if ch in "'\"`":
+            out.append(ch)
+            i += 1
+            while i < n and text[i] != ch:
+                if text[i] == "\\" and i + 1 < n:
+                    out.append("  ")
+                    i += 2
+                    continue
+                out.append(blank(text[i]))
+                i += 1
+            if i < n:
+                out.append(ch)
+                i += 1
             continue
-        out.append(line)
-    return "\n".join(out)
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
-def test_the_comment_stripper_removes_comments_and_nothing_else():
-    """**The positive control for the two checks below.**
+def declarations(text: str, pattern: str) -> list[str]:
+    """Every match of `pattern` in the EXECUTABLE part of `text`, read from the real characters.
 
-    They are only worth anything if `executable_lines` does the two things they rely on: remove a
-    commented-out declaration (pass 49 finding 10's attack) and leave real code alone (the bug my
-    first attempt at it had). A stripper never shown to do either is an instrument never shown to
-    move.
+    The pattern is matched against the mask, so commented-out declarations and decoys inside
+    string literals are not found; the captured group is then taken from `text` at the same
+    offsets, so the real contents come back.
     """
-    attack = "\n".join([
-        "// const READABLE = ['published-v2', 'published-v3', 'published-v4'];",
-        "const READABLE = ['published-v2', 'published-v3'];",
-    ])
-    kept = executable_lines(attack)
-    assert "'published-v4'" not in kept, "a commented-out declaration survived the stripper"
-    assert "const READABLE = ['published-v2', 'published-v3'];" in kept
+    mask = executable_mask(text)
+    assert len(mask) == len(text), "the mask is not length-preserving, so offsets do not align"
+    found = []
+    for m in re.finditer(pattern, mask):
+        start, end = m.span(1)
+        found.append(text[start:end])
+    return found
 
-    blocked = "\n".join([
-        "/* a block comment",
-        " * const READABLE = ['wrong'];",
-        " */",
-        "const READABLE = ['right'];",
-    ])
-    assert executable_lines(blocked).strip() == "const READABLE = ['right'];"
 
-    # The false positive that deleted 200 lines: `/*` inside a line comment, closed much later.
-    survives = "\n".join([
-        "  // ---- loads fixtures/*.bin once ----",
-        "  const READABLE = ['published-v4'];",
-        "  /** a doc comment */",
-    ])
-    assert "const READABLE = ['published-v4'];" in executable_lines(survives), (
-        "a `/*` inside a line comment swallowed the executable code after it")
+def test_the_declaration_scanner_finds_executable_declarations_and_only_those():
+    """**The positive control for the two checks below**, now including pass 50's attacks.
+
+    The checks are only worth something if `declarations` does four things: find a real
+    declaration and read its real contents, ignore one that is commented out, ignore one that is
+    only text inside a string, and *not* lose executable code to a comment marker it misreads.
+    Every one of those was broken in some earlier version of this helper.
+    """
+    pattern = r"const READABLE = \[([^\]]*)\]"
+
+    # 1. It finds a real declaration and reads the real strings back.
+    plain = "const READABLE = ['published-v2', 'published-v4'];"
+    assert declarations(plain, pattern) == ["'published-v2', 'published-v4'"]
+
+    # 2. A commented-out declaration is not a declaration. Both comment forms, and the
+    #    same-line form that the line-oriented version swallowed whole.
+    for attack in (
+        "// const READABLE = ['a', 'b', 'c'];\nconst READABLE = ['real'];",
+        "/* const READABLE = ['a', 'b', 'c']; */\nconst READABLE = ['real'];",
+        "/* note */ const READABLE = ['real'];",
+    ):
+        got = declarations(attack, pattern)
+        assert got == ["'real'"], (attack, got)
+
+    # 3. Pass 50 finding G3's attack: a decoy inside a template literal, with the executable
+    #    declaration commented out behind a same-line block comment.
+    g3 = (
+        "const example = `\n"
+        "const READABLE = ['published-v2', 'published-v3', 'published-v4'];\n"
+        "`;\n"
+        "/* supported versions */ const READABLE = ['published-v2', 'published-v3'];\n"
+    )
+    assert declarations(g3, pattern) == ["'published-v2', 'published-v3'"], (
+        "the decoy inside the template literal was taken for the declaration, or the real "
+        "declaration behind the block comment was lost")
+
+    # 4. The false positive that deleted 200 lines of app.js: a comment marker inside a line
+    #    comment must not open a block that swallows the code after it.
+    survives = (
+        "  // ---- loads fixtures/*.bin once ----\n"
+        "  const READABLE = ['published-v4'];\n"
+        "  /** a doc comment */\n"
+    )
+    assert declarations(survives, pattern) == ["'published-v4'"]
+
+    # 5. A quote inside a comment must not start a string that swallows the declaration.
+    quoted = "// it's a comment\nconst READABLE = ['published-v4'];"
+    assert declarations(quoted, pattern) == ["'published-v4'"]
+
+    # 6. The mask is length-preserving, which is what makes offsets usable at all.
+    for sample in (plain, g3, survives, quoted):
+        assert len(executable_mask(sample)) == len(sample)
+
+    # 7. Two executable declarations are two, so the duplicate check below can fire.
+    assert len(declarations("const READABLE = ['a'];\nconst READABLE = ['b'];", pattern)) == 2
+
+
+def test_the_scanner_agrees_with_the_real_sources():
+    """And on the files it is actually pointed at, it finds exactly one declaration each.
+
+    A helper correct on its own fixtures and wrong on the real file is the failure this project
+    keeps finding, so the real sources are part of the control.
+    """
+    spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
+    for name, pattern in (
+        ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
+        ("app.js", r"const READABLE = \[([^\]]*)\]"),
+    ):
+        text = (spike / name).read_text(encoding="utf-8")
+        assert len(executable_mask(text)) == len(text), f"{name}: the mask changed length"
+        found = declarations(text, pattern)
+        assert len(found) == 1, f"{name} has {len(found)} executable declarations"
+        assert "published-v4" in found[0], f"{name}: {found[0]}"
 
 
 def test_v4_reads_every_earlier_encoding():
@@ -473,15 +566,13 @@ def test_the_javascript_encoding_lists_match_the_python_one():
     executable list drifted, so comments are stripped first and exactly one declaration must
     remain. The executable behaviour is checked too, below.
     """
-    import re
     spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
 
     for name, pattern in (
         ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
         ("app.js", r"const READABLE = \[([^\]]*)\]"),
     ):
-        source = executable_lines((spike / name).read_text(encoding="utf-8"))
-        found = re.findall(pattern, source)
+        found = declarations((spike / name).read_text(encoding="utf-8"), pattern)
         assert found, f"{name} no longer declares a readable-encoding list under a known name"
         assert len(found) == 1, (
             f"{name} declares the readable-encoding list {len(found)} times in executable code; "
@@ -500,7 +591,6 @@ def test_the_page_accepts_the_encoding_the_exporter_writes():
     refused the manifest it had just helped produce". So compare against the manifest actually on
     disk rather than against another list.
     """
-    import re
     spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
     manifest_path = spike / "fixtures" / "published" / "manifest.json"
     if not manifest_path.exists():
@@ -513,8 +603,8 @@ def test_the_page_accepts_the_encoding_the_exporter_writes():
         ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
         ("app.js", r"const READABLE = \[([^\]]*)\]"),
     ):
-        source = executable_lines((spike / name).read_text(encoding="utf-8"))
-        listed = [s.strip().strip("'\"") for s in re.findall(pattern, source)[0].split(",")
+        listed = [s.strip().strip("'\"") for s in
+                  declarations((spike / name).read_text(encoding="utf-8"), pattern)[0].split(",")
                   if s.strip()]
         assert encoding in listed, (
             f"{name} would refuse {encoding!r}, which is the encoding of the bundle in "

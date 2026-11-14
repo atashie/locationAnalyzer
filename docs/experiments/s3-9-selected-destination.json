@@ -1,6 +1,6 @@
 {
   "what_this_is": "which grocery each published answer was measured to. The plane names the destination NODE and the side table carries every place on it, because a node is not a shop and the cost model routed to the node",
-  "built": "2026-11-14 07:55:12",
+  "built": "2026-11-14 08:28:35",
   "mode": "walk",
   "category": "grocery",
   "the_presentation_rule": "the owner's decision, 2026-11-13: THE NODE PLUS THE SET, and the card chooses. The set is the truthful answer rather than a convenience -- the selection is a cost-argmin over NODES, so which of the places on the chosen node a household walks to is not something this pipeline computed and the artifact must not assert it",
@@ -35,42 +35,5 @@
     },
     "cells_whose_destination_is_ambiguous": 14487,
     "what_ambiguous_means_here": "the cell's journey ends at a node carrying more than one grocery, so the artifact names a SET and not a shop. That is the honest state of the computation, not a defect to be resolved by picking one"
-  },
-  "ties": {
-    "what_this_is": "whether the destination a household would be SHOWN is a property of the published answer or of the traversal order",
-    "labellings": {
-      "reversed": {
-        "reachable_in_both": 539814,
-        "seconds_differing": 0,
-        "destination_moved": 0
-      },
-      "random_seed_20261113": {
-        "reachable_in_both": 539814,
-        "seconds_differing": 0,
-        "destination_moved": 0
-      },
-      "random_seed_20261113_second": {
-        "reachable_in_both": 539814,
-        "seconds_differing": 0,
-        "destination_moved": 0
-      }
-    },
-    "total_destination_moves": 0,
-    "positive_control": {
-      "what_this_is": "a three-node construction whose selected destination IS ambiguous, so the instrument's ability to report a moved destination is demonstrated rather than assumed",
-      "published_seconds_at_the_target": [
-        300.0
-      ],
-      "destinations_selected_across_relabellings": [
-        0,
-        1
-      ],
-      "total_destination_moves": 1,
-      "total_seconds_moves": 0,
-      "why_the_flags_control_does_not_cover_this": "measure_tie_flag.py's diamond has ONE destination, so no destination can move in it, and it drives arrival_with_route_flag rather than arrival_with_selected_destination"
-    },
-    "labellings_tried": 3,
-    "what_it_means": "under the 3 relabellings tried, no cell's selected destination moved. That is EVIDENCE that exact bit-level cost ties between different destinations are not being hit on this graph; it is not proof that none exist. Three permutations sample the space, and a tie whose two orderings both happen to be avoided by these three is invisible here -- pass 49 finding 8. The positive control above shows the instrument can report a move, which is what makes this zero worth recording at all",
-    "what_it_does_not_establish": "that the destination is well defined in general. Quantising the cost would manufacture ties, and then the NAME shown would depend on heap order. The earlier wording said ties 'do not occur on this graph', which three relabellings cannot establish"
   }
 }

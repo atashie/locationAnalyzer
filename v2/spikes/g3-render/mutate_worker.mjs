@@ -266,6 +266,64 @@ const MUTATIONS = [
     apply: (s) => s.replace('+ (routeFlags[k] ? 1 : 0) + (destinations[k] ? 2 : 0)), 0),',
                             '+ (routeFlags[k] ? 1 : 0)), 0),'),
   },
+  // ------------------------------------------------------------------ pass 50
+  // Seven more that passed all 75 checks. Three of them existed because the harness compared the
+  // reply against the very object the worker was handed, so a worker that rewrote its own input
+  // in place agreed with itself.
+  {
+    // The whole-record comparison now runs against a frozen snapshot taken before init, so this
+    // is caught. It passed before, every GERS id and licence corrupted.
+    name: 'every returned place record has its gers_id and licence rewritten',
+    apply: (s) => s.replace(
+      'const entry = destTables[k].destinations[d];',
+      'const entry = destTables[k].destinations[d];\n'
+      + "    entry.places.forEach((pl) => { pl.gers_id = 'WRONG'; pl.licence = 'Proprietary'; });"),
+  },
+  {
+    // There was no destination-length refusal case at all, so a plane of the wrong size was read
+    // as if it were right and every ordinal after the first came from the wrong cell.
+    name: 'the destination plane length check is removed',
+    apply: (s) => s.replace('if (buf.byteLength !== n * 2) {', 'if (false) {'),
+  },
+  {
+    // `| 0` before the bounds check: 4294967296 wraps to 0 and gets a confident answer.
+    name: 'a destination coordinate is coerced instead of validated',
+    apply: (s) => s.replace('if (!Number.isInteger(row) || !Number.isInteger(col)) {',
+                            'if (false) {'),
+  },
+  {
+    // The lifecycle class, not the one reader pass 49 fixed.
+    name: 'verdicts are served from the zero-filled plane before any compute',
+    apply: (s) => s.replace(
+      "    throw new Error('verdicts requested before any compute has run; the plane is allocated and ",
+      "    if (false) throw new Error('verdicts requested before any compute has run; the plane is allocated and "),
+  },
+  {
+    name: 'the mask is served before any compute',
+    apply: (s) => s.replace(
+      "    throw new Error('mask requested before any compute has run; there is no region to report and ",
+      "    if (false) throw new Error('mask requested before any compute has run; there is no region to report and "),
+  },
+  // NOT LISTED, deliberately: `state.lastInCount = 0` at init.
+  //
+  // Pass 50 finding D1 observed a fresh zero mask arriving with the previous bundle's count, and
+  // the reset is in `worker.js` because that was a real contradiction. But the same finding's
+  // other half -- refusing `mask` until a compute has run -- makes the stale value UNREACHABLE
+  // through the message protocol: the only message that carries `inCount` cannot be obtained
+  // between an init and a compute, and a compute recomputes it. So removing the reset changes no
+  // observable behaviour, and a mutation for it SURVIVES every check. It is listed here as absent
+  // rather than left to look like an oversight: the reset stays as defence in depth should the
+  // lifecycle guard ever be relaxed, and nothing in this suite claims to be guarding it.
+  {
+    // A compute that throws part-way leaves the planes half rewritten, labelled with the
+    // sequence number of the compute before it.
+    name: 'a failed compute leaves its half-written plane readable',
+    // Anchored on the blank line and the Hoist comment that follow, because the same two
+    // statements appear in the init reset. Pass 49's lesson about identical statements.
+    apply: (s) => s.replace(
+      /state\.computed = false;(\r?\n)  state\.lastSeq = -1;\1\1  \/\/ Hoist/,
+      '// the reset is gone$1$1  // Hoist'),
+  },
 ];
 
 const original = fs.readFileSync(WORKER, 'utf8');

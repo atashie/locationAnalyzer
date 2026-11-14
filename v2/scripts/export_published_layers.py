@@ -171,50 +171,108 @@ def load_selected_destination(stem: str, shape, horizon_s: float,
     return plane, table
 
 
-# Every field a place record is allowed to publish, and every licence it is allowed to carry.
+# Every key a published side table is allowed to carry, at EVERY level, and every licence a
+# record may be published under.
+#
 # Pass 49: the exporter carried the table through byte-for-byte and enforced nothing, so a field
 # added upstream would ship -- and the fields deliberately left out of `place_record` are exactly
 # the ones decision 17 forbids in an ODbL-published bundle: phones, emails, websites, socials,
 # addresses and provider record ids. An allowlist is the only form of this check that works,
 # because a blocklist cannot name a field nobody has invented yet.
+#
+# **Pass 50 finding B1: the first version checked two levels out of four.** It did not look at the
+# table's root keys, at the keys inside the root `licence` object, or at the TYPES of the values
+# in the fields it did allow. So a phone could arrive as root metadata, an upstream provider id
+# inside `licence`, and a website inside an object stored under `brand` -- all three serialised
+# unchanged, and the shipped-bundle check passed 75/75 on the result. A guarantee that "no
+# forbidden field can leave" has to cover every entrance.
+ROOT_FIELDS = {"what_this_is", "built", "mode", "category", "licence", "node_is_not_a_shop",
+               "destinations"}
+LICENCE_FIELDS = {"this_table", "source", "why_it_is_a_separate_artifact",
+                  "fields_deliberately_omitted", "redistribution"}
 PLACE_FIELDS = {"gers_id", "name", "brand", "category", "operating_status", "licence"}
 ENTRY_FIELDS = {"ordinal", "node_index", "place_count", "places"}
 PUBLISHABLE_LICENCES = {"CDLA-Permissive-2.0", "Apache-2.0", "CC0-1.0"}
 
 
 def check_table_is_publishable(table: dict, table_path) -> None:
-    """Refuse a side table that carries a field or a licence nobody reviewed.
+    """Refuse a side table that carries a key, a type or a licence nobody reviewed.
 
     This is a build-time gate, not a wire check: it decides what is allowed to leave the machine.
-    It is deliberately strict about *unknown* values rather than about known-bad ones.
+    It is deliberately strict about *unknown* things rather than about known-bad ones, and it is
+    strict at every level, because a field smuggled in at the root ships exactly as readily as one
+    smuggled into a place record.
     """
-    for entry in table.get("destinations", []):
-        extra = set(entry) - ENTRY_FIELDS
+    name = getattr(table_path, "name", str(table_path))
+
+    def refuse(what: str) -> None:
+        raise SystemExit(f"{name}: {what}")
+
+    def check_keys(obj, allowed: set[str], where: str) -> None:
+        if not isinstance(obj, dict):
+            refuse(f"{where} is {type(obj).__name__}, expected an object")
+        extra = sorted(set(obj) - allowed)
         if extra:
-            raise SystemExit(
-                f"{table_path.name}: destination entry {entry.get('ordinal')} carries "
-                f"{sorted(extra)}, which this exporter has never reviewed for publication. Add "
-                "the field to ENTRY_FIELDS deliberately, or stop producing it")
-        for place in entry.get("places", []):
-            extra = set(place) - PLACE_FIELDS
-            if extra:
-                raise SystemExit(
-                    f"{table_path.name}: a place record carries {sorted(extra)}. The fields left "
-                    "out of place_record() are the ones decision 17 forbids in a published "
-                    "bundle -- phones, emails, websites, socials, addresses, provider record "
-                    "ids -- so an unreviewed field is refused rather than shipped")
+            refuse(f"{where} carries {extra}, which this exporter has never reviewed for "
+                   "publication. The fields left out of place_record() are the ones decision 17 "
+                   "forbids in a published bundle -- phones, emails, websites, socials, "
+                   "addresses, upstream provider record ids -- so an unreviewed key is refused "
+                   f"rather than shipped. Add it to the allowlist deliberately, or stop "
+                   "producing it")
+
+    def check_scalar(value, where: str) -> None:
+        """A reviewed FIELD holding an unreviewed OBJECT is how a website gets published."""
+        if value is None or isinstance(value, (str, bool, int)):
+            return
+        if isinstance(value, float):
+            if value != value:
+                refuse(f"{where} is a float NaN. `json.dumps` writes that as the bare token NaN, "
+                       "which is not JSON and which no browser will parse -- pass 49 finding 2. "
+                       "A missing value is None")
+            return
+        refuse(f"{where} is {type(value).__name__}, and only scalars are published here. A "
+               "nested object inside a reviewed field is an unreviewed field with a reviewed "
+               "name -- pass 50 finding B1")
+
+    check_keys(table, ROOT_FIELDS, "the table root")
+    if "licence" in table:
+        check_keys(table["licence"], LICENCE_FIELDS, "the root licence block")
+        for key, value in table["licence"].items():
+            if isinstance(value, list):
+                for i, item in enumerate(value):
+                    check_scalar(item, f"licence.{key}[{i}]")
+            else:
+                check_scalar(value, f"licence.{key}")
+    for key, value in table.items():
+        if key not in ("destinations", "licence"):
+            check_scalar(value, f"the root field {key!r}")
+
+    if not isinstance(table.get("destinations"), list):
+        refuse("the table has no destinations list")
+    for entry in table["destinations"]:
+        check_keys(entry, ENTRY_FIELDS, f"destination entry {entry.get('ordinal')}"
+                   if isinstance(entry, dict) else "a destination entry")
+        for key in ("ordinal", "node_index", "place_count"):
+            if not isinstance(entry.get(key), int) or isinstance(entry.get(key), bool):
+                refuse(f"destination entry {entry.get('ordinal')} has {key}="
+                       f"{entry.get(key)!r}, which is not an integer")
+        if not isinstance(entry.get("places"), list) or not entry["places"]:
+            refuse(f"destination entry {entry.get('ordinal')} carries no places; a node is a "
+                   "destination only because a place is on it")
+        if len(entry["places"]) != entry["place_count"]:
+            refuse(f"destination entry {entry.get('ordinal')} declares "
+                   f"{entry['place_count']} places and carries {len(entry['places'])}")
+        for place in entry["places"]:
+            check_keys(place, PLACE_FIELDS, f"a place record on entry {entry.get('ordinal')}")
+            for key, value in place.items():
+                check_scalar(value, f"place field {key!r} on entry {entry.get('ordinal')}")
+            if not isinstance(place.get("gers_id"), str) or not place["gers_id"]:
+                refuse(f"a place record on entry {entry.get('ordinal')} has no GERS id")
             lic = place.get("licence")
             if lic is not None and lic not in PUBLISHABLE_LICENCES:
-                raise SystemExit(
-                    f"{table_path.name}: a place record is licensed {lic!r}, which is not one of "
-                    f"{sorted(PUBLISHABLE_LICENCES)}. A licence this exporter has not reviewed "
-                    "does not get published on the strength of being unfamiliar")
-            for key, value in place.items():
-                if isinstance(value, float) and value != value:
-                    raise SystemExit(
-                        f"{table_path.name}: place field {key!r} is a float NaN. `json.dumps` "
-                        "writes that as the bare token NaN, which is not JSON and which no "
-                        "browser will parse -- pass 49 finding 2. A missing value is None")
+                refuse(f"a place record is licensed {lic!r}, which is not one of "
+                       f"{sorted(PUBLISHABLE_LICENCES)}. A licence this exporter has not "
+                       "reviewed does not get published on the strength of being unfamiliar")
 
 
 def load_surface(stem: str) -> tuple[Surface, dict]:
@@ -287,11 +345,17 @@ LICENCES = pathlib.Path(__file__).resolve().parents[1] / "licences"
 def stamp() -> str:
     return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
 
-# The attribution each licence needs carried with the data, beyond its text.
+# The attribution each licence needs carried with the data, beyond its text, and the text that
+# must actually appear in it.
+#
+# Pass 50 finding B2: the first version checked only that the pathname EXISTED, so an empty file
+# satisfied it. A notice requirement discharged by an empty file is not discharged. Each entry
+# therefore names the string the file has to contain -- for Foursquare, the copyright line
+# Overture's documentation gives as the minimum.
 LICENCE_NOTICES = {
     # Apache-2.0 §4(d): keep the attribution notices from the source NOTICE file. In Overture,
     # Apache-licensed Places records are the Foursquare-sourced ones.
-    "Apache-2.0": ["NOTICE-foursquare.txt"],
+    "Apache-2.0": [("NOTICE-foursquare.txt", "Copyright 2024 Foursquare Labs, Inc.")],
 }
 
 
@@ -321,11 +385,18 @@ def write_licence_bundle(out: pathlib.Path, tables: list[dict], releases: set[st
     for lic in present:
         shutil.copyfile(LICENCES / f"{lic}.txt", dest / f"{lic}.txt")
         copied.append(f"LICENSES/{lic}.txt")
-        for notice in LICENCE_NOTICES.get(lic, []):
+        for notice, required in LICENCE_NOTICES.get(lic, []):
             src = LICENCES / notice
             if not src.exists():
                 raise SystemExit(
                     f"{lic} requires {notice} to travel with the data and {src} does not exist")
+            text = src.read_text(encoding="utf-8")
+            if required not in text:
+                raise SystemExit(
+                    f"{lic} requires {notice} to carry {required!r} and it does not. Pass 50 "
+                    "finding B2: this gate used to check only that the file existed, so an empty "
+                    "file passed -- and a notice requirement discharged by an empty file is not "
+                    "discharged")
             shutil.copyfile(src, dest / notice)
             copied.append(f"LICENSES/{notice}")
     counts = collections.Counter(
@@ -339,7 +410,21 @@ def write_licence_bundle(out: pathlib.Path, tables: list[dict], releases: set[st
         files="\n".join(f"* `{f}`" for f in copied))
     (out / "ATTRIBUTION.md").write_text(text, encoding="utf-8")
     return {"licences_present": present, "files": copied + ["ATTRIBUTION.md"],
-            "place_records_by_licence": {k: v for k, v in sorted(counts.items()) if k}}
+            "place_records_by_licence": {k: v for k, v in sorted(counts.items()) if k},
+            # Pass 50 finding B2. What this gate does and does not establish, in the manifest,
+            # so a consumer is not left to infer clearance from the presence of files.
+            "what_this_establishes": (
+                "that every licence a published record names has its text in LICENSES/, and that "
+                "each required notice file exists and carries its required line"),
+            "what_this_does_not_establish": (
+                "Apache-2.0 4 compliance for the Apache-licensed records. 4(a) is satisfied; "
+                "4(b) is not discharged by ATTRIBUTION.md, because the requirement concerns "
+                "notices carried by the modified files; 4(c) requires retaining all upstream "
+                "copyright, patent, trademark and attribution notices and this build has not "
+                "inventoried them; 4(d) requires a readable copy of the source NOTICE and the "
+                "shipped file says on its face that it is not one. Treat the Apache records as "
+                "NOT cleared for redistribution until the real NOTICE is obtained"),
+            "apache_records_are_cleared_for_redistribution": False}
 
 
 ATTRIBUTION = """# Attribution and licensing for this bundle
@@ -356,8 +441,27 @@ From **Overture Maps, release {releases}**, which licenses Places records by sou
 **These records have been modified.** Only `gers_id`, `name`, `brand`, `category`,
 `operating_status` and `licence` are carried; phones, emails, websites, socials, addresses and
 upstream provider record ids are dropped, and the records are grouped by the road-network node
-they snap to. Apache-2.0 §4(b) requires that statement and the date of the change, which is the
-build date above.
+they snap to. Apache-2.0 §4(b) requires modified files to carry prominent notices stating that
+they were changed; the build date above is recorded because it is useful, **not** because §4(b)
+asks for a date — an earlier version of this file said it did, and it does not.
+
+### What is not yet established
+
+Stating this here rather than implying compliance by silence:
+
+* **§4(b)** is not discharged by this file alone. The requirement is about notices carried by the
+  modified files; the modified file is `*.destinations.json` and it carries no such notice.
+* **§4(c)** requires retaining all copyright, patent, trademark and attribution notices from the
+  source. This build has not inventoried those upstream notices, so it cannot claim to have
+  retained them all.
+* **§4(d)** requires a readable copy of the attribution notices from the source `NOTICE`.
+  `LICENSES/NOTICE-foursquare.txt` states on its face that it is **not** that copy: the upstream
+  file is behind a gated repository. It carries the one line Overture documents as the minimum.
+
+So this bundle should be treated as **not cleared for redistribution of the Apache-licensed
+records** until the real `NOTICE` is obtained. The partial notice is here because preserving known
+attribution and naming what is missing is better than shipping nothing — but its presence is not
+clearance, and the licence gate that copies it does not establish §4 compliance.
 
 ## The travel-time planes
 
@@ -387,20 +491,24 @@ data -- appears in any published artifact here.
 
 def verify_provenance(stem: str, transform, crs, bounds, nrows: int, ncols: int,
                       *, source: dict, published: dict) -> dict:
-    """Every published plane at every cell must come from ONE source cell.
+    """Every published plane at every cell must hold the value its source cell holds.
 
     Pass 49 finding 1. A source-cell index is reprojected through the same nearest call as the
-    planes, so the published grid carries, per cell, the identity of the source cell that fed it.
-    Then each published plane is compared against its source plane at that index. If two nearest
-    calls disagreed -- a status from one source cell beside a destination from another -- the
-    comparison fails, whatever the values are.
+    planes, so the published grid carries, per cell, the identity of a source cell; then each
+    published plane is compared against its source plane at that index.
 
-    This is what the two-directional destination invariant cannot do. That invariant compares
-    answer-presence masks and never looks at a value, so exchanging two valid destinations between
-    two OK cells passes it.
+    **What it establishes, stated no more strongly than pass 50 finding A1 allows.** It is an
+    output-VALUE consistency check, not a proof of physical source-cell identity. If two source
+    cells hold the same value, sampling either produces the same byte and the comparison cannot
+    tell them apart -- so "fails whatever the values are", which this docstring used to claim, is
+    false. What it does establish is that no published cell holds a value that is wrong *for the
+    source cell the reprojection says fed it*, which is the thing a household would be shown.
 
-    The returned record is a measurement, not a claim: it says how many cells were checked and how
-    many planes were checked at each.
+    That is still strictly more than the two-directional destination invariant gives. That
+    invariant compares answer-presence masks and never reads a value, so exchanging two valid
+    destinations between two OK cells passes it and fails here.
+
+    The returned record is a measurement, not a claim.
     """
     src_index = np.arange(next(iter(source.values())).size,
                           dtype=np.uint32).reshape(next(iter(source.values())).shape)
@@ -433,10 +541,17 @@ def verify_provenance(stem: str, transform, crs, bounds, nrows: int, ncols: int,
         "cells_no_source_covers": int((~covered).sum()),
         "planes_compared": sorted(published),
         "what_this_establishes": (
-            "every listed plane at every covered cell equals that plane's value at the ONE source "
-            "cell a jointly reprojected index says fed it. The destination plane's two-directional "
-            "invariant does not establish this: it compares answer-presence masks and never reads "
-            "a value, so exchanging two valid destinations between two OK cells passes it"),
+            "every listed plane at every covered cell equals that plane's value at the source "
+            "cell a jointly reprojected index says fed it. The destination plane's "
+            "two-directional invariant does not establish this: it compares answer-presence "
+            "masks and never reads a value, so exchanging two valid destinations between two OK "
+            "cells passes it and fails here"),
+        "what_this_does_not_establish": (
+            "physical source-cell identity. Two source cells holding the same value are "
+            "indistinguishable to this comparison, so it is an output-VALUE consistency check "
+            "rather than a provenance proof -- pass 50 finding A1. What a household would be "
+            "shown is nonetheless pinned, because a value that is right for the cell the "
+            "reprojection names is the value that cell's journey produced"),
     }
 
 

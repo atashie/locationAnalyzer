@@ -94,10 +94,24 @@ decision 17's real rule, which this table does satisfy: no contractually restric
 That is not redistribution compliance:
 
 * **CDLA-Permissive-2.0 §2.1** requires a sharer to make available *the text of this agreement*
-  with the shared data. 411 published place records are CDLA.
-* **Apache-2.0 §4** requires recipients to receive the licence, a statement that files were changed
-  and when, and the attribution notices from the source `NOTICE`. 35 published records are Apache,
-  which in Overture means Foursquare-sourced.
+  with the shared data. 411 published place records are CDLA. That is its only sharing condition —
+  an earlier version of this note also attributed a separate attribution requirement to CDLA, and
+  it has none (pass 50 finding B2).
+* **Apache-2.0 §4** requires recipients to receive the licence (§4a), modified files to carry
+  notices that they were changed (§4b — **and no date**, which this note previously invented),
+  retention of all upstream copyright, patent, trademark and attribution notices (§4c), and a
+  readable copy of the source `NOTICE` attributions (§4d). 35 published records are Apache, which
+  in Overture means Foursquare-sourced.
+
+**Only §4(a) is discharged, and the bundle now says so (pass 50 finding B2).** §4(b) is not
+satisfied by `ATTRIBUTION.md`, because the requirement is about notices carried by the modified
+file, which is the JSON. §4(c) has not been established because the upstream notices have not been
+inventoried. §4(d) cannot be claimed because the shipped notice states on its face that it is not
+the source `NOTICE`. So `ATTRIBUTION.md` and the manifest both record
+`apache_records_are_cleared_for_redistribution: false`, and the gate no longer accepts an **empty**
+notice file — it requires the documented minimum line to be present, because a notice requirement
+discharged by an empty file is not discharged. Shipping the honest partial notice is better than
+shipping none; treating its existence as clearance is what the gate used to do.
 
 So `v2/licences/` now holds the texts, `scripts/export_published_layers.py` copies the ones a
 bundle actually needs into `LICENSES/`, writes `ATTRIBUTION.md` with the modification statement and
@@ -144,12 +158,18 @@ silently misidentified. A mask check cannot catch a defect that preserves the ma
 It is sound as what it is: a **completeness** check. Nothing found a legitimate `DEST_NONE` beside
 `OK` in a layer that promises to name every destination.
 
-The provenance check it was mistaken for now exists, in `export_published_layers.verify_provenance`.
-A source-cell **index** is reprojected through the same nearest call as the planes, so each
-published cell carries the identity of the source cell that fed it; then every published plane is
-required to equal its source plane at that index. Three nearest calls that disagreed about which
-source cell fed a published cell cannot survive that, whatever the values are. On the shipped
-bundle: **330,502 of 330,502 cells trace to one source cell across all four planes, 0 uncovered.**
+A stronger check now exists, in `export_published_layers.verify_provenance`. A source-cell
+**index** is reprojected through the same nearest call as the planes, so each published cell
+carries the identity of a source cell; then every published plane is required to equal its source
+plane at that index. On the shipped bundle: **330,502 of 330,502 cells agree across all four
+planes, 0 uncovered.**
+
+**It is an output-value check, not a proof of source-cell identity (pass 50 finding A1).** I wrote
+that a mixed triple "cannot survive that, whatever the values are". If two source cells hold the
+same value, sampling either produces the same byte and the comparison cannot tell them apart — so
+the claim is withdrawn. What it does establish is that no published cell holds a value that is
+wrong *for the source cell the reprojection names*, which is what a household would be shown. That
+is strictly more than the mask invariant gives, and less than provenance.
 Two positive controls in `tests/test_export_published.py` exchange a destination and shift a
 status, and both are caught — including the exchange that passes the invariant.
 
@@ -172,9 +192,21 @@ Two things about that check I went looking for myself, while writing the pass 50
 
 One related hole closed at the source: `persist_selected_destination.py` stamped the plane with a
 fingerprint of whatever `<stem>.npy` happened to hold, without ever checking the two agreed, so a
-fresh destination computation could be blessed against stale published seconds. It now compares the
-masks before stamping. Pass 48's lesson was to bind a derived plane to its surface; the binding has
-to be earned.
+fresh destination computation could be blessed against stale published seconds. Pass 48's lesson
+was to bind a derived plane to its surface; the binding has to be earned.
+
+**And the first repair did not earn it (pass 50 finding A2).** It compared only the journey-presence
+masks — and **256,276** of this surface's cells can have 60 seconds added while staying finite and
+within the horizon, so every one of their published minutes changes and the mask does not move. The
+gate now recomputes the per-cell seconds with the same function the surface build uses and compares
+the **values**: 256,752 cells compared, **0 differing**. The comparison is exact after the `float32`
+cast the surface was written through, because a direct `float64` comparison disagrees at 251,506
+cells by at most one ULP — 0.00049 s at 7,200 s, which is storage precision and not disagreement. A
+cast is deterministic, so there is no tolerance left to argue about.
+
+The gate is a function, `check_plane_describes_the_surface`, rather than a block inside the build
+step, because a gate buried in a 400-line `main` cannot be handed a wrong surface and shown to
+fail. `tests/test_destination_binding.py` hands it five.
 
 Also corrected from pass 48's write-up: a *clear* route flag beside `OK` is not "asserting
 nothing" — it asserts that the selected route uses no restricted way. What is missing is an
@@ -201,13 +233,26 @@ byte order. Requiring the field cannot catch bytes that are wrongly *labelled* l
 Nothing can.
 
 And the claim that "the name comparison is the only thing that catches a big-endian read" is
-withdrawn (finding 6). The vectors record the expected **ordinal** beside the expected name, so
-`got.ordinal === want.ordinal` fires first and the name is never reached. What a byte swap survives
-is the structural *bounds* check; what catches it is comparing against a recorded expectation at
-all. `byteswap_control.mjs` also used to print `CONFIRMED` without performing an endian mutation —
-reformatting the little-endian expression made its `replace` inert, and any unrelated wrong-name
-defect then satisfied it. It now requires its mutation to have applied, the baseline to answer
-*completely* correctly, and the mutated ordinals to be exactly `1 ↔ 256`.
+withdrawn (pass 49 finding 6). The vectors record the expected **ordinal** beside the expected name,
+so `got.ordinal === want.ordinal` fires first and the name is never reached. What a byte swap
+survives is the structural *bounds* check; what catches it is comparing against a recorded
+expectation at all. `byteswap_control.mjs` also used to print `CONFIRMED` without performing an
+endian mutation — reformatting the little-endian expression made its `replace` inert, and any
+unrelated wrong-name defect then satisfied it.
+
+**And the repair's own claim was false (pass 50 finding G1).** I said the control required the
+baseline to answer "completely correctly". It required the baseline ordinal to be *non-null*, never
+comparing it with the recorded one — so a worker whose baseline returns 256 where 1 is expected
+passed, because its mutated run returns 1, the swap of its own wrong answer. A relative test
+against a wrong baseline confirms nothing. The expectation is now **absolute**: the ordinals the
+vectors record, and their swaps, with the group's expected pair named in the file.
+
+One more claim gone with it (finding G2): this control's stated reason for existing was that the
+mutation runner "stops at the first failing check", so the byte-swap group would never be reached.
+It does not stop — `check()` catches each failure and continues, and under the endian mutation the
+harness runs every check and the byte-swap group fails among them, 8 failures including
+`(0, 0) ordinal 256, expected 1`. The runner merely *prints* the first. The group was always doing
+its job; the control is a focused experiment, not a rescue.
 
 ### The price, corrected
 
@@ -227,15 +272,20 @@ worse than the ones first published:
 * So the headline was "4.1% of the bundle". The real figure is **59,278 deflated bytes, 20.6% of
   what ships** — plane 37,999 plus side table 21,279 against a 287,309-byte bundle.
 
+All three encoding figures above are **source-grid** numbers; the bundle totals are
+**published-grid** ones, and mixing them is what produced the original error. The artifact now
+reports the two under separate keys.
+
 And the access argument was a false necessity. It said answering one cell from run-length means
 "expanding 330,502 run-length entries", and that an index to avoid that is "a second structure to
 ship and validate". Measured: cumulative run endpoints, built at load from the same bytes and never
 shipped, answer any cell by binary search over **28,989** runs in **173,934 bytes** — *less* than
 the expanded plane's 661,004 — with **0 mismatches over all 330,502 cells**. So the honest reason
 for the plane is **simplicity**: no decode step, no second structure to keep in step with the side
-table, no code path that can be wrong only at a run boundary. That is an engineering preference
-bought for a known number of bytes. **Phone latency is still unmeasured**, so nothing here is a
-performance argument.
+table, no code path that can be wrong only at a run boundary. The worker already carries a uint16
+decoder for the plane, so "no decode step" means no *further* one. That is an engineering
+preference bought for a known number of bytes. **Phone latency is still unmeasured**, so nothing
+here is a performance argument.
 
 ## What is still open
 

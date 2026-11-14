@@ -124,6 +124,24 @@ for (const group of vectors.groups) {
     nrows: group.nrows, ncols: group.ncols, encoding: vectors.encoding,
     layers: group.layers.map((l) => ({ id: l.id, horizon_s: l.horizon_s })),
   };
+  // ------------------------------------------------------------------ pass 50 finding C1
+  // **The expected record set must not be the object the worker was handed.** It was: the worker
+  // received `group.dest_tables` itself, and the comparison below then read the expected record
+  // out of that same object, so a worker that rewrote every `gers_id` and `licence` in place
+  // passed all 75 checks. A real `postMessage` structured-clones, so sharing the object is a
+  // property of this Node shim rather than of the browser -- which is exactly why the harness has
+  // to defend against it instead of relying on the shim.
+  //
+  // So: freeze a deep snapshot BEFORE anything runs, and hand the worker its own deep copy.
+  const ORACLE = JSON.parse(JSON.stringify(group.dest_tables || group.layers.map(() => null)));
+  const deepFreeze = (o) => {
+    if (o && typeof o === 'object') {
+      Object.values(o).forEach(deepFreeze);
+      Object.freeze(o);
+    }
+    return o;
+  };
+  deepFreeze(ORACLE);
   const initArgs = (m) => ({
     type: 'init',
     manifest: m,
@@ -131,7 +149,8 @@ for (const group of vectors.groups) {
     statuses: group.layers.map((l) => planeBytes(l.status_file)),
     routeFlags: group.layers.map((l) => (l.flag_file ? planeBytes(l.flag_file) : null)),
     destinations: group.layers.map((l) => (l.dest_file ? planeBytes(l.dest_file) : null)),
-    destTables: (group.dest_tables || group.layers.map(() => null)),
+    destTables: JSON.parse(JSON.stringify(group.dest_tables
+      || group.layers.map(() => null))),
   });
   check(`${group.name}: init`, () => {
     const out = worker.send(initArgs(manifest));
@@ -259,14 +278,17 @@ for (const group of vectors.groups) {
           assert(JSON.stringify(gotNames) === JSON.stringify(want.place_names),
             `(${q.row}, ${q.col}) place names ${JSON.stringify(gotNames)}, expected `
             + `${JSON.stringify(want.place_names)}`);
-          // And the whole record set, against the table this worker was handed. This pins the
-          // reply to its input: a worker that rewrites, reorders or duplicates a record fails
-          // here even where the vectors record only names.
+          // And the whole record set, against the frozen snapshot taken before init -- NOT
+          // against the object the worker holds, which it could have rewritten in place.
           const layerIndex = group.layers.findIndex((l) => l.id === want.layer);
-          const entry = group.dest_tables[layerIndex].destinations[want.ordinal];
-          assert(JSON.stringify(got.places) === JSON.stringify(entry.places),
+          const expected = ORACLE[layerIndex].destinations[want.ordinal];
+          assert(JSON.stringify(got.places) === JSON.stringify(expected.places),
             `(${q.row}, ${q.col}) the places returned are not the side table's record set for `
-            + `ordinal ${want.ordinal}`);
+            + `ordinal ${want.ordinal}:\n    got      ${JSON.stringify(got.places)}\n`
+            + `    expected ${JSON.stringify(expected.places)}`);
+          assert(got.nodeIndex === expected.node_index,
+            `(${q.row}, ${q.col}) nodeIndex ${got.nodeIndex} does not match the snapshot's `
+            + `${expected.node_index}`);
         }
       }
 
@@ -679,17 +701,167 @@ check('a destination query before any compute says nothing has been computed', (
     'the lifecycle guard blocks a legitimate query after a compute');
 });
 
+// Pass 50 finding C1: there was no destination-length refusal case, so deleting the length check
+// passed all 75 checks. A plane of the wrong length read as if it were right returns ordinals
+// drawn from the wrong cells.
+check('a destination plane of the wrong length is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 2, encoding: 'published-v4',
+                  destination_plane_byte_order: 'little',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [new ArrayBuffer(2)], statuses: [new ArrayBuffer(2)],
+      // Two cells need four bytes; this is one cell's worth.
+      destinations: [new ArrayBuffer(2)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /destination: 2 bytes, expected/.test(err.message);
+  }
+  assert(threw, 'a destination plane half the grid was accepted, so every ordinal after the '
+    + 'first came from the wrong cell or from past the end of the buffer');
+  // And the correct length is accepted, so the guard is not simply refusing everything.
+  const ok = loadWorker().send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                destination_plane_byte_order: 'little',
+                layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+    values: [one(5)], statuses: [one(0)],
+    destinations: [new ArrayBuffer(2)], destTables: [table],
+  }).find((m) => m.type === 'ready');
+  assert(ok, 'a correctly sized destination plane was refused');
+});
+
+// Pass 50 finding D1: pass 49 fixed `destinationAt` and left the class. Both other plane readers
+// read the same zero-filled verdict plane, where zero means INCLUDED.
+check('no plane reader answers before a compute has run', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const init = {
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v2',
+                layers: [{ id: 'x', horizon_s: 7200 }] },
+    values: [one(5)], statuses: [one(0)],
+  };
+  worker.send(init);
+  for (const type of ['verdicts', 'mask']) {
+    let threw = false;
+    try {
+      worker.send({ type, reqId: 1 });
+    } catch (err) {
+      threw = /before any compute has run/.test(err.message);
+    }
+    assert(threw, `${type} answered from the zero-filled plane before any compute; allocation is `
+      + 'not evaluation');
+  }
+  worker.send({ type: 'compute', seq: 3, thresholds: [10], enabled: [true] });
+  const v = worker.send({ type: 'verdicts', reqId: 2 }).find((m) => m.type === 'verdicts');
+  const m = worker.send({ type: 'mask', reqId: 3 }).find((m2) => m2.type === 'mask');
+  assert(v && v.seq === 3 && m && m.seq === 3, 'the guard blocks a legitimate query');
+  assert(m.inCount === 1, `inCount ${m.inCount}, expected 1`);
+
+  // A reinitialisation puts the lifecycle back, and must not carry the previous count with it.
+  worker.send(init);
+  let reThrew = false;
+  try {
+    worker.send({ type: 'mask', reqId: 4 });
+  } catch (err) {
+    reThrew = /before any compute has run/.test(err.message);
+  }
+  assert(reThrew, 'after a reinitialisation the mask answered with the previous bundle\'s count');
+});
+
+// Pass 50 finding D2. `handleCompute` writes the planes in place, so a throw part-way through
+// used to leave them half rewritten while the sequence number still described the previous
+// compute -- a mixture of two answers presented as one of them.
+check('a failed compute leaves no readable plane', () => {
+  const worker = loadWorker();
+  worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 2, encoding: 'published-v2',
+                layers: [{ id: 'x', horizon_s: 7200 }] },
+    values: [Uint8Array.of(5, 0).buffer],
+    // The second cell holds a status code this decoder does not define, so the second iteration
+    // of the compute loop throws after the first has already written.
+    statuses: [Uint8Array.of(0, 99).buffer],
+  });
+  worker.send({ type: 'compute', seq: 1, thresholds: [10], enabled: [false] });
+  let computeThrew = false;
+  try {
+    worker.send({ type: 'compute', seq: 2, thresholds: [0], enabled: [true] });
+  } catch (err) {
+    computeThrew = /code 99/.test(err.message);
+  }
+  assert(computeThrew, 'the undefined status code was accepted, so this check tests nothing');
+  let verdictsThrew = false;
+  try {
+    worker.send({ type: 'verdicts', reqId: 1 });
+  } catch (err) {
+    verdictsThrew = /before any compute has run/.test(err.message);
+  }
+  assert(verdictsThrew, 'after a failed compute the half-rewritten verdict plane was still '
+    + 'readable, and labelled with the sequence of the compute before it');
+});
+
+// Pass 50 finding C3. `| 0` ran before the bounds check, so 4294967296 wrapped to 0, 0.9
+// truncated to 0, and `undefined` and `NaN` both became 0 -- each getting a confident
+// destination for a cell nobody asked about. Coercion is not validation.
+check('a coordinate that is not a whole number in range names nothing', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                destination_plane_byte_order: 'little',
+                layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+    values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [table],
+  });
+  worker.send({ type: 'compute', seq: 1, thresholds: [10], enabled: [true] });
+  // The real cell answers, so the refusals below are about the coordinates and nothing else.
+  const good = worker.send({ type: 'destinationAt', reqId: 0, row: 0, col: 0 })
+    .find((m) => m.type === 'destinationAt');
+  assert(good.namesDestination && good.namesDestination[0].places[0].name === 'X',
+    'the valid cell does not answer, so this check proves nothing');
+  for (const q of [{ row: 4294967296, col: 0 }, { row: 0.9, col: 0 }, { row: 0, col: 1.5 },
+                   { row: NaN, col: 0 }, { row: undefined, col: 0 }, { row: '0', col: 0 },
+                   { row: -0.5, col: 0 }]) {
+    const d = worker.send({ type: 'destinationAt', reqId: 1, ...q })
+      .find((m) => m.type === 'destinationAt');
+    assert(d.outside === true && d.namesDestination == null && d.included !== true,
+      `(${q.row}, ${q.col}) was answered as a cell: `
+      + `outside=${d.outside} included=${d.included} `
+      + `names=${JSON.stringify(d.namesDestination)}`);
+  }
+});
+
 // ---------------------------------------------------------------------------------------------
-// The SHIPPED bundle, loaded the way the page loads it.
+// The SHIPPED bundle: does it PARSE and INITIALISE?
 //
 // Pass 49 finding 2 was a release blocker that all 71 of the checks above were blind to: the
 // published side table contained 85 bare `NaN` tokens, so `JSON.parse` -- and therefore
 // `Response.json()` -- threw before the worker was ever constructed. The page could not display
 // a destination at all. Every check above builds its own fixture, so not one byte of the real
-// artifact had ever been through this harness.
+// artifact had ever been through this harness. A fixture is a model of the artifact, and passing
+// on the model does not establish that the artifact loads.
 //
-// A fixture is a model of the artifact. Passing on the model says nothing about the artifact.
-check('the shipped published bundle loads the way the page loads it', () => {
+// **This check was first called "loads the way the page loads it", and pass 50 finding C2 was
+// right that the name claims far more than it does.** It reads files with `fs`, not `fetch`. It
+// does not exercise: relative-URL resolution or case sensitivity under a server, HTTP status
+// handling, response decoding, cross-request staleness between files, `app.js`'s own manifest and
+// plane-length checks, its readable-encoding declaration, its error paths, the Resource Timing
+// and transferred-byte accounting, `versions.json`, or a real Worker with structured cloning and
+// transferred-buffer detachment. It is "parses and initialises", which is the part that was
+// broken, and the name now says so.
+check('the shipped published bundle parses and initialises', () => {
   const dir = path.join(__dirname, 'fixtures', 'published');
   if (!fs.existsSync(path.join(dir, 'manifest.json'))) {
     throw new Error('no published fixture bundle to check; export one before running this');
@@ -742,6 +914,47 @@ check('the shipped published bundle loads the way the page loads it', () => {
     'the shipped place set is not as long as its own count');
   assert(places.every((pl) => typeof pl.gers_id === 'string' && pl.gers_id.length),
     'a shipped place record carries no GERS id');
+
+  // **Every entry, not the one cell this check happened to resolve.** Pass 50 finding C2: a stub
+  // table with all 432 entries emptied passed, because `places.length === place_count` holds at
+  // 0 and `.every()` on an empty array is true. A table of empty sets names nothing while
+  // satisfying every structural rule, so emptiness is now refused explicitly.
+  for (const t of tables) {
+    if (!t) continue;
+    assert(Array.isArray(t.destinations) && t.destinations.length,
+      'a shipped side table holds no destinations');
+    t.destinations.forEach((e, i) => {
+      assert(e.ordinal === i,
+        `side table entry ${i} declares ordinal ${e.ordinal}; the plane indexes by position`);
+      assert(Number.isInteger(e.place_count) && e.place_count >= 1,
+        `side table entry ${i} declares place_count ${e.place_count}; an entry that names no `
+        + 'place names nothing, and a node is only a destination because a place is on it');
+      assert(Array.isArray(e.places) && e.places.length === e.place_count,
+        `side table entry ${i} carries ${e.places && e.places.length} places and declares `
+        + `${e.place_count}`);
+      assert(Number.isInteger(e.node_index) && e.node_index >= 0,
+        `side table entry ${i} has node_index ${e.node_index}`);
+      e.places.forEach((pl, j) => {
+        assert(typeof pl.gers_id === 'string' && pl.gers_id.length,
+          `entry ${i} place ${j} carries no GERS id`);
+        assert(pl.name === null || (typeof pl.name === 'string' && pl.name.length),
+          `entry ${i} place ${j} has name ${JSON.stringify(pl.name)}; a missing name is null, `
+          + 'never an empty string');
+      });
+    });
+  }
+  // And every ordinal the plane uses must resolve, over the WHOLE plane rather than one cell.
+  const highest = dest.reduce((m2, v) => (v !== 65535 && v > m2 ? v : m2), -1);
+  assert(highest < tables[0].destinations.length,
+    `the shipped plane names ordinal ${highest} and the table holds `
+    + `${tables[0].destinations.length}`);
+
+  // **What this check cannot do, stated so it is not mistaken for more.** Exchanging two shipped
+  // cells' ordinals passes everything here, and must: this harness has no independent record of
+  // which destination each of 330,502 real cells should name, so nothing in it can tell a
+  // correct ordinal from another valid one. The guard for that is
+  // `export_published_layers.verify_provenance`, at build time, against the source planes.
+  // Pass 50 finding C2 reported the exchange surviving here; that is this boundary, not a gap.
 });
 
 check('a v3 bundle is readable and reports that it names no destination', () => {
