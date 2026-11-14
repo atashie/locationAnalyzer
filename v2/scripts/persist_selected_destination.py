@@ -322,15 +322,21 @@ def measure_destination_ties(cost_csr, time_csr, dest_idx, selected_n, seconds_n
         print(f"ties {name}: destination moved on {rows[name]['destination_moved']:,}, "
               f"seconds on {rows[name]['seconds_differing']:,}", flush=True)
     total = sum(r["destination_moved"] for r in rows.values())
+    control = destination_tie_control()
+    if control["total_destination_moves"] == 0:
+        raise SystemExit(
+            "the positive control cannot detect a moved destination on a construction that is "
+            "KNOWN to be ambiguous, so this instrument reports nothing and the figure below "
+            "would be worthless")
+    if control["total_seconds_moves"] != 0:
+        raise SystemExit("the control's published seconds moved under a relabelling, which is a "
+                         "different and larger bug than the one this measures")
     return {
         "what_this_is": ("whether the destination a household would be SHOWN is a property of the "
                          "published answer or of the traversal order"),
         "labellings": rows,
         "total_destination_moves": total,
-        "the_control_that_makes_a_zero_meaningful": (
-            "scripts/measure_tie_flag.py holds the four-node construction and its positive "
-            "control. The instrument is the same permutation; this reuses it on the destination "
-            "rather than the flag"),
+        "positive_control": control,
         "what_it_means": (
             "a non-zero here is a NAME decided by heap order, which is worse than a flag decided "
             "that way because the name is shown. A zero says exact bit-level cost ties between "
@@ -340,6 +346,74 @@ def measure_destination_ties(cost_csr, time_csr, dest_idx, selected_n, seconds_n
             "exact bit-level cost ties between different destinations do not occur on this graph, "
             "so the destination is well defined here. It is latent, not absent -- quantising the "
             "cost would manufacture ties, and then the NAME shown would depend on heap order"),
+    }
+
+
+def destination_tie_control() -> dict:
+    """**The control that makes a zero above mean anything**, run rather than pointed at.
+
+    An earlier version of this file cited `measure_tie_flag.py`'s control instead of running one.
+    That control exercises `arrival_with_route_flag`; the destination goes through
+    `arrival_with_selected_destination`, a different function, so nothing demonstrated that this
+    instrument can report a moved destination at all.
+
+    It also needs a different construction. The flag's four-node diamond has ONE destination, so no
+    destination can move in it. Here two destinations sit equidistant from one target --
+    `D1 - T - D2`, equal costs -- so the selected destination is decided by heap order and must
+    move under some relabelling while the published seconds do not.
+    """
+    import itertools
+
+    import scipy.sparse as sp
+
+    n = 3
+    half = 300.0
+    # D1 = 0, D2 = 1, T = 2. Equal cost from T to each destination.
+    raw = [(0, 2, half), (2, 0, half), (1, 2, half), (2, 1, half)]
+    rows_i = np.array([u for u, _v, _c in raw], dtype=np.int64)
+    cols_i = np.array([v for _u, v, _c in raw], dtype=np.int64)
+    order = np.lexsort((cols_i, rows_i))
+    rows_i, cols_i = rows_i[order], cols_i[order]
+    data = np.array([raw[i][2] for i in order], dtype=np.float64)
+    indptr = np.zeros(n + 1, dtype=np.int64)
+    np.add.at(indptr, rows_i + 1, 1)
+    indptr = np.cumsum(indptr)
+
+    def mat():
+        m = sp.csr_matrix((n, n), dtype=np.float64)
+        m.data, m.indices, m.indptr = data.copy(), cols_i.copy(), indptr.copy()
+        return m
+
+    seen = {}
+    for perm in itertools.permutations(range(n)):
+        q = np.array(perm, dtype=np.int64)
+        inv = np.empty(n, dtype=np.int64)
+        inv[q] = np.arange(n)
+        cost_p, time_p = (mat()[q, :][:, q].tocsr(), mat()[q, :][:, q].tocsr())
+        s, sel = arrival_with_selected_destination(
+            cost_p, time_p, dest_idx=sorted((int(inv[0]), int(inv[1]))))
+        # Back to the original numbering before reading the target's answer.
+        s_back = np.empty(n, dtype=float)
+        sel_back = np.empty(n, dtype=np.int64)
+        s_back[q] = s
+        sel_back[q] = np.where(sel >= 0, q[np.where(sel >= 0, sel, 0)], -1)
+        key = (round(float(s_back[2]), 9), int(sel_back[2]))
+        seen.setdefault(key, []).append(perm)
+
+    secs = sorted({t for t, _d in seen})
+    dests = sorted({d for _t, d in seen})
+    return {
+        "what_this_is": ("a three-node construction whose selected destination IS ambiguous, so "
+                         "the instrument's ability to report a moved destination is demonstrated "
+                         "rather than assumed"),
+        "published_seconds_at_the_target": secs,
+        "destinations_selected_across_relabellings": dests,
+        "total_destination_moves": max(len(dests) - 1, 0),
+        "total_seconds_moves": max(len(secs) - 1, 0),
+        "why_the_flags_control_does_not_cover_this": (
+            "measure_tie_flag.py's diamond has ONE destination, so no destination can move in it, "
+            "and it drives arrival_with_route_flag rather than "
+            "arrival_with_selected_destination"),
     }
 
 

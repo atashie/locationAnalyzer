@@ -91,10 +91,23 @@ def test_the_vectors_carry_two_naming_layers_and_a_byte_swap_survivor():
     assert two, "no group with two naming layers"
     naming = [l for l in two["layers"] if l.get("dest_file")]
     assert len(naming) == 2, f"{len(naming)} naming layers, expected 2"
-    # Different ordinals per layer at the same cell, or a layer-0 read would be right by accident.
-    assert two["dest_tables"][0] != two["dest_tables"][1] or True
-    # And one layer must have a cell the other does not publish, which is what makes the
-    # per-layer indexing inside the init invariant loop load-bearing.
+    # `or True` made this vacuous in the first version -- a check that cannot fail, in the test
+    # written to stop checks that cannot fail. What it has to assert is the property that makes a
+    # layer-0 read WRONG: the two layers must name DIFFERENT ordinals at the same cell, or reading
+    # layer 0 for layer 1 would be right by accident.
+    planes = {}
+    for case in two["cases"]:
+        for q in case.get("destination_at", []):
+            for n in (q.get("names") or []):
+                planes.setdefault(q["col"], {})[n["layer"]] = n["ordinal"]
+    differing = [col for col, byl in planes.items()
+                 if len(byl) > 1 and len(set(byl.values())) > 1]
+    assert differing, (
+        "no cell has two layers naming different ordinals, so a destination read from layer 0 "
+        f"would be correct by accident: {planes}")
+    # And one layer must have a cell the other does not publish, which is what makes the per-layer
+    # indexing inside the INIT invariant loop load-bearing rather than only the query's.
+    assert len(two["dest_tables"]) == 2 and all(two["dest_tables"])
     assert any(c.get("destination_at") for c in two["cases"])
 
     mixed = groups.get("one layer names a destination and one does not")

@@ -3,6 +3,10 @@
 Working notes for this project: decisions taken, methods that failed, and
 environment facts worth not rediscovering.
 
+**Resuming work?** Read [`project-phase1-s3-progress`](project-phase1-s3-progress.md) first. It is
+the single live state document: what is done, what is in flight, what the owner owes a decision on,
+and the standing constraints that are recorded nowhere else.
+
 These were accumulated in Claude Code's per-project memory store, which is
 machine-local and does not travel with a clone. They are kept here instead, so a
 checkout on any machine carries the same context. **Write new notes here, not to
@@ -51,6 +55,8 @@ note disagrees with the code, the code is right and the note needs correcting.
 - [`project-phase1-s3-step4a-exact-geometry`](project-phase1-s3-step4a-exact-geometry.md) — Phase 4a.1 built the exact and correctly-rounded geometry primitives: 21 mutations, all caught. An exact projection turned out to be necessary and NOT sufficient — on W3's geometry the gap to the endpoint is exactly half an ulp of the prefix, so rounding the prefix puts it back on the endpoint and the traversal disappears. Also: dead defensive code is a permanent mutation survivor, and I restated a narrow measurement as a broad guarantee again, one hour after writing up the ninth instance of doing exactly that
 - [`project-phase1-s3-step0-audit-harness`](project-phase1-s3-step0-audit-harness.md) — S3 plan §0 step 0, after Codex pass 26 corrected it - the reconstructed OFF_NETWORK bound is sound and LOSSY not exact (200 m is the floor of those distances, not the ceiling), the first sheet asked for 6.22 hours of walking including a 108-minute *control*, and the unknown-beside-a-pass stratum was dilating OK instead of PASS
 - [`project-phase1-s3-encoding-threshold-crossing`](project-phase1-s3-encoding-threshold-crossing.md) — Rounding seconds to whole minutes moves every threshold 30 s more permissive, in one direction only - 8.15% of cells shown as passing 10 minutes do not pass, and ceil makes the encoded verdict exactly the float verdict
+- [`project-phase1-s3-destination-identity`](project-phase1-s3-destination-identity.md) — What a destination *is*: the owner's rule is the node plus the set and the card chooses, and the set is the TRUTHFUL answer because the selection is a cost-argmin over nodes, so two groceries on one node are indistinguishable to the routing graph. Plus the licensing finding that makes publishing the names possible, and the two-directional invariant this plane has and the route flag cannot
+- [`project-phase1-s3-progress`](project-phase1-s3-progress.md) — **START HERE to resume S3.** What is done, what is in flight, the decisions the owner owes, and the standing constraints that live nowhere else — git policy, Codex cadence, decision 17, and the runtime facts that cost real time to rediscover
 - [`project-v2-rethink-decisions`](project-v2-rethink-decisions.md) — Decisions and status for the ground-up rethink (V2) of the Distance Finder / location-finder product, kicked off 2026-11-03
 
 ## Environment and tooling facts
