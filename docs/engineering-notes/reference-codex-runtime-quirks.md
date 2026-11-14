@@ -126,3 +126,39 @@ instrument pointed at the wrong quantity.
 
 Note also that a read-only pass cannot write its report to a file. Ask for stdout and save it
 afterwards, or the pass ends with its findings only in a log.
+
+## 2026-11-14: the working copy is CRLF, so an LF anchor matches nothing
+
+Two mutations in `spikes/g3-render/mutate_worker.mjs` were reported **INERT** — the edit matched
+nothing, so the guard they were meant to exercise was not being exercised at all. The anchors were
+multi-line string literals with `\n` in them, and `worker.js` in the working copy has **CRLF**
+line endings, because `core.autocrlf` converts on checkout. An `\n` literal therefore matches
+nothing while every single-line anchor matches fine, which is why this only ever shows up on
+multi-line edits.
+
+```js
+s.includes("state.lastEnabled = null;\n  state.lastInCount = 0;")    // false
+s.includes("state.lastEnabled = null;\r\n  state.lastInCount = 0;")  // true
+```
+
+So: **any multi-line anchor in a `.mjs` or `.py` patch must be a regex with `\r?\n`**, never a
+string literal with `\n`. The same trap caught a Python patch script earlier (a two-line import
+anchor failed under CRLF while single-line anchors matched), so this is the second time. The
+mutation runner reporting INERT separately from a catch is what made it visible both times —
+without that it reads as a pass.
+
+## 2026-11-14: I used a shell heredoc for a patch script again, twice, and it mangled the escapes again
+
+The note above says to write patch scripts with the file-writing tool. I used
+`python -I - <<'PY'` twice in one session anyway, and both times the backslashes were eaten:
+`\*` arrived as `\*` and `\n` as `\n`, producing `SyntaxWarning: invalid escape sequence` and an
+anchor that matched zero times. The first attempt also aborted part-way, leaving an in-memory edit
+unwritten, which is a worse failure than a clean error.
+
+A quoted heredoc protects `$` and backticks. **It does not protect backslashes from the shell's
+own processing on this setup.** So the rule is narrower and easier to follow than "prefer the
+tool":
+
+* A heredoc is fine for a script with **no backslashes at all**.
+* Anything with a regex, an escape sequence, or a Windows path goes through the file-writing tool
+  and then `python -I <path>`.

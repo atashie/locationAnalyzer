@@ -30,12 +30,29 @@ decoder counts flagged cells and answers `destinationAt` for one cell; nothing d
 The card is now the single remaining blocker for every one of the three, which makes it the next
 substantial piece of work rather than one of several.
 
-## In flight right now
+## In flight right now, and what comes next
 
-Nothing. **Codex passes 49 and 50 are both integrated.** Reports at
+Nothing in flight. **Codex passes 49 and 50 are both integrated.** Reports at
 `docs/research/50-codex-review-pass49-counterexamples/REPORT.md` and
-`docs/research/51-codex-review-pass50-counterexamples/REPORT.md`. The next thing to start is the
-card.
+`docs/research/51-codex-review-pass50-counterexamples/REPORT.md`.
+
+**The next planned step is the per-criterion card, planned in
+`docs/plans/2026-11-14-per-criterion-card-plan.md`.** Read that before starting anything.
+
+Its one load-bearing finding, so a resuming session does not have to rediscover it: the third
+owed disclosure is not merely unshown, it is **not computed as an answer**. `handleCompute`
+evaluates `outcomeOf` per layer per cell, folds the results into `anyFail`/`anyUnknown`, writes one
+combined verdict and discards the detail. None of the worker's six message types can say which
+criterion was unknown at a cell or why. So the card is one new message, `explainAt`, plus one
+surface — and that single message is what unblocks all three disclosures at once, because they are
+the same question asked of one cell.
+
+This was chosen over another Codex pass on the pass 50 repairs, deliberately and against the pull
+of the evidence: passes 49 and 50 both found more in the repairs than in the work they repaired,
+which is a real argument for a pass 51. But §0 orders by **product risk retired, not defect
+severity**, and those findings are defect risk in code no household has ever seen. The pass comes
+after the card, per the standing cadence of running Codex once a major plan is written and once
+its results land.
 
 Pass 49 (11 findings, 3 High) reviewed the destination publication; pass 50 (14 findings, 4 High)
 reviewed pass 49's **repairs** and found more in them than pass 49 had found in the original work.
@@ -97,6 +114,15 @@ Nothing below should be decided by a session on its own.
 * **One repeat walk of `band15min_pass-03`**, with a recorded door, the selected destination and a
   timed duration. This is the cheapest unblock in the whole project: it is what would make the E3
   verdict admissible, and the record currently holds **no admissible observation**.
+* **Whether the Apache-licensed destination names may be published at all yet.** New with pass
+  50. 35 of the 468 published place records are Apache-2.0, which in Overture means
+  Foursquare-sourced, and only §4(a) of that licence is discharged: §4(b) wants a notice on the
+  modified file, §4(c) wants an inventory of upstream notices nobody has made, and §4(d) wants the
+  real Foursquare `NOTICE`, which sits behind a gated Hugging Face repository that answers HTTP
+  401. The build records `apache_records_are_cleared_for_redistribution: false` rather than
+  implying clearance. Three ways out, all the owner's: obtain the real `NOTICE`; drop the 35
+  Apache records and publish only the CDLA and CC0 ones; or publish as-is on the owner's own
+  judgement. Nothing is blocked internally — this matters when the bundle leaves this machine.
 * **Which place on a shared node**, if ever. Deliberately not computed — see
   [[project-phase1-s3-destination-identity]]. Resolving it needs either an invented rule or a finer
   routing target than a node.
