@@ -338,3 +338,62 @@ def test_the_shipped_bundle_carries_its_licence_texts():
         assert (PUBLISHED / rel).exists(), f"{rel} is recorded in the manifest and is not there"
     for lic in licensing["licences_present"]:
         assert (PUBLISHED / "LICENSES" / f"{lic}.txt").stat().st_size > 500
+
+
+def test_every_json_artifact_is_strict_json():
+    """**The generalisation of pass 49's release blocker.**
+
+    `json.dumps` writes `NaN`, `Infinity` and `-Infinity` for non-finite floats, and Python's own
+    `json.loads` accepts them, so a Python-to-Python round trip never notices. No other consumer
+    accepts them: `JSON.parse` throws, which is how the published destination table killed the
+    page while every one of 1,431 tests passed.
+
+    So this parses every JSON artifact in the repository the way a browser would, with the
+    extension constants refused. It is cheap and it covers artifacts nothing else looks at --
+    the class of defect, not the one instance of it.
+    """
+    def reject(constant):
+        raise ValueError(f"not JSON: the bare token {constant}")
+
+    repo = pathlib.Path(__file__).resolve().parents[2]
+    roots = [repo / "docs" / "experiments", repo / "docs" / "research",
+             repo / "v2" / "spikes" / "g3-render" / "fixtures"]
+    checked, bad = 0, []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*.json")):
+            checked += 1
+            try:
+                json.loads(path.read_text(encoding="utf-8"), parse_constant=reject)
+            except Exception as err:                       # noqa: BLE001 - report, do not hide
+                bad.append(f"{path.relative_to(repo)}: {type(err).__name__} {err}")
+    # A floor, not just "more than zero": a glob pointed at the wrong place, or a renamed
+    # directory, would otherwise leave this test passing while checking almost nothing. There
+    # were 43 when it was written.
+    assert checked >= 20, (
+        f"only {checked} JSON artifacts were found under {[str(r) for r in roots]}; this test "
+        "is looking in the wrong place and is passing vacuously")
+    assert not bad, (
+        "these artifacts are not JSON and no browser will load them:\n  " + "\n  ".join(bad))
+
+
+def test_the_strict_json_check_rejects_what_python_tolerates(tmp_path):
+    """**The positive control.** The check above only means something if it can fail.
+
+    `json.loads` accepts `NaN` by default, which is exactly why the blocker survived 1,431 tests.
+    This shows that the `parse_constant` refusal is the whole difference, on a file holding the
+    same token the published table held.
+    """
+    doc = tmp_path / "a.json"
+    doc.write_text('{"operating_status": NaN}', encoding="utf-8")
+
+    # The default parser accepts it and hands back a float NaN.
+    tolerated = json.loads(doc.read_text(encoding="utf-8"))["operating_status"]
+    assert tolerated != tolerated, "the default parser did not return a NaN"
+
+    # The parser the check above uses refuses it.
+    def reject(constant):
+        raise ValueError(constant)
+    with pytest.raises(ValueError, match="NaN"):
+        json.loads(doc.read_text(encoding="utf-8"), parse_constant=reject)

@@ -1,0 +1,4 @@
+# A licence text is a legal artifact. Store and check it out byte-exact -- no line-ending
+# rewriting, no diff munging -- because the file the exporter copies into a published bundle
+# should be the file that was fetched from the licence steward.
+* -text -diff
