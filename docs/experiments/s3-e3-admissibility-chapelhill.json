@@ -1,0 +1,34 @@
+{
+  "script": "v2/scripts/score_walked_audit.py",
+  "sheet": "triangle-grocery-walk-chapelhill-with-destinations.csv",
+  "metro": "triangle",
+  "rows": 16,
+  "reported_time_is": "the published whole minute, in seconds, not the model's float (docs/s3-decision-report.md)",
+  "limits": {
+    "single_journey_ratio": 1.5,
+    "single_journey_absolute_s": 300.0,
+    "median_share_of_reported": 0.25
+  },
+  "outcome": "UNVERIFIED",
+  "no_admissible_observation": true,
+  "reasons": [],
+  "walked_and_scored": 0,
+  "planned_not_walked": 15,
+  "median_difference_s": null,
+  "median_reported_s": null,
+  "median_limit_s": null,
+  "offending": [],
+  "refused": [
+    {
+      "label": "band15min_pass-03",
+      "reasons": [
+        "no start door recorded, so the walk's origin is unknown",
+        "the destination reached is not recorded",
+        "the route walked is not on the record",
+        "the duration is recorded as not timed, so it is an estimate"
+      ]
+    }
+  ],
+  "without_a_published_time": [],
+  "what_this_does_not_establish": "Admissibility is not agreement. A refused walk is not evidence the product was right, and an admissible one that does not trip either limb is not evidence that it was: E3 returns FAILED or UNVERIFIED and never 'supported'."
+}

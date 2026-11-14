@@ -202,10 +202,12 @@ not the order these became known. Each item says what risk it retires, because t
 justifies its position.
 
 **Running in parallel, and only the owner can do it: one repeat walk of `band15min_pass-03`**, from
-a recorded door inside the cell, to the selected destination, timed, with the approach noted. The
-E3 record holds no admissible observation, so this is still the cheapest unblock in the project.
+a recorded door inside cell (286, 129), to the selected destination, timed, with the approach
+noted. The E3 record holds no admissible observation, so this is still the cheapest unblock in the
+project — and since 2026-11-14 the sheet refuses a row that omits any of those four things, so the
+next walk is scorable the moment it is recorded rather than months later by argument.
 
-### 0. Make the walked record admissible by construction — first, because it is small and the owner's track depends on it
+### 0. Make the walked record admissible by construction — **DONE 2026-11-14**
 
 The sheet is not the gap. `triangle-grocery-walk-chapelhill.csv` **already carries** `start_lon`,
 `start_lat`, `destination_used`, `destination_qualifies`, `destination_open`, `route_usable` and
@@ -220,8 +222,28 @@ a *third* thing, "walked but not admissible", and it was reached by a human read
 rather than by the instrument. **A binary where a third state is load-bearing** — the same shape as
 the three-outcome algebra and as ledger 32.
 
-So: an admissibility predicate on the record, an ingestion path that applies it, and a refusal
-rather than a silent score. Then the owner's next walk is scorable the moment it is recorded.
+**Delivered.** `locfinder/measure/admissible.py` is the decision report's own table in code —
+`Admissibility` with three values, a `WalkedRecord` whose every observation field defaults to
+"the record does not say", and a predicate that collects **every** reason rather than the first.
+`scripts/score_walked_audit.py` is the ingestion path, reading the published whole minute as what
+the product said rather than the model's float. `E3Result` gained
+`inadmissible`, `without_a_published_time` and `no_admissible_observation`, so an outcome cannot be
+reported without the refusals: UNVERIFIED on an empty set and UNVERIFIED after refusing a walk are
+different claims about the world, and the metro sheet and the Chapel Hill sheet now return
+different answers for that reason. `E3Outcome` still has two values — a third would be a design
+amendment.
+
+The sheets gained `duration_timed` and `route_followed`, which is what moved the record from prose
+to columns. Run on the Chapel Hill sheet, the one walked row is refused on all four counts and the
+reasons are the decision report's four rows. 31 tests, and
+`scripts/mutate_admissible.py` reverts each of the ten rules and reports which test catches it —
+**10 caught, 0 inert.** Every refusal test has the positive control beside it: the same record,
+repaired, is admissible and **FAILS**, because a refusal test that cannot distinguish a working
+predicate from one refusing everything proves nothing.
+
+One defect found while doing it: `GridSpec.cell_for_lonlat` **raises** on a non-finite or
+unprojectable coordinate, by design, so one mistyped cell in a hand-filled sheet would have taken
+down the ingestion of every other row. Refused per row now, with its own reason.
 
 ### 1. The card
 

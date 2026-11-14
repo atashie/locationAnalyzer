@@ -43,6 +43,22 @@ previous draft did — asserts something about the owner's route that nothing re
 "failed".** What would make this one scorable: a repeat walk from a recorded door inside the cell,
 to the destination the layer selected, timed, with the approach route noted. That is one walk.
 
+> **The status is now computed rather than argued, 2026-11-14.** The table above was the only
+> statement of what E3 compares, and it was prose: `measure/e3.py` had two states — walked and not
+> walked — so "walked but not admissible" had to be reached by a person reading the audit record,
+> and the two drafts before this one reached it wrongly in opposite directions.
+> `measure/admissible.py` is that table in code, `scripts/score_walked_audit.py` is the path from
+> a sheet to a score, and the sheets gained `duration_timed` and `route_followed` so the predicate
+> reads columns instead of a sentence in `notes`. On the sheet as it stands the one walked row is
+> refused on all four counts, and `E3Result.no_admissible_observation` is `True`:
+> [s3-e3-admissibility-chapelhill](experiments/s3-e3-admissibility-chapelhill.json).
+>
+> This changes no threshold and adds no outcome. `E3Outcome` still has exactly two values, because
+> a third would change what the design says E3 reports. What changed is that the refusal is now
+> mechanical, and a refused walk is reported with its reasons instead of vanishing: UNVERIFIED on
+> an empty set and UNVERIFIED after refusing a walk are different claims, and the result object now
+> distinguishes them.
+
 ## The three outcomes
 
 | outcome | status |

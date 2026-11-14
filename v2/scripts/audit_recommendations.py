@@ -189,12 +189,27 @@ OWNER_COLUMNS = [
     "destination_qualifies",     # yes / no  - is it a grocery by our own category rule?
     "destination_open",          # yes / no  - open, in business and usable on arrival
     "route_usable",              # yes / no  - no locked gate, fence, missing crossing
+    "route_followed",            # free text - WHICH way you went; see below
     "walked_seconds",
+    "duration_timed",            # yes / no  - stopwatch-timed, or an estimate?
     "witness_within_10min",      # yes / no / untested - a qualifying walk inside 10 min
     "witness_within_15min",
     "unresolved",                # what this walk could not settle
     "notes",
 ]
+
+#: **`route_followed` and `duration_timed` exist so a refusal can be computed rather than read.**
+#: Added 2026-11-14. `docs/s3-decision-report.md` lists four things E3 compares and the first
+#: walked row documents none of them; the only record of that was a sentence in `notes` —
+#: "OWNER-REPORTED, APPROXIMATE, NOT STOPWATCH-TIMED" — which no predicate can parse. Codex pass 47
+#: had to be a human reading prose, and the two drafts before it got the status wrong in opposite
+#: directions. `locfinder/measure/admissible.py` now reads these two columns plus `start_lon`,
+#: `start_lat` and `destination_used`, and refuses a walk that leaves any of them blank.
+#:
+#: Neither is a yes/no judgement about the walk. `duration_timed` asks only whether a clock was
+#: used, because an estimate and a measurement are different observations. `route_followed` asks
+#: which way you actually went, in your own words, and is required only to be **present**: no
+#: predicate can check prose, but an empty cell is an absence E3 must not score through.
 
 
 #: Where the committed layers live. A parameter rather than a constant so the refusal paths below

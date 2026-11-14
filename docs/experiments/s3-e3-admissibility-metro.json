@@ -1,0 +1,28 @@
+{
+  "script": "v2/scripts/score_walked_audit.py",
+  "sheet": "triangle-grocery-walk-with-destinations.csv",
+  "metro": "triangle",
+  "rows": 19,
+  "reported_time_is": "the published whole minute, in seconds, not the model's float (docs/s3-decision-report.md)",
+  "limits": {
+    "single_journey_ratio": 1.5,
+    "single_journey_absolute_s": 300.0,
+    "median_share_of_reported": 0.25
+  },
+  "outcome": "UNVERIFIED",
+  "no_admissible_observation": false,
+  "reasons": [],
+  "walked_and_scored": 0,
+  "planned_not_walked": 16,
+  "median_difference_s": null,
+  "median_reported_s": null,
+  "median_limit_s": null,
+  "offending": [],
+  "refused": [],
+  "without_a_published_time": [
+    "off_network_beside_pass15min-01",
+    "off_network_beside_pass15min-02",
+    "off_network_beside_pass15min-03"
+  ],
+  "what_this_does_not_establish": "Admissibility is not agreement. A refused walk is not evidence the product was right, and an admissible one that does not trip either limb is not evidence that it was: E3 returns FAILED or UNVERIFIED and never 'supported'."
+}

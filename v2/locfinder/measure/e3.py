@@ -28,6 +28,16 @@ A planned journey that was not walked leaves the outcome UNVERIFIED and **can ne
 established by the journeys that were walked. That is a one-way rule: adding `observed_s=None` rows
 to a failing set keeps it failing. The medians are taken over **walked** journeys only, because a
 missing observation is not a zero difference.
+
+## A walked journey is not automatically a scorable one
+
+`Journey` has two states and the audit record needs three. A walk whose record does not document
+the journey being compared — no start door, no confirmed destination, an untimed duration — is
+**not scorable**, and Codex pass 47 established that treating it as scorable produced a `FAILED`
+the evidence does not support, just as the draft before it produced an `UNVERIFIED` that ignored
+this project's own scorer. That third state lives in `admissible.py`, and
+`score_walked_records` below is the only entry point that applies it. `score_e3` itself is design
+§3's rule and nothing else: hand it a walked journey and it will score it.
 """
 
 from __future__ import annotations
@@ -37,6 +47,7 @@ from enum import Enum
 
 import numpy as np
 
+from .admissible import Grid, Inadmissible, sort_records
 from .stats import QUANTILE_METHOD
 
 #: Design §3, limb (i).
@@ -108,16 +119,40 @@ class E3Result:
     median_limit_s: float | None        # 25% of the median reported time
     offending: tuple[str, ...]          # journeys tripping limb (i), by label
 
+    #: Walks that happened and could not be scored, with every reason. Carried on the result so an
+    #: E3 outcome cannot be reported without them: UNVERIFIED on an empty set and UNVERIFIED after
+    #: refusing every walk are different claims about the world.
+    inadmissible: tuple[Inadmissible, ...] = ()
+    #: Rows the product published no time for, so there is no claim to test.
+    without_a_published_time: tuple[str, ...] = ()
+
     @property
     def failed(self) -> bool:
         return self.outcome is E3Outcome.FAILED
 
+    @property
+    def no_admissible_observation(self) -> bool:
+        """Nothing scorable was walked, but something unscorable was.
 
-def score_e3(journeys) -> E3Result:
+        `docs/s3-decision-report.md` reports this as a **third status**, distinct from both
+        "unverified" and "failed", and the distinction is the whole of pass 47's finding. It is a
+        property of the result and not a value of `E3Outcome`, because adding an outcome would
+        change what the design says E3 reports, and that is an amendment with a §13 row.
+        """
+        return self.walked == 0 and bool(self.inadmissible)
+
+
+def score_e3(journeys, *, inadmissible: tuple[Inadmissible, ...] = (),
+             without_a_published_time: tuple[str, ...] = ()) -> E3Result:
     """Design §3's disjunction. Returns `FAILED` or `UNVERIFIED`, never anything else.
 
     With no walked journey the outcome is UNVERIFIED and both medians are `None` — not zero, which
     would be a claim that the product was accurate.
+
+    `inadmissible` and `without_a_published_time` are carried through unexamined: this function
+    scores what it is given and does not decide what it should have been given. Use
+    `score_walked_records` to go from audit records to a result, because it is the path that cannot
+    forget them.
     """
     journeys = tuple(journeys)
     labels = [j.label for j in journeys]
@@ -159,4 +194,18 @@ def score_e3(journeys) -> E3Result:
         median_reported_s=median_reported,
         median_limit_s=median_limit,
         offending=offending,
+        inadmissible=tuple(inadmissible),
+        without_a_published_time=tuple(without_a_published_time),
     )
+
+
+def score_walked_records(records, *, grid: Grid) -> E3Result:
+    """Score a set of audit records: apply the admissibility predicate, then design §3's rule.
+
+    This is the only path from a sheet to an E3 outcome, and it exists so that the refusal cannot
+    be skipped by accident. An inadmissible walk reaches the result as an `Inadmissible`, never as
+    a planned journey and never as an observation.
+    """
+    split = sort_records(records, grid=grid)
+    return score_e3(split.journeys, inadmissible=split.inadmissible,
+                    without_a_published_time=split.without_a_published_time)

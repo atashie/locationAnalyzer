@@ -72,6 +72,11 @@ Chapel Hill sheet has none of them — see below.
    `walked_seconds`, and put the store you actually used in `destination_used`: normally the same
    name, but not if you had to divert.
 
+   **Use a clock, and say whether you did.** Set `duration_timed` to `yes` if the number came
+   from a stopwatch or phone timer, `no` if you worked it out afterwards. An estimate and a
+   measurement are different observations and the scorer will not treat one as the other — the
+   first walked journey was refused for exactly this.
+
    If `predicted_destination_alternatives` is non-empty, several shops snapped to the same road
    node and our number cannot distinguish them. Walk to whichever you would use and name it.
 
@@ -86,6 +91,11 @@ Chapel Hill sheet has none of them — see below.
      destination is a failed recommendation, not a bad row.** Record `no` and keep the row.
    - `route_usable` — any locked gate, missing crossing, private drive, or path that only exists on
      the map?
+   - `route_followed` — **which way you actually went**, in your own words. "Up the private track
+     behind the garages" or "round by the main road" is enough. Nothing parses this column; it is
+     required only to be filled in, because without it nobody can tell afterwards whether you
+     walked our route or a different one, and that is the difference between checking our number
+     and replacing it.
    - `witness_within_10min` / `witness_within_15min` — `yes` if this walk reached a *qualifying,
      open* destination inside that time, `no` if it did not, `untested` if you did not try.
 5. `unresolved` — say what this walk could **not** settle. This column matters more than it looks;
@@ -95,6 +105,28 @@ Chapel Hill sheet has none of them — see below.
 
 Leave `seconds`, `reason`, `encoded_minutes` and the `outcome_*` columns alone — they are what the
 product said before you set out, and overwriting them destroys the comparison.
+
+## What makes a walk scorable, and how to check before you forget the details
+
+**Four things, and a walk missing any one of them cannot be compared with anything.** This is not a
+style preference: `docs/s3-decision-report.md` lists them, and `locfinder/measure/admissible.py`
+now refuses a record that leaves one blank.
+
+| E3 needs | the column | why a blank is fatal |
+|---|---|---|
+| the door you started from, **inside the cell** | `start_lon`, `start_lat` | the published answer is for one 100 m cell; a walk from the next cell is a different journey |
+| the destination you reached | `destination_used` | walking to a nearer shop checks the town, not our number |
+| which way you went | `route_followed` | otherwise nobody can tell whether you walked our route |
+| a timed duration | `walked_seconds` **and** `duration_timed=yes` | an estimate is not a measurement |
+
+Check a filled-in sheet straight away, while you still remember what is missing. From `v2/`:
+
+    python scripts/score_walked_audit.py \
+        ../docs/experiments/audit/triangle-grocery-walk-chapelhill-with-destinations.csv
+
+It prints every refused walk with each reason, and writes the result to
+`docs/experiments/s3-e3-admissibility-chapelhill.json`. It needs no graph and takes about a second.
+Running it on the sheet as it stands today refuses the one walked row on all four counts.
 
 ## The asymmetry: a walk can confirm a PASS but cannot refute one
 
@@ -170,6 +202,15 @@ observation at about +11.5 minutes, which is not a rate. See
 Note what the row does *not* claim. Per the asymmetry below, a slow walk to one shop does not refute
 the existential fifteen-minute claim for that cell. `witness_within_15min` is `no` **for this walk**;
 `unresolved` carries the rest.
+
+> **The sheet now says this in a column rather than in prose, 2026-11-14.** The row's
+> `duration_timed` is `no` and its `route_followed` is blank, so
+> `scripts/score_walked_audit.py` refuses it by rule and names all four missing things. Until
+> now the only record of the gap was the sentence "OWNER-REPORTED, APPROXIMATE, NOT
+> STOPWATCH-TIMED" in `notes`, which no check can read — so the journey's status had to be
+> decided by a person each time it came up, and the first two attempts got it wrong in opposite
+> directions (Codex passes 46 and 47). **One repeat walk clears it**: a door inside cell
+> (286, 129), a timer, the shop you reached, and a line saying which way you went.
 
 ## Two limits and one closed question
 
