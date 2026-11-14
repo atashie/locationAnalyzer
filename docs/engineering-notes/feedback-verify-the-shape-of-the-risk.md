@@ -641,4 +641,89 @@ choosing the instrument, then check that the instrument's output is in the units
 Round-trip agreement is in units of cells; 1,316 structures silently unflagged is in units of
 households.
 
-Twenty-eight instances now.
+
+
+## Twenty-ninth to thirty-third, 2026-11-14 — pass 49 on publishing the destination
+
+Eleven findings, three High, and one of them was a **release blocker that 1,431 tests and 71
+conformance checks could not see**. Five new shapes, and the first is the most useful thing in this
+file.
+
+**Twenty-ninth: a fixture is a model of the artifact, and passing on the model says nothing about
+the artifact.** The published side table contained 85 bare `NaN` tokens, because `brand` and
+`operating_status` arrive from the parquet as float NaN and `json.dumps` writes those as `NaN`,
+which is not JSON. `JSON.parse` throws, so `Response.json()` throws, so the page could not display
+a destination at all — the entire feature I had just published, dead on arrival. Nothing caught it
+because **every one of the 71 conformance checks builds its own fixture**, and not one byte of the
+real bundle had ever been through the harness. The fixtures were not wrong; they were not the
+artifact.
+
+This is distinct from the twenty-seventh instance, where the fixtures' *shape* made a defect class
+unreachable. Here the shape was fine. The gap was that a whole category of defect — anything that
+happens between the generator and the bytes on disk — lives in the artifact and nowhere else, and
+I had built an elaborate apparatus that could not reach it. The check now exists: load the shipped
+manifest and side table with `JSON.parse`, init the real worker with the real planes, compute, and
+resolve a cell that names something. It failed on first run, which is how I know it works.
+
+The rule: **for every artifact a consumer loads, one check must load it the way the consumer
+does.** Not a copy of it, not a fixture shaped like it. It.
+
+**Thirtieth: a positive control that can pass on the wrong cause is not a control.** I had written
+`byteswap_control.mjs` precisely because I suspected a guard was decoration, and it printed
+`CONFIRMED`. Codex reformatted the little-endian expression so the control's own `replace` became a
+no-op — mutating nothing — then added an unrelated wrong-name defect. The control still printed
+`CONFIRMED` and exited 0.
+
+The twenty-fifth and twenty-eighth instances were about an instrument never shown to move. This is
+the next failure along: the instrument moved, for the wrong reason, and the control could not tell
+the difference because it asked "is some name wrong?" instead of "is *this specific predicted
+thing* true?". Three conditions were missing and all three are now required: **the mutation must be
+shown to have applied**, the **baseline must answer completely correctly**, and the observed effect
+must be the **specific** predicted one — here ordinals exactly `1 ↔ 256`, named in the file rather
+than inferred.
+
+**Thirty-first: checking one member of a set is not checking the set, and a count is not a set.**
+The conformance harness compared a destination's ordinal, its place *count* and its *first* place's
+name. Four defects passed all 71 checks: renaming every place after the first; replacing every
+place with a copy of the first, which preserves the count exactly; a constant `node_index`, which
+nothing compared at all; and deleting one half of the two-directional invariant, which had no
+refusal case while its partner did. This is sharpest here because **the set is the answer** — the
+whole point of this layer is that the selection is a cost-argmin over nodes and a shared node's
+places are indistinguishable to it. I wrote that down in three documents and then checked one
+member of it.
+
+**Thirty-second: allocation is not evaluation.** `state.verdict` is allocated at init and
+zero-filled, and in this algebra zero means INCLUDED. The destination query guarded itself with
+`if (!state.verdict) throw`, which tests whether the array *exists*. So before any compute had run,
+every cell read as included and the worker named a shop for a cell no criterion had been applied
+to. The general shape: **a default-initialised value that is indistinguishable from a real answer
+turns "I have not been asked yet" into a confident reply.** A lifecycle flag is the fix; noticing
+that zero was load-bearing was the part I missed.
+
+**Thirty-third: a label is not the thing it names, and silence is not confirmation.** Two findings
+with one shape. The side table carried SPDX licence identifiers and I wrote that the names were
+"publishable with attribution" — but CDLA-Permissive-2.0 §2.1 requires *the text of the agreement*
+to travel with the data, and Apache-2.0 §4 requires the licence, a modification statement and the
+source `NOTICE`. "Publishable with attribution" described the licence; it was not a description of
+anything the build had done. Separately, the byte-order guard refused a manifest that declared the
+wrong order and **accepted one that declared nothing**, falling back to little-endian — so a plane
+written the other way round was read as though its order had been confirmed. The project already
+has "absence is not evidence of cleanliness" written down. Both of these are that sentence, and I
+still wrote the code the other way.
+
+### And one correction that is not an instance
+
+Pass 49 also took apart my cost report (finding 9) in three ways at once: it priced the encodings on
+the source raster while taking the other planes from the reprojected bundle, reported the total of
+the bundle carrying the *cheapest* encoding as the total for the one carrying the *chosen* one, and
+left the side table out of every figure. The headline moved from "4.1% of the bundle" to **20.6%**.
+And the access-pattern argument was a false necessity — run-length random access needs no expanded
+plane and no shipped index: cumulative run endpoints cost 173,934 bytes against the plane's 661,004
+and answer every one of 330,502 cells correctly.
+
+That is the twenty-second instance again (a measurement that mixes two populations) and the
+twenty-fifth again (defending a choice with a figure about the alternative). It is listed here
+rather than numbered because the shape is already in this file twice. **Both times it was a
+denominator.** When a share is reported, the next sentence should name the denominator.
+
+Thirty-three instances now.

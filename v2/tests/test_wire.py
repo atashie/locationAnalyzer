@@ -392,6 +392,66 @@ def test_a_layer_with_no_destination_plane_says_nothing_rather_than_having_no_de
         wire.named_destination(None, np.array([int(Outcome.PASS)], dtype=np.int8))
 
 
+def executable_lines(text: str) -> str:
+    """The lines of a JavaScript file that are not commented out.
+
+    Line-oriented on purpose. A first attempt stripped `/* ... */` with a regex and deleted 200
+    lines of real code, because `fixtures/*.bin` inside a `//` comment opened a block that closed
+    at the next doc comment -- a comment stripper that removes executable code is worse than none.
+    So only comments that BEGIN a line are removed, which is how a declaration actually gets
+    commented out, and a `/*` in the middle of a line is left alone.
+    """
+    out, in_block = [], False
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if in_block:
+            if "*/" in line:
+                in_block = False
+            continue
+        if stripped.startswith("//"):
+            continue
+        if stripped.startswith("/*"):
+            if "*/" not in stripped[2:]:
+                in_block = True
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+def test_the_comment_stripper_removes_comments_and_nothing_else():
+    """**The positive control for the two checks below.**
+
+    They are only worth anything if `executable_lines` does the two things they rely on: remove a
+    commented-out declaration (pass 49 finding 10's attack) and leave real code alone (the bug my
+    first attempt at it had). A stripper never shown to do either is an instrument never shown to
+    move.
+    """
+    attack = "\n".join([
+        "// const READABLE = ['published-v2', 'published-v3', 'published-v4'];",
+        "const READABLE = ['published-v2', 'published-v3'];",
+    ])
+    kept = executable_lines(attack)
+    assert "'published-v4'" not in kept, "a commented-out declaration survived the stripper"
+    assert "const READABLE = ['published-v2', 'published-v3'];" in kept
+
+    blocked = "\n".join([
+        "/* a block comment",
+        " * const READABLE = ['wrong'];",
+        " */",
+        "const READABLE = ['right'];",
+    ])
+    assert executable_lines(blocked).strip() == "const READABLE = ['right'];"
+
+    # The false positive that deleted 200 lines: `/*` inside a line comment, closed much later.
+    survives = "\n".join([
+        "  // ---- loads fixtures/*.bin once ----",
+        "  const READABLE = ['published-v4'];",
+        "  /** a doc comment */",
+    ])
+    assert "const READABLE = ['published-v4'];" in executable_lines(survives), (
+        "a `/*` inside a line comment swallowed the executable code after it")
+
+
 def test_v4_reads_every_earlier_encoding():
     assert wire.ENCODING == "published-v4"
     for older in ("published-v2", "published-v3"):
@@ -407,17 +467,55 @@ def test_the_javascript_encoding_lists_match_the_python_one():
 
     The duplication is unavoidable; going unchecked was not. This fails once, here, with the two
     lists printed side by side.
+
+    **Pass 49 finding 10:** the first regex match could be a COMMENT. Commenting the real
+    declaration out and writing a stale one underneath it satisfied the check while the
+    executable list drifted, so comments are stripped first and exactly one declaration must
+    remain. The executable behaviour is checked too, below.
     """
     import re
     spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
+
     for name, pattern in (
         ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
         ("app.js", r"const READABLE = \[([^\]]*)\]"),
     ):
-        source = (spike / name).read_text(encoding="utf-8")
-        found = re.search(pattern, source)
+        source = executable_lines((spike / name).read_text(encoding="utf-8"))
+        found = re.findall(pattern, source)
         assert found, f"{name} no longer declares a readable-encoding list under a known name"
-        listed = tuple(s.strip().strip("'\"") for s in found.group(1).split(",") if s.strip())
+        assert len(found) == 1, (
+            f"{name} declares the readable-encoding list {len(found)} times in executable code; "
+            "which one the decoder uses is then a question of order")
+        listed = tuple(s.strip().strip("'\"") for s in found[0].split(",") if s.strip())
         assert listed == tuple(wire.READABLE_ENCODINGS), (
             f"{name} reads {listed} and locfinder.wire reads "
             f"{tuple(wire.READABLE_ENCODINGS)}")
+
+
+def test_the_page_accepts_the_encoding_the_exporter_writes():
+    """A list that matches `wire.py` is not the same as a page that loads the artifact.
+
+    Pass 49 finding 10's second half: `app.js` holds the only copy of the readable-encoding list
+    that no harness exercises, and the hazard that produced this family of bugs was "a page that
+    refused the manifest it had just helped produce". So compare against the manifest actually on
+    disk rather than against another list.
+    """
+    import re
+    spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
+    manifest_path = spike / "fixtures" / "published" / "manifest.json"
+    if not manifest_path.exists():
+        pytest.skip("no published fixture bundle to check")
+    encoding = json.loads(manifest_path.read_text(encoding="utf-8"))["encoding"]
+    assert encoding == wire.ENCODING, (
+        f"the published manifest says {encoding!r} and wire.py writes {wire.ENCODING!r}; the "
+        "bundle on disk was produced by a different version of the format")
+    for name, pattern in (
+        ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
+        ("app.js", r"const READABLE = \[([^\]]*)\]"),
+    ):
+        source = executable_lines((spike / name).read_text(encoding="utf-8"))
+        listed = [s.strip().strip("'\"") for s in re.findall(pattern, source)[0].split(",")
+                  if s.strip()]
+        assert encoding in listed, (
+            f"{name} would refuse {encoding!r}, which is the encoding of the bundle in "
+            f"fixtures/published")

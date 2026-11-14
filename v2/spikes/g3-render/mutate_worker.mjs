@@ -218,6 +218,54 @@ const MUTATIONS = [
     name: 'the counts no longer describe the plane',
     apply: (s) => s.replace('          excludedCount++;', '          if (p % 7) excludedCount++;'),
   },
+  // ------------------------------------------------------------------ pass 49 finding 5
+  // Four defects that passed all 71 checks. Three of them are variations on the same hole: the
+  // harness compared the ordinal, the count and the FIRST place's name, so anything that left
+  // those three alone was invisible. The fourth is a missing refusal case.
+  {
+    // The count survives, the first name survives, and every other name is wrong. This is the
+    // mutation that proves checking one member of a set is not checking the set.
+    name: 'every place after the first is renamed',
+    apply: (s) => s.replace('places: entry.places,',
+                            "places: entry.places.map((p, i) => (i ? { ...p, name: 'WRONG' } : p)),"),
+  },
+  {
+    // Collapsing the set while PRESERVING its length. `places.length === placeCount` holds, so
+    // the shape check passes and the answer is three copies of one shop.
+    name: 'the destination set is filled with copies of its first place',
+    apply: (s) => s.replace('places: entry.places,',
+                            'places: entry.places.map(() => entry.places[0]),'),
+  },
+  {
+    // The node the journey was measured to, which nothing compared before pass 49.
+    name: 'the destination node index is a constant',
+    apply: (s) => s.replace('nodeIndex: entry.node_index,', 'nodeIndex: 999999,'),
+  },
+  {
+    // The other half of the two-directional invariant. Its partner above had a refusal case and
+    // this one did not, so deleting it was free.
+    name: 'a destination named where no time is published is accepted',
+    apply: (s) => s.replace('if (named && statuses[k][p] !== S_OK) {', 'if (false) {'),
+  },
+  {
+    // Pass 49 finding 7: silence about the byte order read as little-endian by default.
+    name: 'an undeclared destination byte order is read as little-endian',
+    apply: (s) => s.replace("if (anyPlane && manifest.destination_plane_byte_order !== 'little') {",
+                            "if (anyPlane && manifest.destination_plane_byte_order !== 'little'\n"
+                            + '        && manifest.destination_plane_byte_order !== undefined) {'),
+  },
+  {
+    // Pass 49 finding 11: allocation read as evaluation, so a zero-filled verdict plane answered
+    // "included" for a cell no criterion had been applied to.
+    name: 'a destination query before any compute answers from the zero-filled verdict plane',
+    apply: (s) => s.replace('  if (!state.computed) {', '  if (false) {'),
+  },
+  {
+    // Pass 49 finding 9: a byte count that omits the largest plane.
+    name: 'the reported byte count omits the destination plane',
+    apply: (s) => s.replace('+ (routeFlags[k] ? 1 : 0) + (destinations[k] ? 2 : 0)), 0),',
+                            '+ (routeFlags[k] ? 1 : 0)), 0),'),
+  },
 ];
 
 const original = fs.readFileSync(WORKER, 'utf8');

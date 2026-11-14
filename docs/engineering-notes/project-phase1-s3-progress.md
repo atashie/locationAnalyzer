@@ -22,7 +22,7 @@ S3 is:
 | owed | data | interface |
 |---|---|---|
 | the restricted-route flag | **done** `5e5118f` — `published-v3`, optional third plane | not shown |
-| the destination the time was measured to | **done** `4685158` — `published-v4`, optional fourth plane + side table | not shown |
+| the destination the time was measured to | **done** `4685158`, repaired after pass 49 — `published-v4`, optional fourth plane + side table, licence texts and provenance check | not shown |
 | which criterion was unknown, and why | — | **the per-criterion card is unbuilt** |
 
 **So the data gap is closed on two of three and the interface gap is open on all three.** The
@@ -32,26 +32,34 @@ substantial piece of work rather than one of several.
 
 ## In flight right now
 
-**Codex pass 49** is running on the destination work (`4685158`). Prompt committed at
-`docs/research/50-codex-review-pass49-prompt.md`; its report belongs in
-`docs/research/50-codex-review-pass49-counterexamples/REPORT.md`. It runs **read-only** — see the
-runtime constraint below — so it returns its report on stdout and the report has to be saved from
-the log rather than found as a file.
+Nothing. **Codex pass 49 landed and is integrated**: report at
+`docs/research/50-codex-review-pass49-counterexamples/REPORT.md`, 11 findings and 3 High, all 11
+reproduced. The next thing to start is the card.
 
-Two questions in that prompt are about my own guards and are worth chasing whatever else it finds:
+What pass 49 cost, in one line each, because these are the live corrections:
 
-* does the destination tie measurement actually reach the **positive control** that makes its zero
-  meaningful, or did I reuse `measure_tie_flag.py`'s instrument and leave its control behind?
-* `test_the_vectors_carry_two_naming_layers_and_a_byte_swap_survivor` contains
-  `assert two["dest_tables"][0] != two["dest_tables"][1] or True`, which I believe is **vacuous** —
-  a check that cannot fail, in the file written to stop checks that cannot fail. Fix it regardless
-  of what the pass says.
+* **A release blocker nothing could see.** The published side table held 85 bare `NaN` tokens, so
+  `JSON.parse` threw and the page could not display a destination at all. Every conformance check
+  built its own fixture; none loaded the artifact. Fixed at the generator, at the serialiser
+  (`allow_nan=False`), and with a check that loads the shipped bundle the way the page does.
+* **The two-directional invariant does not prove provenance** — it compares answer-presence masks
+  and never reads a value, so exchanging two valid destinations passes it. Replaced for that
+  purpose by `verify_provenance`, which reprojects a source-cell index and requires every plane to
+  match its source at that index: 330,502 of 330,502 cells, 0 uncovered.
+* **A licence identifier is not a licence.** `v2/licences/` now holds the texts and the exporter
+  refuses to finish without them.
+* **The destination cost is 20.6% of the bundle, not 4.1%** — the old figure mixed two grids, used
+  the cheaper option's total as the denominator and left the side table out.
+* **Four defects passed all 71 checks** because the harness compared one member of the place set.
+* Both of the guards I had already fixed in `b37ed59` were confirmed broken, and pass 49 went
+  further on each.
 
-## Verified state at `4685158`
+## Verified state at `4685158` + the pass 49 integration
 
-1,431 tests, 1,407 passed, 24 skipped, 0 failures. 71 browser conformance checks pass. 30 of 30
-mutations caught. `byteswap_control.mjs` confirms the name comparison, not the bounds check, is
-what catches a big-endian destination plane.
+1,440 tests, 1,416 passed, 24 skipped, 0 failures. 75 browser conformance checks pass. 37 of 37
+mutations caught. `byteswap_control.mjs` confirms that a **recorded expectation**, not a structural
+check, is what catches a big-endian destination plane — and now refuses to confirm anything if its
+own mutation did not apply or its baseline is not exactly right.
 
 ## Decisions the owner owes
 
@@ -114,17 +122,24 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **28 instances**. It is the most useful document
-in the repository for avoiding repeats, and the four most recent are the ones currently live:
+[[feedback-verify-the-shape-of-the-risk]] now holds **33 instances**. It is the most useful document
+in the repository for avoiding repeats, and the five most recent are the ones currently live:
 
-* **25** — citing a measurement that was never run. A measurement of the option you chose is not a
-  refutation of the option you rejected.
-* **26** — correcting an artifact and not its generator, or not every place the claim lives. Hit
-  twice: the experiment JSON's generator, then `wire.py`'s own comment.
-* **27** — fixtures whose *shape* made a class of defect unreachable, for the fourth time. A
-  mutation guard inherits its blind spots from the fixtures it mutates.
-* **28** — overstating what a measurement establishes. Name the question before choosing the
-  instrument, then check the instrument's output is in the units of the question.
+* **29** — **a fixture is a model of the artifact; passing on the model says nothing about the
+  artifact.** 71 checks, none of which loaded the real bundle, so a release blocker was invisible.
+  For every artifact a consumer loads, one check must load it the way the consumer does.
+* **30** — a positive control that can pass on the **wrong cause** is not a control. Require the
+  mutation to have applied, the baseline to be exactly right, and the effect to be the specific
+  predicted one.
+* **31** — checking one member of a set is not checking the set, and a count is not a set.
+* **32** — **allocation is not evaluation.** A default-initialised value that is indistinguishable
+  from a real answer turns "I have not been asked yet" into a confident reply.
+* **33** — a label is not the thing it names, and silence is not confirmation. Both are "absence is
+  not evidence of cleanliness", already written down, and I still wrote the code the other way.
+
+And a repeat, not numbered because the shape is in the file twice already: **when a share is
+reported, the next sentence names the denominator.** The destination's cost moved from 4.1% to
+20.6% when the denominator was fixed.
 
 ## Not started, deliberately
 

@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import math
 import pathlib
 import sys
 import time
@@ -77,17 +78,43 @@ LAYERS = V2 / "data" / "layers"
 ARTIFACT = V2.parent / "docs" / "experiments" / "s3-9-selected-destination.json"
 
 
+def scalar(value):
+    """A missing value is `None`, never a float NaN.
+
+    Pass 49 finding 2 was a release blocker this cost. `brand` and `operating_status` arrive from
+    the parquet as float NaN where the record has none; `json.dumps` writes those as the bare
+    token `NaN`, which is not JSON. 85 of them reached the published table, so `JSON.parse` --
+    and therefore the browser's `Response.json()` -- threw before the worker was constructed and
+    the page could not display a destination at all. Nothing in 71 conformance checks saw it,
+    because every one of them built its own fixture.
+
+    `None` is the right value for the same reason `null` is right in the wire format: "this record
+    does not say" is a statement the format has to be able to make.
+    """
+    if value is None:
+        return None
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    # numpy scalars and pandas NA both answer to this, and neither is JSON-serialisable.
+    try:
+        if value != value:  # NaN is the only value that is not equal to itself.
+            return None
+    except (TypeError, ValueError):
+        pass
+    return value
+
+
 def place_record(row) -> dict:
     """The minimum that names a destination. Nothing more leaves the parquet."""
     names = row.get("names") or {}
     brand = (row.get("brand") or {}).get("names") or {}
     return {
         "gers_id": row["id"],
-        "name": names.get("primary") or names.get("common"),
-        "brand": brand.get("primary") or brand.get("common"),
-        "category": row.get("basic_category"),
-        "operating_status": row.get("operating_status"),
-        "licence": row.get("licence"),
+        "name": scalar(names.get("primary") or names.get("common")),
+        "brand": scalar(brand.get("primary") or brand.get("common")),
+        "category": scalar(row.get("basic_category")),
+        "operating_status": scalar(row.get("operating_status")),
+        "licence": scalar(row.get("licence")),
     }
 
 
@@ -211,6 +238,28 @@ def main(argv: list[str] | None = None) -> int:
             ordinals[cell_node == node] = ordinal
         if (cell_node >= 0).sum() != int((ordinals != wire.DEST_NONE).sum()):
             raise SystemExit("an ordinal was lost in translation from node ids")
+        # ------------------------------------------------------------ pass 49 finding 1
+        # The fingerprint below binds this plane to a surface. Stamping it proves nothing unless
+        # the plane and that surface actually AGREE, and nothing checked: the fingerprint was
+        # taken of whatever `{STEM}.npy` happened to hold, so a fresh destination computation
+        # could be blessed against stale published seconds and the stamp would say they belong
+        # together. Pass 48's F3 lesson was to bind a derived plane to its surface; the binding
+        # has to be earned.
+        #
+        # So compare the two masks before stamping. This is the same two-directional check the
+        # wire format and the exporter make, applied at the SOURCE, where the surface is still a
+        # float array of seconds rather than a published minute.
+        surf_seconds = np.load(LAYERS / f"{STEM}.npy")
+        journey = np.isfinite(surf_seconds) & (surf_seconds <= HORIZON_S)
+        named_mask = ordinals != wire.DEST_NONE
+        orphan = int((named_mask & ~journey).sum())
+        missing = int((journey & ~named_mask).sum())
+        if orphan or missing:
+            raise SystemExit(
+                f"this destination plane names {orphan:,} cells the surface gives no journey and "
+                f"leaves {missing:,} of the surface's journeys unnamed, so it does not describe "
+                f"{STEM}.npy and must not be stamped with its fingerprint. Rebuild the surface "
+                "and the destinations from the same graph")
         path = LAYERS / f"{STEM}_selected_destination.npy"
         np.save(path, ordinals)
 
@@ -224,12 +273,22 @@ def main(argv: list[str] | None = None) -> int:
                                       if p["licence"]}),
                 "source": f"Overture {places['overture_release'].iloc[0]}",
                 "why_it_is_a_separate_artifact": (
-                    "the travel-time layer is ODbL-published and ODbL is share-alike. These names "
-                    "are CDLA-Permissive-2.0, Apache-2.0 and CC0-1.0 -- permissive, and none of "
-                    "the contractually restricted sources decision 17 forbids. Keeping the table "
-                    "apart from the layer is what stops permissively licensed names being swept "
-                    "into a share-alike database, and keeps decision 17's rule that an "
-                    "ODbL-published artifact carries no restricted source"),
+                    "for organisation and for clarity about what came from where, NOT as a legal "
+                    "determination. Codex pass 49 finding 4 withdrew the earlier claim that "
+                    "keeping the table apart was 'what stops permissively licensed names being "
+                    "swept into a share-alike database': ODbL distinguishes a collective from a "
+                    "derivative database by the substantive relationship between the parts, not "
+                    "by how many files they are stored in, and decision 17 itself permits "
+                    "OSM-derived and Overture-derived data in the same tables provided the "
+                    "notices travel with them. What IS load-bearing is decision 17's actual "
+                    "rule, which this table satisfies: no contractually restricted source"),
+                "redistribution": (
+                    "these licences carry obligations that a label does not discharge. "
+                    "CDLA-Permissive-2.0 2.1 requires the TEXT of the agreement to be made "
+                    "available with the shared data, and Apache-2.0 4 requires the licence, a "
+                    "statement of modification and the source NOTICE. "
+                    "scripts/export_published_layers.py copies them into the published bundle "
+                    "and refuses to finish without them -- pass 49 finding 3"),
                 "fields_deliberately_omitted": [
                     "phones", "emails", "websites", "socials", "addresses",
                     "upstream provider record ids"],
@@ -245,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
             ],
         }
         (LAYERS / f"{STEM}_selected_destination_table.json").write_text(
-            json.dumps(table, indent=2, default=str), encoding="utf-8")
+            json.dumps(table, indent=2, default=str, allow_nan=False), encoding="utf-8")
 
         meta = {
             "built": stamp(), "mode": MODE, "category": CATEGORY,
@@ -267,11 +326,11 @@ def main(argv: list[str] | None = None) -> int:
                 "somewhere"),
         }
         (LAYERS / f"{STEM}_selected_destination_build.json").write_text(
-            json.dumps(meta, indent=2, default=str), encoding="utf-8")
+            json.dumps(meta, indent=2, default=str, allow_nan=False), encoding="utf-8")
         print(f"\nwrote {path.name}: {meta['named']:,} of {meta['cells']:,} cells named, "
               f"{len(chosen_nodes):,} distinct destinations")
 
-    args.out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    args.out.write_text(json.dumps(report, indent=2, default=str, allow_nan=False), encoding="utf-8")
     p = report["places"]
     print(f"\n{p['in_category']:,} places -> {p['distinct_destination_nodes']:,} nodes, "
           f"{p['nodes_carrying_more_than_one_place']:,} carrying more than one "
@@ -337,15 +396,22 @@ def measure_destination_ties(cost_csr, time_csr, dest_idx, selected_n, seconds_n
         "labellings": rows,
         "total_destination_moves": total,
         "positive_control": control,
+        "labellings_tried": len(rows),
         "what_it_means": (
             "a non-zero here is a NAME decided by heap order, which is worse than a flag decided "
-            "that way because the name is shown. A zero says exact bit-level cost ties between "
-            "different destinations do not occur on this graph, and remains latent: quantising "
-            "the cost would manufacture them"
+            "that way because the name is shown"
             if total else
-            "exact bit-level cost ties between different destinations do not occur on this graph, "
-            "so the destination is well defined here. It is latent, not absent -- quantising the "
-            "cost would manufacture ties, and then the NAME shown would depend on heap order"),
+            f"under the {len(rows)} relabellings tried, no cell's selected destination moved. "
+            "That is EVIDENCE that exact bit-level cost ties between different destinations are "
+            "not being hit on this graph; it is not proof that none exist. Three permutations "
+            "sample the space, and a tie whose two orderings both happen to be avoided by these "
+            "three is invisible here -- pass 49 finding 8. The positive control above shows the "
+            "instrument can report a move, which is what makes this zero worth recording at all"),
+        "what_it_does_not_establish": (
+            "that the destination is well defined in general. Quantising the cost would "
+            "manufacture ties, and then the NAME shown would depend on heap order. The earlier "
+            "wording said ties 'do not occur on this graph', which three relabellings cannot "
+            "establish"),
     }
 
 

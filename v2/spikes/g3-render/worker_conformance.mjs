@@ -206,9 +206,18 @@ for (const group of vectors.groups) {
       const verdicts = new Int8Array(vMsg.verdicts);
       assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
 
-      // The destination query, cell by cell. The NAME is compared and not only the ordinal,
-      // because an ordinal comparison passes under a big-endian read whenever the swapped value
-      // lands in range -- which is the whole point of the byte-swap group.
+      // The destination query, cell by cell. Every field is compared against what the vectors
+      // record, and the whole place SET against the side table the worker was handed.
+      //
+      // Pass 49 finding 5: comparing the ordinal, the count and the FIRST place's name left four
+      // real defects passing all 71 checks -- wrong names on every place after the first, every
+      // place replaced by a copy of the first (the count survives), a constant `node_index`
+      // (never compared at all), and the removal of the named-implies-OK half of the init
+      // invariant. The set IS the answer here, so checking one member of it is not checking it.
+      //
+      // Pass 49 finding 6 also corrected why these comparisons matter. A big-endian read is not
+      // caught by the name in particular; it is caught by comparing against a RECORDED
+      // expectation at all. What a swap survives is the structural bounds check.
       for (const q of (c.destination_at || [])) {
         const dOut = w.send({ type: 'destinationAt', reqId: 1, row: q.row, col: q.col });
         const d = dOut.find((m) => m.type === 'destinationAt');
@@ -241,6 +250,23 @@ for (const group of vectors.groups) {
           assert(got.places[0].name === want.first_place_name,
             `(${q.row}, ${q.col}) first place ${JSON.stringify(got.places[0].name)}, expected `
             + `${JSON.stringify(want.first_place_name)}`);
+          // The node the time was measured to. Never compared before pass 49, so a constant
+          // stood in for it through 71 passing checks.
+          assert(got.nodeIndex === want.node_index,
+            `(${q.row}, ${q.col}) nodeIndex ${got.nodeIndex}, expected ${want.node_index}`);
+          // Every name, in order. Catches a defect that preserves the count.
+          const gotNames = got.places.map((pl) => pl.name);
+          assert(JSON.stringify(gotNames) === JSON.stringify(want.place_names),
+            `(${q.row}, ${q.col}) place names ${JSON.stringify(gotNames)}, expected `
+            + `${JSON.stringify(want.place_names)}`);
+          // And the whole record set, against the table this worker was handed. This pins the
+          // reply to its input: a worker that rewrites, reorders or duplicates a record fails
+          // here even where the vectors record only names.
+          const layerIndex = group.layers.findIndex((l) => l.id === want.layer);
+          const entry = group.dest_tables[layerIndex].destinations[want.ordinal];
+          assert(JSON.stringify(got.places) === JSON.stringify(entry.places),
+            `(${q.row}, ${q.col}) the places returned are not the side table's record set for `
+            + `ordinal ${want.ordinal}`);
         }
       }
 
@@ -515,6 +541,7 @@ check('a published time with no destination is refused as a contradiction', () =
     worker.send({
       type: 'init',
       manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  destination_plane_byte_order: 'little',
                   layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
       values: [one(5)], statuses: [one(0)], destinations: [u16(65535)], destTables: [table],
     });
@@ -537,6 +564,7 @@ check('a destination ordinal past the end of the side table is refused', () => {
     worker.send({
       type: 'init',
       manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  destination_plane_byte_order: 'little',
                   layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
       values: [one(5)], statuses: [one(0)], destinations: [u16(7)], destTables: [table],
     });
@@ -556,6 +584,7 @@ check('a destination plane with no side table is refused', () => {
     worker.send({
       type: 'init',
       manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  destination_plane_byte_order: 'little',
                   layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
       values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [null],
     });
@@ -563,6 +592,156 @@ check('a destination plane with no side table is refused', () => {
     threw = /names nothing a reader can resolve/.test(err.message);
   }
   assert(threw, 'ordinals shipped with no table to resolve them');
+});
+
+// Pass 49 finding 7. The guard accepted a manifest that said NOTHING about the byte order and
+// read little-endian by default, so a plane written the other way round resolved to in-range
+// ordinals and confident wrong names. The published rule is that an order a decoder cannot
+// confirm is refused; silence is not confirmation.
+check('a destination plane with no declared byte order is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /declares no destination byte order/.test(err.message);
+  }
+  assert(threw, 'an undeclared byte order was read as little-endian by default, which is a guess '
+    + 'at an ordinal the decoder cannot verify');
+});
+
+// Pass 49 finding 5. The init invariant has two halves and only one had a refusal case, so
+// deleting the named-implies-OK half passed all 71 checks.
+check('a destination named where no time is published is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  destination_plane_byte_order: 'little',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      // OFF_NETWORK, so there is no journey -- and ordinal 0 names a destination for it.
+      values: [one(255)], statuses: [one(1)], destinations: [u16(0)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /no journey for it to be the/.test(err.message);
+  }
+  assert(threw, 'a destination was named at a cell with no published journey; the invariant has '
+    + 'TWO directions and this is the one that had no refusal case');
+});
+
+// Pass 49 finding 11. `verdict` is allocated at init and zero-filled, and 0 is INCLUDED, so a
+// query before any compute used to answer `included: true` and name a shop for a cell no
+// criterion had been applied to. Allocation is not evaluation.
+check('a destination query before any compute says nothing has been computed', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                destination_plane_byte_order: 'little',
+                layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+    values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [table],
+  });
+  const out = worker.send({ type: 'destinationAt', reqId: 1, row: 0, col: 0 });
+  const d = out.find((m) => m.type === 'destinationAt');
+  assert(d, 'no destinationAt reply');
+  assert(d.notComputed === true, 'a query before any compute did not say so');
+  assert(d.included === null, `included ${d.included}, expected null -- "nothing has been `
+    + 'evaluated" is not "included" and is not "excluded"');
+  assert(d.namesDestination === null, 'a destination was named before any compute ran');
+  // And after a compute the same cell answers normally, so the guard is not simply off.
+  worker.send({ type: 'compute', seq: 1, thresholds: [10], enabled: [true] });
+  const after = worker.send({ type: 'destinationAt', reqId: 2, row: 0, col: 0 })
+    .find((m) => m.type === 'destinationAt');
+  assert(after.notComputed === undefined && after.included === true
+    && after.namesDestination[0].places[0].name === 'X',
+    'the lifecycle guard blocks a legitimate query after a compute');
+});
+
+// ---------------------------------------------------------------------------------------------
+// The SHIPPED bundle, loaded the way the page loads it.
+//
+// Pass 49 finding 2 was a release blocker that all 71 of the checks above were blind to: the
+// published side table contained 85 bare `NaN` tokens, so `JSON.parse` -- and therefore
+// `Response.json()` -- threw before the worker was ever constructed. The page could not display
+// a destination at all. Every check above builds its own fixture, so not one byte of the real
+// artifact had ever been through this harness.
+//
+// A fixture is a model of the artifact. Passing on the model says nothing about the artifact.
+check('the shipped published bundle loads the way the page loads it', () => {
+  const dir = path.join(__dirname, 'fixtures', 'published');
+  if (!fs.existsSync(path.join(dir, 'manifest.json'))) {
+    throw new Error('no published fixture bundle to check; export one before running this');
+  }
+  const bytesOf = (file) => {
+    const buf = fs.readFileSync(path.join(dir, file));
+    const out = new ArrayBuffer(buf.length);
+    new Uint8Array(out).set(buf);
+    return out;
+  };
+  // JSON.parse, not a tolerant reader. This is the browser's parser and it rejects NaN,
+  // Infinity, trailing commas and comments.
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+  const tables = manifest.layers.map((l) => (l.dest_table
+    ? JSON.parse(fs.readFileSync(path.join(dir, l.dest_table), 'utf8'))
+    : null));
+  const worker = loadWorker();
+  const ready = worker.send({
+    type: 'init',
+    manifest,
+    values: manifest.layers.map((l) => bytesOf(l.value_file)),
+    statuses: manifest.layers.map((l) => bytesOf(l.status_file)),
+    routeFlags: manifest.layers.map((l) => (l.flag_file ? bytesOf(l.flag_file) : null)),
+    destinations: manifest.layers.map((l) => (l.dest_file ? bytesOf(l.dest_file) : null)),
+    destTables: tables,
+  }).find((m) => m.type === 'ready');
+  assert(ready, 'the shipped bundle did not initialise');
+  // The reported byte count must include every plane that arrived, the uint16 destination plane
+  // included -- pass 49 finding 9 found it omitted, which understated the bundle by two thirds.
+  const n = manifest.nrows * manifest.ncols;
+  const expectBytes = manifest.layers.reduce((sum, l) => sum + n * (2
+    + (l.flag_file ? 1 : 0) + (l.dest_file ? 2 : 0)), 0);
+  assert(ready.bytes === expectBytes,
+    `ready.bytes ${ready.bytes}, expected ${expectBytes} -- a byte count that omits a plane`);
+  worker.send({ type: 'compute', seq: 1, thresholds: manifest.layers.map(() => 254),
+                enabled: manifest.layers.map(() => true) });
+  // Find a cell that actually names something and resolve it, so the table is not merely
+  // parsed but used.
+  const dest = new Uint16Array(bytesOf(manifest.layers[0].dest_file));
+  let named = -1;
+  for (let p = 0; p < dest.length; p++) if (dest[p] !== 65535) { named = p; break; }
+  assert(named >= 0, 'the shipped destination plane names nothing');
+  const d = worker.send({ type: 'destinationAt', reqId: 1,
+                          row: Math.floor(named / manifest.ncols), col: named % manifest.ncols })
+    .find((m) => m.type === 'destinationAt');
+  assert(d && d.namesDestination && d.namesDestination.length,
+    'the shipped bundle named no destination at a cell whose plane holds an ordinal');
+  const places = d.namesDestination[0].places;
+  assert(Array.isArray(places) && places.length === d.namesDestination[0].placeCount,
+    'the shipped place set is not as long as its own count');
+  assert(places.every((pl) => typeof pl.gers_id === 'string' && pl.gers_id.length),
+    'a shipped place record carries no GERS id');
 });
 
 check('a v3 bundle is readable and reports that it names no destination', () => {

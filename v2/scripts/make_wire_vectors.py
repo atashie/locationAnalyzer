@@ -285,9 +285,11 @@ def main() -> int:
              "destination_at": [
                  {"row": 0, "col": 0, "included": True,
                   "names": [{"layer": "destA", "ordinal": 0, "place_count": 1,
-                             "first_place_name": "A Shop 0"},
+                             "node_index": 1000, "first_place_name": "A Shop 0",
+                             "place_names": ["A Shop 0"]},
                             {"layer": "destB", "ordinal": 3, "place_count": 2,
-                             "first_place_name": "B Shop 3"}]},
+                             "node_index": 1003, "first_place_name": "B Shop 3",
+                             "place_names": ["B Shop 3", "B Annex 3"]}]},
                  # Cell 3: layer B excludes it, so the combined verdict excludes it and no
                  # destination is applicable at all.
                  {"row": 0, "col": 3, "included": False, "names": None},
@@ -297,7 +299,8 @@ def main() -> int:
              "destination_at": [
                  {"row": 0, "col": 3, "included": True,
                   "names": [{"layer": "destA", "ordinal": 3, "place_count": 2,
-                             "first_place_name": "A Shop 3"}]},
+                             "node_index": 1003, "first_place_name": "A Shop 3",
+                             "place_names": ["A Shop 3", "A Annex 3"]}]},
              ]},
         ]})
 
@@ -320,7 +323,8 @@ def main() -> int:
              "destination_at": [
                  {"row": 0, "col": 0, "included": True,
                   "names": [{"layer": "namesDest", "ordinal": 1, "place_count": 2,
-                             "first_place_name": "N Shop 1"}]}]},
+                             "node_index": 1001, "first_place_name": "N Shop 1",
+                             "place_names": ["N Shop 1", "N Annex 1"]}]}]},
             # With only the SILENT layer enabled nothing names anything, so the answer is null
             # rather than an empty list: "this bundle does not say" is not "there is none".
             {"name": "only the silent layer, T=10", "thresholds": [10, 10],
@@ -333,7 +337,8 @@ def main() -> int:
     # The destination plane is the only uint16 plane, so it is the only one with a byte order, and
     # its failure mode is a VALID wrong answer. With small ordinals a swap lands out of range and
     # the bounds check catches it -- which hides the real hazard. 1 and 256 swap into each other,
-    # both in range for a 300-entry table, so nothing but the NAME can notice.
+    # both in range for a 300-entry table, so no STRUCTURAL check can notice: only a comparison
+    # against what this file records the answer to be.
     bs = surface_from([120.0, 120.0], [Reason.OK, Reason.OK], [120.0, 120.0])
     tbs = table(300, "S")
     ebs, vbs, sbs, _k, dbs = layer_entry("byteSwap", bs, destinations=np.array([1, 256]),
@@ -345,18 +350,22 @@ def main() -> int:
         "expect_names_destinations": True,
         "why_this_group_exists": (
             "ordinals 1 and 256 are byte-swaps of each other and both index a real destination in "
-            "a 300-entry table, so a big-endian read passes every structural check and returns "
-            "the wrong shop. Only comparing the name catches it"),
+            "a 300-entry table, so a big-endian read passes the BOUNDS check and returns the "
+            "wrong shop. What catches it is comparing against a recorded expectation -- the "
+            "ordinal first, then the node and the name. Pass 49 finding 6 withdrew the claim "
+            "that only the name can catch it"),
         "cases": [
             {"name": "byte-swap survivors, T=10", "thresholds": [10], "enabled": [True],
              "verdicts": [int(v) for v in wire.combine_planes([obs])],
              "destination_at": [
                  {"row": 0, "col": 0, "included": True,
                   "names": [{"layer": "byteSwap", "ordinal": 1, "place_count": 2,
-                             "first_place_name": "S Shop 1"}]},
+                             "node_index": 1001, "first_place_name": "S Shop 1",
+                             "place_names": ["S Shop 1", "S Annex 1"]}]},
                  {"row": 0, "col": 1, "included": True,
                   "names": [{"layer": "byteSwap", "ordinal": 256, "place_count": 1,
-                             "first_place_name": "S Shop 256"}]},
+                             "node_index": 1256, "first_place_name": "S Shop 256",
+                             "place_names": ["S Shop 256"]}]},
              ]},
         ]})
 

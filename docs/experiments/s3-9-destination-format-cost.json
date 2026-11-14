@@ -31,14 +31,45 @@
     }
   },
   "cheapest_encoding": "runlength_colmajor",
+  "chosen_encoding": "uint16_plane_as_written",
+  "on_the_source_grid": {
+    "cells": 330502,
+    "chosen_plane_deflated": 38505,
+    "cheapest_alternative": "runlength_colmajor",
+    "cheapest_alternative_deflated": 28027,
+    "what_the_plane_costs_over_the_cheapest": 10478
+  },
+  "on_the_published_grid": {
+    "value_file": 185053,
+    "status_file": 17327,
+    "flag_file": 25651,
+    "dest_file": 37999,
+    "dest_table": 21279
+  },
+  "random_access_to_the_cheapest_alternative": {
+    "runs": 28989,
+    "index_bytes_in_memory": 173934,
+    "expanded_plane_bytes_in_memory": 661004,
+    "cells_probed": 330502,
+    "lookup_mismatches": 0,
+    "what_this_measures": "answering ONE cell from the column-major run-length encoding, using cumulative run endpoints built at load and never shipped. Every source cell was probed and compared against the plane, so the zero above is a verified lookup and not an assumption",
+    "what_it_refutes": "that random access to run-length requires expanding the plane, and that avoiding that needs a second shipped structure. The index is smaller in memory than the plane it replaces"
+  },
   "bundle_without_the_destination_plane": 228031,
   "bundle_planes": {
     "value_file": 185053,
     "status_file": 17327,
-    "flag_file": 25651
+    "flag_file": 25651,
+    "dest_file": 37999,
+    "dest_table": 21279
   },
-  "bundle_with_the_destination_plane": 256058,
-  "the_decision_and_why": "SHIP THE uint16 PLANE, and not because it is cheapest -- it is not. Column-major run-length is 28,027 against the plane's 38,505, so the plane costs 10,478 bytes more, 4.1% of the bundle. The reason is the ACCESS PATTERN: a card reads ONE cell's destination, the cell a household is pointing at, where the value and status planes are read for every cell on every repaint. Expanding 330,502 run-length entries to answer a single lookup is backwards, and a prefix index to avoid that is a second structure to ship and validate. A plane answers in O(1) with no decode step at all",
+  "bundle_with_the_destination_plane": 287309,
+  "what_the_destination_costs_the_bundle": {
+    "bytes": 59278,
+    "share_of_the_bundle_that_ships": 20.63,
+    "the_denominator": "the total actually shipped, including the plane and the side table. The earlier report divided by the total of a bundle carrying the CHEAPEST encoding instead, and left the side table out of both -- pass 49 finding 9"
+  },
+  "the_decision_and_why": "SHIP THE uint16 PLANE, and not because it is cheapest -- it is not, and not because the alternative cannot do random access -- it can. On the source grid the plane deflates to 38,505 against column-major run-length's 28,027, so the plane costs 10,478 bytes more. Pass 49 finding 9 measured what the access argument had only asserted: cumulative run endpoints, built at load and never shipped, answer any single cell in O(log 28,989) and occupy 173,934 bytes against the expanded plane's 661,004 -- SMALLER, with 0 mismatches over all 330,502 cells. So the honest reason is SIMPLICITY: the plane needs no decode step, no second structure to build and keep in step with the side table, and no code path that can be wrong only at a run boundary. That is an engineering preference bought for a known number of bytes, not a necessity",
   "the_free_option_measured_and_declined": "renumbering the ordinals by first appearance saves 314 bytes, 0.8% of the plane. That is noise. It is declined not because it costs anything but because adopting it would add an ordinal-assignment step between the raster and the table for no real gain, and every such step is a place the two can drift apart",
   "what_this_does_not_settle": "phone latency, which is unmeasured and on the release prerequisite list. The argument above is about where work belongs rather than how much there is"
 }

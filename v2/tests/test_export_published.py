@@ -168,3 +168,173 @@ def test_an_absent_flag_raster_is_none_rather_than_a_plane_of_zeros(tmp_path, mo
     is restricted" and no consumer may collapse the two."""
     monkeypatch.setattr(exporter, "LAYERS", tmp_path)
     assert exporter.load_route_flag("s", (2, 3), 7200.0) is None
+
+
+# ---------------------------------------------------------------------------------------------
+# Pass 49 finding 1: the provenance check, and the control that makes its result mean something.
+
+
+def _tiny_grid():
+    """A 100 m source grid, small enough that the reprojection is one-to-one.
+
+    With one source cell per published cell, a deliberate mix of planes is the only thing that
+    can make the check fail.
+    """
+    from rasterio.transform import from_origin
+    return from_origin(661800.0, 4003600.0, 100.0, 100.0), "EPSG:32617"
+
+
+def _bounds_for(transform, shape, crs):
+    """The WGS84 bounds that put the published grid over the source grid."""
+    import rasterio.warp
+    from rasterio.transform import array_bounds
+    nrows, ncols = shape
+    west, south, east, north = array_bounds(nrows, ncols, transform)
+    return rasterio.warp.transform_bounds(crs, "EPSG:4326", west, south, east, north)
+
+
+def _reproject_all(transform, crs, bounds, value, status, dest):
+    nrows, ncols = value.shape
+    out = {
+        "value": exporter.reproject_plane(value, transform, crs, src_fill=wire.VALUE_NONE,
+                                          dst_fill=wire.VALUE_NONE, bounds=bounds,
+                                          nrows=nrows, ncols=ncols),
+        "status": exporter.reproject_plane(status, transform, crs, src_fill=wire.OUTSIDE,
+                                           dst_fill=wire.OUTSIDE, bounds=bounds,
+                                           nrows=nrows, ncols=ncols),
+    }
+    if dest is not None:
+        out["destination"] = exporter.reproject_plane(
+            dest, transform, crs, src_fill=wire.DEST_NONE, dst_fill=wire.DEST_NONE,
+            bounds=bounds, nrows=nrows, ncols=ncols, dtype=wire.DEST_DTYPE)
+    return out
+
+
+def test_the_provenance_check_passes_when_every_plane_shares_a_source_cell():
+    value = np.array([[5, 6, 7], [8, 9, 10]], dtype=np.uint8)
+    status = np.full((2, 3), wire.OK, dtype=np.uint8)
+    dest = np.array([[0, 1, 2], [2, 1, 0]], dtype=wire.DEST_DTYPE)
+    transform, crs = _tiny_grid()
+    bounds = _bounds_for(transform, value.shape, crs)
+    pub = _reproject_all(transform, crs, bounds, value, status, dest)
+    got = exporter.verify_provenance(
+        "tiny", transform, crs, bounds, *value.shape,
+        source={"value": value, "status": status, "destination": dest},
+        published=pub)
+    assert got["cells_traced_to_a_source_cell"] == value.size
+    assert got["planes_compared"] == ["destination", "status", "value"]
+
+
+def test_the_provenance_check_catches_a_destination_from_another_source_cell():
+    """**The positive control.** A check never shown to fail says nothing when it passes.
+
+    Two published cells keep their own times and statuses and swap destinations. That is exactly
+    the mutation Codex ran on the shipped plane, where both directions of the destination
+    invariant held, all three aggregates were unchanged, and two journeys were misidentified.
+    This check is the one that has to catch it.
+    """
+    value = np.array([[5, 6, 7], [8, 9, 10]], dtype=np.uint8)
+    status = np.full((2, 3), wire.OK, dtype=np.uint8)
+    dest = np.array([[0, 1, 2], [2, 1, 0]], dtype=wire.DEST_DTYPE)
+    transform, crs = _tiny_grid()
+    bounds = _bounds_for(transform, value.shape, crs)
+    pub = _reproject_all(transform, crs, bounds, value, status, dest)
+    mixed = pub["destination"].copy()
+    mixed[0, 0], mixed[0, 2] = mixed[0, 2], mixed[0, 0]
+    assert not np.array_equal(mixed, pub["destination"]), "the control changed nothing"
+    # And the exchange passes the invariant it is meant to defeat: presence is untouched.
+    assert np.array_equal(mixed == wire.DEST_NONE, pub["destination"] == wire.DEST_NONE)
+    with pytest.raises(SystemExit, match="not the destination of the source cell"):
+        exporter.verify_provenance(
+            "tiny", transform, crs, bounds, *value.shape,
+            source={"value": value, "status": status, "destination": dest},
+            published={**pub, "destination": mixed})
+
+
+def test_the_provenance_check_catches_a_status_from_another_source_cell():
+    value = np.array([[5, 6, 7], [8, 9, 10]], dtype=np.uint8)
+    status = np.array([[wire.OK, wire.OFF_NETWORK, wire.OK],
+                       [wire.OK, wire.OK, wire.NO_PATH]], dtype=np.uint8)
+    transform, crs = _tiny_grid()
+    bounds = _bounds_for(transform, value.shape, crs)
+    pub = _reproject_all(transform, crs, bounds, value, status, None)
+    shifted = np.roll(pub["status"], 1, axis=1)
+    assert not np.array_equal(shifted, pub["status"]), "the control changed nothing"
+    with pytest.raises(SystemExit, match="not the status of the source cell"):
+        exporter.verify_provenance(
+            "tiny", transform, crs, bounds, *value.shape,
+            source={"value": value, "status": status},
+            published={**pub, "status": shifted})
+
+
+# ---------------------------------------------------------------------------------------------
+# Pass 49 finding 3: the licence bundle, and the controls that show the gate can fail.
+
+
+def _table(*licences):
+    return {"licence": {"source": "Overture 2026-10-21.0"},
+            "destinations": [{"ordinal": 0, "node_index": 1, "place_count": len(licences),
+                              "places": [{"gers_id": f"x{i}", "name": f"N{i}", "brand": None,
+                                          "category": "grocery", "operating_status": "open",
+                                          "licence": lic}
+                                         for i, lic in enumerate(licences)]}]}
+
+
+def test_the_licence_bundle_carries_the_text_of_every_licence_it_ships(tmp_path):
+    got = exporter.write_licence_bundle(
+        tmp_path, [_table("CDLA-Permissive-2.0", "Apache-2.0", "CC0-1.0")],
+        {"Overture 2026-10-21.0"})
+    assert got["licences_present"] == ["Apache-2.0", "CC0-1.0", "CDLA-Permissive-2.0"]
+    for name in ("Apache-2.0.txt", "CC0-1.0.txt", "CDLA-Permissive-2.0.txt"):
+        text = (tmp_path / "LICENSES" / name).read_text(encoding="utf-8")
+        assert len(text) > 500, f"{name} is too short to be a licence text"
+    # Apache-2.0 4(d): the source NOTICE travels with the data.
+    assert (tmp_path / "LICENSES" / "NOTICE-foursquare.txt").exists()
+    # CDLA 2.1 is about the text of the agreement, so check the text really is the agreement.
+    cdla = (tmp_path / "LICENSES" / "CDLA-Permissive-2.0.txt").read_text(encoding="utf-8")
+    assert "makes available the text of this agreement with the shared Data" in cdla
+    attribution = (tmp_path / "ATTRIBUTION.md").read_text(encoding="utf-8")
+    assert "These records have been modified." in attribution, (
+        "Apache-2.0 4(b) requires a statement that files were changed, and the date")
+    assert "Overture 2026-10-21.0" in attribution
+    assert "ODbL" in attribution and "OpenStreetMap contributors" in attribution
+
+
+def test_a_licence_with_no_text_on_disk_is_refused(tmp_path):
+    """**The positive control.** A gate that has never refused anything is decoration.
+
+    This is also the shape of the real hazard: a future Overture release adds a source under a
+    licence nobody has reviewed, and the names ship with a label and no text.
+    """
+    with pytest.raises(SystemExit, match="holds no text for them"):
+        exporter.write_licence_bundle(tmp_path, [_table("ODbL-1.0")], {"r"})
+    assert not (tmp_path / "ATTRIBUTION.md").exists(), (
+        "the attribution was written for a bundle that was refused")
+
+
+def test_an_apache_record_without_its_notice_is_refused(tmp_path, monkeypatch):
+    """Apache-2.0 without the source NOTICE is not Apache-2.0 compliance."""
+    import shutil
+    bare = tmp_path / "licences-without-the-notice"
+    bare.mkdir()
+    shutil.copyfile(exporter.LICENCES / "Apache-2.0.txt", bare / "Apache-2.0.txt")
+    monkeypatch.setattr(exporter, "LICENCES", bare)
+    with pytest.raises(SystemExit, match="requires NOTICE-foursquare.txt"):
+        exporter.write_licence_bundle(tmp_path / "out", [_table("Apache-2.0")], {"r"})
+
+
+def test_the_shipped_bundle_carries_its_licence_texts():
+    """And the artifact in the repository, not only the function."""
+    if not (PUBLISHED / "manifest.json").exists():
+        pytest.skip("no published bundle on disk")
+    manifest = json.loads((PUBLISHED / "manifest.json").read_text(encoding="utf-8"))
+    licensing = manifest.get("licensing")
+    if not any("dest_table" in layer for layer in manifest["layers"]):
+        assert licensing is None, (
+            "a bundle with no third-party names must say nothing rather than say {}")
+        return
+    assert licensing, "the bundle ships place names and records no licensing"
+    for rel in licensing["files"]:
+        assert (PUBLISHED / rel).exists(), f"{rel} is recorded in the manifest and is not there"
+    for lic in licensing["licences_present"]:
+        assert (PUBLISHED / "LICENSES" / f"{lic}.txt").stat().st_size > 500

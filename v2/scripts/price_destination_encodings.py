@@ -132,17 +132,69 @@ def main(argv: list[str] | None = None) -> int:
 
     cheapest = min(encodings, key=lambda k: encodings[k]["deflated_bytes"]
                    if encodings[k]["deflated_bytes"] is not None else 1 << 62)
-    shipped_total = None
-    entry_bytes = {}
+    CHOSEN = "uint16_plane_as_written"
+
+    # ------------------------------------------------------------------ pass 49 finding 9
+    # The random-access cost of the cheapest alternative, MEASURED rather than asserted.
+    #
+    # The decision text used to say that answering one lookup from run-length means "expanding
+    # 330,502 run-length entries", and that an index to avoid that is "a second structure to ship
+    # and validate". Both are wrong. Cumulative run endpoints are built at load from the same
+    # bytes, are never shipped, and answer a single cell by binary search -- and they are SMALLER
+    # in memory than the expanded plane, not larger. So the plane is the simpler choice, not the
+    # necessary one, and this records the number that makes the difference.
+    seq = plane.T.ravel()
+    chg = np.flatnonzero(np.diff(seq)) + 1
+    run_vals = seq[np.concatenate(([0], chg))].astype(np.uint16)
+    run_ends = np.concatenate((chg, [seq.size])).astype(np.uint32)
+    probe = np.searchsorted(run_ends, np.arange(seq.size), side="right")
+    random_access = {
+        "runs": int(run_vals.size),
+        "index_bytes_in_memory": int(run_vals.nbytes + run_ends.nbytes),
+        "expanded_plane_bytes_in_memory": int(plane.astype(np.uint16).nbytes),
+        "cells_probed": int(seq.size),
+        "lookup_mismatches": int((run_vals[probe] != seq).sum()),
+        "what_this_measures": (
+            "answering ONE cell from the column-major run-length encoding, using cumulative run "
+            "endpoints built at load and never shipped. Every source cell was probed and "
+            "compared against the plane, so the zero above is a verified lookup and not an "
+            "assumption"),
+        "what_it_refutes": (
+            "that random access to run-length requires expanding the plane, and that avoiding "
+            "that needs a second shipped structure. The index is smaller in memory than the "
+            "plane it replaces"),
+    }
+
+    # The encodings above are priced on the SOURCE raster. The published bundle is a different
+    # grid -- 514x643 reprojected from 514x643 at 100 m, but reprojected all the same -- so
+    # adding a source-grid number to published-grid numbers compares two different things.
+    # Pass 49 finding 9: that is what produced a bundle total 10,478 bytes below the truth.
+    # Both grids are now reported, separately and labelled.
+    source_grid = {
+        "cells": int(plane.size),
+        "chosen_plane_deflated": encodings[CHOSEN]["deflated_bytes"],
+        "cheapest_alternative": cheapest,
+        "cheapest_alternative_deflated": encodings[cheapest]["deflated_bytes"],
+        "what_the_plane_costs_over_the_cheapest": (
+            encodings[CHOSEN]["deflated_bytes"] - encodings[cheapest]["deflated_bytes"]),
+    }
+    published_grid = {}
     man_path = PUBLISHED / "manifest.json"
     if man_path.exists():
         man = json.loads(man_path.read_text(encoding="utf-8"))
         e = next((l for l in man["layers"] if l["id"] == STEM), None)
-        for key in ("value_file", "status_file", "flag_file"):
+        for key in ("value_file", "status_file", "flag_file", "dest_file"):
             if e and key in e and (PUBLISHED / e[key]).exists():
-                entry_bytes[key] = deflated((PUBLISHED / e[key]).read_bytes())
-        if entry_bytes:
-            shipped_total = sum(entry_bytes.values())
+                published_grid[key] = deflated((PUBLISHED / e[key]).read_bytes())
+        # The side table is part of what a household downloads to be told a destination, and the
+        # earlier report left it out of every total.
+        if e and "dest_table" in e and (PUBLISHED / e["dest_table"]).exists():
+            published_grid["dest_table"] = deflated((PUBLISHED / e["dest_table"]).read_bytes())
+    without_dest = sum(v for k, v in published_grid.items()
+                       if k not in ("dest_file", "dest_table")) or None
+    with_dest = sum(published_grid.values()) if published_grid else None
+    shipped_total = without_dest
+    entry_bytes = published_grid
 
     report = {
         "what_this_is": ("the destination plane's cost against the alternatives, measured before "
@@ -152,19 +204,40 @@ def main(argv: list[str] | None = None) -> int:
         "distinct_destinations_named": distinct,
         "encodings": encodings,
         "cheapest_encoding": cheapest,
-        "bundle_without_the_destination_plane": shipped_total,
+        "chosen_encoding": CHOSEN,
+        "on_the_source_grid": source_grid,
+        "on_the_published_grid": published_grid,
+        "random_access_to_the_cheapest_alternative": random_access,
+        "bundle_without_the_destination_plane": without_dest,
         "bundle_planes": entry_bytes,
-        "bundle_with_the_destination_plane": (
-            None if shipped_total is None
-            else shipped_total + encodings[cheapest]["deflated_bytes"]),
+        "bundle_with_the_destination_plane": with_dest,
+        "what_the_destination_costs_the_bundle": (
+            None if not (with_dest and without_dest)
+            else {"bytes": with_dest - without_dest,
+                  "share_of_the_bundle_that_ships": round(
+                      (with_dest - without_dest) / with_dest * 100, 2),
+                  "the_denominator": (
+                      "the total actually shipped, including the plane and the side table. The "
+                      "earlier report divided by the total of a bundle carrying the CHEAPEST "
+                      "encoding instead, and left the side table out of both -- pass 49 "
+                      "finding 9")}),
         "the_decision_and_why": (
-            "SHIP THE uint16 PLANE, and not because it is cheapest -- it is not. Column-major "
-            "run-length is 28,027 against the plane's 38,505, so the plane costs 10,478 bytes "
-            "more, 4.1% of the bundle. The reason is the ACCESS PATTERN: a card reads ONE cell's "
-            "destination, the cell a household is pointing at, where the value and status planes "
-            "are read for every cell on every repaint. Expanding 330,502 run-length entries to "
-            "answer a single lookup is backwards, and a prefix index to avoid that is a second "
-            "structure to ship and validate. A plane answers in O(1) with no decode step at all"),
+            "SHIP THE uint16 PLANE, and not because it is cheapest -- it is not, and not because "
+            "the alternative cannot do random access -- it can. On the source grid the plane "
+            "deflates to "
+            f"{encodings[CHOSEN]['deflated_bytes']:,} against column-major run-length's "
+            f"{encodings[cheapest]['deflated_bytes']:,}, so the plane costs "
+            f"{source_grid['what_the_plane_costs_over_the_cheapest']:,} bytes more. Pass 49 "
+            "finding 9 measured what the access argument had only asserted: cumulative run "
+            f"endpoints, built at load and never shipped, answer any single cell in "
+            f"O(log {random_access['runs']:,}) and occupy "
+            f"{random_access['index_bytes_in_memory']:,} bytes against the expanded plane's "
+            f"{random_access['expanded_plane_bytes_in_memory']:,} -- SMALLER, with "
+            f"{random_access['lookup_mismatches']} mismatches over all "
+            f"{random_access['cells_probed']:,} cells. So the honest reason is SIMPLICITY: the "
+            "plane needs no decode step, no second structure to build and keep in step with the "
+            "side table, and no code path that can be wrong only at a run boundary. That is an "
+            "engineering preference bought for a known number of bytes, not a necessity"),
         "the_free_option_measured_and_declined": (
             "renumbering the ordinals by first appearance saves 314 bytes, 0.8% of the plane. "
             "That is noise. It is declined not because it costs anything but because adopting it "
@@ -183,10 +256,16 @@ def main(argv: list[str] | None = None) -> int:
         raw = f"{e['raw_bytes']:,}" if e["raw_bytes"] is not None else "-"
         de = f"{e['deflated_bytes']:,}" if e["deflated_bytes"] is not None else "impossible"
         print(f"{name:<46} {raw:>10} {de:>10}")
-    print(f"\ncheapest: {cheapest}")
-    if shipped_total is not None:
-        print(f"bundle without it {shipped_total:,} -> with it "
-              f"{shipped_total + encodings[cheapest]['deflated_bytes']:,}")
+    print(f"\ncheapest: {cheapest}   chosen: {CHOSEN}")
+    print(f"random access to the cheapest: {random_access['index_bytes_in_memory']:,} bytes of "
+          f"run endpoints vs {random_access['expanded_plane_bytes_in_memory']:,} expanded, "
+          f"{random_access['lookup_mismatches']} mismatches over "
+          f"{random_access['cells_probed']:,} cells")
+    if with_dest is not None and without_dest is not None:
+        cost = report["what_the_destination_costs_the_bundle"]
+        print(f"bundle without the destination {without_dest:,} -> with it {with_dest:,}  "
+              f"(+{cost['bytes']:,}, {cost['share_of_the_bundle_that_ships']}% of what ships, "
+              f"side table {entry_bytes.get('dest_table', 0):,} included)")
     print(f"\nwrote {args.out}")
     return 0
 

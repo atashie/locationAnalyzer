@@ -55,24 +55,34 @@ CONTROL = SPIKE / "byteswap_control.mjs"
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not on PATH")
 @pytest.mark.skipif(not VECTORS.exists(), reason="vectors not generated")
-def test_only_the_name_comparison_catches_a_big_endian_destination_plane():
+def test_a_recorded_expectation_and_not_a_structural_check_catches_a_byte_swap():
     """**A positive control on a check**, and the reason the byte-swap group exists.
 
     The destination plane is the only `uint16` plane, so it is the only one with a byte order, and
     read the wrong way round its ordinals are *valid* -- they index real destinations -- and wrong.
     With small ordinals a swap lands out of range and the bounds check fires, which hides the real
     hazard. The `byte-swap survivors` group holds a 300-entry table with cells at ordinals 1 and
-    256, which swap into each other.
+    256, which swap into each other, so no structural check can see the difference.
 
     This runs the big-endian mutation against **only** that group, because the mutation runner
     stops at the first failing check -- a different group's bounds check -- so without this the
-    group built for the hazard would never be the thing that caught it. The control requires that
-    every ordinal stays in range, every structural check passes, and the shop NAME is wrong.
+    group built for the hazard would never be the thing that caught it.
+
+    **Renamed after pass 49 finding 6**, which withdrew the claim this test used to assert. The
+    name comparison is not what catches a byte swap: the vectors record the expected *ordinal*
+    too, so the ordinal comparison fires first. What a swap survives is the structural bounds
+    check; what catches it is comparing against a recorded expectation at all. The same finding
+    showed the control could print `CONFIRMED` without performing an endian mutation, so it now
+    requires its mutation to have applied, the baseline to answer completely correctly, and the
+    mutated ordinals to be exactly the byte-swaps of the baseline's.
     """
     out = subprocess.run(["node", str(CONTROL)], capture_output=True, text=True, timeout=300)
     assert out.returncode == 0, f"{out.stdout}\n{out.stderr}"
     assert "CONFIRMED" in out.stdout, out.stdout
-    assert "the NAME is wrong" in out.stdout, out.stdout
+    assert "became exactly its byte-swap" in out.stdout, out.stdout
+    assert "comparing against a recorded expectation" in out.stdout, out.stdout
+    # The withdrawn claim must not come back.
+    assert "only thing that catches" not in out.stdout, out.stdout
 
 
 @pytest.mark.skipif(not VECTORS.exists(), reason="vectors not generated")

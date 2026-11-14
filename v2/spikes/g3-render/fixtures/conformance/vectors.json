@@ -687,13 +687,22 @@
                   "layer": "destA",
                   "ordinal": 0,
                   "place_count": 1,
-                  "first_place_name": "A Shop 0"
+                  "node_index": 1000,
+                  "first_place_name": "A Shop 0",
+                  "place_names": [
+                    "A Shop 0"
+                  ]
                 },
                 {
                   "layer": "destB",
                   "ordinal": 3,
                   "place_count": 2,
-                  "first_place_name": "B Shop 3"
+                  "node_index": 1003,
+                  "first_place_name": "B Shop 3",
+                  "place_names": [
+                    "B Shop 3",
+                    "B Annex 3"
+                  ]
                 }
               ]
             },
@@ -731,7 +740,12 @@
                   "layer": "destA",
                   "ordinal": 3,
                   "place_count": 2,
-                  "first_place_name": "A Shop 3"
+                  "node_index": 1003,
+                  "first_place_name": "A Shop 3",
+                  "place_names": [
+                    "A Shop 3",
+                    "A Annex 3"
+                  ]
                 }
               ]
             }
@@ -839,7 +853,12 @@
                   "layer": "namesDest",
                   "ordinal": 1,
                   "place_count": 2,
-                  "first_place_name": "N Shop 1"
+                  "node_index": 1001,
+                  "first_place_name": "N Shop 1",
+                  "place_names": [
+                    "N Shop 1",
+                    "N Annex 1"
+                  ]
                 }
               ]
             }
@@ -6600,7 +6619,7 @@
         }
       ],
       "expect_names_destinations": true,
-      "why_this_group_exists": "ordinals 1 and 256 are byte-swaps of each other and both index a real destination in a 300-entry table, so a big-endian read passes every structural check and returns the wrong shop. Only comparing the name catches it",
+      "why_this_group_exists": "ordinals 1 and 256 are byte-swaps of each other and both index a real destination in a 300-entry table, so a big-endian read passes the BOUNDS check and returns the wrong shop. What catches it is comparing against a recorded expectation -- the ordinal first, then the node and the name. Pass 49 finding 6 withdrew the claim that only the name can catch it",
       "cases": [
         {
           "name": "byte-swap survivors, T=10",
@@ -6624,7 +6643,12 @@
                   "layer": "byteSwap",
                   "ordinal": 1,
                   "place_count": 2,
-                  "first_place_name": "S Shop 1"
+                  "node_index": 1001,
+                  "first_place_name": "S Shop 1",
+                  "place_names": [
+                    "S Shop 1",
+                    "S Annex 1"
+                  ]
                 }
               ]
             },
@@ -6637,7 +6661,11 @@
                   "layer": "byteSwap",
                   "ordinal": 256,
                   "place_count": 1,
-                  "first_place_name": "S Shop 256"
+                  "node_index": 1256,
+                  "first_place_name": "S Shop 256",
+                  "place_names": [
+                    "S Shop 256"
+                  ]
                 }
               ]
             }

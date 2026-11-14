@@ -1,6 +1,6 @@
 {
   "what_this_is": "which grocery each published answer was measured to. The plane names the destination NODE and the side table carries every place on it, because a node is not a shop and the cost model routed to the node",
-  "built": "2026-11-14 07:24:41",
+  "built": "2026-11-14 07:55:12",
   "mode": "walk",
   "category": "grocery",
   "the_presentation_rule": "the owner's decision, 2026-11-13: THE NODE PLUS THE SET, and the card chooses. The set is the truthful answer rather than a convenience -- the selection is a cost-argmin over NODES, so which of the places on the chosen node a household walks to is not something this pipeline computed and the artifact must not assert it",
@@ -69,6 +69,8 @@
       "total_seconds_moves": 0,
       "why_the_flags_control_does_not_cover_this": "measure_tie_flag.py's diamond has ONE destination, so no destination can move in it, and it drives arrival_with_route_flag rather than arrival_with_selected_destination"
     },
-    "what_it_means": "exact bit-level cost ties between different destinations do not occur on this graph, so the destination is well defined here. It is latent, not absent -- quantising the cost would manufacture ties, and then the NAME shown would depend on heap order"
+    "labellings_tried": 3,
+    "what_it_means": "under the 3 relabellings tried, no cell's selected destination moved. That is EVIDENCE that exact bit-level cost ties between different destinations are not being hit on this graph; it is not proof that none exist. Three permutations sample the space, and a tie whose two orderings both happen to be avoided by these three is invisible here -- pass 49 finding 8. The positive control above shows the instrument can report a move, which is what makes this zero worth recording at all",
+    "what_it_does_not_establish": "that the destination is well defined in general. Quantising the cost would manufacture ties, and then the NAME shown would depend on heap order. The earlier wording said ties 'do not occur on this graph', which three relabellings cannot establish"
   }
 }

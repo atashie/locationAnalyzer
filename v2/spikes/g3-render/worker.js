@@ -102,6 +102,11 @@ const state = {
   lastSeq: -1,
   lastInCount: 0,
   lastEnabled: null,  // which criteria the last compute used; a destination query honours it
+  // Has a compute actually RUN? `verdict` is allocated at init and zero-filled, and 0 is
+  // INCLUDED, so an allocated plane reads as "every cell is in the region" before anything has
+  // been evaluated. Pass 49 finding 11: `handleDestinationAt` checked allocation and so named a
+  // destination for a cell no criterion had been applied to. Allocation is not evaluation.
+  computed: false,
 };
 
 self.onmessage = (ev) => {
@@ -193,16 +198,29 @@ function handleInit(msg) {
   let destinations = manifest.layers.map(() => null);
   let destTables = manifest.layers.map(() => null);
   if (declaresDest || Array.isArray(msg.destinations)) {
-    if (manifest.destination_plane_byte_order !== undefined
-        && manifest.destination_plane_byte_order !== 'little') {
-      throw new Error(`manifest declares destination byte order `
-        + `${JSON.stringify(manifest.destination_plane_byte_order)}; this decoder reads little-`
-        + 'endian only and will not guess at an ordinal it cannot verify');
-    }
     const bufs = msg.destinations;
     if (!Array.isArray(bufs) || bufs.length !== manifest.layers.length) {
       throw new Error(`expected ${manifest.layers.length} destination buffers, got `
         + `${bufs && bufs.length}`);
+    }
+    // The order must be DECLARED, not merely not-contradicted. Pass 49 finding 7: this guard
+    // used to accept `undefined`, so a manifest that said nothing got the little-endian read by
+    // default -- and a plane written the other way round then resolved to in-range ordinals and
+    // confident wrong shop names. "An order I cannot confirm" and "an order declared wrong" are
+    // the same refusal, because the consequence is the same. Requiring the field still cannot
+    // catch bytes that are incorrectly LABELLED little-endian; nothing in the plane can.
+    //
+    // It is required only where a plane is actually PRESENT. A bundle that names no destination
+    // has no uint16 plane and so has no byte order to declare; demanding the field of it would
+    // refuse a legitimate v2 or v3 bundle.
+    const anyPlane = declaresDest || bufs.some((b) => b !== null && b !== undefined);
+    if (anyPlane && manifest.destination_plane_byte_order !== 'little') {
+      const what = manifest.destination_plane_byte_order === undefined
+        ? 'manifest declares no destination byte order'
+        : `manifest declares destination byte order `
+          + `${JSON.stringify(manifest.destination_plane_byte_order)}`;
+      throw new Error(`${what}; this decoder reads little-endian only and will not guess at an `
+        + 'ordinal it cannot verify');
     }
     destinations = bufs.map((buf, i) => {
       const id = manifest.layers[i].id;
@@ -322,6 +340,11 @@ function handleInit(msg) {
   state.mask = new Uint8Array(n);
   state.verdict = new Int8Array(n);
   state.pool = [];
+  // A reinitialisation discards whatever the previous compute established, so the lifecycle goes
+  // back to "nothing has been evaluated" rather than keeping the old answer's permission.
+  state.computed = false;
+  state.lastSeq = -1;
+  state.lastEnabled = null;
   self.postMessage({
     type: 'ready',
     nrows,
@@ -329,7 +352,12 @@ function handleInit(msg) {
     layerCount: layers.length,
     disclosesRoutes: declaresFlags,
     namesDestinations: declaresDest,
-    bytes: n * layers.length * (declaresFlags ? 3 : 2),
+    // Per layer, and counting every plane it actually holds. Pass 49 finding 9: this reported
+    // `n * layerCount * (flags ? 3 : 2)`, which omitted the uint16 destination plane entirely --
+    // 661,004 bytes on the shipped bundle, two thirds of the real figure. A byte count that
+    // leaves out the largest plane is worse than no byte count.
+    bytes: layers.reduce((sum, _l, k) => sum + n * (2
+      + (routeFlags[k] ? 1 : 0) + (destinations[k] ? 2 : 0)), 0),
     initMs: performance.now() - t0,
   });
 }
@@ -425,6 +453,7 @@ function handleCompute(msg) {
   state.lastSeq = msg.seq;
   state.lastInCount = inCount;
   state.lastEnabled = msg.enabled ? msg.enabled.slice() : null;
+  state.computed = true;
   self.postMessage({
     type: 'result',
     seq: msg.seq,
@@ -500,6 +529,13 @@ function handleDestinationAt(msg) {
   const reply = { type: 'destinationAt', reqId: msg.reqId, seq: state.lastSeq, row, col };
   if (row < 0 || row >= nrows || col < 0 || col >= ncols) {
     self.postMessage({ ...reply, outside: true });
+    return;
+  }
+  // No compute has run, so there is no verdict to read and no destination to name. `included` is
+  // null rather than false: "nothing has been evaluated" is not "this cell is excluded", and it
+  // is certainly not the `included: true` this used to answer off a zero-filled plane.
+  if (!state.computed) {
+    self.postMessage({ ...reply, notComputed: true, included: null, namesDestination: null });
     return;
   }
   const p = row * ncols + col;

@@ -1,0 +1,24 @@
+Copyright 2024 Foursquare Labs, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-----------------------------------------------------------------------
+THIS FILE IS NOT A COPY OF THE UPSTREAM NOTICE.
+
+Overture's documentation states that a redistributor of Foursquare-sourced Places records must
+preserve the attribution notices from the source NOTICE file, "including at minimum: Copyright
+2024 Foursquare Labs, Inc."  That minimum line is reproduced above.
+
+The upstream NOTICE.txt itself could not be retrieved on 2026-11-14: the Foursquare dataset
+repository on Hugging Face is gated and answers HTTP 401 without an account. Fetch the real file
+and replace this one before publishing outside this repository. See licences/README.md.

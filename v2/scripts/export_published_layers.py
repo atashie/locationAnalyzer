@@ -30,8 +30,11 @@ deflated size of each, which is S3.5's transfer-size question.
 from __future__ import annotations
 
 import argparse
+import collections
+import datetime
 import json
 import pathlib
+import shutil
 import sys
 import zlib
 
@@ -164,7 +167,54 @@ def load_selected_destination(stem: str, shape, horizon_s: float,
         raise SystemExit(
             f"{path.name} names ordinal {int(named.max())} and {table_path.name} holds {count} "
             "destinations, so at least one published cell points past the end of the table")
+    check_table_is_publishable(table, table_path)
     return plane, table
+
+
+# Every field a place record is allowed to publish, and every licence it is allowed to carry.
+# Pass 49: the exporter carried the table through byte-for-byte and enforced nothing, so a field
+# added upstream would ship -- and the fields deliberately left out of `place_record` are exactly
+# the ones decision 17 forbids in an ODbL-published bundle: phones, emails, websites, socials,
+# addresses and provider record ids. An allowlist is the only form of this check that works,
+# because a blocklist cannot name a field nobody has invented yet.
+PLACE_FIELDS = {"gers_id", "name", "brand", "category", "operating_status", "licence"}
+ENTRY_FIELDS = {"ordinal", "node_index", "place_count", "places"}
+PUBLISHABLE_LICENCES = {"CDLA-Permissive-2.0", "Apache-2.0", "CC0-1.0"}
+
+
+def check_table_is_publishable(table: dict, table_path) -> None:
+    """Refuse a side table that carries a field or a licence nobody reviewed.
+
+    This is a build-time gate, not a wire check: it decides what is allowed to leave the machine.
+    It is deliberately strict about *unknown* values rather than about known-bad ones.
+    """
+    for entry in table.get("destinations", []):
+        extra = set(entry) - ENTRY_FIELDS
+        if extra:
+            raise SystemExit(
+                f"{table_path.name}: destination entry {entry.get('ordinal')} carries "
+                f"{sorted(extra)}, which this exporter has never reviewed for publication. Add "
+                "the field to ENTRY_FIELDS deliberately, or stop producing it")
+        for place in entry.get("places", []):
+            extra = set(place) - PLACE_FIELDS
+            if extra:
+                raise SystemExit(
+                    f"{table_path.name}: a place record carries {sorted(extra)}. The fields left "
+                    "out of place_record() are the ones decision 17 forbids in a published "
+                    "bundle -- phones, emails, websites, socials, addresses, provider record "
+                    "ids -- so an unreviewed field is refused rather than shipped")
+            lic = place.get("licence")
+            if lic is not None and lic not in PUBLISHABLE_LICENCES:
+                raise SystemExit(
+                    f"{table_path.name}: a place record is licensed {lic!r}, which is not one of "
+                    f"{sorted(PUBLISHABLE_LICENCES)}. A licence this exporter has not reviewed "
+                    "does not get published on the strength of being unfamiliar")
+            for key, value in place.items():
+                if isinstance(value, float) and value != value:
+                    raise SystemExit(
+                        f"{table_path.name}: place field {key!r} is a float NaN. `json.dumps` "
+                        "writes that as the bare token NaN, which is not JSON and which no "
+                        "browser will parse -- pass 49 finding 2. A missing value is None")
 
 
 def load_surface(stem: str) -> tuple[Surface, dict]:
@@ -229,6 +279,167 @@ def reproject_plane(plane: np.ndarray, transform, crs, *, src_fill: int, dst_fil
     return dst
 
 
+INDEX_NONE = 0xFFFFFFFF
+
+LICENCES = pathlib.Path(__file__).resolve().parents[1] / "licences"
+
+
+def stamp() -> str:
+    return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+
+# The attribution each licence needs carried with the data, beyond its text.
+LICENCE_NOTICES = {
+    # Apache-2.0 §4(d): keep the attribution notices from the source NOTICE file. In Overture,
+    # Apache-licensed Places records are the Foursquare-sourced ones.
+    "Apache-2.0": ["NOTICE-foursquare.txt"],
+}
+
+
+def write_licence_bundle(out: pathlib.Path, tables: list[dict], releases: set[str]) -> dict:
+    """Copy the text of every licence the published tables carry, and write the attribution.
+
+    Pass 49 finding 3. The tables carried SPDX identifiers and an Overture release label, and
+    nothing else: no licence texts, no Foursquare notice. CDLA-Permissive-2.0 §2.1 requires the
+    **text of the agreement** to be made available with shared data, and Apache-2.0 §4 requires
+    recipients to receive the licence, a statement of modification, and the source notices. A
+    label is not a licence; "publishable with attribution" described the licence rather than
+    anything the build had done.
+
+    Refuses rather than warns. A bundle that ships a label it cannot resolve has already failed.
+    """
+    present = sorted({p.get("licence") for t in tables if t
+                      for e in t.get("destinations", []) for p in e.get("places", [])
+                      if p.get("licence")})
+    missing = [lic for lic in present if not (LICENCES / f"{lic}.txt").exists()]
+    if missing:
+        raise SystemExit(
+            f"the side tables carry {missing}, and {LICENCES} holds no text for them. Add the "
+            "text, or stop publishing records under a licence this build cannot hand on")
+    dest = out / "LICENSES"
+    dest.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for lic in present:
+        shutil.copyfile(LICENCES / f"{lic}.txt", dest / f"{lic}.txt")
+        copied.append(f"LICENSES/{lic}.txt")
+        for notice in LICENCE_NOTICES.get(lic, []):
+            src = LICENCES / notice
+            if not src.exists():
+                raise SystemExit(
+                    f"{lic} requires {notice} to travel with the data and {src} does not exist")
+            shutil.copyfile(src, dest / notice)
+            copied.append(f"LICENSES/{notice}")
+    counts = collections.Counter(
+        p.get("licence") for t in tables if t
+        for e in t.get("destinations", []) for p in e.get("places", []))
+    text = ATTRIBUTION.format(
+        when=stamp(),
+        releases=", ".join(sorted(releases)) or "unrecorded",
+        counts="\n".join(f"* **{k}** — {v} place records" for k, v in sorted(counts.items())
+                         if k),
+        files="\n".join(f"* `{f}`" for f in copied))
+    (out / "ATTRIBUTION.md").write_text(text, encoding="utf-8")
+    return {"licences_present": present, "files": copied + ["ATTRIBUTION.md"],
+            "place_records_by_licence": {k: v for k, v in sorted(counts.items()) if k}}
+
+
+ATTRIBUTION = """# Attribution and licensing for this bundle
+
+Written by `scripts/export_published_layers.py` on {when}. Every licence named here has its text
+in `LICENSES/`, because a licence identifier is not a licence.
+
+## The destination names
+
+From **Overture Maps, release {releases}**, which licenses Places records by source:
+
+{counts}
+
+**These records have been modified.** Only `gers_id`, `name`, `brand`, `category`,
+`operating_status` and `licence` are carried; phones, emails, websites, socials, addresses and
+upstream provider record ids are dropped, and the records are grouped by the road-network node
+they snap to. Apache-2.0 §4(b) requires that statement and the date of the change, which is the
+build date above.
+
+## The travel-time planes
+
+Derived from **OpenStreetMap**, © OpenStreetMap contributors, available under the **Open Database
+License (ODbL) 1.0**. The planes are an ODbL-published derived database.
+
+## Why the names are a separate file from the planes
+
+For organisation and for clarity about what came from where, **not** as a legal determination.
+An earlier version of this project claimed that separate files were what kept permissively
+licensed names out of a share-alike database, and that keeping them apart avoided having to
+argue about derivative-database boundaries. Codex pass 49 finding 4 withdrew both claims: ODbL
+distinguishes a collective from a derivative database by the substantive relationship between
+the parts, not by how many files they are stored in. The project's own decision 17 permits
+OSM-derived and Overture-derived data in the same tables provided the notices travel with them.
+
+What is actually load-bearing is decision 17's real rule, which this bundle does satisfy: no
+contractually restricted source -- no Google place ids, no RentCast, no MLS or IDX, no portal
+data -- appears in any published artifact here.
+
+## Files
+
+{files}
+* `ATTRIBUTION.md` (this file)
+"""
+
+
+def verify_provenance(stem: str, transform, crs, bounds, nrows: int, ncols: int,
+                      *, source: dict, published: dict) -> dict:
+    """Every published plane at every cell must come from ONE source cell.
+
+    Pass 49 finding 1. A source-cell index is reprojected through the same nearest call as the
+    planes, so the published grid carries, per cell, the identity of the source cell that fed it.
+    Then each published plane is compared against its source plane at that index. If two nearest
+    calls disagreed -- a status from one source cell beside a destination from another -- the
+    comparison fails, whatever the values are.
+
+    This is what the two-directional destination invariant cannot do. That invariant compares
+    answer-presence masks and never looks at a value, so exchanging two valid destinations between
+    two OK cells passes it.
+
+    The returned record is a measurement, not a claim: it says how many cells were checked and how
+    many planes were checked at each.
+    """
+    src_index = np.arange(next(iter(source.values())).size,
+                          dtype=np.uint32).reshape(next(iter(source.values())).shape)
+    idx = reproject_plane(src_index, transform, crs, src_fill=INDEX_NONE, dst_fill=INDEX_NONE,
+                          bounds=bounds, nrows=nrows, ncols=ncols, dtype=np.uint32)
+    covered = idx != INDEX_NONE
+    flat = idx[covered].astype(np.int64)
+    for name, plane in published.items():
+        got = plane[covered]
+        want = np.asarray(source[name]).ravel()[flat]
+        if not np.array_equal(got, want):
+            n = int((got != want).sum())
+            raise SystemExit(
+                f"{stem}: {n:,} published cells hold a {name} that is not the {name} of the "
+                "source cell the reprojection says fed them. Two of these planes were resampled "
+                "from different source cells, so some household would be shown one cell's "
+                "journey beside another cell's destination")
+        # A cell no source cell covers must hold the fill the format defines for it, not a value
+        # resampling happened to leave behind.
+        uncovered = plane[~covered]
+        if name == "value" and uncovered.size and not (uncovered == wire.VALUE_NONE).all():
+            raise SystemExit(f"{stem}: an uncovered published cell carries a value")
+        if name == "status" and uncovered.size and not (uncovered == wire.OUTSIDE).all():
+            raise SystemExit(f"{stem}: an uncovered published cell carries a status other than "
+                             "OUTSIDE, which is the one thing v1 could not say")
+        if name == "destination" and uncovered.size and not (uncovered == wire.DEST_NONE).all():
+            raise SystemExit(f"{stem}: an uncovered published cell names a destination")
+    return {
+        "cells_traced_to_a_source_cell": int(covered.sum()),
+        "cells_no_source_covers": int((~covered).sum()),
+        "planes_compared": sorted(published),
+        "what_this_establishes": (
+            "every listed plane at every covered cell equals that plane's value at the ONE source "
+            "cell a jointly reprojected index says fed it. The destination plane's two-directional "
+            "invariant does not establish this: it compares answer-presence masks and never reads "
+            "a value, so exchanging two valid destinations between two OK cells passes it"),
+    }
+
+
 def deflated(data: bytes) -> int:
     return len(zlib.compress(data, 9))
 
@@ -263,6 +474,8 @@ def main(argv: list[str] | None = None) -> int:
 
     entries = []
     sizes = []
+    published_tables = []   # every side table that actually ships, for the licence bundle
+    releases = set()        # the Overture releases those tables name
     for stem, label, cell_m in SOURCES:
         if cell_m != 100.0 and not args.candidates:
             continue
@@ -325,7 +538,11 @@ def main(argv: list[str] | None = None) -> int:
             db = wire.destination_plane_bytes(dplane)
             (args.out / f"{stem}.dest.bin").write_bytes(db)
             (args.out / f"{stem}.destinations.json").write_text(
-                json.dumps(dest_table, indent=2), encoding="utf-8")
+                json.dumps(dest_table, indent=2, allow_nan=False), encoding="utf-8")
+            published_tables.append(dest_table)
+            source = (dest_table.get("licence") or {}).get("source")
+            if source:
+                releases.add(str(source))
             entry["dest_file"] = f"{stem}.dest.bin"
             entry["dest_table"] = f"{stem}.destinations.json"
             entry["dest_byte_order"] = wire.DEST_BYTE_ORDER
@@ -351,6 +568,29 @@ def main(argv: list[str] | None = None) -> int:
             (args.out / f"{stem}.flag.bin").write_bytes(fb)
             entry["flag_file"] = f"{stem}.flag.bin"
             entry["flagged_cells"] = int((fplane == wire.ROUTE_RESTRICTED).sum())
+
+        # ------------------------------------------------------------ pass 49 finding 1
+        # The real provenance check, and the reason the two-directional invariant is not one.
+        #
+        # That invariant compares the destination plane's answer-PRESENCE mask against the status
+        # plane's. Exchange two valid destinations between two OK cells and both directions still
+        # hold, every aggregate is unchanged, and two journeys are misidentified -- Codex did
+        # exactly that on the shipped plane and nothing noticed. The claim that it was "the first
+        # check that would CATCH a mixed triple" is withdrawn: it never inspects a value.
+        #
+        # What does catch one: reproject a SOURCE-CELL IDENTIFIER through the same nearest call,
+        # then require every published plane at every cell to equal its source plane at the cell
+        # the identifier names. Three independent nearest calls that disagree about which source
+        # cell fed a published cell cannot survive this, whatever the values happen to be.
+        provenance_checked = verify_provenance(
+            stem, transform, crs, bounds, args.nrows, args.ncols,
+            source={"value": value, "status": status,
+                    **({"destination": dest} if dest is not None else {}),
+                    **({"flag": flag} if flag is not None else {})},
+            published={"value": v, "status": s,
+                       **({"destination": dplane} if dest is not None else {}),
+                       **({"flag": fplane} if flag is not None else {})})
+        entry["planes_share_a_source_cell"] = provenance_checked
         entries.append(entry)
         sizes.append({
             "id": stem,
@@ -369,8 +609,15 @@ def main(argv: list[str] | None = None) -> int:
     if not entries:
         raise SystemExit("nothing to export")
 
+    licensing = (write_licence_bundle(args.out, published_tables, releases)
+                 if published_tables else None)
+
     manifest = {
         "encoding": wire.ENCODING,
+        # `None`, not `{}`, where nothing with a licence obligation ships: "this bundle carries no
+        # third-party names" and "this bundle ships names and says nothing about their licence"
+        # are different statements, and the second one is the bug.
+        "licensing": licensing,
         "discloses_restricted_routes": any("flag_file" in e for e in entries),
         "names_selected_destinations": any("dest_file" in e for e in entries),
         "what_an_absent_destination_plane_means": (
@@ -406,7 +653,7 @@ def main(argv: list[str] | None = None) -> int:
         "layers": entries,
         "transfer_bytes": sizes,
     }
-    (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2, allow_nan=False), encoding="utf-8")
 
     print(f"wrote {len(entries)} layers to {args.out}")
     print(f"\n{'layer':30s} {'raw':>10s} {'deflated':>10s} {'flag':>9s} {'dest':>9s} "
