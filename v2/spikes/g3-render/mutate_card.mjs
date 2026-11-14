@@ -23,9 +23,11 @@ const MUTATIONS = [
     // "We are not telling you" rendered as "there are none". The exact confusion the optional
     // plane exists to prevent, and the one a household cannot detect.
     name: 'a layer that does not disclose is rendered as having no restrictions',
+    // A regex with `\r?\n`, not a string literal: this working copy is checked out CRLF, and an
+    // LF anchor matches nothing while every single-line anchor still matches fine.
     apply: (s) => s.replace(
-      "bits.push('<div class=\"silent\">This criterion does not say whether the route uses a '\n          + 'restricted way.</div>');",
-      "bits.push('<div class=\"silent\">No restrictions on this route.</div>');"),
+      /bits\.push\('<div class="silent">This criterion does not say whether the route uses a '\r?\n          \+ 'restricted way\.<\/div>'\);/,
+      'bits.push(\'<div class="silent">No restrictions on this route.</div>\');'),
   },
   {
     name: 'a layer that does not disclose is rendered as nothing at all',
