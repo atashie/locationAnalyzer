@@ -397,3 +397,74 @@ def test_the_strict_json_check_rejects_what_python_tolerates(tmp_path):
         raise ValueError(constant)
     with pytest.raises(ValueError, match="NaN"):
         json.loads(doc.read_text(encoding="utf-8"), parse_constant=reject)
+
+
+def test_the_provenance_check_works_where_several_source_cells_feed_one_published_cell():
+    """**The case the check exists for, which the controls above do not cover.**
+
+    Every other provenance test here -- and the real export -- is a one-to-one retiling, where a
+    published cell has exactly one candidate source cell and planes cannot disagree about which
+    one fed it. A check that only ever runs on a one-to-one mapping has not been exercised. So
+    this one publishes a 4x4 source onto a 2x2 grid, four candidates per published cell, and then
+    mixes a single plane.
+
+    It also settles a hazard I suspected and was wrong about. Every data plane passes its own
+    fill as `src_nodata`, and those are in-band values -- the route flag's is `ROUTE_CLEAR`, which
+    is 0 and is the common legitimate value. If `src_nodata` excluded those source cells from
+    SELECTION, the index plane (whose sentinel cannot occur) and the flag plane would pick
+    different source cells and this check would compare the wrong pair. Measured: it does not.
+    `Resampling.nearest` picks the same cell either way, and the assertions below hold it to that.
+    """
+    import rasterio.warp
+    from rasterio.transform import array_bounds, from_origin
+
+    crs = "EPSG:32617"
+    transform = from_origin(661800.0, 4003600.0, 100.0, 100.0)
+    src_shape = (4, 4)
+    west, south, east, north = array_bounds(*src_shape, transform)
+    bounds = rasterio.warp.transform_bounds(crs, "EPSG:4326", west, south, east, north)
+    nrows, ncols = 2, 2                       # four source cells per published cell
+
+    value = np.arange(16, dtype=np.uint8).reshape(src_shape) + 1
+    status = np.full(src_shape, wire.OK, dtype=np.uint8)
+    dest = np.arange(16, dtype=wire.DEST_DTYPE).reshape(src_shape)
+    # ROUTE_CLEAR is 0 and is passed as src_nodata by the exporter: a checkerboard puts eight
+    # legitimate zeros in the source, so if src_nodata excluded them the published plane would be
+    # all ones.
+    flag = (np.indices(src_shape).sum(axis=0) % 2).astype(np.uint8)
+
+    def warp(plane, fill, dtype=np.uint8):
+        return exporter.reproject_plane(plane, transform, crs, src_fill=fill, dst_fill=fill,
+                                        bounds=bounds, nrows=nrows, ncols=ncols, dtype=dtype)
+
+    pub = {"value": warp(value, wire.VALUE_NONE), "status": warp(status, wire.OUTSIDE),
+           "destination": warp(dest, wire.DEST_NONE, wire.DEST_DTYPE),
+           "flag": warp(flag, wire.ROUTE_CLEAR)}
+    src = {"value": value, "status": status, "destination": dest, "flag": flag}
+
+    # The flag plane did not lose its legitimate zeros to src_nodata.
+    assert 0 < int((pub["flag"] == wire.ROUTE_CLEAR).sum()) < pub["flag"].size, (
+        "the published flag plane is all one value, so src_nodata=ROUTE_CLEAR excluded the clear "
+        "source cells from selection and this check is comparing the wrong pair")
+
+    got = exporter.verify_provenance("coarse", transform, crs, bounds, nrows, ncols,
+                                     source=src, published=pub)
+    assert got["cells_traced_to_a_source_cell"] == nrows * ncols
+    assert got["cells_no_source_covers"] == 0
+
+    # Now the control: one published cell takes a destination that belongs to a DIFFERENT source
+    # cell -- a real one, in range, and in a mapping where four source cells were candidates.
+    mixed = pub["destination"].copy()
+    other = [int(v) for v in np.unique(dest) if v != mixed[0, 0]][0]
+    mixed[0, 0] = other
+    assert not np.array_equal(mixed, pub["destination"]), "the control changed nothing"
+    with pytest.raises(SystemExit, match="not the destination of the source cell"):
+        exporter.verify_provenance("coarse", transform, crs, bounds, nrows, ncols,
+                                   source=src, published={**pub, "destination": mixed})
+
+    # And on the flag plane, whose src_nodata is the in-band ROUTE_CLEAR.
+    flipped = pub["flag"].copy()
+    flipped[1, 1] ^= 1
+    with pytest.raises(SystemExit, match="not the flag of the source cell"):
+        exporter.verify_provenance("coarse", transform, crs, bounds, nrows, ncols,
+                                   source=src, published={**pub, "flag": flipped})

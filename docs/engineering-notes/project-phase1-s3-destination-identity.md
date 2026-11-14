@@ -153,6 +153,23 @@ bundle: **330,502 of 330,502 cells trace to one source cell across all four plan
 Two positive controls in `tests/test_export_published.py` exchange a destination and shift a
 status, and both are caught — including the exchange that passes the invariant.
 
+Two things about that check I went looking for myself, while writing the pass 50 prompt:
+
+* **The controls only covered a one-to-one retiling**, which is what the real grid is — so a
+  published cell had exactly one candidate source cell and the planes *could not* disagree about
+  which one fed it. A check exercised only where its failure mode is impossible has not been
+  exercised. There is now a control on a 4×4 source published onto a 2×2 grid, four candidates
+  per cell, and it catches both a mixed destination and a flipped flag.
+* **A hazard I suspected and was wrong about.** Every data plane passes its own fill as
+  `src_nodata`, and those are *in-band* values — the route flag's is `ROUTE_CLEAR`, which is `0`
+  and is the common legitimate value, while the index plane's sentinel cannot occur. If
+  `src_nodata` excluded those source cells from *selection*, the index plane and the flag plane
+  would pick different source cells and the comparison would be against the wrong pair. Measured
+  at 1:1, many:1 and 1:many: `Resampling.nearest` picks the same cell with `src_nodata` set, with
+  it unset, and as the index plane does — identical arrays in every case. `src_nodata` substitutes
+  at the output; it does not change selection. The test now asserts the published flag plane keeps
+  its legitimate zeros, so if that ever changes it fails here rather than silently.
+
 One related hole closed at the source: `persist_selected_destination.py` stamped the plane with a
 fingerprint of whatever `<stem>.npy` happened to hold, without ever checking the two agreed, so a
 fresh destination computation could be blessed against stale published seconds. It now compares the
