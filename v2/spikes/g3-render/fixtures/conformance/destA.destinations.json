@@ -1,0 +1,87 @@
+{
+  "what_this_is": "side table for A",
+  "licence": {
+    "this_table": [
+      "CC0-1.0"
+    ],
+    "source": "synthetic"
+  },
+  "destinations": [
+    {
+      "ordinal": 0,
+      "node_index": 1000,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "A-0-a",
+          "name": "A Shop 0",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 1,
+      "node_index": 1001,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "A-1-a",
+          "name": "A Shop 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "A-1-b",
+          "name": "A Annex 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "node_index": 1002,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "A-2-a",
+          "name": "A Shop 2",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 3,
+      "node_index": 1003,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "A-3-a",
+          "name": "A Shop 3",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "A-3-b",
+          "name": "A Annex 3",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    }
+  ]
+}

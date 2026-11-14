@@ -99,12 +99,12 @@ def real_window():
     return surf, (best[0].start, best[1].start)
 
 
-def layer_entry(name: str, surf: Surface, flagged=None):
-    """`(manifest entry, value, status, flag or None)`.
+def layer_entry(name: str, surf: Surface, flagged=None, destinations=None, dest_table=None):
+    """`(manifest entry, value, status, flag or None, dest or None)`.
 
-    A layer carries a flag plane only when one is supplied, and the entry declares `flag_file` only
-    then — because an absent plane means "this layer does not disclose", which a decoder has to
-    keep distinct from a plane of zeros.
+    A layer carries an optional plane only when one is supplied, and the entry declares its file
+    only then -- because an absent plane means "this layer does not say", which a decoder has to
+    keep distinct from a plane of sentinels.
     """
     value, status = wire.encode_planes(surf)
     entry = {"id": name, "horizon_s": surf.horizon_s,
@@ -113,7 +113,16 @@ def layer_entry(name: str, surf: Surface, flagged=None):
     if flagged is not None:
         flag = wire.encode_route_flag(flagged, status)
         entry["flag_file"] = f"{name}.flag.bin"
-    return entry, value, status, flag
+    dest = None
+    if destinations is not None:
+        dest = wire.encode_selected_destination(destinations, status)
+        entry["dest_file"] = f"{name}.dest.bin"
+        entry["dest_table"] = f"{name}.destinations.json"
+        entry["dest_byte_order"] = wire.DEST_BYTE_ORDER
+        entry["dest_none"] = int(wire.DEST_NONE)
+        if dest_table is None:
+            raise ValueError(f"{name} ships destination ordinals and no side table")
+    return entry, value, status, flag, dest
 
 
 def main() -> int:
@@ -125,7 +134,7 @@ def main() -> int:
     # Flag the first OK cell, so the group exercises a disclosure alongside every status code.
     hand_flags = np.zeros(len(surf.seconds), dtype=bool)
     hand_flags[0] = True
-    entry, value, status, flag = layer_entry("hand", surf, flagged=hand_flags)
+    entry, value, status, flag, _dest = layer_entry("hand", surf, flagged=hand_flags)
     cases = []
     for t in (1, 3, 5, 10, 11, 39, 40, 41, 120, 251, 252, 254):
         expected = evaluate(
@@ -138,7 +147,7 @@ def main() -> int:
         cases.append({"name": f"hand T={t}", "thresholds": [t], "enabled": [True],
                       "verdicts": [int(v) for v in verdict]})
     groups.append({"name": "hand-built statuses", "nrows": 1, "ncols": len(value),
-                   "layers": [entry], "planes": [(value, status, flag)], "cases": cases,
+                   "layers": [entry], "planes": [(value, status, flag, None)], "cases": cases,
                    "expect_discloses_routes": True})
 
     # ---------------------------------------------------------------- two layers
@@ -146,13 +155,13 @@ def main() -> int:
     # EXCLUDED. The old worker broke out of its loop at A and reported unknown.
     a = surface_from([np.inf, 300.0], [Reason.OFF_NETWORK, Reason.OK], [60.0, 300.0])
     b = surface_from([1800.0, np.inf], [Reason.OK, Reason.OFF_NETWORK], [1800.0, 60.0])
-    ea, va, sa, _fa = layer_entry("twoA", a)
-    eb, vb, sb, _fb = layer_entry("twoB", b)
+    ea, va, sa, _fa, _da = layer_entry("twoA", a)
+    eb, vb, sb, _fb, _db = layer_entry("twoB", b)
     oa = wire.outcome_planes(va, sa, threshold_min=10, horizon_s=a.horizon_s)
     ob = wire.outcome_planes(vb, sb, threshold_min=10, horizon_s=b.horizon_s)
     groups.append({
         "name": "known failure beats unknown", "nrows": 1, "ncols": 2,
-        "layers": [ea, eb], "planes": [(va, sa, None), (vb, sb, None)],
+        "layers": [ea, eb], "planes": [(va, sa, None, None), (vb, sb, None, None)],
         "expect_discloses_routes": False,
         "cases": [
             {"name": "both layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
@@ -178,8 +187,8 @@ def main() -> int:
                       [Reason.OK, Reason.OK, Reason.OK, Reason.OK], [180.0, 180.0, 180.0, 1800.0])
     fa = np.array([True, True, False, True])
     fb = np.array([True, False, True, False])
-    eda, vda, sda, flda = layer_entry("discA", da, flagged=fa)
-    edb, vdb, sdb, fldb = layer_entry("discB", db, flagged=fb)
+    eda, vda, sda, flda, _xa = layer_entry("discA", da, flagged=fa)
+    edb, vdb, sdb, fldb, _xb = layer_entry("discB", db, flagged=fb)
     oda = wire.outcome_planes(vda, sda, threshold_min=10, horizon_s=da.horizon_s)
     odb = wire.outcome_planes(vdb, sdb, threshold_min=10, horizon_s=db.horizon_s)
     both = wire.combine_planes([oda, odb])
@@ -191,7 +200,7 @@ def main() -> int:
     disc_a_only = int(((np.asarray(a_only) == int(Verdict.INCLUDED)) & fa).sum())
     groups.append({
         "name": "two layers that both disclose", "nrows": 1, "ncols": 4,
-        "layers": [eda, edb], "planes": [(vda, sda, flda), (vdb, sdb, fldb)],
+        "layers": [eda, edb], "planes": [(vda, sda, flda, None), (vdb, sdb, fldb, None)],
         "expect_discloses_routes": True,
         "cases": [
             {"name": "both disclosing layers, T=10", "thresholds": [10, 10],
@@ -208,14 +217,15 @@ def main() -> int:
     # `null.byteLength`. A null slot is legal exactly where the manifest declares no plane.
     ma = surface_from([120.0, 120.0], [Reason.OK, Reason.OK], [120.0, 120.0])
     mb = surface_from([240.0, 240.0], [Reason.OK, Reason.OK], [240.0, 240.0])
-    ema, vma, sma, flma = layer_entry("mixedDiscloses", ma, flagged=np.array([True, False]))
-    emb, vmb, smb, _flmb = layer_entry("mixedSilent", mb)
+    ema, vma, sma, flma, _xc = layer_entry(
+        "mixedDiscloses", ma, flagged=np.array([True, False]))
+    emb, vmb, smb, _flmb, _xd = layer_entry("mixedSilent", mb)
     oma = wire.outcome_planes(vma, sma, threshold_min=10, horizon_s=ma.horizon_s)
     omb = wire.outcome_planes(vmb, smb, threshold_min=10, horizon_s=mb.horizon_s)
     mixed = wire.combine_planes([oma, omb])
     groups.append({
         "name": "one layer discloses and one does not", "nrows": 1, "ncols": 2,
-        "layers": [ema, emb], "planes": [(vma, sma, flma), (vmb, smb, None)],
+        "layers": [ema, emb], "planes": [(vma, sma, flma, None), (vmb, smb, None, None)],
         "expect_discloses_routes": True,
         "cases": [
             {"name": "both layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
@@ -225,6 +235,129 @@ def main() -> int:
             {"name": "only the silent layer, T=10", "thresholds": [10, 10],
              "enabled": [False, True], "restricted_included": None,
              "verdicts": [int(v) for v in wire.combine_planes([omb])]},
+        ]})
+
+    # -------------------------------------------- two layers that BOTH name destinations
+    # Two naming layers from the START. Pass 48's twenty-seventh instance was that every
+    # disclosing fixture had ONE disclosing layer, so a flag read from layer 0 was correct by
+    # accident and three real mutations passed all fifty checks.
+    def table(n, prefix):
+        return {"what_this_is": f"side table for {prefix}",
+                "licence": {"this_table": ["CC0-1.0"], "source": "synthetic"},
+                "destinations": [
+                    {"ordinal": i, "node_index": 1000 + i, "place_count": 1 + (i % 2),
+                     "places": ([{"gers_id": f"{prefix}-{i}-a", "name": f"{prefix} Shop {i}",
+                                  "brand": None, "category": "grocery",
+                                  "operating_status": "open", "licence": "CC0-1.0"}]
+                                + ([{"gers_id": f"{prefix}-{i}-b", "name": f"{prefix} Annex {i}",
+                                     "brand": None, "category": "grocery",
+                                     "operating_status": "open", "licence": "CC0-1.0"}]
+                                   if i % 2 else []))}
+                    for i in range(n)],
+                }
+
+    na = surface_from([120.0, 120.0, 120.0, 120.0], [Reason.OK] * 4, [120.0] * 4)
+    # Layer B is OFF_NETWORK at the last cell where layer A has an answer. That is what
+    # makes the per-layer indexing inside the init invariant loop load-bearing: a plane read
+    # from layer 0 names a destination there, where B publishes no journey at all.
+    nb = surface_from([180.0, 180.0, 180.0, np.inf],
+                      [Reason.OK, Reason.OK, Reason.OK, Reason.OFF_NETWORK],
+                      [180.0, 180.0, 180.0, 60.0])
+    ta, tb = table(4, "A"), table(4, "B")
+    # Different ordinals per layer at the same cell, so a plane read from layer 0 names the
+    # wrong shop rather than coincidentally the right one.
+    ena, vna, sna, _f, dna = layer_entry("destA", na, destinations=np.array([0, 1, 2, 3]),
+                                         dest_table=ta)
+    enb, vnb, snb, _g, dnb = layer_entry(
+        "destB", nb, destinations=np.array([3, 2, 1, wire.DEST_NONE]), dest_table=tb)
+    ona = wire.outcome_planes(vna, sna, threshold_min=10, horizon_s=na.horizon_s)
+    onb = wire.outcome_planes(vnb, snb, threshold_min=10, horizon_s=nb.horizon_s)
+    both_v = wire.combine_planes([ona, onb])
+    groups.append({
+        "name": "two layers that both name destinations", "nrows": 1, "ncols": 4,
+        "layers": [ena, enb], "planes": [(vna, sna, None, dna), (vnb, snb, None, dnb)],
+        "dest_tables": [ta, tb], "expect_names_destinations": True,
+        "cases": [
+            {"name": "both naming layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
+             "verdicts": [int(v) for v in both_v],
+             # Cell 0 is included in both layers, so BOTH name a destination and the card is owed
+             # both -- one per criterion, not one for the household.
+             "destination_at": [
+                 {"row": 0, "col": 0, "included": True,
+                  "names": [{"layer": "destA", "ordinal": 0, "place_count": 1,
+                             "first_place_name": "A Shop 0"},
+                            {"layer": "destB", "ordinal": 3, "place_count": 2,
+                             "first_place_name": "B Shop 3"}]},
+                 # Cell 3: layer B excludes it, so the combined verdict excludes it and no
+                 # destination is applicable at all.
+                 {"row": 0, "col": 3, "included": False, "names": None},
+             ]},
+            {"name": "layer A only, T=10", "thresholds": [10, 10], "enabled": [True, False],
+             "verdicts": [int(v) for v in wire.combine_planes([ona])],
+             "destination_at": [
+                 {"row": 0, "col": 3, "included": True,
+                  "names": [{"layer": "destA", "ordinal": 3, "place_count": 2,
+                             "first_place_name": "A Shop 3"}]},
+             ]},
+        ]})
+
+    # ------------------------------- one layer names a destination and the other does not
+    sa = surface_from([120.0, 120.0], [Reason.OK, Reason.OK], [120.0, 120.0])
+    sb = surface_from([240.0, 240.0], [Reason.OK, Reason.OK], [240.0, 240.0])
+    tn = table(2, "N")
+    ema, vma, sma, _h, dma = layer_entry("namesDest", sa, destinations=np.array([1, 0]),
+                                         dest_table=tn)
+    emb, vmb, smb, _i, _j = layer_entry("silentDest", sb)
+    oma = wire.outcome_planes(vma, sma, threshold_min=10, horizon_s=sa.horizon_s)
+    omb = wire.outcome_planes(vmb, smb, threshold_min=10, horizon_s=sb.horizon_s)
+    groups.append({
+        "name": "one layer names a destination and one does not", "nrows": 1, "ncols": 2,
+        "layers": [ema, emb], "planes": [(vma, sma, None, dma), (vmb, smb, None, None)],
+        "dest_tables": [tn, None], "expect_names_destinations": True,
+        "cases": [
+            {"name": "both layers, T=10", "thresholds": [10, 10], "enabled": [True, True],
+             "verdicts": [int(v) for v in wire.combine_planes([oma, omb])],
+             "destination_at": [
+                 {"row": 0, "col": 0, "included": True,
+                  "names": [{"layer": "namesDest", "ordinal": 1, "place_count": 2,
+                             "first_place_name": "N Shop 1"}]}]},
+            # With only the SILENT layer enabled nothing names anything, so the answer is null
+            # rather than an empty list: "this bundle does not say" is not "there is none".
+            {"name": "only the silent layer, T=10", "thresholds": [10, 10],
+             "enabled": [False, True],
+             "verdicts": [int(v) for v in wire.combine_planes([omb])],
+             "destination_at": [{"row": 0, "col": 0, "included": True, "names": None}]},
+        ]})
+
+    # ------------------------------------------------------- ordinals that survive a byte swap
+    # The destination plane is the only uint16 plane, so it is the only one with a byte order, and
+    # its failure mode is a VALID wrong answer. With small ordinals a swap lands out of range and
+    # the bounds check catches it -- which hides the real hazard. 1 and 256 swap into each other,
+    # both in range for a 300-entry table, so nothing but the NAME can notice.
+    bs = surface_from([120.0, 120.0], [Reason.OK, Reason.OK], [120.0, 120.0])
+    tbs = table(300, "S")
+    ebs, vbs, sbs, _k, dbs = layer_entry("byteSwap", bs, destinations=np.array([1, 256]),
+                                         dest_table=tbs)
+    obs = wire.outcome_planes(vbs, sbs, threshold_min=10, horizon_s=bs.horizon_s)
+    groups.append({
+        "name": "destination ordinals that survive a byte swap", "nrows": 1, "ncols": 2,
+        "layers": [ebs], "planes": [(vbs, sbs, None, dbs)], "dest_tables": [tbs],
+        "expect_names_destinations": True,
+        "why_this_group_exists": (
+            "ordinals 1 and 256 are byte-swaps of each other and both index a real destination in "
+            "a 300-entry table, so a big-endian read passes every structural check and returns "
+            "the wrong shop. Only comparing the name catches it"),
+        "cases": [
+            {"name": "byte-swap survivors, T=10", "thresholds": [10], "enabled": [True],
+             "verdicts": [int(v) for v in wire.combine_planes([obs])],
+             "destination_at": [
+                 {"row": 0, "col": 0, "included": True,
+                  "names": [{"layer": "byteSwap", "ordinal": 1, "place_count": 2,
+                             "first_place_name": "S Shop 1"}]},
+                 {"row": 0, "col": 1, "included": True,
+                  "names": [{"layer": "byteSwap", "ordinal": 256, "place_count": 1,
+                             "first_place_name": "S Shop 256"}]},
+             ]},
         ]})
 
     # ---------------------------------------------------------------- the codes no surface holds
@@ -247,7 +380,7 @@ def main() -> int:
                    "layers": [{"id": "codes", "horizon_s": 7200.0,
                                "value_file": "codes.value.bin",
                                "status_file": "codes.status.bin"}],
-                   "planes": [(vals, codes, None)], "cases": code_cases,
+                   "planes": [(vals, codes, None, None)], "cases": code_cases,
                    "expect_discloses_routes": False,
                    "status_codes_present": sorted(int(c) for c in np.unique(codes))})
 
@@ -260,7 +393,7 @@ def main() -> int:
     real_flags = np.zeros(ok.size, dtype=bool)
     real_flags[idxs[::6]] = True
     real_flags = real_flags.reshape(ok.shape)
-    entry, value, status, flag = layer_entry("real", surf, flagged=real_flags)
+    entry, value, status, flag, _dreal = layer_entry("real", surf, flagged=real_flags)
     cases = []
     for t in THRESHOLDS:
         expected = evaluate(
@@ -286,23 +419,31 @@ def main() -> int:
                       "restricted_included": None,
                       "verdict_sha256_32": digest(verdict)})
     groups.append({"name": f"published layer window at {origin}", "nrows": WINDOW,
-                   "ncols": WINDOW, "layers": [entry], "planes": [(value, status, flag)],
+                   "ncols": WINDOW, "layers": [entry], "planes": [(value, status, flag, None)],
                    "cases": cases, "expect_discloses_routes": True,
                    "status_codes_present": sorted(int(c) for c in np.unique(status))})
 
     out = {"encoding": wire.ENCODING,
            "route_flag_codes": {str(k): v for k, v in wire.ROUTE_FLAG_CODES.items()},
+           "dest_none": int(wire.DEST_NONE),
+           "destination_plane_byte_order": wire.DEST_BYTE_ORDER,
            "generated_by": "v2/scripts/make_wire_vectors.py",
            "why": ("a Python round trip cannot protect the browser; these are replayed through "
                    "the real worker by worker_conformance.mjs"),
            "status_codes": {str(k): v for k, v in wire.STATUS_CODES.items()},
            "groups": []}
     for g in groups:
-        for (value, status, flag), entry in zip(g["planes"], g["layers"]):
+        for (value, status, flag, dest), entry in zip(g["planes"], g["layers"]):
             (OUT / entry["value_file"]).write_bytes(np.ascontiguousarray(value).tobytes())
             (OUT / entry["status_file"]).write_bytes(np.ascontiguousarray(status).tobytes())
             if flag is not None:
                 (OUT / entry["flag_file"]).write_bytes(np.ascontiguousarray(flag).tobytes())
+            if dest is not None:
+                (OUT / entry["dest_file"]).write_bytes(wire.destination_plane_bytes(dest))
+                tables = g.get("dest_tables") or []
+                i = g["layers"].index(entry)
+                (OUT / entry["dest_table"]).write_text(
+                    json.dumps(tables[i], indent=2), encoding="utf-8")
         out["groups"].append({k: v for k, v in g.items() if k != "planes"})
     (OUT / "vectors.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
 

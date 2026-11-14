@@ -114,6 +114,59 @@ def load_route_flag(stem: str, shape, horizon_s: float,
     return flag
 
 
+def load_selected_destination(stem: str, shape, horizon_s: float,
+                             fingerprint: str | None = None):
+    """`(plane, side table)` for this layer, or `(None, None)` if it names no destinations.
+
+    `None` is meaningful in the same way the route flag's is: it means **this layer does not say
+    which destination**, which a consumer must keep distinct from "there is no destination".
+
+    The side table is a separate artifact with its own licence block and is carried through
+    unmodified. The grocery names are CDLA-Permissive-2.0, Apache-2.0 and CC0-1.0, so they are
+    publishable with attribution and carry none of the contractually restricted sources decision
+    17 forbids -- but the travel-time layer is ODbL-published and ODbL is share-alike, so the two
+    stay separate files rather than one merged object.
+    """
+    path = LAYERS / f"{stem}_selected_destination.npy"
+    table_path = LAYERS / f"{stem}_selected_destination_table.json"
+    if not path.exists():
+        return None, None
+    if not table_path.exists():
+        raise SystemExit(
+            f"{path.name} exists and {table_path.name} does not. A plane of ordinals with no table "
+            "to index names nothing at all, and publishing it would ship identifiers no reader "
+            "can resolve")
+    plane = np.load(path)
+    if plane.shape != tuple(shape):
+        raise SystemExit(
+            f"{path.name} is {plane.shape} and the surface is {tuple(shape)}; refusing to publish "
+            "destinations that do not describe this layer")
+    meta_path = LAYERS / f"{stem}_selected_destination_build.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+    recorded = meta.get("horizon_s")
+    if recorded is None:
+        print(f"  WARNING: {meta_path.name} records no horizon_s, so the destination plane cannot "
+              f"be checked against the surface's {horizon_s:g} s")
+    elif float(recorded) != float(horizon_s):
+        raise SystemExit(
+            f"{path.name} was computed with horizon {float(recorded):g} s and the surface applies "
+            f"{float(horizon_s):g} s, so the two disagree about which cells have a journey at all")
+    stated = meta.get("surface_fingerprint")
+    if fingerprint is not None and stated is not None and stated != fingerprint:
+        raise SystemExit(
+            f"{path.name} was computed against surface {stated} and this surface is {fingerprint}. "
+            "The destinations describe a different layer, or the plane has been altered since it "
+            "was written")
+    table = json.loads(table_path.read_text(encoding="utf-8"))
+    count = len(table.get("destinations", []))
+    named = plane[plane != wire.DEST_NONE]
+    if named.size and int(named.max()) >= count:
+        raise SystemExit(
+            f"{path.name} names ordinal {int(named.max())} and {table_path.name} holds {count} "
+            "destinations, so at least one published cell points past the end of the table")
+    return plane, table
+
+
 def load_surface(stem: str) -> tuple[Surface, dict]:
     build = json.loads((LAYERS / f"{stem}_build.json").read_text(encoding="utf-8"))
     seconds = np.load(LAYERS / f"{stem}.npy").astype(np.float64)
@@ -160,9 +213,16 @@ def source_transform(build: dict, shape: tuple[int, int]):
 
 
 def reproject_plane(plane: np.ndarray, transform, crs, *, src_fill: int, dst_fill: int,
-                    bounds, nrows: int, ncols: int) -> np.ndarray:
-    dst = np.full((nrows, ncols), dst_fill, dtype=np.uint8)
-    reproject(source=np.ascontiguousarray(plane, dtype=np.uint8), destination=dst,
+                    bounds, nrows: int, ncols: int, dtype=np.uint8) -> np.ndarray:
+    """Nearest-resample one plane onto the published WGS84 grid.
+
+    `dtype` exists for the destination plane, which is `uint16`: every other plane is a byte and
+    the parameter was previously hard-coded. Resampling stays NEAREST for all of them -- a status
+    code is a name, a minute is a decision input and a destination ordinal is an identity, and
+    averaging any of the three publishes something nobody computed.
+    """
+    dst = np.full((nrows, ncols), dst_fill, dtype=dtype)
+    reproject(source=np.ascontiguousarray(plane, dtype=dtype), destination=dst,
               src_transform=transform, src_crs=crs, src_nodata=src_fill,
               dst_transform=from_bounds(*bounds, ncols, nrows),
               dst_crs="EPSG:4326", dst_nodata=dst_fill, resampling=Resampling.nearest)
@@ -211,9 +271,12 @@ def main(argv: list[str] | None = None) -> int:
             continue
         surf, build = load_surface(stem)
         value, status = wire.encode_planes(surf)
-        raw_flag = load_route_flag(
-            stem, value.shape, surf.horizon_s,
-            fingerprint=wire.surface_fingerprint(surf.seconds, surf.reason))
+        fingerprint = wire.surface_fingerprint(surf.seconds, surf.reason)
+        raw_flag = load_route_flag(stem, value.shape, surf.horizon_s, fingerprint=fingerprint)
+        raw_dest, dest_table = load_selected_destination(
+            stem, value.shape, surf.horizon_s, fingerprint=fingerprint)
+        dest = (None if raw_dest is None
+                else wire.encode_selected_destination(raw_dest, status))
         flag = None if raw_flag is None else wire.encode_route_flag(raw_flag, status)
         transform, crs = source_transform(build, value.shape)
 
@@ -242,6 +305,35 @@ def main(argv: list[str] | None = None) -> int:
             "value_file": f"{stem}.value.bin", "status_file": f"{stem}.status.bin",
             "source_shape": list(value.shape),
         }
+        db = None
+        if dest is not None:
+            dplane = reproject_plane(dest, transform, crs, src_fill=wire.DEST_NONE,
+                                     dst_fill=wire.DEST_NONE, bounds=bounds,
+                                     nrows=args.nrows, ncols=args.ncols, dtype=wire.DEST_DTYPE)
+            # BOTH directions, on the reprojected planes. The value, status and destination planes
+            # are three independent nearest calls; pass 48 measured 0 of 330,502 shipped cells
+            # taking a mixed triple, and this is the first check that would CATCH one, because a
+            # status from one source cell beside a sentinel from another is a contradiction.
+            orphan = (dplane != wire.DEST_NONE) & (s != wire.OK)
+            missing = (dplane == wire.DEST_NONE) & (s == wire.OK)
+            if orphan.any() or missing.any():
+                raise SystemExit(
+                    f"{stem}: after reprojection {int(orphan.sum())} cells name a destination with "
+                    f"no published journey and {int(missing.sum())} publish a time with no "
+                    "destination. Nearest resampling moved the planes apart, so some shipped cell "
+                    "holds one source cell's status beside another's destination")
+            db = wire.destination_plane_bytes(dplane)
+            (args.out / f"{stem}.dest.bin").write_bytes(db)
+            (args.out / f"{stem}.destinations.json").write_text(
+                json.dumps(dest_table, indent=2), encoding="utf-8")
+            entry["dest_file"] = f"{stem}.dest.bin"
+            entry["dest_table"] = f"{stem}.destinations.json"
+            entry["dest_byte_order"] = wire.DEST_BYTE_ORDER
+            entry["dest_none"] = int(wire.DEST_NONE)
+            entry["named_cells"] = int((dplane != wire.DEST_NONE).sum())
+            entry["distinct_destinations"] = int(np.unique(
+                dplane[dplane != wire.DEST_NONE]).size)
+
         fb = None
         if flag is not None:
             # Uncovered pixels become ROUTE_CLEAR, which is safe only because the status plane
@@ -262,10 +354,12 @@ def main(argv: list[str] | None = None) -> int:
         entries.append(entry)
         sizes.append({
             "id": stem,
-            "raw_bytes": len(vb) + len(sb) + (len(fb) if fb else 0),
+            "raw_bytes": len(vb) + len(sb) + (len(fb) if fb else 0) + (len(db) if db else 0),
             "deflated_value": deflated(vb), "deflated_status": deflated(sb),
             "deflated_flag": deflated(fb) if fb else None,
-            "deflated_total": deflated(vb) + deflated(sb) + (deflated(fb) if fb else 0),
+            "deflated_dest": deflated(db) if db else None,
+            "deflated_total": (deflated(vb) + deflated(sb) + (deflated(fb) if fb else 0)
+                               + (deflated(db) if db else 0)),
             "v1_raw_bytes": len(vb),
             "v1_deflated": deflated(v1_plane(v, s).tobytes()),
             "status_counts": {wire.STATUS_CODES[int(c)]: int(n)
@@ -278,6 +372,20 @@ def main(argv: list[str] | None = None) -> int:
     manifest = {
         "encoding": wire.ENCODING,
         "discloses_restricted_routes": any("flag_file" in e for e in entries),
+        "names_selected_destinations": any("dest_file" in e for e in entries),
+        "what_an_absent_destination_plane_means": (
+            "that the layer does not say WHICH destination its times were measured to, NOT that "
+            "there is no destination. A decoder must report that distinction"),
+        "a_destination_is_a_node_and_not_a_shop": (
+            "the plane names a node and the side table carries every place on it. The selection "
+            "is a cost-argmin over nodes, so where a node holds more than one place the pipeline "
+            "did not choose between them and no consumer may present one as THE destination. The "
+            "owner's rule, 2026-11-13: the node plus the set, and the card chooses"),
+        "destination_plane_byte_order": wire.DEST_BYTE_ORDER,
+        "why_the_destination_plane_declares_a_byte_order": (
+            "it is the only uint16 plane. Read with the wrong order its ordinals are VALID -- they "
+            "index real destinations -- and wrong, which produces a confident incorrect shop name "
+            "rather than an error. A decoder that cannot confirm the order must refuse the plane"),
         "what_an_absent_flag_plane_means": (
             "that the layer does not disclose, NOT that no route is restricted. A decoder must "
             "report that distinction rather than defaulting to clean"),
@@ -301,12 +409,14 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     print(f"wrote {len(entries)} layers to {args.out}")
-    print(f"\n{'layer':34s} {'raw':>10s} {'deflated':>10s} {'of which flag':>14s} "
+    print(f"\n{'layer':30s} {'raw':>10s} {'deflated':>10s} {'flag':>9s} {'dest':>9s} "
           f"{'v1 defl.':>10s} {'ratio':>6s}")
     for s in sizes:
         fl = f"{s['deflated_flag']:,}" if s["deflated_flag"] is not None else "-"
-        print(f"{s['id']:34s} {s['raw_bytes']:>10,} {s['deflated_total']:>10,} {fl:>14s} "
-              f"{s['v1_deflated']:>10,} {s['deflated_total'] / s['v1_deflated']:>6.2f}x")
+        de = f"{s['deflated_dest']:,}" if s.get("deflated_dest") is not None else "-"
+        print(f"{s['id']:30s} {s['raw_bytes']:>10,} {s['deflated_total']:>10,} {fl:>9s} "
+              f"{de:>9s} {s['v1_deflated']:>10,} "
+              f"{s['deflated_total'] / s['v1_deflated']:>6.2f}x")
     for s in sizes:
         print(f"\n{s['id']} status plane: {s['status_counts']}")
     return 0

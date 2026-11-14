@@ -1,0 +1,49 @@
+{
+  "what_this_is": "side table for N",
+  "licence": {
+    "this_table": [
+      "CC0-1.0"
+    ],
+    "source": "synthetic"
+  },
+  "destinations": [
+    {
+      "ordinal": 0,
+      "node_index": 1000,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "N-0-a",
+          "name": "N Shop 0",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 1,
+      "node_index": 1001,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "N-1-a",
+          "name": "N Shop 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "N-1-b",
+          "name": "N Annex 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    }
+  ]
+}

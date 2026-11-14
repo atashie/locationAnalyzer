@@ -157,7 +157,9 @@
     }
     // The decoder refuses an encoding it does not know; say so here too, where the message can
     // name the file, rather than letting the worker's refusal arrive without a path.
-    const READABLE = ['published-v2', 'published-v3'];
+    // Kept in step with `locfinder.wire.READABLE_ENCODINGS` by
+    // tests/test_wire.py::test_the_javascript_encoding_lists_match_the_python_one.
+    const READABLE = ['published-v2', 'published-v3', 'published-v4'];
     if (!READABLE.includes(manifest.encoding)) {
       throw new Error(`${FIXTURES}/manifest.json carries encoding "${manifest.encoding}"; this `
         + `page decodes ${READABLE.join(' or ')}. Run scripts/export_published_layers.py.`);
@@ -173,6 +175,17 @@
     // Optional: a layer discloses its restricted routes only if it says so.
     const routeFlags = await Promise.all(manifest.layers.map(
       (l) => (l.flag_file ? fetchPlane(l.flag_file) : Promise.resolve(null))));
+    // Optional: a layer says WHICH destination only if it says so. The side table comes with the
+    // plane -- ordinals with no table to resolve them name nothing a reader can use.
+    const destinations = await Promise.all(manifest.layers.map(
+      (l) => (l.dest_file ? fetchPlane(l.dest_file) : Promise.resolve(null))));
+    const destTables = await Promise.all(manifest.layers.map(
+      (l) => (l.dest_table
+        ? fetch(`${FIXTURES}/${l.dest_table}`, { cache: 'no-store' }).then((r) => {
+          if (!r.ok) throw new Error(`${FIXTURES}/${l.dest_table}: HTTP ${r.status}`);
+          return r.json();
+        })
+        : Promise.resolve(null))));
 
     const expected = manifest.nrows * manifest.ncols;
     // Pass 48: the flag plane was not length-checked here, so a short one reached the worker and
@@ -186,11 +199,21 @@
         }
       });
     });
+    // The destination plane is uint16, so TWO bytes per cell. Checking it against `expected`
+    // would pass a plane half the size it should be.
+    destinations.forEach((buf, i) => {
+      if (buf === null) return;
+      if (buf.byteLength !== expected * 2) {
+        throw new Error(`${FIXTURES}/${manifest.layers[i].dest_file}: ${buf.byteLength} bytes, expected nrows*ncols*2=${expected * 2}`);
+      }
+    });
 
     const t1 = performance.now();
     // Pass 48: this summed value and status only, so the page reported 661,004 bytes for a
     // 991,506-byte payload -- understating the cost of the format change it exists to measure.
-    const buffers = values.concat(statuses).concat(routeFlags.filter((b) => b !== null));
+    const buffers = values.concat(statuses)
+      .concat(routeFlags.filter((b) => b !== null))
+      .concat(destinations.filter((b) => b !== null));
     const decodedBytes = buffers.reduce((a, b) => a + b.byteLength, 0);
 
     // Resource Timing: actual bytes moved over the network (same-origin, so transferSize is
@@ -200,7 +223,9 @@
       const names = [`${FIXTURES}/manifest.json`,
         ...manifest.layers.flatMap((l) => [`${FIXTURES}/${l.value_file}`,
           `${FIXTURES}/${l.status_file}`,
-          ...(l.flag_file ? [`${FIXTURES}/${l.flag_file}`] : [])])];
+          ...(l.flag_file ? [`${FIXTURES}/${l.flag_file}`] : []),
+          ...(l.dest_file ? [`${FIXTURES}/${l.dest_file}`] : []),
+          ...(l.dest_table ? [`${FIXTURES}/${l.dest_table}`] : [])])];
       const entries = performance.getEntriesByType('resource');
       for (const name of names) {
         const entry = entries.find((e) => e.name.endsWith(name));
@@ -236,12 +261,12 @@
       `source="${manifest.source || 'unknown'}"`,
     );
 
-    return { manifest, values, statuses, routeFlags };
+    return { manifest, values, statuses, routeFlags, destinations, destTables };
   }
 
   // ---- 3. worker ------------------------------------------------------------------------------
 
-  function initWorker(manifest, values, statuses, routeFlags) {
+  function initWorker(manifest, values, statuses, routeFlags, destinations, destTables) {
     return new Promise((resolve, reject) => {
       const worker = new Worker('worker.js');
       state.worker = worker;
@@ -282,8 +307,10 @@
       // Each plane is listed in the payload (so worker.js can read it) and in the transfer list
       // (so its memory moves instead of being structured-clone copied).
       const flagBuffers = routeFlags.filter((b) => b);
-      worker.postMessage({ type: 'init', manifest, values, statuses, routeFlags },
-        values.concat(statuses).concat(flagBuffers));
+      const destBuffers = (destinations || []).filter((b) => b);
+      worker.postMessage(
+        { type: 'init', manifest, values, statuses, routeFlags, destinations, destTables },
+        values.concat(statuses).concat(flagBuffers).concat(destBuffers));
     });
   }
 
@@ -699,7 +726,7 @@
       const [map] = await Promise.all([
         initMap(versions),
         initWorker(fixtures.manifest, fixtures.values, fixtures.statuses,
-          fixtures.routeFlags),
+          fixtures.routeFlags, fixtures.destinations, fixtures.destTables),
       ]);
 
       addMaskSource(map);

@@ -293,6 +293,131 @@ def test_a_layer_with_no_flag_plane_discloses_nothing_rather_than_being_clean():
         wire.disclosed_restricted(None, np.array([int(Outcome.PASS)], dtype=np.int8))
 
 
-def test_both_encodings_are_readable_and_v3_is_the_one_written():
-    assert wire.ENCODING == "published-v3"
-    assert set(wire.READABLE_ENCODINGS) == {"published-v2", "published-v3"}
+def test_every_earlier_encoding_is_readable_and_v4_is_the_one_written():
+    """Each version adds an optional plane and reinterprets no code, so every earlier bundle
+    stays readable and simply carries fewer facts. The written encoding is the newest."""
+    assert wire.ENCODING == "published-v4"
+    assert set(wire.READABLE_ENCODINGS) == {"published-v2", "published-v3", "published-v4"}
+    assert wire.ENCODING in wire.READABLE_ENCODINGS
+
+# --------------------------------------------------------------- the selected-destination plane
+
+
+def test_a_destination_may_only_be_named_where_the_status_is_ok():
+    status = np.array([wire.OK, wire.OFF_NETWORK], dtype=np.uint8)
+    with pytest.raises(ValueError, match="no published journey for it to be the destination OF"):
+        wire.encode_selected_destination(np.array([3, 4]), status)
+
+
+def test_a_published_time_with_no_destination_is_a_contradiction_not_a_silence():
+    """**The direction the route-flag plane cannot have.**
+
+    Pass 48 F3: a *clear* flag asserts nothing, so a flag plane cannot be validated from its own
+    contents -- one flag flipped down and one up passed every check in the pipeline. `DEST_NONE`
+    beside a published time is a different kind of value. A published time is a time *to
+    somewhere*, so this is the plane and the surface disagreeing about whether a journey exists,
+    and it is refusable.
+    """
+    status = np.array([wire.OK, wire.OK], dtype=np.uint8)
+    with pytest.raises(ValueError, match="publish a time and name no destination"):
+        wire.encode_selected_destination(np.array([wire.DEST_NONE, wire.DEST_NONE]), status)
+
+
+def test_both_directions_together_accept_only_the_consistent_plane():
+    status = np.array([wire.OK, wire.OFF_NETWORK, wire.OK, wire.BEYOND_HORIZON], dtype=np.uint8)
+    got = wire.encode_selected_destination(
+        np.array([0, wire.DEST_NONE, 509, wire.DEST_NONE]), status)
+    assert list(got) == [0, wire.DEST_NONE, 509, wire.DEST_NONE]
+    assert got.dtype == np.dtype(wire.DEST_DTYPE)
+
+
+def test_a_destination_plane_of_the_wrong_shape_is_refused():
+    with pytest.raises(ValueError, match="cell for cell"):
+        wire.encode_selected_destination(np.zeros((2, 2), dtype=np.uint16),
+                                         np.zeros(4, dtype=np.uint8))
+
+
+def test_an_ordinal_outside_the_representable_range_is_refused():
+    status = np.array([wire.OK], dtype=np.uint8)
+    with pytest.raises(ValueError, match="outside"):
+        wire.encode_selected_destination(np.array([wire.DEST_NONE + 1]), status)
+
+
+def test_the_destination_plane_goes_on_the_wire_little_endian_whatever_the_host():
+    """**The only plane with a byte order, and the reason is the failure mode.**
+
+    A `uint16` plane read with the wrong order yields ordinals that are *valid* -- they index real
+    destinations -- and wrong. That produces a confident incorrect shop name rather than an error,
+    which is why the order is declared in the manifest and written through an explicit dtype
+    rather than through `tobytes()` on whatever the caller happened to hold.
+    """
+    plane = np.array([[1, 258], [wire.DEST_NONE, 0]], dtype=wire.DEST_DTYPE)
+    raw = wire.destination_plane_bytes(plane)
+    assert raw[:4] == bytes([0x01, 0x00, 0x02, 0x01])          # 1, then 258 = 0x0102
+    assert np.array_equal(wire.decode_destination_plane(raw, plane.shape), plane)
+    # Big-endian input is the counterfactual: the same bytes read the wrong way round are a
+    # DIFFERENT valid plane, not an error. Nothing in the bytes themselves can catch it.
+    swapped = np.frombuffer(raw, dtype=np.dtype(">u2")).reshape(plane.shape)
+    assert not np.array_equal(swapped, plane)
+    assert int(swapped[0, 0]) == 256
+
+
+def test_a_destination_plane_that_does_not_fit_the_layer_is_refused_rather_than_reshaped():
+    raw = wire.destination_plane_bytes(np.zeros(5, dtype=wire.DEST_DTYPE))
+    with pytest.raises(ValueError, match="refusing to reshape"):
+        wire.decode_destination_plane(raw, (2, 3))
+
+
+def test_the_destination_is_never_an_eligibility_input():
+    """Same structural guarantee as the flag, and the same limit on what a signature proves:
+    pass 48 found a coupling that changes no signature, so `mutate_worker.mjs` carries the
+    mutation and the two-layer fixtures that catch it."""
+    import inspect
+    for name in ("dest", "destination", "selected"):
+        assert name not in inspect.signature(wire.outcome_planes).parameters
+        assert name not in inspect.signature(wire.combine_planes).parameters
+
+
+def test_named_destination_reads_the_plane_only_where_the_outcome_passes():
+    outcomes = np.array([int(Outcome.PASS), int(Outcome.FAIL), int(Outcome.UNKNOWN)],
+                        dtype=np.int8)
+    plane = np.array([7, 8, 9], dtype=wire.DEST_DTYPE)
+    got = wire.named_destination(plane, outcomes)
+    assert list(got) == [7, wire.DEST_NONE, wire.DEST_NONE]
+
+
+def test_a_layer_with_no_destination_plane_says_nothing_rather_than_having_no_destination():
+    """*Absence is not evidence of cleanliness*, for the fourth plane as for the third."""
+    with pytest.raises(ValueError, match="does not say"):
+        wire.named_destination(None, np.array([int(Outcome.PASS)], dtype=np.int8))
+
+
+def test_v4_reads_every_earlier_encoding():
+    assert wire.ENCODING == "published-v4"
+    for older in ("published-v2", "published-v3"):
+        assert older in wire.READABLE_ENCODINGS
+
+def test_the_javascript_encoding_lists_match_the_python_one():
+    """**The encoding set lives in five places and a bump missed three of them.**
+
+    `wire.py` is the source. `worker.js` and `app.js` each hold their own literal, because a
+    browser worker cannot import Python, and two tests used to hold a third and fourth. Adding
+    `published-v4` broke the conformance harness on the worker's copy and would have shipped a
+    page that refused the manifest it had just helped produce.
+
+    The duplication is unavoidable; going unchecked was not. This fails once, here, with the two
+    lists printed side by side.
+    """
+    import re
+    spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
+    for name, pattern in (
+        ("worker.js", r"const READABLE_ENCODINGS = \[([^\]]*)\]"),
+        ("app.js", r"const READABLE = \[([^\]]*)\]"),
+    ):
+        source = (spike / name).read_text(encoding="utf-8")
+        found = re.search(pattern, source)
+        assert found, f"{name} no longer declares a readable-encoding list under a known name"
+        listed = tuple(s.strip().strip("'\"") for s in found.group(1).split(",") if s.strip())
+        assert listed == tuple(wire.READABLE_ENCODINGS), (
+            f"{name} reads {listed} and locfinder.wire reads "
+            f"{tuple(wire.READABLE_ENCODINGS)}")

@@ -1,0 +1,44 @@
+{
+  "what_this_is": "the destination plane's cost against the alternatives, measured before the format is argued rather than after",
+  "cells": 330502,
+  "cells_naming_a_destination": 256752,
+  "distinct_destinations_named": 432,
+  "encodings": {
+    "uint16_plane_as_written": {
+      "raw_bytes": 661004,
+      "deflated_bytes": 38505
+    },
+    "uint8_palette": {
+      "raw_bytes": null,
+      "deflated_bytes": null,
+      "possible": false,
+      "why_not": "432 distinct destinations are named and a uint8 palette holds at most 254. A plane whose width depends on the data is also a format that breaks silently when the data changes, so this is not merely unavailable today -- it is the wrong shape for a published format"
+    },
+    "runlength_rowmajor": {
+      "raw_bytes": 72611,
+      "deflated_bytes": 28471,
+      "runs": 29735
+    },
+    "runlength_colmajor": {
+      "raw_bytes": 70832,
+      "deflated_bytes": 28027,
+      "runs": 28989
+    },
+    "uint16_plane_renumbered_by_first_appearance": {
+      "raw_bytes": 661004,
+      "deflated_bytes": 38191,
+      "why_this_one_is_free": "it changes which integer names a destination and nothing else. The side table is written in the same order either way, so there is no decode cost and no contract change -- if it wins, there is no trade to weigh"
+    }
+  },
+  "cheapest_encoding": "runlength_colmajor",
+  "bundle_without_the_destination_plane": 228031,
+  "bundle_planes": {
+    "value_file": 185053,
+    "status_file": 17327,
+    "flag_file": 25651
+  },
+  "bundle_with_the_destination_plane": 256058,
+  "the_decision_and_why": "SHIP THE uint16 PLANE, and not because it is cheapest -- it is not. Column-major run-length is 28,027 against the plane's 38,505, so the plane costs 10,478 bytes more, 4.1% of the bundle. The reason is the ACCESS PATTERN: a card reads ONE cell's destination, the cell a household is pointing at, where the value and status planes are read for every cell on every repaint. Expanding 330,502 run-length entries to answer a single lookup is backwards, and a prefix index to avoid that is a second structure to ship and validate. A plane answers in O(1) with no decode step at all",
+  "the_free_option_measured_and_declined": "renumbering the ordinals by first appearance saves 314 bytes, 0.8% of the plane. That is noise. It is declined not because it costs anything but because adopting it would add an ordinal-assignment step between the raster and the table for no real gain, and every such step is a place the two can drift apart",
+  "what_this_does_not_settle": "phone latency, which is unmeasured and on the release prerequisite list. The argument above is about where work belongs rather than how much there is"
+}

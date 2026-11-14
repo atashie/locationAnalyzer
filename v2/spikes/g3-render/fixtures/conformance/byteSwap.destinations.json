@@ -1,0 +1,5711 @@
+{
+  "what_this_is": "side table for S",
+  "licence": {
+    "this_table": [
+      "CC0-1.0"
+    ],
+    "source": "synthetic"
+  },
+  "destinations": [
+    {
+      "ordinal": 0,
+      "node_index": 1000,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-0-a",
+          "name": "S Shop 0",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 1,
+      "node_index": 1001,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-1-a",
+          "name": "S Shop 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-1-b",
+          "name": "S Annex 1",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "node_index": 1002,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-2-a",
+          "name": "S Shop 2",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 3,
+      "node_index": 1003,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-3-a",
+          "name": "S Shop 3",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-3-b",
+          "name": "S Annex 3",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 4,
+      "node_index": 1004,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-4-a",
+          "name": "S Shop 4",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 5,
+      "node_index": 1005,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-5-a",
+          "name": "S Shop 5",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-5-b",
+          "name": "S Annex 5",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 6,
+      "node_index": 1006,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-6-a",
+          "name": "S Shop 6",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 7,
+      "node_index": 1007,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-7-a",
+          "name": "S Shop 7",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-7-b",
+          "name": "S Annex 7",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 8,
+      "node_index": 1008,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-8-a",
+          "name": "S Shop 8",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 9,
+      "node_index": 1009,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-9-a",
+          "name": "S Shop 9",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-9-b",
+          "name": "S Annex 9",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 10,
+      "node_index": 1010,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-10-a",
+          "name": "S Shop 10",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 11,
+      "node_index": 1011,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-11-a",
+          "name": "S Shop 11",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-11-b",
+          "name": "S Annex 11",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 12,
+      "node_index": 1012,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-12-a",
+          "name": "S Shop 12",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 13,
+      "node_index": 1013,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-13-a",
+          "name": "S Shop 13",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-13-b",
+          "name": "S Annex 13",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 14,
+      "node_index": 1014,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-14-a",
+          "name": "S Shop 14",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 15,
+      "node_index": 1015,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-15-a",
+          "name": "S Shop 15",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-15-b",
+          "name": "S Annex 15",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 16,
+      "node_index": 1016,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-16-a",
+          "name": "S Shop 16",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 17,
+      "node_index": 1017,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-17-a",
+          "name": "S Shop 17",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-17-b",
+          "name": "S Annex 17",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 18,
+      "node_index": 1018,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-18-a",
+          "name": "S Shop 18",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 19,
+      "node_index": 1019,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-19-a",
+          "name": "S Shop 19",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-19-b",
+          "name": "S Annex 19",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 20,
+      "node_index": 1020,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-20-a",
+          "name": "S Shop 20",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 21,
+      "node_index": 1021,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-21-a",
+          "name": "S Shop 21",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-21-b",
+          "name": "S Annex 21",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 22,
+      "node_index": 1022,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-22-a",
+          "name": "S Shop 22",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 23,
+      "node_index": 1023,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-23-a",
+          "name": "S Shop 23",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-23-b",
+          "name": "S Annex 23",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 24,
+      "node_index": 1024,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-24-a",
+          "name": "S Shop 24",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 25,
+      "node_index": 1025,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-25-a",
+          "name": "S Shop 25",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-25-b",
+          "name": "S Annex 25",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 26,
+      "node_index": 1026,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-26-a",
+          "name": "S Shop 26",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 27,
+      "node_index": 1027,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-27-a",
+          "name": "S Shop 27",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-27-b",
+          "name": "S Annex 27",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 28,
+      "node_index": 1028,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-28-a",
+          "name": "S Shop 28",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 29,
+      "node_index": 1029,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-29-a",
+          "name": "S Shop 29",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-29-b",
+          "name": "S Annex 29",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 30,
+      "node_index": 1030,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-30-a",
+          "name": "S Shop 30",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 31,
+      "node_index": 1031,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-31-a",
+          "name": "S Shop 31",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-31-b",
+          "name": "S Annex 31",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 32,
+      "node_index": 1032,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-32-a",
+          "name": "S Shop 32",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 33,
+      "node_index": 1033,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-33-a",
+          "name": "S Shop 33",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-33-b",
+          "name": "S Annex 33",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 34,
+      "node_index": 1034,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-34-a",
+          "name": "S Shop 34",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 35,
+      "node_index": 1035,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-35-a",
+          "name": "S Shop 35",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-35-b",
+          "name": "S Annex 35",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 36,
+      "node_index": 1036,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-36-a",
+          "name": "S Shop 36",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 37,
+      "node_index": 1037,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-37-a",
+          "name": "S Shop 37",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-37-b",
+          "name": "S Annex 37",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 38,
+      "node_index": 1038,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-38-a",
+          "name": "S Shop 38",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 39,
+      "node_index": 1039,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-39-a",
+          "name": "S Shop 39",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-39-b",
+          "name": "S Annex 39",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 40,
+      "node_index": 1040,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-40-a",
+          "name": "S Shop 40",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 41,
+      "node_index": 1041,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-41-a",
+          "name": "S Shop 41",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-41-b",
+          "name": "S Annex 41",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 42,
+      "node_index": 1042,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-42-a",
+          "name": "S Shop 42",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 43,
+      "node_index": 1043,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-43-a",
+          "name": "S Shop 43",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-43-b",
+          "name": "S Annex 43",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 44,
+      "node_index": 1044,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-44-a",
+          "name": "S Shop 44",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 45,
+      "node_index": 1045,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-45-a",
+          "name": "S Shop 45",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-45-b",
+          "name": "S Annex 45",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 46,
+      "node_index": 1046,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-46-a",
+          "name": "S Shop 46",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 47,
+      "node_index": 1047,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-47-a",
+          "name": "S Shop 47",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-47-b",
+          "name": "S Annex 47",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 48,
+      "node_index": 1048,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-48-a",
+          "name": "S Shop 48",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 49,
+      "node_index": 1049,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-49-a",
+          "name": "S Shop 49",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-49-b",
+          "name": "S Annex 49",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 50,
+      "node_index": 1050,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-50-a",
+          "name": "S Shop 50",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 51,
+      "node_index": 1051,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-51-a",
+          "name": "S Shop 51",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-51-b",
+          "name": "S Annex 51",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 52,
+      "node_index": 1052,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-52-a",
+          "name": "S Shop 52",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 53,
+      "node_index": 1053,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-53-a",
+          "name": "S Shop 53",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-53-b",
+          "name": "S Annex 53",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 54,
+      "node_index": 1054,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-54-a",
+          "name": "S Shop 54",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 55,
+      "node_index": 1055,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-55-a",
+          "name": "S Shop 55",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-55-b",
+          "name": "S Annex 55",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 56,
+      "node_index": 1056,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-56-a",
+          "name": "S Shop 56",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 57,
+      "node_index": 1057,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-57-a",
+          "name": "S Shop 57",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-57-b",
+          "name": "S Annex 57",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 58,
+      "node_index": 1058,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-58-a",
+          "name": "S Shop 58",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 59,
+      "node_index": 1059,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-59-a",
+          "name": "S Shop 59",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-59-b",
+          "name": "S Annex 59",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 60,
+      "node_index": 1060,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-60-a",
+          "name": "S Shop 60",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 61,
+      "node_index": 1061,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-61-a",
+          "name": "S Shop 61",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-61-b",
+          "name": "S Annex 61",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 62,
+      "node_index": 1062,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-62-a",
+          "name": "S Shop 62",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 63,
+      "node_index": 1063,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-63-a",
+          "name": "S Shop 63",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-63-b",
+          "name": "S Annex 63",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 64,
+      "node_index": 1064,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-64-a",
+          "name": "S Shop 64",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 65,
+      "node_index": 1065,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-65-a",
+          "name": "S Shop 65",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-65-b",
+          "name": "S Annex 65",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 66,
+      "node_index": 1066,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-66-a",
+          "name": "S Shop 66",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 67,
+      "node_index": 1067,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-67-a",
+          "name": "S Shop 67",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-67-b",
+          "name": "S Annex 67",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 68,
+      "node_index": 1068,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-68-a",
+          "name": "S Shop 68",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 69,
+      "node_index": 1069,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-69-a",
+          "name": "S Shop 69",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-69-b",
+          "name": "S Annex 69",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 70,
+      "node_index": 1070,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-70-a",
+          "name": "S Shop 70",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 71,
+      "node_index": 1071,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-71-a",
+          "name": "S Shop 71",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-71-b",
+          "name": "S Annex 71",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 72,
+      "node_index": 1072,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-72-a",
+          "name": "S Shop 72",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 73,
+      "node_index": 1073,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-73-a",
+          "name": "S Shop 73",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-73-b",
+          "name": "S Annex 73",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 74,
+      "node_index": 1074,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-74-a",
+          "name": "S Shop 74",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 75,
+      "node_index": 1075,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-75-a",
+          "name": "S Shop 75",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-75-b",
+          "name": "S Annex 75",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 76,
+      "node_index": 1076,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-76-a",
+          "name": "S Shop 76",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 77,
+      "node_index": 1077,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-77-a",
+          "name": "S Shop 77",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-77-b",
+          "name": "S Annex 77",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 78,
+      "node_index": 1078,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-78-a",
+          "name": "S Shop 78",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 79,
+      "node_index": 1079,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-79-a",
+          "name": "S Shop 79",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-79-b",
+          "name": "S Annex 79",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 80,
+      "node_index": 1080,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-80-a",
+          "name": "S Shop 80",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 81,
+      "node_index": 1081,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-81-a",
+          "name": "S Shop 81",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-81-b",
+          "name": "S Annex 81",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 82,
+      "node_index": 1082,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-82-a",
+          "name": "S Shop 82",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 83,
+      "node_index": 1083,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-83-a",
+          "name": "S Shop 83",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-83-b",
+          "name": "S Annex 83",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 84,
+      "node_index": 1084,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-84-a",
+          "name": "S Shop 84",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 85,
+      "node_index": 1085,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-85-a",
+          "name": "S Shop 85",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-85-b",
+          "name": "S Annex 85",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 86,
+      "node_index": 1086,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-86-a",
+          "name": "S Shop 86",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 87,
+      "node_index": 1087,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-87-a",
+          "name": "S Shop 87",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-87-b",
+          "name": "S Annex 87",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 88,
+      "node_index": 1088,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-88-a",
+          "name": "S Shop 88",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 89,
+      "node_index": 1089,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-89-a",
+          "name": "S Shop 89",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-89-b",
+          "name": "S Annex 89",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 90,
+      "node_index": 1090,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-90-a",
+          "name": "S Shop 90",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 91,
+      "node_index": 1091,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-91-a",
+          "name": "S Shop 91",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-91-b",
+          "name": "S Annex 91",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 92,
+      "node_index": 1092,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-92-a",
+          "name": "S Shop 92",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 93,
+      "node_index": 1093,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-93-a",
+          "name": "S Shop 93",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-93-b",
+          "name": "S Annex 93",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 94,
+      "node_index": 1094,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-94-a",
+          "name": "S Shop 94",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 95,
+      "node_index": 1095,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-95-a",
+          "name": "S Shop 95",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-95-b",
+          "name": "S Annex 95",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 96,
+      "node_index": 1096,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-96-a",
+          "name": "S Shop 96",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 97,
+      "node_index": 1097,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-97-a",
+          "name": "S Shop 97",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-97-b",
+          "name": "S Annex 97",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 98,
+      "node_index": 1098,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-98-a",
+          "name": "S Shop 98",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 99,
+      "node_index": 1099,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-99-a",
+          "name": "S Shop 99",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-99-b",
+          "name": "S Annex 99",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 100,
+      "node_index": 1100,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-100-a",
+          "name": "S Shop 100",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 101,
+      "node_index": 1101,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-101-a",
+          "name": "S Shop 101",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-101-b",
+          "name": "S Annex 101",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 102,
+      "node_index": 1102,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-102-a",
+          "name": "S Shop 102",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 103,
+      "node_index": 1103,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-103-a",
+          "name": "S Shop 103",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-103-b",
+          "name": "S Annex 103",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 104,
+      "node_index": 1104,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-104-a",
+          "name": "S Shop 104",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 105,
+      "node_index": 1105,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-105-a",
+          "name": "S Shop 105",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-105-b",
+          "name": "S Annex 105",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 106,
+      "node_index": 1106,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-106-a",
+          "name": "S Shop 106",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 107,
+      "node_index": 1107,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-107-a",
+          "name": "S Shop 107",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-107-b",
+          "name": "S Annex 107",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 108,
+      "node_index": 1108,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-108-a",
+          "name": "S Shop 108",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 109,
+      "node_index": 1109,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-109-a",
+          "name": "S Shop 109",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-109-b",
+          "name": "S Annex 109",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 110,
+      "node_index": 1110,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-110-a",
+          "name": "S Shop 110",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 111,
+      "node_index": 1111,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-111-a",
+          "name": "S Shop 111",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-111-b",
+          "name": "S Annex 111",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 112,
+      "node_index": 1112,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-112-a",
+          "name": "S Shop 112",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 113,
+      "node_index": 1113,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-113-a",
+          "name": "S Shop 113",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-113-b",
+          "name": "S Annex 113",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 114,
+      "node_index": 1114,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-114-a",
+          "name": "S Shop 114",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 115,
+      "node_index": 1115,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-115-a",
+          "name": "S Shop 115",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-115-b",
+          "name": "S Annex 115",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 116,
+      "node_index": 1116,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-116-a",
+          "name": "S Shop 116",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 117,
+      "node_index": 1117,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-117-a",
+          "name": "S Shop 117",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-117-b",
+          "name": "S Annex 117",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 118,
+      "node_index": 1118,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-118-a",
+          "name": "S Shop 118",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 119,
+      "node_index": 1119,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-119-a",
+          "name": "S Shop 119",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-119-b",
+          "name": "S Annex 119",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 120,
+      "node_index": 1120,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-120-a",
+          "name": "S Shop 120",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 121,
+      "node_index": 1121,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-121-a",
+          "name": "S Shop 121",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-121-b",
+          "name": "S Annex 121",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 122,
+      "node_index": 1122,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-122-a",
+          "name": "S Shop 122",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 123,
+      "node_index": 1123,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-123-a",
+          "name": "S Shop 123",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-123-b",
+          "name": "S Annex 123",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 124,
+      "node_index": 1124,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-124-a",
+          "name": "S Shop 124",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 125,
+      "node_index": 1125,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-125-a",
+          "name": "S Shop 125",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-125-b",
+          "name": "S Annex 125",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 126,
+      "node_index": 1126,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-126-a",
+          "name": "S Shop 126",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 127,
+      "node_index": 1127,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-127-a",
+          "name": "S Shop 127",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-127-b",
+          "name": "S Annex 127",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 128,
+      "node_index": 1128,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-128-a",
+          "name": "S Shop 128",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 129,
+      "node_index": 1129,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-129-a",
+          "name": "S Shop 129",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-129-b",
+          "name": "S Annex 129",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 130,
+      "node_index": 1130,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-130-a",
+          "name": "S Shop 130",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 131,
+      "node_index": 1131,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-131-a",
+          "name": "S Shop 131",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-131-b",
+          "name": "S Annex 131",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 132,
+      "node_index": 1132,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-132-a",
+          "name": "S Shop 132",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 133,
+      "node_index": 1133,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-133-a",
+          "name": "S Shop 133",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-133-b",
+          "name": "S Annex 133",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 134,
+      "node_index": 1134,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-134-a",
+          "name": "S Shop 134",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 135,
+      "node_index": 1135,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-135-a",
+          "name": "S Shop 135",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-135-b",
+          "name": "S Annex 135",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 136,
+      "node_index": 1136,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-136-a",
+          "name": "S Shop 136",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 137,
+      "node_index": 1137,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-137-a",
+          "name": "S Shop 137",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-137-b",
+          "name": "S Annex 137",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 138,
+      "node_index": 1138,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-138-a",
+          "name": "S Shop 138",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 139,
+      "node_index": 1139,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-139-a",
+          "name": "S Shop 139",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-139-b",
+          "name": "S Annex 139",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 140,
+      "node_index": 1140,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-140-a",
+          "name": "S Shop 140",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 141,
+      "node_index": 1141,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-141-a",
+          "name": "S Shop 141",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-141-b",
+          "name": "S Annex 141",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 142,
+      "node_index": 1142,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-142-a",
+          "name": "S Shop 142",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 143,
+      "node_index": 1143,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-143-a",
+          "name": "S Shop 143",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-143-b",
+          "name": "S Annex 143",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 144,
+      "node_index": 1144,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-144-a",
+          "name": "S Shop 144",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 145,
+      "node_index": 1145,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-145-a",
+          "name": "S Shop 145",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-145-b",
+          "name": "S Annex 145",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 146,
+      "node_index": 1146,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-146-a",
+          "name": "S Shop 146",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 147,
+      "node_index": 1147,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-147-a",
+          "name": "S Shop 147",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-147-b",
+          "name": "S Annex 147",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 148,
+      "node_index": 1148,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-148-a",
+          "name": "S Shop 148",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 149,
+      "node_index": 1149,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-149-a",
+          "name": "S Shop 149",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-149-b",
+          "name": "S Annex 149",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 150,
+      "node_index": 1150,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-150-a",
+          "name": "S Shop 150",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 151,
+      "node_index": 1151,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-151-a",
+          "name": "S Shop 151",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-151-b",
+          "name": "S Annex 151",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 152,
+      "node_index": 1152,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-152-a",
+          "name": "S Shop 152",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 153,
+      "node_index": 1153,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-153-a",
+          "name": "S Shop 153",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-153-b",
+          "name": "S Annex 153",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 154,
+      "node_index": 1154,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-154-a",
+          "name": "S Shop 154",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 155,
+      "node_index": 1155,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-155-a",
+          "name": "S Shop 155",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-155-b",
+          "name": "S Annex 155",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 156,
+      "node_index": 1156,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-156-a",
+          "name": "S Shop 156",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 157,
+      "node_index": 1157,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-157-a",
+          "name": "S Shop 157",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-157-b",
+          "name": "S Annex 157",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 158,
+      "node_index": 1158,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-158-a",
+          "name": "S Shop 158",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 159,
+      "node_index": 1159,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-159-a",
+          "name": "S Shop 159",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-159-b",
+          "name": "S Annex 159",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 160,
+      "node_index": 1160,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-160-a",
+          "name": "S Shop 160",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 161,
+      "node_index": 1161,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-161-a",
+          "name": "S Shop 161",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-161-b",
+          "name": "S Annex 161",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 162,
+      "node_index": 1162,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-162-a",
+          "name": "S Shop 162",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 163,
+      "node_index": 1163,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-163-a",
+          "name": "S Shop 163",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-163-b",
+          "name": "S Annex 163",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 164,
+      "node_index": 1164,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-164-a",
+          "name": "S Shop 164",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 165,
+      "node_index": 1165,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-165-a",
+          "name": "S Shop 165",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-165-b",
+          "name": "S Annex 165",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 166,
+      "node_index": 1166,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-166-a",
+          "name": "S Shop 166",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 167,
+      "node_index": 1167,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-167-a",
+          "name": "S Shop 167",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-167-b",
+          "name": "S Annex 167",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 168,
+      "node_index": 1168,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-168-a",
+          "name": "S Shop 168",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 169,
+      "node_index": 1169,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-169-a",
+          "name": "S Shop 169",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-169-b",
+          "name": "S Annex 169",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 170,
+      "node_index": 1170,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-170-a",
+          "name": "S Shop 170",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 171,
+      "node_index": 1171,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-171-a",
+          "name": "S Shop 171",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-171-b",
+          "name": "S Annex 171",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 172,
+      "node_index": 1172,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-172-a",
+          "name": "S Shop 172",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 173,
+      "node_index": 1173,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-173-a",
+          "name": "S Shop 173",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-173-b",
+          "name": "S Annex 173",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 174,
+      "node_index": 1174,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-174-a",
+          "name": "S Shop 174",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 175,
+      "node_index": 1175,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-175-a",
+          "name": "S Shop 175",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-175-b",
+          "name": "S Annex 175",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 176,
+      "node_index": 1176,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-176-a",
+          "name": "S Shop 176",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 177,
+      "node_index": 1177,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-177-a",
+          "name": "S Shop 177",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-177-b",
+          "name": "S Annex 177",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 178,
+      "node_index": 1178,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-178-a",
+          "name": "S Shop 178",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 179,
+      "node_index": 1179,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-179-a",
+          "name": "S Shop 179",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-179-b",
+          "name": "S Annex 179",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 180,
+      "node_index": 1180,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-180-a",
+          "name": "S Shop 180",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 181,
+      "node_index": 1181,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-181-a",
+          "name": "S Shop 181",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-181-b",
+          "name": "S Annex 181",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 182,
+      "node_index": 1182,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-182-a",
+          "name": "S Shop 182",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 183,
+      "node_index": 1183,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-183-a",
+          "name": "S Shop 183",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-183-b",
+          "name": "S Annex 183",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 184,
+      "node_index": 1184,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-184-a",
+          "name": "S Shop 184",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 185,
+      "node_index": 1185,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-185-a",
+          "name": "S Shop 185",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-185-b",
+          "name": "S Annex 185",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 186,
+      "node_index": 1186,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-186-a",
+          "name": "S Shop 186",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 187,
+      "node_index": 1187,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-187-a",
+          "name": "S Shop 187",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-187-b",
+          "name": "S Annex 187",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 188,
+      "node_index": 1188,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-188-a",
+          "name": "S Shop 188",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 189,
+      "node_index": 1189,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-189-a",
+          "name": "S Shop 189",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-189-b",
+          "name": "S Annex 189",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 190,
+      "node_index": 1190,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-190-a",
+          "name": "S Shop 190",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 191,
+      "node_index": 1191,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-191-a",
+          "name": "S Shop 191",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-191-b",
+          "name": "S Annex 191",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 192,
+      "node_index": 1192,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-192-a",
+          "name": "S Shop 192",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 193,
+      "node_index": 1193,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-193-a",
+          "name": "S Shop 193",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-193-b",
+          "name": "S Annex 193",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 194,
+      "node_index": 1194,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-194-a",
+          "name": "S Shop 194",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 195,
+      "node_index": 1195,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-195-a",
+          "name": "S Shop 195",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-195-b",
+          "name": "S Annex 195",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 196,
+      "node_index": 1196,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-196-a",
+          "name": "S Shop 196",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 197,
+      "node_index": 1197,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-197-a",
+          "name": "S Shop 197",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-197-b",
+          "name": "S Annex 197",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 198,
+      "node_index": 1198,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-198-a",
+          "name": "S Shop 198",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 199,
+      "node_index": 1199,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-199-a",
+          "name": "S Shop 199",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-199-b",
+          "name": "S Annex 199",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 200,
+      "node_index": 1200,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-200-a",
+          "name": "S Shop 200",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 201,
+      "node_index": 1201,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-201-a",
+          "name": "S Shop 201",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-201-b",
+          "name": "S Annex 201",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 202,
+      "node_index": 1202,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-202-a",
+          "name": "S Shop 202",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 203,
+      "node_index": 1203,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-203-a",
+          "name": "S Shop 203",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-203-b",
+          "name": "S Annex 203",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 204,
+      "node_index": 1204,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-204-a",
+          "name": "S Shop 204",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 205,
+      "node_index": 1205,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-205-a",
+          "name": "S Shop 205",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-205-b",
+          "name": "S Annex 205",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 206,
+      "node_index": 1206,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-206-a",
+          "name": "S Shop 206",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 207,
+      "node_index": 1207,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-207-a",
+          "name": "S Shop 207",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-207-b",
+          "name": "S Annex 207",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 208,
+      "node_index": 1208,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-208-a",
+          "name": "S Shop 208",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 209,
+      "node_index": 1209,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-209-a",
+          "name": "S Shop 209",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-209-b",
+          "name": "S Annex 209",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 210,
+      "node_index": 1210,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-210-a",
+          "name": "S Shop 210",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 211,
+      "node_index": 1211,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-211-a",
+          "name": "S Shop 211",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-211-b",
+          "name": "S Annex 211",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 212,
+      "node_index": 1212,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-212-a",
+          "name": "S Shop 212",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 213,
+      "node_index": 1213,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-213-a",
+          "name": "S Shop 213",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-213-b",
+          "name": "S Annex 213",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 214,
+      "node_index": 1214,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-214-a",
+          "name": "S Shop 214",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 215,
+      "node_index": 1215,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-215-a",
+          "name": "S Shop 215",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-215-b",
+          "name": "S Annex 215",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 216,
+      "node_index": 1216,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-216-a",
+          "name": "S Shop 216",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 217,
+      "node_index": 1217,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-217-a",
+          "name": "S Shop 217",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-217-b",
+          "name": "S Annex 217",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 218,
+      "node_index": 1218,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-218-a",
+          "name": "S Shop 218",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 219,
+      "node_index": 1219,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-219-a",
+          "name": "S Shop 219",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-219-b",
+          "name": "S Annex 219",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 220,
+      "node_index": 1220,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-220-a",
+          "name": "S Shop 220",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 221,
+      "node_index": 1221,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-221-a",
+          "name": "S Shop 221",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-221-b",
+          "name": "S Annex 221",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 222,
+      "node_index": 1222,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-222-a",
+          "name": "S Shop 222",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 223,
+      "node_index": 1223,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-223-a",
+          "name": "S Shop 223",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-223-b",
+          "name": "S Annex 223",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 224,
+      "node_index": 1224,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-224-a",
+          "name": "S Shop 224",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 225,
+      "node_index": 1225,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-225-a",
+          "name": "S Shop 225",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-225-b",
+          "name": "S Annex 225",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 226,
+      "node_index": 1226,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-226-a",
+          "name": "S Shop 226",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 227,
+      "node_index": 1227,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-227-a",
+          "name": "S Shop 227",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-227-b",
+          "name": "S Annex 227",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 228,
+      "node_index": 1228,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-228-a",
+          "name": "S Shop 228",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 229,
+      "node_index": 1229,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-229-a",
+          "name": "S Shop 229",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-229-b",
+          "name": "S Annex 229",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 230,
+      "node_index": 1230,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-230-a",
+          "name": "S Shop 230",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 231,
+      "node_index": 1231,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-231-a",
+          "name": "S Shop 231",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-231-b",
+          "name": "S Annex 231",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 232,
+      "node_index": 1232,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-232-a",
+          "name": "S Shop 232",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 233,
+      "node_index": 1233,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-233-a",
+          "name": "S Shop 233",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-233-b",
+          "name": "S Annex 233",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 234,
+      "node_index": 1234,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-234-a",
+          "name": "S Shop 234",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 235,
+      "node_index": 1235,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-235-a",
+          "name": "S Shop 235",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-235-b",
+          "name": "S Annex 235",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 236,
+      "node_index": 1236,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-236-a",
+          "name": "S Shop 236",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 237,
+      "node_index": 1237,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-237-a",
+          "name": "S Shop 237",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-237-b",
+          "name": "S Annex 237",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 238,
+      "node_index": 1238,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-238-a",
+          "name": "S Shop 238",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 239,
+      "node_index": 1239,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-239-a",
+          "name": "S Shop 239",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-239-b",
+          "name": "S Annex 239",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 240,
+      "node_index": 1240,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-240-a",
+          "name": "S Shop 240",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 241,
+      "node_index": 1241,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-241-a",
+          "name": "S Shop 241",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-241-b",
+          "name": "S Annex 241",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 242,
+      "node_index": 1242,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-242-a",
+          "name": "S Shop 242",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 243,
+      "node_index": 1243,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-243-a",
+          "name": "S Shop 243",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-243-b",
+          "name": "S Annex 243",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 244,
+      "node_index": 1244,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-244-a",
+          "name": "S Shop 244",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 245,
+      "node_index": 1245,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-245-a",
+          "name": "S Shop 245",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-245-b",
+          "name": "S Annex 245",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 246,
+      "node_index": 1246,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-246-a",
+          "name": "S Shop 246",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 247,
+      "node_index": 1247,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-247-a",
+          "name": "S Shop 247",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-247-b",
+          "name": "S Annex 247",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 248,
+      "node_index": 1248,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-248-a",
+          "name": "S Shop 248",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 249,
+      "node_index": 1249,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-249-a",
+          "name": "S Shop 249",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-249-b",
+          "name": "S Annex 249",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 250,
+      "node_index": 1250,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-250-a",
+          "name": "S Shop 250",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 251,
+      "node_index": 1251,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-251-a",
+          "name": "S Shop 251",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-251-b",
+          "name": "S Annex 251",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 252,
+      "node_index": 1252,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-252-a",
+          "name": "S Shop 252",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 253,
+      "node_index": 1253,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-253-a",
+          "name": "S Shop 253",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-253-b",
+          "name": "S Annex 253",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 254,
+      "node_index": 1254,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-254-a",
+          "name": "S Shop 254",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 255,
+      "node_index": 1255,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-255-a",
+          "name": "S Shop 255",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-255-b",
+          "name": "S Annex 255",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 256,
+      "node_index": 1256,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-256-a",
+          "name": "S Shop 256",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 257,
+      "node_index": 1257,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-257-a",
+          "name": "S Shop 257",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-257-b",
+          "name": "S Annex 257",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 258,
+      "node_index": 1258,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-258-a",
+          "name": "S Shop 258",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 259,
+      "node_index": 1259,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-259-a",
+          "name": "S Shop 259",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-259-b",
+          "name": "S Annex 259",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 260,
+      "node_index": 1260,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-260-a",
+          "name": "S Shop 260",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 261,
+      "node_index": 1261,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-261-a",
+          "name": "S Shop 261",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-261-b",
+          "name": "S Annex 261",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 262,
+      "node_index": 1262,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-262-a",
+          "name": "S Shop 262",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 263,
+      "node_index": 1263,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-263-a",
+          "name": "S Shop 263",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-263-b",
+          "name": "S Annex 263",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 264,
+      "node_index": 1264,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-264-a",
+          "name": "S Shop 264",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 265,
+      "node_index": 1265,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-265-a",
+          "name": "S Shop 265",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-265-b",
+          "name": "S Annex 265",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 266,
+      "node_index": 1266,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-266-a",
+          "name": "S Shop 266",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 267,
+      "node_index": 1267,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-267-a",
+          "name": "S Shop 267",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-267-b",
+          "name": "S Annex 267",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 268,
+      "node_index": 1268,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-268-a",
+          "name": "S Shop 268",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 269,
+      "node_index": 1269,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-269-a",
+          "name": "S Shop 269",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-269-b",
+          "name": "S Annex 269",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 270,
+      "node_index": 1270,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-270-a",
+          "name": "S Shop 270",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 271,
+      "node_index": 1271,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-271-a",
+          "name": "S Shop 271",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-271-b",
+          "name": "S Annex 271",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 272,
+      "node_index": 1272,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-272-a",
+          "name": "S Shop 272",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 273,
+      "node_index": 1273,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-273-a",
+          "name": "S Shop 273",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-273-b",
+          "name": "S Annex 273",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 274,
+      "node_index": 1274,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-274-a",
+          "name": "S Shop 274",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 275,
+      "node_index": 1275,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-275-a",
+          "name": "S Shop 275",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-275-b",
+          "name": "S Annex 275",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 276,
+      "node_index": 1276,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-276-a",
+          "name": "S Shop 276",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 277,
+      "node_index": 1277,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-277-a",
+          "name": "S Shop 277",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-277-b",
+          "name": "S Annex 277",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 278,
+      "node_index": 1278,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-278-a",
+          "name": "S Shop 278",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 279,
+      "node_index": 1279,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-279-a",
+          "name": "S Shop 279",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-279-b",
+          "name": "S Annex 279",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 280,
+      "node_index": 1280,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-280-a",
+          "name": "S Shop 280",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 281,
+      "node_index": 1281,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-281-a",
+          "name": "S Shop 281",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-281-b",
+          "name": "S Annex 281",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 282,
+      "node_index": 1282,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-282-a",
+          "name": "S Shop 282",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 283,
+      "node_index": 1283,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-283-a",
+          "name": "S Shop 283",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-283-b",
+          "name": "S Annex 283",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 284,
+      "node_index": 1284,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-284-a",
+          "name": "S Shop 284",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 285,
+      "node_index": 1285,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-285-a",
+          "name": "S Shop 285",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-285-b",
+          "name": "S Annex 285",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 286,
+      "node_index": 1286,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-286-a",
+          "name": "S Shop 286",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 287,
+      "node_index": 1287,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-287-a",
+          "name": "S Shop 287",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-287-b",
+          "name": "S Annex 287",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 288,
+      "node_index": 1288,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-288-a",
+          "name": "S Shop 288",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 289,
+      "node_index": 1289,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-289-a",
+          "name": "S Shop 289",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-289-b",
+          "name": "S Annex 289",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 290,
+      "node_index": 1290,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-290-a",
+          "name": "S Shop 290",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 291,
+      "node_index": 1291,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-291-a",
+          "name": "S Shop 291",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-291-b",
+          "name": "S Annex 291",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 292,
+      "node_index": 1292,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-292-a",
+          "name": "S Shop 292",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 293,
+      "node_index": 1293,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-293-a",
+          "name": "S Shop 293",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-293-b",
+          "name": "S Annex 293",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 294,
+      "node_index": 1294,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-294-a",
+          "name": "S Shop 294",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 295,
+      "node_index": 1295,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-295-a",
+          "name": "S Shop 295",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-295-b",
+          "name": "S Annex 295",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 296,
+      "node_index": 1296,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-296-a",
+          "name": "S Shop 296",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 297,
+      "node_index": 1297,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-297-a",
+          "name": "S Shop 297",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-297-b",
+          "name": "S Annex 297",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 298,
+      "node_index": 1298,
+      "place_count": 1,
+      "places": [
+        {
+          "gers_id": "S-298-a",
+          "name": "S Shop 298",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    },
+    {
+      "ordinal": 299,
+      "node_index": 1299,
+      "place_count": 2,
+      "places": [
+        {
+          "gers_id": "S-299-a",
+          "name": "S Shop 299",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        },
+        {
+          "gers_id": "S-299-b",
+          "name": "S Annex 299",
+          "brand": null,
+          "category": "grocery",
+          "operating_status": "open",
+          "licence": "CC0-1.0"
+        }
+      ]
+    }
+  ]
+}

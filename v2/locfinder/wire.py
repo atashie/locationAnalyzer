@@ -63,10 +63,16 @@ from .status import LAYER_REASONS, Outcome, Reason, Verdict
 #: one does not disclose, which is a different statement from "no route is restricted", and the
 #: decoder must not be able to confuse them. Existing v2 bundles stay readable and simply disclose
 #: nothing, so this is an additive version rather than a reinterpretation of anything.
-ENCODING = "published-v3"
+#:
+#: v4 adds an **optional fourth plane**, the selected destination -- *which grocery* the published
+#: time was measured to. It is `uint16` rather than `uint8`, so unlike every other plane it has a
+#: declared byte order; see `DEST_BYTE_ORDER`. Each version is additive and refuses nothing that
+#: came before.
+ENCODING = "published-v4"
 
-#: Encodings this decoder reads. v2 differs from v3 only by the absence of the route-flag plane.
-READABLE_ENCODINGS = ("published-v2", "published-v3")
+#: Encodings this decoder reads. Each later version adds an optional plane and reinterprets no
+#: code, so an older bundle stays readable and simply carries fewer facts.
+READABLE_ENCODINGS = ("published-v2", "published-v3", "published-v4")
 
 # --------------------------------------------------------------------------- the route flag
 #: The cost-optimal route behind this cell's published answer uses no access-restricted way.
@@ -75,12 +81,19 @@ ROUTE_CLEAR = 0
 #: restricted-walk penalty at 120 s was conditional on this gap being disclosed, not priced away.
 ROUTE_RESTRICTED = 1
 
-#: **Why this is a plane and not a bit in the status byte.** The layer contract says wire codes are
-#: assigned explicitly and may not be reinterpreted -- the same rule that forbade reading minute
-#: values 251-254 as sentinels. Overloading the status byte's high bit would be that reinterpretation
-#: with extra steps. It is also the wrong shape: the status answers *why there is no time* and the
-#: flag answers *what the route used*, and those are orthogonal. Folding orthogonal facts into one
-#: byte is exactly what made v1 unable to express 18,648 known failures.
+#: **Why this is a plane and not a bit in the status byte.** The original answer here was that the
+#: layer contract forbids reinterpreting a wire code, and **Codex pass 48 withdrew it**: that rule
+#: binds v2, and v3 was a new encoding either way, so v3 could have declared `status = byte & 7`
+#: and `restricted = byte & 8` exactly as explicitly as it declared a third plane. Measurement went
+#: against the plane too -- the bit costs 21,096 deflated bytes against the plane's 25,651, so the
+#: bundle would have been 4,555 bytes smaller (`docs/experiments/s3-8-flag-format-cost.json`).
+#:
+#: What actually decides it is **optionality**, which a bit cannot express. An absent plane says
+#: THIS LAYER DOES NOT DISCLOSE. A clear bit, inside a byte that must be present, says NO ROUTE IS
+#: RESTRICTED. Those are different statements and no consumer may confuse them. Orthogonality is
+#: the secondary reason -- the status answers *why there is no time* and the flag answers *what the
+#: route used* -- and a byte meaning "a code, or a code plus eight" cannot be validated against a
+#: code table. That costs 2.00% of the compressed bundle.
 ROUTE_FLAG_CODES = {ROUTE_CLEAR: "ROUTE_CLEAR", ROUTE_RESTRICTED: "ROUTE_RESTRICTED"}
 
 # --------------------------------------------------------------------------- the wire codes
@@ -184,6 +197,110 @@ def surface_fingerprint(seconds, reason) -> str:
         h.update(str(arr.shape).encode("ascii"))
         h.update(arr.tobytes())
     return h.hexdigest()[:32]
+
+
+# ------------------------------------------------------------------- the selected destination
+#: No published destination, because there is no published journey. The plane's sentinel.
+DEST_NONE = 65535
+#: The largest ordinal a destination may take. One more than this is the sentinel.
+DEST_MAX = 65534
+#: `uint16`, because the ordinal space is set by how many destinations the product NAMES. The
+#: Triangle grocery layer routes to 510 candidate nodes, so a `uint8` plane cannot hold the
+#: ordinals and a palette whose width depends on the data is a format that breaks silently when
+#: the data changes. `scripts/price_destination_encodings.py` prices the alternatives so the
+#: choice carries its cost rather than an assumption -- pass 48's twenty-fifth instance was
+#: exactly this, a format defended with a measurement of the option that was chosen.
+DEST_DTYPE = np.uint16
+
+#: **The only plane with a byte order.** Every other plane is `uint8`, where the question does not
+#: arise. This one is written little-endian and the manifest says so, because a `uint16` plane read
+#: with the wrong order yields ordinals that are *valid* -- they index real destinations -- and
+#: wrong, which is the failure mode that produces a confident incorrect answer rather than an
+#: error. A decoder that cannot confirm the order must refuse the plane.
+DEST_BYTE_ORDER = "little"
+
+
+def encode_selected_destination(ordinals, status: np.ndarray) -> np.ndarray:
+    """The destination plane, with **both** directions of its invariant enforced.
+
+    A destination may only be named where the status is OK -- the route flag's rule, for the same
+    reason: only a published journey has a destination.
+
+    **And where the status is OK a destination must be named.** This is the direction the flag
+    plane cannot have, and it is worth being explicit about why. Pass 48 F3 established that a
+    *clear* route flag asserts nothing, so a flag plane cannot be validated from its own contents;
+    Codex flipped one flag down and one up on the shipped plane and every check accepted it.
+    `DEST_NONE` beside a published time is a different kind of value: it is a **contradiction**,
+    because a published time is a time *to somewhere*. So this plane is checkable in both
+    directions, and the hole F3 found does not exist for it.
+    """
+    out = np.asarray(ordinals)
+    status = np.asarray(status)
+    if out.shape != status.shape:
+        raise ValueError(
+            f"the destination plane is {out.shape} and the status plane is {status.shape}; a plane "
+            "that does not describe this layer cell for cell cannot be published beside it")
+    if not np.issubdtype(out.dtype, np.integer):
+        raise ValueError(f"destination ordinals must be integers, not {out.dtype}")
+    if out.min(initial=0) < 0 or out.max(initial=0) > DEST_NONE:
+        raise ValueError(
+            f"destination ordinals run {int(out.min())}..{int(out.max())}, outside 0..{DEST_NONE}")
+    out = out.astype(DEST_DTYPE)
+
+    named = out != DEST_NONE
+    ok = status == OK
+    orphan = named & ~ok
+    if orphan.any():
+        raise ValueError(
+            f"{int(orphan.sum())} cells name a destination where the status is not OK, so there is "
+            "no published journey for it to be the destination OF. A destination is a property of "
+            "an answer; without the answer it asserts a journey the layer does not publish")
+    missing = ok & ~named
+    if missing.any():
+        raise ValueError(
+            f"{int(missing.sum())} cells publish a time and name no destination. Unlike a clear "
+            "route flag, this is a contradiction rather than a silence: a published time is a time "
+            "TO SOMEWHERE, so DEST_NONE beside status OK means the plane and the surface disagree "
+            "about whether there is a journey")
+    return out
+
+
+def destination_plane_bytes(plane: np.ndarray) -> bytes:
+    """The plane as it goes on the wire: little-endian `uint16`, C order.
+
+    Written through an explicit dtype rather than `tobytes()` on whatever the caller had, because
+    this machine's native order is little-endian and a `tobytes()` that happens to be right here
+    would be wrong on the first big-endian builder.
+    """
+    return np.ascontiguousarray(plane, dtype=np.dtype("<u2")).tobytes()
+
+
+def decode_destination_plane(data: bytes, shape) -> np.ndarray:
+    """Read a wire destination plane back, little-endian regardless of the host."""
+    out = np.frombuffer(data, dtype=np.dtype("<u2"))
+    if out.size != int(np.prod(shape)):
+        raise ValueError(
+            f"the destination plane holds {out.size} ordinals and the layer has "
+            f"{int(np.prod(shape))} cells; refusing to reshape a plane that does not fit")
+    return out.reshape(shape)
+
+
+def named_destination(dest_plane, outcomes) -> np.ndarray:
+    """Where an **included** cell names a destination, the ordinal; `DEST_NONE` elsewhere.
+
+    The counterpart of `disclosed_restricted`, and deliberately the same shape: the destination is
+    read strictly where the outcome already passes, so it cannot participate in deciding the
+    outcome. `outcome_planes` does not take this plane either.
+    """
+    if dest_plane is None:
+        raise ValueError(
+            "this layer carries no destination plane, so it names nothing; a caller must treat "
+            "that as 'does not say' rather than as 'no destination'")
+    plane = np.asarray(dest_plane)
+    out = np.asarray(outcomes)
+    if plane.shape != out.shape:
+        raise ValueError(f"destination plane {plane.shape} against outcomes {out.shape}")
+    return np.where(out == np.int8(Outcome.PASS), plane, DEST_NONE).astype(DEST_DTYPE)
 
 
 def encode_route_flag(flagged, status: np.ndarray) -> np.ndarray:

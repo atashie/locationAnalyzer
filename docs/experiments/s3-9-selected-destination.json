@@ -1,0 +1,62 @@
+{
+  "what_this_is": "which grocery each published answer was measured to. The plane names the destination NODE and the side table carries every place on it, because a node is not a shop and the cost model routed to the node",
+  "built": "2026-11-13 22:14:07",
+  "mode": "walk",
+  "category": "grocery",
+  "the_presentation_rule": "the owner's decision, 2026-11-13: THE NODE PLUS THE SET, and the card chooses. The set is the truthful answer rather than a convenience -- the selection is a cost-argmin over NODES, so which of the places on the chosen node a household walks to is not something this pipeline computed and the artifact must not assert it",
+  "graph": {
+    "edges": 1436992,
+    "nodes": 539814
+  },
+  "places": {
+    "in_category": 550,
+    "within_snap_distance": 549,
+    "snap_max_m": 300.0,
+    "distinct_destination_nodes": 510,
+    "nodes_carrying_more_than_one_place": 36,
+    "largest_set_on_one_node": 3
+  },
+  "cells": {
+    "total": 330502,
+    "with_a_published_destination": 256752,
+    "distinct_destinations_selected": 432,
+    "why_this_number_sets_the_plane_width": "432 distinct destinations are named by at least one cell. A dense ordinal over those fits a uint8 plane only if it is at most 254; scripts/price_destination_encodings.py prices the options on the real plane rather than assuming"
+  },
+  "the_set_a_household_would_be_shown": {
+    "destinations_by_set_size": {
+      "1": 399,
+      "2": 30,
+      "3": 3
+    },
+    "cells_by_set_size": {
+      "1": 242265,
+      "2": 14116,
+      "3": 371
+    },
+    "cells_whose_destination_is_ambiguous": 14487,
+    "what_ambiguous_means_here": "the cell's journey ends at a node carrying more than one grocery, so the artifact names a SET and not a shop. That is the honest state of the computation, not a defect to be resolved by picking one"
+  },
+  "ties": {
+    "what_this_is": "whether the destination a household would be SHOWN is a property of the published answer or of the traversal order",
+    "labellings": {
+      "reversed": {
+        "reachable_in_both": 539814,
+        "seconds_differing": 0,
+        "destination_moved": 0
+      },
+      "random_seed_20261113": {
+        "reachable_in_both": 539814,
+        "seconds_differing": 0,
+        "destination_moved": 0
+      },
+      "random_seed_20261113_second": {
+        "reachable_in_both": 539814,
+        "seconds_differing": 0,
+        "destination_moved": 0
+      }
+    },
+    "total_destination_moves": 0,
+    "the_control_that_makes_a_zero_meaningful": "scripts/measure_tie_flag.py holds the four-node construction and its positive control. The instrument is the same permutation; this reuses it on the destination rather than the flag",
+    "what_it_means": "exact bit-level cost ties between different destinations do not occur on this graph, so the destination is well defined here. It is latent, not absent -- quantising the cost would manufacture ties, and then the NAME shown would depend on heap order"
+  }
+}

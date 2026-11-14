@@ -64,10 +64,13 @@ function packRGBA(r, g, b, a) {
 /* v2 and v3 differ only by the optional route-flag plane, so both are readable. A v2 bundle
  * discloses nothing about routes, which is NOT the same as no route being restricted -- the
  * worker reports `disclosesRoutes` so a caller cannot read silence as a clean answer. */
-const READABLE_ENCODINGS = ['published-v2', 'published-v3'];
+const READABLE_ENCODINGS = ['published-v2', 'published-v3', 'published-v4'];
 /* The route flag is a DISCLOSURE and never an eligibility input. `outcomeFor` does not receive
  * it, which is the cheapest guarantee that adding the plane cannot move a verdict. */
 const ROUTE_RESTRICTED = 1;
+
+/** No published destination, because no published journey. The destination plane's sentinel. */
+const DEST_NONE = 65535;
 const S_OK = 0, S_OFF_NETWORK = 1, S_BEYOND_HORIZON = 2, S_NO_PATH = 3;
 const S_LAYER_UNKNOWN = 4, S_OUTSIDE = 5;
 /* Missing with no recorded cause -- what a v1 artifact's single NODATA becomes when it is lifted
@@ -90,12 +93,15 @@ const state = {
   layers: [],      // value plane, Uint8Array per layer
   statuses: [],    // status plane, Uint8Array per layer
   routeFlags: [],  // route-flag plane per layer, or null where the layer does not disclose
+  destinations: [],  // Uint16Array per layer, or null where the layer names no destination
+  destTables: [],  // the side table per layer, or null -- ordinal i names destinations[i]
   horizons: [],    // horizon_s per layer, for the BEYOND_HORIZON rule
   mask: null,      // Uint8Array, 1 = in region
   verdict: null,   // Int8Array, 0 INCLUDED / 1 EXCLUDED / 2 UNKNOWN -- the whole algebra
   pool: [],        // recycled RGBA ArrayBuffers
   lastSeq: -1,
   lastInCount: 0,
+  lastEnabled: null,  // which criteria the last compute used; a destination query honours it
 };
 
 self.onmessage = (ev) => {
@@ -118,6 +124,9 @@ self.onmessage = (ev) => {
         break;
       case 'verdicts':
         handleVerdicts(msg);
+        break;
+      case 'destinationAt':
+        handleDestinationAt(msg);
         break;
       default:
         self.postMessage({ type: 'error', message: `worker: unknown message type ${String(msg.type)}` });
@@ -176,6 +185,81 @@ function handleInit(msg) {
   // A layer declares a route-flag plane by carrying `flag_file`. If any does, the buffers must
   // arrive: silently treating a declared-but-missing plane as absent would turn a delivery bug
   // into "no route is restricted", which is the one reading this format must never permit.
+  // The destination plane is uint16, so it is the only plane with a byte order, and the
+  // manifest must state it. Read the wrong way round its ordinals are VALID -- they index real
+  // destinations -- and wrong, so the failure mode is a confident incorrect shop name rather than
+  // an error. A decoder that cannot confirm the order refuses the plane.
+  const declaresDest = manifest.layers.some((l) => !!l.dest_file);
+  let destinations = manifest.layers.map(() => null);
+  let destTables = manifest.layers.map(() => null);
+  if (declaresDest || Array.isArray(msg.destinations)) {
+    if (manifest.destination_plane_byte_order !== undefined
+        && manifest.destination_plane_byte_order !== 'little') {
+      throw new Error(`manifest declares destination byte order `
+        + `${JSON.stringify(manifest.destination_plane_byte_order)}; this decoder reads little-`
+        + 'endian only and will not guess at an ordinal it cannot verify');
+    }
+    const bufs = msg.destinations;
+    if (!Array.isArray(bufs) || bufs.length !== manifest.layers.length) {
+      throw new Error(`expected ${manifest.layers.length} destination buffers, got `
+        + `${bufs && bufs.length}`);
+    }
+    destinations = bufs.map((buf, i) => {
+      const id = manifest.layers[i].id;
+      const declared = !!manifest.layers[i].dest_file;
+      if (buf === null || buf === undefined) {
+        if (declared) {
+          throw new Error(`layer ${id} declares a destination plane and none arrived; refusing to `
+            + 'read a missing plane as "no destination"');
+        }
+        return null;
+      }
+      if (!declared) {
+        throw new Error(`layer ${id} received a destination plane the manifest does not declare`);
+      }
+      if (buf.byteLength !== n * 2) {
+        throw new Error(`layer ${id} destination: ${buf.byteLength} bytes, expected `
+          + `nrows*ncols*2 = ${n * 2}`);
+      }
+      return readLittleEndianU16(buf, n);
+    });
+    destTables = manifest.layers.map((l, i) => {
+      if (!destinations[i]) return null;
+      const table = (msg.destTables || [])[i];
+      if (!table || !Array.isArray(table.destinations)) {
+        throw new Error(`layer ${l.id} ships a destination plane and no side table; a plane of `
+          + 'ordinals with no table names nothing a reader can resolve');
+      }
+      return table;
+    });
+    for (let k = 0; k < destinations.length; k++) {
+      if (!destinations[k]) continue;
+      const table = destTables[k];
+      for (let p = 0; p < n; p++) {
+        const d = destinations[k][p];
+        const named = d !== DEST_NONE;
+        // A destination may only be named where there is a published journey...
+        if (named && statuses[k][p] !== S_OK) {
+          throw new Error(`layer ${manifest.layers[k].id}: a destination is named at ${p} where `
+            + `the status is ${statuses[k][p]}, so there is no journey for it to be the `
+            + 'destination of');
+        }
+        // ...AND where there is one, a destination must be named. This direction is the route
+        // flag's missing half: a clear flag asserts nothing, but DEST_NONE beside a published
+        // time is a contradiction, because a published time is a time TO SOMEWHERE.
+        if (!named && statuses[k][p] === S_OK) {
+          throw new Error(`layer ${manifest.layers[k].id}: the cell at ${p} publishes a time and `
+            + 'names no destination, so the plane and the surface disagree about whether there is '
+            + 'a journey');
+        }
+        if (named && d >= table.destinations.length) {
+          throw new Error(`layer ${manifest.layers[k].id}: the cell at ${p} names ordinal ${d} and `
+            + `the side table holds ${table.destinations.length} destinations`);
+        }
+      }
+    }
+  }
+
   const declaresFlags = manifest.layers.some((l) => !!l.flag_file);
   let routeFlags = manifest.layers.map(() => null);
   // The planes are validated whenever EITHER side mentions them, so a payload that carries a
@@ -232,6 +316,8 @@ function handleInit(msg) {
   state.layers = layers;
   state.statuses = statuses;
   state.routeFlags = routeFlags;
+  state.destinations = destinations;
+  state.destTables = destTables;
   state.horizons = horizons;
   state.mask = new Uint8Array(n);
   state.verdict = new Int8Array(n);
@@ -242,6 +328,7 @@ function handleInit(msg) {
     ncols,
     layerCount: layers.length,
     disclosesRoutes: declaresFlags,
+    namesDestinations: declaresDest,
     bytes: n * layers.length * (declaresFlags ? 3 : 2),
     initMs: performance.now() - t0,
   });
@@ -337,6 +424,7 @@ function handleCompute(msg) {
   const tEnd = performance.now();
   state.lastSeq = msg.seq;
   state.lastInCount = inCount;
+  state.lastEnabled = msg.enabled ? msg.enabled.slice() : null;
   self.postMessage({
     type: 'result',
     seq: msg.seq,
@@ -380,6 +468,70 @@ function outcomeFor(status, value, thresholdMin, horizonS) {
     default:
       throw new Error(`status plane holds code ${status}, which this decoder does not define`);
   }
+}
+
+/** A uint16 plane, little-endian whatever the host is. */
+function readLittleEndianU16(buf, count) {
+  const bytes = new Uint8Array(buf);
+  const out = new Uint16Array(count);
+  for (let i = 0; i < count; i++) {
+    out[i] = bytes[2 * i] | (bytes[2 * i + 1] << 8);
+  }
+  return out;
+}
+
+/**
+ * The destination of ONE cell's published journey, for the card.
+ *
+ * Answers for an INCLUDED cell only. That is the same shape as `wire.disclosed_restricted`: the
+ * destination is read strictly where the verdict already passes, so a name cannot be an input to
+ * the verdict that decides whether to show it.
+ *
+ * **It answers with the SET.** The selection is a cost-argmin over nodes, so where the chosen node
+ * carries more than one place the pipeline did not choose between them -- 5.6% of answered cells
+ * on the Triangle grocery layer. `places` is therefore a list and `placeCount` is on the message,
+ * because a card may print "one of 3 at this corner" but may not present its own pick as ours.
+ */
+function handleDestinationAt(msg) {
+  if (!state.verdict) throw new Error('a destination was requested before init');
+  const { nrows, ncols, verdict, destinations, destTables, statuses } = state;
+  const row = msg.row | 0;
+  const col = msg.col | 0;
+  const reply = { type: 'destinationAt', reqId: msg.reqId, seq: state.lastSeq, row, col };
+  if (row < 0 || row >= nrows || col < 0 || col >= ncols) {
+    self.postMessage({ ...reply, outside: true });
+    return;
+  }
+  const p = row * ncols + col;
+  // A cell the region excludes has no published journey to name a destination for. This is not
+  // "no destination" -- it is "not applicable", and the card must not render it as a shop.
+  if (verdict[p] !== 0) {
+    self.postMessage({ ...reply, included: false, namesDestination: null });
+    return;
+  }
+  const named = [];
+  for (let k = 0; k < destinations.length; k++) {
+    // Only the criteria the last compute actually used. A disabled layer contributed nothing to
+    // the verdict, so naming its destination would answer a question the household did not ask --
+    // and would name a shop for a criterion that is not on screen.
+    if (state.lastEnabled && !state.lastEnabled[k]) continue;
+    if (!destinations[k]) continue;
+    if (statuses[k][p] !== S_OK) continue;
+    const d = destinations[k][p];
+    if (d === DEST_NONE) continue;
+    const entry = destTables[k].destinations[d];
+    named.push({
+      layer: state.manifest.layers[k].id,
+      ordinal: d,
+      nodeIndex: entry.node_index,
+      placeCount: entry.place_count,
+      places: entry.places,
+    });
+  }
+  // `null` where no enabled layer names anything, never an empty list: "this bundle does not say"
+  // and "there is no destination" are different statements.
+  self.postMessage({ ...reply, included: true,
+    namesDestination: named.length ? named : null });
 }
 
 function handleVerdicts(msg) {

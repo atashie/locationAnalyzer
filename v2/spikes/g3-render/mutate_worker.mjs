@@ -158,6 +158,63 @@ const MUTATIONS = [
       'if (o === O_FAIL || (m > 1 && F[k] && F[k][p] === ROUTE_RESTRICTED)) anyFail = 1;'),
   },
   {
+    // The plane's signature failure: read big-endian, ordinals 1 and 256 swap into each other,
+    // both index a real destination, every structural check passes and the shop name is wrong.
+    name: 'the destination plane is read big-endian',
+    apply: (s) => s.replace(
+      'out[i] = bytes[2 * i] | (bytes[2 * i + 1] << 8);',
+      'out[i] = (bytes[2 * i] << 8) | bytes[2 * i + 1];'),
+  },
+  {
+    // Correct whenever a bundle names destinations in ONE layer, which is why the two-layer
+    // fixture exists.
+    // Anchored on the line AFTER, because the init-invariant loop and the query hold the
+    // same statement and an unanchored replace silently hits the first one.
+    name: 'the destination QUERY reads every layer from layer 0',
+    apply: (s) => s.replace(
+      /const d = destinations\[k\]\[p\];(\r?\n\s*)if \(d === DEST_NONE\) continue;/,
+      'const d = destinations[0][p];$1if (d === DEST_NONE) continue;'),
+  },
+  {
+    name: 'the destination INVARIANT CHECK reads every layer from layer 0',
+    apply: (s) => s.replace(
+      /const d = destinations\[k\]\[p\];(\r?\n\s*)const named = d !== DEST_NONE;/,
+      'const d = destinations[0][p];$1const named = d !== DEST_NONE;'),
+  },
+  {
+    // A disabled criterion is not on screen, so naming its destination answers a question the
+    // household did not ask.
+    name: 'the destination query ignores which criteria are enabled',
+    apply: (s) => s.replace(
+      'if (state.lastEnabled && !state.lastEnabled[k]) continue;', ''),
+  },
+  {
+    name: 'a destination is named for an excluded cell',
+    apply: (s) => s.replace('if (verdict[p] !== 0) {', 'if (false) {'),
+  },
+  {
+    // "this bundle does not say" rendered as "there is none" -- the UNKNOWN_CAUSE lesson again.
+    name: 'naming nothing reports an empty list instead of null',
+    apply: (s) => s.replace('namesDestination: named.length ? named : null });',
+                            'namesDestination: named });'),
+  },
+  {
+    // The direction the route flag cannot have. Disabling it lets a plane and a surface disagree
+    // about whether a journey exists at all.
+    name: 'a published time with no destination is accepted',
+    apply: (s) => s.replace('if (!named && statuses[k][p] === S_OK) {', 'if (false) {'),
+  },
+  {
+    name: 'a destination ordinal past the side table is accepted',
+    apply: (s) => s.replace('if (named && d >= table.destinations.length) {', 'if (false) {'),
+  },
+  {
+    // The set IS the answer, so collapsing it to its first member asserts a comparison the
+    // routing never made: the cost-argmin is over NODES.
+    name: 'the destination set is collapsed to its first place',
+    apply: (s) => s.replace('places: entry.places,', 'places: entry.places.slice(0, 1),'),
+  },
+  {
     name: 'the counts no longer describe the plane',
     apply: (s) => s.replace('          excludedCount++;', '          if (p % 7) excludedCount++;'),
   },

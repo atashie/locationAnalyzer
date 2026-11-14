@@ -107,12 +107,16 @@ for (const group of vectors.groups) {
   const discloses = group.layers.some((l) => l.flag_file);
   const worker = loadWorker();
   const plainWorker = discloses ? loadWorker() : null;
+  const names = group.layers.some((l) => l.dest_file);
   const entry = (l) => ({ id: l.id, horizon_s: l.horizon_s,
-    ...(l.flag_file ? { flag_file: l.flag_file } : {}) });
+    ...(l.flag_file ? { flag_file: l.flag_file } : {}),
+    ...(l.dest_file ? { dest_file: l.dest_file, dest_table: l.dest_table,
+                        dest_byte_order: l.dest_byte_order, dest_none: l.dest_none } : {}) });
   const manifest = {
     nrows: group.nrows,
     ncols: group.ncols,
     encoding: vectors.encoding,
+    destination_plane_byte_order: vectors.destination_plane_byte_order,
     layers: group.layers.map(entry),
   };
   // The same bundle with every disclosure removed, which must still be readable.
@@ -126,6 +130,8 @@ for (const group of vectors.groups) {
     values: group.layers.map((l) => planeBytes(l.value_file)),
     statuses: group.layers.map((l) => planeBytes(l.status_file)),
     routeFlags: group.layers.map((l) => (l.flag_file ? planeBytes(l.flag_file) : null)),
+    destinations: group.layers.map((l) => (l.dest_file ? planeBytes(l.dest_file) : null)),
+    destTables: (group.dest_tables || group.layers.map(() => null)),
   });
   check(`${group.name}: init`, () => {
     const out = worker.send(initArgs(manifest));
@@ -134,6 +140,12 @@ for (const group of vectors.groups) {
     assert(ready.layerCount === group.layers.length, 'wrong layer count');
     assert(ready.disclosesRoutes === discloses,
       `disclosesRoutes ${ready.disclosesRoutes}, expected ${discloses}`);
+    assert(ready.namesDestinations === names,
+      `namesDestinations ${ready.namesDestinations}, expected ${names}`);
+    if (group.expect_names_destinations !== undefined) {
+      assert(ready.namesDestinations === group.expect_names_destinations,
+        'the vectors and the worker disagree about whether this group names destinations');
+    }
     if (group.expect_discloses_routes !== undefined) {
       assert(ready.disclosesRoutes === group.expect_discloses_routes,
         'the vectors and the worker disagree about whether this group discloses');
@@ -193,6 +205,44 @@ for (const group of vectors.groups) {
       assert(vMsg, 'no verdicts message');
       const verdicts = new Int8Array(vMsg.verdicts);
       assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
+
+      // The destination query, cell by cell. The NAME is compared and not only the ordinal,
+      // because an ordinal comparison passes under a big-endian read whenever the swapped value
+      // lands in range -- which is the whole point of the byte-swap group.
+      for (const q of (c.destination_at || [])) {
+        const dOut = w.send({ type: 'destinationAt', reqId: 1, row: q.row, col: q.col });
+        const d = dOut.find((m) => m.type === 'destinationAt');
+        assert(d, `no destinationAt reply for (${q.row}, ${q.col})`);
+        assert(d.included === q.included,
+          `(${q.row}, ${q.col}) included ${d.included}, expected ${q.included}`);
+        if (q.names === null) {
+          assert(d.namesDestination === null,
+            `(${q.row}, ${q.col}) namesDestination ${JSON.stringify(d.namesDestination)}, `
+            + 'expected null -- "this bundle does not say" must not render as an empty list');
+          continue;
+        }
+        assert(Array.isArray(d.namesDestination),
+          `(${q.row}, ${q.col}) expected a list of destinations`);
+        assert(d.namesDestination.length === q.names.length,
+          `(${q.row}, ${q.col}) ${d.namesDestination.length} destinations, expected `
+          + `${q.names.length}`);
+        for (let i = 0; i < q.names.length; i++) {
+          const got = d.namesDestination[i];
+          const want = q.names[i];
+          assert(got.layer === want.layer,
+            `(${q.row}, ${q.col}) layer ${got.layer}, expected ${want.layer}`);
+          assert(got.ordinal === want.ordinal,
+            `(${q.row}, ${q.col}) ordinal ${got.ordinal}, expected ${want.ordinal}`);
+          assert(got.placeCount === want.place_count,
+            `(${q.row}, ${q.col}) placeCount ${got.placeCount}, expected ${want.place_count}`);
+          assert(Array.isArray(got.places) && got.places.length === want.place_count,
+            `(${q.row}, ${q.col}) places must be a list as long as placeCount -- the set IS the `
+            + 'answer where a node carries more than one place');
+          assert(got.places[0].name === want.first_place_name,
+            `(${q.row}, ${q.col}) first place ${JSON.stringify(got.places[0].name)}, expected `
+            + `${JSON.stringify(want.first_place_name)}`);
+        }
+      }
 
       const maskOut = w.send({ type: 'mask', reqId: 1 });
       const maskMsg = maskOut.find((m) => m.type === 'mask');
@@ -427,6 +477,105 @@ check('a null slot is legal exactly where the manifest declares no plane', () =>
   const ready = out.find((m) => m.type === 'ready');
   assert(ready, 'a mixed bundle did not initialise');
   assert(ready.disclosesRoutes === true, 'a bundle with one disclosing layer discloses');
+});
+
+
+check('a big-endian read of the destination plane is refused, not guessed at', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = v >> 8; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  destination_plane_byte_order: 'big',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /little-/.test(err.message);
+  }
+  assert(threw, 'a declared big-endian destination plane was read anyway, which yields VALID '
+    + 'wrong ordinals rather than an error');
+});
+
+check('a published time with no destination is refused as a contradiction', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [one(5)], statuses: [one(0)], destinations: [u16(65535)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /names no destination/.test(err.message);
+  }
+  assert(threw, 'DEST_NONE beside a published time was accepted; unlike a clear route flag that '
+    + 'is a contradiction, because a published time is a time to somewhere');
+});
+
+check('a destination ordinal past the end of the side table is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  const table = { destinations: [{ ordinal: 0, node_index: 1, place_count: 1,
+                                   places: [{ gers_id: 'x', name: 'X' }] }] };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [one(5)], statuses: [one(0)], destinations: [u16(7)], destTables: [table],
+    });
+  } catch (err) {
+    threw = /side table holds/.test(err.message);
+  }
+  assert(threw, 'an ordinal with no table entry was accepted');
+});
+
+check('a destination plane with no side table is refused', () => {
+  const worker = loadWorker();
+  const one = (v) => { const b = new ArrayBuffer(1); new Uint8Array(b)[0] = v; return b; };
+  const u16 = (v) => { const b = new ArrayBuffer(2); const a = new Uint8Array(b);
+    a[0] = v & 0xff; a[1] = (v >> 8) & 0xff; return b; };
+  let threw = false;
+  try {
+    worker.send({
+      type: 'init',
+      manifest: { nrows: 1, ncols: 1, encoding: 'published-v4',
+                  layers: [{ id: 'x', horizon_s: 7200, dest_file: 'x.dest.bin' }] },
+      values: [one(5)], statuses: [one(0)], destinations: [u16(0)], destTables: [null],
+    });
+  } catch (err) {
+    threw = /names nothing a reader can resolve/.test(err.message);
+  }
+  assert(threw, 'ordinals shipped with no table to resolve them');
+});
+
+check('a v3 bundle is readable and reports that it names no destination', () => {
+  const worker = loadWorker();
+  const out = worker.send({
+    type: 'init',
+    manifest: { nrows: 1, ncols: 1, encoding: 'published-v3',
+                layers: [{ id: 'x', horizon_s: 7200 }] },
+    values: [new ArrayBuffer(1)], statuses: [new ArrayBuffer(1)],
+  });
+  const ready = out.find((m) => m.type === 'ready');
+  assert(ready, 'no ready message');
+  assert(ready.namesDestinations === false, 'a v3 bundle cannot name a destination');
 });
 
 console.log(failures === 0
