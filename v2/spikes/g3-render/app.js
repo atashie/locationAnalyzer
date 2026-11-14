@@ -59,6 +59,9 @@
     plValid: $('pl-valid'),
     results: $('results'),
     log: $('log'),
+    card: $('card'),
+    cardCell: $('card-cell'),
+    stExplain: $('st-explain'),
   };
 
   const PASS_SLIDER_MS = 100; // synthesis §6 gate G3
@@ -127,6 +130,12 @@
     cdnBytes: null,
     mapLoadedMs: null,
     workerReadyMs: null,
+    // The per-criterion card: one explainAt in flight, the newest pointer position behind it.
+    explainReqSeq: 0,
+    explainPending: false,
+    explainQueued: null,
+    explainSentAt: 0,
+    explainMs: [],      // round trips, for the cost measurement the card plan asks for
   };
 
   // ---- 1. versions.json: known pinned CDN byte totals -----------------------------------------
@@ -292,6 +301,9 @@
           case 'mask':
             handleWorkerMask(msg);
             break;
+          case 'explainAt':
+            handleExplainAt(msg);
+            break;
           case 'error':
             // Pass 48 F2: this showed the message and left `initWorker`'s promise PENDING, so a
             // refusal during init hung the page instead of failing it. A protocol error before
@@ -328,6 +340,81 @@
       maskRequestResolvers.delete(msg.reqId);
       resolve(msg);
     }
+  }
+
+  // ---- 3b. the per-criterion card -------------------------------------------------------------
+  //
+  // The three disclosures `docs/s3-decision-report.md` names are all answers about ONE cell, so
+  // they are one surface fed by one message. `compute` cannot supply them: it folds the per-layer
+  // outcomes into a single verdict and discards them, which is why `explainAt` exists.
+  //
+  // The TEXT lives in card.js, with no DOM, because the words are where a disclosure gets lost --
+  // "no restrictions" for a layer that does not disclose, a bare number for a lower bound, a shop
+  // the pipeline never chose. card_selftest.mjs checks those in Node. What is left here is the
+  // plumbing: which cell the pointer is over, one request in flight, and where the HTML lands.
+
+  /** One request in flight at a time, with the latest pointer position coalesced behind it.
+   *
+   * A pointer can move far faster than a round trip, and queueing every move would build an
+   * unbounded backlog that renders cells the pointer has already left. So: send one, remember the
+   * newest position, send that when the reply lands.
+   */
+  function explainAt(row, col) {
+    if (!state.workerReady) return;
+    if (state.explainPending) {
+      state.explainQueued = { row, col };
+      return;
+    }
+    state.explainPending = true;
+    state.explainQueued = null;
+    state.explainSentAt = performance.now();
+    state.worker.postMessage({ type: 'explainAt', reqId: ++state.explainReqSeq, row, col });
+  }
+
+  function handleExplainAt(msg) {
+    state.explainPending = false;
+    // Ignore a reply that is not the newest request: an out-of-order reply would paint a cell the
+    // pointer has already left.
+    if (msg.reqId === state.explainReqSeq) {
+      const ms = performance.now() - state.explainSentAt;
+      state.explainMs.push(ms);
+      if (state.explainMs.length > 50) state.explainMs.shift();
+      // One round trip per pointer move is not free, so the page reports what it actually costs
+      // on this device rather than leaving it to be assumed either way. The worker-side handler
+      // is about 0.2 microseconds on the shipped bundle (bench_explain.mjs); everything else in
+      // this number is the message.
+      const sorted = state.explainMs.slice().sort((a, b) => a - b);
+      el.stExplain.textContent =
+        `${fmtMs(ms)} / ${fmtMs(sorted[Math.floor(sorted.length / 2)])} (n=${sorted.length})`;
+      renderCard(msg);
+    }
+    const next = state.explainQueued;
+    if (next) {
+      state.explainQueued = null;
+      explainAt(next.row, next.col);
+    }
+  }
+
+  function renderCard(msg) {
+    el.cardCell.textContent = (!msg.outside && Number.isInteger(msg.row))
+      ? `(row ${msg.row}, col ${msg.col})` : '';
+    el.card.innerHTML = window.G3Card.renderCardHTML(msg);
+  }
+
+  function wireCardPointer(map) {
+    map.on('mousemove', (e) => {
+      const at = window.G3Card.cellForLonLat(state.bounds, state.ncols, state.nrows,
+        e.lngLat.lng, e.lngLat.lat);
+      if (!at) {
+        renderCard({ outside: true });
+        return;
+      }
+      explainAt(at.row, at.col);
+    });
+    map.on('mouseout', () => {
+      el.cardCell.textContent = '';
+      el.card.innerHTML = '<em>Move the pointer over the map.</em>';
+    });
   }
 
   // ---- 4. MapLibre map + canvas source ----------------------------------------------------------
@@ -730,6 +817,7 @@
       ]);
 
       addMaskSource(map);
+      wireCardPointer(map);
 
       el.btnPolygonize.addEventListener('click', polygonize);
       el.btnClear.addEventListener('click', clearPolygon);

@@ -29,6 +29,17 @@
         <div class="legend"><span class="in">in region</span><span class="nodata">nodata in an enabled layer</span><span class="poly">polygonized</span></div>
       </section>
 
+      <!--
+        The per-criterion card. The three things a household is owed are all answers about ONE
+        cell, so they are one surface: what each criterion decided, what it declines to say, and
+        which shop the time was measured to. Filled from the worker's `explainAt`, which is the
+        only message that reports per-layer detail -- `compute` folds it away.
+      -->
+      <section>
+        <h2>This spot <span class="sub" id="card-cell"></span></h2>
+        <div id="card"><em>Move the pointer over the map.</em></div>
+      </section>
+
       <section class="actions">
         <button id="btn-polygonize" class="primary" disabled>Polygonize</button>
         <button id="btn-clear" disabled>Clear polygon</button>
@@ -50,6 +61,7 @@
           <tr><td>Worker ready at</td><td class="num" id="st-workerready">–</td></tr>
           <tr><td>In-region cells / km²</td><td class="num" id="st-cells">–</td></tr>
           <tr><td>Nodata cells in any enabled layer</td><td class="num" id="st-nodata">–</td></tr>
+          <tr><td>Card round trip, one cell (last / median)</td><td class="num" id="st-explain">–</td></tr>
           <tr><td>JS heap (performance.memory, Chrome only)</td><td class="num" id="st-memory">–</td></tr>
         </table>
       </section>
@@ -128,6 +140,7 @@
           integrity="sha384-XCLBrYzglMwVI9fIpBSglZD2bumR0YWfvaOClufQMVjAZtTPI5CE+AEtn8uY0t1d"
           crossorigin="anonymous"></script>
   <script src="geom.js"></script>
+  <script src="card.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

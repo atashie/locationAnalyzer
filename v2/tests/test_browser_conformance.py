@@ -50,6 +50,34 @@ def test_the_vectors_cover_every_status_code_the_published_layer_produces():
     present = set(real[0]["status_codes_present"])
     assert {0, 1, 2} <= present, f"the window is missing a status code: {sorted(present)}"
 
+CARD = SPIKE / "card_selftest.mjs"
+PUBLISHED = SPIKE / "fixtures" / "published" / "manifest.json"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not on PATH")
+@pytest.mark.skipif(not PUBLISHED.exists(),
+                    reason="run scripts/export_published_layers.py to build the bundle")
+def test_the_card_says_the_right_thing_including_what_it_declines_to_say():
+    """The per-criterion card's **words**, which no message-level check can see.
+
+    `worker_conformance.mjs` checks the `explainAt` reply. A correct reply still becomes a wrong
+    disclosure if the rendering prints "no restrictions" where the layer does not disclose, a bare
+    "20 min" where the 20 is a lower bound, or one shop where the pipeline chose a node carrying
+    three. `card.js` holds those as pure functions for exactly that reason, and
+    `card_selftest.mjs` feeds them both hand-built replies and 40,000 real ones from the shipped
+    bundle.
+    """
+    out = subprocess.run(["node", str(CARD)], capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, f"{out.stdout}\n{out.stderr}"
+    assert "all card checks passed" in out.stdout
+    assert out.stdout.count("PASS  ") >= 15, out.stdout
+    # The real-bundle pass is only evidence if the sample reached all three outcomes and a
+    # shared-node destination, which that check asserts and prints. A run that silently exercised
+    # 40,000 identical passing cells would otherwise look the same from here.
+    assert '"PASS":' in out.stdout and '"UNKNOWN":' in out.stdout, out.stdout
+    assert "of those a shared node" in out.stdout, out.stdout
+
+
 CONTROL = SPIKE / "byteswap_control.mjs"
 
 
