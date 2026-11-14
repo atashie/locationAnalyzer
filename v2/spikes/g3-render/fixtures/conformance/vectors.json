@@ -50,6 +50,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -70,6 +83,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              1,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -90,6 +116,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              1,
+              1,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -110,6 +149,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              1,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -130,6 +182,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -150,6 +215,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -170,6 +248,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -190,6 +281,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -210,6 +314,19 @@
             1,
             1,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1
+            ]
           ]
         },
         {
@@ -230,6 +347,19 @@
             1,
             0,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              0,
+              1
+            ]
           ]
         },
         {
@@ -250,6 +380,19 @@
             1,
             0,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              0,
+              1
+            ]
           ]
         },
         {
@@ -270,6 +413,19 @@
             1,
             0,
             0
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              2,
+              2,
+              1,
+              1,
+              0,
+              0
+            ]
           ]
         }
       ],
@@ -308,6 +464,16 @@
           "verdicts": [
             1,
             2
+          ],
+          "outcomes": [
+            [
+              2,
+              0
+            ],
+            [
+              1,
+              2
+            ]
           ]
         },
         {
@@ -323,6 +489,12 @@
           "verdicts": [
             2,
             0
+          ],
+          "outcomes": [
+            [
+              2,
+              0
+            ]
           ]
         },
         {
@@ -380,6 +552,20 @@
             0,
             0,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
           ]
         },
         {
@@ -398,6 +584,14 @@
             0,
             0,
             0
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              0
+            ]
           ]
         }
       ]
@@ -437,6 +631,16 @@
           "verdicts": [
             0,
             0
+          ],
+          "outcomes": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
           ]
         },
         {
@@ -453,6 +657,12 @@
           "verdicts": [
             0,
             0
+          ],
+          "outcomes": [
+            [
+              0,
+              0
+            ]
           ]
         }
       ]
@@ -712,6 +922,20 @@
               "included": false,
               "names": null
             }
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              2
+            ]
           ]
         },
         {
@@ -749,6 +973,14 @@
                 }
               ]
             }
+          ],
+          "outcomes": [
+            [
+              0,
+              0,
+              0,
+              0
+            ]
           ]
         }
       ]
@@ -862,6 +1094,16 @@
                 }
               ]
             }
+          ],
+          "outcomes": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
           ]
         },
         {
@@ -885,6 +1127,12 @@
               "included": true,
               "names": null
             }
+          ],
+          "outcomes": [
+            [
+              0,
+              0
+            ]
           ]
         }
       ]
@@ -6669,6 +6917,12 @@
                 }
               ]
             }
+          ],
+          "outcomes": [
+            [
+              0,
+              0
+            ]
           ]
         }
       ]
@@ -6700,6 +6954,15 @@
             2,
             2,
             1
+          ],
+          "outcomes": [
+            [
+              1,
+              2,
+              2,
+              2,
+              1
+            ]
           ]
         },
         {
@@ -6716,6 +6979,15 @@
             2,
             2,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              2,
+              2,
+              2,
+              1
+            ]
           ]
         },
         {
@@ -6732,6 +7004,15 @@
             2,
             2,
             1
+          ],
+          "outcomes": [
+            [
+              0,
+              2,
+              2,
+              2,
+              1
+            ]
           ]
         },
         {
@@ -6748,6 +7029,15 @@
             2,
             2,
             2
+          ],
+          "outcomes": [
+            [
+              0,
+              2,
+              2,
+              2,
+              2
+            ]
           ]
         },
         {
@@ -6764,6 +7054,15 @@
             2,
             2,
             2
+          ],
+          "outcomes": [
+            [
+              0,
+              2,
+              2,
+              2,
+              2
+            ]
           ]
         }
       ],
@@ -6804,7 +7103,10 @@
             "unknown": 0
           },
           "restricted_included": 3,
-          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473"
+          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473",
+          "outcome_sha256_32": [
+            "d656db9300a3eecc214c5dde3e1e8473"
+          ]
         },
         {
           "name": "real window T=1, flags withheld",
@@ -6821,7 +7123,10 @@
             "unknown": 0
           },
           "restricted_included": null,
-          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473"
+          "verdict_sha256_32": "d656db9300a3eecc214c5dde3e1e8473",
+          "outcome_sha256_32": [
+            "d656db9300a3eecc214c5dde3e1e8473"
+          ]
         },
         {
           "name": "real window T=5",
@@ -6837,7 +7142,10 @@
             "unknown": 6040
           },
           "restricted_included": 49,
-          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6"
+          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6",
+          "outcome_sha256_32": [
+            "4a012fb78b67a1e3ed59dd0c9065f0f6"
+          ]
         },
         {
           "name": "real window T=5, flags withheld",
@@ -6854,7 +7162,10 @@
             "unknown": 6040
           },
           "restricted_included": null,
-          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6"
+          "verdict_sha256_32": "4a012fb78b67a1e3ed59dd0c9065f0f6",
+          "outcome_sha256_32": [
+            "4a012fb78b67a1e3ed59dd0c9065f0f6"
+          ]
         },
         {
           "name": "real window T=10",
@@ -6870,7 +7181,10 @@
             "unknown": 7585
           },
           "restricted_included": 156,
-          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8"
+          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8",
+          "outcome_sha256_32": [
+            "7d64e8e0622112e9a5eaffbfc8cb70c8"
+          ]
         },
         {
           "name": "real window T=10, flags withheld",
@@ -6887,7 +7201,10 @@
             "unknown": 7585
           },
           "restricted_included": null,
-          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8"
+          "verdict_sha256_32": "7d64e8e0622112e9a5eaffbfc8cb70c8",
+          "outcome_sha256_32": [
+            "7d64e8e0622112e9a5eaffbfc8cb70c8"
+          ]
         },
         {
           "name": "real window T=15",
@@ -6903,7 +7220,10 @@
             "unknown": 7886
           },
           "restricted_included": 310,
-          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1"
+          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1",
+          "outcome_sha256_32": [
+            "f23ddfa78939ef9b186b75e9b3601bd1"
+          ]
         },
         {
           "name": "real window T=15, flags withheld",
@@ -6920,7 +7240,10 @@
             "unknown": 7886
           },
           "restricted_included": null,
-          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1"
+          "verdict_sha256_32": "f23ddfa78939ef9b186b75e9b3601bd1",
+          "outcome_sha256_32": [
+            "f23ddfa78939ef9b186b75e9b3601bd1"
+          ]
         },
         {
           "name": "real window T=25",
@@ -6936,7 +7259,10 @@
             "unknown": 7921
           },
           "restricted_included": 713,
-          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577"
+          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577",
+          "outcome_sha256_32": [
+            "b313af8da242baf6d2121acba6703577"
+          ]
         },
         {
           "name": "real window T=25, flags withheld",
@@ -6953,7 +7279,10 @@
             "unknown": 7921
           },
           "restricted_included": null,
-          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577"
+          "verdict_sha256_32": "b313af8da242baf6d2121acba6703577",
+          "outcome_sha256_32": [
+            "b313af8da242baf6d2121acba6703577"
+          ]
         },
         {
           "name": "real window T=45",
@@ -6969,7 +7298,10 @@
             "unknown": 7921
           },
           "restricted_included": 1925,
-          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1"
+          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1",
+          "outcome_sha256_32": [
+            "6fb91eb0bb598a24f645585fcd05c6d1"
+          ]
         },
         {
           "name": "real window T=45, flags withheld",
@@ -6986,7 +7318,10 @@
             "unknown": 7921
           },
           "restricted_included": null,
-          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1"
+          "verdict_sha256_32": "6fb91eb0bb598a24f645585fcd05c6d1",
+          "outcome_sha256_32": [
+            "6fb91eb0bb598a24f645585fcd05c6d1"
+          ]
         },
         {
           "name": "real window T=60",
@@ -7002,7 +7337,10 @@
             "unknown": 7921
           },
           "restricted_included": 3067,
-          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe"
+          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe",
+          "outcome_sha256_32": [
+            "5c70881354ebdc5853b877e542c16bfe"
+          ]
         },
         {
           "name": "real window T=60, flags withheld",
@@ -7019,7 +7357,10 @@
             "unknown": 7921
           },
           "restricted_included": null,
-          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe"
+          "verdict_sha256_32": "5c70881354ebdc5853b877e542c16bfe",
+          "outcome_sha256_32": [
+            "5c70881354ebdc5853b877e542c16bfe"
+          ]
         },
         {
           "name": "real window T=120",
@@ -7035,7 +7376,10 @@
             "unknown": 7921
           },
           "restricted_included": 5219,
-          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb"
+          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb",
+          "outcome_sha256_32": [
+            "12238087c1b37752bd6709b8cadc4ceb"
+          ]
         },
         {
           "name": "real window T=120, flags withheld",
@@ -7052,7 +7396,10 @@
             "unknown": 7921
           },
           "restricted_included": null,
-          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb"
+          "verdict_sha256_32": "12238087c1b37752bd6709b8cadc4ceb",
+          "outcome_sha256_32": [
+            "12238087c1b37752bd6709b8cadc4ceb"
+          ]
         },
         {
           "name": "real window T=121",
@@ -7068,7 +7415,10 @@
             "unknown": 8688
           },
           "restricted_included": 5219,
-          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7"
+          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7",
+          "outcome_sha256_32": [
+            "c8d2fc4139e770ee6cf4ce36c7e859d7"
+          ]
         },
         {
           "name": "real window T=121, flags withheld",
@@ -7085,7 +7435,10 @@
             "unknown": 8688
           },
           "restricted_included": null,
-          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7"
+          "verdict_sha256_32": "c8d2fc4139e770ee6cf4ce36c7e859d7",
+          "outcome_sha256_32": [
+            "c8d2fc4139e770ee6cf4ce36c7e859d7"
+          ]
         }
       ],
       "expect_discloses_routes": true,

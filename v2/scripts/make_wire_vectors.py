@@ -56,6 +56,52 @@ def digest(arr: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(arr, dtype=np.int8).tobytes()).hexdigest()[:32]
 
 
+#: Above this many cells a case records its per-criterion outcomes as a digest per layer rather
+#: than inlining them. The real window is 40,000 cells over 18 cases, which inlined would add
+#: about 1.5 MB of JSON for no extra evidence.
+INLINE_OUTCOME_LIMIT = 1000
+
+
+def attach_outcome_expectations(groups) -> None:
+    """Record what `wire.outcome_planes` says each enabled criterion decides, per cell.
+
+    **The verdict plane cannot pin this and neither can the browser's own fold.** `explainAt`
+    recomputes the per-layer outcomes `handleCompute` discards, and the harness folds them back
+    and compares with the verdict — a strong check with one blind spot: at a cell where some
+    layer already FAILs, every other layer's outcome is invisible to the fold *and* to the
+    verdict. So a card could report "walk: within 10 minutes" at a cell excluded by a different
+    criterion, with the stored planes saying UNKNOWN, and nothing downstream would disagree.
+    These expectations come from Python and close that.
+
+    They are read back from the **written fixture files**, not from the arrays in memory: an
+    expectation derived from the bytes that ship cannot describe a different plane from the one
+    the worker is handed.
+    """
+    for g in groups:
+        n = g["nrows"] * g["ncols"]
+        planes = []
+        for entry in g["layers"]:
+            value = np.frombuffer((OUT / entry["value_file"]).read_bytes(), dtype=np.uint8)
+            status = np.frombuffer((OUT / entry["status_file"]).read_bytes(), dtype=np.uint8)
+            if value.size != n or status.size != n:
+                raise SystemExit(f"{entry['id']}: plane files are not {n} cells")
+            planes.append((value, status, float(entry["horizon_s"])))
+        for case in g["cases"]:
+            per_layer = []
+            for k, on in enumerate(case["enabled"]):
+                if not on:
+                    continue
+                value, status, horizon = planes[k]
+                per_layer.append(wire.outcome_planes(
+                    value, status, threshold_min=case["thresholds"][k], horizon_s=horizon))
+            if not per_layer:
+                continue                      # no criteria: there is nothing to decide
+            if n <= INLINE_OUTCOME_LIMIT:
+                case["outcomes"] = [[int(v) for v in o] for o in per_layer]
+            else:
+                case["outcome_sha256_32"] = [digest(o) for o in per_layer]
+
+
 def hand_built():
     """Five per-cell statuses and the bounds that separate them, plus the legacy minute values."""
     seconds = [300.0, 600.0, 601.0, np.inf, np.inf, np.inf, np.inf, 251 * 60.0, 254 * 60.0]
@@ -453,6 +499,9 @@ def main() -> int:
                 i = g["layers"].index(entry)
                 (OUT / entry["dest_table"]).write_text(
                     json.dumps(tables[i], indent=2), encoding="utf-8")
+    # After the planes are on disk, so the expectations are derived from the shipped bytes.
+    attach_outcome_expectations(groups)
+    for g in groups:
         out["groups"].append({k: v for k, v in g.items() if k != "planes"})
     (OUT / "vectors.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
 

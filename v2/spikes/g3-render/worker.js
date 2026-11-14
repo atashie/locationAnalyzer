@@ -73,12 +73,26 @@ const ROUTE_RESTRICTED = 1;
 const DEST_NONE = 65535;
 const S_OK = 0, S_OFF_NETWORK = 1, S_BEYOND_HORIZON = 2, S_NO_PATH = 3;
 const S_LAYER_UNKNOWN = 4, S_OUTSIDE = 5;
+// `wire.py`'s VALUE_NONE. Where the status carries no time and no bound, the value byte says
+// nothing, and the card must print nothing rather than "255 minutes".
+const VALUE_NONE = 255;
 /* Missing with no recorded cause -- what a v1 artifact's single NODATA becomes when it is lifted
  * into this format. Never a known failure, which is exactly what v1 could assert. */
 const S_UNKNOWN_CAUSE = 6;
 const O_PASS = 0, O_FAIL = 1, O_UNKNOWN = 2;
 /* `status.Verdict`'s order, which the verdict plane is reported in. */
 const V_INCLUDED = 0, V_EXCLUDED = 1, V_UNKNOWN = 2;
+
+// Names for the codes, indexed by the code, so a name and a number cannot disagree: both come
+// from here. `wire.py`'s STATUS_CODES is the source of the spelling.
+const STATUS_NAMES = ['OK', 'OFF_NETWORK', 'BEYOND_HORIZON', 'NO_PATH', 'LAYER_UNKNOWN',
+  'OUTSIDE', 'UNKNOWN_CAUSE'];
+const OUTCOME_NAMES = ['PASS', 'FAIL', 'UNKNOWN'];
+const VERDICT_NAMES = ['INCLUDED', 'EXCLUDED', 'UNKNOWN'];
+// The statuses whose `value` byte is a LOWER BOUND on the travel time rather than the time
+// itself. `wire.py`'s table, and the distinction a card must not flatten: "at least 12 minutes,
+// and no route was ever computed" is a different sentence from "12 minutes".
+const BOUNDED_STATUSES = [S_OFF_NETWORK, S_BEYOND_HORIZON, S_NO_PATH];
 
 const PX_IN = packRGBA(24, 119, 242, 150);     // included: translucent blue
 const PX_NODATA = packRGBA(60, 60, 60, 130);   // nodata hatch stripe
@@ -102,6 +116,11 @@ const state = {
   lastSeq: -1,
   lastInCount: 0,
   lastEnabled: null,  // which criteria the last compute used; a destination query honours it
+  // The thresholds the last compute used, per ENABLED layer in enabled order. `explainAt`
+  // recomputes a cell's per-layer outcomes rather than storing a plane of them, so it has to use
+  // the same thresholds the verdict was written from -- otherwise its explanation would describe
+  // a computation nobody ran, and the fold check that compares the two would be vacuous.
+  lastThresholds: null,
   // Has a compute actually RUN? `verdict` is allocated at init and zero-filled, and 0 is
   // INCLUDED, so an allocated plane reads as "every cell is in the region" before anything has
   // been evaluated. Pass 49 finding 11: `handleDestinationAt` checked allocation and so named a
@@ -132,6 +151,9 @@ self.onmessage = (ev) => {
         break;
       case 'destinationAt':
         handleDestinationAt(msg);
+        break;
+      case 'explainAt':
+        handleExplainAt(msg);
         break;
       default:
         self.postMessage({ type: 'error', message: `worker: unknown message type ${String(msg.type)}` });
@@ -348,6 +370,7 @@ function handleInit(msg) {
   state.lastSeq = -1;
   state.lastEnabled = null;
   state.lastInCount = 0;
+  state.lastThresholds = null;
   self.postMessage({
     type: 'ready',
     nrows,
@@ -378,6 +401,9 @@ function handleCompute(msg) {
   // the planes unreadable rather than plausible.
   state.computed = false;
   state.lastSeq = -1;
+  // Cleared on the way IN for the same reason as the rest: a failed compute must not leave
+  // `explainAt` able to recompute outcomes against the thresholds of the compute before it.
+  state.lastThresholds = null;
 
   // Hoist enabled layers, their status planes, thresholds and horizons.
   const L = [];
@@ -464,6 +490,9 @@ function handleCompute(msg) {
   state.lastSeq = msg.seq;
   state.lastInCount = inCount;
   state.lastEnabled = msg.enabled ? msg.enabled.slice() : null;
+  // The hoisted array, not `msg.thresholds`: these are the values the loop above actually used,
+  // already validated as whole minutes and already in enabled order.
+  state.lastThresholds = T.slice();
   state.computed = true;
   self.postMessage({
     type: 'result',
@@ -588,6 +617,116 @@ function handleDestinationAt(msg) {
   // and "there is no destination" are different statements.
   self.postMessage({ ...reply, included: true,
     namesDestination: named.length ? named : null });
+}
+
+/** Everything one cell's criteria say about it, and what they decline to say.
+ *
+ * **The third disclosure a household is owed, and the only one that was not even computed as an
+ * answer.** `handleCompute` evaluates `outcomeFor` per layer per cell, folds the results into
+ * `anyFail` / `anyUnknown`, writes one combined verdict and throws the detail away. So before
+ * this handler existed, no message in this worker could say WHICH criterion was unknown at a
+ * cell, or why -- the data was all present and the question was unaskable.
+ *
+ * Three things it does differently from `destinationAt`, each deliberate:
+ *
+ * 1. **It answers for excluded and unknown cells too.** `destinationAt` declines outside the
+ *    region, because a destination beside an excluded cell is "not applicable". But *why* a cell
+ *    is excluded is the whole reason this exists, so declining there would decline exactly the
+ *    question asked. It still names no destination outside the region: that rule is unchanged.
+ * 2. **It recomputes, and stores nothing.** A per-layer outcome plane would be `layers x cells`
+ *    bytes and, worse, a second thing that can drift from the verdict it is supposed to explain.
+ *    The price is that this must reproduce the compute's decision exactly, which is checkable:
+ *    the outcomes reported here must fold to the verdict `compute` wrote, for every cell.
+ * 3. **`null` means "this layer does not disclose", never "nothing to disclose".** A layer with
+ *    no flag plane reports `routeFlag: null` and not 0; a status carrying no time reports
+ *    `value: null` and not 255.
+ *
+ * It cannot move an eligibility answer. `outcomeFor` is the same function the compute calls and
+ * still cannot see the route flag -- pass 48 finding F1, that a disclosure must not reach the
+ * rule that decides inclusion.
+ */
+function handleExplainAt(msg) {
+  if (!state.verdict) throw new Error('an explanation was requested before init');
+  const { nrows, ncols, verdict, layers, statuses, routeFlags, destinations, destTables,
+    horizons } = state;
+  // Validate before coercing, as `destinationAt` learned to (pass 50 finding C3). A coordinate
+  // that is not already a whole number in range is not a cell, and `| 0` would turn it into one.
+  const row = msg.row;
+  const col = msg.col;
+  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row, col };
+  if (!Number.isInteger(row) || !Number.isInteger(col)) {
+    self.postMessage({ ...reply, outside: true, invalidCoordinates: true,
+      verdict: null, verdictName: null, criteria: null });
+    return;
+  }
+  if (row < 0 || row >= nrows || col < 0 || col >= ncols) {
+    self.postMessage({ ...reply, outside: true, verdict: null, verdictName: null,
+      criteria: null });
+    return;
+  }
+  // Nothing has been evaluated, so there is nothing to explain. `verdict` and `criteria` are null
+  // rather than a combined answer off a zero-filled plane, where 0 means INCLUDED. Allocation is
+  // not evaluation (ledger 32), and this is the fourth reader to need the rule.
+  if (!state.computed) {
+    self.postMessage({ ...reply, notComputed: true, verdict: null, verdictName: null,
+      criteria: null });
+    return;
+  }
+
+  const p = row * ncols + col;
+  const included = verdict[p] === V_INCLUDED;
+  const criteria = [];
+  // `lastThresholds` is per ENABLED layer in enabled order, so walk the layers and advance a
+  // separate index only for the ones the compute used. Indexing it by `k` would silently read
+  // another layer's threshold as soon as any criterion was switched off.
+  let enabledIndex = 0;
+  for (let k = 0; k < layers.length; k++) {
+    if (state.lastEnabled && !state.lastEnabled[k]) continue;
+    const thresholdMin = state.lastThresholds ? state.lastThresholds[enabledIndex] : null;
+    enabledIndex++;
+    const status = statuses[k][p];
+    const raw = layers[k][p];
+    const bounded = BOUNDED_STATUSES.indexOf(status) !== -1;
+    const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);
+    // A destination only where the region includes the cell and this layer published a time for
+    // it. Outside the region the card must not render a shop; that is `destinationAt`'s rule and
+    // this handler does not get a second one.
+    let named = null;
+    if (included && destinations[k] && status === S_OK) {
+      const d = destinations[k][p];
+      if (d !== DEST_NONE) {
+        const entry = destTables[k].destinations[d];
+        named = { ordinal: d, nodeIndex: entry.node_index, placeCount: entry.place_count,
+          places: entry.places };
+      }
+    }
+    criteria.push({
+      layer: state.manifest.layers[k].id,
+      outcome,
+      outcomeName: OUTCOME_NAMES[outcome],
+      status,
+      statusName: STATUS_NAMES[status],
+      // The minute, or null where the status carries neither a time nor a bound. 255 is the
+      // format's "this plane says nothing here" and must never reach a reader as a number.
+      value: (status === S_OK || bounded) && raw !== VALUE_NONE ? raw : null,
+      valueIsLowerBound: bounded,
+      thresholdMin,
+      horizonS: horizons[k],
+      // 0, 1, or null where this layer ships no flag plane. "We are not telling you" must not
+      // render as "no restrictions".
+      routeFlag: routeFlags[k] ? routeFlags[k][p] : null,
+      namesDestination: named,
+    });
+  }
+
+  self.postMessage({
+    ...reply,
+    verdict: verdict[p],
+    verdictName: VERDICT_NAMES[verdict[p]],
+    // `null` where no criterion is enabled, never an empty list: "no criteria were applied" is a
+    // different statement from "the criteria said nothing".
+    criteria: criteria.length ? criteria : null,
+  });
 }
 
 function handleVerdicts(msg) {

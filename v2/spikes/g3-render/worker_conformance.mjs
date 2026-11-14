@@ -25,6 +25,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, 'fixtures', 'conformance');
 
 const V_INCLUDED = 0, V_EXCLUDED = 1, V_UNKNOWN = 2;
+// Spelled out here rather than imported from worker.js: a name table the worker also supplies is
+// not an independent expectation. These are `wire.py`'s spellings.
+const STATUS_NAMES = ['OK', 'OFF_NETWORK', 'BEYOND_HORIZON', 'NO_PATH', 'LAYER_UNKNOWN',
+  'OUTSIDE', 'UNKNOWN_CAUSE'];
+const OUTCOME_NAMES = ['PASS', 'FAIL', 'UNKNOWN'];
 
 // worker.js's own palette, recomputed here rather than imported, so a change to one side has to
 // be made deliberately on the other.
@@ -224,6 +229,140 @@ for (const group of vectors.groups) {
       assert(vMsg, 'no verdicts message');
       const verdicts = new Int8Array(vMsg.verdicts);
       assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
+
+      // ------------------------------------------------------------ the fold check, every cell
+      // **`explainAt` recomputes, so the thing to prove is that it recomputes the SAME thing.**
+      // `handleCompute` folds per-layer outcomes into one verdict and discards them; `explainAt`
+      // reconstructs them on demand. Two computations of one answer can drift, and the only
+      // check that cannot be fooled by a plausible-looking card is the total one: fold the
+      // outcomes this handler reports and require the result to equal the verdict `compute`
+      // wrote, at every cell of every fixture.
+      //
+      // The fold is `status.combine`'s rule and `handleCompute`'s loop: any FAIL excludes, else
+      // any UNKNOWN is unknown, else included. An empty criteria list is INCLUDED, because no
+      // criteria excludes nothing.
+      // Python's own per-criterion answer, from `wire.outcome_planes` over the same fixture
+      // bytes. **The fold below cannot replace this.** At a cell where one layer already FAILs,
+      // every other layer's outcome is invisible to the fold and to the verdict plane, so a card
+      // could report "within 10 minutes" for a criterion whose stored status says UNKNOWN and
+      // nothing self-consistent would notice. Inline for the small groups, a digest per layer
+      // for the 40,000-cell window.
+      const expectedOutcomes = c.outcomes || null;
+      const expectedOutcomeDigests = c.outcome_sha256_32 || null;
+      const seenOutcomes = expectedOutcomeDigests
+        ? expectedOutcomeDigests.map(() => new Int8Array(n)) : null;
+
+      const enabledIds = group.layers.filter((_l, k) => c.enabled[k]).map((l) => l.id);
+      const enabledThresholds = group.layers
+        .map((_l, k) => c.thresholds[k]).filter((_t, k) => c.enabled[k]);
+      const enabledDiscloses = group.layers.filter((_l, k) => c.enabled[k])
+        .map((l) => (c.withhold_flags ? false : !!l.flag_file));
+      for (let p = 0; p < n; p++) {
+        const r = Math.floor(p / group.ncols);
+        const col = p % group.ncols;
+        const eOut = w.send({ type: 'explainAt', reqId: 1, row: r, col });
+        const e = eOut.find((m) => m.type === 'explainAt');
+        assert(e, `no explainAt reply for cell ${p}`);
+        assert(e.verdict === verdicts[p],
+          `cell ${p}: explainAt verdict ${e.verdict}, verdict plane ${verdicts[p]}`);
+
+        if (enabledIds.length === 0) {
+          assert(e.criteria === null,
+            `cell ${p}: criteria must be null when nothing is enabled, not an empty list`);
+          assert(verdicts[p] === V_INCLUDED, `cell ${p}: no criteria excludes nothing`);
+          continue;
+        }
+        assert(Array.isArray(e.criteria) && e.criteria.length === enabledIds.length,
+          `cell ${p}: ${e.criteria && e.criteria.length} criteria, expected `
+          + `${enabledIds.length} -- one per ENABLED layer`);
+        assert(e.criteria.length === res.enabledCount,
+          `cell ${p}: criteria count disagrees with the result's enabledCount`);
+
+        let anyFail = false;
+        let anyUnknown = false;
+        for (let i = 0; i < e.criteria.length; i++) {
+          const cr = e.criteria[i];
+          // The layer each entry is about, in manifest order. Without this a handler could
+          // report the right outcomes against the wrong names and the fold would still agree.
+          assert(cr.layer === enabledIds[i],
+            `cell ${p} entry ${i}: layer ${cr.layer}, expected ${enabledIds[i]}`);
+          // The threshold it was compared against. `lastThresholds` is indexed by ENABLED
+          // position, so reading it by layer index would hand a disabled layer's threshold to
+          // the next enabled one -- a defect invisible to the fold whenever the thresholds
+          // happen to agree.
+          assert(cr.thresholdMin === enabledThresholds[i],
+            `cell ${p} entry ${i}: thresholdMin ${cr.thresholdMin}, expected `
+            + `${enabledThresholds[i]}`);
+          assert(OUTCOME_NAMES[cr.outcome] === cr.outcomeName,
+            `cell ${p} entry ${i}: outcome ${cr.outcome} and name ${cr.outcomeName} disagree`);
+          assert(STATUS_NAMES[cr.status] === cr.statusName,
+            `cell ${p} entry ${i}: status ${cr.status} and name ${cr.statusName} disagree`);
+          // `null` where the layer ships no flag plane, 0 or 1 where it does. "Not telling you"
+          // must not render as "no restrictions", which is the whole reason the flag exists.
+          if (enabledDiscloses[i]) {
+            assert(cr.routeFlag === 0 || cr.routeFlag === 1,
+              `cell ${p} entry ${i}: routeFlag ${cr.routeFlag} from a disclosing layer`);
+          } else {
+            assert(cr.routeFlag === null,
+              `cell ${p} entry ${i}: routeFlag ${cr.routeFlag}, expected null from a layer that `
+              + 'does not disclose');
+          }
+          // The value byte means a time where OK, a lower bound where bounded, and nothing
+          // otherwise. 255 is the format's "says nothing here" and must never arrive as a number.
+          const bounded = cr.status === 1 || cr.status === 2 || cr.status === 3;
+          assert(cr.valueIsLowerBound === bounded,
+            `cell ${p} entry ${i}: valueIsLowerBound ${cr.valueIsLowerBound} for status `
+            + `${cr.statusName}`);
+          if (cr.status !== 0 && !bounded) {
+            assert(cr.value === null,
+              `cell ${p} entry ${i}: value ${cr.value} where status ${cr.statusName} carries `
+              + 'neither a time nor a bound');
+          }
+          assert(cr.value !== 255,
+            `cell ${p} entry ${i}: VALUE_NONE reached a reader as the number 255`);
+          // No destination outside the region. `destinationAt`'s rule, and this handler does not
+          // get a second one: a card must not render a shop beside a cell we exclude.
+          if (verdicts[p] !== V_INCLUDED) {
+            assert(cr.namesDestination === null,
+              `cell ${p} entry ${i}: named a destination at a cell the region does not include`);
+          }
+          // Against Python, cell by cell or into the digest buffer.
+          if (expectedOutcomes) {
+            assert(cr.outcome === expectedOutcomes[i][p],
+              `cell ${p} entry ${i} (${cr.layer}): worker says ${cr.outcomeName}, python says `
+              + `${OUTCOME_NAMES[expectedOutcomes[i][p]]}`);
+          } else if (seenOutcomes) {
+            seenOutcomes[i][p] = cr.outcome;
+          }
+          if (cr.outcome === 1) anyFail = true;
+          else if (cr.outcome === 2) anyUnknown = true;
+        }
+        const folded = anyFail ? V_EXCLUDED : (anyUnknown ? V_UNKNOWN : V_INCLUDED);
+        assert(folded === verdicts[p],
+          `cell ${p}: the outcomes explainAt reports fold to ${folded}, but compute wrote `
+          + `${verdicts[p]} -- the card would explain a verdict nobody computed`);
+      }
+      if (seenOutcomes) {
+        for (let i = 0; i < seenOutcomes.length; i++) {
+          const h = createHash('sha256').update(Buffer.from(seenOutcomes[i].buffer, 0, n))
+            .digest('hex').slice(0, 32);
+          assert(h === expectedOutcomeDigests[i],
+            `layer ${enabledIds[i]}: the outcomes explainAt reports hash to ${h}, python's `
+            + `plane hashes to ${expectedOutcomeDigests[i]}`);
+        }
+      }
+      assert(enabledIds.length === 0 || expectedOutcomes || expectedOutcomeDigests,
+        'this case records no per-criterion expectation, so the card could report anything at a '
+        + 'cell another criterion already decides');
+
+      // And asking must not change the answer. `explainAt` reads state and computes one cell; if
+      // it ever wrote to a plane, every check above would still pass while the region moved.
+      const vAfter = new Int8Array(w.send({ type: 'verdicts', reqId: 2 })
+        .find((m) => m.type === 'verdicts').verdicts);
+      for (let i = 0; i < n; i++) {
+        assert(vAfter[i] === verdicts[i],
+          `cell ${i}: the verdict plane moved while explainAt was being queried`);
+      }
 
       // The destination query, cell by cell. Every field is compared against what the vectors
       // record, and the whole place SET against the side table the worker was handed.
@@ -759,11 +898,30 @@ check('no plane reader answers before a compute has run', () => {
     assert(threw, `${type} answered from the zero-filled plane before any compute; allocation is `
       + 'not evaluation');
   }
+  // `explainAt` replies rather than throwing, as `destinationAt` does, because the card asks for
+  // a cell under the pointer and a throw there is an error dialog over a legitimate question.
+  // What it must not do is explain a verdict off the zero-filled plane, where 0 is INCLUDED.
+  const early = worker.send({ type: 'explainAt', reqId: 1, row: 0, col: 0 })
+    .find((m) => m.type === 'explainAt');
+  assert(early && early.notComputed === true,
+    'explainAt did not report that nothing has been computed');
+  assert(early.verdict === null && early.verdictName === null && early.criteria === null,
+    `explainAt answered before any compute: verdict=${early.verdict} `
+    + `criteria=${JSON.stringify(early.criteria)} -- allocation is not evaluation`);
+
   worker.send({ type: 'compute', seq: 3, thresholds: [10], enabled: [true] });
-  const v = worker.send({ type: 'verdicts', reqId: 2 }).find((m) => m.type === 'verdicts');
+  const v = worker.send({ type: 'verdicts', reqId: 2 }).find((m2) => m2.type === 'verdicts');
   const m = worker.send({ type: 'mask', reqId: 3 }).find((m2) => m2.type === 'mask');
   assert(v && v.seq === 3 && m && m.seq === 3, 'the guard blocks a legitimate query');
   assert(m.inCount === 1, `inCount ${m.inCount}, expected 1`);
+  // The control: after a compute it does answer, so the refusal above is about the lifecycle.
+  const late = worker.send({ type: 'explainAt', reqId: 2, row: 0, col: 0 })
+    .find((m2) => m2.type === 'explainAt');
+  assert(late && late.notComputed === undefined && late.verdict === V_INCLUDED
+    && Array.isArray(late.criteria) && late.criteria.length === 1,
+    'the guard blocks a legitimate explanation');
+  assert(late.criteria[0].thresholdMin === 10 && late.criteria[0].outcomeName === 'PASS',
+    `the explanation does not describe the compute: ${JSON.stringify(late.criteria[0])}`);
 
   // A reinitialisation puts the lifecycle back, and must not carry the previous count with it.
   worker.send(init);
@@ -840,7 +998,21 @@ check('a coordinate that is not a whole number in range names nothing', () => {
       `(${q.row}, ${q.col}) was answered as a cell: `
       + `outside=${d.outside} included=${d.included} `
       + `names=${JSON.stringify(d.namesDestination)}`);
+    // `explainAt` has the same entrance and needs the same guard. `| 0` before a bounds check
+    // turns 4294967296 into cell 0 and 0.9 into cell 0, each getting a confident explanation of
+    // a cell nobody asked about.
+    const e = worker.send({ type: 'explainAt', reqId: 1, ...q })
+      .find((m) => m.type === 'explainAt');
+    assert(e.outside === true && e.criteria === null && e.verdict === null,
+      `(${q.row}, ${q.col}) was explained as a cell: outside=${e.outside} `
+      + `verdict=${e.verdict} criteria=${JSON.stringify(e.criteria)}`);
   }
+  // The control for both: the real cell is explained, so the refusals are about the coordinates.
+  const goodE = worker.send({ type: 'explainAt', reqId: 2, row: 0, col: 0 })
+    .find((m) => m.type === 'explainAt');
+  assert(goodE.criteria && goodE.criteria[0].namesDestination
+    && goodE.criteria[0].namesDestination.places[0].name === 'X',
+    'the valid cell is not explained, so this check proves nothing');
 });
 
 // ---------------------------------------------------------------------------------------------

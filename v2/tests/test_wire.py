@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 
 from locfinder import wire
+from locfinder.status import Outcome
 from locfinder.status import (CATEGORY_COST_SELECTED, Criterion, Outcome, Reason,
                               Surface, Verdict, combine, evaluate)
 
@@ -581,6 +582,36 @@ def test_the_javascript_encoding_lists_match_the_python_one():
         assert listed == tuple(wire.READABLE_ENCODINGS), (
             f"{name} reads {listed} and locfinder.wire reads "
             f"{tuple(wire.READABLE_ENCODINGS)}")
+
+
+def test_the_javascript_code_name_tables_match_the_python_ones():
+    """**The same duplication, one layer down: the card prints a status by NAME.**
+
+    `explainAt` reports `statusName` and `outcomeName` so a card can say *why* a criterion is
+    unknown, which means the spelling of every code now reaches a household. `worker.js` holds
+    its own table because a worker cannot import Python, and `worker_conformance.mjs` holds a
+    third so the harness is not checking the worker against the worker's own names.
+
+    Three copies, and nothing would have noticed them drifting. A table indexed by code also
+    fails silently when a code is *inserted*: every name after it shifts by one and every entry
+    stays a plausible string. So the order is compared, not the set.
+    """
+    spike = pathlib.Path(__file__).resolve().parents[1] / "spikes" / "g3-render"
+    expected_status = tuple(wire.STATUS_CODES[k] for k in sorted(wire.STATUS_CODES))
+    assert sorted(wire.STATUS_CODES) == list(range(len(wire.STATUS_CODES))), (
+        "the status codes are no longer 0..n-1, so a table indexed by code is wrong")
+    expected_outcome = ("PASS", "FAIL", "UNKNOWN")
+    assert tuple(o.name for o in sorted(Outcome, key=int)) == expected_outcome
+
+    for name in ("worker.js", "worker_conformance.mjs"):
+        text = (spike / name).read_text(encoding="utf-8")
+        for const, expected in (("STATUS_NAMES", expected_status),
+                                ("OUTCOME_NAMES", expected_outcome)):
+            found = declarations(text, rf"const {const} = \[([^\]]*)\]")
+            assert len(found) == 1, (
+                f"{name} declares {const} {len(found)} times in executable code")
+            listed = tuple(s.strip().strip("'\"") for s in found[0].split(",") if s.strip())
+            assert listed == expected, f"{name} {const} reads {listed}, python reads {expected}"
 
 
 def test_the_page_accepts_the_encoding_the_exporter_writes():

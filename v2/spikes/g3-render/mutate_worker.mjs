@@ -258,7 +258,13 @@ const MUTATIONS = [
     // Pass 49 finding 11: allocation read as evaluation, so a zero-filled verdict plane answered
     // "included" for a cell no criterion had been applied to.
     name: 'a destination query before any compute answers from the zero-filled verdict plane',
-    apply: (s) => s.replace('  if (!state.computed) {', '  if (false) {'),
+    // Anchored on the reply that follows, not on the bare `if`. There are now three handlers
+    // carrying `if (!state.computed) {` and `String.replace` with a string takes the FIRST, so a
+    // bare anchor silently retargets whenever a handler is added above this one -- and would then
+    // report "caught" for a mutation of a function it was not testing.
+    apply: (s) => s.replace(
+      /  if \(!state\.computed\) \{(\r?\n)    self\.postMessage\(\{ \.\.\.reply, notComputed: true, included: null,/,
+      '  if (false) {$1    self.postMessage({ ...reply, notComputed: true, included: null,'),
   },
   {
     // Pass 49 finding 9: a byte count that omits the largest plane.
@@ -320,9 +326,98 @@ const MUTATIONS = [
     name: 'a failed compute leaves its half-written plane readable',
     // Anchored on the blank line and the Hoist comment that follow, because the same two
     // statements appear in the init reset. Pass 49's lesson about identical statements.
+    // Re-anchored 2026-11-14: `state.lastThresholds = null;` and its comment now sit between
+    // these statements and the Hoist comment, so the old anchor matched nothing. It was reported
+    // INERT on the first run after the change, which is what that distinction is for.
     apply: (s) => s.replace(
-      /state\.computed = false;(\r?\n)  state\.lastSeq = -1;\1\1  \/\/ Hoist/,
-      '// the reset is gone$1$1  // Hoist'),
+      /state\.computed = false;(\r?\n)  state\.lastSeq = -1;\1  \/\/ Cleared on the way IN/,
+      '// the reset is gone$1  // Cleared on the way IN'),
+  },
+
+  // ------------------------------------------------------------------ explainAt, the card's data
+  // `explainAt` RECOMPUTES the per-layer outcomes that `handleCompute` discards, so the whole
+  // risk is that it recomputes something else and the card confidently explains a verdict nobody
+  // reached. The fold check in the harness is the guard; these are what test the guard.
+  {
+    name: 'explainAt reports every criterion as a pass',
+    apply: (s) => s.replace('const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);',
+      'const outcome = O_PASS;'),
+  },
+  {
+    name: 'explainAt softens a known failure into an unknown',
+    apply: (s) => s.replace('const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);',
+      'let outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);'
+      + ' if (outcome === O_FAIL) outcome = O_UNKNOWN;'),
+  },
+  {
+    // `lastThresholds` is per ENABLED layer in enabled order. Indexing it by layer index hands
+    // the wrong threshold to every layer after a disabled one, and the fold cannot see it
+    // whenever the two thresholds happen to agree -- which they do in most of these fixtures.
+    name: 'the threshold is read by layer index instead of enabled position',
+    apply: (s) => s.replace('state.lastThresholds[enabledIndex]', 'state.lastThresholds[k]'),
+  },
+  {
+    name: 'a layer that does not disclose reports no restriction instead of nothing',
+    apply: (s) => s.replace('routeFlag: routeFlags[k] ? routeFlags[k][p] : null,',
+      'routeFlag: routeFlags[k] ? routeFlags[k][p] : 0,'),
+  },
+  {
+    name: 'VALUE_NONE reaches the card as the number 255',
+    apply: (s) => s.replace(
+      'value: (status === S_OK || bounded) && raw !== VALUE_NONE ? raw : null,',
+      'value: raw,'),
+  },
+  {
+    name: 'no enabled criteria reports an empty list instead of nothing',
+    apply: (s) => s.replace('criteria: criteria.length ? criteria : null,', 'criteria,'),
+  },
+  {
+    name: 'explainAt explains the zero-filled plane before any compute',
+    // `verdict: null` is what makes this explainAt's guard and not destinationAt's. The first
+    // version of this anchor stopped at `notComputed: true,` and matched destinationAt, which is
+    // earlier in the file -- so it reported CAUGHT by failing the destination check while
+    // explainAt's guard was never touched. A control that can pass on the wrong cause is not a
+    // control (ledger 30), and this one did.
+    apply: (s) => s.replace(
+      /  if \(!state\.computed\) \{(\r?\n)    self\.postMessage\(\{ \.\.\.reply, notComputed: true, verdict: null,/,
+      '  if (false) {$1    self.postMessage({ ...reply, notComputed: true, verdict: null,'),
+  },
+  {
+    name: 'explainAt coerces a coordinate before checking its bounds',
+    apply: (s) => s.replace(
+      /const row = msg\.row;(\r?\n)  const col = msg\.col;(\r?\n)  const reply = \{ type: 'explainAt'/,
+      "const row = msg.row | 0;$1  const col = msg.col | 0;$2"
+      + "  const reply = { type: 'explainAt'"),
+  },
+  {
+    name: 'explainAt names a destination at a cell the region excludes',
+    apply: (s) => s.replace('if (included && destinations[k] && status === S_OK) {',
+      'if (destinations[k] && status === S_OK) {'),
+  },
+  {
+    // A reader that writes. Every per-cell assertion would still pass, because the explanation
+    // and the plane would agree -- on the value the reader had just put there.
+    name: 'explainAt writes to the verdict plane while reading it',
+    apply: (s) => s.replace('const included = verdict[p] === V_INCLUDED;',
+      'const included = verdict[p] === V_INCLUDED; verdict[p] = V_INCLUDED;'),
+  },
+  {
+    // **The mutation the fold cannot see, which is why Python's own per-criterion planes are
+    // recorded.** It softens an UNKNOWN into a PASS only at cells the region already excludes.
+    // There, some other layer FAILs, so the fold still yields EXCLUDED and still equals the
+    // verdict plane: every self-consistency check passes while the card tells a household its
+    // walk criterion was satisfied at a cell whose stored status says we do not know.
+    name: 'explainAt reports an unknown as a pass where another criterion already failed',
+    apply: (s) => s.replace('const outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);',
+      'let outcome = outcomeFor(status, raw, thresholdMin, horizons[k]);'
+      + ' if (verdict[p] === V_EXCLUDED && outcome === O_UNKNOWN) outcome = O_PASS;'),
+  },
+  {
+    // Anchored past the shared `continue` line, which `destinationAt` has verbatim.
+    name: 'explainAt explains criteria the compute did not use',
+    apply: (s) => s.replace(
+      /if \(state\.lastEnabled && !state\.lastEnabled\[k\]\) continue;(\r?\n)    const thresholdMin/,
+      '// the enabled filter is gone$1    const thresholdMin'),
   },
 ];
 
