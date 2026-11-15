@@ -380,50 +380,69 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
     # README explicitly says to walk to whichever of them you would use — refusing a named
     # alternative was the same defect pointing the other way.
     permitted = record.permitted_destinations()
-    by_name = {p.name: p for p in permitted}
+    names = [p.name for p in permitted]
     used = None if _blank(record.destination_used) else str(record.destination_used).strip()
+    # **Every member with this name, not one of them** — pass 53 finding F5. This was a dict keyed
+    # by name, so the LAST member for a name won, and a node carrying two places of the same name
+    # lost one of them. That is not hypothetical: `triangle-grocery-walk-with-destinations.csv`
+    # selects `Food Lion` on two rows and lists an alternative *also* called `Food Lion`, with no
+    # coordinate, so the coordinate-less alternative replaced the selected shop and a legitimate
+    # walk to the selected shop was refused for having no coordinate to match. Seven entries in
+    # the published side table repeat a name inside one entry.
+    candidates = [p for p in permitted if used is not None and p.name == used]
     if used is None:
         reasons.append("the destination reached is not recorded")
     elif not permitted:
         reasons.append("the record does not say which destination the product selected")
-    elif used not in by_name:
+    elif not candidates:
+        others = sorted(set(names) - {str(record.predicted_destination).strip()})
         reasons.append(
             f"walked to {used!r}; the product routed to "
             f"{str(record.predicted_destination).strip()!r}"
-            + (f" (or one of {sorted(set(by_name) - {str(record.predicted_destination).strip()})})"
-               if len(by_name) > 1 else "")
+            + (f" (or one of {others})" if others else "")
             + ", so this is a different journey"
         )
 
-    # The arrival is matched against the coordinate of the member whose name was recorded. Pass 52
+    # The arrival is matched against the coordinate of a member whose name was recorded. Pass 52
     # F3: comparing it against the SELECTED place's coordinate inside a node-sized envelope
     # accepts a different shop of the same name 270 m away on another node, and refuses a
     # legitimate door measured from the wrong member.
-    target = by_name.get(used) if used is not None else None
+    #
+    # Where several members share the recorded name, arriving at ANY of them is arriving at a
+    # place the record names, so the nearest one decides. Refusing because a namesake is further
+    # away would refuse a truthful walk, and accepting on the *selected* member alone was F3.
     if _blank(record.destination_used_lon) or _blank(record.destination_used_lat):
         reasons.append(
             "where the walk ended is not recorded, so the shop reached is identified by name "
             "only and a name does not identify a shop"
         )
-    elif target is None:
+    elif not candidates:
         pass                      # already refused: the name is not a permitted destination
-    elif _blank(target.lon) or _blank(target.lat):
-        reasons.append(
-            f"the record does not say where {target.name!r} is, so the arrival cannot be matched "
-            "to it and the name is the only evidence of which shop was reached"
-        )
     else:
-        try:
-            gap = metres_between(record.destination_used_lon, record.destination_used_lat,
-                                 target.lon, target.lat)
-        except ValueError as exc:
-            reasons.append(f"the arrival coordinate is not usable: {exc}")
+        located = [p for p in candidates if not _blank(p.lon) and not _blank(p.lat)]
+        if not located:
+            reasons.append(
+                f"the record does not say where {used!r} is, so the arrival cannot be matched to "
+                "it and the name is the only evidence of which shop was reached"
+            )
         else:
-            if gap > DESTINATION_ARRIVAL_M:
+            gaps = []
+            bad = None
+            for place in located:
+                try:
+                    gaps.append(metres_between(record.destination_used_lon,
+                                               record.destination_used_lat, place.lon, place.lat))
+                except ValueError as exc:
+                    bad = exc
+            if not gaps:
+                reasons.append(f"the arrival coordinate is not usable: {bad}")
+            elif min(gaps) > DESTINATION_ARRIVAL_M:
                 reasons.append(
-                    f"the walk ended {gap:.0f} m from {target.name!r}, past the "
-                    f"{DESTINATION_ARRIVAL_M:.0f} m a door can be from a shop's centroid, so the "
-                    "shop reached is not the one the record names"
+                    f"the walk ended {min(gaps):.0f} m from "
+                    + (f"the nearest of {len(located)} places called {used!r}"
+                       if len(located) > 1 else repr(used))
+                    + f", past the {DESTINATION_ARRIVAL_M:.0f} m a door can be from a shop's "
+                    "centroid, so the shop reached is not the one the record names"
                 )
 
     # 3. which way the walk went

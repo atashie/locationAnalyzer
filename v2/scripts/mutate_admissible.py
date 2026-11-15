@@ -49,8 +49,8 @@ MUTATIONS = {
     # and pass 52 F3 turned the set into a name-to-place lookup. Each change was reported DID NOT
     # APPLY on the first run after it, which is what that report is for.
     "accept a walk to any destination": (
-        r'    elif used not in by_name:',
-        '    elif False:',
+        r'    elif not candidates:\r?\n        others = sorted',
+        '    elif False:\n        others = sorted',
     ),
     "drop the route check": (
         r'    if _blank\(record\.route_followed\):',
@@ -105,17 +105,34 @@ MUTATIONS = {
         '    if False:',
     ),
     "accept an arrival anywhere": (
-        r'            if gap > DESTINATION_ARRIVAL_M:',
-        '            if False:',
+        r'            elif min\(gaps\) > DESTINATION_ARRIVAL_M:',
+        '            elif False:',
     ),
     # pass 52 F3: the arrival matched against the SELECTED place rather than the named one
     "match the arrival against the selected place instead of the named one": (
-        r'    target = by_name\.get\(used\) if used is not None else None',
-        '    target = permitted[0] if permitted else None',
+        r'        located = \[p for p in candidates if not _blank\(p\.lon\) '
+        r'and not _blank\(p\.lat\)\]',
+        '        located = [p for p in permitted[:1] if not _blank(p.lon) '
+        'and not _blank(p.lat)]',
     ),
     "accept a named place whose location the record does not give": (
-        r'    elif _blank\(target\.lon\) or _blank\(target\.lat\):',
-        '    elif False:',
+        r'        if not located:',
+        '        if False:',
+    ),
+    # pass 53 F5: the by-name collapse, restored. Live on two rows of the committed metro sheet.
+    "collapse permitted members by name so the last one wins": (
+        r'    candidates = \[p for p in permitted if used is not None and p\.name == used\]',
+        '    _by_name = {p.name: p for p in permitted}\n'
+        '    candidates = ([_by_name[used]] if used is not None and used in _by_name else [])',
+    ),
+    "match the arrival against the furthest namesake instead of the nearest": (
+        r'            elif min\(gaps\) > DESTINATION_ARRIVAL_M:',
+        '            elif max(gaps) > DESTINATION_ARRIVAL_M:',
+    ),
+    "drop every namesake when one has an unusable coordinate": (
+        r'            gaps = \[\]',
+        '            gaps = []\n            '
+        'located = located if len(located) < 2 else []',
     ),
     # pass 52 F9
     "skip the geographic range check on a coordinate": (

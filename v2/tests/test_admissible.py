@@ -445,6 +445,78 @@ def test_an_alternative_with_no_coordinate_cannot_establish_identity(good, grid)
     assert any("does not say where 'Compare Foods' is" in r for r in reasons), reasons
 
 
+def test_a_same_name_alternative_does_not_overwrite_the_selected_destination(good, grid):
+    """**Pass 53 finding F5, live on the committed sheets.**
+
+    The permitted set was collapsed into a dict keyed by place name, so the LAST member for a name
+    won. `triangle-grocery-walk-with-destinations.csv` selects `Food Lion` on two rows and lists
+    an alternative **also called `Food Lion`** with no coordinate, so the coordinate-less
+    alternative replaced the selected shop and a legitimate walk ending exactly at the selected
+    shop was refused for having no coordinate to match.
+    """
+    record = dataclasses.replace(
+        good, destination_used="Food Lion", predicted_destination="Food Lion",
+        predicted_destination_lon=SHOP[0], predicted_destination_lat=SHOP[1],
+        destination_used_lon=SHOP[0], destination_used_lat=SHOP[1],
+        destination_alternatives=(PermittedPlace("Food Lion"),))
+    verdict, reasons = admissibility(record, grid=grid)
+    assert verdict is Admissibility.ADMISSIBLE, reasons
+
+
+def test_the_committed_sheet_really_has_that_shape(grid):
+    """The witness is the artifact, not my fixture: two rows select a name they also list."""
+    import csv
+    sheet = SHEET.parent / "triangle-grocery-walk-with-destinations.csv"
+    shaped = []
+    for row in csv.DictReader(sheet.open(newline="", encoding="utf-8-sig")):
+        alts = [a.strip() for a in (row["predicted_destination_alternatives"] or "").split(";")
+                if a.strip()]
+        if row["predicted_destination"].strip() and row["predicted_destination"].strip() in alts:
+            shaped.append(row["journey_id"])
+    assert shaped == ["band10min_fail-02", "band15min_fail-02"], shaped
+
+
+def test_arriving_at_any_place_of_the_recorded_name_is_admissible(good, grid):
+    """Several members share the name: arriving at any of them is arriving at one the record names.
+
+    Refusing because a namesake is further away would refuse a truthful walk; accepting on the
+    *selected* member alone was pass 52 F3. The nearest member decides.
+    """
+    far = (SHOP[0] + 0.02, SHOP[1])          # about 1.8 km away, same name, same node
+    gap = metres_between(SHOP[0], SHOP[1], far[0], far[1])
+    assert gap > 1000, f"{gap:.0f} m"
+    record = dataclasses.replace(
+        good, destination_used="Food Lion", predicted_destination="Food Lion",
+        predicted_destination_lon=far[0], predicted_destination_lat=far[1],
+        destination_used_lon=SHOP[0], destination_used_lat=SHOP[1],
+        destination_alternatives=(PermittedPlace("Food Lion", SHOP[0], SHOP[1]),))
+    assert admissibility(record, grid=grid)[0] is Admissibility.ADMISSIBLE
+    # And arriving at neither is still refused, with the count of namesakes stated.
+    away = dataclasses.replace(record, destination_used_lon=SHOP[0] + 0.01)
+    verdict, reasons = admissibility(away, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("nearest of 2 places called 'Food Lion'" in r for r in reasons), reasons
+
+
+def test_an_unusable_coordinate_on_one_namesake_does_not_hide_a_good_match(good, grid):
+    """One member has a typo for a coordinate and another is where the walk ended.
+
+    The usable one must still decide. Dropping every member because one is malformed would refuse
+    a truthful walk for somebody else's typo.
+    """
+    record = dataclasses.replace(
+        good, destination_used="Food Lion", predicted_destination="Food Lion",
+        predicted_destination_lon=SHOP[0], predicted_destination_lat=395.9,
+        destination_used_lon=SHOP[0], destination_used_lat=SHOP[1],
+        destination_alternatives=(PermittedPlace("Food Lion", SHOP[0], SHOP[1]),))
+    assert admissibility(record, grid=grid)[0] is Admissibility.ADMISSIBLE
+    # But if EVERY member's coordinate is unusable, the row is refused and says why.
+    only_bad = dataclasses.replace(record, destination_alternatives=())
+    verdict, reasons = admissibility(only_bad, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("not usable" in r for r in reasons), reasons
+
+
 def test_an_impossible_latitude_is_refused_rather_than_producing_zero_distance(good, grid):
     """**Pass 52 finding F9.** A typo that manufactured agreement instead of refusing the row.
 
