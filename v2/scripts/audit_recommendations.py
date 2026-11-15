@@ -181,6 +181,12 @@ DEFAULT_MAX_WALK_MIN = 25.0
 #: qualifying walk inside T is a **witness** that settles the cell, while a slow walk is evidence
 #: about one destination and never a proof of universal absence.
 OWNER_COLUMNS = [
+    # **The question, asked rather than inferred.** `yes` if you made this journey, `no` if you
+    # prepared the row and did not. Added after Codex pass 53 F2: three passes tried to infer this
+    # from the other columns and each got it wrong in a new direction, and the README's own
+    # instructions make inference unsound -- step 2 has you record a start door *before* step 3's
+    # walk, so a prepared-then-abandoned row looked like a walk whose record was incomplete.
+    "walked",                    # yes / no  - did you make this journey?
     "walked_date",
     "start_lon",
     "start_lat",

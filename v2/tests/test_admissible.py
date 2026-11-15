@@ -226,7 +226,7 @@ def test_the_suppressed_failure_is_recoverable_from_the_result(good, grid):
 
 def test_an_unwalked_journey_is_not_inadmissible(good, grid):
     """Not walking is not a defect in the record."""
-    planned = dataclasses.replace(good, **dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None))
+    planned = dataclasses.replace(good, **dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None))
     verdict, reasons = admissibility(planned, grid=grid)
     assert verdict is Admissibility.NOT_WALKED
     assert reasons == ()
@@ -245,7 +245,7 @@ def test_a_cell_with_no_published_time_is_not_an_e3_journey(good, grid):
     """
     unpublished = dataclasses.replace(
         good, label="off_network-01", reported_s=None,
-        **dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None))
+        **dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None))
     result = score_walked_records([unpublished], grid=grid)
     assert result.without_a_published_time == ("off_network-01",)
     assert (result.walked, result.planned) == (0, 0)
@@ -300,7 +300,7 @@ def test_a_documented_walk_with_no_duration_does_not_become_unwalked(good, grid)
 
 @pytest.mark.parametrize("evidence", ["walked_date", "destination_qualifies", "destination_open",
                                       "route_usable", "witness_within_10min",
-                                      "witness_within_15min", "start_lon", "destination_used",
+                                      "witness_within_15min", "destination_used",
                                       "route_followed"])
 def test_any_single_observation_column_makes_a_row_a_walk(good, grid, evidence):
     """One filled observation column is a walk, whichever column it is.
@@ -308,7 +308,7 @@ def test_any_single_observation_column_makes_a_row_a_walk(good, grid, evidence):
     A1 was found through `walked_date`, but the class is wider: the sheet has nine columns that
     only get filled in by somebody who went there.
     """
-    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    blank = dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None)
     record = dataclasses.replace(good, **blank)
     assert not record.walked, "the fully blank row must not read as a walk"
     with_one = dataclasses.replace(record, **{evidence: "yes"})
@@ -367,13 +367,13 @@ def test_a_permitted_alternative_on_the_same_node_is_accepted(good, grid):
 
 @pytest.mark.parametrize("field", ["duration_timed", "route_identified"])
 def test_the_two_self_report_columns_are_evidence_of_a_walk(good, grid, field):
-    """**Pass 52 finding F2.** They were missing from `EVIDENCE_FIELDS`.
+    """**Pass 52 finding F2.** They were missing from the evidence list.
 
     A row whose only entry was one of these lost its evidence exactly as before the A1 repair:
     `walked=0, planned=1`, no refusal. They are the two fields that most directly concern having
     gone — one says whether a clock was used, the other whether the walker can say which way.
     """
-    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    blank = dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None)
     record = dataclasses.replace(good, **{**blank, field: True})
     assert record.evidence_of_a_walk == (field,), record.evidence_of_a_walk
     assert admissibility(record, grid=grid)[0] is Admissibility.NOT_ADMISSIBLE
@@ -384,7 +384,7 @@ def test_the_two_self_report_columns_are_evidence_of_a_walk(good, grid, field):
 
 def test_a_recorded_not_timed_is_evidence_and_an_absent_one_is_not(good, grid):
     """`False` is a thing somebody who went says; `None` is the sheet saying nothing."""
-    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    blank = dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None)
     assert dataclasses.replace(good, **{**blank, "duration_timed": False}).walked
     assert not dataclasses.replace(good, **blank).walked
 
@@ -395,7 +395,7 @@ def test_untested_is_not_evidence_that_somebody_walked(good, grid, field):
     did not try, so it can be filled in while planning a sheet rather than walking it. Reading it
     as affirmative evidence turned a planned row into a refused walk — A1's error reversed.
     """
-    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    blank = dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None)
     planned = dataclasses.replace(good, **{**blank, field: "untested"})
     assert planned.evidence_of_a_walk == (), planned.evidence_of_a_walk
     assert admissibility(planned, grid=grid)[0] is Admissibility.NOT_WALKED
@@ -671,19 +671,26 @@ def test_an_inadmissible_is_pointed_at_a_row():
 # ------------------------------------------------------------------- the ingestion path
 
 
-def test_an_unrecognised_yes_no_is_read_as_silence_and_not_as_no():
-    """Coercion is not validation (ledger 35).
+def test_an_unrecognised_yes_no_is_neither_read_as_no_nor_as_silence():
+    """Coercion is not validation (ledger 35), and **"silence" was itself a coercion**.
 
-    Mapping an unrecognised value onto `False` would turn "I wrote something the parser did not
-    expect" into "the duration was not timed", which is a different claim and a refusal for the
-    wrong reason.
+    The original version of this test asserted that an unrecognised answer reads as `None`. It was
+    right that mapping it onto `False` would turn "I wrote something the parser did not expect"
+    into "the duration was not timed" — a different claim, and a refusal for the wrong reason.
+    **It was wrong to accept `None`**, which pass 53 F2 found: `duration_timed="not timed"` then
+    erased itself, and a row somebody had filled in became a planned one with no refusal. Silence
+    and an unreadable answer are as different as silence and "no".
+
+    So an unrecognised answer now raises, the ingestion records the column as malformed, and the
+    predicate refuses the row naming it.
     """
-    from scripts.score_walked_audit import tri_state
+    from scripts.score_walked_audit import NotUnderstood, tri_state
     assert tri_state("yes") is True and tri_state(" YES ") is True
     assert tri_state("no") is False and tri_state("No") is False
     assert tri_state("") is None and tri_state(None) is None
-    assert tri_state("probably") is None
-    assert tri_state("1") is None, "a bare 1 is not one of the sheet's words"
+    for unreadable in ("probably", "1", "not timed", "y/n"):
+        with pytest.raises(NotUnderstood):
+            tri_state(unreadable)
 
 
 def test_the_ingestion_takes_the_published_minute_and_not_the_model_seconds():
@@ -755,3 +762,111 @@ def test_the_committed_json_is_not_stale():
     assert [r["label"] for r in recorded["refused"]] == [i.label for i in fresh.inadmissible]
     assert [tuple(r["reasons"]) for r in recorded["refused"]] == [i.reasons
                                                                   for i in fresh.inadmissible]
+
+# ------------------------------------------------------------------- Codex pass 53's witnesses
+
+
+def test_the_sheet_is_asked_whether_a_walk_happened(good, grid):
+    """**Pass 53 finding F2.** Three passes tried to infer this and each failed differently.
+
+    The README's step 2 has the owner pick a door and record `start_lon`, `start_lat` and
+    `door_offset_m` **before** step 3's walk. So a prepared-then-abandoned row carries exactly the
+    columns the inference read as proof somebody had been there.
+    """
+    prepared = dataclasses.replace(good, **{
+        **dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None),
+        "start_lon": good.start_lon, "start_lat": good.start_lat, "door_offset_m": 23.0})
+    assert prepared.preparation_recorded == ("start_lon", "start_lat", "door_offset_m")
+    assert prepared.evidence_of_a_walk == (), prepared.evidence_of_a_walk
+    assert not prepared.walked, "a prepared row is not a walk"
+    assert admissibility(prepared, grid=grid)[0] is Admissibility.NOT_WALKED
+    result = score_walked_records([prepared], grid=grid)
+    assert (result.walked, result.planned) == (0, 1)
+    assert result.inadmissible == ()
+
+
+def test_an_explicit_no_overrides_the_evidence(good, grid):
+    """A row can carry a destination and a route and still not have been walked.
+
+    Somebody can write down which shop they intend to visit and how they mean to get there. Only
+    the answer decides.
+    """
+    record = dataclasses.replace(good, walk_happened=False)
+    assert record.evidence_of_a_walk, "the control: the evidence is all there"
+    assert not record.walked
+    assert admissibility(record, grid=grid)[0] is Admissibility.NOT_WALKED
+
+
+def test_an_explicit_yes_makes_a_bare_row_a_refused_walk(good, grid):
+    """And the other direction: `yes` with nothing else is a walk that cannot be scored."""
+    bare = dataclasses.replace(good, **{
+        **dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None), "walk_happened": True})
+    assert bare.walked and bare.evidence_of_a_walk == ()
+    verdict, reasons = admissibility(bare, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("the sheet says this journey was walked" in r for r in reasons), reasons
+    result = score_walked_records([bare], grid=grid)
+    assert (result.walked, result.planned) == (0, 0)
+    assert result.no_admissible_observation
+
+
+def test_a_blank_answer_still_falls_back_to_the_evidence(good, grid):
+    """The fallback has to keep working: a sheet filled in before this column existed has none."""
+    record = dataclasses.replace(good, walk_happened=None, walked_seconds=None,
+                                 duration_timed=False)
+    assert record.walked, "walk-only columns are still evidence when the sheet does not say"
+    assert admissibility(record, grid=grid)[0] is Admissibility.NOT_ADMISSIBLE
+
+
+def test_an_answer_that_was_not_understood_is_refused_rather_than_erased(good, grid):
+    """**The other half of F2.** `tri_state` mapped anything unrecognised to `None`.
+
+    So `duration_timed="not timed"` erased itself and a row somebody had filled in became a
+    planned one. Coercion is not validation (ledger 35), one level down from where it was found.
+    """
+    record = dataclasses.replace(good, duration_timed=None, malformed=("duration_timed",))
+    verdict, reasons = admissibility(record, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("recorded in duration_timed was not understood" in r for r in reasons), reasons
+
+
+def test_the_ingestion_records_an_unreadable_answer_instead_of_dropping_it():
+    from scripts.score_walked_audit import NotUnderstood, tri_state, tri_state_or_malformed
+    assert tri_state("") is None and tri_state(None) is None
+    assert tri_state("yes") is True and tri_state("no") is False
+    with pytest.raises(NotUnderstood):
+        tri_state("not timed")
+    malformed = []
+    assert tri_state_or_malformed({"duration_timed": "not timed"},
+                                  "duration_timed", malformed) is None
+    assert malformed == ["duration_timed"]
+
+
+def test_every_owner_column_is_classified():
+    """**The check that would have caught F2 before Codex did.**
+
+    The sheet has eighteen owner columns and the old inference list read fifteen. Each column must
+    appear in exactly one of the three lists, so adding one to the generator without deciding what
+    it means fails here rather than being silently ignored.
+    """
+    from scripts.audit_recommendations import OWNER_COLUMNS
+    classified = list(WalkedRecord.ALL_OBSERVATION_FIELDS)
+    assert len(classified) == len(set(classified)), "a column is in two lists"
+    # `walked` is the question itself, not an observation about the journey.
+    expected = [c for c in OWNER_COLUMNS if c != "walked"]
+    assert sorted(classified) == sorted(expected), (
+        f"unclassified: {sorted(set(expected) - set(classified))}; "
+        f"not in the sheet: {sorted(set(classified) - set(expected))}")
+
+
+def test_free_text_decides_nothing_either_way(good, grid):
+    """`notes` on a planned row may read "picked the north door"; on a walked one, "timer failed".
+
+    Nothing can tell them apart, so neither decides. Treating every note as a walk would invent
+    walks from planning notes; ignoring them entirely is what the column list does.
+    """
+    blank = dict.fromkeys(WalkedRecord.ALL_OBSERVATION_FIELDS, None)
+    for column in WalkedRecord.AMBIGUOUS_FIELDS:
+        record = dataclasses.replace(good, **{**blank, column: "something written here"})
+        assert record.evidence_of_a_walk == (), column
+        assert not record.walked, column

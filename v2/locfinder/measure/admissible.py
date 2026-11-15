@@ -199,33 +199,47 @@ class WalkedRecord:
     #: it" is non-blank prose that admits the approach is unresolved, and a non-blank check
     #: accepted it.
     route_identified: bool | None = None
-    #: Columns that record an observation without being the duration. They decide whether a walk
-    #: HAPPENED, which is a separate question from whether it can be scored.
+    #: **Did you make this journey?** `True` from `yes`, `False` from `no`, `None` where the
+    #: sheet does not say. Added for pass 53 F2: three passes tried to infer this and each got it
+    #: wrong in a new direction, and the README's own instructions make inference unsound, because
+    #: the owner records a start door before setting out.
+    walk_happened: bool | None = None
+    #: Answers that were filled in and not understood — `duration_timed="not timed"`, say. Kept
+    #: rather than coerced to `None`: silently erasing a malformed entry is not validation, and it
+    #: turned a filled row into an empty one (pass 53 F2).
+    malformed: tuple[str, ...] = ()
+    #: Columns that record an observation without being the duration.
     walked_date: str | None = None
+    #: Centre-to-door distance, which the README asks for in step 2, **before** the walk.
+    door_offset_m: float | None = None
+    unresolved: str | None = None
+    notes: str | None = None
     destination_qualifies: str | None = None
     destination_open: str | None = None
     route_usable: str | None = None
     witness_within_10min: str | None = None
     witness_within_15min: str | None = None
 
-    #: Every field whose presence is evidence that somebody walked this journey.
-    #:
-    #: **`duration_timed` and `route_identified` were missing** — pass 52 finding F2. A row whose
-    #: only entry was one of those lost its evidence exactly as before the A1 repair, and they are
-    #: the two fields that most directly concern having gone: one says whether a clock was used,
-    #: the other whether the walker can say which way they went.
-    EVIDENCE_FIELDS = ("walked_seconds", "walked_date", "start_lon", "start_lat",
-                       "destination_used", "destination_used_lon", "destination_used_lat",
-                       "destination_qualifies", "destination_open", "route_usable",
-                       "witness_within_10min", "witness_within_15min", "route_followed",
-                       "duration_timed", "route_identified")
+    #: Columns only somebody who made the journey can fill in. **Not every observation column** —
+    #: see `PREPARATION_FIELDS`, which is the half that broke the inference.
+    WALK_ONLY_FIELDS = ("walked_seconds", "walked_date", "destination_used",
+                        "destination_used_lon", "destination_used_lat", "destination_qualifies",
+                        "destination_open", "route_usable", "route_followed", "route_identified",
+                        "duration_timed", "witness_within_10min", "witness_within_15min")
 
-    #: Answers that are **not** evidence of a walk, per field.
-    #:
-    #: `untested` is what the audit README tells the owner to write for a witness column when they
-    #: did not try, so it can be filled in by somebody planning a sheet rather than walking it.
-    #: Reading it as affirmative evidence was the other half of F2: it turned a planned row into a
-    #: refused walk, which is the same error as A1 pointing the other way.
+    #: Columns the audit README tells the owner to fill in **before setting out**. Step 2 is "pick
+    #: a real front door inside that cell, record it in `start_lon`, `start_lat`, and put the
+    #: distance from the cell centre in `door_offset_m`" — step 3 is the walk. So a sheet prepared
+    #: and then abandoned has these filled and nothing else, and reading them as evidence of a
+    #: walk classified a planned row as a refused one (pass 53 F2).
+    PREPARATION_FIELDS = ("start_lon", "start_lat", "door_offset_m")
+
+    #: Free text that could be either. `notes` on a planned row may read "picked the north door";
+    #: on a walked one, "timer failed". Nothing can tell them apart, so neither decides.
+    AMBIGUOUS_FIELDS = ("unresolved", "notes")
+
+    #: Answers that are **not** evidence of a walk, per field. `untested` is what the README tells
+    #: the owner to write for a witness column when they did not try.
     NON_EVIDENCE_VALUES = {
         "witness_within_10min": {"untested"},
         "witness_within_15min": {"untested"},
@@ -233,19 +247,17 @@ class WalkedRecord:
 
     @property
     def evidence_of_a_walk(self) -> tuple[str, ...]:
-        """Which columns record that somebody actually walked this journey.
+        """Columns whose contents only somebody who made the journey could have written.
 
-        **`walked_seconds` is not the only one, and treating it as the only one lost a walk.**
-        Pass 51 finding A1: a row dated, with a door, a destination and a route recorded, but no
-        usable duration, was reported as "planned, not walked" — `walked=0, planned=1`, nothing
-        inadmissible, `no_admissible_observation` false. The walk vanished from the record of what
-        could not be scored, which is the one thing this module exists to prevent.
-
-        A column counts when it is filled in **and** its answer is one only a walker could give.
-        `False` counts: "I recorded that it was not timed" is a thing somebody who went says.
+        This is **fallback** evidence, used when `walk_happened` does not say. Three passes tried
+        to settle "did a walk happen" by inference and each one got it wrong in a new direction:
+        pass 51 A1 lost a walk whose duration was missing; pass 52 F2 lost one recorded only in
+        `duration_timed`, and invented one from a witness column reading `untested`; pass 53 F2
+        showed the inference is **unsound in principle**, because the README has the owner record
+        a start door before setting out. So the sheet now asks, and this only breaks the tie.
         """
         found = []
-        for name in self.EVIDENCE_FIELDS:
+        for name in self.WALK_ONLY_FIELDS:
             value = getattr(self, name, None)
             if _blank(value):
                 continue
@@ -256,8 +268,29 @@ class WalkedRecord:
         return tuple(found)
 
     @property
+    def preparation_recorded(self) -> tuple[str, ...]:
+        """Columns that are filled in, and that a walk is not needed to fill in."""
+        return tuple(name for name in self.PREPARATION_FIELDS
+                     if not _blank(getattr(self, name, None)))
+
+    @property
     def walked(self) -> bool:
+        """Whether a walk happened. **The sheet's answer first, inference only as a fallback.**
+
+        `walk_happened` is a column the owner fills in: `yes` means they made the journey, `no`
+        means they did not, and a blank falls back to `evidence_of_a_walk`. An explicit `no`
+        overrides the evidence, because a row can carry a start door, a chosen destination and a
+        note about the route while nobody has been anywhere.
+        """
+        if self.walk_happened is not None:
+            return self.walk_happened
         return bool(self.evidence_of_a_walk)
+
+    #: Every owner column, so that the three lists above can be checked against the sheet rather
+    #: than against my memory of it. Pass 53 F2 found three columns missing from the one list
+    #: there was, and `tests/test_admissible.py` now reconciles these against
+    #: `audit_recommendations.OWNER_COLUMNS`.
+    ALL_OBSERVATION_FIELDS = WALK_ONLY_FIELDS + PREPARATION_FIELDS + AMBIGUOUS_FIELDS
 
     def permitted_destinations(self) -> tuple[PermittedPlace, ...]:
         """Every place this walk may legitimately have ended at, each with its own coordinate.
@@ -315,7 +348,7 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
 
     | what E3 needs | checked here as |
     |---|---|
-    | that a walk happened at all | any of `EVIDENCE_FIELDS` is filled in |
+    | that a walk happened at all | `walk_happened`, or failing that `evidence_of_a_walk` |
     | the door the walk started from, inside the cell | `start_lon`/`start_lat` place the door in cell `(row, col)` |
     | the destination actually reached | `destination_used` is the selected place or one of its node's others, **and** `destination_used_lon`/`_lat` is within `DESTINATION_IDENTITY_M` of the selected place |
     | whether the private approach was used or avoided | `route_followed` is on the record **and** `route_identified` is `True` |
@@ -341,10 +374,18 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
 
     # 0. a walk happened, and its duration is on the record (pass 51 A1)
     if record.walked_seconds is None:
+        said = ("the sheet says this journey was walked"
+                if record.walk_happened else
+                "a walk is recorded (" + ", ".join(record.evidence_of_a_walk) + ")")
+        reasons.append(f"{said} and no duration is, so there is nothing to compare it with")
+
+    # Answers that were filled in and not understood. Pass 53 F2: `tri_state` mapped an
+    # unrecognised value to `None`, so `duration_timed="not timed"` erased itself and a filled row
+    # became an empty one. Coercion is not validation (ledger 35), one level down.
+    for column in record.malformed:
         reasons.append(
-            "a walk is recorded ("
-            + ", ".join(record.evidence_of_a_walk)
-            + ") and no duration is, so there is nothing to compare it with"
+            f"the answer recorded in {column} was not understood, so what it says about this "
+            "walk is unknown rather than absent"
         )
 
     # 1. the door, inside the cell the published answer is for

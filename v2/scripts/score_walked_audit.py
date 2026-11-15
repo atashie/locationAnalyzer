@@ -68,6 +68,9 @@ REQUIRED = (
     "predicted_destination_lat", "predicted_destination_lon",
     "predicted_destination_alternatives",
     "predicted_destination_alternatives_lonlat", "route_identified",
+    # Added after pass 53 F2: the sheet is ASKED whether a walk happened rather than inferred
+    # from, and `door_offset_m` is one of the three columns the old inference list omitted.
+    "walked", "door_offset_m", "unresolved", "notes",
 )
 
 #: `yes`/`no` as the sheet spells them. Anything else is **not** read as a no: an unrecognised value
@@ -80,13 +83,35 @@ class Refused(SystemExit):
     """Raised instead of producing a score whose inputs are not what they look like."""
 
 
+class NotUnderstood(ValueError):
+    """A filled-in answer that is not one of the sheet's words."""
+
+
 def tri_state(value: str | None) -> bool | None:
+    """`True`, `False`, or `None` for a blank. **Raises on a filled answer it cannot read.**
+
+    Pass 53 F2: this returned `None` for anything unrecognised, so `duration_timed="not timed"`
+    erased itself and a row somebody had filled in became a planned one. Silently mapping an
+    invalid entry onto a valid value is the defect ledger 35 names; the caller records the column
+    as malformed and the predicate refuses the row naming it.
+    """
     text = (value or "").strip().lower()
+    if not text:
+        return None
     if text in YES:
         return True
     if text in NO:
         return False
-    return None
+    raise NotUnderstood(f"{value!r} is not one of yes/no")
+
+
+def tri_state_or_malformed(row: dict, column: str, malformed: list) -> bool | None:
+    """`tri_state`, recording the column rather than losing the answer."""
+    try:
+        return tri_state(row.get(column))
+    except NotUnderstood:
+        malformed.append(column)
+        return None
 
 
 def blank_to_none(value: str | None) -> str | None:
@@ -132,13 +157,14 @@ def alternatives(names: str | None, lonlats: str | None) -> tuple[PermittedPlace
 def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
     minutes = blank_to_none(row.get("encoded_minutes"))
     walked = blank_to_none(row.get("walked_seconds"))
+    malformed: list = []
     return WalkedRecord(
         label=row[label_column],
         row=int(row["row"]),
         col=int(row["col"]),
         reported_s=reported_seconds(int(minutes)) if minutes is not None else None,
         walked_seconds=float(walked) if walked is not None else None,
-        duration_timed=tri_state(row.get("duration_timed")),
+        duration_timed=tri_state_or_malformed(row, "duration_timed", malformed),
         start_lon=blank_to_none(row.get("start_lon")),
         start_lat=blank_to_none(row.get("start_lat")),
         destination_used=blank_to_none(row.get("destination_used")),
@@ -151,7 +177,11 @@ def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
             row.get("predicted_destination_alternatives"),
             row.get("predicted_destination_alternatives_lonlat")),
         route_followed=blank_to_none(row.get("route_followed")),
-        route_identified=tri_state(row.get("route_identified")),
+        route_identified=tri_state_or_malformed(row, "route_identified", malformed),
+        walk_happened=tri_state_or_malformed(row, "walked", malformed),
+        door_offset_m=blank_to_none(row.get("door_offset_m")),
+        unresolved=blank_to_none(row.get("unresolved")),
+        notes=blank_to_none(row.get("notes")),
         # Evidence that a walk happened, carried so a walk with no duration cannot be filed as
         # "planned, not walked" (pass 51 A1).
         walked_date=blank_to_none(row.get("walked_date")),
@@ -160,6 +190,7 @@ def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
         route_usable=blank_to_none(row.get("route_usable")),
         witness_within_10min=blank_to_none(row.get("witness_within_10min")),
         witness_within_15min=blank_to_none(row.get("witness_within_15min")),
+        malformed=tuple(malformed),
     )
 
 

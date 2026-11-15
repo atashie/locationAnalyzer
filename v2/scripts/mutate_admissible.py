@@ -47,6 +47,11 @@ EXPECTED_IN = {
     "an untested witness counts as evidence that somebody walked": "evidence_of_a_walk",
     "ignore the permitted alternatives on the selected node": "permitted_destinations",
     "skip the geographic range check on a coordinate": "check_lonlat",
+    "infer whether a walk happened instead of asking": "walked",
+    "let the evidence override an explicit no": "walked",
+    "read the preparation columns as evidence of a walk": "evidence_of_a_walk",
+    "read free text as evidence of a walk": "evidence_of_a_walk",
+    "drop the refusal for an answer that was not understood": "admissibility",
 }
 
 MUTATIONS = {
@@ -107,17 +112,44 @@ MUTATIONS = {
     ),
     # pass 52 F2, both halves
     "the self-report columns are not evidence of a walk": (
-        r'                       "duration_timed", "route_identified"\)',
-        '                       )',
+        r'                        "duration_timed", "witness_within_10min", '
+        r'"witness_within_15min"\)',
+        '                        "witness_within_10min", "witness_within_15min")',
+    ),
+    # ------------------------------------------------------------------ pass 53 F2
+    "infer whether a walk happened instead of asking": (
+        r'        if self\.walk_happened is not None:\r?\n'
+        r'            return self\.walk_happened',
+        '        if False:\n            return self.walk_happened',
+    ),
+    "let the evidence override an explicit no": (
+        r'        if self\.walk_happened is not None:',
+        '        if self.walk_happened:',
+    ),
+    "read the preparation columns as evidence of a walk": (
+        r'        for name in self\.WALK_ONLY_FIELDS:',
+        '        for name in self.WALK_ONLY_FIELDS + self.PREPARATION_FIELDS:',
+    ),
+    "read free text as evidence of a walk": (
+        r'        for name in self\.WALK_ONLY_FIELDS:\r?\n'
+        r'            value = getattr\(self, name, None\)',
+        '        for name in self.WALK_ONLY_FIELDS + self.AMBIGUOUS_FIELDS:\n'
+        '            value = getattr(self, name, None)',
+    ),
+    "drop the refusal for an answer that was not understood": (
+        r'    for column in record\.malformed:',
+        '    for column in ():',
     ),
     "an untested witness counts as evidence that somebody walked": (
         r'            if excluded and isinstance\(value, str\) and value\.strip\(\)\.lower\(\) '
         r'in excluded:\r?\n                continue',
         '            if False:\n                continue',
     ),
+    # Re-anchored for pass 53 F2: the reason text became conditional on `walk_happened`, so the
+    # body no longer starts with `reasons.append(`.
     "drop the missing-duration refusal": (
-        r'    if record\.walked_seconds is None:\r?\n        reasons\.append\(',
-        '    if False:\n        reasons.append(',
+        r'    if record\.walked_seconds is None:\r?\n        said = \(',
+        '    if False:\n        said = (',
     ),
     "identify the shop reached by its name alone": (
         r'    if _blank\(record\.destination_used_lon\) or _blank\(record\.destination_used_lat\):',
@@ -181,7 +213,11 @@ MUTATIONS = {
 
 
 def run() -> tuple[int, str]:
-    p = subprocess.run([sys.executable, "-I", "-m", "pytest", "tests/test_admissible.py",
+    # **Not `-I`.** It drops the user site directory, where `dateutil` lives on this machine, so
+    # any test importing `geopandas` -- which `audit_recommendations` does, and the new
+    # column-reconciliation test imports that -- fails at collection and the baseline is not
+    # clean. `-I` is for running scripts over downloaded or untrusted data, which this is not.
+    p = subprocess.run([sys.executable, "-m", "pytest", "tests/test_admissible.py",
                         "-p", "no:cacheprovider", "--no-header", "-q"],
                        cwd=V2, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr

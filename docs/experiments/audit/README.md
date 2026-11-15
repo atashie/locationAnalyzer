@@ -60,6 +60,13 @@ Chapel Hill sheet has none of them — see below.
 
 ## How to walk one
 
+**0. When you get back, put `yes` in the `walked` column.** One word, and it is the only thing
+nothing else can tell us. Three rounds of this harness tried to work out from the other columns
+whether a journey had actually been made, and each attempt was wrong in a new way — because step 2
+below has you record a door **before** you set out, so a row you prepared and then abandoned looks
+exactly like a walk whose record is incomplete. If you prepared a row and did not go, write `no`:
+that is useful, and it stops the scorer treating your preparation as a failed observation.
+
 1. Open `osm_link`. The product's answer is for a **100 m cell** centred on `query_lon`,
    `query_lat` — not for that exact point.
 2. Pick a real front door inside that cell. Record it in `start_lon`, `start_lat`, and put the
@@ -131,6 +138,7 @@ now refuses a record that leaves one blank.
 
 | E3 needs | the column | why a blank is fatal |
 |---|---|---|
+| that you made the journey at all | `walked` | the other columns cannot tell preparation from a walk, because you fill some of them in before setting out |
 | the door you started from, **inside the cell** | `start_lon`, `start_lat` | the published answer is for one 100 m cell; a walk from the next cell is a different journey |
 | the destination you reached | `destination_used`, **and** `destination_used_lon` / `_lat` | walking to a nearer shop checks the town, not our number — and a name does not identify a shop |
 | which way you went | `route_followed`, **and** `route_identified=yes` | otherwise nobody can tell whether you walked our route, and prose that admits you cannot remember reads as an answer |
@@ -142,7 +150,11 @@ which is the correct outcome — what it must never do is file the journey as "p
 walked", which is what it did before 2026-11-14 and which loses the fact that anybody went.
 
 **`untested` in a witness column is not a walk**, because it is what you write when you did not
-try, and a planning sheet can carry it. Any other answer in any observation column is.
+try, and a planning sheet can carry it.
+
+**And a yes/no column needs one of those two words.** "not timed", "y/n" or a sentence is refused
+with the column named, rather than read as a blank — an answer nobody can read is a different thing
+from no answer, and the scorer used to silently turn the first into the second.
 
 ## If you already have a filled-in copy of a sheet
 
