@@ -21,14 +21,19 @@ S3 is:
 
 | owed | data | interface |
 |---|---|---|
-| the restricted-route flag | **done** `5e5118f` — `published-v3`, optional third plane | not shown |
-| the destination the time was measured to | **done** `4685158`, repaired after pass 49 — `published-v4`, optional fourth plane + side table, licence texts and provenance check | not shown |
-| which criterion was unknown, and why | — | **the per-criterion card is unbuilt** |
+| the restricted-route flag | **done** `5e5118f` — `published-v3`, optional third plane | **built, never rendered** |
+| the destination the time was measured to | **done** `4685158`, repaired after passes 49–53 — `published-v4`, optional fourth plane + side table, licence texts and provenance check | **built, never rendered** |
+| which criterion was unknown, and why | **done** — `explainAt`, which computes it per layer per cell | **built, never rendered** |
 
-**So the data gap is closed on two of three and the interface gap is open on all three.** The
-decoder counts flagged cells and answers `destinationAt` for one cell; nothing displays either.
-The card is now the single remaining blocker for every one of the three, which makes it the next
-substantial piece of work rather than one of several.
+**All three are now closed in logic and shown to nobody.** The card is built — `explainAt` in
+`worker.js`, the words in `card.js`, the surface in `index.html` — and **no browser has ever
+rendered the page**, because none has been reachable from any session that built it. So the right
+description of this row is not "unbuilt" and not "done": it is *implemented and unobserved*.
+
+Codex pass 54 put it as "the mitigation exists in code; its effectiveness remains unobserved", and
+judged the five review passes that followed the card "not worth completing before anyone opened
+it". **Corrected 2026-11-15**; this table said "the per-criterion card is unbuilt" for a day after
+it was built, at the top of the document a resuming session reads first.
 
 ## In flight right now, and what comes next
 

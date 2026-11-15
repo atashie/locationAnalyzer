@@ -257,7 +257,7 @@ def main() -> int:
         return 1
     print("baseline clean\n")
 
-    caught = inert = failed_to_apply = misplaced = 0
+    caught = inert = failed_to_apply = misplaced = survived = errored = 0
     try:
         for name, (pattern, replacement) in MUTATIONS.items():
             mutated, n = re.subn(pattern, replacement.replace("\\", "\\\\"), original, count=1)
@@ -276,11 +276,28 @@ def main() -> int:
             TARGET.write_text(mutated, encoding="utf-8", newline="")
             code, out = run()
             TARGET.write_text(original, encoding="utf-8", newline="")
+            names = sorted(set(re.findall(r"FAILED tests/test_admissible\.py::(\w+)", out)))
             if code == 0:
-                print(f"  INERT          {name}  -- nothing caught it")
-                inert += 1
+                # Named SURVIVED, not INERT. This runner used INERT for both "nothing caught it"
+                # and "the anchor matched nothing", while the other three use INERT only for the
+                # second -- so the same word meant two things depending on which output you were
+                # reading. Pass 54's finding was about the missing ERROR branch below; the
+                # vocabulary was aligned at the same time, because two runners whose words differ
+                # cannot be compared at a glance.
+                print(f"  SURVIVED       {name}  -- nothing caught it")
+                survived += 1
+            elif not names:
+                # **A non-zero exit is not a catch** -- pass 54's one Medium finding, and the
+                # third time this defect has appeared in this project. `mutate_worker.mjs` has
+                # required a FAIL line since pass 44 found its ancestor reporting "9 of 9 caught"
+                # with zero mutants executed; `mutate_migrate.py` needed the same guard on its
+                # first run; this runner was written without it, so a mutant that could not be
+                # imported, or any collection error, read as a rejection. "0 errored anywhere"
+                # was not true of the source.
+                print(f"  ERROR          {name}  -- exit {code} with no FAILED line: the mutant "
+                      "did not run")
+                errored += 1
             else:
-                names = sorted(set(re.findall(r"FAILED tests/test_admissible\.py::(\w+)", out)))
                 print(f"  caught         {name}  [{landed}]")
                 for t in names[:4]:
                     print(f"                   by {t}")
@@ -289,9 +306,10 @@ def main() -> int:
         TARGET.write_text(original, encoding="utf-8", newline="")
         assert TARGET.read_text(encoding="utf-8", newline="") == original, "did not restore!"
 
-    print(f"\n{caught} caught, {inert} inert, {failed_to_apply} did not apply, "
-          f"{misplaced} misplaced, {len(MUTATIONS)} attempted")
-    return 1 if (inert or failed_to_apply or misplaced) else 0
+    print(f"\n{caught} caught, {survived} survived, {inert} inert, "
+          f"{failed_to_apply} did not apply, {misplaced} misplaced, {errored} errored, "
+          f"{len(MUTATIONS)} attempted")
+    return 1 if (survived or inert or failed_to_apply or misplaced or errored) else 0
 
 
 if __name__ == "__main__":

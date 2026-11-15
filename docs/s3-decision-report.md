@@ -89,8 +89,14 @@ Scope is **walk / grocery / Triangle only**. Drive, bike and transit have no lay
 
 ## The known optimistic bias, and who is exposed
 
-The walked journey took a private track that wins on cost. Measured over the **published cell each
-structure falls in** — the answer the product would actually give that household:
+**The published route takes a private track that wins on cost.** What the owner walked is not
+recorded — that is the unresolved question above, and this section used to say "the walked journey
+took a private track", which is exactly the assertion the correction on the previous page
+withdraws. A document that withdraws a claim on one page and makes it on another has not withdrawn
+it (corrected 2026-11-15, Codex pass 54).
+
+Measured over the **published cell each structure falls in** — the answer the product would
+actually give that household:
 
 | *T* | structures included | of those, route uses a restricted way |
 |---|---|---|
