@@ -414,7 +414,7 @@ footer p{margin:0 0 9px}
 
   <div class="booked" id="c-booked"></div>
 
-  <h2 class="sec">Choose the halfway stop</h2>
+  <h2 class="sec">Pick a halfway stop</h2>
   <div class="choices" id="c-choices" role="group" aria-label="Halfway stop options"></div>
 
   <div class="journey">
@@ -445,7 +445,7 @@ footer p{margin:0 0 9px}
     </div>
   </div>
 
-  <h2 class="sec">All four, side by side</h2>
+  <h2 class="sec">All the stops, side by side</h2>
   <div class="cmpwrap"><table class="cmp" id="c-cmp"></table></div>
 
   <h2 class="sec">The evening in Columbia</h2>
@@ -453,11 +453,11 @@ footer p{margin:0 0 9px}
   <div class="cols3">
     <div><h2 class="sec">Dinner</h2><div id="c-dine"></div></div>
     <div><h2 class="sec">Dessert</h2><div id="c-dessert"></div></div>
-    <div><h2 class="sec">Small, simple, mostly free</h2><div id="c-free"></div></div>
+    <div><h2 class="sec">Free things to do nearby</h2><div id="c-free"></div></div>
   </div>
 
   <section class="calls" aria-labelledby="c-callh">
-    <h2 class="sec" id="c-callh">Not verified, and the calls worth making</h2>
+    <h2 class="sec" id="c-callh">Still to check, and who to call</h2>
     <ol id="c-calls"></ol>
   </section>
 
@@ -976,14 +976,14 @@ let cCur = COLA.options[0];
 function cBooked(){
   const H = COLA.hotel, F = COLA.lights;
   $('c-booked').innerHTML = `
-    <div class="bk"><span class="k">Staying · booked</span><h3>${H.name}</h3>
+    <div class="bk"><span class="k">Hotel · booked</span><h3>${H.name}</h3>
       <p>${H.address}<br>Check in from <b>${H.checkin}</b> Sat · check out by <b>${H.checkout}</b> Sun
       · <span class="tel">${H.phone}</span></p></div>
-    <div class="bk"><span class="k">Evening · the plan</span><h3><a href="${F.url}" target="_blank" rel="noopener">${F.name}</a></h3>
+    <div class="bk"><span class="k">Evening · tickets bought</span><h3><a href="${F.url}" target="_blank" rel="noopener">${F.name}</a></h3>
       <p>${F.when}<br>${F.price}</p></div>
     <div class="bk"><span class="k">Getting there</span><h3>Hotel → Segra Park</h3>
-      <p><b>${COLA.hotelSegra.mi} mi</b> on foot, about <b>${COLA.hotelSegra.min} min</b> at an adult pace
-      — a long way back for a six-year-old after 9pm. ${COLA.parkingNote}</p></div>`;
+      <p><b>${COLA.hotelSegra.mi} mi</b> on foot, about <b>${COLA.hotelSegra.min} min</b> for an adult.
+      Too far for a six-year-old after 9pm, so drive. ${COLA.parkingNote}</p></div>`;
 }
 
 function cChoices(){
@@ -1061,8 +1061,8 @@ function cDay(o){
 function cStats(o){
   $('c-stats').innerHTML = `
     <div class="stat"><dt>Driving</dt><dd>${hmLong(o.total_s)}<small>${o.miles} miles</small></dd></div>
-    <div class="stat"><dt>Added by the stop</dt><dd>+${Math.round(o.detour_s/60)} min<small>vs. ${hmLong(COLA.direct_s)} direct</small></dd></div>
-    <div class="stat"><dt>Stop comes at</dt><dd>${Math.round(o.share*100)}%<small>of the drive, ${clk(o.depart_h + o.legs_s[0]/3600)}</small></dd></div>
+    <div class="stat"><dt>Extra time for the stop</dt><dd>+${Math.round(o.detour_s/60)} min<small>vs. ${hmLong(COLA.direct_s)} with no stop</small></dd></div>
+    <div class="stat"><dt>Stop is</dt><dd>${Math.round(o.share*100)}%<small>of the way, at ${clk(o.depart_h + o.legs_s[0]/3600)}</small></dd></div>
     <div class="stat"><dt>At the hotel</dt><dd>${o.arrive}<small>leaving ${clk(o.depart_h)}, one ${o.dwell_min}-min stop</small></dd></div>`;
 }
 
@@ -1082,7 +1082,7 @@ function cStop(o){
     <span>${f.url ? `<a href="${f.url}" target="_blank" rel="noopener">${f.name}</a>` : f.name}
     — ${f.detail} <span style="color:var(--ink-3)">(${f.statusLabel})</span></span></li>`).join('');
   $('c-stop').innerHTML = `<section class="daycard">
-    <div class="daycard-head"><h3>${o.name}: what's open when you get there</h3>
+    <div class="daycard-head"><h3>${o.name}: what's open when you arrive</h3>
       <p>arrive ${o.stopArrive} · ${o.dwell_min} min</p></div>
     <p class="item-desc" style="max-width:none">${o.desc}</p>
     <ul class="fac">${fac}</ul>
@@ -1093,7 +1093,7 @@ function cStop(o){
 
 function cCmp(){
   $('c-cmp').innerHTML = `<thead><tr><th>Stop</th><th>Leg 1</th><th>Stop at</th><th>Leg 2</th>
-    <th>Added</th><th>Hotel</th><th>Admission</th><th>Road</th></tr></thead><tbody>` +
+    <th>Added</th><th>Hotel</th><th>Tickets</th><th>Road</th></tr></thead><tbody>` +
     COLA.options.map(o => `<tr class="${o===cCur?'on':''}"><td>${o.name}</td><td>${hm(o.legs_s[0])}</td>
       <td>${o.stopArrive}</td><td>${hm(o.legs_s[1])}</td><td>+${Math.round(o.detour_s/60)} min</td>
       <td>${o.arrive}</td><td>${o.costShort}</td><td>${o.corridor}</td></tr>`).join('') + '</tbody>';
