@@ -334,7 +334,7 @@ def test_a_different_branch_of_the_same_chain_is_refused(good, grid):
         destination_used_lon=b[0], destination_used_lat=b[1])
     verdict, reasons = admissibility(record, grid=grid)
     assert verdict is Admissibility.NOT_ADMISSIBLE
-    assert any("not the one the record names" in r for r in reasons), reasons
+    assert any("probably not the shop the record names" in r for r in reasons), reasons
     # The control: the same walk, ended at the shop the layer picked, is admissible.
     right = dataclasses.replace(record, destination_used_lon=a[0], destination_used_lat=a[1])
     assert admissibility(right, grid=grid)[0] is Admissibility.ADMISSIBLE
@@ -425,7 +425,7 @@ def test_an_arrival_is_matched_to_the_place_it_names_not_to_a_radius(good, grid)
         destination_alternatives=())
     verdict, reasons = admissibility(record, grid=grid)
     assert verdict is Admissibility.NOT_ADMISSIBLE
-    assert any("past the 200 m a door can be" in r for r in reasons), reasons
+    assert any("past the 200 m a door can plausibly be" in r for r in reasons), reasons
     # The control: arriving at the shop the record names is admissible.
     right = dataclasses.replace(record, destination_used_lon=first[0],
                                 destination_used_lat=first[1])

@@ -3,11 +3,16 @@
 // The card asks the worker about one cell on every pointer move, and a pointer can move far
 // faster than a round trip. Card plan step 5: measure it rather than assume it either way.
 //
-// **This is a LOWER BOUND and nothing else.** Node's shim calls the worker's handler
-// synchronously, so what follows measures the handler and the object it builds. A real
-// `Worker.postMessage` adds a structured clone of the reply and two event-loop hops, and a phone
-// adds a slower core. The page reports the real figure in its "Card round trip" row; this is the
-// floor that figure cannot go below, measured on the shipped planes rather than on a fixture.
+// **What this measures: the handler, on this machine, for this bundle.** Node's shim calls the
+// worker's handler synchronously, so what follows is the handler and the object it builds, with no
+// structured clone of the reply and no event-loop hops. The page reports the real round trip in
+// its "Card round trip" row.
+//
+// An earlier version of this header called the figure a LOWER BOUND and "the floor that figure
+// cannot go below", which its own conclusion then denied — pass 53 F11. **It is not a floor.** A
+// measured duration on one warmed desktop core is not a bound for another device or runtime, and
+// the handler's work grows with the number of enabled layers and the size of the destination
+// payload, neither of which this varies.
 //
 // Run:  node spikes/g3-render/bench_explain.mjs
 

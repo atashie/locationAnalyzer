@@ -32,19 +32,15 @@ substantial piece of work rather than one of several.
 
 ## In flight right now, and what comes next
 
-**Codex pass 53 is REPORTED AND BEING INTEGRATED, starting with F5.** Eleven findings, two High,
-five of six claims failed. Report at `docs/research/54-codex-review-pass53-repairs/REPORT.md`,
-prompt at `docs/research/54-codex-review-pass53-prompt.md`, both committed; the integration is
-`e25ba2f` onwards. **Read §2c of the queue below before touching any of it** — it carries the
-findings and the order the owner asked for.
+**Nothing in flight. Codex pass 53 is fully integrated**, all eleven findings — see §2c of the
+queue for what each was. The chain of passes stands at 49, 50, 51, 52, 53, every one of which found
+more in the previous pass's repairs than in the work being repaired.
 
-The single most important thing for a resuming session: **F5 is a live defect on the committed
-sheets, not a hypothetical.** `permitted_destinations` is collapsed into a dict keyed by place
-NAME, and `triangle-grocery-walk-with-destinations.csv` has two rows that select `Food Lion` and
-list an alternative *also* called `Food Lion` with no coordinate — so the coordinate-less
-alternative overwrites the selection and a legitimate walk to the selected shop is refused for
-having no coordinate to match. The published side table has seven entries with repeated names
-inside one entry.
+**The sheet gained three columns across these two passes**, so an owner holding a filled copy must
+run `python scripts/migrate_audit_sheet.py <their copy>` rather than regenerating: `walked`
+(did you make this journey — asked rather than inferred), `destination_used_lon`/`_lat` (where you
+ended up, because a name does not identify a shop) and `route_identified`. The migration is
+lossless by construction and says so after reading its own output back.
 
 ### A judgement the owner should make, and the reason to make it now
 
@@ -122,12 +118,17 @@ The live corrections:
 
 ## Verified state after the pass 50 integration
 
-**1,524 tests, 1,500 passed, 24 skipped, 0 failures. 87 browser conformance checks, 29 card
-checks. 65 of 65 worker mutations, 26 of 26 card mutations, 22 of 22 admissibility mutations, 0
-inert.**
+**1,543 tests, 1,519 passed, 24 skipped, 0 failures. 87 browser conformance checks, 33 card
+checks. 69 of 69 worker mutations, 29 of 29 card mutations, 30 of 30 admissibility mutations, 9 of
+9 migration mutations — 0 inert, 0 misplaced, 0 errored anywhere.**
 
-Earlier figure, kept for the trail: at the end of pass 50 it was 1,460 tests, 79 conformance
-checks and 43 of 43 mutations. `byteswap_control.mjs` confirms that a **recorded expectation**, not a
+Three of the four mutation runners now also **report where each mutation landed** and fail the run
+when it is not the function the mutation names, because a mutation that edits the wrong function is
+caught by a check about something else. That happened twice; both gates are controlled by
+deliberately mis-declaring a function and confirming the run fails.
+
+Earlier figures, kept for the trail: at the end of pass 50 it was 1,460 tests, 79 conformance
+checks and 43 of 43 mutations; at the end of pass 52, 1,500 tests and 87 checks. `byteswap_control.mjs` confirms that a **recorded expectation**, not a
 structural check, is what catches a big-endian destination plane — and refuses to confirm anything
 unless its own mutation applied, the baseline matches the recorded ordinals, and the mutated
 ordinals are exactly their byte-swaps.
@@ -417,11 +418,11 @@ the class.**
 * **The benchmark conclusion was still too broad** (F10): it establishes that recomputing is cheap
   for this one-layer bundle on this runtime, not that the handler can never be the cost.
 
-### 2c. Codex pass 53 — **REPORTED 2026-11-14, integration IN PROGRESS. Eleven findings, two High.**
+### 2c. Codex pass 53 — **INTEGRATED 2026-11-15. Eleven findings, two High, all fixed.**
 
-Report at `docs/research/54-codex-review-pass53-repairs/REPORT.md`. **Five of six claims fail.**
-The owner asked for the integration **starting with F5**. Order, with F5 first because it is live
-on real data:
+Report at `docs/research/54-codex-review-pass53-repairs/REPORT.md`. **Five of six claims failed.**
+The owner asked for the integration starting with F5, and that is the order it was done in. All
+eleven are fixed and guarded; what each one was, and what closed it:
 
 1. **F5 (Medium, but live) — same-name members collapse and overwrite each other.**
    `by_name = {p.name: p for p in permitted}` in `admissible.py` keeps the LAST member for a name,

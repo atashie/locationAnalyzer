@@ -56,10 +56,23 @@ EARTH_RADIUS_M = 6371008.8
 #: different shops of the same name 270 m apart, on different nodes, satisfy it; and a legitimate
 #: door 620 m from a *different* member's centroid failed it.
 #:
-#: So the arrival is matched against **the coordinate of the member whose name was recorded**, and
-#: the radius is a door-to-centroid distance rather than a node envelope: a supermarket footprint
-#: is of the order of 100 m across, the audit's own centroid-to-door bound on a 100 m cell is
-#: 70.7 m, and a phone's fix adds a few tens of metres.
+#: So the arrival is matched against **the coordinate of the member whose name was recorded**.
+#:
+#: **This is plausibility evidence, not proof of identity, and the distinction is the claim rather
+#: than a caveat** — pass 53 finding F6. A genuinely different shop of the same name 135 m away
+#: passes it, and the artifact has no entrance geometry to bound the other direction with: the
+#: snapping code caps **centroid-to-node** distance, not centroid-to-door, and the 70.7 m figure
+#: an earlier version of this comment cited is the **origin cell's** centre-to-door displacement,
+#: which is a different quantity about a different end of the journey. Two same-name members and a
+#: 200 m radius is the best this sheet's data can do.
+#:
+#: What would establish identity is a stable identifier travelling with the arrival — the side
+#: table already carries `gers_id` per place, and the scorer discards it. That is the fix, and it
+#: needs a column the owner can fill in from a map rather than a name and a pin.
+#:
+#: 200 m is chosen as the radius a door can plausibly be from a shop's published centroid: a
+#: supermarket footprint is of the order of 100 m across and a phone's fix adds a few tens of
+#: metres. It is not derived from anything in the artifact.
 DESTINATION_ARRIVAL_M = 200.0
 
 #: The separator `recover_audit_destinations.py` writes between alternative place names.
@@ -482,8 +495,8 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
                     f"the walk ended {min(gaps):.0f} m from "
                     + (f"the nearest of {len(located)} places called {used!r}"
                        if len(located) > 1 else repr(used))
-                    + f", past the {DESTINATION_ARRIVAL_M:.0f} m a door can be from a shop's "
-                    "centroid, so the shop reached is not the one the record names"
+                    + f", past the {DESTINATION_ARRIVAL_M:.0f} m a door can plausibly be from a "
+                    "shop's published centroid, so this is probably not the shop the record names"
                 )
 
     # 3. which way the walk went

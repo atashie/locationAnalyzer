@@ -1011,4 +1011,27 @@ affirmative one, since no assertion mentioned the headline at all.
 > For any surface that composes parts, "each part contains what it should" is half a check. The
 > other half is "and nothing it should not".
 
-Forty-four instances now.
+Forty-four instances at that point.
+
+### Forty-fifth, from integrating pass 53: a runner that cannot tell a crash from a catch
+
+Writing a mutation runner for `migrate_audit_sheet.py` reproduced, immediately, the defect pass 44
+found in this project's first JavaScript runner. It reported **caught** for a mutant that did not
+parse: the replacement's regex backreference was mangled, Python could not import the module,
+pytest exited non-zero, and "non-zero" was the whole test for a catch. `mutate_worker.mjs` has
+required a `FAIL` line in the output since pass 44 for exactly this reason, and I wrote the new
+runner without it.
+
+It also produced a **false** MISPLACED on its first run in the Python case — the landing-site
+detector tracked `def` and not `class`, so a mutation of a class attribute was attributed to the
+preceding module-level function and a correctly placed mutation was accused.
+
+> A guard written fresh does not inherit the lessons of the guard beside it. Both of these were
+> already recorded in this document, about the file one directory away.
+
+And one mutation is withdrawn rather than kept: keying the migration's snapshot positionally is a
+real strengthening whose failure needs **two** faults — a duplicated label *and* a corruption of
+the earlier row — so no one-fault mutation can be caught for the right reason. Recorded as
+unguarded, like `state.lastInCount` and the pointer generation before it.
+
+Forty-five instances now.
