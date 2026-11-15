@@ -309,6 +309,22 @@ footer p{margin:0 0 9px}
 .v.open{background:var(--good-soft);color:var(--good)}
 .v.opens{background:var(--warn-soft);color:var(--warn)}
 .v.shut,.v.unknown{background:var(--surface-2);color:var(--ink-2)}
+.drops{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 34px;align-items:start}
+@media (min-width:980px){.drops{grid-template-columns:repeat(3,1fr)}}
+.drop{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.drop>summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.drop>summary::-webkit-details-marker{display:none}
+.drop>summary:hover{background:var(--surface-2);border-radius:12px}
+.drop .dh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:16.5px;font-weight:700;letter-spacing:-.01em}
+.drop .dh::after{content:"Show ▾";font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-3)}
+.drop[open] .dh::after{content:"Hide ▴"}
+.drop .dn{font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.drop .db{padding:0 16px 6px}
+.drop .item{grid-template-columns:1fr}
+.drop .item:first-of-type{border-top:1px solid var(--line)}
+.m2 .rt-sun2{stroke:var(--dusk-2);stroke-width:2.5;stroke-dasharray:7 6;opacity:.4}
+.m2 .rt-sun2.on{stroke:var(--dusk);stroke-width:3.5;opacity:1}
 .cols3{display:grid;grid-template-columns:1fr;gap:34px}
 @media (min-width:980px){.cols3{grid-template-columns:repeat(3,1fr);gap:34px}}
 .cols3 .item{grid-template-columns:1fr}
@@ -412,8 +428,8 @@ footer p{margin:0 0 9px}
 
 <section id="p-cola" role="tabpanel" aria-labelledby="t-cola">
   <header class="masthead">
-    <p class="eyebrow">Gainesville FL → Columbia SC · Saturday 28 November 2026</p>
-    <h1>Saturday: one stop, then the lights</h1>
+    <p class="eyebrow">Gainesville FL → Columbia SC → Chapel Hill NC · Sat 28–Sun 29 November 2026</p>
+    <h1>One stop, the lights, then Chapel Hill</h1>
     <p class="standfirst" id="c-standfirst"></p>
   </header>
 
@@ -424,7 +440,7 @@ footer p{margin:0 0 9px}
 
   <div class="journey">
     <section class="mapcard m2" aria-labelledby="c-maph">
-      <h2 class="sec" id="c-maph" style="margin-bottom:12px">The drive up</h2>
+      <h2 class="sec" id="c-maph" style="margin-bottom:12px">The drive, both days</h2>
       <svg id="c-map" role="img" aria-labelledby="c-mapdesc"></svg>
       <p id="c-mapdesc" hidden></p>
       <div class="mkey">
@@ -432,6 +448,7 @@ footer p{margin:0 0 9px}
         <span><i style="width:20px;height:0;border-top:3px solid var(--dusk-2);opacity:.45;flex:none"></i> Other options</span>
         <span><svg width="11" height="11" aria-hidden="true"><circle cx="5.5" cy="5.5" r="4"
           fill="var(--amber)"/></svg> Halfway stop</span>
+        <span><i class="dashline" style="border-top-color:var(--dusk)"></i> Sunday to Chapel Hill</span>
       </div>
       <p id="c-mapnote" style="margin:10px 0 0;font-size:12px;color:var(--ink-3)"></p>
     </section>
@@ -453,13 +470,18 @@ footer p{margin:0 0 9px}
   <h2 class="sec">All the stops, side by side</h2>
   <div class="cmpwrap"><table class="cmp" id="c-cmp"></table></div>
 
-  <h2 class="sec">The evening in Columbia</h2>
+  <h2 class="sec">Saturday evening in Columbia</h2>
   <p class="lede" id="c-evening"></p>
-  <div class="cols3">
-    <div><h2 class="sec">Dinner</h2><div id="c-dine"></div></div>
-    <div><h2 class="sec">Dessert</h2><div id="c-dessert"></div></div>
-    <div><h2 class="sec">Free things to do nearby</h2><div id="c-free"></div></div>
-  </div>
+  <div class="drops" id="c-drops-sat"></div>
+
+  <h2 class="sec">Sunday morning, before checkout</h2>
+  <p class="lede" id="c-morning"></p>
+  <div class="drops" id="c-drops-sun"></div>
+
+  <h2 class="sec">Sunday: on to Chapel Hill</h2>
+  <p class="lede" id="c-sunlede"></p>
+  <div class="choices" id="c-sunchoices" role="group" aria-label="Sunday route options"></div>
+  <dl class="stats" id="c-sunstats" style="margin-bottom:34px"></dl>
 
   <section class="calls" aria-labelledby="c-callh">
     <h2 class="sec" id="c-callh">Still to check, and who to call</h2>
@@ -977,6 +999,7 @@ const hmLong = s => { const m = Math.round(s/60), h = Math.floor(m/60), r = m%60
   return h ? `${h} hr ${String(r).padStart(2,'0')} min` : `${r} min`; };
 const clk = h => clock(Math.round(h*60));
 let cCur = COLA.options[0];
+let sCur = COLA.sunday.routes[0];
 
 function cBooked(){
   const H = COLA.hotel, F = COLA.lights;
@@ -1013,7 +1036,7 @@ function cMap(o){
   const net = ROADS.roads.map(r => `<path class="rd" d="${r.d}"/>`).join('');
   const [vx,vy,vw,vh] = M.viewBox.split(' ').map(Number);
   const inside = p => p[0] > vx+20 && p[0] < vx+vw-20 && p[1] > vy+20 && p[1] < vy+vh-20;
-  const far = p => [M.hotel, M.gnv, M.pts[o.stop]].every(q => Math.hypot(p[0]-q[0], p[1]-q[1]) > 40);
+  const far = p => [M.hotel, M.gnv, M.chapelhill, M.pts[o.stop]].every(q => Math.hypot(p[0]-q[0], p[1]-q[1]) > 40);
   const shields = ROADS.shields.filter(s => inside(s.pt) && far(s.pt)).map(s => {
     const w = s.ref.length * 7 + 8, h = 15;
     return `<g class="shd"><rect x="${s.pt[0]-w/2}" y="${s.pt[1]-h/2}" width="${w}" height="${h}" rx="3"/>
@@ -1022,11 +1045,15 @@ function cMap(o){
     .map(x => `<path class="rt rt-alt" d="${M.routes[x.id]}"/>`).join('');
   const altPins = COLA.options.filter(x => x.id !== o.id)
     .map(x => `<circle class="pin-alt" cx="${M.pts[x.stop][0]}" cy="${M.pts[x.stop][1]}" r="4.5"/>`).join('');
+  const sun = Object.entries(M.sunday).sort(([a],[b]) => (a===sCur.id) - (b===sCur.id))
+    .map(([k,d]) => `<path class="rt rt-sun2${k===sCur.id ? ' on' : ''}" d="${d}"/>`).join('');
   const sp = M.pts[o.stop];
   const right = sp[0] < 520;
   $('c-map').setAttribute('viewBox', M.viewBox);
-  $('c-map').innerHTML = `${land}${net}${shields}${alts}
+  $('c-map').innerHTML = `${land}${net}${shields}${alts}${sun}
     <path class="rt rt-on" d="${M.routes[o.id]}"/>${altPins}
+    <circle class="pin-end" cx="${M.chapelhill[0]}" cy="${M.chapelhill[1]}" r="5.5"/>
+    <text class="mlabel" x="${M.chapelhill[0]-10}" y="${M.chapelhill[1]-10}" text-anchor="end">Chapel Hill</text>
     <circle class="pin-end" cx="${M.gnv[0]}" cy="${M.gnv[1]}" r="5.5"/>
     <text class="mlabel" x="${M.gnv[0]+10}" y="${M.gnv[1]+5}">Gainesville</text>
     <circle class="pin-end" cx="${M.hotel[0]}" cy="${M.hotel[1]}" r="5.5"/>
@@ -1035,7 +1062,7 @@ function cMap(o){
     <text class="mlabel big" x="${sp[0] + (right ? 13 : -13)}" y="${sp[1]+5}"
       text-anchor="${right ? 'start' : 'end'}">${o.name}</text>`;
   $('c-mapdesc').textContent = `Map of the drive from Gainesville to Columbia via ${o.name}, ${o.place}: `
-    + `${hmLong(o.total_s)} of driving, ${o.miles} miles.`;
+    + `${hmLong(o.total_s)} of driving, ${o.miles} miles; then on Sunday to Chapel Hill by ${sCur.label}.`;
   $('c-mapnote').textContent = COLA.mapNote;
 }
 
@@ -1082,6 +1109,42 @@ function itemC(it){
     ${it.note ? `<p class="item-note">${it.note}</p>` : ''}</div></div>`;
 }
 
+function drops(id, groups){
+  $(id).innerHTML = groups.map(g => `<details class="drop">
+    <summary><span class="dh">${g.title}</span>
+      <span class="dn">${g.items.length} options · ${g.items.map(i => i.name).join(', ')}</span></summary>
+    <div class="db">${g.items.map(itemC).join('')}</div></details>`).join('');
+}
+
+function cSunChoices(){
+  const S = COLA.sunday;
+  $('c-sunchoices').innerHTML = S.routes.map(r => `
+    <button class="choice" type="button" aria-pressed="${r===sCur}" data-id="${r.id}">
+      <span class="choice-tag">${r.tag}</span>
+      <span class="choice-name">${r.label}</span>
+      <span class="choice-state">${r.roads}</span>
+      <span class="choice-legs">
+        <span><i>Drive</i><b>${hm(r.time_s)}</b></span>
+        <span><i>Miles</i><b>${r.miles}</b></span>
+        <span><i>vs. fastest</i><b>${r.extra_s ? '+' + Math.round(r.extra_s/60) + 'm' : '—'}</b></span>
+      </span>
+    </button>`).join('');
+  $('c-sunchoices').querySelectorAll('.choice').forEach(b =>
+    b.addEventListener('click', () => sSelect(b.dataset.id)));
+}
+
+function sSelect(id){
+  sCur = COLA.sunday.routes.find(r => r.id === id) || COLA.sunday.routes[0];
+  $('c-sunchoices').querySelectorAll('.choice').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.id === sCur.id));
+  const S = COLA.sunday;
+  $('c-sunstats').innerHTML = S.departs.map(d => `
+    <div class="stat"><dt>Leave ${clk(d.h)}${d.note ? ' · ' + d.note : ''}</dt>
+      <dd>${clk(d.h + sCur.time_s/3600)}<small>in Chapel Hill, no stops</small></dd></div>`).join('')
+    + `<div class="stat"><dt>Driving</dt><dd>${hmLong(sCur.time_s)}<small>${sCur.miles} miles</small></dd></div>`;
+  cMap(cCur);
+}
+
 function cStop(o){
   const fac = o.facilities.map(f => `<li><span class="v ${f.verdict}">${f.verdictLabel}</span>
     <span>${f.url ? `<a href="${f.url}" target="_blank" rel="noopener">${f.name}</a>` : f.name}
@@ -1115,9 +1178,11 @@ function cInit(){
   $('c-standfirst').innerHTML = COLA.standfirst;
   cBooked(); cChoices();
   $('c-evening').innerHTML = COLA.evening;
-  $('c-dine').innerHTML = COLA.dine.map(itemC).join('');
-  $('c-dessert').innerHTML = COLA.dessert.map(itemC).join('');
-  $('c-free').innerHTML = COLA.free.map(itemC).join('');
+  drops('c-drops-sat', COLA.satGroups);
+  $('c-morning').innerHTML = COLA.morning;
+  drops('c-drops-sun', COLA.sunGroups);
+  $('c-sunlede').innerHTML = COLA.sunday.lede;
+  cSunChoices(); sSelect(sCur.id);
   $('c-calls').innerHTML = COLA.calls.map((c,i) => `
     <li><span class="num">${String(i+1).padStart(2,'0')}</span>
       <span><b>${c.who}</b>${c.tel ? ` <span class="tel">${c.tel}</span>` : ''} — ${c.why}</span></li>`).join('');

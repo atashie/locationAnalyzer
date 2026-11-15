@@ -1,0 +1,106 @@
+{
+ "motorsupply": {
+  "lat": 33.9997285,
+  "lon": -81.0373571,
+  "matched": "Motor Supply Co. Bistro, 920, Gervais Street, The Vista, Columbia, Richland County, South Carolina, ",
+  "walk": [
+   1.23,
+   24
+  ],
+  "drive": [
+   1.34,
+   4
+  ]
+ },
+ "gourmet": {
+  "lat": 33.9990584,
+  "lon": -81.0169201,
+  "matched": "724, Saluda Avenue, Five Points, Columbia, Richland County, South Carolina, 29205, United States",
+  "walk": [
+   2.74,
+   52
+  ],
+  "drive": [
+   3.06,
+   8
+  ]
+ },
+ "drip": {
+  "lat": 33.9982084,
+  "lon": -81.0177376,
+  "matched": "Saluda Avenue, Five Points, Columbia, Richland County, South Carolina, 29205, United States",
+  "walk": [
+   2.65,
+   51
+  ],
+  "drive": [
+   3.05,
+   8
+  ]
+ },
+ "methodical": {
+  "lat": 33.9990684,
+  "lon": -81.0254109,
+  "matched": "Pickens Street, Five Points, Columbia, Richland County, South Carolina, 29201, United States",
+  "walk": [
+   2.12,
+   41
+  ],
+  "drive": [
+   2.26,
+   6
+  ]
+ },
+ "strudel": {
+  "lat": 33.9919156,
+  "lon": -81.0561579,
+  "matched": "300, State Street, Mill Village, Columbia, Lexington County, South Carolina, 29033, United States",
+  "walk": [
+   1.58,
+   30
+  ],
+  "drive": [
+   1.71,
+   4
+  ]
+ },
+ "lizards": {
+  "lat": 34.011299,
+  "lon": -81.0440805,
+  "matched": "818, Elmwood Avenue, Elmwood, Columbia, Richland County, South Carolina, 29201, United States",
+  "walk": [
+   0.65,
+   14
+  ],
+  "drive": [
+   0.76,
+   3
+  ]
+ },
+ "riverwalk": {
+  "lat": 33.996367,
+  "lon": -81.0551229,
+  "matched": "West Columbia Riverwalk, West Columbia, Lexington County, South Carolina, 29201, United States",
+  "walk": [
+   1.56,
+   29
+  ],
+  "drive": [
+   1.65,
+   5
+  ]
+ },
+ "zoo": {
+  "lat": 34.008742,
+  "lon": -81.0731292,
+  "matched": "Riverbanks Zoo, 500, Wildlife Parkway, Riverbanks, Columbia, Richland County, South Carolina, 29210,",
+  "walk": [
+   4.48,
+   87
+  ],
+  "drive": [
+   2.63,
+   10
+  ]
+ }
+}

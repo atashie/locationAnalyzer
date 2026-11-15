@@ -25,12 +25,20 @@ for k, s in m["stops"].items():
 out["hotel"] = [round(v, 1) for v in proj(34.0077, -81.0498)]
 out["segra"] = [round(v, 1) for v in proj(34.0183, -81.0312)]
 out["gnv"] = [GNV[2], GNV[3]]
-# bounds check: every point of every route inside the cropped frame used by the tab
-VB = (300, 360, 520, 780)  # x, y, w, h
-for k, o in m["options"].items():
-    for p in o["geometry"]:
-        x, y = proj(p[0], p[1])
-        assert VB[0] <= x <= VB[0] + VB[2] and VB[1] <= y <= VB[1] + VB[3], (k, x, y)
+# Sunday leg (sunday.py): hotel -> Chapel Hill on each corridor; "charlotte" duplicates "direct"
+sun = json.load(open("sunday.json"))
+out["sunday"] = {k: "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in (proj(a, b) for a, b in o["geometry"]))
+                 for k, o in sun.items() if k != "charlotte"}
+out["chapelhill"] = [CHP[2], CHP[3]]
+# bounds check: every point of every route, both days, inside the cropped frame used by the tab
+VB = (300, 70, 600, 1070)  # x, y, w, h
+pts = [p for o in m["options"].values() for p in o["geometry"]]
+pts += [p for k, o in sun.items() if k != "charlotte" for p in o["geometry"]]
+for p in pts:
+    x, y = proj(p[0], p[1])
+    assert VB[0] + 10 <= x <= VB[0] + VB[2] - 10 and VB[1] + 10 <= y <= VB[1] + VB[3] - 10, (x, y)
+xs = [proj(*p)[0] for p in pts]; ys = [proj(*p)[1] for p in pts]
+print("extent x", round(min(xs)), round(max(xs)), "y", round(min(ys)), round(max(ys)))
 out["viewBox"] = " ".join(map(str, VB))
 json.dump(out, open(sys.argv[2], "w"))
 print({k: len(v) for k, v in out["routes"].items()}, out["pts"], out["hotel"])

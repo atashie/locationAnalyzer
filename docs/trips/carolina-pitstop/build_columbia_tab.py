@@ -204,6 +204,103 @@ free = [
            before 4pm, and none of the stops above does that if you leave at 9am."""),
 ]
 
+# ---------------------------------------------------------------- Sunday morning (morning.py)
+MO = json.loads((HERE / "morning.json").read_text())
+# Two geocodes matched only the street, not the number: borrow the measured neighbour instead.
+MO_PROXY = {"methodical": ("gather", "next to Gather COLA"), "drip": ("gourmet", "across from The Gourmet Shop")}
+
+
+def from_hotel(key: str) -> list[str]:
+    if key in MO_PROXY:
+        src, why = MO_PROXY[key]
+        if src == "gather":
+            return [f"about <b>{W['gather']['to_hotel'][1]} min</b> walk from the hotel ({why})"]
+        v = MO[src]
+        return [f"about <b>{v['walk'][1]} min</b> walk", f"about <b>{v['drive'][1]} min</b> drive ({why})"]
+    v = MO[key]
+    if v["walk"][1] <= 35:
+        return [f"<b>{v['walk'][1]} min</b> walk from the hotel", f"<b>{v['drive'][1]} min</b> drive"]
+    return [f"<b>{v['drive'][1]} min</b> drive from the hotel"]
+
+
+breakfast = [
+    dict(name="Hotel breakfast (free)", url="https://www.ihg.com/staybridge/hotels/us/en/columbia/caers/hoteldetail",
+         pill=["good", "Free · no driving"], walk=["in the hotel"],
+         meta="Weekends 7:30–10:30am (standing, from listings) · included with the room",
+         desc="""The easiest start: a free hot breakfast downstairs, so you can pack the car
+           without a separate trip out.""",
+         note="Listings disagree on the weekend times. Ask the front desk when you check in."),
+    dict(name="Lizard's Thicket", url="https://www.lizardsthicket.com/locations", pill=["good", "Very Columbia"],
+         walk=from_hotel("lizards"), meta="Sun 6am–9pm, breakfast until noon (standing) · $ · 818 Elmwood Ave",
+         desc="""A Columbia-only family diner since the 1970s: biscuits, grits, pancakes. Cheap, quick
+           and easy with kids. The closest local breakfast to the hotel."""),
+    dict(name="The Gourmet Shop", url="https://www.thegourmetshop.net/", pill=["flat", "Café + cheese shop"],
+         walk=from_hotel("gourmet"), meta="Sun café 9am–4pm (standing) · $$ · Five Points",
+         desc="""A long-running local café that often wins "best breakfast" votes. Good coffee and
+           pastries too."""),
+    dict(name="Cafe Strudel", url="https://www.cafestrudel.com/contact-us/", pill=["flat", "Quirky brunch"],
+         walk=from_hotel("strudel"), meta="Sun hours: couldn't confirm (listings say 10am to 2 or 3pm) · $–$$",
+         desc="""A quirky local favourite across the river in West Columbia, known for Sunday brunch.
+           Pairs well with the Riverwalk next door.""",
+         note="Call 803-794-6634 to check Sunday hours."),
+    dict(name="Motor Supply Co. Bistro", url="https://www.motorsupplycobistro.com/", pill=["flat", "Grown-up brunch"],
+         walk=from_hotel("motorsupply"), meta="Sun brunch 10am–2pm (standing) · $$$ · Gervais St, Vista",
+         desc="""A Columbia favourite for over 30 years, with a menu that changes often. Nicer and
+           pricier than the others.""",
+         note="Opens at 10, so it's tight with a noon checkout."),
+]
+coffee = [
+    dict(name="Drip", url="https://www.dripcolumbia.com/", pill=["good", "Opens 7am"],
+         walk=from_hotel("drip"), meta="Sun 7am–6pm (standing) · $ · 729 Saluda Ave, Five Points",
+         desc="A long-running local coffee shop with a good pastry case.",
+         note="Other listings say it opens at 8am on Sundays."),
+    dict(name="Methodical Coffee", url="https://methodicalcoffee.com/pages/methodical-bullstreet",
+         pill=["flat", "By the ballpark"], walk=from_hotel("methodical"),
+         meta="Sun 8am–2pm (standing) · $ · 2149 Pickens St, BullStreet",
+         desc="A South Carolina roaster with fresh pastries, next to Gather COLA."),
+    dict(name="The Gourmet Shop café", url="https://www.thegourmetshop.net/", pill=["flat", "Opens 9am"],
+         walk=from_hotel("gourmet"), meta="Sun 9am–4pm (standing) · Five Points",
+         desc="Coffee and pastries, if you'd rather not sit down for a full breakfast."),
+]
+morning_do = [
+    dict(name="Riverbanks Zoo & Garden", url="https://www.riverbanks.org/plan-your-visit/visitor-information",
+         pill=["warn", "Paid · the big one"], walk=from_hotel("zoo"),
+         meta="Sun 29 Nov 9am–4pm (confirmed) · about $106 for four online, plus $3 parking",
+         desc="""Over 3,000 animals and a sky ride over the river, which the ticket covers. The best
+           thing to do with kids in Columbia.""",
+         note="Hard to fit before a noon checkout. Easier: check out first, then go to the zoo."),
+    dict(name="West Columbia Riverwalk", url="https://westcolumbiasc.gov/?p=1309", pill=["good", "Free"],
+         walk=from_hotel("riverwalk"), meta="Dawn to dusk (standing) · free",
+         desc="""A paved path along the river, across the bridge from the Vista. Easy for kids, with
+           good river views.""",
+         note="It can close after heavy rain when the river floods."),
+    dict(name="Riverfront Park & the canal", url="https://sctrails.net/trails/trail/riverfront-park",
+         pill=["good", "Free · nearest the hotel"], walk=walk("riverfront")[1:],
+         meta="Dawn to dusk (standing) · free",
+         desc="The flat canal path from Saturday's list. A short walk before breakfast.",
+         note="A city notice said the north end might be closed for clearing."),
+    dict(name="Finlay Park", url="https://columbiasc.gov/city-of-columbia-to-celebrate-the-grand-re-opening-of-finlay-park/",
+         pill=["good", "Free · playground"], walk=walk("finlay")[1:], meta="6am–9pm (standing) · free",
+         desc="""The big new hillside playground. If you skipped it on Saturday, this is the morning
+           to go."""),
+]
+
+# ---------------------------------------------------------------- Sunday leg (sunday.py)
+SUN = json.loads((HERE / "sunday.json").read_text())
+# "charlotte" forces the Charlotte waypoint; the router's own choice already goes that way
+assert abs(SUN["charlotte"]["time_s"] - SUN["direct"]["time_s"]) < 15 * 60
+SUN_META = {
+    "direct": ("Fastest", "Via Charlotte", "I-77, then I-85 and I-40"),
+    "us1": ("Shortest · avoids Charlotte", "Via US-1", "I-20, then US-1 through Cheraw and Sanford"),
+    "i95": ("Interstate the whole way", "Via I-95", "I-20, I-95, then I-40 at Benson"),
+}
+fastest = min(SUN[k]["time_s"] for k in SUN_META)
+sun_routes = [{"id": k, "tag": t, "label": lab, "roads": roads, "time_s": SUN[k]["time_s"],
+               "miles": round(SUN[k]["miles"]), "extra_s": SUN[k]["time_s"] - fastest}
+              for k, (t, lab, roads) in SUN_META.items()]
+assert sun_routes[0]["extra_s"] == 0
+CHECKOUT_H = 12
+
 direct_s = M["direct"]["total_s"]
 earliest = min(o["arrive_h"] for o in options)
 sunset_h = 17 + 16 / 60  # NOAA calculation for Columbia on 28 Nov, from itinerary_compare.py
@@ -218,7 +315,8 @@ COLA = {
     "sunset_h": sunset_h,
     "map": MAP,
     "mapNote": """The Darien, Savannah and Pooler routes use the same roads (I-95, then I-26), so
-      their lines overlap on the map. Only the Statesboro route takes a different road.""",
+      their lines overlap on the map. Only the Statesboro route takes a different road. The dashed
+      lines are Sunday's three ways on to Chapel Hill.""",
     "hotel": {"name": "Staybridge Suites Columbia", "address": "1913 Huger St, Columbia SC 29201",
               "checkin": "3pm", "checkin_h": 15, "checkout": "noon", "phone": "803-451-5900"},
     "lights": {"name": "Fireflies Holiday Lights", "window": [18, 21],
@@ -242,7 +340,25 @@ COLA = {
       work if you leave earlier: every hour earlier from Gainesville gives you an hour more
       daylight in Columbia. The Soda City market ends at 1pm, and we found no parade or tree
       lighting downtown on the 28th.""",
-    "dine": dine, "dessert": dessert, "free": free,
+    "satGroups": [{"title": "Dinner", "items": dine}, {"title": "Dessert", "items": dessert},
+                  {"title": "Free things to do nearby", "items": free}],
+    "sunGroups": [{"title": "Breakfast", "items": breakfast}, {"title": "Coffee", "items": coffee},
+                  {"title": "Things to do in the morning", "items": morning_do}],
+    "morning": f"""It's a Sunday, so some places open late: the State Museum and EdVenture don't open
+      until noon, and Soda City is Saturday only. Checkout is at {h_to_clock(CHECKOUT_H)}. The
+      simplest plan is the free hotel breakfast, a walk by the river, then check out. If you want
+      the zoo, check out first, then go: it's {MO["zoo"]["drive"][1]} minutes' drive from the hotel.""",
+    "sunday": {
+        "routes": sun_routes,
+        "departs": [{"h": 10, "note": ""}, {"h": CHECKOUT_H, "note": "at checkout"},
+                    {"h": 14, "note": "after the zoo"}],
+        "lede": f"""The last leg is {round(fastest / 3600, 1)} hours with no stops. There are three
+          ways to go. The fastest goes through Charlotte. US-1 is
+          {round(SUN["direct"]["miles"] - SUN["us1"]["miles"])} miles shorter and avoids Charlotte,
+          but takes {round((SUN["us1"]["time_s"] - fastest) / 60)} minutes longer. <strong>The
+          Sunday after Thanksgiving is one of the busiest driving days of the year</strong>, and
+          these times assume no traffic, so expect longer, especially around Charlotte.""",
+    },
     "calls": [
         {"who": "Fireflies box office", "tel": "803-726-4487",
          "why": "Tickets are done. Ask about parking, and whether Santa is there on the 28th (this year's announcement doesn't say)."},
@@ -269,6 +385,8 @@ out = base.replace("/*COLA_DATA*/null", json.dumps(COLA, ensure_ascii=False))
 (HERE / "carolina-pitstop.html").write_text(out, encoding="utf-8")
 
 # checks on the figures this script computed
+assert walk("finlay")[1].endswith("to hotel") and walk("riverfront")[1].endswith("to hotel")
+assert SUN["us1"]["miles"] < SUN["direct"]["miles"] and SUN["us1"]["time_s"] > fastest
 for o in options:
     assert abs(sum(o["legs_s"]) - o["total_s"]) < 1, o["id"]
     assert o["arrive_h"] > 15, "every option should reach the hotel after check-in opens"
