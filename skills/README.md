@@ -65,8 +65,8 @@ against the worked example's real figures, so the documentation cannot drift sil
 ## Worked example
 
 `planning-route-stops/examples/chapel-hill-thomasville/` is a complete trip — nine itineraries
-across three corridors, 230 researched candidates, a baked basemap — and it **rebuilds
-offline from what is committed**:
+across three corridors, the day the traveller chose from them, 230 researched candidates, a
+baked basemap — and it **rebuilds offline from what is committed**:
 
 ```bash
 cd skills/planning-route-stops/examples/chapel-hill-thomasville

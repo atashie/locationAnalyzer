@@ -30,6 +30,11 @@ Learned 2026-11-03 after five failed Codex launches:
   **backslash-free** text, or use the Edit tool when the target contains escapes.
   To append a large test block: Write it to the scratchpad, then append with a
   short `python -c` that reads that file. Learned 2026-11-06.
+- 2026-11-15, the same trap in its quiet form: a doubled `\b` arrives as `\b`, which Python
+  accepts as a backspace character instead of rejecting it. The assertion-guarded patch applied,
+  the file looked right under `grep`, and the regex it wrote could never match anything. The
+  check passed its own example and failed every mutation of it. **Write any file containing
+  backslash escapes with the Write tool**, and mutation-test anything that is supposed to fail.
 - The `codex:codex-rescue` subagent retries on its own and reports Bash task ids,
   not companion job ids; check `status --all --json` before launching another job.
 Related: [[feedback-codex-adversarial-review]].

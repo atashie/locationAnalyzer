@@ -27,7 +27,7 @@ not true of the first version, and a session on another machine stalled on exact
 | `spec.json` | Yes, from the two above | 38 stops with a `role` each (`pit`, `excursion`, `lunch`), 81 facility schedules, 10 options with their own departure hours (nine on offer plus the chosen day), a `plan` block naming the chosen option and why a stop came off it, 16 considered-and-left-out entries. |
 | `build_page.py` | **No** | The page generator. Reads the two JSON files below and emits `route-options.html` — switcher, baked SVG basemap, per-option timelines, leg-rhythm strips, totals. |
 | `experiments.json` | **No** | Corridor baselines measured bare (coastal, fall line, Atlanta, Jacksonville) plus rejected candidates. These are measurements, not derivations — nothing else records them. |
-| `measured.json` | Yes, with network | Output of `itinerary_compare.py`. Legs, detours, arrival clocks, hours verdicts, route geometry. |
+| `measured.json` | Yes, with network | Output of `itinerary_compare.py`. Legs, detours, arrival clocks, hours verdicts, route geometry. The tenth option was measured on its own and merged; see below for when that is allowed. |
 | `basemap.json` | Yes, with network | Output of `basemap.py`. State outlines and interstate centrelines, simplified and bakeable. |
 
 `research/`, `assemble_spec.py`, `build_page.py` and `experiments.json` are the ones that cannot be
@@ -134,8 +134,9 @@ Mountain State Park (holiday list). Drive times are **free-flow**: the engine ha
 and the coastal options put 262 miles of southbound I-95 through the Carolinas on one of the
 heaviest travel days of the year. There is no traffic layer and deliberately so.
 
-Every option arrives at or after the 17:35 sunset: a two-hour stop plus lunch and two short stops
-on a 9-10 hour drive does that. The page says so per option rather than hiding it.
+All nine options on offer arrive at or after the 17:35 sunset: a two-hour stop plus lunch and two
+short stops on a 9-10 hour drive does that, and the page says so per option rather than hiding it.
+The chosen day is the exception, and only because it drops the two-hour stop.
 
 The traveller asked for "Flying Rabbit Adventures (Dunwoody)": Flying Rabbit is in Greenville, SC
 and closed Mon-Thu, so the Dunwoody aerial park, Treetop Quest, is the one used.

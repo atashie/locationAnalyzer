@@ -15,6 +15,7 @@ Checks:
   * the rule count in the heading matches the numbered headings
   * figures quoted about the worked example match its JSON, where one is given
   * a worked example's page generator names the repo that built it
+  * a chosen day's prose in the spec quotes no measured figure
   * selftest.py passes
 """
 import io
@@ -108,6 +109,27 @@ def main(example_dir=None):
                 if "republish" not in gen.lower():
                     problems.append("build_page.py Source block never says to republish to the "
                                     "same URL; publishing without it forks the artifact")
+
+        # A clock time or a duration written into the spec's prose is a figure no
+        # re-measure will update. The page renders every one of them from the measurement;
+        # the sentences around them must not repeat any. Two literals in this repo's history
+        # ("19 days away", a basemap's "636 points") were this same defect in prose.
+        spec_path = os.path.join(example_dir, "spec.json")
+        if os.path.exists(spec_path):
+            plan = json.load(io.open(spec_path, encoding="utf-8")).get("plan") or {}
+            prose = [("lede", plan.get("lede", "")), ("why", plan.get("why", ""))]
+            prose += sorted((f"note {k}", v) for k, v in (plan.get("notes") or {}).items())
+            for where, text in prose:
+                for pat, what in ((r"\b\d{1,2}:\d{2}\b", "a clock time"),
+                                  (r"\b\d+\s*(?:min|mins|minutes|hours)\b",
+                                   "a duration"),
+                                  (r"\b\d+h\d{2}\b", "a duration")):
+                    hit = re.search(pat, str(text))
+                    if hit:
+                        problems.append(
+                            f"spec plan prose ({where}) quotes {what}, {hit.group(0)!r}: "
+                            f"measured figures belong in the page, not in a sentence no "
+                            f"re-measure will update")
 
     rc = subprocess.run([sys.executable, os.path.join(HERE, "selftest.py")],
                         capture_output=True, text=True)

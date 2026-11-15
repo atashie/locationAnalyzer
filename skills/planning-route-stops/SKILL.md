@@ -389,9 +389,10 @@ redistribute attention; whatever they do not mention gets the leftovers.**
   the page generator, and enough measured output to rebuild the page with no network. Read it
   before building a new one; the spec format is easier to copy than to infer.
 - `doccheck.py` — checks this prose against this code: files and flags that are named must
-  exist, spec fields promised must be read, the rule count must match, and figures quoted about
-  a worked example must match its JSON. It caught the docs still claiming a basemap of "636
-  points" one commit after a fix made it 673.
+  exist, spec fields promised must be read, the rule count must match, figures quoted about a
+  worked example must match its JSON, its page generator must name the repo that built it, and
+  a chosen day's prose must quote no measured figure. It caught the docs still claiming a
+  basemap of "636 points" one commit after a fix made it 673.
 - `basemap.py` — keyless basemap builder: Census state outlines + OSM motorways, stitched,
   clipped and simplified into `basemap.json` for baking into the page. Every map gets one.
 - `endpoint-notes.md` — public-endpoint limits worth knowing before you hit them.

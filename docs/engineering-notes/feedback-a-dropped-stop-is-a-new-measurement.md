@@ -33,7 +33,17 @@ runs legitimate. Recompute the merged option's detour against the *committed* ba
 available: re-measure everything and say so. See [[feedback-provenance-is-not-correctness]] and
 [[feedback-a-published-page-must-name-its-source]].
 
-A second, smaller lesson from the same change: when you add a tab to a generated page, the old
+**What they asked for once they saw it, same day:** the first tab kept the dropped stop on
+the day, struck through, under a section on what skipping it bought. The reply was "no need to
+say we are skipping it; just skip it", and "simplify language (no flowery prose, just plain
+English)". A plan is read by someone about to drive it, so it states what they will do. The case
+for the plan belongs in the spec, the commit and these notes. Two rules came out of that: name
+the option for what is on the day rather than for what came off it, and keep every clock time
+and duration out of authored prose, because the page renders those from the measurement and a
+sentence quoting one is a figure no re-measure will update. `doccheck.py` now fails an example
+whose plan prose contains either.
+
+A third, smaller lesson from the same change: when you add a tab to a generated page, the old
 view's script starts matching the new view's markup. The option switcher queried `.route`,
 `.markers` and `.tl` document-wide, and the chosen-day tab draws all three — selecting any option
 hid them. Scope such queries to the panel they belong to.

@@ -88,6 +88,10 @@ for driving and the accent for stopped. This renders the real trade-off in one g
 Label each strip with its arrival time and its **longest single leg** — that number is what
 decides whether a plan survives a small child.
 
+One day on its own gets the same strip scaled to *its* elapsed time, not the longest option's,
+and a sentence saying what the bar is: 10h46 from leaving to arriving, 9h06 of it driving, 1h40
+stopped. Scaled against the nine it would read as a short bar with no information in it.
+
 ## Projection and geometry
 
 Artifact pages block every external fetch, so tiles never load and Leaflet renders blank. Bake
@@ -214,6 +218,35 @@ On the rhythm strips, anchor every bar to the *earliest* departure across all op
 the waiting time as a hatched lead-in. Otherwise an option that leaves two hours later looks
 shorter than it is, which is the one thing the strips exist to prevent.
 
+## When the traveller has chosen: a tab for the day
+
+A comparison stops being the point once they pick one. Keep it, put the chosen day in front of
+it, and switch with a two-button tab bar.
+
+**Measure the chosen day as its own option.** They rarely take a row unchanged: here they took
+the coastal option and dropped the stop it was named after. That collapses the two legs either
+side of the gap into one different leg — 869 s + 3977 s became 3299 s, the drive back out of
+the spur gone — so the total, the detour, the arrival, whether it beats sunset, the elapsed
+time and the cost all move at once. Route it. Do not adjust the row.
+
+**Keep it out of the comparison.** It shares a corridor with the option it came from, so
+counting it doubles that corridor in the groups, the totals, the cross-corridor separation and
+the rhythm scale. Name it in the spec (`plan.option`) and build `ORDER` from every other key.
+
+**Scope the switcher's queries to its own panel.** The new tab draws the same classes — a
+route, a markers group, a timeline — and an unscoped `document.querySelectorAll(".tl")` hid all
+three the moment an option was selected. `var CMP = document.getElementById("panel-compare")`,
+then query from `CMP`, fixes every one of them.
+
+**State the plan, not the case for it.** The first draft kept the dropped stop on the day,
+struck through, under a section on what skipping it bought. The traveller's reply: no need to
+say we are skipping it, just skip it. Record the reason in the spec, print the day.
+
+**Keep measured figures out of authored prose.** A note in the spec says what a stop is for;
+every clock time, duration and price on the page is rendered from the measurement. A sentence
+quoting one is a figure that no re-measure will ever update, which is the same defect as a
+hand-typed total. `doccheck.py` fails the example if a plan's prose contains either.
+
 ## Basemap layering
 
 `basemap.py` writes `basemap.json`; the generator inlines it as four SVG groups, in this order,
@@ -318,7 +351,9 @@ Three things earn their place in that sentence:
 A generated page makes these cheap, and each one has caught something real:
 
 ```python
-# every option produced exactly one of everything
+# every option produced exactly one of everything. Count inside the comparison panel: a
+# second tab draws a route, a markers group and a timeline of its own.
+cmp_html = html[html.index('id="panel-compare"'):]
 for pat in (r'class="opt"', r'class="route c', r'class="markers"',
             r'class="tl"', r'class="rhy"', r'<tr data-opt='):
     assert len(re.findall(pat, html)) == len(ORDER)
