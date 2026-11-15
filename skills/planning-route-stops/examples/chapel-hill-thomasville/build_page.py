@@ -14,6 +14,17 @@ opts, stops, bbox, direct = M["options"], M["stops"], M["bbox"], M["direct"]
 ORDER = list(opts)
 SPEC = json.load(open(f"{D}/spec.json", encoding="utf-8"))
 
+# The day the traveller settled on is measured as its own option, so that dropping a stop
+# recomputes the legs either side of it, the detour, the arrival and the cost together. It is
+# kept out of ORDER everywhere: it shares a corridor with the option it came from, and counting
+# it would double that corridor in the groups, the totals and the separation figure.
+PLAN = SPEC.get("plan")
+PLAN_K = PLAN["option"] if PLAN else None
+if PLAN_K:
+    if PLAN_K not in opts:
+        raise SystemExit(f"spec names plan option {PLAN_K!r}, which measured.json does not hold")
+    ORDER = [k for k in ORDER if k != PLAN_K]
+
 GROUPS = []
 for k in ORDER:
     c = opts[k]["corridor"]
@@ -82,7 +93,7 @@ def plus(sec):
 def money(v):
     return f"${int(round(v))}" if v else "n/p"
 
-G = {k: opts[k]["geometry"] for k in ORDER}
+G = {k: opts[k]["geometry"] for k in opts}
 KX_SEP = math.cos(math.radians((bbox["min_lat"] + bbox["max_lat"]) / 2))
 
 def _pt_seg(p, q1, q2):
@@ -206,6 +217,14 @@ def city_tag(c):
 
 base_cities = NL.join(city_tag(c) for c in BM["cities"])
 
+# Assembled once and drawn in both maps. Both use the same projection, so a stop sits at the
+# same pixel on each; the only difference is which routes are drawn over it.
+basemap_groups = NL.join([
+    '      <g class="base-states">', base_states, '      </g>',
+    '      <g class="base-roads">', base_roads, '      </g>',
+    '      <g class="base-road-labels">', base_road_labels, '      </g>',
+    '      <g class="base-cities">', base_cities, '      </g>'])
+
 map_paths = NL.join(
     # Colour by corridor, not by position: "c0..c6" by index silently recoloured every
     # route after the first insertion into ORDER.
@@ -324,8 +343,8 @@ def timeline(k):
     return f'      <ol class="tl" data-opt="{k}" hidden>' + NL + NL.join(items) + NL + '      </ol>'
 timelines = NL.join(timeline(k) for k in ORDER)
 
-max_elapsed = max(v["elapsed_s"] for v in opts.values())
-earliest = min(v["depart_h"] for v in opts.values())
+max_elapsed = max(opts[k]["elapsed_s"] for k in ORDER)
+earliest = min(opts[k]["depart_h"] for k in ORDER)
 def rhythm(k):
     v = opts[k]
     lead = (v["depart_h"] - earliest) * 3600.0
@@ -336,7 +355,7 @@ def rhythm(k):
             dw = v["schedule"][i]["dwell_min"] * 60.0
             kind = "halt big" if role(v["schedule"][i]["stop"]) == "excursion" else "halt"
             segs.append((kind, t, dw)); t += dw
-    span = max_elapsed + (max(o["depart_h"] for o in opts.values()) - earliest) * 3600.0
+    span = max_elapsed + (max(opts[k]["depart_h"] for k in ORDER) - earliest) * 3600.0
     bars = []
     if lead > 0:
         bars.append(f'<span class="seg later" style="left:0;width:{lead/span*100:.3f}%"></span>')
@@ -430,6 +449,256 @@ for s_ in used:                      # one row per number: a stop can appear in 
 calls = NL.join(call_rows)
 def names(xs):
     return ", ".join(xs[:-1]) + (" and " if len(xs) > 1 else "") + xs[-1] if xs else "none"
+
+# ---- the chosen day, rendered as its own tab ------------------------------------------
+# Every figure here is computed from the two measured options -- the plan, and the option it
+# was taken from -- so a re-measure carries all of them with it. Dropping a stop moved the legs
+# either side of it, the detour, the arrival, the daylight and the cost at once; not one of
+# those is adjusted by hand from the fort day's row.
+plan_html = ""
+if PLAN_K:
+    PO, PB = opts[PLAN_K], opts[PLAN["from"]]
+    pdrop = stops[PLAN["dropped"]]
+    di = PB["stops"].index(PLAN["dropped"])
+    pdrop_sch = PB["schedule"][di]
+    leg_to_drop = PB["legs_s"][di]                  # legs_s[i] is the drive INTO stop i
+    before_drop = PB["stops"][di - 1] if di else None
+    saved_drive = PB["total_s"] - PO["total_s"]
+    saved_dwell = (PB["dwell_total_min"] - PO["dwell_total_min"]) * 60.0
+    saved_door = PB["elapsed_s"] - PO["elapsed_s"]
+    daylight_s = (sun_h(PO) - PO["arrive_h"]) * 3600.0
+    plan_longest = max(PO["legs_s"])
+
+    def dash(t):
+        # the spec keeps its prose ASCII; the page sets em dashes like every other sentence on it
+        return t.replace(" -- ", " &mdash; ")
+
+    def tile(v, lbl):
+        return ('        <div class="gl"><span class="gl-v n">%s</span>'
+                '<span class="gl-l">%s</span></div>' % (v, lbl))
+    glance = NL.join([
+        tile(PO["depart"], f'leave {M["origin"]["name"].split(",")[0]}'),
+        tile(PO["arrive"], f'in at {M["dest"]["name"].split(",")[0]} &mdash; '
+                           f'{hm_or_min(daylight_s)} before sunset'),
+        tile(plus(PO["detour_s"]), f'added to the {hm(direct["total_s"])} direct drive'),
+        tile(f'{PO["miles"]:.0f}', f'miles &mdash; longest leg {hm_short(plan_longest)}'),
+        tile(hm_or_min(PO["dwell_total_min"] * 60),
+             f'out of the car, over {NUMWORD[len(PO["stops"])]} stops'),
+        tile(money_opt(PLAN_K), 'admissions &mdash; meals not costed'),
+    ])
+
+    plan_route = (f'      <path class="route k-{CORR_KEY[PO["corridor"]]} sel"'
+                  f' d="{path_of(G[PLAN_K])}" />')
+    pm = []
+    for i, sk in enumerate(PO["stops"], 1):
+        s = stops[sk]
+        x, y = proj(s["lat"], s["lon"])
+        pm.append(f'        <g class="mk"><circle cx="{x:.1f}" cy="{y:.1f}" r="14"/>'
+                  f'<text x="{x:.1f}" y="{y+5:.1f}">{i}</text></g>')
+    fx, fy = proj(pdrop["lat"], pdrop["lon"])     # the dropped stop, marked where it would be
+    pm.append(f'        <g class="mk skip"><circle cx="{fx:.1f}" cy="{fy:.1f}" r="11"/>'
+              f'<text x="{fx:.1f}" y="{fy+5:.1f}">&#215;</text></g>')
+    plan_markers = '      <g class="markers">' + NL + NL.join(pm) + NL + '      </g>'
+
+    def kid_of(sk, fname):
+        for f in stops[sk].get("facilities", []):
+            if f.get("name") == fname:
+                return f.get("kid_note", "")
+        return ""
+
+    def plan_fac_rows(sk, h):
+        # as the comparison timeline renders a facility, plus the researched one-liner where
+        # there is one. Matching on the name is safe: a stop's facility names are unique.
+        out = []
+        for fc in h["facilities"]:
+            nm = f'<a href="{fc["url"]}">{fc["name"]}</a>' if fc.get("url") else fc["name"]
+            scls, stitle = SRC[fc.get("status", "standing")]
+            kid = kid_of(sk, fc["name"])
+            out.append(f'              <li class="fac f-{VERDICT[fc["verdict"]]}">'
+                       f'<span class="fac-n">{nm} <span class="src {scls}">{stitle}</span></span>'
+                       f'<span class="fac-d">{fc["detail"]}</span>'
+                       + (f'<span class="fac-kid">{kid}</span>' if kid else '')
+                       + '</li>')
+        return NL.join(out)
+
+    def plan_card(n, sch):
+        sk = sch["stop"]
+        st, h = stops[sk], sch["hours"]
+        nm = f'<a href="{st["url"]}">{st["name"]}</a>' if st.get("url") else st["name"]
+        warn = ROLL[h["rollup"]]
+        ask = (f'            <p class="ask"><span class="chip call">one call</span>'
+               f' <strong class="n">{st["phone"]}</strong> &mdash; {st["ask"]}</p>'
+               if st.get("phone") and st.get("ask") else "")
+        return NL.join([
+            '        <li class="halt">',
+            f'          <span class="n clock">{sch["arrive"]}</span>',
+            '          <div class="halt-body">',
+            f'            <p class="halt-name"><span class="pnum n">{n}</span> {nm}'
+            f' <span class="num">&middot; {int(sch["dwell_min"])} min</span></p>',
+            f'            <p class="halt-where">{st["where"]}</p>',
+            (f'            <p class="pnote">{dash(PLAN["notes"][sk])}</p>'
+             if PLAN.get("notes", {}).get(sk) else ""),
+            (f'            <p class="warn-row w-{h["rollup"]}">{warn}</p>' if warn else ""),
+            '            <ul class="facs">', plan_fac_rows(sk, h), '            </ul>',
+            (f'            <p class="pkid">{st["kid_note"]}</p>' if st.get("kid_note") else ""),
+            ask,
+            '          </div>',
+            '        </li>'])
+
+    items = [f'        <li class="leg"><span class="n drive">{hm_short(PO["legs_s"][0])}</span>'
+             f'<span class="leg-txt">leave {M["origin"]["name"]} at {PO["depart"]}</span></li>']
+    for i, sch in enumerate(PO["schedule"]):
+        items.append(plan_card(i + 1, sch))
+        if sch["stop"] == before_drop:
+            # shown in place: a plan that silently omits it reads as an oversight
+            items.append(NL.join([
+                '        <li class="halt ghost">',
+                '          <span class="n clock">&mdash;</span>',
+                '          <div class="halt-body">',
+                f'            <p class="halt-name"><s>{pdrop["name"]}</s>'
+                f' <span class="num">&middot; skipped</span></p>',
+                f'            <p class="halt-where">{pdrop["where"]}</p>',
+                f'            <p class="pnote">{mins(leg_to_drop)} further on, '
+                f'{int(pdrop_sch["dwell_min"])} minutes inside, '
+                f'{money(pdrop["cost_usd"])} to get in. Why it is off the plan is below.</p>',
+                (f'            <p class="cost-note">{pdrop["cost_note"]}</p>'
+                 if pdrop.get("cost_note") else ""),
+                '          </div>',
+                '        </li>']))
+        if i + 1 < len(PO["legs_s"]):
+            items.append(f'        <li class="leg">'
+                         f'<span class="n drive">{hm_short(PO["legs_s"][i+1])}</span>'
+                         f'<span class="leg-txt">drive</span></li>')
+    items.append(NL.join([
+        '        <li class="halt arrive">',
+        f'          <span class="n clock">{PO["arrive"]}</span>',
+        '          <div class="halt-body">',
+        f'            <p class="halt-name">{M["dest"]["name"]}</p>',
+        f'            <p class="halt-where">sunset {PO["sunset"]} &middot; '
+        f'{hm(PO["elapsed_s"])} door to door &middot; '
+        f'<strong>{hm_or_min(daylight_s)} of daylight in hand</strong></p>',
+        '          </div>',
+        '        </li>']))
+    plan_tl = '      <ol class="tl plan-tl">' + NL + NL.join(items) + NL + '      </ol>'
+
+    # what the drop changed. Every figure below is read off the two measurements.
+    changes = NL.join([
+        li(f'<strong>You finish in daylight.</strong> The fort day gets in at '
+           f'<span class="n">{PB["arrive"]}</span>, after the '
+           f'<span class="n">{PB["sunset"]}</span> sunset; this one gets in at '
+           f'<span class="n">{PO["arrive"]}</span> with '
+           f'<span class="n">{hm_or_min(daylight_s)}</span> of light left.'),
+        li(f'<strong>{hm_or_min(saved_door)} comes off the day</strong> &mdash; the '
+           f'{hm_or_min(saved_dwell)} you would have spent inside, plus {mins(saved_drive)} of '
+           f'driving, because the fort sits {mins(leg_to_drop)} past the lunch places and has '
+           f'to be driven back from again.'),
+        li(f'<strong>The day becomes free.</strong> Admissions go from '
+           f'<span class="n">{money(PB["cost_usd"])}</span> to '
+           f'<span class="n">{money_opt(PLAN_K)}</span>: the fort was the only stop on it that '
+           f'charges anything. Meals are not costed either way.'),
+        li(f'<strong>The added driving halves.</strong> Against the '
+           f'<span class="n">{hm(direct["total_s"])}</span> direct drive, '
+           f'<span class="n">{plus(PB["detour_s"])}</span> becomes '
+           f'<span class="n">{plus(PO["detour_s"])}</span> &mdash; well inside the hour you set.'),
+        li(f'<strong>And what it costs you.</strong> The fort was the day&rsquo;s one long '
+           f'stretch out of the car: {pdrop["kid_note"]} The longest stop left is '
+           f'<span class="n">{int(max(s["dwell_min"] for s in PO["schedule"]))} min</span>, at '
+           f'lunch.'),
+    ])
+
+    # the slack, as arithmetic rather than advice
+    slack = NL.join([
+        li(f'<strong>Linger instead.</strong> Minutes added at a stop come straight off the '
+           f'daylight, one for one: you can spend up to '
+           f'<span class="n">{hm_or_min(daylight_s)}</span> longer out of the car and still be '
+           f'in before dark. The mound is the one to spend it on &mdash; it is free, and with '
+           f'the fort gone it is the only trail on the day.'),
+        li(f'<strong>Or put the fort back.</strong> It is exactly '
+           f'<span class="n">{hm_or_min(saved_door)}</span> away from this plan, and lands you '
+           f'in at <span class="n">{PB["arrive"]}</span>, in the dark. That is the whole trade, '
+           f'in one number.'),
+        li(f'<strong>If you are behind.</strong> {stops[PO["stops"][-1]]["name"]} is the one to '
+           f'drop: <span class="n">{int(PO["schedule"][-1]["dwell_min"])} min</span>, and the '
+           f'only thing after it is the <span class="n">{hm_short(PO["legs_s"][-1])}</span> run '
+           f'in. Lunch and the mound are what the day is built on.'),
+    ])
+
+    plan_calls = NL.join(
+        li(f'<strong>{stops[s]["name"]} <span class="n">{stops[s]["phone"]}</span></strong>'
+           + (f' &mdash; {stops[s]["ask"]}' if stops[s].get("ask") else ""))
+        for s in PO["stops"] if stops[s].get("phone"))
+    plan_unknown = NL.join(
+        li(f'<strong>{f["name"]}</strong>, at {stops[s]["name"]} &mdash; '
+           f'{f.get("detail") or "hours unknown"}')
+        for s in PO["stops"]
+        for f in next(sc["hours"]["facilities"] for sc in PO["schedule"] if sc["stop"] == s)
+        if f["verdict"] == "unknown")
+
+    plan_html = NL.join([
+        '  <section class="note plan-top">',
+        '    <p class="eyebrow">The day we are taking</p>',
+        f'    <h2 class="plan-h">{short(PLAN_K)[:1].upper() + short(PLAN_K)[1:]}</h2>',
+        f'    <p class="plan-why">{dash(PLAN["why"])}</p>',
+        '    <div class="glance">', glance, '    </div>',
+        '  </section>',
+        '',
+        '  <div class="split">',
+        '    <div class="mapcard">',
+        f'      <svg class="map" viewBox="0 0 {VW:.0f} {VH:.0f}" role="img" aria-label="Map of the'
+        ' chosen coastal route from Chapel Hill to Thomasville over a basemap of state boundaries'
+        ' and interstates, its four stops numbered in order and the skipped fort marked with a'
+        ' cross">',
+        basemap_groups,
+        plan_route,
+        plan_markers,
+        '        <g class="endpt">',
+        f'          <circle cx="{ox:.1f}" cy="{oy:.1f}" r="9"/>',
+        f'          <text x="{ox-255:.1f}" y="{oy+4:.1f}">Chapel Hill</text>',
+        f'          <circle cx="{dx:.1f}" cy="{dy:.1f}" r="9"/>',
+        f'          <text x="{dx+18:.1f}" y="{dy+4:.1f}">Thomasville</text>',
+        '        </g>',
+        '      </svg>',
+        f'      <p class="maplegend">The {NUMWORD[len(PO["stops"])]} stops in order, and '
+        f'<span class="n">&#215;</span> where {pdrop["name"]} would have been. Same projection '
+        f'and the same baked basemap as the comparison tab: state lines from the '
+        f'<a href="https://tigerweb.geo.census.gov/">US Census TIGERweb</a>, interstates from '
+        f'<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>. '
+        f'<strong>No traffic layer</strong> &mdash; the reason is in the other tab.</p>',
+        '    </div>',
+        '',
+        '    <div>',
+        '      <h2 class="ui" style="margin-bottom:.6rem">The day, stop by stop</h2>',
+        plan_tl,
+        '    </div>',
+        '  </div>',
+        '',
+        '  <section class="note">',
+        f'    <h2>What skipping {pdrop["name"]} changes</h2>',
+        '    <ul>', changes, '    </ul>',
+        '  </section>',
+        '',
+        '  <section class="note">',
+        f'    <h2>You have {hm_or_min(daylight_s)} in hand</h2>',
+        '    <ul>', slack, '    </ul>',
+        '  </section>',
+        '',
+        '  <section class="note">',
+        '    <h2>Before you go</h2>',
+        '    <p>Two numbers worth ringing, both because the answer changes what you do rather '
+        'than how you feel about it:</p>',
+        '    <ul>', plan_calls, '    </ul>',
+        f'    <p>Everything else here is a <strong>published routine, not checked against 25 '
+        f'November</strong>. Nothing on the plan is shut when you reach it and nothing opens '
+        f'after you leave &mdash; but that is the routine talking, not the date. Drive times are '
+        f'<strong>free-flow</strong>, from an engine with no traffic model at all, on the day '
+        f'before Thanksgiving: treat <span class="n">{PO["arrive"]}</span> as a floor, and the '
+        f'<span class="n">{i95_mi}</span> miles of southbound I&#8209;95 as the part most likely '
+        f'to spoil it.</p>',
+        ((f'    <p>And {"one thing" if plan_unknown.count(chr(10)) == 0 else "some things"} '
+          f'I could not pin down at all:</p>' + NL + '    <ul>' + NL + plan_unknown + NL
+          + '    </ul>') if plan_unknown else ''),
+        '  </section>'])
+
 
 HTML = f"""<title>Three Roads South</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
@@ -608,6 +877,38 @@ HTML = f"""<title>Three Roads South</title>
   ul li::marker{{color:var(--accent-dim)}}
   .prov{{border-top:1px solid var(--line);padding-top:1rem;font-size:.84rem;color:var(--dim);display:flex;flex-direction:column;gap:.35rem}}
   .prov b{{font-family:"Familjen Grotesk",sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:.68rem;color:var(--ink)}}
+  .tabs{{display:flex;gap:.3rem;border-bottom:1px solid var(--line);margin-bottom:-1.2rem}}
+  .tab{{background:none;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;
+    padding:.5rem .95rem;font-size:.9rem;font-weight:600;color:var(--dim);cursor:pointer}}
+  .tab:hover{{color:var(--ink)}}
+  .tab[aria-selected="true"]{{color:var(--ink);background:var(--panel);border-color:var(--line);
+    box-shadow:0 1px 0 0 var(--panel)}}
+  .panel{{display:flex;flex-direction:column;gap:2rem}}
+
+  .plan-top{{border-left:3px solid var(--accent)}}
+  .plan-h{{font-size:clamp(1.25rem,3.2vw,1.6rem);letter-spacing:-.01em;line-height:1.15;
+    text-wrap:balance}}
+  .plan-why{{max-width:64ch}}
+  .glance{{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.2rem 1.4rem;
+    border-top:1px solid var(--line);padding-top:.85rem}}
+  .gl{{display:flex;flex-direction:column;gap:.05rem;padding:.2rem 0;min-width:0}}
+  .gl-v{{font-size:1.45rem;font-weight:600;color:var(--ink);line-height:1.12}}
+  .gl-l{{font-size:.73rem;color:var(--dim);font-family:"Familjen Grotesk",sans-serif;line-height:1.3}}
+  .pnum{{display:inline-block;min-width:1.3rem;height:1.3rem;line-height:1.3rem;text-align:center;
+    background:var(--ink);color:var(--panel);border-radius:50%;font-size:.74rem;margin-right:.2rem;
+    vertical-align:.08rem}}
+  .plan-tl .halt{{padding:.9rem 0}}
+  .pnote{{font-size:.9rem}}
+  .pkid{{font-size:.82rem;color:var(--dim);border-left:3px solid var(--line);padding-left:.6rem}}
+  .ask{{font-size:.85rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:baseline}}
+  .chip.call{{border-color:var(--flag);color:var(--flag);text-transform:uppercase;
+    letter-spacing:.07em;font-size:.63rem;font-weight:700}}
+  .fac-kid{{grid-column:1/-1;font-size:.76rem;color:var(--dim);padding-top:.1rem}}
+  .halt.ghost .clock{{color:var(--ghost)}}
+  .halt.ghost .halt-name{{color:var(--dim)}}
+  .halt.ghost .halt-name s{{text-decoration-color:var(--flag)}}
+  .markers .mk.skip circle{{fill:var(--panel);stroke:var(--flag);stroke-width:3;stroke-dasharray:5 3}}
+  .markers .mk.skip text{{fill:var(--flag);font-size:18px;font-weight:700}}
   @media (prefers-reduced-motion:reduce){{*{{transition:none!important}}}}
 </style>
 
@@ -622,9 +923,23 @@ HTML = f"""<title>Three Roads South</title>
       straight down I&#8209;85 through Atlanta &mdash; diverging by as much as
       <span class="n">{cross_mi:.0f}</span> miles. {N_OPT.capitalize()} options, each measured end to end on the same
       engine, each built around <strong>one substantial active stop near lunchtime</strong> with
-      short run-around stops either side, and each leaving at the hour its big stop wants. Which trade
-      is worth it is yours to call.</p>
+      short run-around stops either side, and each leaving at the hour its big stop wants.
+      <strong>The day we settled on is the first tab; the {N_OPT} it was chosen from are the
+      second.</strong></p>
   </header>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" id="tab-plan" aria-selected="true"
+            aria-controls="panel-plan">Our day</button>
+    <button class="tab" role="tab" id="tab-compare" aria-selected="false" tabindex="-1"
+            aria-controls="panel-compare">All {N_OPT}, compared</button>
+  </div>
+
+  <div class="panel" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan">
+{plan_html}
+  </div>
+
+  <div class="panel" id="panel-compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
 
   <div class="switch" role="radiogroup" aria-label="Choose an itinerary">
 {switcher}
@@ -633,18 +948,7 @@ HTML = f"""<title>Three Roads South</title>
   <div class="split">
     <div class="mapcard">
       <svg class="map" viewBox="0 0 {VW:.0f} {VH:.0f}" role="img" aria-label="Map of three corridors between Chapel Hill and Thomasville over a basemap of state boundaries and interstates; the selected itinerary is highlighted and its stops numbered">
-      <g class="base-states">
-{base_states}
-      </g>
-      <g class="base-roads">
-{base_roads}
-      </g>
-      <g class="base-road-labels">
-{base_road_labels}
-      </g>
-      <g class="base-cities">
-{base_cities}
-      </g>
+{basemap_groups}
 {map_paths}
 {markers}
         <g class="endpt">
@@ -783,6 +1087,8 @@ HTML = f"""<title>Three Roads South</title>
     </ul>
   </section>
 
+  </div>
+
   <div class="prov">
     <p><b>Provenance</b></p>
     <p><strong>Measured</strong> &mdash; drive times, mileage, legs, added time and route geometry:
@@ -814,16 +1120,19 @@ HTML = f"""<title>Three Roads South</title>
 (function(){{
   var ORDER = {json.dumps(ORDER)};
   var LABELS = {json.dumps({k: opts[k]["label"] for k in ORDER})};
-  var btns = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  // Scoped to the comparison panel: the plan tab draws the same classes (a route, a markers
+  // group, a timeline) and an unscoped query hid them the moment an option was selected.
+  var CMP = document.getElementById("panel-compare");
+  var btns = Array.prototype.slice.call(CMP.querySelectorAll(".opt"));
   function select(key){{
     btns.forEach(function(b){{ b.setAttribute("aria-checked", String(b.dataset.opt === key)); }});
-    document.querySelectorAll(".route").forEach(function(p){{ p.classList.toggle("sel", p.dataset.opt === key); }});
-    document.querySelectorAll(".markers").forEach(function(g){{ g.hidden = g.dataset.opt !== key; }});
-    document.querySelectorAll(".tl").forEach(function(o){{ o.hidden = o.dataset.opt !== key; }});
-    document.querySelectorAll("tbody tr[data-opt]").forEach(function(r){{ r.classList.toggle("sel", r.dataset.opt === key); }});
-    document.querySelectorAll(".rhy").forEach(function(r){{ r.classList.toggle("sel", r.dataset.opt === key); }});
+    CMP.querySelectorAll(".route").forEach(function(p){{ p.classList.toggle("sel", p.dataset.opt === key); }});
+    CMP.querySelectorAll(".markers").forEach(function(g){{ g.hidden = g.dataset.opt !== key; }});
+    CMP.querySelectorAll(".tl").forEach(function(o){{ o.hidden = o.dataset.opt !== key; }});
+    CMP.querySelectorAll("tbody tr[data-opt]").forEach(function(r){{ r.classList.toggle("sel", r.dataset.opt === key); }});
+    CMP.querySelectorAll(".rhy").forEach(function(r){{ r.classList.toggle("sel", r.dataset.opt === key); }});
     document.getElementById("tl-head").textContent = LABELS[key];
-    var sel = document.querySelector('.route[data-opt="' + key + '"]');
+    var sel = CMP.querySelector('.route[data-opt="' + key + '"]');
     if (sel && sel.parentNode) {{ sel.parentNode.insertBefore(sel, sel.parentNode.querySelector(".markers")); }}
   }}
   btns.forEach(function(b){{
@@ -836,6 +1145,27 @@ HTML = f"""<title>Three Roads South</title>
     }});
   }});
   select(ORDER[0]);
+}})();
+
+(function(){{
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  function show(id){{
+    tabs.forEach(function(t){{
+      var on = t.getAttribute("aria-controls") === id;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    }});
+  }}
+  tabs.forEach(function(t, i){{
+    t.addEventListener("click", function(){{ show(t.getAttribute("aria-controls")); }});
+    t.addEventListener("keydown", function(e){{
+      var j = -1;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") j = (i + 1) % tabs.length;
+      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   j = (i - 1 + tabs.length) % tabs.length;
+      if (j >= 0) {{ e.preventDefault(); show(tabs[j].getAttribute("aria-controls")); tabs[j].focus(); }}
+    }});
+  }});
 }})();
 </script>
 """

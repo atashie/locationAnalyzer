@@ -69,7 +69,7 @@ def stop(key, role, dwell=None, name=None, facilities=None, keep=None, **over):
          "dwell_min": dwell or c.get("suggested_dwell_min") or 30,
          "cost_usd": c.get("cost_usd"), "cost_note": c.get("cost_note", ""),
          "url": c["url"], "status": c.get("status", "standing"), "kind": c.get("kind", "outdoors"),
-         "role": role, "facilities": facs}
+         "role": role, "kid_note": c.get("kid_notes", ""), "facilities": facs}
     s.update(over)
     if s["cost_usd"] is None:
         # The tool sums numbers. An unpublished price is carried as 0 plus an explicit flag,
@@ -87,6 +87,8 @@ def lunch(anchor_key, name, where, food_keys, dwell=45, extra=()):
         h = dict(hrs[0])
         h["name"] = f["name"]
         h.setdefault("url", f.get("url"))
+        if f.get("kid_notes"):
+            h["kid_note"] = f["kid_notes"]
         h["status"] = h.get("status", f.get("status", "standing"))
         if f.get("destination") or "destination" in json.dumps(f).lower():
             h["destination"] = True
@@ -123,7 +125,7 @@ S["fort_mcallister"] = stop("fort_mcallister_sp", "excursion", 120, cost_usd=40.
     cost_note="$10 ParkPass plus fort admission $9.75 per adult and $5.50 per child; "
               "whether fort admission covers parking is not stated", phone="912-727-2339")
 S["lunch_richmond_hill"] = lunch("fort_mcallister_sp", "Lunch in Richmond Hill",
-    "Richmond Hill, GA - I-95 exit 87, on the way back from the fort",
+    "Richmond Hill, GA - I-95 exit 87; the fort turn is exit 90",
     ["food_bubbas_bistro", "food_parkers_richmond_hill", "food_kroger_richmond_hill"],
     extra=[dict(old["pig_rh"]["facilities"][0], name="Smokin Pig (BBQ, one option among several)")])
 S["jesup_trains"] = stop("jesup_railfan_platform", "pit", 20)
@@ -242,6 +244,44 @@ O = {
   "atlanta-lake":    {"label": "Atlanta: a state park on Lake Hartwell", "corridor": AT, "depart_h": 5.3,
                       "stops": ["crowders", "tugaloo", "lunch_lavonia", "high_falls", "peanut"],
                       "dwell_min": {"crowders": 30, "tugaloo": 90, "lunch_lavonia": 40, "high_falls": 30}},
+  # The chosen day (see spec["plan"] below): coastal-fort with its own namesake stop dropped.
+  # It is a measured option rather than an adjustment of the fort day's row, because a dropped
+  # stop moves the legs either side of it, the detour, the arrival and the cost at once.
+  "coastal-fort-skipped":
+                     {"label": "Coastal: the fort day, with the fort skipped", "corridor": CO, "depart_h": 5.25,
+                      "stops": ["sob", "santee_mound", "lunch_richmond_hill", "jesup_trains"],
+                      "dwell_min": {"santee_mound": 25, "lunch_richmond_hill": 40}},
+}
+
+# The traveller's decision, 15 November 2026: take the fort day, skip the fort. The page renders
+# this as its own tab, in front of the comparison, and computes what the drop changed by
+# measuring both options rather than editing one. PLAN["option"] is kept out of the nine-way
+# comparison everywhere -- it is the same corridor as coastal-fort and would double-count it.
+PLAN = {
+  "option": "coastal-fort-skipped",
+  "from": "coastal-fort",
+  "dropped": "fort_mcallister",
+  "decided": "2026-11-15",
+  "why": "Fort McAllister is the only paid stop on this day and the longest, and it sits just "
+         "past the lunch places -- where the boys have already been out of the car for the best "
+         "part of an hour. Skipping it is also what turns a day that ends after dark into one "
+         "that ends in daylight.",
+  "notes": {
+    "sob": "Fuel, restrooms and a stretch under the sombrero. You get there before the tower, "
+           "the arcade and the shops open, which is what keeps the stop short -- the Pantry and "
+           "its restrooms are the part that is open.",
+    "santee_mound": "This is the earthwork fort you still get, and with the big one dropped "
+                    "it is the only walk on the day -- which is why the closures below are the "
+                    "one call worth making.",
+    "lunch_richmond_hill": "Four places within a few minutes of exit 87: a sit-down bistro, "
+                           "a grab-and-go counter, a barbecue joint, and a supermarket if you "
+                           "would rather picnic in the park. Three of the four publish hours I "
+                           "could check against your arrival; the supermarket does not. This is "
+                           "also now the stop where the boys get out properly.",
+    "jesup_trains": "Twenty minutes on the chance that a train comes through where three "
+                    "lines meet -- luck rather than a timetable, and a short enough bet to "
+                    "lose. Use the restrooms at lunch, not here.",
+  },
 }
 
 
@@ -284,6 +324,7 @@ CONSIDERED = [
 spec["considered"] = [{"name": n, "url": u, "reason": r} for n, u, r in CONSIDERED]
 spec["stops"] = S
 spec["options"] = O
+spec["plan"] = PLAN
 json.dump(spec, open(os.path.join(D, "spec.json"), "w", encoding="utf-8"), indent=2, ensure_ascii=False)
 open(os.path.join(D, "spec.json"), "a").write("\n")
 print(f"{len(S)} stops, {len(O)} options")

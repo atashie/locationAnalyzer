@@ -5,6 +5,12 @@ the day before Thanksgiving. Nine itineraries, three on each of three genuinely 
 corridors, each built around one substantial active stop near lunchtime with short run-around
 stops either side, and lunch as a short list of nearby places rather than one restaurant.
 
+The page has two tabs. **Our day** is the itinerary the traveller settled on, and
+**All nine, compared** is the comparison they chose it from. The chosen day is a tenth measured
+option rather than a note on the ninth, because it drops a stop from one of them: that moves the
+legs either side of the gap, the detour, the arrival, the daylight and the cost together, and a
+page that recomputes all of them cannot quietly keep one of them stale.
+
 Published artifact: https://claude.ai/code/artifact/bc120a95-023a-4184-81da-b12cebebe9b9
 
 Source of that page: `github.com/atashie/locationAnalyzer`, branch `master`, at
@@ -17,8 +23,8 @@ not true of the first version, and a session on another machine stalled on exact
 | File | Regenerable? | What it holds |
 |---|---|---|
 | `research/*.json` | **No** | Every candidate the 2026-11-08 search found, in the research brief's schema: 230 entries (about 120 activity stops and 107 lunch places) across the three corridors, each with coordinates, hours as fields, prices, status labels and operator URLs. Six passes: a lunchtime-excursion pass per corridor and a pit-stop pass per stretch of road. `carried_over_stops.keep.json` holds the stops checked in the first pass. |
-| `assemble_spec.py` | **No** | Picks from `research/`, normalises hours ("to sunset" becomes 17:30 and says so in the facility name), groups lunch places into "pick one" stops, defines the nine options and the "considered and left out" list, and writes `spec.json`. Re-picking costs no research. |
-| `spec.json` | Yes, from the two above | 38 stops with a `role` each (`pit`, `excursion`, `lunch`), 81 facility schedules, 9 options with their own departure hours, 16 considered-and-left-out entries. |
+| `assemble_spec.py` | **No** | Picks from `research/`, normalises hours ("to sunset" becomes 17:30 and says so in the facility name), groups lunch places into "pick one" stops, defines the nine options, the chosen day under `plan`, and the "considered and left out" list, and writes `spec.json`. Re-picking costs no research. |
+| `spec.json` | Yes, from the two above | 38 stops with a `role` each (`pit`, `excursion`, `lunch`), 81 facility schedules, 10 options with their own departure hours (nine on offer plus the chosen day), a `plan` block naming the chosen option and why a stop came off it, 16 considered-and-left-out entries. |
 | `build_page.py` | **No** | The page generator. Reads the two JSON files below and emits `route-options.html` — switcher, baked SVG basemap, per-option timelines, leg-rhythm strips, totals. |
 | `experiments.json` | **No** | Corridor baselines measured bare (coastal, fall line, Atlanta, Jacksonville) plus rejected candidates. These are measurements, not derivations — nothing else records them. |
 | `measured.json` | Yes, with network | Output of `itinerary_compare.py`. Legs, detours, arrival clocks, hours verdicts, route geometry. |
@@ -37,11 +43,12 @@ generated `route-options.html`.
 Offline, from exactly what is committed:
 
 ```bash
-python build_page.py            # -> route-options.html, ~144 KB
+python build_page.py            # -> route-options.html, ~182 KB
 ```
 
 Re-picking stops or options, then re-measuring against live routing (needs network; responses are
-cached in `.route-cache/`, so only a changed route sends a request):
+cached in `.route-cache/`, so only a changed route sends a request). On a machine with no cache
+this re-measures all ten options, which is the honest thing to do and costs eleven requests:
 
 ```bash
 python assemble_spec.py
@@ -68,6 +75,23 @@ from a fresh session is: read the existing artifact by its URL, rebuild locally,
 to that URL. Keep the favicon off the republish; an artifact keeps the icon it has, and a
 changed icon reads to a viewer as a different page.
 
+### Measuring one option without re-measuring the rest
+
+The tenth option was added on a machine with no route cache, so re-running the whole spec would
+have re-measured the nine committed options as well. It was measured on its own instead -- a
+one-option spec through the same `itinerary_compare.py`, same costing, same date -- and merged
+into `measured.json`. That is only legitimate if the instrument has not moved under you, so two
+things were checked before the merge and both have to hold:
+
+- the **direct baseline** came back at 31314.019 s against the committed 31314.058 s: 39 ms
+  apart on 8h42, or 1.2 ppm;
+- the **three legs the new option shares** with the one it came from (origin to South of the
+  Border to the mound to lunch) came back identical to the millisecond.
+
+The merged option's `detour_s` is then recomputed against the *committed* direct, not the new
+run's, so every "added" figure on the page is measured against one baseline. If either check
+fails, the merge is not available: re-measure the whole spec and say that you did.
+
 ## Changing the trip
 
 Edit `assemble_spec.py`, not `spec.json` (which it overwrites). Everything that describes the
@@ -84,6 +108,10 @@ journey is chosen there:
   `recommended`, `best` and friends. Keep to three per corridor.
 - **A stop's role** — `pit` (short run-around), `excursion` (the one big active stop) or
   `lunch` (a list of places as facilities). The page's prose is computed from roles.
+- **The chosen day** — `PLAN` in `assemble_spec.py`: the option it is, the option it came
+  from, the stop dropped, why, and one note per stop. The "Our day" tab is built from that plus
+  the two measurements; nothing on it is typed in. Dropping a different stop means a new
+  measurement, not an edit to the figures.
 
 Editing dwell times or hours costs **no routing requests** — the cache is keyed on coordinates
 and costing, so only a changed route re-measures.

@@ -180,6 +180,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Stairs up a ~30 ft mound to a lake-view platform; 1 mi nature trail. Bluff deer hunt is 24-25 Oct 2026, not 25 Nov. Nov-Mar waterfowl closures apply to some areas.",
    "facilities": [
     {
      "name": "Bluff Unit vehicle gate (Oct-Feb)",
@@ -213,6 +214,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "Grass-covered Civil War earthwork fort with bombproof, cannon and tunnels to explore. Red Bird Creek Trail 3.2 mi and Magnolia Trail 1.1 mi, both open to hikers and bikes, plus a playground. No holiday notice.",
    "facilities": [
     {
      "name": "Park",
@@ -235,7 +237,7 @@
   },
   "lunch_richmond_hill": {
    "name": "Lunch in Richmond Hill",
-   "where": "Richmond Hill, GA - I-95 exit 87, on the way back from the fort",
+   "where": "Richmond Hill, GA - I-95 exit 87; the fort turn is exit 90",
    "lat": 31.9265,
    "lon": -81.2945,
    "dwell_min": 45,
@@ -252,7 +254,8 @@
      "status": "standing",
      "days": "Tue-Thu",
      "open": "11:00",
-     "close": "20:00"
+     "close": "20:00",
+     "kid_note": "Sit-down coastal Southern with a backyard seating area; Explore Georgia tags it family-friendly. Kids menu not stated. (912) 756-3535."
     },
     {
      "name": "Parker's Kitchen (US-17 at Ford Ave)",
@@ -260,13 +263,15 @@
      "status": "standing",
      "days": "Mon-Fri",
      "open": "04:00",
-     "close": "19:00"
+     "close": "19:00",
+     "kid_note": "Grab-and-go Southern hot food (the regional chain is known for fried chicken) for a picnic at J.F. Gregory's pavilion."
     },
     {
      "name": "Kroger Richmond Hill (picnic supplies)",
      "url": "https://www.kroger.com/stores/search",
      "status": "unknown",
-     "note": "hours not checked"
+     "note": "hours not checked",
+     "kid_note": "Supplies for a picnic at J.F. Gregory or Fort McAllister."
     },
     {
      "name": "Smokin Pig (BBQ, one option among several)",
@@ -290,6 +295,7 @@
    "status": "standing",
    "kind": "icon",
    "role": "pit",
+   "kid_note": "Watch Amtrak/CSX/NS trains, second platform by ACL caboose, geocache; restrooms not listed",
    "facilities": [
     {
      "name": "Railfan platforms & caboose park",
@@ -311,6 +317,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "Walking loop through woods and marsh past native animals (wolves, bison, birds of prey, goats). Trail length not published; allow at least an hour. Closed Thanksgiving Day and the day after, but 25 Nov is not on the closure list. Open rain or shine. On the US-80 route to Pulaski and Tybee.",
    "facilities": [
     {
      "name": "Center",
@@ -344,7 +351,8 @@
      "status": "standing",
      "days": "daily",
      "open": "11:00",
-     "close": "20:00"
+     "close": "20:00",
+     "kid_note": "Competition BBQ on US-80, between Oatland and Fort Pulaski/Tybee. Kids' menu: chicken fingers, corn dog, mac and cheese, grilled cheese. Holiday hours not listed."
     },
     {
      "name": "Sandfly BBQ",
@@ -352,7 +360,8 @@
      "status": "standing",
      "days": "Wed",
      "open": "11:00",
-     "close": "20:00"
+     "close": "20:00",
+     "kid_note": "Casual counter BBQ about 1 mile from the Wormsloe gate, on the way to Skidaway. The downtown Streamliner location has closed."
     },
     {
      "name": "Leopold's Ice Cream (Broughton St)",
@@ -361,6 +370,7 @@
      "days": "Sun-Thu",
      "open": "12:00",
      "close": "21:00",
+     "kid_note": "DESTINATION: century-old Savannah ice-cream parlour. Dessert, not lunch; opens at noon.",
      "destination": true
     }
    ]
@@ -377,6 +387,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Lake, 4 mi of trails (names and lengths not published; the trails page 404s), wildlife-observation boardwalk, playground. 5 min from the Swamp Park.",
    "facilities": [
     {
      "name": "Park",
@@ -400,6 +411,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Boardwalks, bridges and gravel bike/walk trails over braided creeks. Tourism page mentions the Henry Robinson Boardwalk with an observation tower, plus a stretch of the colonial Charleston-Savannah Stagecoach Road. Trail lengths not published. Earlier storm closures are old; no current notice found. City (843) 538-4353.",
    "facilities": [
     {
      "name": "Sanctuary trails and boardwalks (from dawn) (to sunset)",
@@ -461,6 +473,7 @@
    "status": "standing",
    "kind": "roadside",
    "role": "pit",
+   "kid_note": "Restroom/stretch; no playground found",
    "facilities": [
     {
      "name": "Rest area restrooms",
@@ -492,6 +505,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "2,100-acre urban forest with deep-sand horse trails, the Sand River and Memorial Gate; a foundation kids' scavenger hunt used a 1.5-mi loop from the Stable on the Woods entrance (sandy, hilly). No public restrooms or water. Hunt season (Oct 15-Mar 15) restricts dog walking Tue 13:30-17:00 / Sat mornings only - Wed unaffected. Horses have right of way.",
    "facilities": [
     {
      "name": "Woods (from dawn) (to sunset)",
@@ -524,7 +538,8 @@
      "status": "standing",
      "days": "Mon-Sat",
      "open": "11:00",
-     "close": "22:00"
+     "close": "22:00",
+     "kid_note": "Sit-down downtown bar & grill. Operator site/OSM say Lanky's; a Toast page says Electric Eats (Wed 11:00-21:30) and returned 403 on re-check. Confirm occupant."
     },
     {
      "name": "New Moon Cafe",
@@ -532,13 +547,15 @@
      "status": "standing",
      "days": "Mon-Fri",
      "open": "07:00",
-     "close": "16:00"
+     "close": "16:00",
+     "kid_note": "Counter cafe: bagel sandwiches, soups, smoothies, lemonade; good to-go for Hopelands/Hitchcock Woods or to carry to Aiken State Park. Call (803) 643-7088."
     },
     {
      "name": "Food Lion (Richland Ave W)",
      "status": "unknown",
      "note": "hours not checked",
-     "url": "https://stores.foodlion.com/sc/aiken/1520-richland-ave-west"
+     "url": "https://stores.foodlion.com/sc/aiken/1520-richland-ave-west",
+     "kid_note": "Backup grocery near Hitchcock Woods."
     }
    ]
   },
@@ -554,6 +571,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Closed only Thanksgiving, Christmas, New Year's Day per NPS - Wed 25 Nov is a normal day. Climb the stairs of the Great Temple Mound (~0.5 mi from visitor center), crawl into the reconstructed Earth Lodge, 6-8 mi of trails incl. boardwalk.",
    "facilities": [
     {
      "name": "Grounds & trails",
@@ -586,6 +604,7 @@
    "status": "standing",
    "kind": "ticketed",
    "role": "excursion",
+   "kid_note": "Large walking zoo plus river-side botanical garden reached by the Saluda Skyride; 44-ft Sky-High Safari ropes course suits the 9-year-old (6-year-old only if 48 in+ or with parent), kangaroo walk-through, giraffe feeding. Closed only Thanksgiving and Christmas Day per operator, so Wed 25 Nov falls in normal winter hours. Zipline (Zip the Zoo / ZOOm the River) not listed on current rides page - could not determine if still operating.",
    "facilities": [
     {
      "name": "Zoo & Garden gates (winter hours Nov 2 - Jan 31)",
@@ -643,6 +662,7 @@
      "days": "daily",
      "open": "06:00",
      "close": "21:00",
+     "kid_note": "Columbia meat-and-three institution (fried chicken, mac and cheese, sweet tea), fast and family-friendly. Mild local-institution destination. Branch hours not checked; chain says 6am-9pm.",
      "destination": true
     },
     {
@@ -651,13 +671,15 @@
      "status": "standing",
      "days": "daily",
      "open": "10:00",
-     "close": "22:00"
+     "close": "22:00",
+     "kid_note": "Local burger/fries/shakes counter; quick and cheap."
     },
     {
      "name": "Riverbanks Zoo on-site dining (Tuskers, Wild Burger)",
      "status": "unknown",
      "note": "hours not published",
-     "url": "https://riverbanks.org/plan-your-visit/visitor-information"
+     "url": "https://riverbanks.org/plan-your-visit/visitor-information",
+     "kid_note": "Only food once inside: outside food, drinks and coolers banned (refillable water bottles OK). Tuskers reportedly has kids' meals, tenders, pizza (Riverbanks venue PDF, search snippet only). Which venues open in winter not determined."
     }
    ]
   },
@@ -673,6 +695,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Open 365 days per operator. Beaver Dam Trail ~0.5 mi, Pond Trail 0.8 mi loop (alligators sometimes), two short boardwalks with covered observation deck, 25-ft bridge over Butler Creek; covered Pfizer Pavilion for picnics. Boardwalk total is short (~0.2 mi), so a 75+ min visit means combining loops. Old domain phinizyswamp.org no longer resolves.",
    "facilities": [
     {
      "name": "Trails & boardwalks (Oct-Mar)",
@@ -697,6 +720,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "30-acre lake with ~1.9-mi mostly flat Sandhills Trail loop, 3.5-mi Loop Road Trail, 0.4-mi Jackson Creek nature trail, 6.1-mi mountain-bike loop (bring bikes), two playgrounds in the picnic area. Splash pad closed for the season.",
    "facilities": [
     {
      "name": "Park gates (to sunset)",
@@ -737,6 +761,7 @@
      "days": "Mon-Thu",
      "open": "06:30",
      "close": "21:00",
+     "kid_note": "DESTINATION: Macon hot-dog icon since 1916 (original Cotton Ave stand burned 2015). ~2.7 km from Ocmulgee Mounds.",
      "destination": true
     },
     {
@@ -746,6 +771,7 @@
      "days": "Tue-Sat",
      "open": "07:00",
      "close": "15:00",
+     "kid_note": "DESTINATION: soul-food meat-and-three since 1959, Allman Brothers memorabilia. Older sources Mon-Sat; Wednesday open in all versions. Own site 403. Call 478-621-7044.",
      "destination": true
     },
     {
@@ -754,7 +780,8 @@
      "status": "standing",
      "days": "Sun-Thu",
      "open": "11:00",
-     "close": "22:00"
+     "close": "22:00",
+     "kid_note": "Downtown burger institution, easy sit-down; paid street parking. Own site 403."
     }
    ]
   },
@@ -770,6 +797,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "Closed only Thanksgiving, Christmas, New Year's Day per NPS - Wed 25 Nov is a normal day. Climb the stairs of the Great Temple Mound (~0.5 mi from visitor center), crawl into the reconstructed Earth Lodge, 6-8 mi of trails incl. boardwalk.",
    "facilities": [
     {
      "name": "Grounds & trails",
@@ -802,6 +830,7 @@
    "status": "standing",
    "kind": "icon",
    "role": "pit",
+   "kid_note": "Giant steel peanut with LED crown; photo stop",
    "facilities": [
     {
      "name": "Peanut monument",
@@ -823,6 +852,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "Destination playground (2019), walking trail around two ponds; restrooms not stated",
    "facilities": [
     {
      "name": "Park (to sunset)",
@@ -847,6 +877,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "Farm-themed playground with real tractors; directories conflict on hours (9-5, 9-7)",
    "facilities": [
     {
      "name": "Market, cafe, playground",
@@ -872,6 +903,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "135 ft cascade; Historic Trail 0.5 mi easy with falls overlook; Falls View 1.5 mi strenuous; day-use playground. Lake lowered Nov 1 2026-Jan 31 2027",
    "facilities": [
     {
      "name": "Park grounds",
@@ -897,6 +929,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "1 mi paved lighted lake loop with bridges/piers, modern playground, restrooms",
    "facilities": [
     {
      "name": "Park",
@@ -921,6 +954,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "'Great Adventure' older-kid zone, Tot Lot, pond, trails, fitness gear; hours third-party only",
    "facilities": [
     {
      "name": "Park (Nov 1-Feb 28)",
@@ -944,6 +978,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "Large accessible playground (shade sails), miles of river trails, canoe launch, pavilions on the Ocmulgee River. Published 7:30-20:00 is the DST schedule - winter closing time not published (likely earlier). Operator site amerson.maconbibb.us lists no hours. Parks dept 478-803-0484.",
    "facilities": [
     {
      "name": "Park, playground and river trail (Nov-Feb)",
@@ -968,6 +1003,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "335-acre city park with a large playground, a 3-mi paved loop around old rice fields (bikes OK), a huge covered pavilion and restrooms. Cheap leg-stretch near the interstate; the city sometimes closes the trail for maintenance.",
    "facilities": [
     {
      "name": "Park",
@@ -998,7 +1034,8 @@
      "status": "standing",
      "days": "Sun-Thu",
      "open": "11:00",
-     "close": "20:00"
+     "close": "20:00",
+     "kid_note": "Kids' menu (10 and under): burger, grilled cheese, tenders, hot dog, with fries and drink."
     },
     {
      "name": "Kroger Chamblee Dunwoody Rd",
@@ -1007,7 +1044,8 @@
      "days": "daily",
      "open": "06:00",
      "close": "23:00",
-     "url": "https://www.kroger.com/stores/search"
+     "url": "https://www.kroger.com/stores/search",
+     "kid_note": "Picnic supplies; Brook Run Park has picnic space next to Treetop Quest."
     },
     {
      "name": "Walmart Neighborhood Market Winters Chapel",
@@ -1016,7 +1054,8 @@
      "days": "daily",
      "open": "06:00",
      "close": "23:59",
-     "url": "https://www.walmart.com/store-finder"
+     "url": "https://www.walmart.com/store-finder",
+     "kid_note": "Grab-and-go picnic supplies."
     }
    ]
   },
@@ -1032,6 +1071,7 @@
    "status": "standing",
    "kind": "playground",
    "role": "pit",
+   "kid_note": "Turf hills with slides, natural climbing area, tot playground, 2.53 mi loop trails; splash pad closed in Nov; restrooms on site map",
    "facilities": [
     {
      "name": "Park",
@@ -1064,6 +1104,7 @@
    "status": "confirmed",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "Walk-Up Trail ~1-1.3 mi each way up bare granite, ~2 h round trip; ride Skyride down (until 15:00) if tickets allow. SkyHike ropes course and Dinosaur Explore only from 14:00. Lakeside zip is 10+ (45-250 lb) so the 9yo is excluded.",
    "facilities": [
     {
      "name": "Walk-Up Trail / hiking trails",
@@ -1113,7 +1154,8 @@
      "status": "standing",
      "days": "Wed",
      "open": "11:30",
-     "close": "16:00"
+     "close": "16:00",
+     "kid_note": "Sit-down BBQ in a historic village building; listed family-friendly (Explore Georgia). Kids' menu not stated."
     },
     {
      "name": "Stoned Pizza Kitchen",
@@ -1121,7 +1163,8 @@
      "status": "standing",
      "days": "Mon-Thu",
      "open": "11:00",
-     "close": "22:00"
+     "close": "22:00",
+     "kid_note": "Pizza, wings, pasta; also carryout for a park picnic (carryout 11:00-21:00)."
     },
     {
      "name": "Pi-Bytes",
@@ -1129,7 +1172,8 @@
      "status": "standing",
      "days": "Mon-Thu",
      "open": "11:00",
-     "close": "18:00"
+     "close": "18:00",
+     "kid_note": "Cupcake-sized gourmet pies and pizza; pool table. Quirky quick stop."
     },
     {
      "name": "Kroger north of Stone Mountain Park",
@@ -1138,7 +1182,8 @@
      "days": "daily",
      "open": "06:00",
      "close": "23:00",
-     "url": "https://www.kroger.com/stores/search"
+     "url": "https://www.kroger.com/stores/search",
+     "kid_note": "Picnic supplies for the park's lawns/trails."
     }
    ]
   },
@@ -1154,6 +1199,7 @@
    "status": "confirmed",
    "kind": "outdoors",
    "role": "pit",
+   "kid_note": "Trail network (20 mi at this access); short kid-loop lengths not retrieved; closed only Christmas",
    "facilities": [
     {
      "name": "Park gates (November)",
@@ -1186,6 +1232,7 @@
    "status": "standing",
    "kind": "outdoors",
    "role": "excursion",
+   "kid_note": "Peninsula on Lake Hartwell: 4 mi of trails (Sassafras, Muscadine), sand beach open (swim area inaccessible due to low water), mini golf. Playground not mentioned.",
    "facilities": [
     {
      "name": "Park",
@@ -1232,6 +1279,7 @@
      "days": "Mon-Thu",
      "open": "10:00",
      "close": "15:00",
+     "kid_note": "Sit-down home cooking; pies/cakes daily; listed family-friendly; Explore Georgia '100 Plates' 2016 (mild destination). Hours from Explore Georgia, not operator.",
      "destination": true
     },
     {
@@ -1240,7 +1288,8 @@
      "status": "standing",
      "days": "Mon-Sat",
      "open": "06:00",
-     "close": "22:00"
+     "close": "22:00",
+     "kid_note": "Quick counter service; operator lists a Kid's Playground (indoor/outdoor not stated)."
     },
     {
      "name": "Food Lion Lavonia (ex-Dill's Food City)",
@@ -1248,13 +1297,15 @@
      "status": "standing",
      "days": "daily",
      "open": "07:00",
-     "close": "23:00"
+     "close": "23:00",
+     "kid_note": "Picnic supplies for Tugaloo/Victoria Bryant SP. Opened 14 Oct 2026; hours from trade-press article (may be generic to both new stores)."
     },
     {
      "name": "Bella Bella Mozzarella",
      "status": "unknown",
      "note": "Directory (Jul 2026) shows 11:00-21:00; not verified with operator",
-     "url": "https://exploregeorgia.org/lavonia"
+     "url": "https://exploregeorgia.org/lavonia",
+     "kid_note": "Pizza/subs downtown; no operator site found."
     }
    ]
   }
@@ -6785,6 +6836,709 @@
    "rdp_epsilon_used": 0.0064,
    "sunset": "17:35",
    "after_sunset": true,
+   "arrives_next_day": false
+  },
+  "coastal-fort-skipped": {
+   "label": "Coastal: the fort day, with the fort skipped",
+   "stops": [
+    "sob",
+    "santee_mound",
+    "lunch_richmond_hill",
+    "jesup_trains"
+   ],
+   "legs_s": [
+    7712.258,
+    5480.518,
+    7179.2,
+    3298.578,
+    9105.333
+   ],
+   "total_s": 32775.888,
+   "miles": 546.9,
+   "detour_s": 1461.829999999998,
+   "dwell_total_min": 100.0,
+   "cost_usd": 0.0,
+   "depart_h": 5.25,
+   "depart": "05:15",
+   "corridor": "coastal - I-95 then US-84",
+   "arrive_h": 16.0211,
+   "arrive": "16:01",
+   "days_spanned": 0,
+   "elapsed_s": 38775.888,
+   "schedule": [
+    {
+     "stop": "sob",
+     "arrive": "07:24",
+     "arrive_h": 7.3923,
+     "arrive_origin_clock": "07:24",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 15.0,
+     "leg_s": 7712.258,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Sunoco West pumps (pay at pump)",
+        "verdict": "always",
+        "detail": "open 24 h, 7 days; card at the pump before 07:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Outdoor kitsch: 200 ft sombrero, Pedro statues",
+        "verdict": "always",
+        "detail": "no hours; sunrise at Dillon is 07:00",
+        "usable_min": 15,
+        "url": null,
+        "status": "standing"
+       },
+       {
+        "name": "Pedro's Pantry + public restrooms",
+        "verdict": "open",
+        "detail": "open until 23:00",
+        "usable_min": 15,
+        "url": "https://www.sobpedro.com/facilities/south-of-the-border-i95-gas-station-dillon-sc",
+        "status": "standing"
+       },
+       {
+        "name": "Mexico Shop East",
+        "verdict": "shut",
+        "detail": "opens 08:00, 21 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Fort Pedro Fireworks",
+        "verdict": "shut",
+        "detail": "opens 09:00, 81 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/shopping",
+        "status": "standing"
+       },
+       {
+        "name": "Sombrero Tower + arcade",
+        "verdict": "shut",
+        "detail": "opens 11:00, 201 min after you leave",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions",
+        "status": "standing"
+       },
+       {
+        "name": "Reptile Lagoon",
+        "verdict": "closed",
+        "detail": "closed Wed",
+        "usable_min": 0,
+        "url": "https://www.sobpedro.com/attractions/reptile-lagoon",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 4,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "santee_mound",
+     "arrive": "09:10",
+     "arrive_h": 9.1647,
+     "arrive_origin_clock": "09:10",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 25.0,
+     "leg_s": 5480.518,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Bluff Unit vehicle gate (Oct-Feb)",
+        "verdict": "open",
+        "detail": "open until 17:00",
+        "usable_min": 25,
+        "url": "https://www.fws.gov/refuge/santee/visit-us",
+        "status": "standing"
+       },
+       {
+        "name": "Visitor Center",
+        "verdict": "open",
+        "detail": "open until 16:00",
+        "usable_min": 25,
+        "url": "https://www.fws.gov/refuge/santee/visit-us",
+        "status": "standing"
+       }
+      ],
+      "usable": 2,
+      "missed": 0,
+      "unknown": 0
+     }
+    },
+    {
+     "stop": "lunch_richmond_hill",
+     "arrive": "11:35",
+     "arrive_h": 11.5755,
+     "arrive_origin_clock": "11:35",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 40.0,
+     "leg_s": 7179.2,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Bubba's Bistro",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "http://www.rhbubbasbistro.com",
+        "status": "standing"
+       },
+       {
+        "name": "Parker's Kitchen (US-17 at Ford Ave)",
+        "verdict": "open",
+        "detail": "open until 19:00",
+        "usable_min": 40,
+        "url": "https://bryancountynews.com/news/new-parkers-kitchen-location-open-on-hwy-17",
+        "status": "standing"
+       },
+       {
+        "name": "Kroger Richmond Hill (picnic supplies)",
+        "verdict": "unknown",
+        "detail": "hours not published in a form this could check",
+        "usable_min": null,
+        "url": "https://www.kroger.com/stores/search",
+        "status": "unknown"
+       },
+       {
+        "name": "Smokin Pig (BBQ, one option among several)",
+        "verdict": "open",
+        "detail": "open until 20:00",
+        "usable_min": 40,
+        "url": "https://www.smokinpigbbqjoint.com/",
+        "status": "standing"
+       }
+      ],
+      "usable": 3,
+      "missed": 0,
+      "unknown": 1
+     }
+    },
+    {
+     "stop": "jesup_trains",
+     "arrive": "13:10",
+     "arrive_h": 13.1585,
+     "arrive_origin_clock": "13:10",
+     "utc_offset": -5.0,
+     "day_offset": 0,
+     "weekday_checked": true,
+     "dwell_min": 20.0,
+     "leg_s": 3298.578,
+     "hours": {
+      "rollup": "open-on-arrival",
+      "facilities": [
+       {
+        "name": "Railfan platforms & caboose park",
+        "verdict": "always",
+        "detail": "Outdoor; the listed Fri-Sat '12am-12pm' looks like a data error",
+        "usable_min": 20,
+        "url": null,
+        "status": "standing"
+       }
+      ],
+      "usable": 1,
+      "missed": 0,
+      "unknown": 0
+     }
+    }
+   ],
+   "shut_on_arrival": [],
+   "opens_during_halt": [],
+   "geometry": [
+    [
+     35.9132,
+     -79.05581
+    ],
+    [
+     35.88295,
+     -79.06078
+    ],
+    [
+     35.84717,
+     -79.09067
+    ],
+    [
+     35.81634,
+     -79.08446
+    ],
+    [
+     35.79771,
+     -79.09501
+    ],
+    [
+     35.77757,
+     -79.14373
+    ],
+    [
+     35.75853,
+     -79.16646
+    ],
+    [
+     35.71726,
+     -79.17891
+    ],
+    [
+     35.65278,
+     -79.176
+    ],
+    [
+     35.61727,
+     -79.19275
+    ],
+    [
+     35.5827,
+     -79.19525
+    ],
+    [
+     35.52354,
+     -79.18462
+    ],
+    [
+     35.51012,
+     -79.19
+    ],
+    [
+     35.50278,
+     -79.15089
+    ],
+    [
+     35.46805,
+     -79.11822
+    ],
+    [
+     35.43164,
+     -79.12304
+    ],
+    [
+     35.39116,
+     -79.10767
+    ],
+    [
+     35.3522,
+     -79.10893
+    ],
+    [
+     35.27847,
+     -79.0726
+    ],
+    [
+     35.2495,
+     -79.02506
+    ],
+    [
+     35.23303,
+     -79.01849
+    ],
+    [
+     35.20787,
+     -78.99196
+    ],
+    [
+     35.1606,
+     -78.97171
+    ],
+    [
+     35.12342,
+     -78.94065
+    ],
+    [
+     35.11542,
+     -78.95471
+    ],
+    [
+     35.10201,
+     -79.02183
+    ],
+    [
+     35.05365,
+     -79.02327
+    ],
+    [
+     35.03073,
+     -79.0373
+    ],
+    [
+     34.97093,
+     -79.03993
+    ],
+    [
+     34.96205,
+     -78.99749
+    ],
+    [
+     34.93674,
+     -78.99418
+    ],
+    [
+     34.90037,
+     -78.95871
+    ],
+    [
+     34.85428,
+     -78.96679
+    ],
+    [
+     34.79168,
+     -78.99443
+    ],
+    [
+     34.69362,
+     -78.99877
+    ],
+    [
+     34.64358,
+     -79.01495
+    ],
+    [
+     34.55325,
+     -79.19496
+    ],
+    [
+     34.52643,
+     -79.27174
+    ],
+    [
+     34.4983,
+     -79.30921
+    ],
+    [
+     34.50347,
+     -79.3073
+    ],
+    [
+     34.49195,
+     -79.3285
+    ],
+    [
+     34.44769,
+     -79.36372
+    ],
+    [
+     34.40226,
+     -79.4464
+    ],
+    [
+     34.34098,
+     -79.53666
+    ],
+    [
+     34.26828,
+     -79.70551
+    ],
+    [
+     34.26351,
+     -79.7442
+    ],
+    [
+     34.21015,
+     -79.82908
+    ],
+    [
+     34.17949,
+     -79.86313
+    ],
+    [
+     34.13889,
+     -79.88057
+    ],
+    [
+     34.07137,
+     -79.94737
+    ],
+    [
+     34.05768,
+     -79.96978
+    ],
+    [
+     34.00645,
+     -80.00137
+    ],
+    [
+     33.97664,
+     -80.03832
+    ],
+    [
+     33.90961,
+     -80.08839
+    ],
+    [
+     33.84359,
+     -80.12391
+    ],
+    [
+     33.80682,
+     -80.15813
+    ],
+    [
+     33.75451,
+     -80.18376
+    ],
+    [
+     33.73576,
+     -80.21591
+    ],
+    [
+     33.69926,
+     -80.25056
+    ],
+    [
+     33.66496,
+     -80.27581
+    ],
+    [
+     33.64147,
+     -80.28042
+    ],
+    [
+     33.60012,
+     -80.32846
+    ],
+    [
+     33.56601,
+     -80.39088
+    ],
+    [
+     33.49345,
+     -80.46721
+    ],
+    [
+     33.42018,
+     -80.49326
+    ],
+    [
+     33.39718,
+     -80.51315
+    ],
+    [
+     33.12665,
+     -80.63978
+    ],
+    [
+     33.04737,
+     -80.66951
+    ],
+    [
+     33.01866,
+     -80.66623
+    ],
+    [
+     32.95972,
+     -80.67922
+    ],
+    [
+     32.87595,
+     -80.71796
+    ],
+    [
+     32.79207,
+     -80.77711
+    ],
+    [
+     32.7395,
+     -80.84122
+    ],
+    [
+     32.69408,
+     -80.87896
+    ],
+    [
+     32.65122,
+     -80.88649
+    ],
+    [
+     32.63014,
+     -80.88241
+    ],
+    [
+     32.60209,
+     -80.90058
+    ],
+    [
+     32.59085,
+     -80.92161
+    ],
+    [
+     32.57079,
+     -80.93886
+    ],
+    [
+     32.50406,
+     -80.97112
+    ],
+    [
+     32.47735,
+     -80.97154
+    ],
+    [
+     32.41485,
+     -81.01237
+    ],
+    [
+     32.28416,
+     -81.06899
+    ],
+    [
+     32.25638,
+     -81.10123
+    ],
+    [
+     32.25219,
+     -81.12811
+    ],
+    [
+     32.22632,
+     -81.16445
+    ],
+    [
+     32.1678,
+     -81.21458
+    ],
+    [
+     32.151,
+     -81.23895
+    ],
+    [
+     32.09043,
+     -81.23795
+    ],
+    [
+     32.00984,
+     -81.27896
+    ],
+    [
+     31.96051,
+     -81.32989
+    ],
+    [
+     31.92624,
+     -81.29353
+    ],
+    [
+     31.95001,
+     -81.31239
+    ],
+    [
+     31.93462,
+     -81.32188
+    ],
+    [
+     31.87969,
+     -81.39534
+    ],
+    [
+     31.86923,
+     -81.43263
+    ],
+    [
+     31.84943,
+     -81.46861
+    ],
+    [
+     31.82798,
+     -81.49187
+    ],
+    [
+     31.82263,
+     -81.52047
+    ],
+    [
+     31.85897,
+     -81.56351
+    ],
+    [
+     31.84818,
+     -81.59031
+    ],
+    [
+     31.78583,
+     -81.61057
+    ],
+    [
+     31.66334,
+     -81.84599
+    ],
+    [
+     31.60498,
+     -81.88266
+    ],
+    [
+     31.60496,
+     -81.91923
+    ],
+    [
+     31.59119,
+     -81.95081
+    ],
+    [
+     31.49602,
+     -82.00642
+    ],
+    [
+     31.15829,
+     -82.42657
+    ],
+    [
+     31.14787,
+     -82.46894
+    ],
+    [
+     31.04072,
+     -82.7353
+    ],
+    [
+     31.00922,
+     -82.85008
+    ],
+    [
+     30.9888,
+     -82.87081
+    ],
+    [
+     30.79915,
+     -83.37072
+    ],
+    [
+     30.78442,
+     -83.5439
+    ],
+    [
+     30.78492,
+     -83.62306
+    ],
+    [
+     30.80038,
+     -83.76164
+    ],
+    [
+     30.79887,
+     -83.80646
+    ],
+    [
+     30.83499,
+     -83.93568
+    ],
+    [
+     30.83666,
+     -83.97885
+    ]
+   ],
+   "geometry_raw_points": 9072,
+   "rdp_epsilon_used": 0.004,
+   "sunset": "17:35",
+   "after_sunset": false,
    "arrives_next_day": false
   }
  },

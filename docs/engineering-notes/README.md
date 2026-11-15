@@ -18,6 +18,7 @@ note disagrees with the code, the code is right and the note needs correcting.
 
 ## How to work on this (methodology, and what went wrong)
 
+- [`feedback-a-dropped-stop-is-a-new-measurement`](feedback-a-dropped-stop-is-a-new-measurement.md) — Dropping a stop moves the legs either side, the detour, the arrival, the daylight and the cost at once, so measure the variant rather than editing its row; merge a single fresh measurement only when the shared legs and the direct baseline come back identical
 - [`feedback-a-fixture-is-exact-only-where-you-point-it`](feedback-a-fixture-is-exact-only-where-you-point-it.md) — Four reviews defeated the same test suite by varying an axis the fixtures held constant; build the wrong implementation in the test file and name which case kills it
 - [`feedback-a-predeclared-gate-must-be-shown-reachable`](feedback-a-predeclared-gate-must-be-shown-reachable.md) — Before predeclaring a PASS/FAIL rule, compute whether the best possible observation passes it at the predeclared sample size; choose n by failure tolerance, not by the zero-event bound
 - [`feedback-a-published-page-must-name-its-source`](feedback-a-published-page-must-name-its-source.md) — A published artifact is the only copy that reaches other machines; if it does not name the repo, branch and path that built it, a later session can reproduce everything and still refuse to edit it
