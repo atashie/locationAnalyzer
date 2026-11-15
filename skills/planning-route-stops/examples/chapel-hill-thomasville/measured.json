@@ -237,7 +237,7 @@
   },
   "lunch_richmond_hill": {
    "name": "Lunch in Richmond Hill",
-   "where": "Richmond Hill, GA - I-95 exit 87; the fort turn is exit 90",
+   "where": "Richmond Hill, GA - I-95 exit 87",
    "lat": 31.9265,
    "lon": -81.2945,
    "dwell_min": 45,
@@ -271,7 +271,7 @@
      "url": "https://www.kroger.com/stores/search",
      "status": "unknown",
      "note": "hours not checked",
-     "kid_note": "Supplies for a picnic at J.F. Gregory or Fort McAllister."
+     "kid_note": ""
     },
     {
      "name": "Smokin Pig (BBQ, one option among several)",
@@ -6839,7 +6839,7 @@
    "arrives_next_day": false
   },
   "coastal-fort-skipped": {
-   "label": "Coastal: the fort day, with the fort skipped",
+   "label": "Coastal: the mound at Santee, lunch at Richmond Hill, trains at Jesup",
    "stops": [
     "sob",
     "santee_mound",

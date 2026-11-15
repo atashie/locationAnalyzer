@@ -451,23 +451,14 @@ def names(xs):
     return ", ".join(xs[:-1]) + (" and " if len(xs) > 1 else "") + xs[-1] if xs else "none"
 
 # ---- the chosen day, rendered as its own tab ------------------------------------------
-# Every figure here is computed from the two measured options -- the plan, and the option it
-# was taken from -- so a re-measure carries all of them with it. Dropping a stop moved the legs
-# either side of it, the detour, the arrival, the daylight and the cost at once; not one of
-# those is adjusted by hand from the fort day's row.
+# Every number on this tab is read off the measurement. The spec's prose for it carries no
+# clock time and no duration, so a re-measure moves the figures and leaves the words alone.
 plan_html = ""
 if PLAN_K:
-    PO, PB = opts[PLAN_K], opts[PLAN["from"]]
-    pdrop = stops[PLAN["dropped"]]
-    di = PB["stops"].index(PLAN["dropped"])
-    pdrop_sch = PB["schedule"][di]
-    leg_to_drop = PB["legs_s"][di]                  # legs_s[i] is the drive INTO stop i
-    before_drop = PB["stops"][di - 1] if di else None
-    saved_drive = PB["total_s"] - PO["total_s"]
-    saved_dwell = (PB["dwell_total_min"] - PO["dwell_total_min"]) * 60.0
-    saved_door = PB["elapsed_s"] - PO["elapsed_s"]
+    PO = opts[PLAN_K]
     daylight_s = (sun_h(PO) - PO["arrive_h"]) * 3600.0
     plan_longest = max(PO["legs_s"])
+    plan_dwell_s = PO["dwell_total_min"] * 60.0
 
     def dash(t):
         # the spec keeps its prose ASCII; the page sets em dashes like every other sentence on it
@@ -478,13 +469,13 @@ if PLAN_K:
                 '<span class="gl-l">%s</span></div>' % (v, lbl))
     glance = NL.join([
         tile(PO["depart"], f'leave {M["origin"]["name"].split(",")[0]}'),
-        tile(PO["arrive"], f'in at {M["dest"]["name"].split(",")[0]} &mdash; '
+        tile(PO["arrive"], f'in at {M["dest"]["name"].split(",")[0]}, '
                            f'{hm_or_min(daylight_s)} before sunset'),
         tile(plus(PO["detour_s"]), f'added to the {hm(direct["total_s"])} direct drive'),
-        tile(f'{PO["miles"]:.0f}', f'miles &mdash; longest leg {hm_short(plan_longest)}'),
-        tile(hm_or_min(PO["dwell_total_min"] * 60),
+        tile(f'{PO["miles"]:.0f}', f'miles, longest leg {hm_short(plan_longest)}'),
+        tile(hm_or_min(plan_dwell_s),
              f'out of the car, over {NUMWORD[len(PO["stops"])]} stops'),
-        tile(money_opt(PLAN_K), 'admissions &mdash; meals not costed'),
+        tile(money_opt(PLAN_K), 'admissions, meals not costed'),
     ])
 
     plan_route = (f'      <path class="route k-{CORR_KEY[PO["corridor"]]} sel"'
@@ -495,9 +486,6 @@ if PLAN_K:
         x, y = proj(s["lat"], s["lon"])
         pm.append(f'        <g class="mk"><circle cx="{x:.1f}" cy="{y:.1f}" r="14"/>'
                   f'<text x="{x:.1f}" y="{y+5:.1f}">{i}</text></g>')
-    fx, fy = proj(pdrop["lat"], pdrop["lon"])     # the dropped stop, marked where it would be
-    pm.append(f'        <g class="mk skip"><circle cx="{fx:.1f}" cy="{fy:.1f}" r="11"/>'
-              f'<text x="{fx:.1f}" y="{fy+5:.1f}">&#215;</text></g>')
     plan_markers = '      <g class="markers">' + NL + NL.join(pm) + NL + '      </g>'
 
     def kid_of(sk, fname):
@@ -549,22 +537,6 @@ if PLAN_K:
              f'<span class="leg-txt">leave {M["origin"]["name"]} at {PO["depart"]}</span></li>']
     for i, sch in enumerate(PO["schedule"]):
         items.append(plan_card(i + 1, sch))
-        if sch["stop"] == before_drop:
-            # shown in place: a plan that silently omits it reads as an oversight
-            items.append(NL.join([
-                '        <li class="halt ghost">',
-                '          <span class="n clock">&mdash;</span>',
-                '          <div class="halt-body">',
-                f'            <p class="halt-name"><s>{pdrop["name"]}</s>'
-                f' <span class="num">&middot; skipped</span></p>',
-                f'            <p class="halt-where">{pdrop["where"]}</p>',
-                f'            <p class="pnote">{mins(leg_to_drop)} further on, '
-                f'{int(pdrop_sch["dwell_min"])} minutes inside, '
-                f'{money(pdrop["cost_usd"])} to get in. Why it is off the plan is below.</p>',
-                (f'            <p class="cost-note">{pdrop["cost_note"]}</p>'
-                 if pdrop.get("cost_note") else ""),
-                '          </div>',
-                '        </li>']))
         if i + 1 < len(PO["legs_s"]):
             items.append(f'        <li class="leg">'
                          f'<span class="n drive">{hm_short(PO["legs_s"][i+1])}</span>'
@@ -581,46 +553,38 @@ if PLAN_K:
         '        </li>']))
     plan_tl = '      <ol class="tl plan-tl">' + NL + NL.join(items) + NL + '      </ol>'
 
-    # what the drop changed. Every figure below is read off the two measurements.
-    changes = NL.join([
-        li(f'<strong>You finish in daylight.</strong> The fort day gets in at '
-           f'<span class="n">{PB["arrive"]}</span>, after the '
-           f'<span class="n">{PB["sunset"]}</span> sunset; this one gets in at '
-           f'<span class="n">{PO["arrive"]}</span> with '
-           f'<span class="n">{hm_or_min(daylight_s)}</span> of light left.'),
-        li(f'<strong>{hm_or_min(saved_door)} comes off the day</strong> &mdash; the '
-           f'{hm_or_min(saved_dwell)} you would have spent inside, plus {mins(saved_drive)} of '
-           f'driving, because the fort sits {mins(leg_to_drop)} past the lunch places and has '
-           f'to be driven back from again.'),
-        li(f'<strong>The day becomes free.</strong> Admissions go from '
-           f'<span class="n">{money(PB["cost_usd"])}</span> to '
-           f'<span class="n">{money_opt(PLAN_K)}</span>: the fort was the only stop on it that '
-           f'charges anything. Meals are not costed either way.'),
-        li(f'<strong>The added driving halves.</strong> Against the '
-           f'<span class="n">{hm(direct["total_s"])}</span> direct drive, '
-           f'<span class="n">{plus(PB["detour_s"])}</span> becomes '
-           f'<span class="n">{plus(PO["detour_s"])}</span> &mdash; well inside the hour you set.'),
-        li(f'<strong>And what it costs you.</strong> The fort was the day&rsquo;s one long '
-           f'stretch out of the car: {pdrop["kid_note"]} The longest stop left is '
-           f'<span class="n">{int(max(s["dwell_min"] for s in PO["schedule"]))} min</span>, at '
-           f'lunch.'),
-    ])
+    # the same strip the comparison tab draws, on one day and scaled to that day, so the bar
+    # reads as proportions of this drive rather than against the nine
+    segs, t = [], 0.0
+    for i, leg in enumerate(PO["legs_s"]):
+        segs.append(("drive", t, leg))
+        t += leg
+        if i < len(PO["schedule"]):
+            dw = PO["schedule"][i]["dwell_min"] * 60.0
+            segs.append(("halt", t, dw))
+            t += dw
+    pspan = PO["elapsed_s"]
+    pbars = "".join(f'<span class="seg {k}" style="left:{s/pspan*100:.3f}%;'
+                    f'width:{d/pspan*100:.3f}%"></span>' for k, s, d in segs if d > 0)
+    plan_rhythm = NL.join([
+        '    <div class="rhys">',
+        '      <div class="rhy">',
+        f'        <span class="rhy-name">{M["origin"]["name"].split(",")[0]} '
+        f'<span class="n">{PO["depart"]}</span></span>',
+        f'        <span class="rhy-bar">{pbars}</span>',
+        f'        <span class="rhy-end n">{PO["arrive"]}</span>',
+        f'        <span class="rhy-max n">longest leg {hm_short(plan_longest)}</span>',
+        '      </div>',
+        '    </div>'])
 
-    # the slack, as arithmetic rather than advice
-    slack = NL.join([
-        li(f'<strong>Linger instead.</strong> Minutes added at a stop come straight off the '
-           f'daylight, one for one: you can spend up to '
-           f'<span class="n">{hm_or_min(daylight_s)}</span> longer out of the car and still be '
-           f'in before dark. The mound is the one to spend it on &mdash; it is free, and with '
-           f'the fort gone it is the only trail on the day.'),
-        li(f'<strong>Or put the fort back.</strong> It is exactly '
-           f'<span class="n">{hm_or_min(saved_door)}</span> away from this plan, and lands you '
-           f'in at <span class="n">{PB["arrive"]}</span>, in the dark. That is the whole trade, '
-           f'in one number.'),
-        li(f'<strong>If you are behind.</strong> {stops[PO["stops"][-1]]["name"]} is the one to '
-           f'drop: <span class="n">{int(PO["schedule"][-1]["dwell_min"])} min</span>, and the '
-           f'only thing after it is the <span class="n">{hm_short(PO["legs_s"][-1])}</span> run '
-           f'in. Lunch and the mound are what the day is built on.'),
+    spare = NL.join([
+        li(f'<strong>Stay longer if you want to.</strong> A minute more at a stop is a minute '
+           f'later in. You reach {M["dest"]["name"].split(",")[0]} '
+           f'<span class="n">{hm_or_min(daylight_s)}</span> before sunset, so that is how much '
+           f'you can add and still arrive in daylight. The mound is where to spend it.'),
+        li(f'<strong>If you are behind, drop the last stop.</strong> It is '
+           f'<span class="n">{int(PO["schedule"][-1]["dwell_min"])} min</span>, and after it '
+           f'there is only the <span class="n">{hm_short(PO["legs_s"][-1])}</span> run in.'),
     ])
 
     plan_calls = NL.join(
@@ -628,7 +592,7 @@ if PLAN_K:
            + (f' &mdash; {stops[s]["ask"]}' if stops[s].get("ask") else ""))
         for s in PO["stops"] if stops[s].get("phone"))
     plan_unknown = NL.join(
-        li(f'<strong>{f["name"]}</strong>, at {stops[s]["name"]} &mdash; '
+        li(f'<strong>{f["name"]}</strong>, at {stops[s]["name"]}: '
            f'{f.get("detail") or "hours unknown"}')
         for s in PO["stops"]
         for f in next(sc["hours"]["facilities"] for sc in PO["schedule"] if sc["stop"] == s)
@@ -638,16 +602,15 @@ if PLAN_K:
         '  <section class="note plan-top">',
         '    <p class="eyebrow">The day we are taking</p>',
         f'    <h2 class="plan-h">{short(PLAN_K)[:1].upper() + short(PLAN_K)[1:]}</h2>',
-        f'    <p class="plan-why">{dash(PLAN["why"])}</p>',
+        f'    <p class="plan-why">{dash(PLAN["lede"])}</p>',
         '    <div class="glance">', glance, '    </div>',
         '  </section>',
         '',
         '  <div class="split">',
         '    <div class="mapcard">',
         f'      <svg class="map" viewBox="0 0 {VW:.0f} {VH:.0f}" role="img" aria-label="Map of the'
-        ' chosen coastal route from Chapel Hill to Thomasville over a basemap of state boundaries'
-        ' and interstates, its four stops numbered in order and the skipped fort marked with a'
-        ' cross">',
+        ' route from Chapel Hill to Thomasville over a basemap of state boundaries and'
+        ' interstates, with its four stops numbered in order">',
         basemap_groups,
         plan_route,
         plan_markers,
@@ -658,12 +621,11 @@ if PLAN_K:
         f'          <text x="{dx+18:.1f}" y="{dy+4:.1f}">Thomasville</text>',
         '        </g>',
         '      </svg>',
-        f'      <p class="maplegend">The {NUMWORD[len(PO["stops"])]} stops in order, and '
-        f'<span class="n">&#215;</span> where {pdrop["name"]} would have been. Same projection '
-        f'and the same baked basemap as the comparison tab: state lines from the '
+        f'      <p class="maplegend">The {NUMWORD[len(PO["stops"])]} stops, in order. The basemap '
+        f'is baked in at build time: state lines from the '
         f'<a href="https://tigerweb.geo.census.gov/">US Census TIGERweb</a>, interstates from '
         f'<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>. '
-        f'<strong>No traffic layer</strong> &mdash; the reason is in the other tab.</p>',
+        f'<strong>No traffic layer</strong>. The reason is in the other tab.</p>',
         '    </div>',
         '',
         '    <div>',
@@ -673,32 +635,33 @@ if PLAN_K:
         '  </div>',
         '',
         '  <section class="note">',
-        f'    <h2>What skipping {pdrop["name"]} changes</h2>',
-        '    <ul>', changes, '    </ul>',
+        '    <h2>How the day is carved up</h2>',
+        f'    <p>Grey is driving, green is a stop. The bar is the whole '
+        f'<span class="n">{hm(PO["elapsed_s"])}</span> from leaving to arriving: '
+        f'<span class="n">{hm(PO["total_s"])}</span> of it driving, '
+        f'<span class="n">{hm_or_min(plan_dwell_s)}</span> stopped.</p>',
+        plan_rhythm,
         '  </section>',
         '',
         '  <section class="note">',
-        f'    <h2>You have {hm_or_min(daylight_s)} in hand</h2>',
-        '    <ul>', slack, '    </ul>',
+        '    <h2>Spare time, and what to drop</h2>',
+        '    <ul>', spare, '    </ul>',
         '  </section>',
         '',
         '  <section class="note">',
         '    <h2>Before you go</h2>',
-        '    <p>Two numbers worth ringing, both because the answer changes what you do rather '
-        'than how you feel about it:</p>',
+        '    <p>Two numbers to ring:</p>',
         '    <ul>', plan_calls, '    </ul>',
-        f'    <p>Everything else here is a <strong>published routine, not checked against 25 '
-        f'November</strong>. Nothing on the plan is shut when you reach it and nothing opens '
-        f'after you leave &mdash; but that is the routine talking, not the date. Drive times are '
-        f'<strong>free-flow</strong>, from an engine with no traffic model at all, on the day '
-        f'before Thanksgiving: treat <span class="n">{PO["arrive"]}</span> as a floor, and the '
-        f'<span class="n">{i95_mi}</span> miles of southbound I&#8209;95 as the part most likely '
-        f'to spoil it.</p>',
-        ((f'    <p>And {"one thing" if plan_unknown.count(chr(10)) == 0 else "some things"} '
-          f'I could not pin down at all:</p>' + NL + '    <ul>' + NL + plan_unknown + NL
-          + '    </ul>') if plan_unknown else ''),
+        f'    <p>Every other time here is a <strong>published routine, not checked against 25 '
+        f'November</strong>. On those hours nothing is shut when you arrive, and nothing opens '
+        f'after you leave. The drive times are <strong>free-flow</strong>: the engine has no '
+        f'traffic model. You are driving the day before Thanksgiving, with '
+        f'<span class="n">{i95_mi}</span> miles of southbound I&#8209;95, so '
+        f'<span class="n">{PO["arrive"]}</span> is the earliest you could get in, not the '
+        f'likeliest.</p>',
+        ('    <p>One thing I could not check:</p>' + NL + '    <ul>' + NL + plan_unknown + NL
+         + '    </ul>') if plan_unknown else '',
         '  </section>'])
-
 
 HTML = f"""<title>Three Roads South</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
@@ -904,11 +867,6 @@ HTML = f"""<title>Three Roads South</title>
   .chip.call{{border-color:var(--flag);color:var(--flag);text-transform:uppercase;
     letter-spacing:.07em;font-size:.63rem;font-weight:700}}
   .fac-kid{{grid-column:1/-1;font-size:.76rem;color:var(--dim);padding-top:.1rem}}
-  .halt.ghost .clock{{color:var(--ghost)}}
-  .halt.ghost .halt-name{{color:var(--dim)}}
-  .halt.ghost .halt-name s{{text-decoration-color:var(--flag)}}
-  .markers .mk.skip circle{{fill:var(--panel);stroke:var(--flag);stroke-width:3;stroke-dasharray:5 3}}
-  .markers .mk.skip text{{fill:var(--flag);font-size:18px;font-weight:700}}
   @media (prefers-reduced-motion:reduce){{*{{transition:none!important}}}}
 </style>
 

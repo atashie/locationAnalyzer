@@ -43,7 +43,7 @@ generated `route-options.html`.
 Offline, from exactly what is committed:
 
 ```bash
-python build_page.py            # -> route-options.html, ~182 KB
+python build_page.py            # -> route-options.html, ~179 KB
 ```
 
 Re-picking stops or options, then re-measuring against live routing (needs network; responses are
@@ -109,9 +109,11 @@ journey is chosen there:
 - **A stop's role** — `pit` (short run-around), `excursion` (the one big active stop) or
   `lunch` (a list of places as facilities). The page's prose is computed from roles.
 - **The chosen day** — `PLAN` in `assemble_spec.py`: the option it is, the option it came
-  from, the stop dropped, why, and one note per stop. The "Our day" tab is built from that plus
-  the two measurements; nothing on it is typed in. Dropping a different stop means a new
-  measurement, not an edit to the figures.
+  from, the stop dropped and why, a one-line `lede`, and one note per stop. The tab states the
+  plan rather than the case for it, so `why` is recorded but not printed, and no stop that is
+  not on the day is named. Keep clock times and durations out of that prose: they are measured
+  and rendered, and a re-measure must move them without anyone editing a sentence. Dropping a
+  different stop means a new measurement, not an edit to the figures.
 
 Editing dwell times or hours costs **no routing requests** — the cache is keyed on coordinates
 and costing, so only a changed route re-measures.

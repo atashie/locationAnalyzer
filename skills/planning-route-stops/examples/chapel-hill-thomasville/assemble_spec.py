@@ -125,10 +125,15 @@ S["fort_mcallister"] = stop("fort_mcallister_sp", "excursion", 120, cost_usd=40.
     cost_note="$10 ParkPass plus fort admission $9.75 per adult and $5.50 per child; "
               "whether fort admission covers parking is not stated", phone="912-727-2339")
 S["lunch_richmond_hill"] = lunch("fort_mcallister_sp", "Lunch in Richmond Hill",
-    "Richmond Hill, GA - I-95 exit 87; the fort turn is exit 90",
+    "Richmond Hill, GA - I-95 exit 87",
     ["food_bubbas_bistro", "food_parkers_richmond_hill", "food_kroger_richmond_hill"],
     extra=[dict(old["pig_rh"]["facilities"][0], name="Smokin Pig (BBQ, one option among several)")])
 S["jesup_trains"] = stop("jesup_railfan_platform", "pit", 20)
+# The research offers the supermarket for a picnic "at J.F. Gregory or Fort McAllister". The
+# chosen day goes to neither, and this note is shown on its tab.
+for _f in S["lunch_richmond_hill"]["facilities"]:
+    if _f["name"].startswith("Kroger"):
+        _f["kid_note"] = ""
 S["oatland"] = stop("oatland_island", "excursion", 105, phone="912-395-1212",   # operator site footer, checked 2026-11-08
     ask="any closure on the 25th (published list names only Thanksgiving and the day after)")
 S["lunch_savannah_east"] = lunch("oatland_island", "Lunch on the east side of Savannah",
@@ -248,7 +253,7 @@ O = {
   # It is a measured option rather than an adjustment of the fort day's row, because a dropped
   # stop moves the legs either side of it, the detour, the arrival and the cost at once.
   "coastal-fort-skipped":
-                     {"label": "Coastal: the fort day, with the fort skipped", "corridor": CO, "depart_h": 5.25,
+                     {"label": "Coastal: the mound at Santee, lunch at Richmond Hill, trains at Jesup", "corridor": CO, "depart_h": 5.25,
                       "stops": ["sob", "santee_mound", "lunch_richmond_hill", "jesup_trains"],
                       "dwell_min": {"santee_mound": 25, "lunch_richmond_hill": 40}},
 }
@@ -262,25 +267,24 @@ PLAN = {
   "from": "coastal-fort",
   "dropped": "fort_mcallister",
   "decided": "2026-11-15",
-  "why": "Fort McAllister is the only paid stop on this day and the longest, and it sits just "
-         "past the lunch places -- where the boys have already been out of the car for the best "
-         "part of an hour. Skipping it is also what turns a day that ends after dark into one "
-         "that ends in daylight.",
+  # Recorded because the spec is the record of the trip. The page states the plan, not the
+  # case for it, so this is not printed on it.
+  "why": "Fort McAllister is the only paid stop on that day and the longest, and it sits past "
+         "the lunch places, where the boys have already been out of the car.",
+  # No clock time and no duration in any of the prose below. Those are measured, and a
+  # re-measure has to be able to move them without anyone editing a sentence.
+  "lede": "Down I-95, then west on US-84, with four stops: fuel at South of the Border, a "
+          "mound to climb at Santee, lunch at Richmond Hill, and trains at Jesup.",
   "notes": {
-    "sob": "Fuel, restrooms and a stretch under the sombrero. You get there before the tower, "
-           "the arcade and the shops open, which is what keeps the stop short -- the Pantry and "
-           "its restrooms are the part that is open.",
-    "santee_mound": "This is the earthwork fort you still get, and with the big one dropped "
-                    "it is the only walk on the day -- which is why the closures below are the "
-                    "one call worth making.",
-    "lunch_richmond_hill": "Four places within a few minutes of exit 87: a sit-down bistro, "
-                           "a grab-and-go counter, a barbecue joint, and a supermarket if you "
-                           "would rather picnic in the park. Three of the four publish hours I "
-                           "could check against your arrival; the supermarket does not. This is "
-                           "also now the stop where the boys get out properly.",
-    "jesup_trains": "Twenty minutes on the chance that a train comes through where three "
-                    "lines meet -- luck rather than a timetable, and a short enough bet to "
-                    "lose. Use the restrooms at lunch, not here.",
+    "sob": "Fuel, restrooms and a walk round the giant sombrero. The shops, the tower and the "
+           "arcade open later in the morning, so this is a short stop.",
+    "santee_mound": "Free, and the only walk on the day. Some of the refuge closes from "
+                    "November, so ring first.",
+    "lunch_richmond_hill": "Four places within a few minutes of exit 87. Three of them "
+                           "publish hours I could check against your arrival; the supermarket "
+                           "does not. Pick on the day.",
+    "jesup_trains": "There is no timetable, so you may see no train at all. Use the "
+                    "restrooms at lunch.",
   },
 }
 

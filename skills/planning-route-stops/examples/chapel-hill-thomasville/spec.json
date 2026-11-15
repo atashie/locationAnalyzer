@@ -232,7 +232,7 @@
     },
     "lunch_richmond_hill": {
       "name": "Lunch in Richmond Hill",
-      "where": "Richmond Hill, GA - I-95 exit 87; the fort turn is exit 90",
+      "where": "Richmond Hill, GA - I-95 exit 87",
       "lat": 31.9265,
       "lon": -81.2945,
       "dwell_min": 45,
@@ -266,7 +266,7 @@
           "url": "https://www.kroger.com/stores/search",
           "status": "unknown",
           "note": "hours not checked",
-          "kid_note": "Supplies for a picnic at J.F. Gregory or Fort McAllister."
+          "kid_note": ""
         },
         {
           "name": "Smokin Pig (BBQ, one option among several)",
@@ -1452,7 +1452,7 @@
       }
     },
     "coastal-fort-skipped": {
-      "label": "Coastal: the fort day, with the fort skipped",
+      "label": "Coastal: the mound at Santee, lunch at Richmond Hill, trains at Jesup",
       "corridor": "coastal - I-95 then US-84",
       "depart_h": 5.25,
       "stops": [
@@ -1554,12 +1554,13 @@
     "from": "coastal-fort",
     "dropped": "fort_mcallister",
     "decided": "2026-11-15",
-    "why": "Fort McAllister is the only paid stop on this day and the longest, and it sits just past the lunch places -- where the boys have already been out of the car for the best part of an hour. Skipping it is also what turns a day that ends after dark into one that ends in daylight.",
+    "why": "Fort McAllister is the only paid stop on that day and the longest, and it sits past the lunch places, where the boys have already been out of the car.",
+    "lede": "Down I-95, then west on US-84, with four stops: fuel at South of the Border, a mound to climb at Santee, lunch at Richmond Hill, and trains at Jesup.",
     "notes": {
-      "sob": "Fuel, restrooms and a stretch under the sombrero. You get there before the tower, the arcade and the shops open, which is what keeps the stop short -- the Pantry and its restrooms are the part that is open.",
-      "santee_mound": "This is the earthwork fort you still get, and with the big one dropped it is the only walk on the day -- which is why the closures below are the one call worth making.",
-      "lunch_richmond_hill": "Four places within a few minutes of exit 87: a sit-down bistro, a grab-and-go counter, a barbecue joint, and a supermarket if you would rather picnic in the park. Three of the four publish hours I could check against your arrival; the supermarket does not. This is also now the stop where the boys get out properly.",
-      "jesup_trains": "Twenty minutes on the chance that a train comes through where three lines meet -- luck rather than a timetable, and a short enough bet to lose. Use the restrooms at lunch, not here."
+      "sob": "Fuel, restrooms and a walk round the giant sombrero. The shops, the tower and the arcade open later in the morning, so this is a short stop.",
+      "santee_mound": "Free, and the only walk on the day. Some of the refuge closes from November, so ring first.",
+      "lunch_richmond_hill": "Four places within a few minutes of exit 87. Three of them publish hours I could check against your arrival; the supermarket does not. Pick on the day.",
+      "jesup_trains": "There is no timetable, so you may see no train at all. Use the restrooms at lunch."
     }
   }
 }
