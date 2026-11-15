@@ -108,6 +108,10 @@ function planeBytes(file) {
 
 const vectors = JSON.parse(fs.readFileSync(path.join(FIXTURES, 'vectors.json'), 'utf8'));
 
+// Compute sequence numbers are drawn from one counter across every group and case, so no two
+// computes anywhere in this file share one. See pass 53 F1.
+let caseSeq = 0;
+
 for (const group of vectors.groups) {
   // Two workers per group when the group discloses: one initialised WITH the flag planes and one
   // WITHOUT, so "the plane moves no verdict" is checked against the same expectations rather than
@@ -207,7 +211,14 @@ for (const group of vectors.groups) {
         'the vectors and the worker disagree about whether this group discloses');
     }
     if (plainWorker) {
-      const p = plainWorker.send({ ...initArgs(plainManifest), routeFlags: undefined });
+      // **Every disclosure withheld, not just the flags.** `plainManifest` declares no
+      // `dest_file` either, so handing over the destination buffers makes the worker see a plane
+      // its manifest does not declare -- it then requires a byte order `plainManifest` has no
+      // reason to carry, and refuses. That never happened before pass 53 because no group had
+      // ever carried flag planes AND destination planes at once, which is the same gap as F1's:
+      // the fixtures did not hold the combination, so nothing exercised this path.
+      const p = plainWorker.send({ ...initArgs(plainManifest), routeFlags: undefined,
+        destinations: undefined, destTables: undefined });
       const pr = p.find((m) => m.type === 'ready');
       assert(pr && pr.disclosesRoutes === false,
         'a bundle with no flag_file must report that it does not disclose');
@@ -220,12 +231,20 @@ for (const group of vectors.groups) {
       // expectations below are met by a decoder that cannot see a disclosure at all.
       const w = c.withhold_flags ? plainWorker : worker;
       assert(w, 'this case needs a non-disclosing worker and the group has none');
+      // **A DISTINCT sequence per case.** Pass 53 F1: every case computed with `seq: 1`, so the
+      // assertion that an explanation carries `state.lastSeq` was comparing against a constant --
+      // replacing `seq: state.lastSeq` with the literal `1` passed all 87 checks, and in the page
+      // that makes the inspector reject every explanation after the second compute. A constant in
+      // a harness cannot detect a constant in the thing it tests, which this file had already
+      // learned one pass earlier about `reqId` and did not generalise to its neighbour.
+      const computeSeq = ++caseSeq;
       const out = w.send({
-        type: 'compute', seq: 1, tEvent: 0,
+        type: 'compute', seq: computeSeq, tEvent: 0,
         thresholds: c.thresholds, enabled: c.enabled,
       });
       const res = out.find((m) => m.type === 'result');
       assert(res, 'no result message');
+      assert(res.seq === computeSeq, `result seq ${res.seq}, computed ${computeSeq}`);
       const n = group.nrows * group.ncols;
       assert(res.rgba.byteLength === n * 4, 'rgba buffer is the wrong size');
 
@@ -259,6 +278,8 @@ for (const group of vectors.groups) {
       const vOut = w.send({ type: 'verdicts', reqId: 1 });
       const vMsg = vOut.find((m) => m.type === 'verdicts');
       assert(vMsg, 'no verdicts message');
+      assert(vMsg.seq === computeSeq,
+        `verdicts seq ${vMsg.seq}, the compute used ${computeSeq}`);
       const verdicts = new Int8Array(vMsg.verdicts);
       assert(verdicts.length === n, `verdict plane is ${verdicts.length}, expected ${n}`);
 
@@ -320,9 +341,18 @@ for (const group of vectors.groups) {
         // labelled as another cell's).
         assert(e.type === 'explainAt', `cell ${p}: type ${e.type}`);
         assert(e.reqId === reqId, `cell ${p}: reqId ${e.reqId}, sent ${reqId}`);
-        assert(e.seq === 1, `cell ${p}: seq ${e.seq}, the compute used 1`);
+        assert(e.seq === computeSeq,
+          `cell ${p}: seq ${e.seq}, the compute used ${computeSeq}`);
         assert(e.row === r && e.col === col,
           `cell ${p}: reply is labelled (${e.row}, ${e.col}), asked (${r}, ${col})`);
+        // **The three lifecycle flags, by their ABSENCE.** Pass 53 F1: no assertion mentioned
+        // them, so adding `outside: true` to a successful reply passed all 87 worker checks. A
+        // flag that says "this reply is not an answer" must not appear on one that is -- the page
+        // reads them before it reads anything else.
+        for (const flag of ['outside', 'invalidCoordinates', 'notComputed']) {
+          assert(e[flag] === undefined,
+            `cell ${p}: a successful reply carries ${flag}=${e[flag]}`);
+        }
         assert(e.verdict === verdicts[p],
           `cell ${p}: explainAt verdict ${e.verdict}, verdict plane ${verdicts[p]}`);
         // The HEADLINE, not just the code. Pass 51 B2: `verdictName: 'INCLUDED'` for every cell
@@ -530,6 +560,8 @@ for (const group of vectors.groups) {
       const maskOut = w.send({ type: 'mask', reqId: 1 });
       const maskMsg = maskOut.find((m) => m.type === 'mask');
       assert(maskMsg, 'no mask message');
+      assert(maskMsg.seq === computeSeq,
+        `mask seq ${maskMsg.seq}, the compute used ${computeSeq}`);
       const mask = new Uint8Array(maskMsg.mask);
 
       // The mask is a CONSUMER OUTPUT, not a debug aid: app.js polygonizes it at a 0.5

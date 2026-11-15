@@ -30,6 +30,25 @@ TARGET = V2 / "locfinder" / "measure" / "admissible.py"
 #: Anchors are regexes with `\r?\n`, never string literals: the working copy is CRLF, and an LF
 #: anchor matches nothing while every single-line anchor matches fine. Two mutations in
 #: `mutate_worker.mjs` were reported INERT for exactly this.
+#: Where a mutation is expected to land, for the ones whose anchor could match more than one
+#: site. `elif not candidates:` occurs TWICE in `admissibility`, which is exactly the shape that
+#: produced a confirm-on-the-wrong-cause in the worker runner twice.
+EXPECTED_IN = {
+    "drop the destination check": "admissibility",
+    "accept a walk to any destination": "admissibility",
+    "accept an arrival anywhere": "admissibility",
+    "match the arrival against the selected place instead of the named one": "admissibility",
+    "accept a named place whose location the record does not give": "admissibility",
+    "collapse permitted members by name so the last one wins": "admissibility",
+    "match the arrival against the furthest namesake instead of the nearest": "admissibility",
+    "drop every namesake when one has an unusable coordinate": "admissibility",
+    "a walk is only a walk if its duration was recorded": "evidence_of_a_walk",
+    "the self-report columns are not evidence of a walk": "WalkedRecord",
+    "an untested witness counts as evidence that somebody walked": "evidence_of_a_walk",
+    "ignore the permitted alternatives on the selected node": "permitted_destinations",
+    "skip the geographic range check on a coordinate": "check_lonlat",
+}
+
 MUTATIONS = {
     "drop the start-door check": (
         r'    if _blank\(record\.start_lon\) or _blank\(record\.start_lat\):\r?\n'
@@ -168,6 +187,29 @@ def run() -> tuple[int, str]:
     return p.returncode, p.stdout + p.stderr
 
 
+def _definition_at(source: str, offset: int) -> str:
+    """Which definition contains this character offset, by scanning declarations before it.
+
+    **`class` as well as `def`.** The first version tracked only `def`, and its first report was a
+    false positive: `EVIDENCE_FIELDS` is a class attribute of `WalkedRecord`, so the nearest
+    preceding `def` was the module-level `metres_between` and the guard accused a correctly placed
+    mutation. A detector with its own blind spot is the thing it is checking for.
+    """
+    name = "(module level)"
+    for m in re.finditer(r"^\s*(?:def|class) (\w+)", source, re.M):
+        if m.start() > offset:
+            break
+        name = m.group(1)
+    return name
+
+
+def _first_difference(a: str, b: str) -> int:
+    for i, (x, y) in enumerate(zip(a, b)):
+        if x != y:
+            return i
+    return min(len(a), len(b))
+
+
 def main() -> int:
     original = TARGET.read_text(encoding="utf-8", newline="")
     shutil.copy2(TARGET, Path(tempfile.gettempdir()) / "admissible.py.bak")
@@ -179,13 +221,21 @@ def main() -> int:
         return 1
     print("baseline clean\n")
 
-    caught = inert = failed_to_apply = 0
+    caught = inert = failed_to_apply = misplaced = 0
     try:
         for name, (pattern, replacement) in MUTATIONS.items():
             mutated, n = re.subn(pattern, replacement.replace("\\", "\\\\"), original, count=1)
             if n != 1:
                 print(f"  DID NOT APPLY  {name}")
                 failed_to_apply += 1
+                continue
+            # Where did it land? See `_definition_at`: a mutation that edits a different
+            # function is caught by a check about something else.
+            landed = _definition_at(original, _first_difference(original, mutated))
+            if name in EXPECTED_IN and landed != EXPECTED_IN[name]:
+                print(f"  MISPLACED      {name}  -- edited {landed}, not "
+                      f"{EXPECTED_IN[name]}")
+                misplaced += 1
                 continue
             TARGET.write_text(mutated, encoding="utf-8", newline="")
             code, out = run()
@@ -195,7 +245,7 @@ def main() -> int:
                 inert += 1
             else:
                 names = sorted(set(re.findall(r"FAILED tests/test_admissible\.py::(\w+)", out)))
-                print(f"  caught         {name}")
+                print(f"  caught         {name}  [{landed}]")
                 for t in names[:4]:
                     print(f"                   by {t}")
                 caught += 1
@@ -204,8 +254,8 @@ def main() -> int:
         assert TARGET.read_text(encoding="utf-8", newline="") == original, "did not restore!"
 
     print(f"\n{caught} caught, {inert} inert, {failed_to_apply} did not apply, "
-          f"{len(MUTATIONS)} attempted")
-    return 1 if (inert or failed_to_apply) else 0
+          f"{misplaced} misplaced, {len(MUTATIONS)} attempted")
+    return 1 if (inert or failed_to_apply or misplaced) else 0
 
 
 if __name__ == "__main__":

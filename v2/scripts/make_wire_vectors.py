@@ -171,6 +171,29 @@ def layer_entry(name: str, surf: Surface, flagged=None, destinations=None, dest_
     return entry, value, status, flag, dest
 
 
+def table(n, prefix):
+    """A synthetic side table whose names carry their layer's prefix.
+
+    The prefix is what makes a cross-layer destination read **visible**: criterion `triB` reading
+    `triA`'s table returns names beginning `A `, which no assertion about `triB` can accept. At
+    module scope since pass 53 F1, because the three-layer group is built before `main`'s locals
+    exist and needed one too.
+    """
+    return {"what_this_is": f"side table for {prefix}",
+            "licence": {"this_table": ["CC0-1.0"], "source": "synthetic"},
+            "destinations": [
+                {"ordinal": i, "node_index": 1000 + i, "place_count": 1 + (i % 2),
+                 "places": ([{"gers_id": f"{prefix}-{i}-a", "name": f"{prefix} Shop {i}",
+                              "brand": None, "category": "grocery",
+                              "operating_status": "open", "licence": "CC0-1.0"}]
+                            + ([{"gers_id": f"{prefix}-{i}-b", "name": f"{prefix} Annex {i}",
+                                 "brand": None, "category": "grocery",
+                                 "operating_status": "open", "licence": "CC0-1.0"}]
+                               if i % 2 else []))}
+                for i in range(n)],
+            }
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     groups = []
@@ -241,13 +264,45 @@ def main() -> int:
                      [300.0, 1200.0, 1500.0], horizon_s=7200.0),
     ]
     names3 = ["triA", "triB", "triC"]
+    # **Destination planes and flag planes, added for pass 53 F1.** Without them a destination
+    # index substitution survived this group: `destTables[enabledIndex - 1]` made criterion `triB`
+    # name `triA`'s shops and nothing noticed, because the group carried no tables to confuse.
+    # Each layer's table carries its own prefix, so a cross-layer read returns names that cannot
+    # be accepted for the layer that reported them.
+    #
+    # The destination ordinals differ per layer at every cell, for the same reason: reading
+    # another layer's plane must produce a different ORDINAL as well as a different table.
+    tables3 = [table(6, "A3"), table(6, "B3"), table(6, "C3")]
+    # `DEST_NONE` exactly where the status is not OK, which the encoder enforces in BOTH
+    # directions: a destination without a published time is a contradiction, and so is a published
+    # time with no destination. triB is BEYOND_HORIZON at cell 0; triC is OFF_NETWORK at cell 1.
+    N = wire.DEST_NONE
+    dest3 = [np.array([0, 1, 2]), np.array([N, 4, 5]), np.array([5, N, 1])]
+    # Flags on the first and last layer only, with different patterns: mixed disclosure inside a
+    # three-layer group, which no two-layer group can produce either.
+    flags3 = [np.array([True, False, False]), None, np.array([False, False, True])]
     entries3, values3, statuses3 = [], [], []
-    for name, surf3 in zip(names3, t3):
-        e3, v3, s3, _f3, _d3 = layer_entry(name, surf3)
+    planes3 = []
+    for name, surf3, dests, flagged, tbl in zip(names3, t3, dest3, flags3, tables3):
+        e3, v3, s3, f3, d3 = layer_entry(name, surf3, flagged=flagged, destinations=dests,
+                                         dest_table=tbl)
         entries3.append(e3)
         values3.append(v3)
         statuses3.append(s3)
+        planes3.append((v3, s3, f3, d3))
     assert len({e["horizon_s"] for e in entries3}) == 3, "the three horizons must differ"
+    # A destination may only be named where a time is published, so the ordinals above have to
+    # agree with the statuses. `encode_selected_destination` enforces it; this says so out loud.
+    for k, (v3, s3, _f3, d3) in enumerate(planes3):
+        named = [i for i in range(3) if d3[i] != wire.DEST_NONE]
+        assert named, f"{names3[k]} names no destination anywhere, so it discriminates nothing"
+    # The three tables must disagree about every ordinal any layer uses, or a cross-layer read
+    # could return an acceptable record by accident.
+    used = {int(d3[i]) for _v, _s, _f, d3 in planes3 for i in range(3)
+            if d3[i] != wire.DEST_NONE}
+    for ordinal in used:
+        names_here = {t["destinations"][ordinal]["places"][0]["name"] for t in tables3}
+        assert len(names_here) == 3, f"ordinal {ordinal} is named the same by two layers"
 
     THREE = [11, 17, 23]
     assert len(set(THREE)) == 3, "the three thresholds must differ"
@@ -271,8 +326,10 @@ def main() -> int:
     groups.append({
         "name": "three layers with unequal thresholds and horizons", "nrows": 1, "ncols": 3,
         "layers": entries3,
-        "planes": [(values3[k], statuses3[k], None, None) for k in range(3)],
-        "expect_discloses_routes": False,
+        "planes": planes3,
+        "dest_tables": tables3,
+        "expect_discloses_routes": True,
+        "expect_names_destinations": True,
         "cells_with_differing_outcomes": differing,
         "cases": cases3})
 
@@ -345,21 +402,6 @@ def main() -> int:
     # Two naming layers from the START. Pass 48's twenty-seventh instance was that every
     # disclosing fixture had ONE disclosing layer, so a flag read from layer 0 was correct by
     # accident and three real mutations passed all fifty checks.
-    def table(n, prefix):
-        return {"what_this_is": f"side table for {prefix}",
-                "licence": {"this_table": ["CC0-1.0"], "source": "synthetic"},
-                "destinations": [
-                    {"ordinal": i, "node_index": 1000 + i, "place_count": 1 + (i % 2),
-                     "places": ([{"gers_id": f"{prefix}-{i}-a", "name": f"{prefix} Shop {i}",
-                                  "brand": None, "category": "grocery",
-                                  "operating_status": "open", "licence": "CC0-1.0"}]
-                                + ([{"gers_id": f"{prefix}-{i}-b", "name": f"{prefix} Annex {i}",
-                                     "brand": None, "category": "grocery",
-                                     "operating_status": "open", "licence": "CC0-1.0"}]
-                                   if i % 2 else []))}
-                    for i in range(n)],
-                }
-
     na = surface_from([120.0, 120.0, 120.0, 120.0], [Reason.OK] * 4, [120.0] * 4)
     # Layer B is OFF_NETWORK at the last cell where layer A has an answer. That is what
     # makes the per-layer indexing inside the init invariant loop load-bearing: a plane read

@@ -452,6 +452,44 @@ const MUTATIONS = [
     name: 'explainAt reports the wrong horizon',
     apply: (s) => s.replace('      horizonS: horizons[k],', '      horizonS: 1,'),
   },
+  // ------------------------------------------------------------------ pass 53 finding F1
+  // **Three MORE that passed all 87 worker checks and all 29 card checks**, after pass 52's five
+  // were closed. Three distinct causes, all mine: an enumeration written from memory rather than
+  // from the artifact omitted three envelope fields; an assertion compared against a constant the
+  // harness itself supplied; and the fixture added to catch a criterion-index substitution
+  // carried no destination planes, so the same defect one array along survived it.
+  {
+    name: 'explainAt stamps every reply with the first compute sequence',
+    apply: (s) => s.replace("  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row, col };",
+      "  const reply = { type: 'explainAt', reqId: msg.reqId, seq: 1, row, col };"),
+  },
+  {
+    name: 'explainAt marks a successful reply as outside the published area',
+    apply: (s) => s.replace(/    verdict: verdict\[p\],(\r?\n)    verdictName: VERDICT_NAMES\[verdict\[p\]\],/,
+      '    verdict: verdict[p], outside: true,$1    verdictName: VERDICT_NAMES[verdict[p]],'),
+  },
+  // **Both anchored with the preceding newline, which is not cosmetic.** `const d =
+  // destinations[k][p];` occurs three times in worker.js at three indentations -- 8 spaces in
+  // `handleInit`'s validation loop, 4 in `handleDestinationAt`, 6 here -- and a 6-space string
+  // anchor matches INSIDE the 8-space line, which comes first in the file. The first version of
+  // the plane mutation therefore mutated `handleInit`, failed its invariant, and reported CAUGHT
+  // while `handleExplainAt` was never touched. That is pass 51's confirm-on-the-wrong-cause, in a
+  // mutation written one pass after recording it, and it is why this runner now reports the
+  // function each mutation landed in.
+  {
+    name: 'explainAt reads the previous enabled layer destination table',
+    in: 'handleExplainAt',
+    apply: (s) => s.replace(/\n        const entry = destTables\[k\]\.destinations\[d\];/,
+      '\n        const entry = destTables[Math.max(0, k - 1)].destinations[d];'),
+  },
+  {
+    name: 'explainAt reads the previous enabled layer destination plane',
+    in: 'handleExplainAt',
+    apply: (s) => s.replace(/\n      const d = destinations\[k\]\[p\];/,
+      '\n      const d = destinations[Math.max(0, k - 1)] ? destinations[Math.max(0, k - 1)][p]'
+      + ' : destinations[k][p];'),
+  },
+
   // ------------------------------------------------------------------ pass 52 finding F1
   // **Five MORE corruptions that passed all 79 conformance checks and all 27 card checks**, after
   // pass 51's five were closed. Three are response-envelope fields no assertion mentioned; two
@@ -505,6 +543,26 @@ let caught = 0;
 const survived = [];
 const inert = [];
 const errored = [];
+const misplaced = [];
+
+/** Which top-level function contains this character offset, by scanning declarations before it. */
+function functionAt(source, offset) {
+  let name = '(top level)';
+  const decl = /^function (\w+)\(/gm;
+  let m;
+  while ((m = decl.exec(source)) !== null) {
+    if (m.index > offset) break;
+    name = m[1];
+  }
+  return name;
+}
+
+/** The offset of the first character where two sources differ. */
+function firstDifference(a, b) {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) if (a[i] !== b[i]) return i;
+  return n;
+}
 
 // A mutation that does not change the source is a broken mutation, not a passing decoder.
 for (const m of MUTATIONS) {
@@ -514,6 +572,20 @@ for (const m of MUTATIONS) {
     console.error(`INERT    ${m.name}  (the edit matched nothing; the guard is not testing it)`);
     continue;
   }
+  // **Where did it land?** A mutation that edits a function other than the one it names is caught
+  // by a check about something else, and reports CAUGHT while the guard under test is untouched.
+  // That has now happened twice -- pass 51 on a lifecycle guard, pass 53 on a destination read --
+  // both times because a string anchor matched inside a more deeply indented line earlier in the
+  // file. The landing site is printed for every mutation so a wrong one is visible, and asserted
+  // where the mutation declares `in`.
+  const landed = functionAt(original, firstDifference(original, mutated));
+  if (m.in && landed !== m.in) {
+    misplaced.push(`${m.name} (landed in ${landed}, declared ${m.in})`);
+    console.error(`MISPLACED ${m.name}  (edited ${landed}, not ${m.in}: it would be caught by a `
+      + 'check about something else)');
+    continue;
+  }
+
   fs.writeFileSync(WORKER, mutated, 'utf8');
   let out;
   try {
@@ -542,17 +614,18 @@ for (const m of MUTATIONS) {
       + 'crashed rather than rejecting the mutant)');
   } else {
     caught++;
-    console.log(`caught   ${m.name}\n           ${failLine.trim()}`);
+    console.log(`caught   ${m.name}  [${landed}]\n           ${failLine.trim()}`);
   }
 }
 
 console.log(`\n${caught} of ${MUTATIONS.length} mutations caught`
   + (inert.length ? `, ${inert.length} INERT` : '')
   + (survived.length ? `, ${survived.length} SURVIVED` : '')
+  + (misplaced.length ? `, ${misplaced.length} MISPLACED` : '')
   + (errored.length ? `, ${errored.length} ERRORED` : ''));
 if (fs.readFileSync(WORKER, 'utf8') !== original) {
   console.error('worker.js was left mutated');
   process.exit(2);
 }
 process.exit(survived.length === 0 && inert.length === 0 && errored.length === 0
-  && caught === MUTATIONS.length ? 0 : 1);
+  && misplaced.length === 0 && caught === MUTATIONS.length ? 0 : 1);

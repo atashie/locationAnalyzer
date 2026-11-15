@@ -523,22 +523,414 @@
           "id": "triA",
           "horizon_s": 3600.0,
           "value_file": "triA.value.bin",
-          "status_file": "triA.status.bin"
+          "status_file": "triA.status.bin",
+          "flag_file": "triA.flag.bin",
+          "dest_file": "triA.dest.bin",
+          "dest_table": "triA.destinations.json",
+          "dest_byte_order": "little",
+          "dest_none": 65535
         },
         {
           "id": "triB",
           "horizon_s": 900.0,
           "value_file": "triB.value.bin",
-          "status_file": "triB.status.bin"
+          "status_file": "triB.status.bin",
+          "dest_file": "triB.dest.bin",
+          "dest_table": "triB.destinations.json",
+          "dest_byte_order": "little",
+          "dest_none": 65535
         },
         {
           "id": "triC",
           "horizon_s": 7200.0,
           "value_file": "triC.value.bin",
-          "status_file": "triC.status.bin"
+          "status_file": "triC.status.bin",
+          "flag_file": "triC.flag.bin",
+          "dest_file": "triC.dest.bin",
+          "dest_table": "triC.destinations.json",
+          "dest_byte_order": "little",
+          "dest_none": 65535
         }
       ],
-      "expect_discloses_routes": false,
+      "dest_tables": [
+        {
+          "what_this_is": "side table for A3",
+          "licence": {
+            "this_table": [
+              "CC0-1.0"
+            ],
+            "source": "synthetic"
+          },
+          "destinations": [
+            {
+              "ordinal": 0,
+              "node_index": 1000,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "A3-0-a",
+                  "name": "A3 Shop 0",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 1,
+              "node_index": 1001,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "A3-1-a",
+                  "name": "A3 Shop 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "A3-1-b",
+                  "name": "A3 Annex 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 2,
+              "node_index": 1002,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "A3-2-a",
+                  "name": "A3 Shop 2",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 3,
+              "node_index": 1003,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "A3-3-a",
+                  "name": "A3 Shop 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "A3-3-b",
+                  "name": "A3 Annex 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 4,
+              "node_index": 1004,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "A3-4-a",
+                  "name": "A3 Shop 4",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 5,
+              "node_index": 1005,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "A3-5-a",
+                  "name": "A3 Shop 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "A3-5-b",
+                  "name": "A3 Annex 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "what_this_is": "side table for B3",
+          "licence": {
+            "this_table": [
+              "CC0-1.0"
+            ],
+            "source": "synthetic"
+          },
+          "destinations": [
+            {
+              "ordinal": 0,
+              "node_index": 1000,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "B3-0-a",
+                  "name": "B3 Shop 0",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 1,
+              "node_index": 1001,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "B3-1-a",
+                  "name": "B3 Shop 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "B3-1-b",
+                  "name": "B3 Annex 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 2,
+              "node_index": 1002,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "B3-2-a",
+                  "name": "B3 Shop 2",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 3,
+              "node_index": 1003,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "B3-3-a",
+                  "name": "B3 Shop 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "B3-3-b",
+                  "name": "B3 Annex 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 4,
+              "node_index": 1004,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "B3-4-a",
+                  "name": "B3 Shop 4",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 5,
+              "node_index": 1005,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "B3-5-a",
+                  "name": "B3 Shop 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "B3-5-b",
+                  "name": "B3 Annex 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "what_this_is": "side table for C3",
+          "licence": {
+            "this_table": [
+              "CC0-1.0"
+            ],
+            "source": "synthetic"
+          },
+          "destinations": [
+            {
+              "ordinal": 0,
+              "node_index": 1000,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "C3-0-a",
+                  "name": "C3 Shop 0",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 1,
+              "node_index": 1001,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "C3-1-a",
+                  "name": "C3 Shop 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "C3-1-b",
+                  "name": "C3 Annex 1",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 2,
+              "node_index": 1002,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "C3-2-a",
+                  "name": "C3 Shop 2",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 3,
+              "node_index": 1003,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "C3-3-a",
+                  "name": "C3 Shop 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "C3-3-b",
+                  "name": "C3 Annex 3",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 4,
+              "node_index": 1004,
+              "place_count": 1,
+              "places": [
+                {
+                  "gers_id": "C3-4-a",
+                  "name": "C3 Shop 4",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            },
+            {
+              "ordinal": 5,
+              "node_index": 1005,
+              "place_count": 2,
+              "places": [
+                {
+                  "gers_id": "C3-5-a",
+                  "name": "C3 Shop 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                },
+                {
+                  "gers_id": "C3-5-b",
+                  "name": "C3 Annex 5",
+                  "brand": null,
+                  "category": "grocery",
+                  "operating_status": "open",
+                  "licence": "CC0-1.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "expect_discloses_routes": true,
+      "expect_names_destinations": true,
       "cells_with_differing_outcomes": [
         0,
         1,
