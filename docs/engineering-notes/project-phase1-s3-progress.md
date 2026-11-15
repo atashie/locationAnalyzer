@@ -32,7 +32,41 @@ substantial piece of work rather than one of several.
 
 ## In flight right now, and what comes next
 
-Nothing in flight. **Codex passes 49 and 50 are both integrated.** Reports at
+**Codex pass 53 is REPORTED AND BEING INTEGRATED, starting with F5.** Eleven findings, two High,
+five of six claims failed. Report at `docs/research/54-codex-review-pass53-repairs/REPORT.md`,
+prompt at `docs/research/54-codex-review-pass53-prompt.md`, both committed; the integration is
+`e25ba2f` onwards. **Read §2c of the queue below before touching any of it** — it carries the
+findings and the order the owner asked for.
+
+The single most important thing for a resuming session: **F5 is a live defect on the committed
+sheets, not a hypothetical.** `permitted_destinations` is collapsed into a dict keyed by place
+NAME, and `triangle-grocery-walk-with-destinations.csv` has two rows that select `Food Lion` and
+list an alternative *also* called `Food Lion` with no coordinate — so the coordinate-less
+alternative overwrites the selection and a legitimate walk to the selected shop is refused for
+having no coordinate to match. The published side table has seven entries with repeated names
+inside one entry.
+
+### A judgement the owner should make, and the reason to make it now
+
+**Five consecutive adversarial passes have each found more in the previous pass's repairs than in
+the work being repaired** — 49 → 50 → 51 → 52 → 53, and the chain is not converging. Pass 53's
+first claim was "this time I enumerated the class rather than the instances" and it failed twice in
+one pass, on both sides of the codebase.
+
+That is the pattern **Codex pass 25 named about a different surface** and the reason §0 orders work
+by *product risk retired*: eleven passes and 11,000 lines of apparatus had gone into an instrument
+while the decisions S3 exists to make were unstarted. The same question now applies here. Since the
+card's logic landed, **every pass has retired defect risk in code no household has seen, on a page
+that has never been rendered in a browser.** The three owed disclosures are closed in logic and
+shown to nobody.
+
+So the honest statement of where this stands: the card is as well guarded as anything in the
+repository and **less verified than the simplest thing a person could do with it**, which is open
+the page. Continuing the chain is defensible; so is stopping it and spending the next hour on a
+browser. That choice is the owner's, and it should be made deliberately rather than by momentum.
+See queue item 3, which is now the highest-value unblocked item.
+
+Nothing else in flight. **Codex passes 49 and 50 are both integrated.** Reports at
 `docs/research/50-codex-review-pass49-counterexamples/REPORT.md` and
 `docs/research/51-codex-review-pass50-counterexamples/REPORT.md`.
 
@@ -382,6 +416,61 @@ the class.**
   the haversine and returned 1.6e-9 m, so a typo read as "you arrived exactly at the shop".
 * **The benchmark conclusion was still too broad** (F10): it establishes that recomputing is cheap
   for this one-layer bundle on this runtime, not that the handler can never be the cost.
+
+### 2c. Codex pass 53 — **REPORTED 2026-11-14, integration IN PROGRESS. Eleven findings, two High.**
+
+Report at `docs/research/54-codex-review-pass53-repairs/REPORT.md`. **Five of six claims fail.**
+The owner asked for the integration **starting with F5**. Order, with F5 first because it is live
+on real data:
+
+1. **F5 (Medium, but live) — same-name members collapse and overwrite each other.**
+   `by_name = {p.name: p for p in permitted}` in `admissible.py` keeps the LAST member for a name,
+   so a coordinate-less alternative overwrites the selected destination. Confirmed on
+   `band10min_fail-02` and `band15min_fail-02`. The fix is to keep every member for a name and
+   match the arrival against **any eligible** member, and to carry a stable identifier (the side
+   table has `gers_id`) rather than making the name unique.
+2. **F1 (High) — three more worker corruptions pass all 87 worker checks and all 29 card checks.**
+   Three distinct causes, all mine: my reply enumeration **omitted three envelope fields**
+   (`outside`, `invalidCoordinates`, `notComputed`), and adding `outside: true` to a successful
+   reply passed all 87; the `seq` assertion compares against a **constant** because every
+   exhaustive case computes with `seq: 1`; and **the three-layer group I added for F1 last pass
+   carries no destination or flag planes**, so `destTables[enabledIndex - 1]` makes criterion B
+   name A's shops undetected, and layer B is never enabled alone.
+3. **F2 (High) — the sheet has 18 owner columns and the predicate reads 15.** `door_offset_m`,
+   `unresolved` and `notes` are omitted, and the README explicitly asks the owner to measure
+   `door_offset_m`. The deeper point is that **the inference is unsound in both directions**: the
+   README's step 2 has the owner record a start door *before* walking, so a prepared-then-abandoned
+   sheet reads as a refused walk. Extending the list again cannot fix that — it needs an explicit
+   "did a walk happen" field, which is what the fix should add. A sole `duration_timed="not timed"`
+   also vanishes through `tri_state` rather than being refused as malformed.
+4. **F3 and F4 (Medium) — the migration can lose an observation after all.** A duplicate header
+   means `csv.DictReader` keeps only the last value, and my read-back snapshot is built **after**
+   the loss, so it prints "none changed". Plus three destructive paths: the default output silently
+   overwrites a filled `.migrated.csv`, `--in-place` silently overwrites an existing
+   `.before-migration`, and a surplus-field row raises **after** the target is truncated. Duplicate
+   `journey_id`s also make the comparison key ambiguous.
+5. **F7 (Medium) — the card suite accepts an affirmative headline on every excluded cell.**
+   Replacing `VERDICT_TEXT[msg.verdictName]` with `VERDICT_TEXT.INCLUDED` passes all 29 checks, so
+   an excluded cell reads "Every criterion you have on is satisfied here." A second mutation copied
+   other criteria's destination text into unnamed blocks and also passed: checking that expected
+   content is **present** does not check that foreign content is **absent**.
+6. **F8 and F9 (Medium) — the card's freshness is still incomplete.** Already-displayed stale
+   content stays visible when the pointer moves to a new cell (the guard stops a stale reply
+   rendering; it does not invalidate what is already on screen), and a **native**
+   `worker.onerror` still wedges the inspector because only `type: "error"` messages reach
+   `cardFailed`.
+7. **F6 (Medium) — 200 m still does not establish identity**: a different shop of the same name
+   135 m away passes. My justification cited the 70.7 m centre-to-door bound, which is about the
+   **origin cell**, not destination geometry. The honest fix is to treat the radius as plausibility
+   evidence and carry identities.
+8. **F10 and F11 (Low)** — two paint waiters for one sequence overwrite each other, so one can time
+   out after its sequence painted; `autoBench` prints "done, 20 samples" after stopping at change
+   one; and `bench_explain.mjs`'s header still calls the figure a LOWER BOUND while its own
+   conclusion denies that.
+
+**Two suspicions settled in my favour**, recorded because most are not: the single `explainSentAt`
+timestamp measures the right interval (the old reply's timing is recorded before `post(send)`
+overwrites it), and removing `pointerGen` was reasonable for the current contract.
 
 ### 3. Where the published raster actually lands in the browser
 

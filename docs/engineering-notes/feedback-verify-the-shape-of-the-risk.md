@@ -959,4 +959,56 @@ is fine for a script with no backslashes" and I broke it five times anyway, beca
 almost always grows a `\n` or a regex. The rule is now absolute: see
 [[reference-codex-runtime-quirks]].
 
-Forty-two instances now.
+Forty-two instances at that point.
+
+## Pass 53, 2026-11-14 — instance 40 again, in the repair written for instance 40
+
+Pass 53 reviewed pass 52's repairs. **Eleven findings, two High, and five of six claims failed.**
+The fifth consecutive pass to find more in the previous pass's repairs than in the work repaired.
+
+**The prompt's first claim was "this time I enumerated the class rather than the instances", and
+it failed twice in one pass.** That is instance 40 recurring immediately, in the work done
+*because* of instance 40. Three separate mechanisms, and each is worth naming because they are
+different:
+
+* **My enumeration was wrong.** I listed the `explainAt` reply's fields and compared every one —
+  and omitted three: `outside`, `invalidCoordinates`, `notComputed`. Adding `outside: true` to a
+  successful reply passed all 87 worker checks. Writing an enumeration from memory of the code is
+  not enumerating the artifact; Codex produced its own list and diffed it against mine.
+* **The assertion compared against a constant.** Every exhaustive case computes with `seq: 1`, so
+  `seq: state.lastSeq` could be replaced by the literal `1` undetected. A constant in a harness
+  cannot detect a constant in the thing it tests — which I had already written in this file one
+  pass earlier, about `reqId`, and then did not generalise to its neighbour.
+* **The fixture I added to catch a finding could not catch the adjacent form of that finding.** I
+  added a three-layer group with three thresholds and three horizons, because no group varied
+  those. It has **no destination planes and no flag planes**, so a destination-index substitution
+  survives it — the same index walk, the same defect class, one array along.
+
+> Fixing a finding creates a new artifact, and the new artifact has its own blind spots. The
+> fixture built to discriminate one dimension is silent on every dimension it does not carry.
+
+### Forty-third: a read-back check whose snapshot is taken after the loss cannot see it
+
+`migrate_audit_sheet.py` reads the written file back and compares every pre-existing value, and
+prints "every pre-existing value was read back and compared; none changed". With a **duplicate
+header** — two `notes` columns, which is exactly what an owner adding a column of their own
+produces — `csv.DictReader` keeps only the last value. The snapshot is built from that same
+already-lossy read, so the comparison succeeds and the script asserts in words that nothing was
+lost while a value is gone.
+
+> A verification that reads its expectation through the same lossy path as the thing it verifies
+> confirms the path, not the data. The snapshot has to come from a representation that cannot have
+> dropped anything — here, positional rows rather than a dict.
+
+### Forty-fourth: checking that expected content is present does not check that foreign content is absent
+
+The card's new per-criterion assertions check each block for its own outcome, limit, bound, cause,
+disclosure and complete place set. A mutation that **copied other criteria's destination text into
+unnamed blocks** passed all 29 checks, because every assertion was satisfied — the expected content
+was all there, with more beside it. So was a mutation replacing the combined headline with the
+affirmative one, since no assertion mentioned the headline at all.
+
+> For any surface that composes parts, "each part contains what it should" is half a check. The
+> other half is "and nothing it should not".
+
+Forty-four instances now.
