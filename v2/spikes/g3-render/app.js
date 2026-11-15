@@ -287,7 +287,15 @@
 
       worker.onerror = (ev) => {
         showError(`worker error: ${ev.message || ev}`);
-        reject(new Error(ev.message || 'worker error'));
+        // **Pass 53 F9.** This rejected a promise that had already resolved -- a no-op after
+        // init -- and left any outstanding explanation request outstanding for ever, so every
+        // later hover queued behind a reply that was never coming. A native error and a protocol
+        // `error` message are different events that leave the same state, so both settle it.
+        if (state.workerReady) {
+          post(cardFailed());
+        } else {
+          reject(new Error(ev.message || 'worker error'));
+        }
       };
 
       worker.onmessage = (ev) => {
@@ -443,6 +451,15 @@
       if (!at) {
         clearCard(window.G3Card.renderCardHTML({ outside: true }));
         return;
+      }
+      // **The card stops describing the old cell the moment the pointer leaves it** -- pass 53
+      // F8. The inspector's guard stops a stale REPLY rendering; it cannot unrender what is
+      // already on screen, so a PASS card and its `(row 1, col 1)` label stayed visible over a
+      // different cell until the next accepted reply arrived.
+      const was = inspector.state.inspected;
+      if (!was || was.row !== at.row || was.col !== at.col) {
+        el.cardCell.textContent = `(row ${at.row}, col ${at.col})`;
+        el.card.innerHTML = '<em>Reading this spot…</em>';
       }
       explainAt(at.row, at.col);
     });
@@ -658,10 +675,10 @@
         state.paintedSeqs.delete(old);
       }
     }
-    const waiter = state.paintWaiters.get(msg.seq);
-    if (waiter) {
+    const waiters = state.paintWaiters.get(msg.seq);
+    if (waiters) {
       state.paintWaiters.delete(msg.seq);
-      waiter();
+      for (const w of waiters) w.resolve();
     }
 
     if (!state.firstPaintDone) {
@@ -831,15 +848,26 @@
   function waitForResult(seq, { timeoutMs = 10000 } = {}) {
     if (state.paintedSeqs.has(seq)) return Promise.resolve(true);
     return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        state.paintWaiters.delete(seq);
+      // **A LIST of waiters per sequence** -- pass 53 F10. The map held one callback per
+      // sequence, so a second waiter for the same compute overwrote the first: the first then
+      // timed out although its compute had painted, and its timer deleted the second's entry.
+      // One waiter per sequence is all `autoBench` needs, which is why it never showed.
+      const waiters = state.paintWaiters.get(seq) || [];
+      const entry = {};
+      entry.timer = setTimeout(() => {
+        const list = state.paintWaiters.get(seq) || [];
+        const left = list.filter((w) => w !== entry);
+        if (left.length) state.paintWaiters.set(seq, left);
+        else state.paintWaiters.delete(seq);
         log(`compute ${seq} did not paint within ${timeoutMs} ms`);
         resolve(false);
       }, timeoutMs);
-      state.paintWaiters.set(seq, () => {
-        clearTimeout(timer);
+      entry.resolve = () => {
+        clearTimeout(entry.timer);
         resolve(true);
-      });
+      };
+      waiters.push(entry);
+      state.paintWaiters.set(seq, waiters);
     });
   }
 
@@ -847,6 +875,7 @@
     el.btnBench.disabled = true;
     const n = state.manifest.layers.length;
     log('auto-bench: running 20 scripted slider changes (awaiting each repaint before the next)');
+    let done = 0;
     for (let i = 0; i < 20; i++) {
       const layerIdx = i % n;
       const slider = $(`th-${layerIdx}`);
@@ -863,8 +892,11 @@
         log(`auto-bench: stopping at change ${i + 1}, compute ${seq} never painted`);
         break;
       }
+      done++;
     }
-    log('auto-bench: done, 20 samples in the rolling window');
+    // The COMPLETED count, not the intended one. Pass 53 F10: it printed "done, 20 samples"
+    // after stopping at change one with nothing measured.
+    log(`auto-bench: finished ${done} of 20 scripted changes`);
     el.btnBench.disabled = false;
   }
 

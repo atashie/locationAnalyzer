@@ -109,13 +109,36 @@ const MUTATIONS = [
     name: 'a zero bound becomes "more than -1 min"',
     apply: (s) => s.replace("    if (crit.value <= 0) return 'no lower bound published';", ''),
   },
+  // ------------------------------------------------------------------ pass 53 findings
+  {
+    // F7: the headline. No assertion mentioned it, so every excluded cell could read "Every
+    // criterion you have on is satisfied here" and all 29 checks passed.
+    name: 'every card claims the affirmative headline',
+    // A regex with `\r?\n`: this file's targets are CRLF and an LF literal matches nothing,
+    // which the runner reported as INERT. Fifth time, and the reason every multi-line anchor in
+    // these runners is a regex.
+    apply: (s) => s.replace(
+      /`<div class="verdict">\$\{esc\(VERDICT_TEXT\[msg\.verdictName\]\r?\n      \|\| msg\.verdictName\)\}<\/div>`/,
+      '`<div class="verdict">${esc(VERDICT_TEXT.INCLUDED)}</div>`'),
+  },
+  {
+    // F7's second half: expected content being present does not mean foreign content is absent.
+    name: 'a criterion block carries the other criteria destinations too',
+    apply: (s) => s.replace('      const dest = destinationText(crit);',
+      '      const dest = (msg.criteria.map(destinationText).filter(Boolean)[0]) || null;'),
+  },
+  {
+    // F8: a reply that names no compute at all was exempted from the freshness check.
+    name: 'a reply with no compute sequence is rendered anyway',
+    apply: (s) => s.replace('          && msg.seq === s.displayedSeq;',
+      '          && (msg.seq === undefined || msg.seq === s.displayedSeq);'),
+  },
   // ------------------------------------------------- the request lifecycle (pass 51 B1 and B5)
   {
     // B1 restored: without the seq check, an explanation from the previous criteria renders over
     // the new raster.
     name: 'a reply is rendered without checking which compute it describes',
-    apply: (s) => s.replace(
-      '          && (msg.seq === undefined || msg.seq === s.displayedSeq);', ';'),
+    apply: (s) => s.replace('          && msg.seq === s.displayedSeq;', ';'),
   },
   {
     // B5 and F4 together. The generation counter that first covered B5 was removed once the

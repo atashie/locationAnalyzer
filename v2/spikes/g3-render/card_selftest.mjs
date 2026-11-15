@@ -389,6 +389,18 @@ check('real worker replies from the multi-layer fixtures render correctly', () =
           `${group.name} cell ${p}: ${blocks.length} blocks for `
           + `${msg.criteria.length} criteria`);
         assert(!html.includes('undefined') && !html.includes('null'), html);
+        // **The combined headline** -- pass 53 F7. No assertion mentioned it, so replacing
+        // `VERDICT_TEXT[msg.verdictName]` with `VERDICT_TEXT.INCLUDED` passed all 29 checks and
+        // every excluded cell read "Every criterion you have on is satisfied here."
+        const head = html.split('class="crit"')[0];
+        assert(head.includes(C.VERDICT_TEXT[msg.verdictName]),
+          `${group.name} cell ${p}: headline is not ${msg.verdictName}: ${head}`);
+        for (const [name, text] of Object.entries(C.VERDICT_TEXT)) {
+          if (name !== msg.verdictName) {
+            assert(!head.includes(text),
+              `${group.name} cell ${p}: headline also claims ${name}: ${head}`);
+          }
+        }
         const flags = msg.criteria.map((cr) => cr.routeFlag);
         const outcomes = msg.criteria.map((cr) => cr.outcomeName);
         if (flags.includes(null) && flags.some((f) => f !== null)) mixedDisclosure++;
@@ -444,6 +456,23 @@ check('real worker replies from the multi-layer fixtures render correctly', () =
           } else {
             assert(blocks[i].includes('does not say which destination')
               || cr.outcomeName !== 'PASS', blocks[i]);
+          }
+          // **And nothing that belongs to another criterion** -- pass 53 F7. Checking that
+          // expected content is PRESENT is half a check: a mutation that copied other criteria's
+          // destination text into unnamed blocks satisfied every assertion and passed all 29,
+          // because everything expected was there with more beside it.
+          for (let j = 0; j < msg.criteria.length; j++) {
+            if (j === i) continue;
+            const other = msg.criteria[j];
+            assert(!blocks[i].includes(other.layer),
+              `${group.name} cell ${p} block ${i} names ${other.layer}`);
+            for (const place of (other.namesDestination ? other.namesDestination.places : [])) {
+              const mine = (cr.namesDestination ? cr.namesDestination.places : [])
+                .some((q) => q.name === place.name);
+              assert(mine || !place.name || !blocks[i].includes(place.name),
+                `${group.name} cell ${p} block ${i} carries ${other.layer}'s `
+                + `destination ${place.name}`);
+            }
           }
         }
       }
@@ -617,6 +646,65 @@ check('a superseded request is not rendered', () => {
   assert(!ins.reply({ reqId: first.reqId, seq: 1, row: 2, col: 2 }).render,
     'an older reqId must not render over a newer request');
   assert(ins.reply({ reqId: second.reqId, seq: 1, row: 2, col: 2 }).render);
+});
+
+check('the combined headline states the verdict it was given, and no other', () => {
+  // **Pass 53 finding F7.** Replacing `VERDICT_TEXT[msg.verdictName]` with
+  // `VERDICT_TEXT.INCLUDED` passed all 29 card checks, so an excluded cell read "Every criterion
+  // you have on is satisfied here." The block assertions authenticate criterion bodies; nothing
+  // mentioned the sentence above them.
+  for (const [name, text] of Object.entries(C.VERDICT_TEXT)) {
+    const html = C.renderCardHTML(reply([crit({})], { verdictName: name }));
+    const head = html.split('class="crit"')[0];
+    assert(head.includes(text), `${name}: ${head}`);
+    for (const [other, otherText] of Object.entries(C.VERDICT_TEXT)) {
+      if (other !== name) {
+        assert(!head.includes(otherText), `${name} headline also claims ${other}: ${head}`);
+      }
+    }
+  }
+});
+
+check('a block never carries another criterion\'s destination', () => {
+  const html = C.renderCardHTML(reply([
+    crit({ layer: 'walk-grocery',
+      namesDestination: { ordinal: 1, nodeIndex: 9, placeCount: 1,
+        places: [{ name: 'Weaver Street Market' }] } }),
+    crit({ layer: 'drive-work', outcome: 2, outcomeName: 'UNKNOWN', status: 4,
+      statusName: 'LAYER_UNKNOWN', value: null, namesDestination: null }),
+  ], { verdict: 2, verdictName: 'UNKNOWN' }));
+  const blocks = html.split('class="crit"').slice(1);
+  assert(blocks.length === 2, `${blocks.length} blocks`);
+  assert(blocks[0].includes('Weaver Street Market'), blocks[0]);
+  assert(!blocks[1].includes('Weaver Street Market'),
+    `the second criterion carries the first's shop: ${blocks[1]}`);
+  assert(!blocks[0].includes('drive-work') && !blocks[1].includes('walk-grocery'),
+    'a block names another criterion');
+});
+
+check('a reply that names no compute is not rendered', () => {
+  // **Pass 53 F8's second witness.** `msg.seq === undefined ||` exempted a reply that named no
+  // compute, so an old answer delivered without a `seq` replaced "Recomputing..." with the
+  // previous criteria's card.
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const req = ins.pointerAt(1, 1);
+  assert(!ins.reply({ reqId: req.reqId, row: 1, col: 1 }).render,
+    'a reply with no seq must not render');
+  // The control: the same reply WITH its compute named does render, so the refusal above is
+  // about the missing `seq` and nothing else.
+  assert(ins.reply({ reqId: req.reqId, seq: 1, row: 1, col: 1 }).render,
+    'a reply that names the displayed compute must render');
+});
+
+check('nothing renders while a compute is in flight', () => {
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const req = ins.pointerAt(1, 1);
+  ins.computeStarted();
+  assert(ins.state.displayedSeq === null);
+  assert(!ins.reply({ reqId: req.reqId, seq: 1, row: 1, col: 1 }).render,
+    'no reply may render while the screen shows no settled compute');
 });
 
 // ------------------------------------------------------------------ the cell lookup

@@ -271,9 +271,18 @@
         // failure.
         const atInspected = !!s.inspected
           && msg.row === s.inspected.row && msg.col === s.inspected.col;
+        // **A matching compute sequence, with no exemption for a missing one** -- pass 53 F8.
+        // `msg.seq === undefined ||` accepted a reply that named no compute at all, so an old
+        // answer delivered without a `seq` replaced "Recomputing..." with the previous criteria's
+        // card. The worker always sends one; a reply that does not is not an answer about the
+        // region on screen.
+        // `displayedSeq` is `null` while a compute is in flight, and `null` never equals a
+        // sequence number, so this one comparison covers both "the reply describes another
+        // compute" and "no compute is settled on screen". An explicit `displayedSeq !== null`
+        // clause was tried and SURVIVED its mutation, because it can never change the outcome.
         const render = msg.reqId === s.reqSeq
           && atInspected
-          && (msg.seq === undefined || msg.seq === s.displayedSeq);
+          && msg.seq === s.displayedSeq;
         const next = s.queued;
         s.queued = null;
         const send = next ? sendNow(next.row, next.col) : null;
