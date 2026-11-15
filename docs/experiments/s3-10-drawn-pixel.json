@@ -1,0 +1,667 @@
+{
+  "what_this_is": "the DRAWN pixel against the PUBLISHED pixel, which is the first of the two steps Codex pass 54 asked be kept apart. Both grids are the shipped 514 x 643 raster; the only thing that changes is which row MapLibre paints at a latitude",
+  "published": {
+    "encoding": "published-v4",
+    "nrows": 514,
+    "ncols": 643,
+    "bounds_wgs84": [
+      -79.2,
+      35.7,
+      -78.5,
+      36.15
+    ],
+    "layer": "own_triangle_grocery_walk"
+  },
+  "page_default_threshold_min": 20,
+  "displacement": {
+    "what_moves": "which published ROW is painted at a latitude. Columns do not move at all: Mercator x is linear in longitude, so the column the page draws and the column it names are the same column",
+    "max_offset_rows": 0.3656,
+    "max_offset_metres": 35.63,
+    "at_latitude": 35.925416,
+    "sign": "positive offset means the colour painted at a latitude belongs to a cell FURTHER SOUTH than the one the card names, so the coloured picture sits north of where the publication puts it",
+    "offset_at_latitude": {
+      "35.700": 0.0,
+      "35.750": 0.144,
+      "35.800": 0.2523,
+      "35.850": 0.3246,
+      "35.925": 0.3656,
+      "36.000": 0.3254,
+      "36.050": 0.2533,
+      "36.100": 0.1449,
+      "36.150": 0.0
+    },
+    "share_of_the_latitude_span_over_quarter_row": 0.5623,
+    "row_centres_where_the_two_rules_disagree": 0,
+    "why_that_is_zero_and_matters": "at every row centre the two rules name the same row, so a browser probe aimed at cell centres cannot fail. It would report agreement at all 514 rows and establish nothing. The probes below are placed near row boundaries for exactly this reason",
+    "one_row_in_metres": 97.46
+  },
+  "structures": {
+    "total": 512633,
+    "inside_the_published_bounds": 500451,
+    "omitted": 12182
+  },
+  "exposure": {
+    "20": {
+      "structures_compared": 500451,
+      "rows_that_move": 131571,
+      "the_colour_contradicts_the_card": 5801,
+      "painted_excluded_card_included": 2771,
+      "painted_included_card_excluded": 2798,
+      "every_direction": {
+        "painted_PASS_card_FAIL": 2798,
+        "painted_PASS_card_UNKNOWN": 30,
+        "painted_FAIL_card_PASS": 2771,
+        "painted_FAIL_card_UNKNOWN": 99,
+        "painted_UNKNOWN_card_PASS": 18,
+        "painted_UNKNOWN_card_FAIL": 85
+      },
+      "and_the_minute_differs": 102712
+    },
+    "10": {
+      "structures_compared": 500451,
+      "rows_that_move": 131571,
+      "the_colour_contradicts_the_card": 6403,
+      "painted_excluded_card_included": 2953,
+      "painted_included_card_excluded": 3203,
+      "every_direction": {
+        "painted_PASS_card_FAIL": 3203,
+        "painted_PASS_card_UNKNOWN": 9,
+        "painted_FAIL_card_PASS": 2953,
+        "painted_FAIL_card_UNKNOWN": 130,
+        "painted_UNKNOWN_card_PASS": 9,
+        "painted_UNKNOWN_card_FAIL": 99
+      },
+      "and_the_minute_differs": 102712
+    },
+    "15": {
+      "structures_compared": 500451,
+      "rows_that_move": 131571,
+      "the_colour_contradicts_the_card": 6866,
+      "painted_excluded_card_included": 3193,
+      "painted_included_card_excluded": 3441,
+      "every_direction": {
+        "painted_PASS_card_FAIL": 3441,
+        "painted_PASS_card_UNKNOWN": 24,
+        "painted_FAIL_card_PASS": 3193,
+        "painted_FAIL_card_UNKNOWN": 105,
+        "painted_UNKNOWN_card_PASS": 12,
+        "painted_UNKNOWN_card_FAIL": 91
+      },
+      "and_the_minute_differs": 102712
+    },
+    "25": {
+      "structures_compared": 500451,
+      "rows_that_move": 131571,
+      "the_colour_contradicts_the_card": 4607,
+      "painted_excluded_card_included": 2168,
+      "painted_included_card_excluded": 2207,
+      "every_direction": {
+        "painted_PASS_card_FAIL": 2207,
+        "painted_PASS_card_UNKNOWN": 36,
+        "painted_FAIL_card_PASS": 2168,
+        "painted_FAIL_card_UNKNOWN": 93,
+        "painted_UNKNOWN_card_PASS": 22,
+        "painted_UNKNOWN_card_FAIL": 81
+      },
+      "and_the_minute_differs": 102712
+    },
+    "45": {
+      "structures_compared": 500451,
+      "rows_that_move": 131571,
+      "the_colour_contradicts_the_card": 1946,
+      "painted_excluded_card_included": 799,
+      "painted_included_card_excluded": 915,
+      "every_direction": {
+        "painted_PASS_card_FAIL": 915,
+        "painted_PASS_card_UNKNOWN": 52,
+        "painted_FAIL_card_PASS": 799,
+        "painted_FAIL_card_UNKNOWN": 77,
+        "painted_UNKNOWN_card_PASS": 27,
+        "painted_UNKNOWN_card_FAIL": 76
+      },
+      "and_the_minute_differs": 102712
+    }
+  },
+  "controls": {
+    "null": {
+      "what_it_proves": "that the contradictions are produced by the displacement and not by the comparison. The drawn rule is replaced by the published rule, so every count must be zero",
+      "result": {
+        "20": {
+          "structures_compared": 500451,
+          "rows_that_move": 0,
+          "the_colour_contradicts_the_card": 0,
+          "painted_excluded_card_included": 0,
+          "painted_included_card_excluded": 0,
+          "every_direction": {},
+          "and_the_minute_differs": 0
+        },
+        "10": {
+          "structures_compared": 500451,
+          "rows_that_move": 0,
+          "the_colour_contradicts_the_card": 0,
+          "painted_excluded_card_included": 0,
+          "painted_included_card_excluded": 0,
+          "every_direction": {},
+          "and_the_minute_differs": 0
+        },
+        "15": {
+          "structures_compared": 500451,
+          "rows_that_move": 0,
+          "the_colour_contradicts_the_card": 0,
+          "painted_excluded_card_included": 0,
+          "painted_included_card_excluded": 0,
+          "every_direction": {},
+          "and_the_minute_differs": 0
+        },
+        "25": {
+          "structures_compared": 500451,
+          "rows_that_move": 0,
+          "the_colour_contradicts_the_card": 0,
+          "painted_excluded_card_included": 0,
+          "painted_included_card_excluded": 0,
+          "every_direction": {},
+          "and_the_minute_differs": 0
+        },
+        "45": {
+          "structures_compared": 500451,
+          "rows_that_move": 0,
+          "the_colour_contradicts_the_card": 0,
+          "painted_excluded_card_included": 0,
+          "painted_included_card_excluded": 0,
+          "every_direction": {},
+          "and_the_minute_differs": 0
+        }
+      }
+    },
+    "one_row": {
+      "what_it_proves": "that the comparison can report a large number, so a small one is a finding rather than an inert check. The drawn rule is shifted by a whole row",
+      "result": {
+        "20": {
+          "structures_compared": 500451,
+          "rows_that_move": 499694,
+          "the_colour_contradicts_the_card": 22206,
+          "painted_excluded_card_included": 10883,
+          "painted_included_card_excluded": 10290,
+          "every_direction": {
+            "painted_PASS_card_FAIL": 10290,
+            "painted_PASS_card_UNKNOWN": 104,
+            "painted_FAIL_card_PASS": 10883,
+            "painted_FAIL_card_UNKNOWN": 360,
+            "painted_UNKNOWN_card_PASS": 82,
+            "painted_UNKNOWN_card_FAIL": 487
+          },
+          "and_the_minute_differs": 390091
+        },
+        "10": {
+          "structures_compared": 500451,
+          "rows_that_move": 499694,
+          "the_colour_contradicts_the_card": 24427,
+          "painted_excluded_card_included": 11017,
+          "painted_included_card_excluded": 12322,
+          "every_direction": {
+            "painted_PASS_card_FAIL": 12322,
+            "painted_PASS_card_UNKNOWN": 32,
+            "painted_FAIL_card_PASS": 11017,
+            "painted_FAIL_card_UNKNOWN": 466,
+            "painted_UNKNOWN_card_PASS": 26,
+            "painted_UNKNOWN_card_FAIL": 564
+          },
+          "and_the_minute_differs": 390091
+        },
+        "15": {
+          "structures_compared": 500451,
+          "rows_that_move": 499694,
+          "the_colour_contradicts_the_card": 26759,
+          "painted_excluded_card_included": 12718,
+          "painted_included_card_excluded": 13006,
+          "every_direction": {
+            "painted_PASS_card_FAIL": 13006,
+            "painted_PASS_card_UNKNOWN": 69,
+            "painted_FAIL_card_PASS": 12718,
+            "painted_FAIL_card_UNKNOWN": 396,
+            "painted_UNKNOWN_card_PASS": 55,
+            "painted_UNKNOWN_card_FAIL": 515
+          },
+          "and_the_minute_differs": 390091
+        },
+        "25": {
+          "structures_compared": 500451,
+          "rows_that_move": 499694,
+          "the_colour_contradicts_the_card": 18063,
+          "painted_excluded_card_included": 8810,
+          "painted_included_card_excluded": 8220,
+          "every_direction": {
+            "painted_PASS_card_FAIL": 8220,
+            "painted_PASS_card_UNKNOWN": 128,
+            "painted_FAIL_card_PASS": 8810,
+            "painted_FAIL_card_UNKNOWN": 336,
+            "painted_UNKNOWN_card_PASS": 112,
+            "painted_UNKNOWN_card_FAIL": 457
+          },
+          "and_the_minute_differs": 390091
+        },
+        "45": {
+          "structures_compared": 500451,
+          "rows_that_move": 499694,
+          "the_colour_contradicts_the_card": 7381,
+          "painted_excluded_card_included": 3145,
+          "painted_included_card_excluded": 3203,
+          "every_direction": {
+            "painted_PASS_card_FAIL": 3203,
+            "painted_PASS_card_UNKNOWN": 197,
+            "painted_FAIL_card_PASS": 3145,
+            "painted_FAIL_card_UNKNOWN": 267,
+            "painted_UNKNOWN_card_PASS": 174,
+            "painted_UNKNOWN_card_FAIL": 395
+          },
+          "and_the_minute_differs": 390091
+        }
+      }
+    }
+  },
+  "probes": [
+    {
+      "id": "corner_nw",
+      "why": "a footprint corner, half a cell inside; the offset is near zero at the north and south edges, so these probes test the placement of the quad and not the stretch",
+      "lon": -79.1994557,
+      "lat": 36.1495623,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 0,
+        "col": 0
+      },
+      "expected_drawn_row": 0,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 3,
+        "status_byte": 1,
+        "status_name": "OFF_NETWORK",
+        "route_flag_byte": 0,
+        "destination_index": null,
+        "destination": null,
+        "outcome": "UNKNOWN",
+        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "rgba_of_the_cell_the_card_names": [
+          60,
+          60,
+          60,
+          130
+        ]
+      },
+      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_rgba_under_the_pointer": [
+        60,
+        60,
+        60,
+        130
+      ],
+      "expected_outcome_under_the_pointer": "UNKNOWN",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "corner_ne",
+      "why": "a footprint corner, half a cell inside; the offset is near zero at the north and south edges, so these probes test the placement of the quad and not the stretch",
+      "lon": -78.5005443,
+      "lat": 36.1495623,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 0,
+        "col": 642
+      },
+      "expected_drawn_row": 0,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 4,
+        "status_byte": 1,
+        "status_name": "OFF_NETWORK",
+        "route_flag_byte": 0,
+        "destination_index": null,
+        "destination": null,
+        "outcome": "UNKNOWN",
+        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "rgba_of_the_cell_the_card_names": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_rgba_under_the_pointer": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_outcome_under_the_pointer": "UNKNOWN",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "corner_sw",
+      "why": "a footprint corner, half a cell inside; the offset is near zero at the north and south edges, so these probes test the placement of the quad and not the stretch",
+      "lon": -79.1994557,
+      "lat": 35.7004377,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 513,
+        "col": 0
+      },
+      "expected_drawn_row": 513,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 3,
+        "status_byte": 1,
+        "status_name": "OFF_NETWORK",
+        "route_flag_byte": 0,
+        "destination_index": null,
+        "destination": null,
+        "outcome": "UNKNOWN",
+        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "rgba_of_the_cell_the_card_names": [
+          60,
+          60,
+          60,
+          130
+        ]
+      },
+      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_rgba_under_the_pointer": [
+        60,
+        60,
+        60,
+        130
+      ],
+      "expected_outcome_under_the_pointer": "UNKNOWN",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "corner_se",
+      "why": "a footprint corner, half a cell inside; the offset is near zero at the north and south edges, so these probes test the placement of the quad and not the stretch",
+      "lon": -78.5005443,
+      "lat": 35.7004377,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 513,
+        "col": 642
+      },
+      "expected_drawn_row": 513,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 76,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 1,
+        "destination_index": 301,
+        "destination": {
+          "ordinal": 301,
+          "place_count": 1,
+          "place_names": [
+            "Food Lion"
+          ]
+        },
+        "outcome": "FAIL",
+        "paint_of_the_cell_the_card_names": "transparent (excluded)",
+        "rgba_of_the_cell_the_card_names": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected_paint_under_the_pointer": "transparent (excluded)",
+      "expected_rgba_under_the_pointer": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_outcome_under_the_pointer": "FAIL",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "the_walked_cell",
+      "why": "the centre of cell (286, 129), which is the cell band15min_pass-03 was walked from; a cell centre, so it is inert for the displacement and present because its card is the one a person can check against a walk",
+      "lon": -79.0590202,
+      "lat": 35.8991732,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 286,
+        "col": 129
+      },
+      "expected_drawn_row": 286,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 24,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 0,
+        "destination_index": 124,
+        "destination": {
+          "ordinal": 124,
+          "place_count": 1,
+          "place_names": [
+            "Seal The Seasons"
+          ]
+        },
+        "outcome": "FAIL",
+        "paint_of_the_cell_the_card_names": "transparent (excluded)",
+        "rgba_of_the_cell_the_card_names": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected_paint_under_the_pointer": "transparent (excluded)",
+      "expected_rgba_under_the_pointer": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_outcome_under_the_pointer": "FAIL",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "boundary_north",
+      "why": "a tenth of a row above the southern edge of published row 100, at a column where rows 100 and 101 differ in verdict. The card must name row 100 while the pixel under the pointer is painted from row 101: this is the probe that can fail, and it is where a household could be shown the wrong colour",
+      "lon": -79.1199844,
+      "lat": 36.0616634,
+      "sensitive": true,
+      "expected_published_cell": {
+        "row": 100,
+        "col": 73
+      },
+      "expected_drawn_row": 101,
+      "expected_drawn_minus_published": 1,
+      "expected_card": {
+        "value_byte": 20,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 1,
+        "destination_index": 105,
+        "destination": {
+          "ordinal": 105,
+          "place_count": 2,
+          "place_names": [
+            "Weaver Street Market, Inc",
+            "Weaver Street Market Administration"
+          ]
+        },
+        "outcome": "PASS",
+        "paint_of_the_cell_the_card_names": "blue (included)",
+        "rgba_of_the_cell_the_card_names": [
+          24,
+          119,
+          242,
+          150
+        ]
+      },
+      "expected_paint_under_the_pointer": "transparent (excluded)",
+      "expected_rgba_under_the_pointer": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_outcome_under_the_pointer": "FAIL",
+      "the_picture_contradicts_the_card_here": true
+    },
+    {
+      "id": "boundary_mid",
+      "why": "a tenth of a row above the southern edge of published row 257, at a column where rows 257 and 258 differ in verdict. The card must name row 257 while the pixel under the pointer is painted from row 258: this is the probe that can fail, and it is where a household could be shown the wrong colour",
+      "lon": -79.0862364,
+      "lat": 35.9242121,
+      "sensitive": true,
+      "expected_published_cell": {
+        "row": 257,
+        "col": 104
+      },
+      "expected_drawn_row": 258,
+      "expected_drawn_minus_published": 1,
+      "expected_card": {
+        "value_byte": 22,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 0,
+        "destination_index": 101,
+        "destination": {
+          "ordinal": 101,
+          "place_count": 1,
+          "place_names": [
+            "Mikyins Asian Market"
+          ]
+        },
+        "outcome": "FAIL",
+        "paint_of_the_cell_the_card_names": "transparent (excluded)",
+        "rgba_of_the_cell_the_card_names": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected_paint_under_the_pointer": "blue (included)",
+      "expected_rgba_under_the_pointer": [
+        24,
+        119,
+        242,
+        150
+      ],
+      "expected_outcome_under_the_pointer": "PASS",
+      "the_picture_contradicts_the_card_here": true
+    },
+    {
+      "id": "boundary_south",
+      "why": "a tenth of a row above the southern edge of published row 420, at a column where rows 420 and 421 differ in verdict. The card must name row 420 while the pixel under the pointer is painted from row 421: this is the probe that can fail, and it is where a household could be shown the wrong colour",
+      "lon": -78.9730171,
+      "lat": 35.7815078,
+      "sensitive": true,
+      "expected_published_cell": {
+        "row": 420,
+        "col": 208
+      },
+      "expected_drawn_row": 421,
+      "expected_drawn_minus_published": 1,
+      "expected_card": {
+        "value_byte": 20,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 0,
+        "destination_index": 385,
+        "destination": {
+          "ordinal": 385,
+          "place_count": 1,
+          "place_names": [
+            "Jean's Neighborhood Market"
+          ]
+        },
+        "outcome": "PASS",
+        "paint_of_the_cell_the_card_names": "blue (included)",
+        "rgba_of_the_cell_the_card_names": [
+          24,
+          119,
+          242,
+          150
+        ]
+      },
+      "expected_paint_under_the_pointer": "transparent (excluded)",
+      "expected_rgba_under_the_pointer": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected_outcome_under_the_pointer": "FAIL",
+      "the_picture_contradicts_the_card_here": true
+    },
+    {
+      "id": "inert_interior",
+      "why": "a cell centre whose rows above and below agree with it, so this probe MUST report agreement. It is the control on the sensitive ones: if it also disagrees, the comparison is broken rather than the placement",
+      "lon": -79.0644635,
+      "lat": 35.9735895,
+      "sensitive": false,
+      "expected_published_cell": {
+        "row": 201,
+        "col": 124
+      },
+      "expected_drawn_row": 201,
+      "expected_drawn_minus_published": 0,
+      "expected_card": {
+        "value_byte": 12,
+        "status_byte": 0,
+        "status_name": "OK",
+        "route_flag_byte": 0,
+        "destination_index": 99,
+        "destination": {
+          "ordinal": 99,
+          "place_count": 1,
+          "place_names": [
+            "Harris Teeter"
+          ]
+        },
+        "outcome": "PASS",
+        "paint_of_the_cell_the_card_names": "blue (included)",
+        "rgba_of_the_cell_the_card_names": [
+          24,
+          119,
+          242,
+          150
+        ]
+      },
+      "expected_paint_under_the_pointer": "blue (included)",
+      "expected_rgba_under_the_pointer": [
+        24,
+        119,
+        242,
+        150
+      ],
+      "expected_outcome_under_the_pointer": "PASS",
+      "the_picture_contradicts_the_card_here": false
+    },
+    {
+      "id": "outside_west",
+      "why": "a longitude west of the footprint; the card must say the pointer is outside the published area and must not name a cell",
+      "lon": -79.2010886,
+      "lat": 36.0624514,
+      "sensitive": false,
+      "expected_card": {
+        "outside": true
+      },
+      "expected_published_cell": null
+    },
+    {
+      "id": "outside_north",
+      "why": "a latitude north of the footprint, which is the half-open edge the published rule includes and excludes differently from the southern one",
+      "lon": -79.0911353,
+      "lat": 36.1508755,
+      "sensitive": false,
+      "expected_card": {
+        "outside": true
+      },
+      "expected_published_cell": null
+    }
+  ],
+  "what_this_establishes": "that the picture the page draws is displaced from the publication it draws, by up to 0.37 of a row, and how many structures stand where that displacement puts a colour that contradicts their own card",
+  "what_this_does_not_establish": "that MapLibre places the quad this way. The rule is read off the canvas-source contract and matches the one behind the published 131,571 figure, but no browser has confirmed it. The `probes` section is that session's oracle, and the sensitive probes are the ones that can fail. It also says nothing about the source grid: that step is s3-5-export-regrid.json, and pass 54's point is that folding the two together would hand a correct measurement the wrong interpretation. And one further step is left out on purpose: the raster is drawn at SCREEN resolution with nearest resampling, so which texel a screen pixel takes depends on the zoom -- at the opening fit the footprint is about 620 pixels tall for 514 rows, so a screen pixel spans more than a row and adds a quantisation of its own. The figures here are the zoom-independent part: the colour the placement assigns at a structure's exact latitude. Rolling the zoom in would be the same conflation in a smaller form"
+}

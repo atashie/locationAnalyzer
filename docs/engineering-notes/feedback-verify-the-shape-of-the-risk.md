@@ -1035,3 +1035,42 @@ the earlier row — so no one-fault mutation can be caught for the right reason.
 unguarded, like `state.lastInCount` and the pointer generation before it.
 
 Forty-five instances now.
+
+## Pass 54's aftermath, 2026-11-15 — one instance supplied, six more of the same claim
+
+### Forty-sixth: a probe aimed at the obvious place cannot see a sub-cell error
+
+Queue item 3 was written as "compare the cell the page resolves at known coordinates against
+`GridSpec.cell_for_lonlat`, at the footprint corners and far from the origin". Computing the
+displacement first showed that at **every one of the 514 row centres the two placement rules name
+the same row**: the disagreement is a sub-row offset, at most 0.37 of a row, which can only tip a
+floor near a row *boundary*. A probe at a cell centre — the natural place to put one, and the place
+corners and cell indices lead you to — would have reported agreement 514 times out of 514 and been
+quoted as confirmation.
+
+> Place the probe where the error can show, not where the coordinate is easy to name. A measurement
+> whose resolution is coarser than the error it looks for returns agreement, and agreement from an
+> inert probe is indistinguishable from the real thing in a report.
+
+The same reasoning made the probe's own blind spot visible: it recovers the drawn row from where
+the quad's corners project, so any **affine** placement error — a constant offset, a uniform
+stretch — cancels and it reports agreement. That is now a passing check that says so, rather than
+a gap discovered after the number was used.
+
+### Forty-seventh: instance 40 again, and this time a reviewer had handed me one of the instances
+
+Codex pass 54 found that the progress note's first table said "the per-criterion card is unbuilt" a
+day after the card was built. I fixed that table and committed, with a commit message about what
+contradictory live documents cost. **There were six more copies of the same claim in live
+documents** — two in the decision report's release prerequisites, where it says a release is
+blocked on building something that already exists, and four in the execution plan. One grep for
+"is unbuilt" found them all, and I ran it a day later, while writing something else.
+
+> A stale claim is a class, not a line. When a reviewer points at one instance of a sentence that
+> is no longer true, the next action is to search for the sentence — not to edit the line.
+
+This is at least the third recurrence of instance 40 since it was written -- twice inside pass
+53’s own repairs, by that section’s own account, and now with the instance handed to me by a
+reviewer. It is the first where somebody else found the instance and I still closed only that.
+
+Forty-seven instances now.

@@ -124,8 +124,11 @@ flag come from **one** source cell — 0 of 330,502 are mixed — so the re-tili
 hand a household a time whose disclosure describes a different journey. What it moves is which
 cell answers, which is the 2.1% verdict movement already measured in s3-5.
 
-**And nothing shows a flagged answer to anyone yet.** The decoder counts the disclosure; the
-per-criterion card is unbuilt, so no interface displays one.
+**The card renders a flagged answer, and no browser has ever drawn it.** The decoder counts the
+disclosure and `card.js` prints it, in words checked against the shipped bundle. What has not
+happened is anyone seeing it. *(Corrected 2026-11-15: this said "the per-criterion card is
+unbuilt" for a day after it was built, as did the release prerequisites below and four lines of
+the execution plan. Codex pass 54 found the instance in the progress note; these were the rest.)*
 [s3-8](experiments/s3-8-restricted-routes.json),
 [s3-8-shipped](experiments/s3-8-shipped-disclosure.json)
 
@@ -143,7 +146,14 @@ Costco, Sam's Club and BJ's are not destinations at all**, and Walmart is split 
 
 **The shipped raster is not the measured grid**: a WGS84 re-tiling moves 2.42% of structures at
 fifteen minutes and omits 12,182; MapLibre's placement shifts 131,571 by one row (analytical, not a
-screenshot).
+screenshot). **And that second number now has a household form.** The drawn raster sits up to
+**0.37 of a row — 36 m — north** of the published one, zero at the footprint's north and south
+edges and largest in the middle, so at the twenty minutes the page opens on, **5,801 structures
+stand where the colour the map paints contradicts their own card** — **2,771** of them painted
+*outside* the coloured area although the publication includes them, which is an exclusion a
+household can act on without ever opening a card. Still analytical: the placement rule is read off
+MapLibre's canvas-source contract and no browser has confirmed it.
+[s3-10](experiments/s3-10-drawn-pixel.json)
 
 **E1c has no interval method chosen**, so the conditional estimand is specified and not computed.
 
@@ -151,20 +161,32 @@ screenshot).
 
 ## Release prerequisites, which are longer than "publish the flag"
 
-None of the three things a household is owed can be delivered today:
+**All three things a household is owed are implemented, and none of them has been shown to
+anybody.** This section described all three as missing for a day after the last one landed, which
+is why it now carries dates:
 
 1. ~~**The restricted-route flag** — computed, not persisted in the layer bundle.~~ **DONE
-   2026-11-13**: `published-v3` carries it as an optional third plane. What is *not* done is
-   **showing** it, which is item (3) — now the binding constraint on this item too.
-2. **The destination the time was measured to** — not persisted either, and a destination *node*
-   does not identify a shop: 550 places snap to 510 nodes and 75 share one, so presenting an
-   identity needs a rule that does not exist yet.
-3. **Which criterion was unknown, and why** — the per-criterion card is unbuilt.
+   2026-11-13**, `5e5118f`: `published-v3` carries it as an optional third plane, and the card
+   prints it.
+2. ~~**The destination the time was measured to** — not persisted either.~~ **DONE 2026-11-14**,
+   `4685158`: `published-v4` carries the plane and a side table, and the card names **every**
+   place on a shared node instead of choosing one — 550 places snap to 510 nodes and 75 share one,
+   so presenting one of them as *the* destination would be a claim the pipeline never made.
+3. ~~**Which criterion was unknown, and why** — the per-criterion card is unbuilt.~~ **DONE
+   2026-11-14**: `explainAt` computes it per layer per cell and `card.js` renders it.
+
+**What is not done is being seen.** No browser has drawn this page in any session that built it,
+so all three disclosures exist in code and have reached nobody — and the first measurement of what
+that costs is above: 5,801 structures at twenty minutes stand where the picture contradicts the
+card. `spikes/g3-render/probe_placement.js` is the instrument that would settle it in one session,
+with its expectations predeclared in `s3-10-drawn-pixel.json`.
 
 Also outstanding: **phone decode latency is unmeasured** (it needs a device), the
-**recomputation-eligibility UI** is absent although the format carries what it needs, and the
-browser implementation discussed above is **`v2/spikes/g3-render`, a spike** — not an identified
-household product.
+**recomputation-eligibility UI** is absent although the format carries what it needs, there is
+**no persistent selection at all** — the page reads an explanation on `mousemove` and clears it on
+`mouseout`, so a household cannot pick a home, keep its explanation, read it on a phone or reach
+it without a mouse (Codex pass 54) — and the browser implementation discussed above is
+**`v2/spikes/g3-render`, a spike**, not an identified household product.
 
 ## A proposed ordering, not a measured one
 

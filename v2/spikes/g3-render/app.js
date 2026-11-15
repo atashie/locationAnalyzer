@@ -944,6 +944,40 @@
     }
   }
 
+  /** **A read-only window for the placement probe** -- queue item 3.
+   *
+   * The page draws the published raster as a MapLibre `canvas` source, placed by its four
+   * corners in Web Mercator, while the raster's own rows are linear in latitude. Those two
+   * rules disagree by up to 0.37 of a row, so the pixel under the pointer and the cell the
+   * card names can be different cells. Measuring that needs the live map's own projection
+   * and the canvas the page actually painted, and `state` is private to this file.
+   *
+   * **Everything here reads.** Nothing exposed can set a threshold, enable a layer, move the
+   * map or render a card, so the probe cannot become a second way of driving the page. The
+   * oracle it is compared against is `docs/experiments/s3-10-drawn-pixel.json`, written
+   * before any browser ran; the runner is `probe_placement.js` beside this file.
+   */
+  window.G3Probe = Object.freeze({
+    ready: () => Boolean(state.map && state.maskCtx && state.ncols),
+    grid: () => ({ nrows: state.nrows, ncols: state.ncols, bounds: state.bounds.slice() }),
+    project: (lon, lat) => {
+      const p = state.map.project([lon, lat]);
+      return { x: p.x, y: p.y };
+    },
+    unproject: (x, y) => {
+      const c = state.map.unproject([x, y]);
+      return { lon: c.lng, lat: c.lat };
+    },
+    /** The RGBA the page painted for one published cell: the input MapLibre samples. */
+    maskPixel: (col, row) => Array.from(state.maskCtx.getImageData(col, row, 1, 1).data),
+    /** The linear-in-screen interpolation below holds for a north-up, untilted map only. */
+    bearingPitch: () => ({ bearing: state.map.getBearing(), pitch: state.map.getPitch() }),
+    canvasRect: () => {
+      const r = state.map.getCanvas().getBoundingClientRect();
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    },
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {

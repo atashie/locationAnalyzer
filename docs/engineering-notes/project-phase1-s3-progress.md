@@ -53,7 +53,28 @@ repairs than in the work being repaired.
 **After pass 54, the chain is closed by the owner's instruction.** A resuming session should not
 start a pass 55 on its repairs without being asked: the standing Codex cadence is "after every
 major plan and every analysed result set", and the owner has now named the end of this particular
-sequence. What comes next is queue item 3 — the browser — unless pass 54 says otherwise.
+sequence.
+
+**Pass 54 is integrated, and its verdict was that the sequence had become disproportionate:** "the
+card was worth building; this sequence of reviews was not worth completing before anyone opened
+it." It found **no High defects**, the first time in six passes. Its sharpest point was not that
+pass 52 was the stopping boundary but that **the next review of the card should have followed its
+first browser use** — a different source of evidence instead of another examination of the same
+code. Report at `docs/research/55-codex-review-pass54-fitness/REPORT.md`.
+
+**Queue item 3's first half is done, 2026-11-15**, in the decomposition pass 54 asked for: the
+drawn pixel against the published pixel in Python, with the browser left to confirm a predeclared
+expectation rather than to discover one. The figures are in item 3 below; the headline is that
+**5,801 structures at the threshold the page opens on stand where the painted colour contradicts
+their own card**, 2,771 of them painted outside the coloured area although the publication
+includes them.
+
+**What is left of item 3 needs a browser this machine has never had.** The only Chrome the
+extension has offered this project is on a different computer — it reports macOS, and the files are
+here on Windows — and serving the spike across the network was refused by the permission
+classifier. So that session needs the owner: Chrome on this machine, or the spike served to that
+one. Everything that does not depend on it is done, including the instrument and its proof that it
+can fail.
 
 **The sheet gained three columns across these two passes**, so an owner holding a filled copy must
 run `python scripts/migrate_audit_sheet.py <their copy>` rather than regenerating: `walked`
@@ -492,15 +513,44 @@ eleven are fixed and guarded; what each one was, and what closed it:
 timestamp measures the right interval (the old reply's timing is recorded before `post(send)`
 overwrites it), and removing `pointerGen` was reasonable for the current contract.
 
-### 3. Where the published raster actually lands in the browser
+### 3. Where the published raster actually lands in the browser — **MEASURED 2026-11-15; the
+browser half is still open**
 
-MapLibre places the raster in Web Mercator while the published rows are linear in latitude, and
-**nothing has measured the result**. If a household reads a cell that is not the cell the answer was
-computed for, every disclosure above it is attached to the wrong place — which makes this a
-wrong-answer risk in the thing actually shown, not a defect in unseen code. Cheap, and it needs no
-new data: compare the cell the page resolves at known coordinates against
-`GridSpec.cell_for_lonlat`, at the footprint corners and far from the origin, because
-[[feedback-a-relative-invariant-cannot-see-an-absence]] applies here too.
+MapLibre places the raster in Web Mercator while the published rows are linear in latitude. That is
+now measured rather than guessed, in the decomposition pass 54 asked for — **the drawn pixel
+against the published pixel first**, with the source grid left to `s3-5-export-regrid.json`,
+because folding the two together hands a correct measurement the wrong interpretation.
+
+`scripts/measure_drawn_pixel.py` → [s3-10-drawn-pixel.json](../experiments/s3-10-drawn-pixel.json):
+
+* **The displacement is sub-pixel.** The drawn raster sits up to **0.3656 of a row — 35.6 m —
+  north** of the published one, zero at the footprint's north and south edges and largest in the
+  middle. At **all 514 row centres the two rules name the same row**, so the obvious probe — read
+  the page at a cell centre and compare — *could not have failed*. It would have reported
+  agreement 514 times and established nothing. The probes are near row boundaries for that reason.
+* **The household figure is not the row movement.** 131,571 structures read a moved row, which
+  reproduces the published figure exactly, but a moved row only matters if the colour moves with
+  it. At the twenty minutes the page opens on, **5,801 structures stand where the painted colour
+  contradicts their own card** — **2,771 painted out while the publication includes them**, 2,798
+  the other way. The first of those is a **false exclusion in the picture**, which is the risk
+  Codex pass 54 named as unexamined: nobody opens a card in a neighbourhood they have already
+  ruled out.
+* **Two controls, in the artifact.** Replacing the drawn rule with the published one must report
+  zero contradictions and does; shifting by a whole row must report more and does. The script
+  refuses to write the file otherwise.
+
+**What is left is the browser**, and it is now one bounded session rather than an open-ended one.
+`spikes/g3-render/probe_placement.js` reads the predeclared probes, asks the live page where it
+draws each one, and compares — including one hover that exercises a PASS at exactly the default
+threshold, on a restricted route, to a junction carrying two places. `probe_placement_selftest.mjs`
+proves in Node that it can fail: twelve checks, with a stub page placed in Mercator agreeing
+exactly, a stub with **no** displacement caught at every sensitive probe, a larger distortion
+caught more widely, and the one error it **cannot** see declared in its own output — an affine
+placement error cancels, because the drawn row is recovered from where the quad's own corners
+project. Closing that needs one screenshot at a colour edge.
+
+`window.G3Probe` in `app.js` is the read-only window it needs: eight accessors, none of which can
+set a threshold, enable a layer, move the map or render a card.
 
 ### 4. Phone decode latency
 
