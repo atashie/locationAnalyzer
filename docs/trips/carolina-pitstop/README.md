@@ -6,12 +6,18 @@ Published page: https://claude.ai/artifact/D9wbv1pjQhaFFCSnXUnjsd (shared by lin
   Gainesville FL to Chapel Hill NC. It is carried over unchanged from the published
   version 1793985816-bceb. Its own generator was never committed, so its data lives only in
   `page_base.html`.
-- **Booked tab, "Our Saturday: Columbia"** (added 2026-11-15; the page always opens here, and only a `#route` link opens the background tab): the booked plan. It covers the
-  Staybridge Suites on Huger St and the Fireflies Holiday Lights at Segra Park on Sat 28 Nov
-  2026. It compares four halfway stops and lists dinner, dessert and small, free things
-  nearby.
+- **Booked tab, "Our Saturday: Columbia"** (added 2026-11-15): the booked plan for Sat 28 to
+  Sun 29 Nov 2026. The page always opens on this tab; only a `#route` link opens the
+  background tab, which carries an "already decided" banner. The booked tab covers:
+  - the Staybridge Suites on Huger St, and the Fireflies Holiday Lights at Segra Park
+    (tickets already bought for all four);
+  - four halfway stops for Saturday's drive up;
+  - Saturday evening dropdowns: dinner, dessert, free things near the park;
+  - Sunday morning dropdowns: breakfast, coffee, things to do before the noon checkout;
+  - Sunday's last leg to Chapel Hill on three corridors (Charlotte, US-1, I-95), drawn dashed
+    on the map, with arrivals for three departure times.
 
-## Rebuild tab 2
+## Rebuild the booked tab
 
 ```bash
 python ~/.claude/skills/planning-route-stops/itinerary_compare.py --spec spec.json \
@@ -23,7 +29,11 @@ python project.py measured.json cola_map.json                # both days' routes
 python build_columbia_tab.py                                 # writes carolina-pitstop.html
 ```
 
-Then publish `carolina-pitstop.html` to the URL above.
+Then check the page script and publish `carolina-pitstop.html` to the URL above:
+
+```bash
+node check_page.js carolina-pitstop.html   # runs the page JS against a stub DOM; prints BAD on undefined/NaN
+```
 
 ## Files
 
@@ -35,6 +45,7 @@ Then publish `carolina-pitstop.html` to the URL above.
 | `walks.json` | Walking routes from each venue to Segra Park and to the hotel. |
 | `sunday.py`, `sunday.json` | The Sunday leg to Chapel Hill on each corridor. `charlotte` forces the Charlotte waypoint and matches the router's own pick, so the page drops it. |
 | `morning.py`, `morning.json` | Walk and drive times from the hotel to the Sunday-morning places. Methodical and Drip geocoded to their street only, so the page borrows the measured neighbour and says "about". |
+| `check_page.js`, `check_page_cases.js` | A stub-DOM harness that runs the page's script, selects every option and Sunday route, and flags `undefined`/`NaN` in the output. No browser needed. |
 | `project.py` | Projects the routes into the page's map frame. It recovers the original map's linear lat/lon fit from the Gainesville and Chapel Hill labels, and asserts it against the Charlotte and Jacksonville labels. |
 
 ## Known gaps
@@ -42,6 +53,11 @@ Then publish `carolina-pitstop.html` to the URL above.
 - **Walk times.** All walks are Valhalla pedestrian times at adult pace.
 - **Bad geocodes.** Page Ellington Park and Coastal Crust geocoded badly, so the page shows no
   measured walk for either.
-- **Drive times.** Drive times are free-flow, with no Thanksgiving traffic.
+- **Drive times.** Drive times are free-flow, with no Thanksgiving traffic. The Sunday after
+  Thanksgiving is one of the busiest driving days, so the Sunday leg is a floor.
+- **Sunday hours.** Only Riverbanks Zoo is confirmed for 29 Nov. Every other Sunday time is the
+  place's usual Sunday hours. The hotel breakfast hours come from listings, not from IHG.
+- **Street-only geocodes.** Methodical Coffee and Drip matched only their street (see
+  `docs/engineering-notes/reference-nominatim-street-only-match.md`).
 - **Not shown.** The booking confirmation number is deliberately not on the page or in this
   repo.

@@ -63,6 +63,7 @@ note disagrees with the code, the code is right and the note needs correcting.
 
 - [`reference-text-io-rewrites-line-endings`](reference-text-io-rewrites-line-endings.md) — `Path.read_text` + `Path.write_text` is not a round trip on Windows: it converts an LF file to CRLF, and hashing the decoded text on both sides makes a "restored byte-identically" check that can never fail
 - [`reference-codex-runtime-quirks`](reference-codex-runtime-quirks.md) — How to invoke Codex reliably on this machine - supported models for the ChatGPT account, pass --model explicitly, put long prompts in a file, avoid big Bash heredocs
+- [`reference-nominatim-street-only-match`](reference-nominatim-street-only-match.md) — A house-number query can come back matched to the street itself, at a point far from the address, with no error; read `display_name` before trusting any routed figure
 - [`reference-sibling-repos`](reference-sibling-repos.md) — Paths to sibling repos whose code the V2 rebuild may reuse (CHCCS_geospatial gridded travel times, localUpdates NL-to-spatial-SQL agent)
 - [`reference-where-secrets-hide`](reference-where-secrets-hide.md) — Where credentials have actually turned up in this repo - .claude/settings.local.json records approved Bash commands verbatim, and four diagnostic scripts printed a live key to stdout - plus the handling pattern that found them
 
