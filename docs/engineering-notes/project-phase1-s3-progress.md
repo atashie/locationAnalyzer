@@ -32,9 +32,23 @@ substantial piece of work rather than one of several.
 
 ## In flight right now, and what comes next
 
-**Nothing in flight. Codex pass 53 is fully integrated**, all eleven findings — see §2c of the
-queue for what each was. The chain of passes stands at 49, 50, 51, 52, 53, every one of which found
-more in the previous pass's repairs than in the work being repaired.
+**Codex pass 54 is running, and the owner asked for it as the FINAL round of this chain.**
+Prompt at `docs/research/55-codex-review-pass54-prompt.md`, committed before the run. It is
+deliberately **not** a sixth defect hunt on the repairs: it is a fitness review in the shape of
+pass 25, asking whether this body of work is proportionate to the product's purpose and what the
+highest-value next action is, with a last defect sweep attached rather than leading. Pass 25 is
+the precedent and the most valuable pass in this project's history — it is the one that produced
+§0's ordering rule after judging eleven passes of apparatus "disproportionate and elaborating the
+wrong axis".
+
+**Codex pass 53 is fully integrated**, all eleven findings — see §2c of the queue for what each
+was. The chain stands at 49, 50, 51, 52, 53, every one of which found more in the previous pass's
+repairs than in the work being repaired.
+
+**After pass 54, the chain is closed by the owner's instruction.** A resuming session should not
+start a pass 55 on its repairs without being asked: the standing Codex cadence is "after every
+major plan and every analysed result set", and the owner has now named the end of this particular
+sequence. What comes next is queue item 3 — the browser — unless pass 54 says otherwise.
 
 **The sheet gained three columns across these two passes**, so an owner holding a filled copy must
 run `python scripts/migrate_audit_sheet.py <their copy>` rather than regenerating: `walked`
