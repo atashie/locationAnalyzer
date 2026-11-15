@@ -290,9 +290,12 @@
       requestFailed() {
         if (!s.pending) return null;
         s.pending = false;
-        const next = s.queued || (s.inspected
-          ? { row: s.inspected.row, col: s.inspected.col }
-          : null);
+        // **Only a position the pointer has actually moved to.** Re-asking the inspected cell
+        // here would retry the request that just failed, and a deterministic failure then loops:
+        // error, retry, error, retry, with one message per round and no bound. Sending only a
+        // QUEUED position bounds the retries by pointer moves, and the caller tells the viewer
+        // the explanation failed so a move retries it.
+        const next = s.queued;
         s.queued = null;
         return next ? sendNow(next.row, next.col) : null;
       },

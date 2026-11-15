@@ -575,12 +575,20 @@ check('a failed request settles instead of wedging the inspector', () => {
   const req = ins.pointerAt(1, 1);
   assert(req && ins.state.pending, 'a request is outstanding');
 
-  const retry = ins.requestFailed();
-  assert(retry && retry.row === 1 && retry.col === 1,
-    'the inspected cell is re-asked rather than left unanswered');
-  assert(retry.reqId !== req.reqId, 'the retry is a new request, not the dead one');
-  assert(ins.reply({ reqId: retry.reqId, seq: 1, row: 1, col: 1 }).render,
-    'and the retry renders, so the card is not wedged shut');
+  // Nothing is re-sent for the cell that just failed: that would retry the failing request, and
+  // a deterministic failure then loops without bound. What must be true is that the inspector is
+  // SETTLED, so the next pointer move gets through.
+  assert(ins.requestFailed() === null, 'the failed cell must not be retried automatically');
+  const after = ins.pointerAt(2, 2);
+  assert(after, 'the next pointer move must be sent, so the card is not wedged shut');
+  assert(ins.reply({ reqId: after.reqId, seq: 1, row: 2, col: 2 }).render,
+    'and its reply must render');
+  // Calling it twice is harmless: there is nothing outstanding the second time.
+  const ins0 = C.createInspector();
+  ins0.computePainted(1, 1);
+  ins0.pointerAt(1, 1);
+  ins0.requestFailed();
+  assert(ins0.requestFailed() === null, 'a second failure with nothing outstanding sends nothing');
 
   // A failure with a newer position queued sends that one instead.
   const ins2 = C.createInspector();
