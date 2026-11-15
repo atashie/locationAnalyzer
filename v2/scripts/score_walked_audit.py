@@ -40,6 +40,7 @@ if str(V2) not in sys.path:
 
 from locfinder.measure.admissible import (  # noqa: E402
     ALTERNATIVES_SEPARATOR,
+    PermittedPlace,
     WalkedRecord,
     reported_seconds,
 )
@@ -65,7 +66,8 @@ REQUIRED = (
     "witness_within_10min", "witness_within_15min",
     "destination_used_lon", "destination_used_lat",
     "predicted_destination_lat", "predicted_destination_lon",
-    "predicted_destination_alternatives", "route_identified",
+    "predicted_destination_alternatives",
+    "predicted_destination_alternatives_lonlat", "route_identified",
 )
 
 #: `yes`/`no` as the sheet spells them. Anything else is **not** read as a no: an unrecognised value
@@ -92,17 +94,39 @@ def blank_to_none(value: str | None) -> str | None:
     return text or None
 
 
-def alternatives(value: str | None) -> tuple[str, ...]:
-    """The other places on the selected node, as `recover_audit_destinations.py` joins them.
+def alternatives(names: str | None, lonlats: str | None) -> tuple[PermittedPlace, ...]:
+    """The other places on the selected node, each paired with its own coordinate.
 
-    It writes `"; ".join(others)`, so split on the semicolon and strip. An empty cell is an empty
-    tuple, which is "this node carries no other place" — the recovery fills the column for every
-    row that names a destination.
+    `recover_audit_destinations.py` writes `"; ".join(...)` for both columns in the same order. A
+    name with no coordinate is kept as a `PermittedPlace` with `lon`/`lat` `None`: the predicate
+    then refuses an arrival that claims to be it, which is the honest outcome for a sheet produced
+    before the coordinate column existed. **The lists are zipped, never indexed separately**, and
+    a length mismatch raises rather than silently pairing a name with another place's location
+    (pass 52 F3).
     """
-    text = (value or "").strip()
-    if not text:
-        return ()
-    return tuple(part.strip() for part in text.split(ALTERNATIVES_SEPARATOR) if part.strip())
+    def split(value):
+        text = (value or "").strip()
+        if not text:
+            return []
+        return [part.strip() for part in text.split(ALTERNATIVES_SEPARATOR) if part.strip()]
+
+    got_names = split(names)
+    got_lonlats = split(lonlats)
+    if got_lonlats and len(got_lonlats) != len(got_names):
+        raise Refused(
+            f"{len(got_names)} alternative names and {len(got_lonlats)} coordinates; they are "
+            "written in the same order and must be the same length, or a name would be paired "
+            "with another place's location")
+    out = []
+    for i, name in enumerate(got_names):
+        lon = lat = None
+        if i < len(got_lonlats):
+            parts = got_lonlats[i].split(",")
+            if len(parts) != 2:
+                raise Refused(f"alternative coordinate {got_lonlats[i]!r} is not 'lon,lat'")
+            lon, lat = parts[0].strip(), parts[1].strip()
+        out.append(PermittedPlace(name=name, lon=lon or None, lat=lat or None))
+    return tuple(out)
 
 
 def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
@@ -123,7 +147,9 @@ def record_for(row: dict, *, label_column: str = "journey_id") -> WalkedRecord:
         predicted_destination=blank_to_none(row.get("predicted_destination")),
         predicted_destination_lon=blank_to_none(row.get("predicted_destination_lon")),
         predicted_destination_lat=blank_to_none(row.get("predicted_destination_lat")),
-        destination_alternatives=alternatives(row.get("predicted_destination_alternatives")),
+        destination_alternatives=alternatives(
+            row.get("predicted_destination_alternatives"),
+            row.get("predicted_destination_alternatives_lonlat")),
         route_followed=blank_to_none(row.get("route_followed")),
         route_identified=tri_state(row.get("route_identified")),
         # Evidence that a walk happened, carried so a walk with no duration cannot be filed as
@@ -152,9 +178,14 @@ def read_sheet(path: Path) -> list[WalkedRecord]:
         rows = list(reader)
     missing = [c for c in REQUIRED if c not in header]
     if missing:
+        # **Not "regenerate it"** -- pass 52 finding F7. `audit_recommendations.py` writes every
+        # owner column blank, so the only way past its overwrite guard destroys a filled sheet's
+        # observations. `migrate_audit_sheet.py` adds the missing columns and changes nothing else.
         raise Refused(
-            f"{path.name} has no {', '.join(missing)} column. Regenerate it with "
-            "scripts/audit_recommendations.py, or the walks it records can never be scored."
+            f"{path.name} has no {', '.join(missing)} column, so the walks it records cannot be "
+            "scored. Add the missing columns without touching anything already recorded:\n"
+            f"    python scripts/migrate_audit_sheet.py {path}\n"
+            "Do NOT regenerate the sheet: that writes every owner column blank."
         )
     if not rows:
         raise Refused(f"{path.name} has no rows")

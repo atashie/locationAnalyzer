@@ -17,6 +17,7 @@ from locfinder.grid import GridSpec
 from locfinder.measure.admissible import (
     Admissibility,
     Inadmissible,
+    PermittedPlace,
     WalkedRecord,
     admissibility,
     metres_between,
@@ -225,10 +226,7 @@ def test_the_suppressed_failure_is_recoverable_from_the_result(good, grid):
 
 def test_an_unwalked_journey_is_not_inadmissible(good, grid):
     """Not walking is not a defect in the record."""
-    planned = dataclasses.replace(good, walked_seconds=None, duration_timed=None,
-                                  start_lon=None, start_lat=None, destination_used=None,
-                                  destination_used_lon=None, destination_used_lat=None,
-                                  walked_date=None, route_followed=None, route_identified=None)
+    planned = dataclasses.replace(good, **dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None))
     verdict, reasons = admissibility(planned, grid=grid)
     assert verdict is Admissibility.NOT_WALKED
     assert reasons == ()
@@ -246,9 +244,8 @@ def test_a_cell_with_no_published_time_is_not_an_e3_journey(good, grid):
     filled would make it a walked row with no claim, which is the next test.
     """
     unpublished = dataclasses.replace(
-        good, label="off_network-01", reported_s=None, walked_seconds=None, walked_date=None,
-        start_lon=None, start_lat=None, destination_used=None, destination_used_lon=None,
-        destination_used_lat=None, route_followed=None)
+        good, label="off_network-01", reported_s=None,
+        **dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None))
     result = score_walked_records([unpublished], grid=grid)
     assert result.without_a_published_time == ("off_network-01",)
     assert (result.walked, result.planned) == (0, 0)
@@ -312,7 +309,7 @@ def test_any_single_observation_column_makes_a_row_a_walk(good, grid, evidence):
     only get filled in by somebody who went there.
     """
     blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
-    record = dataclasses.replace(good, duration_timed=None, route_identified=None, **blank)
+    record = dataclasses.replace(good, **blank)
     assert not record.walked, "the fully blank row must not read as a walk"
     with_one = dataclasses.replace(record, **{evidence: "yes"})
     assert with_one.walked, f"{evidence} alone must mark the row as walked"
@@ -337,7 +334,7 @@ def test_a_different_branch_of_the_same_chain_is_refused(good, grid):
         destination_used_lon=b[0], destination_used_lat=b[1])
     verdict, reasons = admissibility(record, grid=grid)
     assert verdict is Admissibility.NOT_ADMISSIBLE
-    assert any("different shop whatever it is called" in r for r in reasons), reasons
+    assert any("not the one the record names" in r for r in reasons), reasons
     # The control: the same walk, ended at the shop the layer picked, is admissible.
     right = dataclasses.replace(record, destination_used_lon=a[0], destination_used_lat=a[1])
     assert admissibility(right, grid=grid)[0] is Admissibility.ADMISSIBLE
@@ -347,17 +344,123 @@ def test_a_permitted_alternative_on_the_same_node_is_accepted(good, grid):
     """The other half of A2: the README explicitly permits walking to any place on the node.
 
     Refusing a named alternative was the same defect pointing the other way, and the ingestion
-    was discarding the column that lists them.
+    was discarding the column that lists them. The alternative's own coordinate travels with its
+    name, so the arrival is matched against the member actually reached.
     """
+    nearby = (SHOP[0] + 0.0005, SHOP[1])        # about 45 m away, on the same node
     record = dataclasses.replace(
         good, destination_used="Weaver Street Market",
-        destination_alternatives=("Weaver Street Market", "Compare Foods"))
+        destination_used_lon=nearby[0], destination_used_lat=nearby[1],
+        destination_alternatives=(
+            PermittedPlace("Weaver Street Market", nearby[0], nearby[1]),
+            PermittedPlace("Compare Foods", SHOP[0], SHOP[1])))
     assert admissibility(record, grid=grid)[0] is Admissibility.ADMISSIBLE
     # And a shop that is neither the selection nor an alternative is still a different journey.
     other = dataclasses.replace(record, destination_used="Costco")
     verdict, reasons = admissibility(other, grid=grid)
     assert verdict is Admissibility.NOT_ADMISSIBLE
     assert any("different journey" in r for r in reasons), reasons
+
+
+# ------------------------------------------------------------------- Codex pass 52's witnesses
+
+
+@pytest.mark.parametrize("field", ["duration_timed", "route_identified"])
+def test_the_two_self_report_columns_are_evidence_of_a_walk(good, grid, field):
+    """**Pass 52 finding F2.** They were missing from `EVIDENCE_FIELDS`.
+
+    A row whose only entry was one of these lost its evidence exactly as before the A1 repair:
+    `walked=0, planned=1`, no refusal. They are the two fields that most directly concern having
+    gone — one says whether a clock was used, the other whether the walker can say which way.
+    """
+    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    record = dataclasses.replace(good, **{**blank, field: True})
+    assert record.evidence_of_a_walk == (field,), record.evidence_of_a_walk
+    assert admissibility(record, grid=grid)[0] is Admissibility.NOT_ADMISSIBLE
+    result = score_walked_records([record], grid=grid)
+    assert (result.walked, result.planned) == (0, 0)
+    assert result.no_admissible_observation
+
+
+def test_a_recorded_not_timed_is_evidence_and_an_absent_one_is_not(good, grid):
+    """`False` is a thing somebody who went says; `None` is the sheet saying nothing."""
+    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    assert dataclasses.replace(good, **{**blank, "duration_timed": False}).walked
+    assert not dataclasses.replace(good, **blank).walked
+
+
+@pytest.mark.parametrize("field", ["witness_within_10min", "witness_within_15min"])
+def test_untested_is_not_evidence_that_somebody_walked(good, grid, field):
+    """**The other half of F2.** `untested` is what the README tells the owner to write when they
+    did not try, so it can be filled in while planning a sheet rather than walking it. Reading it
+    as affirmative evidence turned a planned row into a refused walk — A1's error reversed.
+    """
+    blank = dict.fromkeys(WalkedRecord.EVIDENCE_FIELDS, None)
+    planned = dataclasses.replace(good, **{**blank, field: "untested"})
+    assert planned.evidence_of_a_walk == (), planned.evidence_of_a_walk
+    assert admissibility(planned, grid=grid)[0] is Admissibility.NOT_WALKED
+    # The control: an answer only a walker could give IS evidence, in the same column.
+    for answer in ("yes", "no", " YES "):
+        walked = dataclasses.replace(good, **{**blank, field: answer})
+        assert walked.evidence_of_a_walk == (field,), (answer, walked.evidence_of_a_walk)
+
+
+def test_an_arrival_is_matched_to_the_place_it_names_not_to_a_radius(good, grid):
+    """**Pass 52 finding F3.** Proximity is not identity either.
+
+    Two different shops of the same name 270 m apart, on different nodes: select the first, walk
+    to the second, record it truthfully. The name is in the permitted set and 270 m was inside the
+    600 m node envelope the first repair used, so the wrong journey was accepted. The arrival is
+    now matched against the coordinate of the member whose name was recorded.
+    """
+    first = (-79.0, 35.9)
+    second = (-78.997, 35.9)
+    gap = metres_between(first[0], first[1], second[0], second[1])
+    assert 250 < gap < 290, f"{gap:.0f} m"
+
+    record = dataclasses.replace(
+        good, destination_used="Food Lion", predicted_destination="Food Lion",
+        predicted_destination_lon=first[0], predicted_destination_lat=first[1],
+        destination_used_lon=second[0], destination_used_lat=second[1],
+        destination_alternatives=())
+    verdict, reasons = admissibility(record, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("past the 200 m a door can be" in r for r in reasons), reasons
+    # The control: arriving at the shop the record names is admissible.
+    right = dataclasses.replace(record, destination_used_lon=first[0],
+                                destination_used_lat=first[1])
+    assert admissibility(right, grid=grid)[0] is Admissibility.ADMISSIBLE
+
+
+def test_an_alternative_with_no_coordinate_cannot_establish_identity(good, grid):
+    """A sheet made before the coordinate column existed names alternatives and locates none.
+
+    The honest outcome is a refusal naming the place, not silent acceptance on the name alone.
+    """
+    record = dataclasses.replace(
+        good, destination_used="Compare Foods",
+        destination_alternatives=(PermittedPlace("Compare Foods"),))
+    verdict, reasons = admissibility(record, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("does not say where 'Compare Foods' is" in r for r in reasons), reasons
+
+
+def test_an_impossible_latitude_is_refused_rather_than_producing_zero_distance(good, grid):
+    """**Pass 52 finding F9.** A typo that manufactured agreement instead of refusing the row.
+
+    `395.910405` is one keystroke from `35.910405`. The haversine wrapped it through 360° and
+    returned about 1.6e-9 m, so the impossible coordinate read as "you arrived exactly at the
+    shop" and the record was admissible.
+    """
+    record = dataclasses.replace(good, destination_used_lat=395.910405)
+    verdict, reasons = admissibility(record, grid=grid)
+    assert verdict is Admissibility.NOT_ADMISSIBLE
+    assert any("outside the geographic ranges" in r for r in reasons), reasons
+    with pytest.raises(ValueError, match="outside the geographic ranges"):
+        metres_between(-79.0, 395.9, -79.0, 35.9)
+    for bad in ((181.0, 35.9), (-79.0, 91.0), (float("inf"), 35.9), (float("nan"), 35.9)):
+        with pytest.raises(ValueError):
+            metres_between(bad[0], bad[1], -79.0, 35.9)
 
 
 def test_an_arrival_coordinate_is_required_at_all(good, grid):

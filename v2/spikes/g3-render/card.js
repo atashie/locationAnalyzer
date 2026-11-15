@@ -192,18 +192,26 @@
    * Three things can make a reply obsolete, and all three are checked:
    *
    * * a newer **request** was sent (`reqId`);
-   * * the pointer has left the data since the request was sent (`pointerGen`);
+   * * the reply is about a cell that is not the one being inspected — which covers both the
+   *   pointer having left the data and the pointer having moved on to another cell;
    * * the **compute** the reply describes is not the one on screen (`seq` against
    *   `displayedSeq`), which is the one a `reqId` check cannot see.
+   *
+   * The first version carried a separate `pointerGen` counter for leaving the data. The position
+   * check added for F4 subsumes it completely — `pointerLeft` sets `inspected` to `null`, and a
+   * reply can then match no cell — so both of its mutations SURVIVED once F4 was fixed. It is
+   * removed rather than kept as defence in depth: dead defensive code is a permanent mutation
+   * survivor, and this project has paid for that lesson once already in `measure/exact.py`.
+   * B5's witness is covered by the position check, and its regression test still asserts the
+   * behaviour.
    */
   function createInspector() {
     const s = {
       reqSeq: 0,
       pending: false,
       queued: null,
-      pointerGen: 0,
-      sentGen: 0,
-      //: The cell the card describes, so a finished compute can refresh it in place.
+      //: The cell the card describes. The single source of truth for what is being looked at:
+      //: `null` means the pointer is not on the data, and a reply matching no cell cannot render.
       inspected: null,
       //: The compute whose raster is on screen. `null` while one is in flight: the new answer
       //: does not exist until it has painted, and the old one no longer describes the criteria.
@@ -213,7 +221,6 @@
     function sendNow(row, col) {
       s.pending = true;
       s.queued = null;
-      s.sentGen = s.pointerGen;
       return { reqId: ++s.reqSeq, row, col };
     }
 
@@ -223,14 +230,13 @@
       pointerAt(row, col) {
         s.inspected = { row, col };
         if (s.pending) {
-          s.queued = { row, col, gen: s.pointerGen };
+          s.queued = { row, col };
           return null;
         }
         return sendNow(row, col);
       },
       /** Pointer left the raster or the map. Nothing in flight is about anywhere on screen. */
       pointerLeft() {
-        s.pointerGen++;
         s.queued = null;
         s.inspected = null;
       },
@@ -248,7 +254,7 @@
         s.displayedSeq = seq;
         if (!s.inspected) return null;
         if (s.pending) {
-          s.queued = { row: s.inspected.row, col: s.inspected.col, gen: s.pointerGen };
+          s.queued = { row: s.inspected.row, col: s.inspected.col };
           return null;
         }
         return sendNow(s.inspected.row, s.inspected.col);
@@ -256,13 +262,39 @@
       /** A reply arrived. Returns whether to render it, and the next request to send. */
       reply(msg) {
         s.pending = false;
+        // **The reply must be about the cell the pointer is on now** -- pass 52 finding F4. With
+        // one request in flight, moving from (1,1) to (2,2) queues the second and renders the
+        // FIRST when its reply lands, so the card describes (1,1) while the pointer is over
+        // (2,2) until the next round trip. The generation counter this first carried changed
+        // only on LEAVING the data, so it could not see a move between two cells, and the
+        // regression test written beside it asserted the first reply renders -- preserving the
+        // failure.
+        const atInspected = !!s.inspected
+          && msg.row === s.inspected.row && msg.col === s.inspected.col;
         const render = msg.reqId === s.reqSeq
-          && s.sentGen === s.pointerGen
+          && atInspected
           && (msg.seq === undefined || msg.seq === s.displayedSeq);
         const next = s.queued;
         s.queued = null;
-        const send = (next && next.gen === s.pointerGen) ? sendNow(next.row, next.col) : null;
+        const send = next ? sendNow(next.row, next.col) : null;
         return { render, send };
+      },
+      /** The outstanding request will never be answered. Returns the next request to send.
+       *
+       * **Pass 52 finding F5: without this the inspector wedges permanently.** A worker `error`
+       * for an explanation left `pending` true for ever, so every later hover queued behind a
+       * reply that was never coming, and leaving the map, resetting the criteria and further
+       * successful computes all failed to recover it. The worker's error message carries no
+       * request id, so this settles whatever was outstanding rather than correlating.
+       */
+      requestFailed() {
+        if (!s.pending) return null;
+        s.pending = false;
+        const next = s.queued || (s.inspected
+          ? { row: s.inspected.row, col: s.inspected.col }
+          : null);
+        s.queued = null;
+        return next ? sendNow(next.row, next.col) : null;
       },
     };
   }

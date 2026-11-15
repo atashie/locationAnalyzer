@@ -41,13 +41,15 @@ MUTATIONS = {
         '            elif False:',
     ),
     "drop the destination check": (
-        r'    if _blank\(record\.destination_used\):',
-        '    if False and _blank(record.destination_used):',
+        r'    if used is None:\r?\n        reasons\.append\("the destination reached is not '
+        r'recorded"\)',
+        '    if False:\n        pass',
     ),
-    # Re-anchored after pass 51 A2 turned the name comparison from `!=` to a permitted-set test.
-    # It was reported DID NOT APPLY on the first run after that change.
+    # Re-anchored twice: pass 51 A2 turned the comparison from `!=` into a permitted-set test,
+    # and pass 52 F3 turned the set into a name-to-place lookup. Each change was reported DID NOT
+    # APPLY on the first run after it, which is what that report is for.
     "accept a walk to any destination": (
-        r'    elif str\(record\.destination_used\)\.strip\(\) not in permitted:',
+        r'    elif used not in by_name:',
         '    elif False:',
     ),
     "drop the route check": (
@@ -81,9 +83,18 @@ MUTATIONS = {
     ),
     # ------------------------------------------------------------------ Codex pass 51
     "a walk is only a walk if its duration was recorded": (
-        r'        return tuple\(name for name in self\.EVIDENCE_FIELDS\r?\n'
-        r'                     if not _blank\(getattr\(self, name, None\)\)\)',
-        "        return () if self.walked_seconds is None else ('walked_seconds',)",
+        r'        found = \[\]',
+        "        return () if self.walked_seconds is None else ('walked_seconds',)\n        found = []",
+    ),
+    # pass 52 F2, both halves
+    "the self-report columns are not evidence of a walk": (
+        r'                       "duration_timed", "route_identified"\)',
+        '                       )',
+    ),
+    "an untested witness counts as evidence that somebody walked": (
+        r'            if excluded and isinstance\(value, str\) and value\.strip\(\)\.lower\(\) '
+        r'in excluded:\r?\n                continue',
+        '            if False:\n                continue',
     ),
     "drop the missing-duration refusal": (
         r'    if record\.walked_seconds is None:\r?\n        reasons\.append\(',
@@ -94,8 +105,22 @@ MUTATIONS = {
         '    if False:',
     ),
     "accept an arrival anywhere": (
-        r'            if gap > DESTINATION_IDENTITY_M:',
+        r'            if gap > DESTINATION_ARRIVAL_M:',
         '            if False:',
+    ),
+    # pass 52 F3: the arrival matched against the SELECTED place rather than the named one
+    "match the arrival against the selected place instead of the named one": (
+        r'    target = by_name\.get\(used\) if used is not None else None',
+        '    target = permitted[0] if permitted else None',
+    ),
+    "accept a named place whose location the record does not give": (
+        r'    elif _blank\(target\.lon\) or _blank\(target\.lat\):',
+        '    elif False:',
+    ),
+    # pass 52 F9
+    "skip the geographic range check on a coordinate": (
+        r'    if not \(-180\.0 <= lon_f <= 180\.0 and -90\.0 <= lat_f <= 90\.0\):',
+        '    if False:',
     ),
     "accept a route the walker cannot identify": (
         r'    if record\.route_identified is None:',
@@ -106,9 +131,8 @@ MUTATIONS = {
         '    elif False:',
     ),
     "ignore the permitted alternatives on the selected node": (
-        r'    permitted \|= \{str\(a\)\.strip\(\) for a in record\.destination_alternatives '
-        r'if not _blank\(a\)\}',
-        '    permitted |= set()',
+        r'        for alt in self\.destination_alternatives:',
+        '        for alt in ():',
     ),
 }
 

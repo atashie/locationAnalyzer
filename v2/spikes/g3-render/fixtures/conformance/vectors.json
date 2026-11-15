@@ -515,6 +515,239 @@
       ]
     },
     {
+      "name": "three layers with unequal thresholds and horizons",
+      "nrows": 1,
+      "ncols": 3,
+      "layers": [
+        {
+          "id": "triA",
+          "horizon_s": 3600.0,
+          "value_file": "triA.value.bin",
+          "status_file": "triA.status.bin"
+        },
+        {
+          "id": "triB",
+          "horizon_s": 900.0,
+          "value_file": "triB.value.bin",
+          "status_file": "triB.status.bin"
+        },
+        {
+          "id": "triC",
+          "horizon_s": 7200.0,
+          "value_file": "triC.value.bin",
+          "status_file": "triC.status.bin"
+        }
+      ],
+      "expect_discloses_routes": false,
+      "cells_with_differing_outcomes": [
+        0,
+        1,
+        2
+      ],
+      "cases": [
+        {
+          "name": "three layers 111",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            true,
+            true,
+            true
+          ],
+          "verdicts": [
+            1,
+            1,
+            1
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              0
+            ],
+            [
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              1
+            ]
+          ]
+        },
+        {
+          "name": "three layers 101",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            true,
+            false,
+            true
+          ],
+          "verdicts": [
+            1,
+            1,
+            1
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              2,
+              1
+            ]
+          ]
+        },
+        {
+          "name": "three layers 011",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            false,
+            true,
+            true
+          ],
+          "verdicts": [
+            2,
+            2,
+            1
+          ],
+          "outcomes": [
+            [
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              1
+            ]
+          ]
+        },
+        {
+          "name": "three layers 110",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            true,
+            true,
+            false
+          ],
+          "verdicts": [
+            1,
+            1,
+            0
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              0
+            ],
+            [
+              2,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "name": "three layers 001",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            false,
+            false,
+            true
+          ],
+          "verdicts": [
+            0,
+            2,
+            1
+          ],
+          "outcomes": [
+            [
+              0,
+              2,
+              1
+            ]
+          ]
+        },
+        {
+          "name": "three layers 100",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            true,
+            false,
+            false
+          ],
+          "verdicts": [
+            1,
+            1,
+            0
+          ],
+          "outcomes": [
+            [
+              1,
+              1,
+              0
+            ]
+          ]
+        },
+        {
+          "name": "three layers 010",
+          "thresholds": [
+            11,
+            17,
+            23
+          ],
+          "enabled": [
+            false,
+            true,
+            false
+          ],
+          "verdicts": [
+            2,
+            0,
+            0
+          ],
+          "outcomes": [
+            [
+              2,
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
       "name": "two layers that both disclose",
       "nrows": 1,
       "ncols": 4,

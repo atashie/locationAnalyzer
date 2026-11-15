@@ -74,9 +74,22 @@ NEW_COLUMNS = [
     "predicted_destination_lon",
     "predicted_destination_osm_link",
     "predicted_destination_alternatives",
+    # Each alternative's own centroid, same order as the names above. See pass 52 F3.
+    "predicted_destination_alternatives_lonlat",
     "predicted_seconds_recheck",
     "recheck_matches_sheet",
 ]
+
+#: The columns blanked for a row with no published journey: everything describing a destination,
+#: which is `NEW_COLUMNS[1]` through the alternatives' coordinates. A slice by index was used here
+#: and adding a column in the middle would have silently changed which ones it covered.
+NO_JOURNEY_BLANKS = (
+    "predicted_destination_lat",
+    "predicted_destination_lon",
+    "predicted_destination_osm_link",
+    "predicted_destination_alternatives",
+    "predicted_destination_alternatives_lonlat",
+)
 
 
 def place_label(names) -> str:
@@ -245,7 +258,7 @@ def main() -> int:
         node = int(dest_node[i])
         if node < 0:
             row["predicted_destination"] = "(none: no published journey)"
-            for c in NEW_COLUMNS[1:5]:
+            for c in NO_JOURNEY_BLANKS:
                 row[c] = ""
         else:
             cands = node_to_places[node]
@@ -260,6 +273,14 @@ def main() -> int:
                 f"{p.geometry.centroid.y:.6f}/{p.geometry.centroid.x:.6f}")
             others = [place_label(sel["names"].iloc[j]) for j in cands[1:]]
             row["predicted_destination_alternatives"] = "; ".join(others)
+            # **Each alternative's own coordinate, in the same order as the names.** Pass 52 F3:
+            # the scorer matched a recorded arrival against the SELECTED place's coordinate inside
+            # a node-sized envelope, which accepts a different shop of the same name on another
+            # node and refuses a legitimate door measured from the wrong member. A permitted
+            # alternative is only an identity if its own location travels with its name.
+            row["predicted_destination_alternatives_lonlat"] = "; ".join(
+                f"{places_ll.iloc[j].geometry.centroid.x:.6f},"
+                f"{places_ll.iloc[j].geometry.centroid.y:.6f}" for j in cands[1:])
 
         # Against the committed raster, cast the same way it was stored. Quantisation to float32
         # is a known function, not an unknown error to absorb in a tolerance: s0's check learned

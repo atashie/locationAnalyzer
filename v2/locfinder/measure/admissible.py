@@ -45,19 +45,22 @@ from typing import Protocol
 #: Mean Earth radius, for the arrival-coordinate check below.
 EARTH_RADIUS_M = 6371008.8
 
-#: How far the recorded arrival may be from the destination the layer selected, in metres.
+#: How far a recorded arrival may be from the coordinate of the place it **names**, in metres.
 #:
-#: **A name is not an identity**, which is pass 51 finding A2. The committed metro sheet holds two
-#: different shops both called `Food Lion`, 11 km apart, and one journey's own
-#: `predicted_destination_alternatives` is *also* `Food Lion` — a second shop of that name on the
-#: same road node. So a string comparison accepts a walk to the wrong branch and cannot tell the
-#: right branch from its namesake.
+#: **A name is not an identity** (pass 51 A2) **and proximity is not identity either** (pass 52
+#: F3). The committed metro sheet holds two shops both called `Food Lion` 11 km apart, and one
+#: journey's own alternatives list is *also* `Food Lion`, so a string comparison accepts the wrong
+#: branch. The first repair compared the arrival with the **selected** place's coordinate inside a
+#: 600 m envelope, justified as "a place is within 300 m of its node, so two places on one node
+#: are within 600 m of each other" — which is a necessary condition and not a sufficient one. Two
+#: different shops of the same name 270 m apart, on different nodes, satisfy it; and a legitimate
+#: door 620 m from a *different* member's centroid failed it.
 #:
-#: 300 m is the acquisition cap from a place to its road node, so every place sharing the selected
-#: node is within 300 m of the node and therefore within 600 m of any other such place. This
-#: tolerance is measured from the **selected place's** coordinate and admits a shared-node
-#: alternative comfortably while refusing a different branch of the same chain.
-DESTINATION_IDENTITY_M = 600.0
+#: So the arrival is matched against **the coordinate of the member whose name was recorded**, and
+#: the radius is a door-to-centroid distance rather than a node envelope: a supermarket footprint
+#: is of the order of 100 m across, the audit's own centroid-to-door bound on a 100 m cell is
+#: 70.7 m, and a phone's fix adds a few tens of metres.
+DESTINATION_ARRIVAL_M = 200.0
 
 #: The separator `recover_audit_destinations.py` writes between alternative place names.
 ALTERNATIVES_SEPARATOR = ";"
@@ -102,14 +105,56 @@ def reported_seconds(encoded_minutes: float | int | None) -> float | None:
     return m * SECONDS_PER_MINUTE
 
 
+def check_lonlat(lon, lat, *, what: str) -> tuple[float, float]:
+    """A finite coordinate inside the geographic ranges, or `ValueError`.
+
+    **Pass 52 finding F9**: without the range check, a latitude of `395.910405` — a typo away from
+    `35.910405` — wrapped through 360° in the haversine and produced a distance of about
+    1.6e-9 m, so an impossible coordinate read as "you arrived exactly at the shop". A sheet is
+    typed by hand and this is the one place a typo in it could *manufacture* agreement rather than
+    refuse the row.
+    """
+    try:
+        lon_f, lat_f = float(lon), float(lat)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{what} ({lon!r}, {lat!r}) is not a pair of numbers: {exc}") from exc
+    if not (math.isfinite(lon_f) and math.isfinite(lat_f)):
+        raise ValueError(f"{what} ({lon!r}, {lat!r}) is not finite")
+    if not (-180.0 <= lon_f <= 180.0 and -90.0 <= lat_f <= 90.0):
+        raise ValueError(
+            f"{what} ({lon_f}, {lat_f}) is outside the geographic ranges, so it is a typo rather "
+            "than a place")
+    return lon_f, lat_f
+
+
 def metres_between(lon_a, lat_a, lon_b, lat_b) -> float:
-    """Great-circle metres. Exact enough for a few hundred metres on a 100 m grid."""
+    """Great-circle metres. Exact enough for a few hundred metres on a 100 m grid.
+
+    Both coordinates are range-checked: see `check_lonlat`.
+    """
+    lon_a, lat_a = check_lonlat(lon_a, lat_a, what="a coordinate")
+    lon_b, lat_b = check_lonlat(lon_b, lat_b, what="a coordinate")
     phi_a, phi_b = math.radians(float(lat_a)), math.radians(float(lat_b))
     d_phi = phi_b - phi_a
     d_lam = math.radians(float(lon_b) - float(lon_a))
     h = (math.sin(d_phi / 2) ** 2
          + math.cos(phi_a) * math.cos(phi_b) * math.sin(d_lam / 2) ** 2)
     return 2 * EARTH_RADIUS_M * math.asin(min(1.0, math.sqrt(h)))
+
+
+@dataclass(frozen=True)
+class PermittedPlace:
+    """One place the walk may legitimately have ended at, with its own coordinate.
+
+    A name and a coordinate travel together in one object rather than in two aligned lists,
+    because the whole point is that the pair is the identity: matching a recorded name against
+    one member and a recorded arrival against a *different* member's coordinate is the defect
+    pass 52 F3 describes.
+    """
+
+    name: str
+    lon: float | None = None
+    lat: float | None = None
 
 
 @dataclass(frozen=True)
@@ -141,9 +186,11 @@ class WalkedRecord:
     #: The selected place's own coordinate, from the sheet's `predicted_destination_lat`/`_lon`.
     predicted_destination_lon: float | None = None
     predicted_destination_lat: float | None = None
-    #: Other places on the selected node. The audit README explicitly permits walking to any of
-    #: them, so refusing one by name was a defect in the other direction (A2).
-    destination_alternatives: tuple[str, ...] = ()
+    #: Other places on the selected node, each with its own coordinate. The audit README
+    #: explicitly permits walking to any of them, so refusing one by name was a defect in the
+    #: other direction (A2); and each needs its own location, or an arrival can be matched to the
+    #: wrong member (F3).
+    destination_alternatives: tuple[PermittedPlace, ...] = ()
     #: Free text: which way the walk actually went. Detail for a reader, not something a predicate
     #: can check — which is why `route_identified` exists beside it.
     route_followed: str | None = None
@@ -162,10 +209,27 @@ class WalkedRecord:
     witness_within_15min: str | None = None
 
     #: Every field whose presence is evidence that somebody walked this journey.
+    #:
+    #: **`duration_timed` and `route_identified` were missing** — pass 52 finding F2. A row whose
+    #: only entry was one of those lost its evidence exactly as before the A1 repair, and they are
+    #: the two fields that most directly concern having gone: one says whether a clock was used,
+    #: the other whether the walker can say which way they went.
     EVIDENCE_FIELDS = ("walked_seconds", "walked_date", "start_lon", "start_lat",
                        "destination_used", "destination_used_lon", "destination_used_lat",
                        "destination_qualifies", "destination_open", "route_usable",
-                       "witness_within_10min", "witness_within_15min", "route_followed")
+                       "witness_within_10min", "witness_within_15min", "route_followed",
+                       "duration_timed", "route_identified")
+
+    #: Answers that are **not** evidence of a walk, per field.
+    #:
+    #: `untested` is what the audit README tells the owner to write for a witness column when they
+    #: did not try, so it can be filled in by somebody planning a sheet rather than walking it.
+    #: Reading it as affirmative evidence was the other half of F2: it turned a planned row into a
+    #: refused walk, which is the same error as A1 pointing the other way.
+    NON_EVIDENCE_VALUES = {
+        "witness_within_10min": {"untested"},
+        "witness_within_15min": {"untested"},
+    }
 
     @property
     def evidence_of_a_walk(self) -> tuple[str, ...]:
@@ -176,13 +240,43 @@ class WalkedRecord:
         usable duration, was reported as "planned, not walked" — `walked=0, planned=1`, nothing
         inadmissible, `no_admissible_observation` false. The walk vanished from the record of what
         could not be scored, which is the one thing this module exists to prevent.
+
+        A column counts when it is filled in **and** its answer is one only a walker could give.
+        `False` counts: "I recorded that it was not timed" is a thing somebody who went says.
         """
-        return tuple(name for name in self.EVIDENCE_FIELDS
-                     if not _blank(getattr(self, name, None)))
+        found = []
+        for name in self.EVIDENCE_FIELDS:
+            value = getattr(self, name, None)
+            if _blank(value):
+                continue
+            excluded = self.NON_EVIDENCE_VALUES.get(name)
+            if excluded and isinstance(value, str) and value.strip().lower() in excluded:
+                continue
+            found.append(name)
+        return tuple(found)
 
     @property
     def walked(self) -> bool:
         return bool(self.evidence_of_a_walk)
+
+    def permitted_destinations(self) -> tuple[PermittedPlace, ...]:
+        """Every place this walk may legitimately have ended at, each with its own coordinate.
+
+        The selected place first, then the others on its node. The audit README tells the owner to
+        walk to whichever of them they would use, so all of them are permitted — and each carries
+        its own location, because matching a recorded name to one member and a recorded arrival to
+        another member's coordinate is what pass 52 F3 found.
+        """
+        out = []
+        if not _blank(self.predicted_destination):
+            out.append(PermittedPlace(name=str(self.predicted_destination).strip(),
+                                      lon=self.predicted_destination_lon,
+                                      lat=self.predicted_destination_lat))
+        for alt in self.destination_alternatives:
+            if _blank(alt.name):
+                continue
+            out.append(PermittedPlace(name=str(alt.name).strip(), lon=alt.lon, lat=alt.lat))
+        return tuple(out)
 
 
 @dataclass(frozen=True)
@@ -285,45 +379,51 @@ def admissibility(record: WalkedRecord, *, grid: Grid) -> tuple[Admissibility, t
     # permitted set is the selected place plus the other places on its node, because the audit
     # README explicitly says to walk to whichever of them you would use — refusing a named
     # alternative was the same defect pointing the other way.
-    permitted = {str(record.predicted_destination).strip()} if not _blank(
-        record.predicted_destination) else set()
-    permitted |= {str(a).strip() for a in record.destination_alternatives if not _blank(a)}
-    if _blank(record.destination_used):
+    permitted = record.permitted_destinations()
+    by_name = {p.name: p for p in permitted}
+    used = None if _blank(record.destination_used) else str(record.destination_used).strip()
+    if used is None:
         reasons.append("the destination reached is not recorded")
     elif not permitted:
         reasons.append("the record does not say which destination the product selected")
-    elif str(record.destination_used).strip() not in permitted:
+    elif used not in by_name:
         reasons.append(
-            f"walked to {str(record.destination_used).strip()!r}; the product routed to "
+            f"walked to {used!r}; the product routed to "
             f"{str(record.predicted_destination).strip()!r}"
-            + (f" (or one of {sorted(permitted - {str(record.predicted_destination).strip()})})"
-               if len(permitted) > 1 else "")
+            + (f" (or one of {sorted(set(by_name) - {str(record.predicted_destination).strip()})})"
+               if len(by_name) > 1 else "")
             + ", so this is a different journey"
         )
 
+    # The arrival is matched against the coordinate of the member whose name was recorded. Pass 52
+    # F3: comparing it against the SELECTED place's coordinate inside a node-sized envelope
+    # accepts a different shop of the same name 270 m away on another node, and refuses a
+    # legitimate door measured from the wrong member.
+    target = by_name.get(used) if used is not None else None
     if _blank(record.destination_used_lon) or _blank(record.destination_used_lat):
         reasons.append(
             "where the walk ended is not recorded, so the shop reached is identified by name "
             "only and a name does not identify a shop"
         )
-    elif _blank(record.predicted_destination_lon) or _blank(record.predicted_destination_lat):
+    elif target is None:
+        pass                      # already refused: the name is not a permitted destination
+    elif _blank(target.lon) or _blank(target.lat):
         reasons.append(
-            "the record does not say where the selected destination is, so the arrival cannot be "
-            "checked against it"
+            f"the record does not say where {target.name!r} is, so the arrival cannot be matched "
+            "to it and the name is the only evidence of which shop was reached"
         )
     else:
         try:
             gap = metres_between(record.destination_used_lon, record.destination_used_lat,
-                                 record.predicted_destination_lon,
-                                 record.predicted_destination_lat)
-        except (ValueError, TypeError) as exc:
-            reasons.append(f"the arrival coordinate is not a usable coordinate: {exc}")
+                                 target.lon, target.lat)
+        except ValueError as exc:
+            reasons.append(f"the arrival coordinate is not usable: {exc}")
         else:
-            if gap > DESTINATION_IDENTITY_M:
+            if gap > DESTINATION_ARRIVAL_M:
                 reasons.append(
-                    f"the walk ended {gap:.0f} m from the destination the layer selected, past "
-                    f"the {DESTINATION_IDENTITY_M:.0f} m a place on the selected node can be, so "
-                    "this is a different shop whatever it is called"
+                    f"the walk ended {gap:.0f} m from {target.name!r}, past the "
+                    f"{DESTINATION_ARRIVAL_M:.0f} m a door can be from a shop's centroid, so the "
+                    "shop reached is not the one the record names"
                 )
 
     # 3. which way the walk went

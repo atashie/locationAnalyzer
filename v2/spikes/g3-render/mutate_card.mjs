@@ -118,10 +118,25 @@ const MUTATIONS = [
       '          && (msg.seq === undefined || msg.seq === s.displayedSeq);', ';'),
   },
   {
-    // B5 restored: without the generation check, a late reply reinstates the old cell's card
-    // after the pointer has left the raster.
-    name: 'a reply is rendered without checking the pointer is still on the data',
-    apply: (s) => s.replace('          && s.sentGen === s.pointerGen', ''),
+    // B5 and F4 together. The generation counter that first covered B5 was removed once the
+    // position check subsumed it: both of its mutations survived, and dead defensive code is a
+    // permanent survivor. This is the check that now carries both -- a reply must be about the
+    // cell being inspected, and after `pointerLeft` no cell is.
+    name: 'a reply is rendered without checking which cell it is about',
+    apply: (s) => s.replace('          && atInspected', ''),
+  },
+  {
+    name: 'a reply is matched to the inspected cell by row alone',
+    apply: (s) => s.replace('          && msg.row === s.inspected.row && msg.col === s.inspected.col;',
+      '          && msg.row === s.inspected.row;'),
+  },
+  {
+    // F5: the failed-request transition. Without it the inspector wedges for ever.
+    name: 'a failed request is left outstanding for ever',
+    // A regex with `\r?\n`: card.js is CRLF and an LF literal matched nothing, which the runner
+    // reported as INERT. Fourth time this session.
+    apply: (s) => s.replace(/      requestFailed\(\) \{(\r?\n)        if \(!s\.pending\) return null;/,
+      '      requestFailed() {$1        if (true) return null;'),
   },
   {
     name: 'a compute in flight leaves the previous one marked as displayed',
@@ -138,9 +153,9 @@ const MUTATIONS = [
       '        return null;'),
   },
   {
-    name: 'leaving the data does not invalidate what is in flight',
-    apply: (s) => s.replace(/      pointerLeft\(\) \{(\r?\n)        s\.pointerGen\+\+;/,
-      '      pointerLeft() {$1        // generation not bumped'),
+    name: 'leaving the data does not forget the inspected cell',
+    apply: (s) => s.replace(/      pointerLeft\(\) \{(\r?\n)        s\.queued = null;(\r?\n)        s\.inspected = null;/,
+      '      pointerLeft() {$1        s.queued = null;$2        // inspected kept'),
   },
   // NOT LISTED, deliberately: the generation check on the QUEUED position in `reply`.
   //
@@ -151,6 +166,25 @@ const MUTATIONS = [
   // queue a position without clearing it, and it is recorded here as unguarded rather than left
   // to look like coverage. Same decision, and the same reasoning, as `state.lastInCount` in
   // `mutate_worker.mjs`.
+  // ------------------------------------------------------------------ pass 52 finding F6
+  // Three rendering corruptions that passed all 27 card checks, because the fixture-driven
+  // checks inspected the disclosure's presence and the FIRST destination name and nothing else.
+  {
+    name: 'every criterion is displayed as a pass whatever it decided',
+    apply: (s) => s.replace('<span class="outcome ${esc(crit.outcomeName)}">'
+      + '${esc(crit.outcomeName)}</span>',
+    '<span class="outcome ${esc(crit.outcomeName)}">PASS</span>'),
+  },
+  {
+    name: 'every criterion displays the same limit',
+    apply: (s) => s.replace('`<div>${esc(mins)} &middot; your limit ${esc(crit.thresholdMin)} min</div>`',
+      '`<div>${esc(mins)} &middot; your limit 15 min</div>`'),
+  },
+  {
+    name: 'only the first place of a shared node is displayed',
+    apply: (s) => s.replace("    const names = (d.places || []).map((p) => p && p.name).filter(Boolean);",
+      '    const names = (d.places || []).slice(0, 1).map((p) => p && p.name).filter(Boolean);'),
+  },
   {
     name: 'the outside and not-yet-computed states are collapsed into one sentence',
     apply: (s) => s.replace("    if (msg.notComputed) return '<em>Nothing has been computed yet.</em>';",

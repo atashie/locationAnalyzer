@@ -84,6 +84,10 @@ Chapel Hill sheet has none of them — see below.
    tell the shop we routed you to from its namesake across town, so the scorer refuses a row that
    identifies the destination by name only.
 
+   The pin is matched against **the shop you named**, within 200 m — roughly a supermarket's own
+   footprint plus a phone's error. It is not a radius around the shop we picked: that would accept
+   a different branch 270 m away and refuse a legitimate door measured from the wrong one.
+
    If `predicted_destination_alternatives` is non-empty, several shops snapped to the same road
    node and our number cannot distinguish them. Walk to whichever you would use and name it.
 
@@ -136,6 +140,22 @@ now refuses a record that leaves one blank.
 you did observe and leave `walked_seconds` blank. The scorer will refuse the row and say why,
 which is the correct outcome — what it must never do is file the journey as "planned, not
 walked", which is what it did before 2026-11-14 and which loses the fact that anybody went.
+
+**`untested` in a witness column is not a walk**, because it is what you write when you did not
+try, and a planning sheet can carry it. Any other answer in any observation column is.
+
+## If you already have a filled-in copy of a sheet
+
+**Do not regenerate it.** `audit_recommendations.py` writes every owner column blank, so
+regenerating a sheet you have filled in destroys exactly what you recorded. Columns have been
+added twice; to bring a filled copy up to date, from `v2/`:
+
+    python scripts/migrate_audit_sheet.py ../docs/experiments/audit/your-copy.csv
+
+It adds any missing column in its proper place, blank, keeps every value and every column you
+added yourself, writes to a new file unless you pass `--in-place`, and reads the result back to
+check that nothing already recorded changed. Running it on an up-to-date sheet says so and writes
+nothing.
 
 Check a filled-in sheet straight away, while you still remember what is missing. From `v2/`:
 

@@ -452,6 +452,37 @@ const MUTATIONS = [
     name: 'explainAt reports the wrong horizon',
     apply: (s) => s.replace('      horizonS: horizons[k],', '      horizonS: 1,'),
   },
+  // ------------------------------------------------------------------ pass 52 finding F1
+  // **Five MORE corruptions that passed all 79 conformance checks and all 27 card checks**, after
+  // pass 51's five were closed. Three are response-envelope fields no assertion mentioned; two
+  // are criterion-index substitutions that no fixture could discriminate, because every
+  // multi-layer group gave its layers the same threshold and the same horizon.
+  //
+  // The lesson underneath both halves: closing the instances a reviewer supplies is not closing
+  // the class, and a fixture set that holds a dimension constant cannot see a defect along it.
+  {
+    name: 'explainAt labels every reply with a sequence no compute produced',
+    apply: (s) => s.replace("  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row, col };",
+      "  const reply = { type: 'explainAt', reqId: msg.reqId, seq: -1, row, col };"),
+  },
+  {
+    name: 'explainAt answers a request id nobody sent',
+    apply: (s) => s.replace("  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row, col };",
+      "  const reply = { type: 'explainAt', reqId: 0, seq: state.lastSeq, row, col };"),
+  },
+  {
+    name: 'explainAt labels every reply as cell (0, 0)',
+    apply: (s) => s.replace("  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row, col };",
+      "  const reply = { type: 'explainAt', reqId: msg.reqId, seq: state.lastSeq, row: 0, col: 0 };"),
+  },
+  {
+    name: 'every criterion is compared against the first enabled threshold',
+    apply: (s) => s.replace('state.lastThresholds[enabledIndex]', 'state.lastThresholds[0]'),
+  },
+  {
+    name: 'every criterion discloses the first layer horizon',
+    apply: (s) => s.replace('      horizonS: horizons[k],', '      horizonS: horizons[0],'),
+  },
   {
     // Pass 51 B4, restored as a mutation. Suppressing a criterion's destination because some
     // OTHER criterion failed made the card say the layer "does not say which destination" about

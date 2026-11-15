@@ -119,9 +119,12 @@ console.log(`\nFor scale: at 60 pointer events a second the median handler cost 
 console.log(`
 WHAT THIS ESTABLISHES, narrowed after Codex pass 51 finding B8.
 
-  It establishes that the HANDLER is not the cost, so there is no case for caching a per-layer
-  outcome plane to avoid recomputing one cell. That was the open design question and it is
-  answered.
+  It establishes that recomputing one cell is inexpensive FOR THIS BUNDLE ON THIS RUNTIME: one
+  layer, one warmed desktop core, no concurrent compute. On that evidence this measurement does
+  not justify caching a per-layer outcome plane. It does not establish that the handler could
+  never be the cost: its work grows with the number of enabled layers and with the size of the
+  destination payload, neither of which is varied here, and a measured desktop duration is not a
+  floor for another device or runtime.
 
   It does NOT establish an end-to-end pointer-move budget, and the comparison against a
   whole-raster compute above is the wrong denominator for one: the quantities that decide whether

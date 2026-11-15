@@ -399,16 +399,48 @@ check('real worker replies from the multi-layer fixtures render correctly', () =
           const cr = msg.criteria[i];
           assert(blocks[i].includes(cr.layer),
             `${group.name} cell ${p}: block ${i} is not about ${cr.layer}`);
+          // **Every sentence in the block, against the reply it is rendering.** Pass 52 finding
+          // F6: this used to check the disclosure's presence and the FIRST destination name, so
+          // three mutations passed all 27 checks -- the outcome text replaced by a literal
+          // `PASS`, every threshold replaced by `15`, and every place after the first dropped.
+          // A card that shows the right words in the wrong places looked complete.
+          assert(blocks[i].includes(`>${cr.outcomeName}<`),
+            `${group.name} cell ${p} block ${i}: outcome ${cr.outcomeName} is not what the block `
+            + `displays: ${blocks[i]}`);
+          assert(blocks[i].includes(`your limit ${cr.thresholdMin} min`),
+            `${group.name} cell ${p} block ${i}: limit ${cr.thresholdMin} is not displayed: `
+            + blocks[i]);
+          const mins = C.minutesText(cr);
+          assert(mins === null ? blocks[i].includes('no time published')
+            : blocks[i].includes(mins),
+            `${group.name} cell ${p} block ${i}: expected ${mins}: ${blocks[i]}`);
+          if (cr.outcomeName === 'UNKNOWN') {
+            assert(blocks[i].includes(C.WHY_UNKNOWN[cr.statusName]),
+              `${group.name} cell ${p} block ${i}: no cause for ${cr.statusName}`);
+          }
           // Each block carries its OWN disclosure, so a card that attributes one criterion's
           // flag or shop to another is caught rather than looking complete.
           if (cr.routeFlag === null) {
             assert(blocks[i].includes('does not say whether the route'), blocks[i]);
           } else {
             assert(!blocks[i].includes('does not say whether the route'), blocks[i]);
+            if (cr.routeFlag === 1) {
+              assert(blocks[i].includes('not clearly public'), blocks[i]);
+            } else {
+              assert(!blocks[i].includes('not clearly public'), blocks[i]);
+            }
           }
           if (cr.namesDestination) {
-            const first = cr.namesDestination.places[0];
-            assert(!first || !first.name || blocks[i].includes(first.name), blocks[i]);
+            // EVERY member of the set, not the first. The set IS the answer where a node carries
+            // more than one place, and dropping the rest preserved every other assertion.
+            for (const place of cr.namesDestination.places) {
+              assert(!place.name || blocks[i].includes(place.name),
+                `${group.name} cell ${p} block ${i}: place ${place.name} is missing: `
+                + blocks[i]);
+            }
+            if (cr.namesDestination.placeCount > 1) {
+              assert(blocks[i].includes(`one of ${cr.namesDestination.placeCount}`), blocks[i]);
+            }
           } else {
             assert(blocks[i].includes('does not say which destination')
               || cr.outcomeName !== 'PASS', blocks[i]);
@@ -444,27 +476,29 @@ check('a reply from the previous compute is not rendered beside the new raster',
 
   const req = ins.pointerAt(10, 20);
   assert(req && req.row === 10, 'the first hover must send a request');
-  assert(ins.reply({ reqId: req.reqId, seq: 1 }).render, 'a current reply must render');
+  assert(ins.reply({ reqId: req.reqId, seq: 1, row: 10, col: 20 }).render,
+    'a current reply must render');
 
   // The limit changes: a compute is requested, and its raster has not painted.
   ins.computeStarted();
   assert(ins.state.displayedSeq === null, 'the screen shows no settled compute while one runs');
   // A reply built from compute 1 arrives late. It describes the previous criteria.
   const stale = ins.pointerAt(10, 20);
-  assert(!ins.reply({ reqId: stale.reqId, seq: 1 }).render,
+  assert(!ins.reply({ reqId: stale.reqId, seq: 1, row: 10, col: 20 }).render,
     'a reply from compute 1 must not render once compute 2 has been requested');
 
   // Compute 2 paints, and the inspected cell is re-asked without the pointer moving.
   const refresh = ins.computePainted(2, 2);
   assert(refresh && refresh.row === 10 && refresh.col === 20,
     'the inspected cell must be re-asked when the new raster paints');
-  assert(ins.reply({ reqId: refresh.reqId, seq: 2 }).render, 'the fresh reply must render');
+  assert(ins.reply({ reqId: refresh.reqId, seq: 2, row: 10, col: 20 }).render,
+    'the fresh reply must render');
 });
 
 check('an older compute that paints after a newer one does not claim the screen', () => {
   const ins = C.createInspector();
   ins.pointerAt(1, 1);
-  ins.reply({ reqId: 1, seq: 1 });
+  ins.reply({ reqId: 1, seq: 1, row: 1, col: 1 });
   ins.computeStarted();
   // Result 2 is requested, then result 1 arrives late from the paint chain.
   assert(ins.computePainted(1, 2) === null, 'compute 1 painted after 2 was requested');
@@ -482,7 +516,7 @@ check('a late reply does not restore an inside card after the pointer leaves', (
   ins.computePainted(1, 1);
   const req = ins.pointerAt(10, 20);
   ins.pointerLeft();                                  // pointer moves off the raster
-  const { render, send } = ins.reply({ reqId: req.reqId, seq: 1 });
+  const { render, send } = ins.reply({ reqId: req.reqId, seq: 1, row: 10, col: 20 });
   assert(!render, 'a reply for a cell the pointer has left must not be rendered');
   assert(send === null, 'and nothing queued behind it may be sent either');
   assert(ins.state.inspected === null, 'leaving the data forgets the inspected cell');
@@ -490,7 +524,8 @@ check('a late reply does not restore an inside card after the pointer leaves', (
   // Coming back works: the generation check must not wedge the card shut.
   const again = ins.pointerAt(11, 21);
   assert(again, 'returning to the map must send again');
-  assert(ins.reply({ reqId: again.reqId, seq: 1 }).render, 'and that reply must render');
+  assert(ins.reply({ reqId: again.reqId, seq: 1, row: 11, col: 21 }).render,
+    'and that reply must render');
 });
 
 check('a queued position from before the pointer left is dropped, not sent', () => {
@@ -499,32 +534,81 @@ check('a queued position from before the pointer left is dropped, not sent', () 
   const first = ins.pointerAt(1, 1);
   assert(ins.pointerAt(2, 2) === null, 'the second move is coalesced behind the first');
   ins.pointerLeft();
-  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1 });
+  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1, row: 1, col: 1 });
   assert(!render && send === null,
     'the queued position was recorded before the pointer left and must not be sent');
 });
 
-check('positions are coalesced to one in flight and the newest is the one sent', () => {
+check('positions are coalesced, and a reply for a cell already left is not rendered', () => {
+  // **Pass 52 finding F4.** This check used to assert that the first reply renders, which
+  // preserved the failure: the pointer is over (3,3) and the card described (1,1) until the next
+  // round trip completed. A reply must name the cell being inspected now.
   const ins = C.createInspector();
   ins.computePainted(1, 1);
   const first = ins.pointerAt(1, 1);
   assert(ins.pointerAt(2, 2) === null);
   assert(ins.pointerAt(3, 3) === null, 'only one request is in flight');
-  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1 });
-  assert(render, 'the first reply is current and renders');
+  const { render, send } = ins.reply({ reqId: first.reqId, seq: 1, row: 1, col: 1 });
+  assert(!render, 'the pointer has moved to (3,3); (1,1) must not be rendered');
   assert(send && send.row === 3 && send.col === 3,
     `the newest queued position must be the one sent, got ${JSON.stringify(send)}`);
+  // And that one does render, because it is where the pointer is.
+  assert(ins.reply({ reqId: send.reqId, seq: 1, row: 3, col: 3 }).render,
+    'the reply for the current cell must render');
+});
+
+check('a reply for the wrong cell is never rendered, whatever else is current', () => {
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const req = ins.pointerAt(5, 6);
+  // Everything else about this reply is current: the request id, the generation, the compute.
+  assert(!ins.reply({ reqId: req.reqId, seq: 1, row: 5, col: 7 }).render,
+    'a reply one column away from the inspected cell must not render');
+});
+
+check('a failed request settles instead of wedging the inspector', () => {
+  // **Pass 52 finding F5.** A worker `error` for an explanation left the request outstanding for
+  // ever: every later hover queued behind a reply that was never coming, and leaving the map,
+  // resetting the criteria and further successful computes all failed to recover it.
+  const ins = C.createInspector();
+  ins.computePainted(1, 1);
+  const req = ins.pointerAt(1, 1);
+  assert(req && ins.state.pending, 'a request is outstanding');
+
+  const retry = ins.requestFailed();
+  assert(retry && retry.row === 1 && retry.col === 1,
+    'the inspected cell is re-asked rather than left unanswered');
+  assert(retry.reqId !== req.reqId, 'the retry is a new request, not the dead one');
+  assert(ins.reply({ reqId: retry.reqId, seq: 1, row: 1, col: 1 }).render,
+    'and the retry renders, so the card is not wedged shut');
+
+  // A failure with a newer position queued sends that one instead.
+  const ins2 = C.createInspector();
+  ins2.computePainted(1, 1);
+  ins2.pointerAt(1, 1);
+  ins2.pointerAt(4, 4);
+  const next = ins2.requestFailed();
+  assert(next && next.row === 4 && next.col === 4, JSON.stringify(next));
+
+  // A failure after the pointer has left sends nothing and does not wedge.
+  const ins3 = C.createInspector();
+  ins3.computePainted(1, 1);
+  ins3.pointerAt(1, 1);
+  ins3.pointerLeft();
+  assert(ins3.requestFailed() === null, 'nothing to re-ask once the pointer has left');
+  const back = ins3.pointerAt(2, 2);
+  assert(back, 'and the inspector still works afterwards');
 });
 
 check('a superseded request is not rendered', () => {
   const ins = C.createInspector();
   ins.computePainted(1, 1);
   const first = ins.pointerAt(1, 1);
-  ins.reply({ reqId: first.reqId, seq: 1 });
+  ins.reply({ reqId: first.reqId, seq: 1, row: 1, col: 1 });
   const second = ins.pointerAt(2, 2);
-  assert(!ins.reply({ reqId: first.reqId, seq: 1 }).render,
+  assert(!ins.reply({ reqId: first.reqId, seq: 1, row: 2, col: 2 }).render,
     'an older reqId must not render over a newer request');
-  assert(ins.reply({ reqId: second.reqId, seq: 1 }).render);
+  assert(ins.reply({ reqId: second.reqId, seq: 1, row: 2, col: 2 }).render);
 });
 
 // ------------------------------------------------------------------ the cell lookup

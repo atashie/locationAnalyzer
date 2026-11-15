@@ -890,4 +890,73 @@ What the byte supports is "more than 10 minutes". The ceiling was chosen so the 
 matches the float verdict at integer thresholds; it was never a literal bound in minutes, and
 reading it as one claimed more than the data.
 
-Thirty-nine instances now.
+Thirty-nine instances at that point.
+
+## Pass 52, 2026-11-14 — the repairs again, and the shape of my repairs
+
+Pass 52 reviewed pass 51's repairs. **Ten findings, two High, and five of the six claims I put up
+failed.** The fourth consecutive pass to find more in the previous pass's repairs than in the work
+being repaired. Three new instances.
+
+### Fortieth: closing the instances a reviewer gives you is not closing the class
+
+Pass 51 found five corruptions of `explainAt` that passed every check. I fixed the class as I
+understood it — compare every field against the byte it reports — and claimed it closed. **Five
+more survived.** Three were response-envelope fields no assertion mentioned at all: a reply
+labelled `seq: -1` (after which the page rejects every explanation it ever receives), `reqId: 0`
+(every request rejected), and `row: 0, col: 0` (every correct answer labelled as another cell's).
+Two were criterion-index substitutions.
+
+The same thing happened in the Python half. Pass 51's A1 was "a walk with no duration disappears",
+and I fixed it by listing thirteen columns whose presence means somebody walked. **I left out the
+two that most directly mean it** — `duration_timed` and `route_identified` — so a row whose only
+entry was one of those disappeared exactly as before.
+
+> **A reviewer's counterexamples are samples from a class, not the class.** After fixing them,
+> enumerate the class yourself and check the enumeration against the artifact: every field in the
+> reply, every column in the sheet. "I fixed the five and generalised" is the claim that failed
+> twice in one pass.
+
+### Forty-first: a regression test written beside a fix can lock in the adjacent bug
+
+Pass 51's B5 was "a late reply restores an inside card after the pointer leaves". I fixed it with a
+pointer generation counter and wrote a test. That test asserted, as a precondition, that **the
+first reply renders** — and pass 52's F4 is that the first reply must *not* render when the pointer
+has moved to another cell, because the card then describes a cell the pointer has left. My
+regression test asserted the defect as expected behaviour, one line from the fix.
+
+The generation counter was the wrong mechanism for the same reason: it changes only on *leaving*
+the data, so it cannot see a move between two cells. Once F4 was fixed by comparing the reply's
+position with the inspected cell, **both of the generation mutations survived** — the mechanism had
+become redundant, and dead defensive code is a permanent mutation survivor. It is removed.
+
+> A fix tells you what to assert about the bug. It does not tell you what to assert about the
+> states either side of it, and a precondition written to set up the bug can be the next bug.
+
+### Forty-second: a schema change is not finished until the copies already in the field can move
+
+I added columns to the audit sheets twice in one day. `score_walked_audit.py` refused a sheet
+without them and told the owner to **regenerate** — and the generator writes every owner column
+blank, so the only route past its overwrite guard destroys exactly the observations the whole
+exercise exists to collect. There was no migration at all, and the instruction was worse than
+nothing.
+
+> A required column is a breaking change to every copy of the file that already exists. The
+> migration is part of the change, not a follow-up.
+
+### And two recurrences
+
+**A fixture set that holds a dimension constant cannot see a defect along it**, which is the
+oldest lesson in this document. Every multi-layer group gave its layers the **same threshold and
+the same horizon**, so two of F1's mutations — reading the first enabled threshold for every
+criterion, and reporting the first layer's horizon for every criterion — were invisible to all 79
+conformance checks and all 27 card checks. The groups were built before `explainAt` existed to read
+those arrays, and nothing re-asked whether they still discriminated. There is now a three-layer
+group with three thresholds and three horizons, and it is what catches both.
+
+**And the shell heredoc, for the fifth time in one session.** The rule was narrowed to "a heredoc
+is fine for a script with no backslashes" and I broke it five times anyway, because a patch script
+almost always grows a `\n` or a regex. The rule is now absolute: see
+[[reference-codex-runtime-quirks]].
+
+Forty-two instances now.

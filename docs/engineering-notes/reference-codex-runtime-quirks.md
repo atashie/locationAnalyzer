@@ -162,3 +162,23 @@ tool":
 * A heredoc is fine for a script with **no backslashes at all**.
 * Anything with a regex, an escape sequence, or a Windows path goes through the file-writing tool
   and then `python -I <path>`.
+
+## The heredoc rule is now absolute, after failing five times in one session
+
+The rule was: a quoted shell heredoc is fine for a patch script **with no backslashes**, because a
+quoted heredoc protects `$` and backticks but still eats one level of backslash.
+
+That rule is correct and it does not work, because I cannot tell in advance whether a patch script
+will need a backslash. On 2026-11-14 it was broken five times in one session: `\\*` became `\*`;
+`\\n` became `\n`; a `\n` inside a replacement string became a real newline and produced
+`SyntaxError: unterminated f-string literal`; and twice a quoted heredoc failed to parse at all
+because the content contained an apostrophe the shell objected to.
+
+**So: never use a shell heredoc to write a script. Write it with the file-writing tool and run it
+with `python <path>`.** No exceptions, no judgement call about whether this one has backslashes in
+it. The judgement call is the thing that keeps failing.
+
+One further detail that cost a run: **`python -I` breaks on this machine** for anything importing
+`geopandas` or `pandas`, because `-I` drops the user site directory and `dateutil` lives there.
+Use `-I` only for scripts that read downloaded or untrusted data, which is what it is for; project
+code runs as plain `python`.

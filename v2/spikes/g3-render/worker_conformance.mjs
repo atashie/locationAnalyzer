@@ -306,9 +306,23 @@ for (const group of vectors.groups) {
       for (let p = 0; p < n; p++) {
         const r = Math.floor(p / group.ncols);
         const col = p % group.ncols;
-        const eOut = w.send({ type: 'explainAt', reqId: 1, row: r, col });
+        // **A DISTINCT reqId per cell.** Pass 52 F1: with a constant `reqId: 1` and no assertion
+        // on it, a handler replying `reqId: 0` passed every check -- and in the page that makes
+        // the inspector reject every explanation it ever asks for. A constant in a harness cannot
+        // detect a constant in the thing it tests.
+        const reqId = p + 1;
+        const eOut = w.send({ type: 'explainAt', reqId, row: r, col });
         const e = eOut.find((m) => m.type === 'explainAt');
         assert(e, `no explainAt reply for cell ${p}`);
+        // The response ENVELOPE, which no assertion mentioned. Three of F1's five surviving
+        // mutations were here: `seq: -1` (the page then rejects every explanation after a normal
+        // compute), `reqId: 0` (every request is rejected), and `row: 0, col: 0` (correct answers
+        // labelled as another cell's).
+        assert(e.type === 'explainAt', `cell ${p}: type ${e.type}`);
+        assert(e.reqId === reqId, `cell ${p}: reqId ${e.reqId}, sent ${reqId}`);
+        assert(e.seq === 1, `cell ${p}: seq ${e.seq}, the compute used 1`);
+        assert(e.row === r && e.col === col,
+          `cell ${p}: reply is labelled (${e.row}, ${e.col}), asked (${r}, ${col})`);
         assert(e.verdict === verdicts[p],
           `cell ${p}: explainAt verdict ${e.verdict}, verdict plane ${verdicts[p]}`);
         // The HEADLINE, not just the code. Pass 51 B2: `verdictName: 'INCLUDED'` for every cell

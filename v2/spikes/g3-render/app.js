@@ -133,6 +133,10 @@
     // The per-criterion card: one explainAt in flight, the newest pointer position behind it.
     explainSentAt: 0,
     explainMs: [],      // round trips, for the cost measurement the card plan asks for
+    // Which computes have painted, and who is waiting for one. Keyed by sequence number, so a
+    // waiter is released by the compute it actually asked about -- see waitForResult (pass 52 F8).
+    paintedSeqs: new Set(),
+    paintWaiters: new Map(),
     // The rest of the card's lifecycle -- which request is outstanding, which cell is being
     // inspected, which compute the screen shows, and whether the pointer has left since -- lives
     // in `G3Card.createInspector`, because both of pass 51's presentation findings were in that
@@ -311,6 +315,11 @@
             // ready is a failed start; after ready it is one bad message.
             showError(`worker: ${msg.message}`);
             if (!state.workerReady) reject(new Error(msg.message || 'worker refused the bundle'));
+            // Pass 52 F5: an error for an explanation left the inspector's request outstanding
+            // for ever, so every later hover queued behind a reply that was never coming and
+            // nothing recovered it -- not leaving the map, not resetting, not a later compute.
+            // The worker's error carries no request id, so whatever was outstanding is settled.
+            if (state.workerReady) post(cardFailed());
             break;
           default:
             log(`worker: unknown message type ${msg.type}`);
@@ -415,6 +424,16 @@
    */
   function cardAwaitingCompute() {
     el.card.innerHTML = '<em>Recomputing…</em>';
+  }
+
+  /** An explanation request failed. Settle it, say so, and let the next one through. */
+  function cardFailed() {
+    const next = inspector.requestFailed();
+    if (!next && inspector.state.inspected) {
+      el.card.innerHTML = '<em>That explanation could not be produced. Move the pointer to try '
+        + 'again.</em>';
+    }
+    return next;
   }
 
   function wireCardPointer(map) {
@@ -579,6 +598,7 @@
     inspector.computeStarted();
     if (inspector.state.inspected) cardAwaitingCompute();
     state.worker.postMessage({ type: 'compute', seq, thresholds, enabled, tEvent: tEventAbs });
+    return seq;
   }
 
   async function handleWorkerResult(msg) {
@@ -629,6 +649,20 @@
     // inspected cell is re-asked. Only the newest compute may claim the screen: with several
     // results in flight an older one must not mark itself displayed after a newer one painted.
     post(inspector.computePainted(msg.seq, state.seq));
+
+    // Record the paint and release anyone waiting for this specific compute. Bounded: only the
+    // most recent sequence numbers are kept, which is all a waiter can ask about.
+    state.paintedSeqs.add(msg.seq);
+    if (state.paintedSeqs.size > 64) {
+      for (const old of [...state.paintedSeqs].slice(0, state.paintedSeqs.size - 64)) {
+        state.paintedSeqs.delete(old);
+      }
+    }
+    const waiter = state.paintWaiters.get(msg.seq);
+    if (waiter) {
+      state.paintWaiters.delete(msg.seq);
+      waiter();
+    }
 
     if (!state.firstPaintDone) {
       state.firstPaintDone = true;
@@ -782,14 +816,30 @@
 
   // ---- 8. auto-bench: 20 deterministic slider changes, awaited one at a time -------------------
 
-  function waitForNextResult() {
-    const before = state.window.length;
+  /** Resolve when the compute with this sequence number has painted.
+   *
+   * **Pass 52 finding F8**, which predates the card. This used to wait for the rolling timing
+   * window to GROW — and the window is capped at 20, so once it was full `length > before` could
+   * never become true: `autoBench` hung on its first change and left its button disabled for the
+   * rest of the session. Even a fresh page reached that state, because the bench itself fills the
+   * window. A `resetAll` during the wait could invalidate the captured length too.
+   *
+   * Waiting for the specific compute is both correct and immune to both: the thing being waited
+   * for is the thing that was started. The timeout exists so a compute that never paints reports
+   * and releases rather than hanging the caller for ever.
+   */
+  function waitForResult(seq, { timeoutMs = 10000 } = {}) {
+    if (state.paintedSeqs.has(seq)) return Promise.resolve(true);
     return new Promise((resolve) => {
-      const poll = () => {
-        if (state.window.length > before) resolve();
-        else setTimeout(poll, 5);
-      };
-      poll();
+      const timer = setTimeout(() => {
+        state.paintWaiters.delete(seq);
+        log(`compute ${seq} did not paint within ${timeoutMs} ms`);
+        resolve(false);
+      }, timeoutMs);
+      state.paintWaiters.set(seq, () => {
+        clearTimeout(timer);
+        resolve(true);
+      });
     });
   }
 
@@ -804,8 +854,15 @@
       const next = 1 + ((base + i * 7) % 60); // deterministic pseudo-random walk, 1..60
       slider.value = String(next);
       $(`val-${layerIdx}`).textContent = `<= ${next} min`;
-      recompute('auto-bench');
-      await waitForNextResult();
+      const seq = recompute('auto-bench');
+      if (seq === undefined) {
+        log('auto-bench: the worker is not ready, stopping');
+        break;
+      }
+      if (!await waitForResult(seq)) {
+        log(`auto-bench: stopping at change ${i + 1}, compute ${seq} never painted`);
+        break;
+      }
     }
     log('auto-bench: done, 20 samples in the rolling window');
     el.btnBench.disabled = false;

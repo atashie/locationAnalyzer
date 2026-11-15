@@ -88,8 +88,12 @@ The live corrections:
 
 ## Verified state after the pass 50 integration
 
-1,460 tests, 1,436 passed, 24 skipped, 0 failures. 79 browser conformance checks. 43 of 43
-mutations caught, 0 inert. `byteswap_control.mjs` confirms that a **recorded expectation**, not a
+**1,524 tests, 1,500 passed, 24 skipped, 0 failures. 87 browser conformance checks, 29 card
+checks. 65 of 65 worker mutations, 26 of 26 card mutations, 22 of 22 admissibility mutations, 0
+inert.**
+
+Earlier figure, kept for the trail: at the end of pass 50 it was 1,460 tests, 79 conformance
+checks and 43 of 43 mutations. `byteswap_control.mjs` confirms that a **recorded expectation**, not a
 structural check, is what catches a big-endian destination plane — and refuses to confirm anything
 unless its own mutation applied, the baseline matches the recorded ordinals, and the mutated
 ordinals are exactly their byte-swaps.
@@ -169,11 +173,14 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **39 instances**. The three from pass 51: a
-check on the answer is not a check on the explanation of the answer; one field cannot answer two
-questions; and a rule borrowed from a different question changes meaning on arrival. Plus two
-recurrences **inside the checks written for them** — instance 32 in the digest buffer, instance 30
-in a mutation anchor. It is the most useful document
+[[feedback-verify-the-shape-of-the-risk]] now holds **42 instances**. From pass 51: a check on
+the answer is not a check on the explanation of the answer; one field cannot answer two questions;
+a rule borrowed from a different question changes meaning on arrival. From pass 52: **closing the
+instances a reviewer supplies is not closing the class** (both its High findings); a regression
+test written beside a fix can lock in the adjacent bug; and a schema change is not finished until
+the copies already in the field can move. Plus recurrences **inside the checks written for them**
+— instance 32 in a digest buffer, instance 30 in a mutation anchor, and the oldest one of all,
+a fixture set holding a dimension constant. It is the most useful document
 in the repository for avoiding repeats. The ones currently live:
 
 * **29** — a fixture is a model of the artifact, and passing on the model does not establish that
@@ -330,6 +337,51 @@ And the mediums worth carrying forward:
 `destinationAt` also carries, so it mutated the wrong handler and reported CAUGHT while the guard
 under test was never touched; the pre-existing one used a bare positional anchor for the same text
 and would have retargeted silently the next time a handler was added above it.
+
+### 2b. Codex pass 52 — **INTEGRATED 2026-11-14. Ten findings, two High.**
+
+Report at `docs/research/53-codex-review-pass52-repairs/REPORT.md`, prompt at
+`docs/research/53-codex-review-pass52-prompt.md`. **Five of the six claims failed.** The fourth
+consecutive pass to find more in the previous pass's repairs than in the work being repaired, and
+both High findings are the same shape: **closing the instances a reviewer supplies is not closing
+the class.**
+
+* **Five MORE corruptions of `explainAt` survived** (F1). Three were response-envelope fields no
+  assertion mentioned: `seq: -1` (after which the page rejects every explanation it receives),
+  `reqId: 0` (every request rejected), `row: 0, col: 0` (every answer labelled as another cell's).
+  Two were criterion-index substitutions invisible to every fixture, because **every multi-layer
+  group gave its layers the same threshold and the same horizon** — built before `explainAt`
+  existed to read those arrays, and nothing re-asked whether they still discriminated. There is
+  now a three-layer group with three thresholds and three horizons, and it catches both.
+* **The walk-evidence list left out the two columns that most mean a walk happened** (F2) —
+  `duration_timed` and `route_identified` — so a row whose only entry was one of those vanished
+  exactly as before the repair. And it read `witness_within_15min=untested`, which the README
+  tells the owner to write when they did not try, as affirmative evidence that somebody walked.
+* **Proximity is not identity either** (F3). The 600 m envelope round the *selected* place accepts
+  a different shop of the same name 270 m away on another node, and refuses a legitimate door
+  measured from the wrong member. The arrival is now matched against the coordinate of **the
+  member whose name was recorded**, inside 200 m, and `recover_audit_destinations.py` writes each
+  alternative's own coordinate beside its name.
+* **The card rendered a cell the pointer had already left** (F4) — and my regression test for
+  B5 asserted that it should, as a precondition. Once that was fixed, the pointer-generation
+  mechanism B5 introduced became redundant and both of its mutations survived, so it is removed.
+* **A worker error wedged the card permanently** (F5): the request was never settled, so every
+  later hover queued behind a reply that was never coming, and leaving the map, resetting and
+  further computes all failed to recover it.
+* **Three rendering corruptions still passed all 27 card checks** (F6) — the outcome text forced
+  to `PASS`, every threshold forced to 15, every place after the first dropped. Each block's
+  outcome, limit, bound, cause, disclosure and whole place set is compared with its own reply now.
+* **A schema change with no migration** (F7). The scorer refused an owner's filled sheet and told
+  them to **regenerate**, which writes every owner column blank. `scripts/migrate_audit_sheet.py`
+  adds missing columns in place, keeps every value and every column the owner added, and reads the
+  result back to prove nothing recorded changed. Nine tests.
+* **`autoBench` could never finish** (F8, inherited and older than this work): it waited for the
+  rolling timing window to grow, and the window is capped at 20. It awaits its own compute's
+  sequence number now.
+* **An impossible latitude manufactured agreement** (F9): `395.910405` wrapped through 360° in
+  the haversine and returned 1.6e-9 m, so a typo read as "you arrived exactly at the shop".
+* **The benchmark conclusion was still too broad** (F10): it establishes that recomputing is cheap
+  for this one-layer bundle on this runtime, not that the handler can never be the cost.
 
 ### 3. Where the published raster actually lands in the browser
 

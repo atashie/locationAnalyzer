@@ -218,6 +218,64 @@ def main() -> int:
              "enabled": [False, False], "verdicts": [0, 0]},
         ]})
 
+    # ---------------------------------------------------------------- three layers, all different
+    # **Pass 52 finding F1.** Every multi-layer group gave its layers the SAME threshold and the
+    # SAME horizon, so two mutations could not be discriminated by any fixture: reading
+    # `lastThresholds[0]` for every criterion, and reporting `horizons[0]` for every criterion.
+    # Both passed all 79 conformance checks and all 27 card checks. A fixture set that holds a
+    # dimension constant cannot see a defect along it -- which is this project's oldest lesson,
+    # and the multi-layer groups were built before `explainAt` existed to read those arrays.
+    #
+    # So: three layers with three thresholds, three horizons, and a cell where the per-layer
+    # outcomes DIFFER under those thresholds, plus every enable mask including a disabled MIDDLE
+    # layer -- the pattern no two-layer group can produce.
+    t3 = [
+        # 12 min everywhere, so one threshold passes it and another fails it.
+        surface_from([720.0, 720.0, 60.0], [Reason.OK, Reason.OK, Reason.OK],
+                     [720.0, 720.0, 60.0], horizon_s=3600.0),
+        # beyond a LOW horizon: unknown at a threshold above it, a known failure below it.
+        surface_from([np.inf, 300.0, 300.0],
+                     [Reason.BEYOND_HORIZON, Reason.OK, Reason.OK],
+                     [900.0, 300.0, 300.0], horizon_s=900.0),
+        surface_from([300.0, np.inf, 1500.0], [Reason.OK, Reason.OFF_NETWORK, Reason.OK],
+                     [300.0, 1200.0, 1500.0], horizon_s=7200.0),
+    ]
+    names3 = ["triA", "triB", "triC"]
+    entries3, values3, statuses3 = [], [], []
+    for name, surf3 in zip(names3, t3):
+        e3, v3, s3, _f3, _d3 = layer_entry(name, surf3)
+        entries3.append(e3)
+        values3.append(v3)
+        statuses3.append(s3)
+    assert len({e["horizon_s"] for e in entries3}) == 3, "the three horizons must differ"
+
+    THREE = [11, 17, 23]
+    assert len(set(THREE)) == 3, "the three thresholds must differ"
+    cases3 = []
+    for mask in [(True, True, True), (True, False, True), (False, True, True),
+                 (True, True, False), (False, False, True), (True, False, False),
+                 (False, True, False)]:
+        outs = [wire.outcome_planes(values3[k], statuses3[k], threshold_min=THREE[k],
+                                    horizon_s=t3[k].horizon_s)
+                for k in range(3) if mask[k]]
+        cases3.append({
+            "name": f"three layers {''.join('1' if m else '0' for m in mask)}",
+            "thresholds": list(THREE), "enabled": [bool(m) for m in mask],
+            "verdicts": [int(v) for v in wire.combine_planes(outs)]})
+    # The group is only evidence if the per-layer outcomes actually differ somewhere under these
+    # thresholds: identical outcomes cannot expose a criterion-index substitution either.
+    all_outs = [wire.outcome_planes(values3[k], statuses3[k], threshold_min=THREE[k],
+                                    horizon_s=t3[k].horizon_s) for k in range(3)]
+    differing = [i for i in range(3) if len({int(o[i]) for o in all_outs}) > 1]
+    assert differing, "no cell has three differing per-layer outcomes, so the group proves nothing"
+    groups.append({
+        "name": "three layers with unequal thresholds and horizons", "nrows": 1, "ncols": 3,
+        "layers": entries3,
+        "planes": [(values3[k], statuses3[k], None, None) for k in range(3)],
+        "expect_discloses_routes": False,
+        "cells_with_differing_outcomes": differing,
+        "cases": cases3})
+
     # ------------------------------------------------- two layers that BOTH disclose
     # Pass 48: every disclosing fixture had one disclosing layer, so three real mutations passed
     # all fifty checks -- a flag read from layer 0 instead of layer k, a cell counted once per
