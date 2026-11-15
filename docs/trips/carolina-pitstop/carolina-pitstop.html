@@ -107,6 +107,8 @@ h1{font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.022em;
   line-height:1.04;margin:0 0 14px;text-wrap:balance}
 .standfirst{font-family:var(--serif);font-size:17.5px;line-height:1.58;
   color:var(--ink-2);max-width:60ch;margin:0}
+.decided{background:var(--amber-soft);border:1px solid var(--line);border-radius:9px;
+  padding:12px 16px;margin:0 0 24px;font-size:14px;color:var(--ink)}
 .masthead{border-bottom:1px solid var(--line);padding-bottom:30px;margin-bottom:30px}
 
 h2.sec{font-size:12px;font-family:var(--mono);letter-spacing:.13em;
@@ -324,13 +326,16 @@ footer p{margin:0 0 9px}
 <div class="wrap">
 
   <div class="tabs" role="tablist" aria-label="Plan views">
-    <button class="tab" role="tab" id="t-route" aria-controls="p-route" aria-selected="false">
-      <small>Tab 1</small>Where to stop: five towns</button>
     <button class="tab" role="tab" id="t-cola" aria-controls="p-cola" aria-selected="true">
-      <small>Tab 2 · booked</small>Our Saturday: Columbia</button>
+      <small>Booked · the plan</small>Our Saturday: Columbia</button>
+    <button class="tab" role="tab" id="t-route" aria-controls="p-route" aria-selected="false">
+      <small>Background · already decided</small>How we chose: five towns</button>
   </div>
 
 <section id="p-route" role="tabpanel" aria-labelledby="t-route" hidden>
+  <p class="decided"><b>Already decided: we're staying in Columbia.</b> This tab is the
+    comparison we used to choose, kept for reference. The booked plan is on the
+    <a href="#columbia" id="to-cola">Our Saturday: Columbia</a> tab.</p>
   <header class="masthead">
     <p class="eyebrow">Gainesville FL → Chapel Hill NC · Sat 28–Sun 29 November 2026</p>
     <h1>Where to stop for the night</h1>
@@ -1127,12 +1132,11 @@ function showTab(which){
     $('t-'+k).setAttribute('aria-selected', k === which);
     $('p-'+k).hidden = k !== which;
   });
-  try { localStorage.setItem('pitstop-tab', which); } catch(e) {}
 }
 ['route','cola'].forEach(k => $('t-'+k).addEventListener('click', () => showTab(k)));
-let startTab = 'cola';
-try { const s = localStorage.getItem('pitstop-tab'); if (s === 'route' || s === 'cola') startTab = s; } catch(e) {}
-if (location.hash === '#route' || location.hash === '#columbia') startTab = location.hash === '#route' ? 'route' : 'cola';
+$('to-cola').addEventListener('click', e => { e.preventDefault(); showTab('cola'); scrollTo(0, 0); });
+// Always open on the booked plan; only an explicit #route link opens the background tab.
+const startTab = location.hash === '#route' ? 'route' : 'cola';
 showTab(startTab);
 </script>
 

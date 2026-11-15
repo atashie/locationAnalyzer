@@ -2,11 +2,11 @@
 
 Published page: https://claude.ai/artifact/D9wbv1pjQhaFFCSnXUnjsd (shared by link).
 
-- **Tab 1, "Where to stop: five towns"**: the original comparison of overnight stops from
+- **Background tab, "How we chose: five towns"**: the original comparison of overnight stops from
   Gainesville FL to Chapel Hill NC. It is carried over unchanged from the published
   version 1793985816-bceb. Its own generator was never committed, so its data lives only in
   `page_base.html`.
-- **Tab 2, "Our Saturday: Columbia"** (added 2026-11-15): the booked plan. It covers the
+- **Booked tab, "Our Saturday: Columbia"** (added 2026-11-15; the page always opens here, and only a `#route` link opens the background tab): the booked plan. It covers the
   Staybridge Suites on Huger St and the Fireflies Holiday Lights at Segra Park on Sat 28 Nov
   2026. It compares four halfway stops and lists dinner, dessert and small, free things
   nearby.
