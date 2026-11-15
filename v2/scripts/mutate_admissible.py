@@ -119,6 +119,13 @@ MUTATIONS = {
         r'        if not located:',
         '        if False:',
     ),
+    # **`elif not candidates:` occurs TWICE in `admissibility`** -- once for the name check and
+    # once for the arrival check -- so both mutations anchored on it carry the line that follows
+    # as well. A bare anchor would match the first site and `re.subn(count=1)` would mutate it
+    # silently, which is the defect pass 51 found in a worker mutation: a mutation that reports
+    # CAUGHT while the guard under test was never touched. It is also why this runner reports DID
+    # NOT APPLY separately from a catch.
+    #
     # pass 53 F5: the by-name collapse, restored. Live on two rows of the committed metro sheet.
     "collapse permitted members by name so the last one wins": (
         r'    candidates = \[p for p in permitted if used is not None and p\.name == used\]',

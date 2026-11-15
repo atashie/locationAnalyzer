@@ -182,3 +182,14 @@ One further detail that cost a run: **`python -I` breaks on this machine** for a
 `geopandas` or `pandas`, because `-I` drops the user site directory and `dateutil` lives there.
 Use `-I` only for scripts that read downloaded or untrusted data, which is what it is for; project
 code runs as plain `python`.
+
+## Backticks in a `git commit -m` string are command substitution
+
+A commit message passed with `-m "...`identifier`..."` had every backticked identifier **eaten by
+the shell**: `` `elif not candidates:` `` became an attempted command and the surrounding sentence
+lost its subject. The commit landed with the gap, and because it was already pushed, repairing it
+would have meant rewriting pushed history, which is not worth a sentence.
+
+**So: every commit message goes through a file with `-F`, not `-m`.** This project's messages are
+long and full of backticked identifiers, which is exactly the shape that breaks. The rationale
+that was lost went into a code comment instead, where it is more useful than in a message.
