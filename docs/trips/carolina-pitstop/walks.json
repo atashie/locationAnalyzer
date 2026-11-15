@@ -1,0 +1,216 @@
+{
+ "gather": {
+  "name": "Gather COLA",
+  "lat": 34.0181463,
+  "lon": -81.0345177,
+  "matched": "Gather COLA, 2191, Pickens Street, BullStreet District, Columbia, Richland County, South C",
+  "to_segra": [
+   0.41,
+   8
+  ],
+  "to_hotel": [
+   1.56,
+   30
+  ]
+ },
+ "crust": {
+  "name": "Coastal Crust",
+  "lat": 34.0025855,
+  "lon": -81.0268245,
+  "matched": "Pickens Street, Main Street District, Columbia, Richland County, South Carolina, 29201, Un",
+  "to_segra": [
+   1.48,
+   28
+  ],
+  "to_hotel": [
+   1.89,
+   36
+  ]
+ },
+ "warmouth": {
+  "name": "The War Mouth",
+  "lat": 34.0170614,
+  "lon": -81.0399217,
+  "matched": "The War Mouth, 1209, Franklin Street, Bellevue, Columbia, Richland County, South Carolina,",
+  "to_segra": [
+   0.82,
+   16
+  ],
+  "to_hotel": [
+   1.26,
+   24
+  ]
+ },
+ "transmission": {
+  "name": "Transmission Arcade",
+  "lat": 34.0084492,
+  "lon": -81.0365359,
+  "matched": "Transmission Arcade, 1712, Main Street, Main Street District, Columbia, Richland County, S",
+  "to_segra": [
+   1.1,
+   21
+  ],
+  "to_hotel": [
+   0.94,
+   18
+  ]
+ },
+ "grand": {
+  "name": "The Grand on Main",
+  "lat": 34.0069898,
+  "lon": -81.036764,
+  "matched": "Robinson Building, 1619-1621, Main Street, Main Street District, Columbia, Richland County",
+  "to_segra": [
+   1.35,
+   25
+  ],
+  "to_hotel": [
+   1.07,
+   21
+  ]
+ },
+ "villa": {
+  "name": "Villa Tronco",
+  "lat": 34.0084283,
+  "lon": -81.0359539,
+  "matched": "1213, Blanding Street, Main Street District, Columbia, Richland County, South Carolina, 29",
+  "to_segra": [
+   1.11,
+   21
+  ],
+  "to_hotel": [
+   0.98,
+   19
+  ]
+ },
+ "sweetcream": {
+  "name": "Sweet Cream Co",
+  "lat": 34.0072144,
+  "lon": -81.0365951,
+  "matched": "1627, Main Street, Main Street District, Columbia, Richland County, South Carolina, 29202,",
+  "to_segra": [
+   1.35,
+   25
+  ],
+  "to_hotel": [
+   1.08,
+   21
+  ]
+ },
+ "kaminskys": {
+  "name": "Kaminsky's",
+  "lat": 33.9998961,
+  "lon": -81.0371264,
+  "matched": "928-930, Gervais Street, The Vista, Columbia, Richland County, South Carolina, 29201, Unit",
+  "to_segra": [
+   1.87,
+   35
+  ],
+  "to_hotel": [
+   1.23,
+   24
+  ]
+ },
+ "pearlz": {
+  "name": "Pearlz",
+  "lat": 33.999875,
+  "lon": -81.0378675,
+  "matched": "936, Gervais Street, The Vista, Columbia, Richland County, South Carolina, 29201, United S",
+  "to_segra": [
+   1.9,
+   36
+  ],
+  "to_hotel": [
+   1.18,
+   23
+  ]
+ },
+ "finlay": {
+  "name": "Finlay Park",
+  "lat": 34.0067164,
+  "lon": -81.0410502,
+  "matched": "Finlay Park, Main Street District, Columbia, Richland County, South Carolina, United State",
+  "to_segra": [
+   1.45,
+   28
+  ],
+  "to_hotel": [
+   0.72,
+   15
+  ]
+ },
+ "riverfront": {
+  "name": "Riverfront Park",
+  "lat": 34.0036501,
+  "lon": -81.0512721,
+  "matched": "Riverfront Park, 312, Elmwood, Columbia, Richland County, South Carolina, 29201, United St",
+  "to_segra": [
+   2.03,
+   40
+  ],
+  "to_hotel": [
+   0.46,
+   10
+  ]
+ },
+ "cma": {
+  "name": "Columbia Museum of Art",
+  "lat": 34.0059416,
+  "lon": -81.0362001,
+  "matched": "Columbia Museum of Art, 1515, Main Street, Main Street District, Columbia, Richland County",
+  "to_segra": [
+   1.37,
+   26
+  ],
+  "to_hotel": [
+   1.15,
+   22
+  ]
+ },
+ "statehouse": {
+  "name": "SC State House",
+  "lat": 34.0003435,
+  "lon": -81.0330519,
+  "matched": "South Carolina State House, 1100, Gervais Street, The Vista, Columbia, Richland County, So",
+  "to_segra": [
+   1.66,
+   31
+  ],
+  "to_hotel": [
+   1.53,
+   29
+  ]
+ },
+ "edventure": {
+  "name": "EdVenture",
+  "lat": 33.9972341,
+  "lon": -81.0481862,
+  "matched": "EdVenture, 211, Gervais Street, The Vista, Columbia, Richland County, South Carolina, 2920",
+  "to_segra": [
+   2.54,
+   50
+  ],
+  "to_hotel": [
+   0.94,
+   20
+  ]
+ },
+ "ellington": {
+  "name": "Page Ellington Park",
+  "lat": 34.0203733,
+  "lon": -81.0284477,
+  "matched": "Page Ellington Park, BullStreet District, Columbia, Richland County, South Carolina, Unite",
+  "to_segra": [
+   1.72,
+   33
+  ],
+  "to_hotel": [
+   2.7,
+   53
+  ]
+ },
+ "hotel_segra": [
+  1.7,
+  34
+ ]
+}

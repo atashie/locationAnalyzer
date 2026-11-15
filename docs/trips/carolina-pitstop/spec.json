@@ -1,0 +1,31 @@
+{
+ "origin": {"name": "Gainesville, FL", "lat": 29.6516, "lon": -82.3248},
+ "dest": {"name": "Staybridge Suites, 1913 Huger St, Columbia SC", "lat": 34.0077, "lon": -81.0498},
+ "stops": {
+  "darien": {"name": "Darien waterfront + Fort King George", "where": "Darien, GA - I-95 exit 49",
+   "lat": 31.3700, "lon": -81.4340, "dwell_min": 105,
+   "facilities": [
+    {"name": "Skipper's Fish Camp (lunch)", "days": "daily", "open": "11:00", "close": "21:00", "status": "standing", "url": "https://www.exploregeorgia.org/darien/food-drink/casual-full-service/skippers-fish-camp"},
+    {"name": "Fort King George State Historic Site", "days": "Thu-Sat", "open": "09:00", "close": "17:00", "status": "standing", "url": "https://gastateparks.org/FortKingGeorge"},
+    {"name": "Waterfront park + shrimp boat docks", "always": true, "note": "outdoor, no hours", "status": "standing"}]},
+  "railroad": {"name": "Georgia State Railroad Museum", "where": "Savannah, GA - 655 Louisville Rd",
+   "lat": 32.0757, "lon": -81.1010, "dwell_min": 105, "cost_usd": 68,
+   "facilities": [
+    {"name": "Museum (roundhouse, turntable, STEAM Center)", "days": "daily", "open": "09:00", "close": "16:00", "status": "standing", "url": "https://chsgeorgia.org/GSRM"}]},
+  "mighty8": {"name": "National Museum of the Mighty Eighth Air Force", "where": "Pooler, GA - I-95 exit 102",
+   "lat": 32.1053, "lon": -81.2123, "dwell_min": 105,
+   "facilities": [
+    {"name": "Museum", "days": "Tue-Sat", "open": "10:00", "close": "17:00", "status": "standing", "url": "https://mightyeighth.org/faq"}]},
+  "statesboro": {"name": "Statesboro: Vandy's BBQ + Center for Wildlife Education", "where": "Statesboro, GA - US-301",
+   "lat": 32.4196, "lon": -81.7870, "dwell_min": 105,
+   "facilities": [
+    {"name": "Vandy's Bar-B-Q downtown (lunch)", "days": "Mon-Sat", "open": "06:00", "close": "14:00", "status": "standing", "url": "https://visitstatesboro.org/places-to-eat/vandys-bar-b-q-downtown"},
+    {"name": "Center for Wildlife Education + Raptor Center", "days": "Sat", "open": "13:00", "close": "16:45", "status": "standing", "url": "https://www.georgiasouthern.edu/campuses/visit/wildlife-center/about"}]}
+ },
+ "options": {
+  "fort-and-shrimp-boats": {"label": "Darien: shrimp boats and a fort", "corridor": "I-95 then I-26", "depart_h": 9.0, "stops": ["darien"]},
+  "trains": {"label": "Savannah: the railroad roundhouse", "corridor": "I-95 then I-26", "depart_h": 9.0, "stops": ["railroad"]},
+  "planes": {"label": "Pooler: the B-17 museum", "corridor": "I-95 then I-26", "depart_h": 9.0, "stops": ["mighty8"]},
+  "back-roads": {"label": "Statesboro: BBQ and raptors, off I-95", "corridor": "US-301 inland", "depart_h": 9.0, "stops": ["statesboro"]}
+ }
+}
