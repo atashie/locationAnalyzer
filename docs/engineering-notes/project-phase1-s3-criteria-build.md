@@ -62,8 +62,15 @@ accepted-places frame:
 | school | 559 | **3** | 0 | 556 |
 | coffee | 678 | **90** | 5 | 583 |
 
-That is **137 further Apache-licensed records**, against the 41 already in the bundle — more than
-tripling them. The published manifest says on its own face
+> **Both counts corrected 2026-11-16 after pass 56, which called this claim WRONG.** The table
+> above counts the **accepted input**. What *ships* is what `persist_selected_destination.py`
+> retains — the places on nodes a published answer actually selected. The shipped grocery table
+> holds **35** Apache records, not 41; the manifest says so on its face
+> (`"Apache-2.0": 35`) and counting the side table gives 35. And park, school and coffee would add
+> **120** (39 + 2 + 79), not 137. Both reviewers found this; Gemini ran the selection to get 120.
+
+That is **120 further Apache-licensed records**, against the 35 already shipped — more than
+quadrupling them. The published manifest says on its own face
 `"apache_records_are_cleared_for_redistribution": false`, because §4(b) is not discharged by
 `ATTRIBUTION.md`, §4(c) needs an inventory of upstream notices nobody has made, and §4(d) needs a
 readable copy of the source NOTICE that the shipped file says it is not. **Shipping three more

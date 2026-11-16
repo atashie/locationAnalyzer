@@ -15,6 +15,7 @@ from collections import Counter
 import geopandas as gpd
 import numpy as np
 import osmnx as ox
+import shapely
 from scipy.sparse.csgraph import dijkstra
 
 V2 = pathlib.Path(__file__).resolve().parent.parent
@@ -27,7 +28,8 @@ from locfinder.places.categories import select_target  # noqa: E402
 from locfinder.traveltime.arrival import arrival_seconds  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
-from locfinder.traveltime.snap import EdgeIndex, _snap_network  # noqa: E402
+from locfinder.traveltime.snap import (EdgeIndex, _canonical_geometry_key,  # noqa: E402
+                                       _snap_network)
 from locfinder.traveltime.speeds import add_travel_times, symmetrise  # noqa: E402
 
 OK = 0
@@ -35,13 +37,31 @@ POI_SNAP_MAX_M = 300.0
 
 
 def klass(G, rev, eidx, gi):
+    """The class of the edge whose geometry the point actually matched.
+
+    **Not the longest parallel edge over the node pair**, which is what this did until Codex
+    pass 56 found it. `EdgeIndex` keys its entries by (node pair, canonical geometry), so two
+    parallel roads of different shapes are different entries and only one is the one the point
+    snapped to -- exactly the defect `explain_journey.edge_on_geometry` was written for in
+    pass 35. Choosing by length can name a different road, and this script's whole output is an
+    attribution of holes to road classes.
+    """
     s_osm, e_osm = rev[eidx.start_idx[gi]], rev[eidx.end_idx[gi]]
+    key = _canonical_geometry_key(eidx.geoms[gi])
     best = None
-    for data in (G.get_edge_data(s_osm, e_osm) or {}).values():
-        if best is None or data.get("length", 0) > best.get("length", 0):
-            best = data
+    for u, v in ((s_osm, e_osm), (e_osm, s_osm)):
+        for data in (G.get_edge_data(u, v) or {}).values():
+            geom = data.get("geometry")
+            if geom is None:
+                geom = shapely.LineString([(G.nodes[u]["x"], G.nodes[u]["y"]),
+                                           (G.nodes[v]["x"], G.nodes[v]["y"])])
+            if _canonical_geometry_key(geom) != key:
+                continue
+            if best is None or data.get("cost", float("inf")) < best.get("cost", float("inf")):
+                best = data
     if best is None:
-        return "(none)"
+        # Never silently substitute a road the point did not snap to.
+        return "(geometry not matched)"
     hw = best.get("highway")
     hw = "/".join(str(h) for h in hw) if isinstance(hw, list) else str(hw)
     sv = best.get("service")

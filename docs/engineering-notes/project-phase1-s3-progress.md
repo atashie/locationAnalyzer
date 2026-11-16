@@ -306,7 +306,7 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **52 instances**. *(This said 42 from pass 52
+[[feedback-verify-the-shape-of-the-risk]] now holds **54 instances**. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
 closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
@@ -857,6 +857,45 @@ layer; the card suite now exercises it.
 cells each. The opening case is one enabled criterion and is unchanged; the all-on case is new and
 **unmeasured**. One click of Auto-bench with the window on screen gives the figure, and that is
 still an owner item.
+
+### 3e. Pass 56 — **the owner was sceptical and asked for a critical review. 2 WRONG, 7
+OVERSTATED of 20.**
+
+The owner read the seven-criterion page, reported two anomalies, read my answers and said they
+did not believe them. Two reviewers, independently and without sight of each other: **Codex**
+(`gpt-6.1-sol`) and **Antigravity/Gemini** (`gemini-4-hydrogen-xhigh`). Prompt committed before
+either ran (`5a7a5fe`); reviews at `docs/research/57-review-pass56/`. The prompt numbered twenty
+claims and named seven places I thought I was weakest, so the review began at the soft points.
+
+**The five measurement scripts behind the claims were in a session scratchpad**, so until that
+commit neither reviewer could have checked a single number. They are in `v2/scripts/` now. That is
+the process finding and it is the one most likely to recur.
+
+**What survived:** the holes are real, they hold buildings, single-nearest-edge snapping is the
+mechanism, and the hatch is the renderer working as designed. Gemini verified claim 3 as exact set
+identity where I had only matched counts, and settled W1 precisely — the recomputed surface is
+**bit-identical** to the committed raster once the 7,200 s horizon and the float32 cast are
+applied.
+
+**What did not.** One error of reasoning and seven of scope:
+
+* **WRONG — "adding nodes would change nothing".** `speeds.py:133` charges the restricted penalty
+  **per edge**, so splitting a restricted edge doubles it. Gemini ran it on the real graph:
+  splitting every edge over 100 m moves **74,930 OK cells**, and recovers **6 of the 7 parks**
+  currently dropped for sitting beyond the 300 m POI-to-node bound — one of which is **0.2 m from
+  an edge and 356.4 m from any node**. It still makes the holes worse (125 -> 131/134), so it is
+  not the fix; my reason for dismissing it was simply not a reason.
+* **WRONG — the Apache counts.** 41 is the accepted input, 35 is what ships; park, school and
+  coffee would add **120**, not 137.
+* **OVERSTATED x7**, all the same mistake: a true number attached to a population it did not
+  describe. Recorded as **ledger instance 54**, with the table of all eight.
+
+**And one the reviewers split on.** `docs/plans/layer-contract.md` — the normative contract — still
+said `NO_PATH` "is unreachable in every configuration we currently ship" in three places, and told
+readers not to write user-facing copy for it. Codex missed it; Gemini found it. I had corrected
+the claim in `project-phase1-s0-complete.md` and left the contract alone, which is the
+incomplete-cleanup hazard of instances 40 and 47. Corrected, including the advice, since the card's
+`NO_PATH` wording now renders from a real layer for the first time.
 
 ### 4. Phone decode latency
 

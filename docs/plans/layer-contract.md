@@ -64,6 +64,14 @@ producer.
 §9 measures the difference on the real Triangle walk layer, and finds that **`NO_PATH` is
 unreachable in every configuration we currently ship.**
 
+> **False since 2026-11-16, corrected here after Antigravity pass 56 found it.** That sentence was
+> true of a bundle containing only WALK layers, and `symmetrise` — which is what makes the
+> argument work — runs for walk only. The criteria build ships three own-graph drive layers and a
+> bike layer, and they carry **57 `NO_PATH` cells per drive layer and 95 on the bike layer** on the
+> UTM surface, 39 and 80 after reprojection. Read every statement below about `NO_PATH` as being
+> about the **walk** configuration. See [[project-phase1-s3-criteria-build]] and ledger instance
+> 53.
+
 ### `NO_PATH` is engine-dependent, and that is the S0.1 rule
 
 Proving no route exists requires an exhaustive search. Checked against the code, not assumed:
@@ -550,7 +558,10 @@ float32 rounding is a *known function*, not an unknown error to absorb, so the c
 run's seconds to float32 and demands exact equality. It passes. The builder's own timings
 on this run: 3.58 s for the two Dijkstras, 3.30 s for the provenance snap over 330,502 cells.
 
-### `NO_PATH` is unreachable in every shipped configuration today
+### `NO_PATH` is unreachable in every shipped WALK configuration
+
+*(This section's heading said "in every shipped configuration today" until 2026-11-16. The drive
+and bike layers published that day contain it. Everything below is correct **for walk**.)*
 
 Measured, not argued: after preparation the retained walk graph has **1 strongly connected
 component**, and **0 of 539,814 nodes** are unreached by the unbounded cost search.
@@ -562,14 +573,25 @@ grocery places after the routing-extent re-acquisition — the argument does not
 only on every destination being inside the retained component). Every retained node reaches a destination.
 `NO_PATH` cannot occur.
 
-For bike and drive the status is unavailable for the other reason — Valhalla `/expansion` cannot
-prove it. So **no shipped layer can currently contain `NO_PATH`.**
+For bike and drive **via Valhalla** the status is unavailable for the other reason —
+`/expansion` cannot prove it.
+
+> **The own-graph bike and drive layers are a different case, and they ship it.** `symmetrise`
+> runs for walk only, so those graphs stay directed and a node in a directed dead end reaches
+> nothing. Measured on the 2026-11-16 build: **57 cells in every drive layer** — the same count
+> in all three, which is what you would expect, because a node with no directed path out has none
+> to any destination set — and **95 on the bike layer**. The largest group is 19 cells at the
+> western clip edge, where a one-way road leaving the extract would produce exactly this; that
+> mechanism is plausible and nobody has traced a cell to confirm it.
 
 It stays in the enum, because the code path is correct and tested and an unsymmetrised own-graph
 layer would produce it. But two consequences must not be missed:
 
-- Nobody should write user-facing copy for a status users cannot see, and nobody should read its
-  absence as evidence of anything.
+- ~~Nobody should write user-facing copy for a status users cannot see~~ — **reversed
+  2026-11-16.** Users can see it now. `card.js` has carried wording for `NO_PATH` all along
+  (*"no route to anywhere qualifying exists in the map we hold"*) and it had **never once rendered
+  from a real published layer** until the drive and bike layers shipped. It does now, and the card
+  suite exercises it. Nobody should read its absence as evidence of anything — that half stands.
 - **Component pruning, not unreachability, is what hides a disconnected neighbourhood.** 3,046
   components were found and 13,608 nodes (2.5%) dropped. A household whose streets were in a
   dropped component does not get `NO_PATH`; their cells either snap to a retained road up to 200 m

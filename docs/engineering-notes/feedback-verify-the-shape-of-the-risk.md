@@ -1269,4 +1269,47 @@ Unlike instances 51 and 52 this one was not found by a reviewer or by an owner. 
 Which is the same lesson as the walked journey, one level up: the cheapest test of a claim about
 every case is to produce a case.
 
-Fifty-three instances now.
+### Fifty-fourth: every overstatement was a true number attached to the wrong population
+
+The owner read the seven-criterion page, reported two anomalies, and then said they were sceptical
+of my answers and asked for a critical review. Two reviewers ran independently — Codex
+`gpt-6.1-sol` and Antigravity/Gemini `gemini-4-hydrogen-xhigh` — against twenty numbered claims.
+**Eleven confirmed, seven overstated, two wrong.** The findings survived; a lot of the precision
+did not.
+
+What makes it worth an entry is that the seven overstatements are **the same mistake seven times**,
+and it is not sloppiness about the numbers. Every number was correct. Each was attached to a
+population it did not describe:
+
+| I said | true of | not true of |
+|---|---|---|
+| "56,034 then flat" | the count at 20 minutes | the plateau, which is 56,036 from 21 |
+| "17.4% of cells, 0.71% of buildings" | the UTM source grid | the published grid the browser paints: 16.95% and 0.67% |
+| "125 holes" | the UTM grid | the screen, where it is 121 |
+| "every hole has status OK" | the walk layers | `grocery/drive`, which has 14 `NO_PATH` holes — printed by my own script |
+| "the whole gap is in `atnode`" | its being the dominant term | hole one, where the on-edge leg is 32% of the gap |
+| "removes 23% of the holes" | the 20-minute threshold | 10 and 15 minutes, where it is nearly 39% |
+| "33 m away" | the **east neighbour's** access leg | the hole, which is 105.94 m from that road |
+| "41 Apache records already shipped" | the accepted input | the shipped side table, which holds 35 |
+
+> A number does not carry its population with it. Every one of these was lifted from a table that
+> knew which grid, which threshold, which layer, which row and which pipeline stage it described,
+> and written into a sentence that did not say. The fix is not to be more careful; it is to make
+> the sentence name the population — **"121 on the published grid", "23% at 20 minutes", "35 in
+> the shipped table"** — because a claim that names its population can be checked and one that
+> does not cannot.
+
+This is instance **50** again — *an index is not a location until it names its grid* — generalised
+from indices to every measured quantity, and instance **52** again in the 33 m case, where I read a
+value off a neighbouring row of my own table. Third time for that one.
+
+**One claim was not an overstatement but a straightforward error, and the owner was closer to right
+than I was.** I wrote that adding nodes along an edge "would change nothing", because subdividing
+does not change shortest-path distances. `speeds.py:133` charges the restricted-access penalty
+**per edge**, so splitting a restricted edge doubles it. Codex built the counterexample, Gemini ran
+it on the real graph — 74,930 cells move — and I reproduced it through the production
+`add_travel_times`. The lesson is narrower than the others and worth having: **an invariance
+borrowed from a textbook problem has to be checked against the pipeline's own cost function**,
+which here is not the textbook's.
+
+Fifty-four instances now.

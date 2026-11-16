@@ -66,6 +66,16 @@ chain, established rather than inferred:
 3. **120 s over the 3 restricted hops is 360 s of cost, and the detour it must beat is 968 s**
    (782.7 s via the track against 1,750.4 s on public roads). Counted, not estimated: the
    explainer's `RESTRICTED EDGES` line reports **3 of 29 hops, 159 m, 360 s of cost penalty**.
+
+   > **The 360 s is an artefact of where junctions are mapped — found 2026-11-16, pass 56.** The
+   > penalty is a flat 120 s charged **per edge** (`speeds.py:133`), and those 3 hops lie on only
+   > **two** OSM ways. The same 159 m of private track mapped as one graph edge would be charged
+   > **120 s**. So the exchange rate a journey actually pays is 120 s x (number of restricted
+   > segments it crosses), which is a property of the mapping's node density and not of the
+   > journey. The owner declined to raise `RESTRICTED_PENALTY_S` from 120 s on the ground that it
+   > is an unmeasured behavioural quantity; the effective penalty was never 120 s per journey, and
+   > a decision about its value should probably be a decision about whether it is per edge at all.
+   > See [[project-phase1-s3-donut-holes]].
    Earlier revisions said "~4 edges, 480 s" from a reading of the route rather than a count; the
    real figure is smaller, which makes the penalty further from sufficient, not closer.
 4. So the private track still wins on cost — and because *selection is by cost, reporting is by
