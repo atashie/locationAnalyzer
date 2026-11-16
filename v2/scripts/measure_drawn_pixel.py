@@ -71,10 +71,16 @@ ARTIFACT = V2.parent / "docs" / "experiments" / "s3-10-drawn-pixel.json"
 #: The page opens with this threshold on the one published walk layer -- `defaultThreshold` in
 #: `app.js`. It leads the list because it is the number a household meets before touching anything.
 PAGE_DEFAULT_MIN = 20
-#: The door recorded for `band15min_pass-03` in
-#: `docs/experiments/audit/triangle-grocery-walk-chapelhill.csv`, read from that row's own lon/lat
-#: columns. **Not its row/col columns**, which index the UTM `GridSpec` and not this raster.
-WALKED_DOOR_LON, WALKED_DOOR_LAT = -79.062476, 35.902334
+#: The QUERY coordinate of `band15min_pass-03` in
+#: `docs/experiments/audit/triangle-grocery-walk-chapelhill.csv`: `query_lon`/`query_lat`, which
+#: is the centre of the UTM cell the journey was computed for. **Not its row/col columns**, which
+#: index the UTM `GridSpec` and not this raster.
+#:
+#: **It is not a door** -- Codex pass 55, F4. This was called `WALKED_DOOR` for a day. That row's
+#: `start_lon` and `start_lat` are blank: no door has ever been recorded for this journey, and
+#: recording one is the entire point of the re-walk. Calling a query point a door would have let
+#: the next walk claim a provenance it does not have.
+WALKED_QUERY_LON, WALKED_QUERY_LAT = -79.062476, 35.902334
 THRESHOLDS_MIN = (PAGE_DEFAULT_MIN, 10, 15, 25, 45)
 
 #: What `worker.js` paints for each outcome: included is translucent blue, unknown is a diagonal
@@ -193,7 +199,21 @@ def exposure(outcomes: dict[int, np.ndarray], value: np.ndarray, rows_pub: np.nd
         out[str(t_min)] = {
             "structures_compared": int(len(rows_pub)),
             "rows_that_move": int((rows_drawn != rows_pub).sum()),
+            # **This counts OUTCOME disagreement, not colour disagreement** -- Codex pass
+            # 55, F8. The name said colour and the `every_direction` breakdown below proves it
+            # does not: an UNKNOWN cell off the hatch stripe is painted exactly like a FAIL, so
+            # some of these pairs are the same pixel, and shifting the hatch can change a pixel
+            # without changing an outcome. Codex reports 127 of the 5,801 with identical source
+            # RGBA, 134 same-outcome-but-different-pixel, and 5,808 with any RGBA difference.
+            # **Those three figures are its measurement, not reproduced here** -- my own attempt
+            # compared a row against itself and returned zeros, so they are cited rather than
+            # claimed. What is established here is that the field is an outcome comparison. The
+            # 2,771 PASS-to-FAIL figure is unaffected: those two paint differently by
+            # construction.
+            "the_outcome_contradicts_the_card": int((seen != card).sum()),
             "the_colour_contradicts_the_card": int((seen != card).sum()),
+            "why_both_names": "the second is the old name, kept so a reader of an earlier "
+                              "quotation finds the same number. It was never a colour count",
             "painted_excluded_card_included": int(((seen == int(Outcome.FAIL))
                                                    & (card == int(Outcome.PASS))).sum()),
             "painted_included_card_excluded": int(((seen == int(Outcome.PASS))
@@ -323,15 +343,16 @@ def build_probes(man: dict, value: np.ndarray, status: np.ndarray, flag: np.ndar
     # Markets" -- which is the sheet's own recorded destination. So the probe's card was a card
     # about somewhere else, while its own text called it "the one a person can check against a
     # walk". Found by reading the page before the re-walk, which is what that reading was for.
-    walked_row = int(published_rows(np.array([WALKED_DOOR_LAT]), north, south, nrows)[0])
-    walked_col = int(np.floor((WALKED_DOOR_LON - west) / (east - west) * ncols))
+    walked_row = int(published_rows(np.array([WALKED_QUERY_LAT]), north, south, nrows)[0])
+    walked_col = int(np.floor((WALKED_QUERY_LON - west) / (east - west) * ncols))
     add("the_walked_cell",
         f"the centre of published cell ({walked_row}, {walked_col}), which is the cell containing "
-        f"the door recorded for band15min_pass-03 ({WALKED_DOOR_LON}, {WALKED_DOOR_LAT}); a cell "
-        f"centre, so it is inert for the displacement, and present because its card is the one a "
-        f"person can check against a walk. NOT published cell (286, 129): that index pair is the "
-        f"UTM grid's, this probe read it as this raster's until 2026-11-16, and they are about "
-        f"400 m apart",
+        f"the QUERY COORDINATE of band15min_pass-03 ({WALKED_QUERY_LON}, {WALKED_QUERY_LAT}) -- "
+        f"the centre of the UTM cell that journey was computed for, not a recorded door: that "
+        f"row's start_lon and start_lat are blank. A cell centre, so it is inert for the "
+        f"displacement, and present because its card is the one a person can check against a "
+        f"walk. NOT published cell (286, 129): that index pair is the UTM grid's, this probe read "
+        f"it as this raster's until 2026-11-16, and they are about 400 m apart",
         west + (walked_col + 0.5) * col_w, north - (walked_row + 0.5) * row_h, sensitive=False)
 
     # The probes that can actually fail.

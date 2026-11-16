@@ -34,15 +34,58 @@ const ORACLE = path.join(__dirname, '..', '..', '..', 'docs', 'experiments',
   's3-10-drawn-pixel.json');
 
 let failures = 0;
-function check(name, fn) {
-  try {
-    fn();
-    console.log(`PASS  ${name}`);
-  } catch (err) {
+const pending = [];
+
+function report(name, err) {
+  if (err) {
     failures++;
     console.error(`FAIL  ${name}\n      ${err && err.message ? err.message : err}`);
+  } else {
+    console.log(`PASS  ${name}`);
   }
 }
+
+/** Run one check. **If it returns a promise, the result is not known yet.**
+ *
+ * Codex pass 55 finding F6. This used to print PASS the instant `fn()` returned, and three of
+ * the checks below return promises -- the colour-tolerance control, the wrong-grid refusal and
+ * the tilted-map refusal. `process.exit()` at the end of this synchronous script ran before any
+ * of their continuations, so **their assertions never executed**, for a day, while the runner
+ * printed "13 checks, all passed" and that figure was quoted into three documents. The
+ * counterexample: replace the tolerance check's assertion with `assert(false, ...)` and the run
+ * still ends "all checks passed", exit 0. Reproduced before repairing.
+ *
+ * The colour-tolerance check was the worst of the three to lose. It is the control that the
+ * one-count RGBA tolerance has not turned the colour comparison off -- a control I added the day
+ * before, for a risk I had identified myself, which had never once run.
+ */
+function check(name, fn) {
+  let out;
+  try {
+    out = fn();
+  } catch (err) {
+    report(name, err);
+    return;
+  }
+  if (out && typeof out.then === 'function') {
+    pending.push(out.then(() => report(name, null), (err) => report(name, err)));
+    return;
+  }
+  report(name, null);
+}
+
+/** **The control on the runner, not on the probe.**
+ *
+ * `fn` must fail. This check passes when its failure is actually observed, so it is red exactly
+ * when the runner has gone back to reporting an unfinished async check as a pass. No ordinary
+ * check can see that, because an ordinary check cannot tell whether it ran.
+ */
+function checkAnAsyncFailureIsSeen(name, fn) {
+  pending.push(Promise.resolve().then(fn).then(
+    () => report(name, new Error('a deliberately failing async check was reported as passing')),
+    () => report(name, null)));
+}
+
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
 // ---- the real paint, from the real worker on the real bundle ----------------------------------
@@ -407,6 +450,13 @@ check('and refuses a tilted map, where its geometry does not hold', async () => 
   assert(out.ran === false, 'the probe ran on a tilted map');
   assert(/tilt/.test(out.why), out.why);
 });
+
+checkAnAsyncFailureIsSeen(
+  'the runner sees an async check fail, which it did not until pass 55',
+  async () => { await Promise.resolve(); assert(false, 'this check is meant to fail'); });
+
+// **Nothing may be reported before every check has finished** -- pass 55 F6.
+await Promise.all(pending);
 
 console.log(`\n${failures === 0 ? 'all checks passed' : `${failures} FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);

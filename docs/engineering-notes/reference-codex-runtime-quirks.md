@@ -30,6 +30,14 @@ Learned 2026-11-03 after five failed Codex launches:
   **backslash-free** text, or use the Edit tool when the target contains escapes.
   To append a large test block: Write it to the scratchpad, then append with a
   short `python -c` that reads that file. Learned 2026-11-06.
+- **2026-11-16: Codex DID execute processes this session**, against the note above. A `task`
+  run on gpt-6.1-sol ran PowerShell, the venv Python, pytest and node, rebuilt the UTM grid and
+  reproduced counterexamples. Do not assume read-only any more -- check, because handing over a
+  measurement "to attack as method" is a weaker review than letting it run the code. Two other
+  things from that run: a background job can **die leaving its state saying `running`** with the
+  pid gone, so check the pid and the log mtime rather than the status; and the full assistant
+  messages of a dead run are recoverable from `~/.codex/sessions/<date>/rollout-*-<threadId>.jsonl`,
+  which is how pass 55's first four findings survived.
 - The `codex:codex-rescue` subagent retries on its own and reports Bash task ids,
   not companion job ids; check `status --all --json` before launching another job.
 Related: [[feedback-codex-adversarial-review]].

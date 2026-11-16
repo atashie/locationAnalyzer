@@ -202,9 +202,10 @@ it without a mouse (Codex pass 54) — and the browser implementation discussed 
 No comparative error rates or return-per-hour figures exist, so this is a judgement about where to
 look next, not a finding:
 
-1. **Re-walk `band15min_pass-03` with the record E3 needs** — a door inside the cell at
-   lon -79.062476, lat 35.902334, the selected destination, a timed duration, and whether the
-   private approach was used. The page was read there on 2026-11-16 and shows 14 min, PASS at a
+1. **Re-walk `band15min_pass-03` with the record E3 needs** — a door you choose and record
+   inside the cell whose query coordinate is lon -79.062476, lat 35.902334 (that coordinate is the
+   computed origin, not a door; `start_lon`/`start_lat` are blank), the selected destination, a
+   timed duration, and whether the private approach was used. The page was read there on 2026-11-16 and shows 14 min, PASS at a
    15-minute limit, the restricted-route warning and Hill's Family Asian Markets, so what the
    walk would confirm or refute is now a specific displayed claim rather than a row in a sheet. It is one
    walk, and it is the only thing that turns the standing discrepancy into evidence either way.

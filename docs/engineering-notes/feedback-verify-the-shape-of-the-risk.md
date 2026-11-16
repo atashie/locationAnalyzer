@@ -1118,7 +1118,7 @@ What changed is the **price**. The docstring priced the cost of `ceil` like this
 
 It even named the trigger. On 2026-11-14 the per-criterion card started printing the minute, and
 the trigger fired with nothing attached to it. A household can now read "12 min" for a model time
-of 11 minutes 1 second. Five adversarial passes read that card's code in the fortnight that
+of 11 minutes 1 second. Five adversarial passes read that card's code in the two days that
 followed and none of them connected it back, because the encoder still looked right -- and it is
 right. Only its cost had moved, and a cost is not where anyone looks for a defect.
 
@@ -1131,8 +1131,15 @@ right. Only its cost had moved, and a cost is not where anyone looks for a defec
 Closed in both directions: the docstring no longer claims nothing displays the minute, the card
 now says "rounded **up** to the whole minute" rather than leaving the direction to be guessed,
 and `tests/test_browser_conformance.py` reads that sentence out of the running `card.js` and the
-rounding rule out of the running `encode_minutes`, so the two cannot drift apart again in
-silence. The 30-second-unit question the docstring named is now an owner-owed decision in the
+rounding rule out of the running `encode_minutes`.
+
+**That last claim was overstated and pass 55 proved it the next day.** The sentence here said the
+cross-check meant "the two cannot drift apart again in silence". The same sentence it checks then
+shipped a *different* false statement -- "measured from the centre of this cell", naming the
+published cell's centre when the time was computed at a UTM centre a median 39.9 m away -- and
+the cross-check passed it, because the check confirmed that the producer evaluates *source* cell
+centres, which is true, and says nothing about the consumer's displayed cell. A check that
+confirms a true proposition adjacent to the claim is not a check on the claim. See instance 51. The 30-second-unit question the docstring named is now an owner-owed decision in the
 progress note rather than a sentence waiting in a comment.
 
 ### Fiftieth: an index is not a location until it names its grid
@@ -1146,7 +1153,7 @@ origin and its own indexing -- and it also has a cell (286, 129), about 400 m fr
 into the published raster. The sheet's own `query_lon` and `query_lat` were in the same row and
 were not used. The two cells disagree about every single thing a walker would check:
 
-| | the walked door | the index read as published |
+| | the cell the query coordinate is in | the index read as published |
 |---|---|---|
 | minutes | 14 | 24 |
 | at the 15-minute band | PASS | FAIL |
@@ -1155,7 +1162,14 @@ were not used. The two cells disagree about every single thing a walker would ch
 
 And the probe's own text called its card "the one a person can check against a walk".
 
-**Nothing internal could have found it.** The probe was self-consistent. Its expectations were
+**I wrote "nothing internal could have found it", and that was wrong** -- Codex pass 55. The
+sheet coordinate, the source grid and the published grid were all in this repository; an internal
+consistency check between a sheet row's index and its own coordinate would have found it without
+any browser. What the browser session did was *prompt* the comparison. That is worth something and
+it is not the same claim. The paragraph as written is kept below so the overstatement is visible,
+with its last sentence corrected.
+
+The probe was self-consistent. Its expectations were
 re-derived from the published bytes by a second code path that does not share the generator's
 helpers -- the control this project added precisely so an oracle cannot agree with itself. A
 browser then ran against it and agreed at all eleven probes with zero disagreements. Every check
@@ -1166,13 +1180,69 @@ whether it was *where it said it was*.
 > it, and two grids over the same ground will both answer to the same pair of numbers with
 > different land. Carry the coordinate; where an index has to travel, make it carry the name of
 > its grid. And note what this costs to detect: a reference that is merely consistent is not
-> thereby correct, so the check has to come from outside the system that produced it.
+> thereby correct, so something has to compare it against a fact it did not generate. That
+> comparison does not have to come from outside the system -- the coordinate and both grids were
+> already in the repository. It has to come from outside the *assumption*.
 
 It was found by reading the page at that cell before the owner re-walked it -- a step taken
 because a reviewer said the sheet's own number should not be assumed to authenticate what a
-household is shown at a real door. The first comparison against anything outside the apparatus
-found it immediately. The probe now derives from the door's coordinate, the walk instruction in
-three documents gives the coordinate instead of the index, and the sheet's README says which grid
-its columns are in.
+household is shown at a real door. The probe now derives from the journey's query coordinate, the
+walk instruction in three documents gives that coordinate instead of the index, and the sheet's
+README says which grid its columns are in.
 
-Fifty instances now.
+**And the repair carried its own version of the same error.** Six places then called that
+coordinate "the recorded door". It is `query_lon`/`query_lat`, the centre of the UTM cell the
+journey was computed for; the row's `start_lon` and `start_lat` are blank and filling them is the
+whole point of the re-walk. Having just learned that an index is not a location, I promoted a
+query point into a door in the same commit.
+
+### Fifty-first: a check on a true neighbouring fact is not a check on the claim
+
+Fixing an overclaim, I wrote a new disclosure: *"Times are estimates: measured from the centre of
+this cell, and rounded up to the whole minute."* Then, knowing that a card suite comparing the
+card against its own string is a tautology, I wrote the cross-check I thought closed it -- a test
+that reads the sentence out of the running `card.js` and the rounding rule out of the running
+`encode_minutes`, plus:
+
+```python
+src = inspect.getsource(build_layer_surface)
+assert "cell_centers_xy()" in src
+```
+
+That assertion is **true**. The producer does evaluate cell centres. It is also about the **UTM**
+grid, and the sentence is about the cell the **card** names, which is a cell of the reprojected
+WGS84 raster. A published cell carries a time measured at some UTM cell's centre -- a median
+**39.9 m** from its own centre, up to **70.6 m**, the same order as the 36 m placement error this
+page was built to measure. The disclosure written to stop the product overclaiming was itself
+false, in a sentence that answers "where does this journey begin?", and the test I wrote to
+prevent exactly that waved it through.
+
+> A check that confirms a true fact *next to* the claim is not a check on the claim, and it is
+> more dangerous than no check, because it is reported as coverage. When a sentence names a
+> thing -- this cell, this address, this route -- the check has to pin the **referent**, not the
+> mechanism that produced the value. Ask what the sentence would have to mean to be false, and
+> test that.
+
+The repair measures the gap instead of asserting the premise, and fails if the two grids ever
+align -- which is the one condition under which the retired wording would become sayable again.
+
+### Fifty-second: I repaired "an index is not a location" by inventing a location
+
+Instance 50 was found on 2026-11-16: the audit sheet's `(286, 129)` is a UTM index and had been
+read as a published one. In the same commit that recorded that lesson, I described the sheet's
+`query_lon`/`query_lat` as **"the door recorded for `band15min_pass-03`"** -- in the oracle
+generator, the probe's own text, a new experiment record, a new test, the progress note, the
+audit README and the decision report, and then in the instruction telling the owner where to
+walk from.
+
+It is not a door. It is the journey's query point, the centre of the UTM cell the time was
+computed for. That row's `start_lon` and `start_lat` are **blank**, and filling them is the
+entire purpose of the re-walk. Codex pass 55 found it by opening the CSV.
+
+> The repair for a precision failure is where the next precision failure goes. Having just
+> learned that an index is not a location, I promoted a query point into a door -- a *more*
+> specific claim than the data carried, made while writing the lesson about claims more specific
+> than the data carries. Check the words of the fix against the same source you checked the bug
+> against, in the same sitting.
+
+Fifty-two instances now.

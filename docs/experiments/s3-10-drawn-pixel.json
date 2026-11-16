@@ -44,7 +44,9 @@
     "20": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
+      "the_outcome_contradicts_the_card": 5801,
       "the_colour_contradicts_the_card": 5801,
+      "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
       "painted_excluded_card_included": 2771,
       "painted_included_card_excluded": 2798,
       "every_direction": {
@@ -60,7 +62,9 @@
     "10": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
+      "the_outcome_contradicts_the_card": 6403,
       "the_colour_contradicts_the_card": 6403,
+      "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
       "painted_excluded_card_included": 2953,
       "painted_included_card_excluded": 3203,
       "every_direction": {
@@ -76,7 +80,9 @@
     "15": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
+      "the_outcome_contradicts_the_card": 6866,
       "the_colour_contradicts_the_card": 6866,
+      "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
       "painted_excluded_card_included": 3193,
       "painted_included_card_excluded": 3441,
       "every_direction": {
@@ -92,7 +98,9 @@
     "25": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
+      "the_outcome_contradicts_the_card": 4607,
       "the_colour_contradicts_the_card": 4607,
+      "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
       "painted_excluded_card_included": 2168,
       "painted_included_card_excluded": 2207,
       "every_direction": {
@@ -108,7 +116,9 @@
     "45": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
+      "the_outcome_contradicts_the_card": 1946,
       "the_colour_contradicts_the_card": 1946,
+      "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
       "painted_excluded_card_included": 799,
       "painted_included_card_excluded": 915,
       "every_direction": {
@@ -129,7 +139,9 @@
         "20": {
           "structures_compared": 500451,
           "rows_that_move": 0,
+          "the_outcome_contradicts_the_card": 0,
           "the_colour_contradicts_the_card": 0,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 0,
           "painted_included_card_excluded": 0,
           "every_direction": {},
@@ -138,7 +150,9 @@
         "10": {
           "structures_compared": 500451,
           "rows_that_move": 0,
+          "the_outcome_contradicts_the_card": 0,
           "the_colour_contradicts_the_card": 0,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 0,
           "painted_included_card_excluded": 0,
           "every_direction": {},
@@ -147,7 +161,9 @@
         "15": {
           "structures_compared": 500451,
           "rows_that_move": 0,
+          "the_outcome_contradicts_the_card": 0,
           "the_colour_contradicts_the_card": 0,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 0,
           "painted_included_card_excluded": 0,
           "every_direction": {},
@@ -156,7 +172,9 @@
         "25": {
           "structures_compared": 500451,
           "rows_that_move": 0,
+          "the_outcome_contradicts_the_card": 0,
           "the_colour_contradicts_the_card": 0,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 0,
           "painted_included_card_excluded": 0,
           "every_direction": {},
@@ -165,7 +183,9 @@
         "45": {
           "structures_compared": 500451,
           "rows_that_move": 0,
+          "the_outcome_contradicts_the_card": 0,
           "the_colour_contradicts_the_card": 0,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 0,
           "painted_included_card_excluded": 0,
           "every_direction": {},
@@ -179,7 +199,9 @@
         "20": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
+          "the_outcome_contradicts_the_card": 22206,
           "the_colour_contradicts_the_card": 22206,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 10883,
           "painted_included_card_excluded": 10290,
           "every_direction": {
@@ -195,7 +217,9 @@
         "10": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
+          "the_outcome_contradicts_the_card": 24427,
           "the_colour_contradicts_the_card": 24427,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 11017,
           "painted_included_card_excluded": 12322,
           "every_direction": {
@@ -211,7 +235,9 @@
         "15": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
+          "the_outcome_contradicts_the_card": 26759,
           "the_colour_contradicts_the_card": 26759,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 12718,
           "painted_included_card_excluded": 13006,
           "every_direction": {
@@ -227,7 +253,9 @@
         "25": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
+          "the_outcome_contradicts_the_card": 18063,
           "the_colour_contradicts_the_card": 18063,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 8810,
           "painted_included_card_excluded": 8220,
           "every_direction": {
@@ -243,7 +271,9 @@
         "45": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
+          "the_outcome_contradicts_the_card": 7381,
           "the_colour_contradicts_the_card": 7381,
+          "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
           "painted_excluded_card_included": 3145,
           "painted_included_card_excluded": 3203,
           "every_direction": {
@@ -420,7 +450,7 @@
     },
     {
       "id": "the_walked_cell",
-      "why": "the centre of published cell (282, 126), which is the cell containing the door recorded for band15min_pass-03 (-79.062476, 35.902334); a cell centre, so it is inert for the displacement, and present because its card is the one a person can check against a walk. NOT published cell (286, 129): that index pair is the UTM grid's, this probe read it as this raster's until 2026-11-16, and they are about 400 m apart",
+      "why": "the centre of published cell (282, 126), which is the cell containing the QUERY COORDINATE of band15min_pass-03 (-79.062476, 35.902334) -- the centre of the UTM cell that journey was computed for, not a recorded door: that row's start_lon and start_lat are blank. A cell centre, so it is inert for the displacement, and present because its card is the one a person can check against a walk. NOT published cell (286, 129): that index pair is the UTM grid's, this probe read it as this raster's until 2026-11-16, and they are about 400 m apart",
       "lon": -79.0622862,
       "lat": 35.9026751,
       "sensitive": false,

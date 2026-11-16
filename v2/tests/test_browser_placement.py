@@ -74,8 +74,20 @@ def test_the_run_is_against_the_oracle_that_is_committed(current_run, oracle):
     for seen, want in zip(run["probes"], oracle["probes"]):
         assert seen["sensitive"] == bool(want.get("sensitive")), seen["id"]
         assert seen.get("card_cell") == want.get("expected_published_cell"), seen["id"]
-    assert current_run["disagreements"] == 0
-    assert current_run["sensitive_probes_contradicting_the_card"] == 3
+    # **Recomputed from the probes, never read from the summary** -- pass 55 F7. This asserted
+    # `current_run["disagreements"] == 0`, which is a number written beside the run at collection
+    # time. A run doctored to contain eleven timed-out hovers, wrong card text and explicit
+    # per-probe disagreements passed this test, because nothing read the probes. The summary is
+    # still checked -- against what the probes say, so a summary that disagrees with its own run
+    # is now a failure rather than the thing being trusted.
+    counted = sum(len(p.get("disagreements") or []) for p in run["probes"])
+    assert counted == 0, f"{counted} disagreements recorded in the probes"
+    assert current_run["disagreements"] == counted, (
+        f"the summary says {current_run['disagreements']} and the probes say {counted}")
+    contradicting = sum(1 for p in run["probes"]
+                        if p.get("sensitive") and p.get("the_picture_contradicts_the_card_here"))
+    assert contradicting == 3, contradicting
+    assert current_run["sensitive_probes_contradicting_the_card"] == contradicting
 
 
 def test_the_first_run_is_kept_as_what_it_was(doc, oracle):
@@ -93,47 +105,73 @@ def test_the_first_run_is_kept_as_what_it_was(doc, oracle):
     assert moved == ["the_walked_cell"], moved
 
 
-def test_every_probe_agreed_and_the_sensitive_ones_showed_the_contradiction(doc):
+@pytest.fixture(scope="module")
+def runs(doc, current_run) -> list:
+    """Every run this repository presents as evidence, each with a label for the failure message.
+
+    **Pass 55 F7.** The checks below used to take `doc` and therefore only ever examined the
+    2026-11-15 run. The 2026-11-16 re-run is the one the oracle is now checked against -- the
+    current confirmation -- and it was getting none of them.
+    """
+    return [("2026-11-15 (s3-11)", doc["the_run"]),
+            ("2026-11-16 re-run (s3-12)", current_run["run"])]
+
+
+def test_every_probe_agreed_and_the_sensitive_ones_showed_the_contradiction(runs):
     """The result itself, and the shape that makes it a result rather than a tautology."""
-    run = doc["the_run"]
-    assert run["disagreements_with_the_oracle"] == 0
-    assert sum(len(p["disagreements"]) for p in run["probes"]) == 0
-    assert run["sensitive_probes"] == 3
-    assert run["sensitive_probes_where_the_picture_contradicted_the_card"] == 3
+    for label, run in runs:
+        _every_probe_agreed(label, run)
+
+
+def _every_probe_agreed(label, run):
+    counted = sum(len(p["disagreements"]) for p in run["probes"])
+    assert counted == 0, f"{label}: {counted} disagreements in the probes"
+    assert run["disagreements_with_the_oracle"] == counted, (
+        f"{label}: the run's own summary disagrees with its probes")
     sensitive = [p for p in run["probes"] if p["sensitive"]]
+    assert len(sensitive) == 3 == run["sensitive_probes"], label
+    contradicting = sum(1 for p in sensitive if p["the_picture_contradicts_the_card_here"])
+    assert contradicting == 3, f"{label}: {contradicting}"
+    assert run["sensitive_probes_where_the_picture_contradicted_the_card"] == contradicting, label
     for p in sensitive:
-        assert p["drawn_minus_published_row"] == 1, p["id"]
-        assert p["the_picture_contradicts_the_card_here"] is True, p["id"]
+        assert p["drawn_minus_published_row"] == 1, (label, p["id"])
+        assert p["the_picture_contradicts_the_card_here"] is True, (label, p["id"])
     # And the control that makes agreement non-automatic: a cell centre, where the two placement
     # rules agree at all 514 rows, had to agree and did.
     inert = next(p for p in run["probes"] if p["id"] == "inert_interior")
-    assert inert["drawn_minus_published_row"] == 0
-    assert inert["the_picture_contradicts_the_card_here"] is False
+    assert inert["drawn_minus_published_row"] == 0, label
+    assert inert["the_picture_contradicts_the_card_here"] is False, label
 
 
-def test_both_harm_directions_were_seen_in_the_live_page(doc):
+def test_both_harm_directions_were_seen_in_the_live_page(runs):
     """2,771 of the 5,801 are painted OUT while included. A run that only ever saw the other
     direction would not be evidence for the half that matters."""
-    run = doc["the_run"]
-    pairs = {(tuple(p["rgba_of_the_cell_the_card_names"]) == (0, 0, 0, 0),
-              tuple(p["rgba_under_the_pointer"]) == (0, 0, 0, 0))
-             for p in run["probes"] if p["sensitive"]}
-    assert (False, True) in pairs, "no probe was painted out while the card included it"
-    assert (True, False) in pairs, "no probe was painted in while the card excluded it"
+    for label, run in runs:
+        pairs = {(tuple(p["rgba_of_the_cell_the_card_names"]) == (0, 0, 0, 0),
+                  tuple(p["rgba_under_the_pointer"]) == (0, 0, 0, 0))
+                 for p in run["probes"] if p["sensitive"]}
+        assert (False, True) in pairs, f"{label}: no probe painted out while the card included it"
+        assert (True, False) in pairs, f"{label}: no probe painted in while the card excluded it"
 
 
-def test_the_hover_landed_on_the_cell_it_claims_to_describe(doc):
+def test_the_hover_landed_on_the_cell_it_claims_to_describe(runs):
     """The second instrument defect, inverted into a requirement: a card read one cell away is a
-    card about somewhere else, and would have been reported as agreement."""
-    for p in doc["the_run"]["probes"]:
-        hover = p["hover"]
-        assert hover["placed_on_the_probe_cell"] is True, p["id"]
-        assert hover["timed_out"] is False, p["id"]
-        assert "Reading this spot" not in hover["card_text"], p["id"]
-        off = hover["pixels_from_the_probe_point"]
-        assert abs(off["x"]) < 1 and abs(off["y"]) < 1, (p["id"], off)
-        if p.get("card_cell"):
-            assert hover["cell_under_the_pixel_the_pointer_reached"] == p["card_cell"], p["id"]
+    card about somewhere else, and would have been reported as agreement.
+
+    **Applied to every run, not only the first** -- pass 55 F7. Eleven timed-out hovers in the
+    newest run passed every check in this file until this took `runs`.
+    """
+    for label, run in runs:
+        for p in run["probes"]:
+            hover = p["hover"]
+            assert hover["placed_on_the_probe_cell"] is True, (label, p["id"])
+            assert hover["timed_out"] is False, (label, p["id"])
+            assert "Reading this spot" not in hover["card_text"], (label, p["id"])
+            off = hover["pixels_from_the_probe_point"]
+            assert abs(off["x"]) < 1 and abs(off["y"]) < 1, (label, p["id"], off)
+            if p.get("card_cell"):
+                assert hover["cell_under_the_pixel_the_pointer_reached"] == p["card_cell"], (
+                    label, p["id"])
 
 
 def test_the_card_a_household_gets_carried_all_three_disclosures(doc):

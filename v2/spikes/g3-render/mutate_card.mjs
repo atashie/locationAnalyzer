@@ -227,13 +227,32 @@ const MUTATIONS = [
     // The whole point of the word. `encode_minutes` is `ceil`, so "to the nearest" understates
     // our own overstatement by up to 60 s -- and it reads MORE accurate, not less.
     name: 'the rounding is described as to the nearest minute',
-    apply: (s) => s.replace("'up to the whole minute.'", "'to the nearest whole minute.'"),
+    apply: (s) => s.replace("'and are rounded up to the whole minute.'",
+      "'and are rounded to the nearest whole minute.'"),
   },
   {
     name: 'the estimate is described as measured from the address',
     apply: (s) => s.replace(
-      "'Times are estimates: measured from the centre of this cell, and rounded '",
-      "'Times are estimates: measured from this address, and rounded '"),
+      "'Times are model estimates for a nearby grid point, not your address, '",
+      "'Times are model estimates for this address, '"),
+  },
+  {
+    // **Pass 55 F1, restored.** The published cell's centre is not where the time was measured:
+    // the seconds come from a UTM cell centre a median 39.9 m away. This is the exact sentence
+    // that shipped for a day, and the check that catches it must stay able to.
+    name: 'the estimate claims the displayed cell\'s own centre as the origin',
+    apply: (s) => s.replace(
+      "'Times are model estimates for a nearby grid point, not your address, '\r\n    + 'and are rounded up to the whole minute.'",
+      "'Times are estimates: measured from the centre of this cell, and '\r\n    + 'rounded up to the whole minute.'"),
+  },
+  {
+    // **Pass 55 F2, restored.** A mutation of the CONSTANT, not of the rendering: every check
+    // that compares the card against `VERDICT_TEXT` reads the mutated value and still agrees,
+    // so only the pinned-literal check can catch this one. That is what it is for.
+    name: 'the exclusion headline is stated as a fact about the place',
+    apply: (s) => s.replace(
+      "    EXCLUDED: 'Our model rules this cell out for at least one of your limits.',",
+      "    EXCLUDED: 'At least one criterion is not satisfied here.',"),
   },
   {
     // A true swap back to the order this had before pass 54: the warning below the status

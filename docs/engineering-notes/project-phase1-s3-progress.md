@@ -175,10 +175,14 @@ The live corrections:
 
 ## Verified state, 2026-11-16
 
-**1,566 tests, 1,542 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
-checks, 13 probe checks. 69 of 69 worker mutations, 33 of 33 card mutations, 30 of 30
+**1,568 tests, 1,544 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
+checks, 14 probe checks. 69 of 69 worker mutations, 35 of 35 card mutations, 30 of 30
 admissibility mutations, 9 of 9 migration mutations — 0 inert, 0 survived, 0 misplaced, 0
 errored anywhere.** Every figure here was re-run on 2026-11-16, not carried forward.
+
+*(The "13 probe checks" this said earlier was worth less than it looked: three of them never
+asserted anything. See pass 55 F6 below. It is 14 now, all of them awaited, one of them a control
+on the runner itself.)*
 *(This block was headed "after the pass 50 integration" and still gave that run's numbers —
 1,519 passed, 33 card checks, 29 card mutations — through the browser session and the wording
 change. It is the first thing a resuming session reads.)*
@@ -297,13 +301,16 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **50 instances**. *(This said 42 from pass 52
+[[feedback-verify-the-shape-of-the-risk]] now holds **52 instances**. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
 closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
 stands in for; **49**, a tradeoff can stay right while its justification expires — the minute
-is `ceil` because "nothing displays it", and since 2026-11-14 the card displays it; and **50**,
-an index is not a location until it names its grid. From pass 51:
+is `ceil` because "nothing displays it", and since 2026-11-14 the card displays it; **50**,
+an index is not a location until it names its grid; **51**, a check on a true neighbouring fact is
+not a check on the claim; and **52**, I repaired instance 50 by inventing a location in the same
+commit. 49 and 50 were both **corrected by pass 55 for overstatement**, which is the second review
+in a row to find that: pass 48 found four of five overstated, pass 55 found two of two. From pass 51:
 a check on
 the answer is not a check on the explanation of the answer; one field cannot answer two questions;
 a rule borrowed from a different question changes meaning on arrival. From pass 52: **closing the
@@ -344,8 +351,11 @@ not the order these became known. Each item says what risk it retires, because t
 justifies its position.
 
 **Running in parallel, and only the owner can do it: one repeat walk of `band15min_pass-03`**, from
-a recorded door inside the cell at **lon -79.062476, lat 35.902334**, to the selected destination,
-timed, with the approach noted. *(Use the coordinate, not an index. The sheet's `row`/`col`
+a **chosen and recorded** door inside the cell whose query coordinate is **lon -79.062476,
+lat 35.902334**, to the selected destination, timed, with the approach noted. *(That coordinate is
+not a door: it is the centre of the UTM cell the 810.8 s was computed for, and this journey's
+`start_lon`/`start_lat` are blank. Recording a real door is the point of the walk -- Codex pass
+55, F4, after this note called it a recorded door for a day.)* *(Use the coordinate, not an index. The sheet's `row`/`col`
 columns say (286, 129) and those index the **UTM** grid; the published raster has a cell
 (286, 129) too, about 400 m away, and it is a different answer entirely — 24 minutes and a FAIL.
 In the published raster this door is cell **(282, 126)**, which is what the page's card heading
@@ -713,6 +723,70 @@ real browser — the figure the card plan listed as unverified — which matches
 measurement's order and settles that one `explainAt` per pointer move needs no batching. Worker
 compute over 20 scripted threshold changes is 9.1 ms median. The **slider-to-repaint** figure the
 page reported, 1002 ms, is **the instrument**: see the runtime constraints below.
+
+### 3c. Codex pass 55 — **INTEGRATED 2026-11-16. Nine findings, and two of my guards were
+hollow.**
+
+The owner reopened the chain for the three browser commits. Pass 54 had said the next review of
+the card should follow its first browser use rather than another reading of the same code; it had
+had three. Report at `docs/research/56-codex-review-pass55/REPORT.md`, prompt committed first.
+
+**The run died at 1h 28m without reporting**, process gone and the job state still saying
+`running`. Four findings were recovered from the Codex session transcript and handed back on
+resume as established facts. Worth knowing: **Codex could execute processes this session**,
+against the standing note in [[reference-codex-runtime-quirks]] that every `exec_command` fails
+here. It ran the venv's Python, rebuilt the UTM grid, reproduced counterexamples and ran pytest.
+
+**Two of the findings are defects I shipped yesterday while fixing other defects.**
+
+* **F1 (High): the card's new origin sentence named the wrong point.** "Measured from the centre
+  of this cell" — the card's cell is a cell of the *published* WGS84 raster; the seconds were
+  computed at a **UTM** cell centre and the publication is a NEAREST reprojection, so a published
+  cell carries a time measured a **median 39.9 m** from its own centre, p90 55.8 m, up to the
+  70.6 m half-diagonal. Measured here, not argued. It now reads *"Times are model estimates for a
+  nearby grid point, not your address, and are rounded up to the whole minute."* **Ledger instance
+  51**: a check on a true neighbouring fact is not a check on the claim — my pytest asserted that
+  the producer evaluates `cell_centers_xy()`, which is true, and about the other grid.
+* **F4 (Medium): a query coordinate was promoted into a recorded door**, in seven places including
+  the instruction telling the owner where to walk. `start_lon`/`start_lat` are **blank**; filling
+  them is the point of the walk. **Ledger instance 52**: I repaired "an index is not a location"
+  by inventing a location, in the same commit.
+
+**And two guards were hollow, each demonstrated with an executable counterexample.**
+
+* **F6: three probe self-tests reported PASS before their assertions ran.** `check()` called
+  `fn()` and printed PASS; three checks return promises, so `process.exit()` ran first. Codex put
+  `assert(false)` in the colour-tolerance check and the run still printed "all checks passed",
+  exit 0 — **I reproduced it before repairing it**. The worst one to lose was that tolerance
+  control: I added it the day before, for a risk I had identified myself, and it had never run.
+  The runner now awaits, and carries a control on its own awaiting. 14 checks.
+* **F7: the newest run was trusted on a summary number nobody checked.** A run doctored to
+  contain eleven timed-out hovers, wrong card text and explicit per-probe disagreements passed
+  `test_the_run_is_against_the_oracle_that_is_committed`, and every substantive check ran on the
+  *first* run only. Both runs now get every structural check and the summary is required to equal
+  what the probes say. Re-running Codex's counterexample against the repair: three tests fail.
+
+**Also corrected:** F2, the exclusion headline, now *"Our model rules this cell out for at least
+one of your limits"* — leaving it categorical while hedging inclusions made an exclusion read as
+the more certain answer, which is the asymmetry the estimate note was supposed to prevent and does
+not, because "times are estimates" does not qualify an exclusion caused by a shop we never held.
+F3, "the page draws the raster where s3-10 said" — the probe reads the **source canvas** and
+computes the drawn row from projected corners; it never samples a rendered pixel, so the
+screenshot carries that claim, locally. F5, "free", "untainted" and "60 fps" withdrawn, and
+0.2 ms is **1,000 times** 0.0002 ms, not the same order. F8, the 5,801 counts **outcome**
+disagreement, not colour. F9, the collector now refuses a chunk index outside its declared range.
+The walked-route caveat said "20 minutes"; it is about 25 against a published 14, and inadmissible.
+
+**Ledger instances 49 and 50 were both corrected for overstatement** — pass 48 found four of five
+overstated, pass 55 two of two. 49 claimed a cross-check meant the two "cannot drift apart again
+in silence", and the next sentence it checked shipped false. 50 claimed "nothing internal could
+have found it"; the coordinate and both grids were in the repository all along.
+
+**What pass 55 says to do next:** correct the wording (done), then *"have somebody unfamiliar with
+the implementation select a place, interpret its result, and explain what the map has ruled out"*.
+It also recommends **keeping whole-minute `ceil`** for now rather than moving to 30-second units —
+the display cost is understood and statable, and no household observation shows the rounding
+causing a mistaken decision.
 
 ### 4. Phone decode latency
 

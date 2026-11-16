@@ -13,8 +13,12 @@ ROOT = pathlib.Path(r"C:\Users\arikt\documents\github\distanceFinder")
 PUB = ROOT / "v2" / "spikes" / "g3-render" / "fixtures" / "published"
 OUT = ROOT / "docs" / "experiments" / "s3-12-what-the-page-says-at-the-walked-cell.json"
 
-DOOR_LON, DOOR_LAT = -79.062476, 35.902334
-WALKED = (282, 126)          # the published cell containing that door
+#: `query_lon`/`query_lat` of band15min_pass-03: the centre of the UTM cell the journey was
+#: computed for. **Not a door** -- Codex pass 55, F4. That row's `start_lon` and `start_lat` are
+#: blank. No door has ever been recorded for this journey; recording one is what the re-walk is
+#: for, and calling this a door would let the next walk claim a provenance it does not have.
+QUERY_LON, QUERY_LAT = -79.062476, 35.902334
+WALKED = (282, 126)          # the published cell containing that query coordinate
 SHEET_INDEX = (286, 129)     # the same numbers, in the UTM grid the sheet uses
 
 CARD_AT_15 = ("The model estimates this cell meets your limits."
@@ -45,7 +49,8 @@ def main() -> None:
     flag, dest = plane("flag_file", np.uint8), plane("dest_file", np.dtype("<u2"))
     table = json.loads((PUB / entry["dest_table"]).read_text(encoding="utf-8"))["destinations"]
 
-    assert published(bounds, nrows, ncols, DOOR_LON, DOOR_LAT) == WALKED, "the door moved"
+    assert published(bounds, nrows, ncols, QUERY_LON, QUERY_LAT) == WALKED, (
+        "the query coordinate no longer falls in the cell this record is about")
 
     def describe(cell):
         r, c = cell
@@ -72,7 +77,10 @@ def main() -> None:
             "The reading Codex pass 54 asked for before the re-walk: what the PAGE says at the "
             "cell band15min_pass-03 was walked from, read in a browser rather than inferred from "
             "the sheet. The sheet's encoded 14 minutes is evidence about the sheet. This is the "
-            "answer a household standing at that door would actually be shown.",
+            "answer the page gives for that cell. CORRECTED 2026-11-16, Codex pass 55 F4: this "
+            "said 'the answer a household standing at that door would actually be shown'. There "
+            "is no door. The coordinate is the journey's QUERY point -- the UTM cell centre -- "
+            "and the sheet's start_lon/start_lat are blank.",
         "when": "2026-11-16",
         "where": {
             "browser": "Chrome 157.0.0.0 on Windows, devicePixelRatio 1",
@@ -84,6 +92,9 @@ def main() -> None:
             "set the walk threshold to 15, which is the band this journey is in",
             "hover the centre of published cell (282, 126): "
             f"lon {-79.0622862}, lat {35.9026751}",
+            "note that this is the published cell's centre, which is about 41.5 m from the UTM "
+            "cell centre the 810.8 s was computed at. They are different points and neither is "
+            "a door",
             "the card's own heading states the cell it is describing, so the reading can be "
             "checked without trusting the pointer arithmetic",
         ],
@@ -96,7 +107,9 @@ def main() -> None:
                     "numbers index the UTM GridSpec the pipeline computes on. The published "
                     "raster is a WGS84 lon/lat grid with its own indexing and also has a cell "
                     "(286, 129), about 400 m away, and the sheet's own lon/lat columns were "
-                    "unused.",
+                    "unused. Codex pass 55 confirmed the cause by rebuilding the UTM grid: the "
+                    "sheet coordinate is the rounded centre of UTM cell (286, 129) and falls in "
+                    "published cell (282, 126).",
                 "why_it_mattered":
                     "The probe's own text called its card 'the one a person can check against a "
                     "walk'. The two cells do not agree about anything a walker would check.",
@@ -132,18 +145,27 @@ def main() -> None:
                      "destination_named": "Hill's Family Asian Markets",
                      "restricted": "the restricted-route warning is rendered"},
             "so":
-                "the re-walk's precondition is met: the page shows what the record says it "
-                "should, at the cell the door is actually in. A walker now has something "
-                "specific to confirm or refute -- 14 minutes to Hill's Family Asian Markets, on "
-                "a route that may use a private way.",
+            "a displayed candidate claim has been identified: at the cell the journey's query "
+            "coordinate falls in, the page shows 14 minutes to Hill's Family Asian Markets on a "
+            "route that may use a private way. CORRECTED 2026-11-16, Codex pass 55 F4: this said "
+            "'the re-walk's precondition is met', which is too broad. The start door still has "
+            "to be chosen inside the cell and recorded -- that is what start_lon/start_lat are "
+            "for and they are still blank. What has been removed is the risk of walking to the "
+            "wrong cell's claim.",
         },
 
         "the_costs_this_session_could_measure": {
             "card_round_trip_one_cell": "0.3 ms last / 0.2 ms median over 17 hovers",
             "card_round_trip_note":
                 "the figure the card plan listed as unverified. It is a real browser message "
-                "round trip, and it matches the order of the Node worker-side measurement "
-                "(0.0002 ms median in the handler). One explainAt per pointer move is free.",
+                "round trip on one desktop, measured between sending the request and receiving "
+                "the reply: it does NOT include the DOM update, so it is not pointer-to-visible "
+                "latency. CORRECTED 2026-11-16, Codex pass 55 F5: this said the figure 'matches "
+                "the order of' the Node worker-side measurement and that one explainAt per "
+                "pointer move is 'free'. 0.2 ms is 1,000 times 0.0002 ms, not the same order, "
+                "and the handler figure excludes the message passing that dominates it. What it "
+                "does support is retaining the current architecture on this desktop: no "
+                "batching and no cached outcome plane are justified by anything measured here.",
             "worker_compute_whole_raster": "7.7 ms last / 9.1 ms median over 20 scripted changes",
         },
 
@@ -159,13 +181,20 @@ def main() -> None:
             "the_control":
                 "frame gaps sampled for ten seconds read 1000, 450, 33, 1000, 1000, 1000, 1000, "
                 "33, 17, 17, 17, 17, 17, 17, 17, 1000, 1017, 1000 ms. The run of 17 ms frames is "
-                "exactly the window in which a screenshot was captured: forcing a capture "
-                "un-throttles the compositor, and the gaps return to 1000 ms after it. So the "
-                "page renders at 60 fps when something is looking at it.",
-            "the_one_untainted_sample":
+                "exactly the window in which a screenshot was captured. CORRECTED 2026-11-16, "
+                "Codex pass 55 F5: this concluded 'the page renders at 60 fps when something is "
+                "looking at it'. The observation is a capture-associated burst of animation-frame "
+                "callbacks; it does not establish product rendering performance, and it does not "
+                "exclude the reading in which the one-second delay is real in that operating "
+                "state and the capture is the intervention. BOTH readings are live. Foreground "
+                "interactive latency is unresolved and needs a person with the window on screen.",
+            "the_one_sample_taken_after_a_capture":
                 "a single manual threshold change made immediately after two screen captures: "
                 "68.9 ms total, 54.8 ms transfer and paint, 13.5 ms compute. n=1, and reported "
-                "as n=1.",
+                "as n=1. CORRECTED 2026-11-16, Codex pass 55 F5: this was called 'untainted'. It "
+                "was taken immediately after the very intervention that is said to change frame "
+                "scheduling, so it is evidence that a faster response occurred, not an "
+                "unconfounded baseline.",
             "to_measure_it_properly":
                 "click Auto-bench with the window actually on screen and read the stats row. "
                 "One click, and it needs a person at the machine rather than a session.",

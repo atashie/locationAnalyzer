@@ -77,13 +77,30 @@ def published_cell(planes: dict, lon: float, lat: float) -> tuple[int, int]:
             int((lon - W) / (E - W) * planes["ncols"]))
 
 
-def test_the_door_is_in_the_cell_the_record_names(doc, planes, sheet_row):
+def test_the_query_coordinate_is_in_the_cell_the_record_names(doc, planes, sheet_row):
     """The sheet's own lon/lat columns, which is what the broken probe failed to read."""
     lon, lat = float(sheet_row["query_lon"]), float(sheet_row["query_lat"])
-    assert (lon, lat) == (-79.062476, 35.902334), "the sheet's door moved"
+    assert (lon, lat) == (-79.062476, 35.902334), "the sheet's query coordinate moved"
     row, col = published_cell(planes, lon, lat)
     named = doc["the_defect_this_reading_found"]["the_cell_the_door_is_in"]["published_cell"]
     assert (row, col) == (named["row"], named["col"]) == (282, 126)
+
+
+def test_no_door_has_been_recorded_for_this_journey(sheet_row):
+    """**Codex pass 55, F4.** For one day this repository called `query_lon`/`query_lat` "the
+    recorded door", in six places including the instruction telling the owner where to walk from.
+
+    It is the journey's query point -- the centre of the UTM cell the time was computed for. The
+    row's start fields are blank, and filling them is the entire purpose of the re-walk. If a
+    door is ever recorded, this test fails and the wording everywhere can finally be made true.
+    """
+    assert sheet_row["start_lon"] == "" and sheet_row["start_lat"] == "", (
+        "a start door has been recorded for band15min_pass-03. The claim that this journey has "
+        "no recorded door is now stale: update s3-12, the probe's text in measure_drawn_pixel.py "
+        "and the walk instruction in the progress note, the audit README and the decision report")
+    assert sheet_row["duration_timed"] == "no"
+    assert sheet_row["destination_used"] == "", (
+        "a destination was recorded; the E3 record may now hold an admissible observation")
 
 
 def test_the_two_cells_that_share_an_index_still_contradict_each_other(doc, planes):
@@ -146,7 +163,16 @@ def test_the_cost_that_was_measured_is_kept_apart_from_the_one_that_was_not(doc)
     control = not_measured["the_control"]
     assert "17" in control and "1000" in control, control
     assert "screenshot" in control, "the control is the capture burst; without it this is a story"
-    assert "n=1" in not_measured["the_one_untainted_sample"]
+    # **Renamed after pass 55 F5.** It was "the_one_untainted_sample", and it was taken
+    # immediately after the capture that is said to change frame scheduling, so "untainted" was
+    # the one word it could not carry.
+    assert "the_one_untainted_sample" not in not_measured, (
+        "the sample is called untainted again; it was taken right after the intervention")
+    sample = not_measured["the_one_sample_taken_after_a_capture"]
+    assert "n=1" in sample
+    assert "not an unconfounded baseline" in sample
+    # And both readings of the 1002 ms must stay on the record, not just the flattering one.
+    assert "BOTH readings are live" in not_measured["the_control"], not_measured["the_control"]
 
 
 def test_the_record_says_what_it_does_not_establish(doc):

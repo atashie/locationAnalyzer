@@ -36,15 +36,21 @@
    * that makes the number wrong. It makes "is satisfied here" a stronger claim than the evidence,
    * and the household who acts on it is the one who then never checks.
    *
-   * **The two negative headlines are left as they were, and that is the owner's call to
-   * revisit.** They are the same kind of claim, stated the same way. `ESTIMATE_NOTE` is printed
-   * under ALL THREE for that reason: a card that hedged only its affirmative verdict would
-   * present an exclusion as the more certain answer, which is a new asymmetry rather than a
-   * repair.
+   * **The exclusion headline was hedged a day later, by pass 55.** It was left categorical on
+   * 2026-11-16 on the reasoning that `ESTIMATE_NOTE` under all three verdicts covered it. That
+   * reasoning was wrong twice over: the categorical sentence is the headline and the
+   * qualification is smaller and muted beneath it, and "times are estimates" does not qualify an
+   * exclusion at all when its cause is a destination we never held. An omitted shop produces a
+   * confident FAIL with no numerical uncertainty anywhere in it. Hedging inclusions alone made
+   * an exclusion read as the more certain answer -- the exact asymmetry the note was supposed to
+   * prevent.
+   *
+   * UNKNOWN is left alone and that is deliberate: "We cannot say" is already a statement about
+   * our state of knowledge, not about the place.
    */
   const VERDICT_TEXT = {
     INCLUDED: 'The model estimates this cell meets your limits.',
-    EXCLUDED: 'At least one criterion is not satisfied here.',
+    EXCLUDED: 'Our model rules this cell out for at least one of your limits.',
     UNKNOWN: 'We cannot say. At least one criterion does not know, and none has ruled this out.',
   };
 
@@ -57,11 +63,28 @@
    * "nothing displays it", and this card displays it. So the word has to carry it, and "rounded"
    * alone would read as "to the nearest".
    *
+   * **"A nearby grid point", NOT "the centre of this cell"** -- Codex pass 55, finding F1. This
+   * said "measured from the centre of this cell" for one day, and that named the wrong point.
+   * The card's cell is a cell of the PUBLISHED raster, a WGS84 lon/lat grid. The seconds were
+   * computed at the centre of a **UTM** cell (`build_layer_surface` -> `grid.cell_centers_xy()`)
+   * and the published raster is a NEAREST reprojection of that grid, so a published cell carries
+   * a time measured at some UTM cell's centre -- a median **39.9 m** from the published cell's
+   * own centre, p90 55.8 m, up to the half-diagonal bound of **70.6 m**. That is the same order
+   * as the 36 m placement displacement this page was built to measure.
+   *
+   * The sentence was wrong in the direction that matters: it answers "where does this journey
+   * begin?", and a walker who took it literally would start from the wrong point and read the
+   * difference as routing error. Naming the real origin would mean carrying the source cell's
+   * identity through the reprojection, which the wire format does not do.
+   *
+   * It also now says **"not your address"**, which is the fact a household actually needs: a
+   * structure can be another 70.7 m from the point we answered for.
+   *
    * It is not printed for `outside`, `notComputed` or no criteria, because there is no time on
    * those cards to qualify.
    */
-  const ESTIMATE_NOTE = 'Times are estimates: measured from the centre of this cell, and rounded '
-    + 'up to the whole minute.';
+  const ESTIMATE_NOTE = 'Times are model estimates for a nearby grid point, not your address, '
+    + 'and are rounded up to the whole minute.';
 
   /** Everything below comes from a published artifact, so it is escaped rather than trusted: a
    *  place name is upstream data and reaches the DOM as text. */

@@ -262,9 +262,11 @@ the existential fifteen-minute claim for that cell. `witness_within_15min` is `n
 > time it came up, and the first two attempts got it wrong in opposite directions (Codex passes
 > 46 and 47).
 >
-> **One repeat walk clears it**: a door inside the cell at lon -79.062476, lat 35.902334 — the
-> `query_lon`/`query_lat` of that row — a timer, the shop you reached with a pin on it, and a line
-> saying which way you went.
+> **One repeat walk clears it**: a door you choose inside the cell whose query coordinate is
+> lon -79.062476, lat 35.902334 — the `query_lon`/`query_lat` of that row, which is the centre of
+> the UTM cell the time was computed for and **not** a recorded door; this row's `start_lon` and
+> `start_lat` are blank, and filling them is the point. Then a timer, the shop you reached with a
+> pin on it, and a line saying which way you went.
 >
 > *(Added 2026-11-16: this said "a door inside cell (286, 129)". That is this sheet's own `row`
 > and `col`, which index the UTM grid the pipeline computes on. The published raster is a WGS84

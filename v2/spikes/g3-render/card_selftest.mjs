@@ -318,16 +318,29 @@ check('the words are the ones pass 54 asked for, pinned here because nothing els
   //    `grid.cell_centers_xy()` and not a door.
   assert(C.VERDICT_TEXT.INCLUDED === 'The model estimates this cell meets your limits.',
     C.VERDICT_TEXT.INCLUDED);
-  assert(C.ESTIMATE_NOTE === 'Times are estimates: measured from the centre of this cell, and '
-    + 'rounded up to the whole minute.', C.ESTIMATE_NOTE);
+  assert(C.VERDICT_TEXT.EXCLUDED === 'Our model rules this cell out for at least one of your '
+    + 'limits.', C.VERDICT_TEXT.EXCLUDED);
+  assert(C.ESTIMATE_NOTE === 'Times are model estimates for a nearby grid point, not your '
+    + 'address, and are rounded up to the whole minute.', C.ESTIMATE_NOTE);
   assert(/rounded up/.test(C.ESTIMATE_NOTE), C.ESTIMATE_NOTE);
   assert(!/nearest/.test(C.ESTIMATE_NOTE), `the encoding is ceil, not round: ${C.ESTIMATE_NOTE}`);
-  assert(/centre of this cell/.test(C.ESTIMATE_NOTE), C.ESTIMATE_NOTE);
-  // And the sentence it replaced reaches no card at all, under any verdict.
+  assert(/not your address/.test(C.ESTIMATE_NOTE), C.ESTIMATE_NOTE);
+  // **The retired false claim, pinned as retired** -- pass 55 F1. The note said "measured from
+  // the centre of this cell" for one day. The card's cell is a PUBLISHED cell; the time was
+  // measured at a UTM cell centre a median 39.9 m away, up to 70.6 m. If that phrasing ever
+  // comes back it is a false statement about where a journey starts, so it is checked for by
+  // name rather than left to a reviewer to notice again.
+  assert(!/centre of this cell/.test(C.ESTIMATE_NOTE),
+    `the note names the displayed cell's centre, which is not where the time was measured: `
+    + C.ESTIMATE_NOTE);
+  // And the two sentences these replaced reach no card at all, under any verdict.
   for (const name of Object.keys(C.VERDICT_TEXT)) {
     const html = C.renderCardHTML(reply([crit({})], { verdictName: name }));
     assert(!html.includes('Every criterion you have on is satisfied here'),
       `${name} still asserts satisfaction as a fact about the place: ${html}`);
+    assert(!html.includes('At least one criterion is not satisfied here'),
+      `${name} still asserts an exclusion as a fact about the place: ${html}`);
+    assert(!html.includes('centre of this cell'), `${name}: ${html}`);
   }
 });
 

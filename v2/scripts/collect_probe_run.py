@@ -50,12 +50,18 @@ def collect(log: pathlib.Path, stamp: str) -> dict:
         i, n = int(m.group(2)), int(m.group(3))
         total = n if total is None else total
         assert n == total, f"chunk {i} says {n} chunks, an earlier one said {total}"
+        # **Reject an index outside the declared range** -- Codex pass 55, F9. Without this a
+        # complete `n=1` payload plus a stray `i=99,n=1` was accepted, the extra chunk silently
+        # ignored, and the result reported as a clean collection. A collector whose job is to
+        # move evidence must refuse anything it cannot account for, not quietly drop it.
+        assert 0 <= i < total, f"chunk index {i} is outside the declared range 0..{total - 1}"
         assert i not in chunks, f"chunk {i} arrived twice; the log holds two runs for this stamp"
         chunks[i] = m.group(4)
 
     assert total is not None, f"no chunks for stamp {stamp} in {log.name}"
     missing = [i for i in range(total) if i not in chunks]
     assert not missing, f"missing chunks: {missing} of {total}"
+    assert len(chunks) == total, f"{len(chunks)} chunks for a payload declaring {total}"
     encoded = "".join(urllib.parse.unquote(chunks[i]) for i in range(total))
     return json.loads(urllib.parse.unquote(encoded))
 

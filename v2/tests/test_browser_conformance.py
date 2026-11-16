@@ -80,6 +80,7 @@ def test_the_card_says_the_right_thing_including_what_it_declines_to_say():
 
 
 CARD_JS = SPIKE / "card.js"
+PUBLISHED_MANIFEST = SPIKE / "fixtures" / "published" / "manifest.json"
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not on PATH")
@@ -112,10 +113,15 @@ def test_the_cards_estimate_note_is_the_encoders_own_rounding_rule():
     assert int(np.rint(601.0 / 60.0)) == 10, "the control for what 'to the nearest' would claim"
     assert "ceil" in ENCODING, ENCODING
 
+    # **This check used to license the wrong sentence** -- pass 55 F1. It asserts that the
+    # producer evaluates SOURCE cell centres, which is true, and that was used to justify the
+    # card saying "measured from the centre of this cell". The card's cell is a cell of the
+    # REPROJECTED raster, which is a different grid. The fact is right; the sentence it was
+    # quoted in support of was not. Both halves are now checked.
     src = inspect.getsource(build_layer_surface)
     assert "cell_centers_xy()" in src, (
-        "the published seconds are no longer evaluated at cell centres, so the card's "
-        "'from the centre of this cell' is now a false claim")
+        "the published seconds are no longer evaluated at source cell centres, so the card's "
+        "'a nearby grid point' no longer describes anything")
 
     # The card, from the running file rather than a transcription of it.
     script = (
@@ -132,7 +138,11 @@ def test_the_cards_estimate_note_is_the_encoders_own_rounding_rule():
         f"the encoder rounds up and the card does not say so: {card['note']!r}")
     assert "nearest" not in card["note"], (
         f"the encoder is ceil, so 'nearest' overstates its own accuracy: {card['note']!r}")
-    assert "centre of this cell" in card["note"], card["note"]
+    assert "not your address" in card["note"], card["note"]
+    assert "centre of this cell" not in card["note"], (
+        "the card names the displayed cell's centre as the measurement origin again; "
+        "test_the_displayed_cells_centre_is_not_where_the_time_was_measured says how far that is "
+        "from the truth")
 
     # And the headline is a claim about the model, not about the place. The sentence it replaced
     # is recorded here because it is what a reader of `docs/experiments/s3-11/` sees on the
@@ -141,6 +151,53 @@ def test_the_cards_estimate_note_is_the_encoders_own_rounding_rule():
     assert "satisfied here" not in card["included"], (
         "the affirmative headline asserts a fact about the place again; pass 54 asked for a "
         "statement about the model")
+
+
+def test_the_displayed_cells_centre_is_not_where_the_time_was_measured():
+    """**The measurement behind pass 55 F1**, so the card's wording cannot drift back.
+
+    The card names a cell. That cell is a cell of the PUBLISHED raster -- WGS84 lon/lat, 514 x
+    643. The seconds were computed at the centres of a **UTM** grid of 100 m squares, and the
+    published raster is a NEAREST reprojection of it (the manifest's own `note` says so). So a
+    published cell carries a time measured at some UTM cell's centre, and that point is not the
+    published cell's centre.
+
+    This measures the gap instead of arguing about it. If it ever collapses -- if the publication
+    stops being a reprojection, or the two grids are aligned -- "the centre of this cell" becomes
+    sayable again and this test will say so by failing.
+    """
+    pyproj = pytest.importorskip("pyproj")
+    manifest = PUBLISHED_MANIFEST
+    if not manifest.exists():
+        pytest.skip("run scripts/export_published_layers.py to build the bundle")
+    man = json.loads(manifest.read_text(encoding="utf-8"))
+    entry = next(l for l in man["layers"] if l["id"] == "own_triangle_grocery_walk")
+    cell_m = float(entry["cell_m"])
+    assert "Reprojected from UTM" in man["note"], (
+        "the publication no longer declares itself a reprojection, so this test's premise is "
+        "no longer established by the artifact")
+
+    import numpy as np
+
+    nrows, ncols = man["nrows"], man["ncols"]
+    west, south, east, north = man["bounds_wgs84"]
+    # Every 7th centre: enough to characterise the distribution, fast enough for a unit test.
+    lons = west + (np.arange(0, ncols, 7) + 0.5) * (east - west) / ncols
+    lats = north - (np.arange(0, nrows, 7) + 0.5) * (north - south) / nrows
+    to_utm = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:32617", always_xy=True)
+    LON, LAT = np.meshgrid(lons, lats)
+    x, y = to_utm.transform(LON.ravel(), LAT.ravel())
+    # Distance from each published centre to the centre of the 100 m square it falls in. The
+    # source grid's origin phase does not matter: NEAREST takes the nearest source centre.
+    gap = np.hypot(np.mod(x, cell_m) - cell_m / 2.0, np.mod(y, cell_m) - cell_m / 2.0)
+
+    assert np.median(gap) > 20.0, (
+        f"the two grids now agree to within {np.median(gap):.1f} m at the median, so the card "
+        "could say 'the centre of this cell' again -- check before loosening the wording")
+    assert gap.max() > 60.0, gap.max()
+    assert gap.max() <= cell_m * 2 ** 0.5 / 2 + 1e-6, (
+        f"{gap.max():.2f} m exceeds half the {cell_m:.0f} m diagonal, so this is not the "
+        "offset it is supposed to be measuring")
 
 
 CONTROL = SPIKE / "byteswap_control.mjs"
