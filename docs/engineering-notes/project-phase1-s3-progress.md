@@ -266,6 +266,10 @@ Pointers where the reasoning is recorded; the rule itself is here so it cannot b
   always pass `--model gpt-6.1-sol` instead.
 * **Prose:** short, plain, concrete sentences. The owner rejected decorated writing in those words.
   Do not write a sentence whose meaning cannot be checked.
+* **Replies to the owner, 2026-11-16:** plain English, bullet points wherever they fit, and
+  **always split next steps into two labelled lists** — what the session plans to do and why,
+  against what needs the owner's decision, approval or hands. Their words: *"I don't like how we
+  are communicating with each other."* See [[feedback-autonomous-work-style]].
 
 ## Runtime constraints that cost real time to rediscover
 
