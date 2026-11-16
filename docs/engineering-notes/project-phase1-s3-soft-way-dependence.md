@@ -104,6 +104,65 @@ taken against this table and the table still describes the extract we now have.
 > hypothesis, not a verified explanation, and it is recorded unverified rather than asserted. I
 > made the opposite mistake earlier the same day with the staleness monotonicity claim.
 
+## The approach, way by way, with the tags read from OSM — 2026-11-16
+
+The owner asked: *"I wonder if you are again routing to Edwards Street across property boundaries
+instead of linking to Dogwood or Westwood Drive — it is not possible to walk directly to Edwards St
+or S Merritt Mill rd."*
+
+**Edwards Street is not in the route.** It is 262.9 m west of the query point and the model never
+uses it. Neither is the route reaching South Merritt Mill Road directly: it joins that road at a
+normal junction about 250 m north of the cell, by way of Raintree Lane and Locust Court.
+
+What it does instead is leave the cell on **297.9 m of unnamed dirt**, and `explain_journey.py`
+could not previously name the ways, so this could not be checked against the ground or against
+osm.org. It prints the OSM way id on every hop now, plus an approach section with coordinates.
+
+| hop | m | way | highway | tags | penalty |
+|---|---|---|---|---|---|
+| 1 | 50.2 | 1254722642 | `track` | `access=private` `motor_vehicle=no` `surface=dirt` `tracktype=grade4` | +120 s |
+| 2 | 17.7 | 1254722641 | `track` | same | +120 s |
+| 3 | 91.6 | 1254722641 | `track` | same | +120 s |
+| 4 | 138.4 | 1343881800 | `path` | `informal=yes` `trail_visibility=bad` `smoothness=bad` `surface=dirt` `width=1` | **none** |
+| 5 | 77.1 | 16707130 | Raintree Lane `residential` | — | none |
+
+Walking order, from the matched point: **35.902606/-79.062699** west, then north along the track to
+**35.903565/-79.063239**, then north-west on the path to Raintree Lane at
+**35.904141/-79.064191**.
+
+**The 138.4 m that completes the shortcut costs nothing.** Way 1343881800 carries no access tag, so
+`classify_access` returns OPEN and `access_penalty_s` returns 0. It is tagged `informal=yes` —
+OSM's word for a trail worn by use rather than built — with `trail_visibility=bad`, `smoothness=bad`
+and `width=1`. **None of those four tags is in `EXTRA_WAY_TAGS`**, so no rule in this project can
+read any of them; to the model it is an ordinary path. The 2026-11-10 revision of this note flagged
+`informal` as the tag we had not extracted (449 ways). This is that gap, on the one journey anybody
+has walked, carrying 46% of the approach for free. Only **159.5 m of the 297.9 m is penalised at
+all.**
+
+**A locked gate exists on this track network, and it is not on the route.** Way 1254722641 carries
+node 11663898537, tagged `barrier=gate` `locked=yes` `material=metal`, at 35.904322/-79.062641. The
+route traverses that way between its node indices 7 and 11; the gate is at index 17, about 200 m
+further north, past the point where the route turns off onto the informal path. Two `ford=yes`
+nodes on the same way, and one on way 430448289, are likewise off the traversed stretch. **The gate
+does not block this journey.** It is recorded because checking the node order rather than the way
+is the only reason this is not written the other way round — an OSM way is not a route, and ledger
+instance 52 was exactly this mistake made in the opposite direction.
+
+**Remove the tracks and the model goes where the owner says it must.** `--drop track`, keeping
+paths, re-snaps the cell to a footway 46.0 m out and routes **Chase Park Road → Dogwood Drive →
+Woodland Avenue → Westwood Drive** and onward. Both streets the owner named, in order. The informal
+path is no shortcut on its own, because it is only reachable across the tracks: dropping `track`
+alone is enough to end it. **The private dirt tracks are the whole mechanism.** That run is not a
+like-for-like comparison of times — it also changes the destination to Seal The Seasons and totals
+29.8 min — and the comparable figure remains the one below: **1.3297 miles, 25.55 minutes** holding
+Hill's Family Asian Markets fixed, against the owner's 1.3 miles and about 25 minutes.
+
+**What this does not establish.** Whether a person can walk hops 1 to 4 on the ground. OSM says
+three of them are private dirt and the fourth is a faint informal trail, and the owner says the
+link is not walkable. Both are consistent with the model being wrong here, and neither is a
+measurement. The walk is still the thing that settles it, and the approach above is what to check,
+hop by hop.
+
 ## Removing highway classes measures tag sensitivity, not usability
 
 Revision 1 presented a `{track, path}` exclusion as measuring dependence on "ways whose existence on

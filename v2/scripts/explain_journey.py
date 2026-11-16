@@ -257,6 +257,10 @@ def main() -> int:
     hops = 0
     node = chosen
     names = Counter()
+    # Per-hop detail, kept so the approach can be printed with coordinates and tags. The owner
+    # asked which way the route uses to leave the cell and whether it crosses property; the street
+    # names alone could not answer that, because the ways in question are unnamed.
+    hop_rows: list[dict] = []
     while True:
         p = int(pred[node])
         if p == NO_PREDECESSOR:
@@ -286,9 +290,26 @@ def main() -> int:
             restricted_m += length
         hops += 1
         names[edge_name(best or {})] += 1
+        hop_rows.append({
+            "n": hops,
+            "length": length,
+            "secs": secs,
+            "name": edge_name(best or {}),
+            "named": bool((best or {}).get("name")),
+            "klass": klass,
+            "penalty": penalty,
+            "way": (best or {}).get("osmid"),
+            "access": (best or {}).get("access"),
+            "surface": (best or {}).get("surface"),
+            "from_node": u,
+            "to_node": v,
+            "from_xy": (G.nodes[u]["x"], G.nodes[u]["y"]),
+            "to_xy": (G.nodes[v]["x"], G.nodes[v]["y"]),
+        })
         if hops <= 40:
             mark = f"  {klass.upper()} +{penalty:.0f}s cost" if penalty else ""
-            print(f"  {hops:>3}. {length:7.1f} m  {secs:6.1f} s  {edge_name(best or {})}{mark}")
+            print(f"  {hops:>3}. {length:7.1f} m  {secs:6.1f} s  {edge_name(best or {})}"
+                  f"  way {(best or {}).get('osmid')}{mark}")
         node = p
     if hops > 40:
         print(f"  ... {hops - 40} more segments")
@@ -325,6 +346,38 @@ def main() -> int:
     print(f"\n  streets used, most segments first:")
     for name, n in names.most_common(12):
         print(f"    {n:>3}x  {name}")
+
+    # ---- the approach, hop by hop, in lat/lon ------------------------------------------------
+    # Everything up to and including the first hop on a NAMED way. That is the stretch a walker
+    # has to find on the ground, it is where this journey's whole disagreement with the owner's
+    # walk lives, and it is unnamed in OSM, so a street list cannot describe it.
+    first_named = next((r["n"] for r in hop_rows if r["named"]), len(hop_rows))
+    approach = [r for r in hop_rows if r["n"] <= first_named]
+    if approach:
+        pts = [shapely.points([r["from_xy"][0]], [r["from_xy"][1]])[0] for r in approach]
+        pts.append(shapely.points([approach[-1]["to_xy"][0]], [approach[-1]["to_xy"][1]])[0])
+        ll = gpd.GeoSeries(pts, crs=GRID.crs).to_crs("EPSG:4326")
+        print(f"\n--- the approach: {len(approach)} hops to the first named street "
+              f"({approach[-1]['name']}) ---")
+        print("  Each row is one OSM way segment the model assumes you can walk. Check them on"
+              " the ground.")
+        for i, r in enumerate(approach):
+            tags = []
+            if r["access"]:
+                tags.append(f"access={r['access']}")
+            if r["surface"]:
+                tags.append(f"surface={r['surface']}")
+            print(f"  {r['n']:>3}. {r['length']:7.1f} m  {r['name']}  way {r['way']}"
+                  f"{('  ' + ' '.join(tags)) if tags else ''}"
+                  f"{'  PENALISED +%.0fs' % r['penalty'] if r['penalty'] else ''}")
+            print(f"       from  lat {ll.iloc[i].y:.6f}, lon {ll.iloc[i].x:.6f}"
+                  f"   (node {r['from_node']})")
+        print(f"       to    lat {ll.iloc[-1].y:.6f}, lon {ll.iloc[-1].x:.6f}"
+              f"   (node {approach[-1]['to_node']})")
+        app_m = sum(r["length"] for r in approach)
+        print(f"  approach total    {app_m:,.1f} m, "
+              f"{sum(r['secs'] for r in approach):,.1f} s, of which "
+              f"{sum(r['length'] for r in approach if r['penalty']):,.1f} m is restricted")
     return 0
 
 
