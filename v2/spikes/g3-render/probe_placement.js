@@ -20,6 +20,12 @@
  *     eval(<contents of this file>);
  *     await g3RunPlacementProbe(<contents of s3-10-drawn-pixel.json>, { hover: true });
  *
+ * Two notes for a session loading this into a page, both learned the hard way on 2026-11-15:
+ * the file is strict-mode, so `eval` keeps the function in the eval's own scope and
+ * `window.g3RunPlacementProbe` stays undefined -- append a <script src> instead. And the oracle
+ * lives outside the served directory, so copy it in beside the page for the run and delete it
+ * afterwards rather than committing a second copy that can drift from the first.
+ *
  * `hover` dispatches a real pointer move at each probe's screen position and reads the card the
  * page renders, so the comparison covers the words a household gets and not only the geometry.
  */
@@ -34,6 +40,18 @@ async function g3RunPlacementProbe(oracle, options) {
   const r7 = (n) => Math.round(n * 1e7) / 1e7;
   const same = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length
     && a.every((v, i) => v === b[i]);
+  /** Two paintings of the same cell, compared the way a canvas can actually answer.
+   *
+   *  A browser canvas stores a translucent pixel PREMULTIPLIED by its alpha in eight bits, so
+   *  `getImageData` cannot hand back the byte that was written: the page's own blue
+   *  (24,119,242,150) reads back as (24,119,241,150) and its hatch grey (60,60,60,130) as
+   *  (61,61,61,130). Measured in Chrome, with opaque pixels in the same call as the control --
+   *  those return exactly. So colour is compared to within one count per channel and the exact
+   *  bytes stay in the record. ALPHA is not quantised and is compared exactly, and alpha is what
+   *  separates included (150) from nodata (130) from excluded (0), so nothing a household reads
+   *  as in or out rests on the tolerance. */
+  const sameColour = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length
+    && a[3] === b[3] && a.slice(0, 3).every((v, i) => Math.abs(v - b[i]) <= 1);
 
   if (!P) return { ran: false, why: 'window.G3Probe is absent: this page predates the probe accessor' };
   if (!C) return { ran: false, why: 'window.G3Card is absent: card.js did not load' };
@@ -73,14 +91,47 @@ async function g3RunPlacementProbe(oracle, options) {
   const canvas = document.querySelector('#map canvas');
   const rect = P.canvasRect();
 
-  /** Move a real pointer to a screen position and wait for the card the page renders there. */
-  const hoverAndRead = async (x, y) => {
+  /** Where the pointer can actually be put, which is not where the probe points.
+   *
+   *  `MouseEvent`'s clientX/clientY are IDL `long`, so a fractional value is TRUNCATED when the
+   *  event is constructed -- measured in Chrome, 464.378 arrives as 464. A cell is about a cell
+   *  and a half of screen pixel at a whole-footprint view, so the nearest whole pixel to a probe
+   *  point can sit in the next cell, and a card read there is a card about somewhere else.
+   *
+   *  So the whole pixel is chosen deliberately rather than left to the truncation: the nearest
+   *  one whose OWN coordinates resolve to the cell this probe is about. If no pixel in the
+   *  neighbourhood does, the hover cannot be placed on this cell at this zoom; that is recorded
+   *  as a disagreement rather than passed over, because the oracle's expectation for this probe
+   *  then went unchecked. */
+  const placePointer = (x, y, wantCell) => {
+    const cands = [];
+    for (const dx of [0, -1, 1]) {
+      for (const dy of [0, -1, 1]) {
+        const ix = Math.round(rect.left + x) + dx;
+        const iy = Math.round(rect.top + y) + dy;
+        const cx = ix - rect.left;
+        const cy = iy - rect.top;
+        const at = P.unproject(cx, cy);
+        const cell = C.cellForLonLat(grid.bounds, grid.ncols, grid.nrows, at.lon, at.lat);
+        const hit = wantCell
+          ? Boolean(cell) && cell.row === wantCell.row && cell.col === wantCell.col
+          : !cell;
+        cands.push({ ix, iy, cx, cy, cell, hit, d2: (cx - x) ** 2 + (cy - y) ** 2 });
+      }
+    }
+    cands.sort((a, b) => a.d2 - b.d2);
+    const chosen = cands.find((c) => c.hit) || cands[0];
+    return { ...chosen, placed_on_the_probe_cell: Boolean(chosen.hit) };
+  };
+
+  /** Move a real pointer to a whole screen pixel and wait for the card the page renders there. */
+  const hoverAndRead = async (ix, iy) => {
     const cardEl = document.getElementById('card');
     const cellEl = document.getElementById('card-cell');
     const before = cardEl.innerHTML;
     canvas.dispatchEvent(new MouseEvent('mousemove', {
       bubbles: true, cancelable: true, view: window,
-      clientX: rect.left + x, clientY: rect.top + y,
+      clientX: ix, clientY: iy,
     }));
     const deadline = Date.now() + 4000;
     let text = cardEl.textContent;
@@ -134,12 +185,12 @@ async function g3RunPlacementProbe(oracle, options) {
       }
       rec.rgba_of_the_cell_the_card_names = P.maskPixel(card.col, card.row);
       rec.rgba_under_the_pointer = P.maskPixel(d.col, d.row);
-      if (!same(rec.rgba_of_the_cell_the_card_names,
-                probe.expected_card.rgba_of_the_cell_the_card_names)) {
+      if (!sameColour(rec.rgba_of_the_cell_the_card_names,
+                      probe.expected_card.rgba_of_the_cell_the_card_names)) {
         note('the painted input for the card\'s cell', rec.rgba_of_the_cell_the_card_names,
              probe.expected_card.rgba_of_the_cell_the_card_names);
       }
-      if (!same(rec.rgba_under_the_pointer, probe.expected_rgba_under_the_pointer)) {
+      if (!sameColour(rec.rgba_under_the_pointer, probe.expected_rgba_under_the_pointer)) {
         note('the painted input under the pointer', rec.rgba_under_the_pointer,
              probe.expected_rgba_under_the_pointer);
       }
@@ -154,16 +205,29 @@ async function g3RunPlacementProbe(oracle, options) {
     }
 
     if (opts.hover) {
+      const spot = placePointer(scr.x, scr.y, expected);
       // eslint-disable-next-line no-await-in-loop
-      const seen = await hoverAndRead(scr.x, scr.y);
+      const seen = await hoverAndRead(spot.ix, spot.iy);
       rec.hover = seen;
-      const wanted = expected ? `(row ${expected.row}, col ${expected.col})` : '';
-      if (expected && seen.cell_label.trim() !== wanted) {
+      rec.hover.pointer_landed_at = { x: r3(spot.cx), y: r3(spot.cy) };
+      rec.hover.pixels_from_the_probe_point = { x: r3(spot.cx - scr.x), y: r3(spot.cy - scr.y) };
+      rec.hover.cell_under_the_pixel_the_pointer_reached = spot.cell;
+      rec.hover.placed_on_the_probe_cell = spot.placed_on_the_probe_cell;
+      // The card is judged against the cell the pointer REACHED, which the page must name
+      // correctly wherever it is. Whether that is the cell the oracle asked about is the
+      // separate question above it.
+      const wanted = spot.cell ? `(row ${spot.cell.row}, col ${spot.cell.col})` : '';
+      if (spot.cell && seen.cell_label.trim() !== wanted) {
         note('the cell label the card shows', seen.cell_label, wanted);
       }
-      if (!expected && !/Outside the published area/.test(seen.card_text)) {
+      if (!spot.cell && !/Outside the published area/.test(seen.card_text)) {
         note('the card for a point outside the footprint', seen.card_text,
              'Outside the published area.');
+      }
+      if (!spot.placed_on_the_probe_cell) {
+        note('whether any whole screen pixel lands on this probe\'s cell at this zoom',
+             `the nearest one lands on ${JSON.stringify(spot.cell)}`,
+             `a pixel on ${JSON.stringify(expected)}`);
       }
     }
     probes.push(rec);

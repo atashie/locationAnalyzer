@@ -1,0 +1,649 @@
+{
+ "what_this_is": "the first time a browser has drawn this publication, and the browser half of queue item 3. s3-10 measured in Python where the page WOULD draw the raster and wrote eleven probes with their expected answers before any browser ran. This is that oracle read back off a live page: the cell the card names, the cell the picture paints, the colour of both, and the words a household gets on hover.",
+ "when": "2026-11-15",
+ "where": {
+  "page": "http://localhost:8099/ serving v2/spikes/g3-render from the working tree",
+  "browser": "Chrome 157.0.0.0 on Windows (devicePixelRatio 1, viewport 1920x855)",
+  "map": "MapLibre GL JS 5.24.0, north-up, untilted",
+  "threshold": "the page default, 20 minutes, on the single published layer"
+ },
+ "oracle": "docs/experiments/s3-10-drawn-pixel.json, written 2026-11-15 before this ran",
+ "how_to_reproduce": [
+  "serve v2/spikes/g3-render on loopback",
+  "append <script src='probe_placement.js'> to the page (NOT eval: the file is strict-mode so eval keeps the function in its own scope)",
+  "fetch the oracle and call g3RunPlacementProbe(oracle, { hover: true })",
+  "the run takes under nine seconds and touches nothing: G3Probe cannot set a threshold, enable a layer, move the map or render a card"
+ ],
+ "the_first_run_found_two_defects_in_the_instrument_and_none_in_the_page": {
+  "what_happened": "the first run reported 14 disagreements with the oracle. Every one of them was in the instrument. The GEOMETRY agreed at all eleven probes on that first run, including the three sensitive ones, and nothing about the geometry was changed afterwards.",
+  "defect_1_translucent_colour_cannot_be_read_back": {
+   "symptom": "the page's blue read back (24,119,241,150) where the oracle said (24,119,242,150), and its hatch grey (61,61,61,130) where the oracle said (60,60,60,130)",
+   "cause": "a canvas stores a translucent pixel premultiplied by alpha in eight bits, so getImageData cannot return the byte that was written",
+   "control_run_in_the_same_call": "two OPAQUE pixels written and read in the same canvas came back exactly, which is what makes this premultiplication rather than a painting error",
+   "fix": "colour is compared to within one count per channel and alpha exactly; alpha is what separates included (150) from nodata (130) from excluded (0), so nothing a household reads as in or out rests on the tolerance",
+   "proof_the_tolerance_did_not_blind_it": "a new self-test check shifts a channel by three counts and requires it to be caught"
+  },
+  "defect_2_the_pointer_cannot_be_put_on_a_sub_pixel_point": {
+   "symptom": "the hover read a card for the cell one column west, or one row north, of the probe: '(row 100, col 72)' for a probe about (100, 73), '(row 200, col 124)' for a probe about (201, 124), and 'outside the published area' at two corners",
+   "cause": "MouseEvent's clientX/clientY are IDL `long`, so a fractional value is truncated when the event is constructed. Measured: 464.378 arrives as 464",
+   "why_it_mattered_here": "at the whole-footprint view one screen pixel is 0.671 of a row, so losing up to a pixel moves the reading up to two thirds of a cell -- and every probe worth having sits on a cell boundary",
+   "fix": "the whole pixel is now chosen deliberately: the nearest one whose own coordinates resolve to the cell the probe is about. If no pixel in the neighbourhood does, the probe records that rather than reading a card for somewhere else"
+  },
+  "disagreements_by_probe_on_the_first_run": {
+   "corner_nw": 3,
+   "corner_ne": 1,
+   "corner_sw": 2,
+   "corner_se": 0,
+   "the_walked_cell": 1,
+   "boundary_north": 2,
+   "boundary_mid": 1,
+   "boundary_south": 1,
+   "inert_interior": 3,
+   "outside_west": 0,
+   "outside_north": 0
+  },
+  "the_lesson": "the Node self-test had stubbed away both behaviours -- its MouseEvent kept fractional coordinates and its maskPixel returned the bytes that were written -- so it proved the instrument could fail at the error I had modelled and said nothing about the two it stood in for. The self-test now reproduces both exactly and is at least as hostile as Chrome."
+ },
+ "the_run": {
+  "ran": true,
+  "oracle": {
+   "what": "the DRAWN pixel against the PUBLISHED pixel, which is the first of the two steps Codex pass 54 asked be kept apart. Both grids are the shipped 514 x 643 raster; the only thing that changes is which row MapLibre paints at a latitude",
+   "max_offset_rows": 0.3656,
+   "max_offset_metres": 35.63
+  },
+  "view": {
+   "bearing": 0,
+   "pitch": 0,
+   "corner_screen_y": {
+    "north": 16,
+    "south": 782
+   },
+   "drawn_rows_per_screen_pixel": 0.671
+  },
+  "probes": [
+   {
+    "id": "corner_nw",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 278.3,
+     "y": 16.747
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 0,
+     "col": 0
+    },
+    "drawn_cell": {
+     "row": 0,
+     "col": 0
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     61,
+     61,
+     61,
+     130
+    ],
+    "rgba_under_the_pointer": [
+     61,
+     61,
+     61,
+     130
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 0, col 0)",
+     "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.own_triangle_grocery_walkUNKNOWNmore than 2 min \u00b7 your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 278,
+      "y": 16.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.3,
+      "y": 0.065
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 0,
+      "col": 0
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "corner_ne",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 1241.7,
+     "y": 16.747
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 0,
+     "col": 642
+    },
+    "drawn_cell": {
+     "row": 0,
+     "col": 642
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "rgba_under_the_pointer": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 0, col 642)",
+     "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.own_triangle_grocery_walkUNKNOWNmore than 3 min \u00b7 your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 1242,
+      "y": 16.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": 0.3,
+      "y": 0.065
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 0,
+      "col": 642
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "corner_sw",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 278.3,
+     "y": 781.257
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 513,
+     "col": 0
+    },
+    "drawn_cell": {
+     "row": 513,
+     "col": 0
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     61,
+     61,
+     61,
+     130
+    ],
+    "rgba_under_the_pointer": [
+     61,
+     61,
+     61,
+     130
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 513, col 0)",
+     "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.own_triangle_grocery_walkUNKNOWNmore than 2 min \u00b7 your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 278,
+      "y": 780.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.3,
+      "y": -0.445
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 513,
+      "col": 0
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "corner_se",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 1241.7,
+     "y": 781.257
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 513,
+     "col": 642
+    },
+    "drawn_cell": {
+     "row": 513,
+     "col": 642
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "rgba_under_the_pointer": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 513, col 642)",
+     "card_text": "At least one criterion is not satisfied here.own_triangle_grocery_walkFAIL76 min \u00b7 your limit 20 minThis route uses a way that is not clearly public \u2014 a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to Food Lion",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 1242,
+      "y": 780.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": 0.3,
+      "y": -0.445
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 513,
+      "col": 642
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "the_walked_cell",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 471.881,
+     "y": 443.5
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 286,
+     "col": 129
+    },
+    "drawn_cell": {
+     "row": 286,
+     "col": 129
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "rgba_under_the_pointer": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 286, col 129)",
+     "card_text": "At least one criterion is not satisfied here.own_triangle_grocery_walkFAIL24 min \u00b7 your limit 20 minmeasured to Seal The Seasons",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 472,
+      "y": 443.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": 0.119,
+      "y": 0.312
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 286,
+      "col": 129
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "boundary_north",
+    "sensitive": true,
+    "disagreements": [],
+    "screen": {
+     "x": 387.846,
+     "y": 166.713
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 100,
+     "col": 73
+    },
+    "drawn_cell": {
+     "row": 101,
+     "col": 73
+    },
+    "drawn_minus_published_row": 1,
+    "rgba_of_the_cell_the_card_names": [
+     24,
+     119,
+     241,
+     150
+    ],
+    "rgba_under_the_pointer": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "the_picture_contradicts_the_card_here": true,
+    "hover": {
+     "cell_label": "(row 100, col 73)",
+     "card_text": "Every criterion you have on is satisfied here.own_triangle_grocery_walkPASS20 min \u00b7 your limit 20 minThis route uses a way that is not clearly public \u2014 a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to one of 2 places at this junction: Weaver Street Market, Inc, Weaver Street Market Administration",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 388,
+      "y": 166.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": 0.154,
+      "y": 0.099
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 100,
+      "col": 73
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "boundary_mid",
+    "sensitive": true,
+    "disagreements": [],
+    "screen": {
+     "x": 434.365,
+     "y": 400.886
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 257,
+     "col": 104
+    },
+    "drawn_cell": {
+     "row": 258,
+     "col": 104
+    },
+    "drawn_minus_published_row": 1,
+    "rgba_of_the_cell_the_card_names": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "rgba_under_the_pointer": [
+     24,
+     119,
+     241,
+     150
+    ],
+    "the_picture_contradicts_the_card_here": true,
+    "hover": {
+     "cell_label": "(row 257, col 104)",
+     "card_text": "At least one criterion is not satisfied here.own_triangle_grocery_walkFAIL22 min \u00b7 your limit 20 minmeasured to Mikyins Asian Market",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 434,
+      "y": 400.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.365,
+      "y": -0.074
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 257,
+      "col": 104
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "boundary_south",
+    "sensitive": true,
+    "disagreements": [],
+    "screen": {
+     "x": 590.43,
+     "y": 643.578
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 420,
+     "col": 208
+    },
+    "drawn_cell": {
+     "row": 421,
+     "col": 208
+    },
+    "drawn_minus_published_row": 1,
+    "rgba_of_the_cell_the_card_names": [
+     24,
+     119,
+     241,
+     150
+    ],
+    "rgba_under_the_pointer": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "the_picture_contradicts_the_card_here": true,
+    "hover": {
+     "cell_label": "(row 420, col 208)",
+     "card_text": "Every criterion you have on is satisfied here.own_triangle_grocery_walkPASS20 min \u00b7 your limit 20 minmeasured to Jean's Neighborhood Market",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 590,
+      "y": 642.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.43,
+      "y": -0.766
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 420,
+      "col": 208
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "inert_interior",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 464.378,
+     "y": 316.81
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": {
+     "row": 201,
+     "col": 124
+    },
+    "drawn_cell": {
+     "row": 201,
+     "col": 124
+    },
+    "drawn_minus_published_row": 0,
+    "rgba_of_the_cell_the_card_names": [
+     24,
+     119,
+     241,
+     150
+    ],
+    "rgba_under_the_pointer": [
+     24,
+     119,
+     241,
+     150
+    ],
+    "the_picture_contradicts_the_card_here": false,
+    "hover": {
+     "cell_label": "(row 201, col 124)",
+     "card_text": "Every criterion you have on is satisfied here.own_triangle_grocery_walkPASS12 min \u00b7 your limit 20 minmeasured to Harris Teeter",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 464,
+      "y": 316.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.378,
+      "y": 0.003
+     },
+     "cell_under_the_pixel_the_pointer_reached": {
+      "row": 201,
+      "col": 124
+     },
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "outside_west",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 276.05,
+     "y": 165.369
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": null,
+    "hover": {
+     "cell_label": "",
+     "card_text": "Outside the published area.",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 276,
+      "y": 165.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": -0.05,
+      "y": 0.443
+     },
+     "cell_under_the_pixel_the_pointer_reached": null,
+     "placed_on_the_probe_cell": true
+    }
+   },
+   {
+    "id": "outside_north",
+    "sensitive": false,
+    "disagreements": [],
+    "screen": {
+     "x": 427.612,
+     "y": 14.505
+    },
+    "round_trip_degrees": {
+     "lon": 0,
+     "lat": 0
+    },
+    "card_cell": null,
+    "hover": {
+     "cell_label": "",
+     "card_text": "Outside the published area.",
+     "timed_out": false,
+     "pointer_landed_at": {
+      "x": 428,
+      "y": 14.813
+     },
+     "pixels_from_the_probe_point": {
+      "x": 0.388,
+      "y": 0.307
+     },
+     "cell_under_the_pixel_the_pointer_reached": null,
+     "placed_on_the_probe_cell": true
+    }
+   }
+  ],
+  "disagreements_with_the_oracle": 0,
+  "sensitive_probes": 3,
+  "sensitive_probes_where_the_picture_contradicted_the_card": 3,
+  "what_zero_disagreements_would_mean": "that the page places the raster exactly as measure_drawn_pixel.py predicts, including the sub-row displacement, so the structure counts in that artifact describe the page a household actually gets",
+  "what_this_cannot_see": "an AFFINE placement error. The drawn row is recovered from where the quad's own corners project, so a constant offset or a uniform stretch of the texture cancels out and this probe reports agreement. Only the SHAPE of the placement is visible to it, which is the Mercator-against-latitude question it was built for. Closing the rest needs a rendered pixel: a screenshot at a colour edge, checked against the screen row predicted from corner_screen_y and drawn_rows_per_screen_pixel above."
+ },
+ "the_affine_check_the_probe_declares_it_cannot_make": {
+  "why_it_is_needed": "the probe recovers the drawn row from where the quad's own corners project, so a constant offset or a uniform stretch of the texture cancels and it reports agreement. probe_placement_selftest.mjs asserts that blindness with a page placed a whole row off, and the probe declares it in its own output. Closing it needs a RENDERED pixel.",
+  "method": "zoom in until one raster row is 38 screen pixels, find the row boundary with the most colour transitions in view (row 105/106, eleven columns in three runs), and draw four one-pixel lines across exactly those columns: where MapLibre's quad places the boundary, where the publication places it (linear in latitude), and the same boundary plus and minus one whole row. Then photograph it.",
+  "numbers": {
+   "screen_pixels_per_row": 37.84,
+   "published_minus_drawn_px": 9.08,
+   "published_minus_drawn_rows": 0.2399,
+   "one_row_control_px": 37.84,
+   "row_boundary": "105/106",
+   "columns": [
+    [
+     77,
+     80
+    ],
+    [
+     91,
+     93
+    ],
+    [
+     102,
+     102
+    ]
+   ]
+  },
+  "result": "the painted edge sits on the Mercator line. The latitude line is 9 px south of it, inside ground the page has left unpainted, and the plus and minus one row controls are 38 px away on either side. So the texture is drawn where its corners project, to well inside a row, and the sub-row displacement s3-10 computed is visible in rendered pixels rather than inferred from a projection.",
+  "images": [
+   "docs/experiments/s3-11/colour-edge-against-four-hypotheses.png",
+   "docs/experiments/s3-11/card-at-boundary-north.jpg"
+  ],
+  "what_is_still_judged_by_eye": "the coincidence of the painted edge with the red line is read off an image, not computed: neither virtual environment here has an image library, and a canvas-source page cannot hand back its own rendered pixels. The competing hypotheses are drawn on the same image at 38 px separation, so the reading is coarse but the margin is large. A numeric version would decode the screenshot and fit the edge."
+ },
+ "what_this_establishes": [
+  "the page draws the published raster where measure_drawn_pixel.py predicted, at every one of the eleven probes, including the sub-row displacement",
+  "so the structure counts in s3-10 describe the page a household actually gets: at the 20 minutes the page opens on, 5,801 structures stand where the painted colour contradicts their own card, 2,771 of them painted outside the coloured area although the publication includes them",
+  "all three sensitive probes showed the contradiction in the live page: the card named one cell while the pixel under the pointer was painted from the next row down",
+  "the three disclosures a household is owed were rendered in a browser for the first time, in one card: the cell identity (row 100, col 73), the restricted-route warning, and 'measured to one of 2 places at this junction: Weaver Street Market, Inc, Weaver Street Market Administration'"
+ ],
+ "what_this_does_not_establish": [
+  "anything about a phone: this is one desktop Chrome at devicePixelRatio 1",
+  "anything about the model underneath. The probe compares the page against the publication, not the publication against the ground. The one walked route in the record still disagrees with the model by 20 minutes and that is unchanged",
+  "that 36 m is acceptable. It is now measured, confirmed in a browser and visible in a picture; whether to fix it by regridding in Mercator, by placing the quad per row, or not at all, is the owner's call",
+  "that the card's opening sentence is right. 'Every criterion you have on is satisfied here' is still what it says, and pass 54 asked for 'the model estimates this cell meets your limits'. The screenshot now shows the sentence in a browser"
+ ]
+}

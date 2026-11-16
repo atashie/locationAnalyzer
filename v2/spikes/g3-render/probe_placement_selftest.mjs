@@ -135,12 +135,23 @@ function stubPage(manifest, rgba, placement) {
     }),
     maskPixel: (col, row) => {
       const p = (row * ncols + col) * 4;
-      return [rgba[p], rgba[p + 1], rgba[p + 2], rgba[p + 3]];
+      return quantise([rgba[p], rgba[p + 1], rgba[p + 2], rgba[p + 3]]);
     },
     bearingPitch: () => ({ bearing: 0, pitch: 0 }),
     canvasRect: () => ({ left: 0, top: 0, width: WIDTH, height: HEIGHT }),
   };
 }
+
+/** What a real canvas does to a translucent pixel, and what this file used not to do.
+ *
+ *  A canvas stores colour premultiplied by alpha in eight bits, so a read-back cannot return the
+ *  byte that was written. This reproduces Chrome exactly: the page's blue (24,119,242,150) comes
+ *  back (24,119,241,150) and its hatch grey (60,60,60,130) comes back (61,61,61,130), while
+ *  opaque pixels are untouched. The stub returned the written bytes, so the probe's exact RGBA
+ *  comparison passed here and failed on the first real page. A stub must be at least as hostile
+ *  as the thing it stands in for. */
+const quantise = ([r, g, b, a]) => (a === 0 || a === 255 ? [r, g, b, a]
+  : [r, g, b].map((c) => Math.round(Math.round((c * a) / 255) * (255 / a))).concat(a));
 
 const mercatorY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
 
@@ -215,7 +226,16 @@ function installWindow(card, probe, hover) {
       },
     }),
   };
-  globalThis.MouseEvent = class { constructor(type, init) { Object.assign(this, init); } };
+  // IDL `long`: a fractional clientX is truncated when the event is constructed. Chrome does
+  // this; the stub did not, so the probe's sub-pixel pointer worked here and landed in the wrong
+  // cell on the first real page.
+  globalThis.MouseEvent = class {
+    constructor(type, init) {
+      Object.assign(this, init);
+      this.clientX = Math.trunc(init.clientX);
+      this.clientY = Math.trunc(init.clientY);
+    }
+  };
 }
 
 // ---- the three runs ----------------------------------------------------------------------------
@@ -238,6 +258,8 @@ const linearRun = await runWith('linear');
 const bulgeRun = await runWith('bulge');
 const offsetRun = await runWith('constantOffset');
 const hoverRun = await runWith('mercator', true);
+const rectLeft = 0;
+const rectTop = 0;
 
 check('the oracle declares probes that can fail', () => {
   assert(sensitiveIds.length >= 3, `${sensitiveIds.length} sensitive probes`);
@@ -266,9 +288,13 @@ check('the RGBA it reads is the worker\'s own paint, not the oracle\'s copy of i
   assert(p.rgba_of_the_cell_the_card_names.join() !== p.rgba_under_the_pointer.join(),
     'the two pixels are identical, so this probe cannot show a contradiction');
   const oracleProbe = oracle.probes.find((x) => x.id === sensitiveIds[0]);
-  assert(p.rgba_of_the_cell_the_card_names.join()
-    === oracleProbe.expected_card.rgba_of_the_cell_the_card_names.join(),
-  'the worker paints this cell differently from what the oracle predeclared');
+  // To within the one count per channel that premultiplied alpha costs on a canvas, and with
+  // alpha exact. The bytes are deliberately NOT required to be identical: the stub quantises the
+  // way Chrome does, so a reading that matched the oracle byte for byte would be a copy of it.
+  const oraclePx = oracleProbe.expected_card.rgba_of_the_cell_the_card_names;
+  const read = p.rgba_of_the_cell_the_card_names;
+  assert(read[3] === oraclePx[3] && read.slice(0, 3).every((v, i) => Math.abs(v - oraclePx[i]) <= 1),
+    `the worker paints this cell ${read} where the oracle predeclared ${oraclePx}`);
 });
 
 check('a page with NO displacement is caught, at every sensitive probe', () => {
@@ -335,6 +361,26 @@ check('the hover half reads a real card at every probe, and waits for it', () =>
   assert(/Weaver Street Market/.test(north.hover.card_text), north.hover.card_text);
   assert(/restricted|private/i.test(north.hover.card_text), north.hover.card_text);
   assert(north.hover.cell_label.trim() === '(row 100, col 73)', north.hover.cell_label);
+  assert(north.hover.placed_on_the_probe_cell,
+    'the pointer could not be placed on the probe cell, so this card is about somewhere else');
+  for (const p of hoverRun.probes) {
+    assert(Number.isInteger(p.hover.pointer_landed_at.x + rectLeft)
+      && Number.isInteger(p.hover.pointer_landed_at.y + rectTop),
+    `${p.id}: the pointer was placed on a fractional client pixel, which a browser truncates`);
+  }
+});
+
+check('the colour tolerance does not blind the comparison it loosens', () => {
+  // One count per channel is what premultiplied alpha costs. Three is a different picture, and
+  // must still be caught, or the tolerance has quietly turned the RGBA check off.
+  const base = stubPage(manifest, rgba, place.mercator);
+  installWindow(card, { ...base,
+    maskPixel: (c, r) => { const px = base.maskPixel(c, r); return [px[0], px[1], px[2] - 3, px[3]]; } });
+  return run(oracle, { hover: false }).then((out) => {
+    const colour = out.probes.flatMap((p) => p.disagreements)
+      .filter((d) => /painted input/.test(d.what));
+    assert(colour.length > 0, 'a three-count colour shift went unnoticed');
+  });
 });
 
 check('and a point outside the footprint is told so, in words', () => {

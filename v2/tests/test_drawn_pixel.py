@@ -209,9 +209,17 @@ def test_the_artifact_carries_its_own_controls(artifact):
 
 
 def test_the_artifact_says_what_it_does_not_establish(artifact):
-    """A measurement of the page nobody has opened must say so, in the file a reader quotes."""
+    """A measurement of the page nobody had opened had to say so, in the file a reader quotes.
+
+    A browser opened it on 2026-11-15 and agreed at all eleven probes, so the sentence now has to
+    carry both halves: that this file alone did not establish the placement, and where the
+    confirmation is. Dropping either one misleads in a different direction.
+    """
     text = artifact["what_this_does_not_establish"]
-    assert re.search(r"no browser has confirmed", text), text
+    assert re.search(r"no browser had confirmed it when this was written", text), text
+    assert "s3-11-browser-placement.json" in text, (
+        "the artifact no longer points at the browser session that confirmed it, so a reader "
+        "quoting it would under-claim a measured result")
     assert "s3-5-export-regrid.json" in text, (
         "the artifact no longer points at the other half of the comparison, which is how the two "
         "steps get folded back into one number")

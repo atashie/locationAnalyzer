@@ -1073,4 +1073,33 @@ This is at least the third recurrence of instance 40 since it was written -- twi
 53’s own repairs, by that section’s own account, and now with the instance handed to me by a
 reviewer. It is the first where somebody else found the instance and I still closed only that.
 
-Forty-seven instances now.
+### Forty-eighth: the self-test proved the instrument could fail, and the browser broke it twice
+
+`probe_placement_selftest.mjs` was built to show the browser probe could fail: four stub pages, a
+Mercator one it must agree with, two displaced ones it must catch, and one it is asserted to be
+blind to. Twelve checks, all passing, and the reasoning behind them was right. Then the probe ran
+in Chrome for the first time and reported **fourteen disagreements, none of them about the page**.
+
+Both were behaviours the stub had quietly replaced with something kinder:
+
+* the stub's `maskPixel` returned the bytes the worker wrote. A real canvas stores a translucent
+  pixel premultiplied by alpha in eight bits, so `getImageData` cannot give the byte back: the
+  page's blue (24,119,242,150) reads as (24,119,241,150). Every exact RGBA comparison failed.
+* the stub's `MouseEvent` kept the fractional coordinates it was handed. A real `MouseEvent`
+  truncates them, because clientX is an IDL `long` -- 464.378 arrives as 464. One screen pixel was
+  two thirds of a cell at that view, so the hover read a card for the *next cell* and compared it
+  against the probe's. Every probe worth having sits on a cell boundary, which is exactly where a
+  lost pixel changes the answer.
+
+> A stub must be at least as hostile as the thing it stands in for. A test double written from
+> what the real thing *means* will model the semantics and smooth away the mechanics -- integer
+> truncation, 8-bit quantisation, premultiplied alpha -- and those are what break at a boundary.
+> When a double's behaviour is kinder than the original's, the test measures the double.
+
+Both are now reproduced in the stub -- the quantisation exactly, with a check that a three-count
+shift is still caught so the new tolerance has not turned the comparison off -- and the repaired
+probe ran again and agreed with the oracle at all eleven probes. Instance 46 was about where to
+put a probe; this one is about what the probe is rehearsed against. The rehearsal was the thing
+that was wrong, and nothing in it could have shown that.
+
+Forty-eight instances now.

@@ -10,6 +10,9 @@
 > has never been rendered in a browser -- no browser was reachable from this session -- so the
 > card's words and logic are checked headlessly against 40,000 real `explainAt` replies while its
 > appearance is unverified. The end of this file says what else is open.
+>
+> *(2026-11-15: step 6 is done and the page has now been rendered — `docs/experiments/`*
+> *`s3-11-browser-placement.json`. This paragraph is left as it stood.)*
 
 Ordering follows `docs/plans/2026-11-04-s3-execution-plan.md` §0: **product risk retired, not
 defect severity.** That is what chooses this over another Codex pass on the pass 50 repairs, even
@@ -159,9 +162,10 @@ Minimum that discharges the three disclosures, and nothing more:
 
 **Not verified, and it matters:**
 
-* **The page has never been rendered.** No browser was reachable, so the panel's layout, the
-  pointer wiring and the real round-trip cost are unconfirmed. Everything above tests the logic and
-  the words, not the appearance.
+* **The page was rendered on 2026-11-15** (`docs/experiments/s3-11-browser-placement.json`). The
+  pointer wiring works, the panel lays out, and the card appears with all three disclosures in it;
+  the screenshot is committed. Still unconfirmed: the real round-trip cost, which that session
+  never exercised because it changed no threshold, and anything at all about a phone.
 * **Which cell the pointer is over in the PICTURE.** MapLibre draws the mask as a `canvas` source
   across a Mercator quad while the published rows are linear in latitude. Over this bundle's
   latitude span the two disagree by at most **0.366 rows, which is 35.6 m at a 97.5 m row** --

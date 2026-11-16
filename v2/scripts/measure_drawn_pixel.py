@@ -412,8 +412,9 @@ def main(argv: list[str] | None = None) -> int:
             "that contradicts their own card"),
         "what_this_does_not_establish": (
             "that MapLibre places the quad this way. The rule is read off the canvas-source "
-            "contract and matches the one behind the published 131,571 figure, but no browser has "
-            "confirmed it. The `probes` section is that session's oracle, and the sensitive probes "
+            "contract and matches the one behind the published 131,571 figure, and no browser had "
+            "confirmed it when this was written. One did on 2026-11-15 -- eleven probes, "
+            "zero disagreements, s3-11-browser-placement.json. The `probes` section is that session's oracle, and the sensitive probes "
             "are the ones that can fail. It also says nothing about the source grid: that step is "
             "s3-5-export-regrid.json, and pass 54's point is that folding the two together would "
             "hand a correct measurement the wrong interpretation. And one further step is left "

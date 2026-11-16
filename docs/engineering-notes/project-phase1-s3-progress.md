@@ -21,14 +21,18 @@ S3 is:
 
 | owed | data | interface |
 |---|---|---|
-| the restricted-route flag | **done** `5e5118f` — `published-v3`, optional third plane | **built, never rendered** |
-| the destination the time was measured to | **done** `4685158`, repaired after passes 49–53 — `published-v4`, optional fourth plane + side table, licence texts and provenance check | **built, never rendered** |
-| which criterion was unknown, and why | **done** — `explainAt`, which computes it per layer per cell | **built, never rendered** |
+| the restricted-route flag | **done** `5e5118f` — `published-v3`, optional third plane | built; **rendered 2026-11-15** |
+| the destination the time was measured to | **done** `4685158`, repaired after passes 49–53 — `published-v4`, optional fourth plane + side table, licence texts and provenance check | built; **rendered 2026-11-15** |
+| which criterion was unknown, and why | **done** — `explainAt`, which computes it per layer per cell | built; **rendered 2026-11-15** |
 
-**All three are now closed in logic and shown to nobody.** The card is built — `explainAt` in
-`worker.js`, the words in `card.js`, the surface in `index.html` — and **no browser has ever
-rendered the page**, because none has been reachable from any session that built it. So the right
-description of this row is not "unbuilt" and not "done": it is *implemented and unobserved*.
+**All three were drawn in a browser on 2026-11-15, in one card.** Chrome on this machine
+loaded the shipped bundle and a hover at (row 100, col 73) produced the cell identity, the
+restricted-route warning, and "measured to one of 2 places at this junction: Weaver Street Market,
+Inc, Weaver Street Market Administration" — the three owed disclosures, in the words a household
+would get. The screenshot is committed at `docs/experiments/s3-11/`. So this row is no longer
+*implemented and unobserved*; it is **implemented, observed once, and seen by no household**. One
+session by the model that built the page is not a user test.
+*(Until 2026-11-15 this said "no browser has ever rendered the page".)*
 
 Codex pass 54 put it as "the mitigation exists in code; its effectiveness remains unobserved", and
 judged the five review passes that followed the card "not worth completing before anyone opened
@@ -69,12 +73,20 @@ expectation rather than to discover one. The figures are in item 3 below; the he
 their own card**, 2,771 of them painted outside the coloured area although the publication
 includes them.
 
-**What is left of item 3 needs a browser this machine has never had.** The only Chrome the
-extension has offered this project is on a different computer — it reports macOS, and the files are
-here on Windows — and serving the spike across the network was refused by the permission
-classifier. So that session needs the owner: Chrome on this machine, or the spike served to that
-one. Everything that does not depend on it is done, including the instrument and its proof that it
-can fail.
+**Item 3 is finished, 2026-11-15. A browser has now drawn this publication.** The owner
+installed the extension on this PC; the page was served on loopback and opened in Chrome 157. The
+probe ran against its predeclared oracle and **agreed at all eleven points, with zero
+disagreements**, and all three sensitive probes showed the live page naming one cell while painting
+the colour of the row below. The affine error the probe declares it cannot see is ruled out by a
+picture at a colour edge with the one-row alternatives drawn beside it.
+`docs/experiments/s3-11-browser-placement.json`, with two screenshots in
+`docs/experiments/s3-11/`.
+
+**The first run reported fourteen disagreements and every one was in the instrument**, not the
+page — a canvas cannot read back a translucent pixel it wrote, and a `MouseEvent` truncates a
+fractional coordinate, so the hover was reading a card for the cell next door. Both had been
+stubbed away in the Node self-test, which is ledger instance 48: *a stub must be at least as
+hostile as the thing it stands in for*. The self-test now reproduces both and is 13 checks.
 
 **The sheet gained three columns across these two passes**, so an owner holding a filled copy must
 run `python scripts/migrate_audit_sheet.py <their copy>` rather than regenerating: `walked`
@@ -92,15 +104,18 @@ one pass, on both sides of the codebase.
 That is the pattern **Codex pass 25 named about a different surface** and the reason §0 orders work
 by *product risk retired*: eleven passes and 11,000 lines of apparatus had gone into an instrument
 while the decisions S3 exists to make were unstarted. The same question now applies here. Since the
-card's logic landed, **every pass has retired defect risk in code no household has seen, on a page
-that has never been rendered in a browser.** The three owed disclosures are closed in logic and
-shown to nobody.
+card's logic landed, **every pass has retired defect risk in code no household has seen.** The
+page itself was rendered on 2026-11-15, which took one session and found two defects — both in the
+instrument, none in the page. The three owed disclosures have now been read off a screen, and still
+by nobody who is trying to find somewhere to live.
 
 So the honest statement of where this stands: the card is as well guarded as anything in the
 repository and **less verified than the simplest thing a person could do with it**, which is open
 the page. Continuing the chain is defensible; so is stopping it and spending the next hour on a
 browser. That choice is the owner's, and it should be made deliberately rather than by momentum.
-See queue item 3, which is now the highest-value unblocked item.
+*(2026-11-15: the page was opened. Item 3 is done and the three disclosures have been seen on a
+screen. What the card looks like to somebody who is not the model that built it is still untested,
+and that is now the highest-value unblocked item — it needs a person, not a session.)*
 
 Nothing else in flight. **Codex passes 49 and 50 are both integrated.** Reports at
 `docs/research/50-codex-review-pass49-counterexamples/REPORT.md` and
@@ -334,8 +349,9 @@ down the ingestion of every other row. Refused per row now, with its own reason.
 ### 1. The card — **DONE 2026-11-14, all six steps including the Codex pass**
 
 `docs/plans/2026-11-14-per-criterion-card-plan.md` carries what was built and what is still not
-verified. **The interface gap on all three owed disclosures is closed in logic.** It is not closed
-in anything anyone has looked at: no browser was reachable from the session that built it.
+verified. **The interface gap on all three owed disclosures is closed in logic, and on
+2026-11-15 the card was drawn in a browser** — `docs/experiments/s3-11-browser-placement.json`,
+with the screenshot beside it. No household has seen it.
 
 `explainAt(row, col)` reports, per enabled layer, the outcome, the status as code and name, the
 minute or `null`, whether that minute is a lower bound, the threshold, the horizon, the route flag
@@ -513,8 +529,8 @@ eleven are fixed and guarded; what each one was, and what closed it:
 timestamp measures the right interval (the old reply's timing is recorded before `post(send)`
 overwrites it), and removing `pointerGen` was reasonable for the current contract.
 
-### 3. Where the published raster actually lands in the browser — **MEASURED 2026-11-15; the
-browser half is still open**
+### 3. Where the published raster actually lands in the browser — **DONE 2026-11-15, both
+halves**
 
 MapLibre places the raster in Web Mercator while the published rows are linear in latitude. That is
 now measured rather than guessed, in the decomposition pass 54 asked for — **the drawn pixel
@@ -539,18 +555,38 @@ because folding the two together hands a correct measurement the wrong interpret
   zero contradictions and does; shifting by a whole row must report more and does. The script
   refuses to write the file otherwise.
 
-**What is left is the browser**, and it is now one bounded session rather than an open-ended one.
-`spikes/g3-render/probe_placement.js` reads the predeclared probes, asks the live page where it
-draws each one, and compares — including one hover that exercises a PASS at exactly the default
-threshold, on a restricted route, to a junction carrying two places. `probe_placement_selftest.mjs`
-proves in Node that it can fail: twelve checks, with a stub page placed in Mercator agreeing
-exactly, a stub with **no** displacement caught at every sensitive probe, a larger distortion
-caught more widely, and the one error it **cannot** see declared in its own output — an affine
-placement error cancels, because the drawn row is recovered from where the quad's own corners
-project. Closing that needs one screenshot at a colour edge.
+**The browser ran on 2026-11-15** →
+[s3-11-browser-placement.json](../experiments/s3-11-browser-placement.json). Chrome 157 on this
+machine, the page served on loopback from the working tree, the shipped bundle, the default 20
+minutes:
 
-`window.G3Probe` in `app.js` is the read-only window it needs: eight accessors, none of which can
-set a threshold, enable a layer, move the map or render a card.
+* **Zero disagreements with the oracle at all eleven probes.** The sub-row displacement is drawn
+  exactly as computed, so the 5,801 and the 2,771 above describe the page a household gets rather
+  than a model of it.
+* **All three sensitive probes contradicted the card in the live page** — blue cell, transparent
+  pixel, and the reverse — which is the failure mode itself, observed rather than predicted.
+* **The three owed disclosures were rendered, in one card**: `(row 100, col 73)`, the
+  restricted-route warning, and "measured to one of 2 places at this junction: Weaver Street
+  Market, Inc, Weaver Street Market Administration". Screenshot at
+  `docs/experiments/s3-11/card-at-boundary-north.jpg`.
+* **The affine blind spot is closed by a picture**, as the self-test said it would have to be.
+  Zoomed until one row was 38 screen pixels, the painted edge sits on the line where MapLibre's
+  quad puts it; the publication's own line is 9 px south of that, inside unpainted ground, and the
+  ±1 row controls are 38 px away. `docs/experiments/s3-11/colour-edge-against-four-hypotheses.png`.
+  That reading is off an image, not computed: neither venv here has an image library.
+
+**The first run found two defects, both in the instrument.** A canvas stores translucent pixels
+premultiplied by alpha, so the page's blue reads back (24,119,241,150) and not (24,119,242,150);
+and `MouseEvent`'s clientX is an IDL `long`, so a fractional coordinate is truncated and the hover
+landed up to two thirds of a cell away — on a probe set deliberately placed on cell boundaries.
+The Node self-test had stubbed away both. It now reproduces them exactly and is **13 checks**;
+`probe_placement.js` compares colour to within the one count premultiplication costs, with alpha
+exact, and chooses the whole screen pixel that lands on the cell the probe is about. Ledger
+instance 48.
+
+`window.G3Probe` in `app.js` is the read-only window it needs: seven accessors, none of which can
+set a threshold, enable a layer, move the map or render a card. *(An earlier note here and the
+commit message for `cdcd77c` both said eight; there are seven.)*
 
 ### 4. Phone decode latency
 
