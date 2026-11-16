@@ -1196,11 +1196,18 @@ check('the shipped published bundle parses and initialises', () => {
     + (l.flag_file ? 1 : 0) + (l.dest_file ? 2 : 0)), 0);
   assert(ready.bytes === expectBytes,
     `ready.bytes ${ready.bytes}, expected ${expectBytes} -- a byte count that omits a plane`);
+  // The layer that carries the plane, found rather than assumed to be layer 0. And ONLY that
+  // layer enabled: with seven criteria, requiring the first grocery-naming cell to survive every
+  // other criterion is a different claim -- a cell OK on foot can be OFF_NETWORK for a drive, the
+  // verdict then excludes it, and `destinationAt` declines for a reason that is not about
+  // destinations at all.
+  const destLayerIdx = manifest.layers.findIndex((l) => !!l.dest_file);
+  assert(destLayerIdx >= 0, 'no shipped layer carries a destination plane');
   worker.send({ type: 'compute', seq: 1, thresholds: manifest.layers.map(() => 254),
-                enabled: manifest.layers.map(() => true) });
+                enabled: manifest.layers.map((_l, k) => k === destLayerIdx) });
   // Find a cell that actually names something and resolve it, so the table is not merely
   // parsed but used.
-  const dest = new Uint16Array(bytesOf(manifest.layers[0].dest_file));
+  const dest = new Uint16Array(bytesOf(manifest.layers[destLayerIdx].dest_file));
   let named = -1;
   for (let p = 0; p < dest.length; p++) if (dest[p] !== 65535) { named = p; break; }
   assert(named >= 0, 'the shipped destination plane names nothing');

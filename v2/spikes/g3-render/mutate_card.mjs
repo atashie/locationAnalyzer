@@ -20,6 +20,47 @@ const HARNESS = path.join(__dirname, 'card_selftest.mjs');
 
 const MUTATIONS = [
   {
+    // The card showed `own_triangle_duke-hospital_drive` to a household for as long as
+    // the bundle had one criterion and nobody looked twice at one ugly line. At seven it
+    // is most of the card.
+    name: 'a criterion is named by its layer id rather than its published label',
+    apply: (s) => s.replace('      const critName = crit.label || crit.layer;',
+      '      const critName = crit.layer;'),
+  },
+  {
+    // The other direction: a bundle with no label must not print the word `undefined`
+    // where the criterion's name goes.
+    name: 'a criterion with no label renders undefined as its name',
+    apply: (s) => s.replace('      const critName = crit.label || crit.layer;',
+      '      const critName = crit.label;'),
+  },
+  {
+    // The opening view. With one criterion "everything on" and "the opening state" were the same
+    // thing; with seven they are not, and the difference is whether a household's first sight of
+    // the product is a map or a blank. Nothing but these checks pins it.
+    name: 'a layer that does not say whether it opens on is read as opening OFF',
+    apply: (s) => s.replace('    return !layer || layer.default_on !== false;',
+      '    return !!(layer && layer.default_on);'),
+  },
+  {
+    // Loose inequality, so `undefined` still opens ON and only the falsy-but-not-false
+    // values change. The strict/loose distinction is the whole content of the second
+    // check, and a `!!layer.default_on` mutation does not test it -- the first check
+    // catches that one, which would have left the second unproven.
+    name: 'a bundle writing 0 or "" for default_on silently loses that criterion',
+    apply: (s) => s.replace('    return !layer || layer.default_on !== false;',
+      '    return !layer || layer.default_on != false;'),
+  },
+  {
+    // A slider set from `undefined` reads as empty and the first compute runs on NaN -- worse
+    // than a wrong default, because nothing on screen says a number is missing.
+    name: 'an unusable published opening minute is taken at face value',
+    apply: (s) => s.replace(
+      /    const published = layer && layer\.default_threshold_min;\r?\n    if \(typeof published === 'number' && Number\.isFinite\(published\)\) return published;/,
+      "    const published = layer && layer.default_threshold_min;\r\n"
+      + "    if (published !== undefined) return published;"),
+  },
+  {
     // "We are not telling you" rendered as "there are none". The exact confusion the optional
     // plane exists to prevent, and the one a household cannot detect.
     name: 'a layer that does not disclose is rendered as having no restrictions',

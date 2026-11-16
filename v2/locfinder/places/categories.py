@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from .named_places import is_named_place, select_named
+
 WEDGE_CATEGORIES: dict[str, dict] = {
     "grocery": {
         "overture_primary": set(),
@@ -103,6 +105,22 @@ def select_overture(gdf, category: str):
     mask = gdf["taxonomy"].apply(lambda t: taxonomy_matches(t, spec)).to_numpy(dtype=bool)
     out = gdf[mask]
     return out.sort_values("id") if "id" in out.columns else out
+
+
+def select_target(gdf, target: str):
+    """Destinations for a layer target: a wedge category, or a slug from `named_places`.
+
+    A household's criteria are not all categories -- "drive to work" and "drive to the airport"
+    are single places -- and the layer builders only ever needed a set of points. This is the one
+    place that decides which kind of target a name is, so the builders carry no branch and a new
+    named place needs no change to either of them.
+
+    A slug that is neither raises from `WEDGE_CATEGORIES`, naming the categories, which is the
+    more common mistake of the two.
+    """
+    if is_named_place(target):
+        return select_named(target, getattr(gdf, "crs", None))
+    return select_overture(gdf, target)
 
 
 def select_osm(gdf, category: str):

@@ -44,7 +44,7 @@ from _common import (ACCEPTED_PLACES, GRID, LAYERS, METRO, METRO_DIR,  # noqa: E
 from locfinder import profile  # noqa: E402
 from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.measure.frames import file_digest  # noqa: E402
-from locfinder.places.categories import select_overture  # noqa: E402
+from locfinder.places.categories import select_target  # noqa: E402
 from locfinder.status import Reason  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
@@ -80,7 +80,8 @@ def building_counts() -> tuple[np.ndarray, dict]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("category")
+    ap.add_argument("category", help="a wedge category, or a named-place slug such as "
+                                     "duke-hospital or rdu-airport")
     ap.add_argument("mode", choices=["walk", "bike", "drive"])
     args = ap.parse_args()
     out: dict = {"metro": METRO.name, "category": args.category, "mode": args.mode}
@@ -100,7 +101,7 @@ def main() -> None:
     G, comp = largest_component(G)
     cost_csr, time_csr, index = graph_to_cost_time_csr(G)
     places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
-    sel = select_overture(places, args.category)
+    sel = select_target(places, args.category)
     cent = sel.geometry.centroid
     nodes, dists = ox.nearest_nodes(G, cent.x.to_numpy(), cent.y.to_numpy(), return_dist=True)
     dest_idx = sorted({index[n] for n, d in zip(nodes, dists) if d <= POI_SNAP_MAX_M})

@@ -1245,4 +1245,28 @@ entire purpose of the re-walk. Codex pass 55 found it by opening the CSV.
 > than the data carries. Check the words of the fix against the same source you checked the bug
 > against, in the same sitting.
 
-Fifty-two instances now.
+### Fifty-third: "every" meant "the one I have"
+
+`project-phase1-s0-complete.md` carried this, in bold, as a result:
+
+> **NO_PATH is unreachable in every shipped configuration.** `symmetrise` runs before
+> `largest_component`, so the retained walk graph is 1 strongly connected component...
+
+The reason is sound and it is about **walk**. `symmetrise` runs for walk only; a drive or bike
+graph stays directed, and a node in a directed dead end reaches nothing. The claim was quantified
+over *every shipped configuration* while every configuration that had ever shipped was a walk
+layer, so the quantifier cost nothing to write and bought a result it had not earned. On
+2026-11-16 four non-walk layers were published and the status appeared in all four: **57 cells per
+drive layer, 95 in the bike layer.**
+
+> A universal claim is cheap exactly when the set has one member. Before writing "every", ask
+> what else is *in* the set — and when the set is "everything we have shipped so far", say that
+> instead, because it is the true statement and it stays true. The justification here was
+> mode-specific and the sentence above it was not, and nothing in between flagged the gap.
+
+Unlike instances 51 and 52 this one was not found by a reviewer or by an owner. It fell out of
+**doing the thing the claim quantified over** — shipping a configuration that had never shipped.
+Which is the same lesson as the walked journey, one level up: the cheapest test of a claim about
+every case is to produce a case.
+
+Fifty-three instances now.

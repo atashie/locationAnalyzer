@@ -175,10 +175,11 @@ The live corrections:
 
 ## Verified state, 2026-11-16
 
-**1,568 tests, 1,544 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
-checks, 14 probe checks. 69 of 69 worker mutations, 35 of 35 card mutations, 30 of 30
+**1,577 tests, 1,553 passed, 24 skipped, 0 failures. 87 browser conformance checks, 44 card
+checks, 14 probe checks. 69 of 69 worker mutations, 40 of 40 card mutations, 30 of 30
 admissibility mutations, 9 of 9 migration mutations — 0 inert, 0 survived, 0 misplaced, 0
-errored anywhere.** Every figure here was re-run on 2026-11-16, not carried forward.
+errored anywhere.** Every figure here was re-run on 2026-11-16, not carried forward, and every
+browser suite now runs against the **seven-criterion** bundle rather than the one-layer one.
 
 *(The "13 probe checks" this said earlier was worth less than it looked: three of them never
 asserted anything. See pass 55 F6 below. It is 14 now, all of them awaited, one of them a control
@@ -791,6 +792,71 @@ the implementation select a place, interpret its result, and explain what the ma
 It also recommends **keeping whole-minute `ceil`** for now rather than moving to 30-second units —
 the display cost is understood and statable, and no household observation shows the rounding
 causing a mistaken decision.
+
+### 3d. Seven criteria, and two defects only a real criteria set could show — **DONE
+2026-11-16**
+
+The owner chose the criteria for the reading test: park and school on foot, a grocery and a place
+of work and the airport by car, coffee by bike, beside the grocery walk already published. Seven.
+The bundle had held **one** since it was first exported. Full record in
+[[project-phase1-s3-criteria-build]], protocol in [[s3-13-reading-test]].
+
+Reachable is the share of the **UTM** surface's 330,502 cells with a finite time, as each
+build reports it. The published WGS84 planes differ slightly — grocery walk is 78.3% there —
+and mixing the two in one column is how a table stops being comparable.
+
+| criterion | destinations | reachable | opens on |
+|---|---|---|---|
+| Grocery shop, walk | 510 nodes / 550 places | 77.7% | 20 min, **on** |
+| Park, walk | 723 / 746 | 81.1% | 15 min, off |
+| School, walk | 537 / 559 | 78.2% | 20 min, off |
+| Grocery shop, drive | 510 / 550 | 80.6% | 10 min, off |
+| Coffee shop, bike | 644 / 678 | 83.1% | 15 min, off |
+| Duke University Hospital, drive | 1 point | 80.6% | 30 min, off |
+| RDU airport, drive | 2 points | 80.6% | 40 min, off |
+
+The last two are **named places**, a new kind of layer target: `locfinder/places/named_places.py`
+holds each slug's points *and where they came from*, and `select_target` dispatches so neither
+builder carries a branch. Both were pinned against the data rather than matched by name — Overture
+holds *JFK Airport New York* at RDU and has no record that is Duke University Hospital, only
+per-department ones.
+
+**Two defects, both found by having a real criteria set rather than by any test.**
+
+* **The page opened on a blank map.** Pass 43 F4 recorded that every manifest entry starts
+  enabled. Harmless at one criterion; at seven the opening view is the intersection of all of
+  them, and *drive to RDU within 10 minutes* is empty from anywhere in Chapel Hill. `resetAll`
+  had the same bug one button press away. The manifest now carries `default_on` and
+  `default_threshold_min`, both optional and absent-safe; the rules live in `card.js` so Node can
+  check them, and one check reads the **shipped** manifest and fails if more than one criterion
+  opens enabled.
+* **The card named each criterion by its layer id.** `own_triangle_duke-hospital_drive PASS
+  20 min`, to a household. The manifest has carried a `label` since it was written and the card
+  had never used it. One ugly line while the bundle had one criterion; most of the card at seven.
+  Found by hovering **one cell** on the built page.
+
+Neither was reachable by the suite as it stood: every check in it is about a layer, a message or a
+sentence, and both of these are properties of the **set**. Eight new card checks and five new card
+mutations now cover them.
+
+**`NO_PATH` ships for the first time, and a note had said it could not.**
+[[project-phase1-s0-complete]] carried *"NO_PATH is unreachable in every shipped configuration"*.
+The reason it gave — `symmetrise` making the retained graph strongly connected — holds for **walk
+only**, and every layer that had ever shipped was a walk layer. The drive and bike layers produce
+it at once: **57 cells per drive layer, 95 in the bike layer** (39 and 80 after reprojection).
+Corrected there, and recorded as **ledger instance 53: "every" meant "the one I have"**. The
+card's `NO_PATH` wording has existed all along and had never once rendered from a real published
+layer; the card suite now exercises it.
+
+**What it costs.** Deflated transfer goes from **266 KB to 1.15 MB**. Per layer: grocery walk 266 KB
+(it alone carries the flag and destination planes), park 206 KB, school 203 KB, grocery drive
+109 KB, coffee bike 134 KB, Duke 117 KB, RDU 118 KB.
+
+**What was not re-measured: the slider budget.** Gate G3 is a median slider-to-repaint under
+100 ms, measured on a one-layer bundle. A compute now evaluates up to seven layers over 330,502
+cells each. The opening case is one enabled criterion and is unchanged; the all-on case is new and
+**unmeasured**. One click of Auto-bench with the window on screen gives the figure, and that is
+still an owner item.
 
 ### 4. Phone decode latency
 

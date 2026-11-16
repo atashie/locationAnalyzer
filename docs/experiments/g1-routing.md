@@ -1403,3 +1403,45 @@ Still open: the walk gap is not zero either (+6 to +12 s at the median with a p9
 
 - profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
 
+
+### Own-graph layer: park / walk (2026-11-16 13:48:44)
+- graph: 539814 nodes, 1436992 edges (graphml cache; 3046 components; kept 539814 nodes (97.5%), dropped 13608); destinations 723 nodes from 746 places (7 dropped > 300 m)
+- reachable cells 81.1%; one-way-adjacent cells 3.4%
+- timings (s): {"load_graph_s": 37.41, "prepare_graph_s": 48.9, "csr_s": 3.62, "snap_pois_s": 2.83, "edge_index_s": 0.0, "dijkstra_s": 3.67, "snap_s": 3.24}; total 99.7
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### Own-graph layer: school / walk (2026-11-16 13:52:25)
+- graph: 539814 nodes, 1436992 edges (graphml cache; 3046 components; kept 539814 nodes (97.5%), dropped 13608); destinations 537 nodes from 559 places (0 dropped > 300 m)
+- reachable cells 78.2%; one-way-adjacent cells 3.4%
+- timings (s): {"load_graph_s": 36.15, "prepare_graph_s": 45.42, "csr_s": 3.58, "snap_pois_s": 2.82, "edge_index_s": 0.0, "dijkstra_s": 3.69, "snap_s": 3.37}; total 95.0
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### Own-graph layer: grocery / drive (2026-11-16 13:55:57)
+- graph: 437616 nodes, 993451 edges (graphml cache; 198 components; kept 437616 nodes (99.9%), dropped 635); destinations 510 nodes from 550 places (0 dropped > 300 m)
+- reachable cells 80.6%; one-way-adjacent cells 9.8%
+- timings (s): {"load_graph_s": 36.47, "prepare_graph_s": 40.51, "csr_s": 2.62, "snap_pois_s": 1.56, "edge_index_s": 0.0, "dijkstra_s": 3.13, "snap_s": 2.93}; total 87.2
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### Own-graph layer: coffee / bike (2026-11-16 13:59:16)
+- graph: 547554 nodes, 1397396 edges (graphml cache; 1542 components; kept 547554 nodes (99.1%), dropped 5151); destinations 644 nodes from 678 places (0 dropped > 300 m)
+- reachable cells 83.1%; one-way-adjacent cells 6.0%
+- timings (s): {"load_graph_s": 34.94, "prepare_graph_s": 40.35, "csr_s": 3.29, "snap_pois_s": 1.54, "edge_index_s": 0.0, "dijkstra_s": 3.59, "snap_s": 3.07}; total 86.8
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### Own-graph layer: duke-hospital / drive (2026-11-16 14:02:44)
+- graph: 437616 nodes, 993451 edges (graphml cache; 198 components; kept 437616 nodes (99.9%), dropped 635); destinations 1 nodes from 1 places (0 dropped > 300 m)
+- reachable cells 80.6%; one-way-adjacent cells 9.8%
+- timings (s): {"load_graph_s": 34.76, "prepare_graph_s": 37.79, "csr_s": 2.6, "snap_pois_s": 1.41, "edge_index_s": 0.0, "dijkstra_s": 2.86, "snap_s": 2.88}; total 82.3
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### Own-graph layer: rdu-airport / drive (2026-11-16 14:05:55)
+- graph: 437616 nodes, 993451 edges (graphml cache; 198 components; kept 437616 nodes (99.9%), dropped 635); destinations 2 nodes from 2 places (0 dropped > 300 m)
+- reachable cells 80.6%; one-way-adjacent cells 9.8%
+- timings (s): {"load_graph_s": 35.03, "prepare_graph_s": 37.52, "csr_s": 2.48, "snap_pois_s": 1.45, "edge_index_s": 0.0, "dijkstra_s": 2.86, "snap_s": 2.86}; total 82.2
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+

@@ -27,7 +27,7 @@ from _common import (ACCEPTED_PLACES, GRAPH_CACHE, GRID, ROADS_XML, append_resul
                      graph_cache_complaint, layer_path, read_graph_cache_manifest, stamp,
                      write_graph_cache_manifest)
 from locfinder.grid import encode_minutes  # noqa: E402
-from locfinder.places.categories import select_overture  # noqa: E402
+from locfinder.places.categories import select_target  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.layer import build_layer_seconds, write_layer  # noqa: E402
@@ -74,7 +74,8 @@ def load_graph(timings: dict):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("category")
+    ap.add_argument("category", help="a wedge category, or a named-place slug such as "
+                                     "duke-hospital or rdu-airport")
     ap.add_argument("mode", choices=["walk", "bike", "drive"])
     args = ap.parse_args()
     timings: dict = {}
@@ -99,7 +100,7 @@ def main() -> None:
 
     t = time.perf_counter()
     places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
-    sel = select_overture(places, args.category)
+    sel = select_target(places, args.category)
     cent = sel.geometry.centroid
     nodes, dists = ox.nearest_nodes(G, cent.x.to_numpy(), cent.y.to_numpy(), return_dist=True)
     keep = np.asarray(dists) <= POI_SNAP_MAX_M

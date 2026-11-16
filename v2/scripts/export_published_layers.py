@@ -55,9 +55,24 @@ OUT = V2 / "spikes" / "g3-render" / "fixtures" / "published"
 METRO = get_metro()
 
 #: Every published surface, by the stem of its `.npy` triple. The product layer first.
+#: `(stem, label, cell_m, default_on, default_threshold_min)`. The last two are what the PAGE
+#: opens with, not statements about the data: pass 43 F4 established that every manifest entry
+#: starts enabled, so with seven criteria the opening view would be the intersection of all seven
+#: and a household would meet a blank map. Only the grocery walk starts on; the rest are there to
+#: be switched on one at a time, which is also how somebody actually searches.
+#:
+#: The default minutes are chosen to be *plausible*, not to flatter the layer -- 10 minutes to RDU
+#: is not reachable from anywhere in Chapel Hill, and a slider that starts on an impossible number
+#: teaches a reader that the map is broken before they have read a word of it.
 SOURCES = [
-    ("own_triangle_grocery_walk", "Grocery, walk (100 m)", 100.0),
-    ("own_triangle_grocery_walk_cell200", "Grocery, walk (200 m candidate)", 200.0),
+    ("own_triangle_grocery_walk", "Grocery shop, walk", 100.0, True, 20),
+    ("own_triangle_park_walk", "Park, walk", 100.0, False, 15),
+    ("own_triangle_school_walk", "School, walk", 100.0, False, 20),
+    ("own_triangle_grocery_drive", "Grocery shop, drive", 100.0, False, 10),
+    ("own_triangle_coffee_bike", "Coffee shop, bike", 100.0, False, 15),
+    ("own_triangle_duke-hospital_drive", "Duke University Hospital, drive", 100.0, False, 30),
+    ("own_triangle_rdu-airport_drive", "RDU airport, drive", 100.0, False, 40),
+    ("own_triangle_grocery_walk_cell200", "Grocery, walk (200 m candidate)", 200.0, False, 20),
 ]
 
 
@@ -591,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
     sizes = []
     published_tables = []   # every side table that actually ships, for the licence bundle
     releases = set()        # the Overture releases those tables name
-    for stem, label, cell_m in SOURCES:
+    for stem, label, cell_m, default_on, default_threshold_min in SOURCES:
         if cell_m != 100.0 and not args.candidates:
             continue
         if not (LAYERS / f"{stem}.npy").exists():
@@ -630,6 +645,10 @@ def main(argv: list[str] | None = None) -> int:
             "id": stem, "label": label, "engine": build["engine"], "mode": build["mode"],
             "category": build["category"], "cell_m": cell_m,
             "horizon_s": surf.horizon_s,
+            # What the PAGE opens with. Not a claim about the data: a decoder that ignores both
+            # fields reads exactly the same layer.
+            "default_on": bool(default_on),
+            "default_threshold_min": int(default_threshold_min),
             "value_file": f"{stem}.value.bin", "status_file": f"{stem}.status.bin",
             "source_shape": list(value.shape),
         }

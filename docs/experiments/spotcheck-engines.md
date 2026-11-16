@@ -1340,3 +1340,249 @@ Cell coverage weights Jordan Lake the same as downtown Durham. This reports cove
 | 584 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -78.60635, 36.12014 |
 
 - profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: park / walk (2026-11-16 13:50:33)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 268,061 | 330,502 | **81.1072%** |
+| buildings | 507,231 | 512,633 | **98.9462%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 268,061 | 81.1072% | 507,231 | 98.9462% |
+| `OFF_NETWORK` | 57,541 | 17.4102% | 3,657 | 0.7134% |
+| `BEYOND_HORIZON` | 4,900 | 1.4826% | 1,745 | 0.3404% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 9.6060% | **22.6513%** |
+| 15min | 17.8867% | **39.3424%** |
+| 25min | 32.9971% | **63.8829%** |
+| 45min | 53.1458% | **85.2866%** |
+
+**The missing region as places.** 1,351 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 5,654 | 178 | `OFF_NETWORK` | 83.4% | 4 | 174 | -78.76324, 36.06335 |
+| 3,183 | 25 | `OFF_NETWORK` | 100.0% | 25 | 0 | -79.0329, 35.74518 |
+| 2,188 | 6 | `OFF_NETWORK` | 100.0% | 6 | 0 | -78.99016, 35.82602 |
+| 1,864 | 100 | `OFF_NETWORK` | 83.0% | 40 | 60 | -79.18562, 35.7973 |
+| 1,827 | 760 | `OFF_NETWORK` | 63.2% | 447 | 313 | -79.17126, 35.92223 |
+| 1,656 | 632 | `BEYOND_HORIZON` | 66.0% | 6 | 626 | -78.51395, 36.13613 |
+| 1,460 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.64888, 36.07706 |
+| 1,389 | 301 | `OFF_NETWORK` | 94.7% | 275 | 26 | -78.60703, 35.97191 |
+| 1,237 | 401 | `OFF_NETWORK` | 100.0% | 401 | 0 | -78.97981, 35.74275 |
+| 1,027 | 8 | `OFF_NETWORK` | 100.0% | 8 | 0 | -78.98546, 35.70869 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: school / walk (2026-11-16 13:54:15)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 258,412 | 330,502 | **78.1877%** |
+| buildings | 501,874 | 512,633 | **97.9012%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 258,412 | 78.1877% | 501,874 | 97.9012% |
+| `OFF_NETWORK` | 57,541 | 17.4102% | 3,657 | 0.7134% |
+| `BEYOND_HORIZON` | 14,549 | 4.4021% | 7,102 | 1.3854% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 7.4810% | **17.2246%** |
+| 15min | 15.0701% | **34.0955%** |
+| 25min | 30.3302% | **61.7676%** |
+| 45min | 50.9725% | **85.2111%** |
+
+**The missing region as places.** 1,257 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 17,714 | 4,244 | `OFF_NETWORK` | 59.2% | 351 | 3,893 | -78.67952, 36.04008 |
+| 6,260 | 1,908 | `BEYOND_HORIZON` | 61.6% | 451 | 1,457 | -79.1806, 35.93956 |
+| 4,804 | 1,072 | `OFF_NETWORK` | 83.6% | 119 | 953 | -79.04348, 35.75314 |
+| 2,653 | 776 | `OFF_NETWORK` | 63.5% | 291 | 485 | -79.13918, 36.14921 |
+| 2,333 | 6 | `OFF_NETWORK` | 93.9% | 6 | 0 | -78.98998, 35.82599 |
+| 1,901 | 106 | `OFF_NETWORK` | 81.4% | 40 | 66 | -79.18568, 35.79704 |
+| 1,503 | 158 | `OFF_NETWORK` | 84.2% | 158 | 0 | -79.02583, 36.07086 |
+| 1,237 | 401 | `OFF_NETWORK` | 100.0% | 401 | 0 | -78.97981, 35.74275 |
+| 1,027 | 8 | `OFF_NETWORK` | 100.0% | 8 | 0 | -78.98546, 35.70869 |
+| 926 | 234 | `BEYOND_HORIZON` | 74.3% | 4 | 230 | -79.01253, 36.14265 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: grocery / drive (2026-11-16 13:57:33)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 266,278 | 330,502 | **80.5677%** |
+| buildings | 511,926 | 512,633 | **99.8621%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 266,278 | 80.5677% | 511,926 | 99.8621% |
+| `OFF_NETWORK` | 64,167 | 19.4150% | 670 | 0.1307% |
+| `NO_PATH` | 57 | 0.0172% | 37 | 0.0072% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 68.2492% | **96.0239%** |
+| 15min | 77.7233% | **99.0163%** |
+| 25min | 80.5420% | **99.8603%** |
+| 45min | 80.5677% | **99.8621%** |
+
+**The missing region as places.** 1,456 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 3,367 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.73216, 36.02187 |
+| 3,212 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.98729, 35.83539 |
+| 2,927 | 5 | `OFF_NETWORK` | 100.0% | 5 | 0 | -78.80303, 36.10082 |
+| 2,074 | 40 | `OFF_NETWORK` | 100.0% | 40 | 0 | -78.75663, 35.85365 |
+| 2,002 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -79.05798, 35.71441 |
+| 1,580 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -79.02703, 35.77061 |
+| 1,532 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.64754, 36.07729 |
+| 1,442 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -79.02194, 36.08011 |
+| 1,226 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.6043, 35.96191 |
+| 1,127 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.67706, 36.02729 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: coffee / bike (2026-11-16 14:00:57)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 274,805 | 330,502 | **83.1478%** |
+| buildings | 512,125 | 512,633 | **99.9009%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 274,805 | 83.1478% | 512,125 | 99.9009% |
+| `OFF_NETWORK` | 55,602 | 16.8235% | 473 | 0.0923% |
+| `NO_PATH` | 95 | 0.0287% | 35 | 0.0068% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 33.4999% | **63.5412%** |
+| 15min | 45.6705% | **77.8348%** |
+| 25min | 63.4362% | **92.4092%** |
+| 45min | 80.7653% | **99.2176%** |
+
+**The missing region as places.** 1,488 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 2,938 | 3 | `OFF_NETWORK` | 100.0% | 3 | 0 | -78.79131, 36.08809 |
+| 2,909 | 6 | `OFF_NETWORK` | 100.0% | 6 | 0 | -78.98811, 35.83437 |
+| 2,687 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.73198, 36.02705 |
+| 1,530 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.64756, 36.07731 |
+| 1,320 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -79.02407, 35.77257 |
+| 1,268 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -79.04104, 35.71552 |
+| 1,027 | 8 | `OFF_NETWORK` | 100.0% | 8 | 0 | -78.98546, 35.70869 |
+| 1,004 | 13 | `OFF_NETWORK` | 100.0% | 13 | 0 | -79.18284, 35.78712 |
+| 881 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -79.02173, 36.07907 |
+| 836 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.60022, 35.96007 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: duke-hospital / drive (2026-11-16 14:04:19)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 266,278 | 330,502 | **80.5677%** |
+| buildings | 511,926 | 512,633 | **99.8621%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 266,278 | 80.5677% | 511,926 | 99.8621% |
+| `OFF_NETWORK` | 64,167 | 19.4150% | 670 | 0.1307% |
+| `NO_PATH` | 57 | 0.0172% | 37 | 0.0072% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 3.6802% | **7.6253%** |
+| 15min | 10.8777% | **16.9636%** |
+| 25min | 33.5626% | **39.4091%** |
+| 45min | 77.9926% | **98.7869%** |
+
+**The missing region as places.** 1,456 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 3,367 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.73216, 36.02187 |
+| 3,212 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.98729, 35.83539 |
+| 2,927 | 5 | `OFF_NETWORK` | 100.0% | 5 | 0 | -78.80303, 36.10082 |
+| 2,074 | 40 | `OFF_NETWORK` | 100.0% | 40 | 0 | -78.75663, 35.85365 |
+| 2,002 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -79.05798, 35.71441 |
+| 1,580 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -79.02703, 35.77061 |
+| 1,532 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.64754, 36.07729 |
+| 1,442 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -79.02194, 36.08011 |
+| 1,226 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.6043, 35.96191 |
+| 1,127 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.67706, 36.02729 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+
+### S2.4 building-weighted coverage: rdu-airport / drive (2026-11-16 14:07:29)
+
+Cell coverage weights Jordan Lake the same as downtown Durham. This reports coverage weighted by **building count** alongside it. It is **building-weighted, not home-weighted**: Overture carries no reliable residential flag here, so sheds, barns and a hospital campus's several hundred structures all count as one building each. The weights are ODbL/CC BY rows admitted to this use only, as counts — a Produced Work, republishing no footprints.
+
+- 522,160 accepted buildings, **512,633 inside the grid** and 9,527 outside it (the download covers the grid's own WGS84 envelope, which is larger than the grid's UTM rectangle)
+
+| denominator | covered | total | share |
+|---|---|---|---|
+| cells | 266,278 | 330,502 | **80.5677%** |
+| buildings | 511,926 | 512,633 | **99.8621%** |
+
+| reason | cells | of cells | buildings | of buildings |
+|---|---|---|---|---|
+| `OK` | 266,278 | 80.5677% | 511,926 | 99.8621% |
+| `OFF_NETWORK` | 64,167 | 19.4150% | 670 | 0.1307% |
+| `NO_PATH` | 57 | 0.0172% | 37 | 0.0072% |
+
+| threshold | of cells | of buildings |
+|---|---|---|
+| 10min | 1.9918% | **1.3277%** |
+| 15min | 9.1455% | **13.6482%** |
+| 25min | 37.2615% | **67.3977%** |
+| 45min | 77.2322% | **98.8003%** |
+
+**The missing region as places.** 1,456 contiguous components (4-connectivity, the conservative reading). The ten largest. `dominant` is the reason holding most of the region's *cells*; the two building columns split the same region by reason, which is the breakdown that can be acted on:
+
+| cells | buildings | dominant reason (cells) | share | off-network buildings | beyond-horizon buildings | centre (lon, lat) |
+|---|---|---|---|---|---|---|
+| 3,367 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.73216, 36.02187 |
+| 3,212 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -78.98729, 35.83539 |
+| 2,927 | 5 | `OFF_NETWORK` | 100.0% | 5 | 0 | -78.80303, 36.10082 |
+| 2,074 | 40 | `OFF_NETWORK` | 100.0% | 40 | 0 | -78.75663, 35.85365 |
+| 2,002 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -79.05798, 35.71441 |
+| 1,580 | 1 | `OFF_NETWORK` | 100.0% | 1 | 0 | -79.02703, 35.77061 |
+| 1,532 | 2 | `OFF_NETWORK` | 100.0% | 2 | 0 | -78.64754, 36.07729 |
+| 1,442 | 7 | `OFF_NETWORK` | 100.0% | 7 | 0 | -79.02194, 36.08011 |
+| 1,226 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.6043, 35.96191 |
+| 1,127 | 0 | `OFF_NETWORK` | 100.0% | 0 | 0 | -78.67706, 36.02729 |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`

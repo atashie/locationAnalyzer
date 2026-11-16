@@ -30,6 +30,11 @@ import vm from 'vm';
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BUNDLE = path.join(__dirname, 'fixtures', 'published');
+// Loaded at module scope so the opening-state rules are available before the bundle is
+// painted; the `require` lower down is then a cache hit. Read from card.js rather than
+// restated here: two copies of "which criteria open on" is one copy too many.
+require(path.join(__dirname, 'card.js'));
+const CARD = globalThis.G3Card;
 const ORACLE = path.join(__dirname, '..', '..', '..', 'docs', 'experiments',
   's3-10-drawn-pixel.json');
 
@@ -125,9 +130,17 @@ function paintTheBundle(thresholdMin) {
     destTables: manifest.layers.map((l) => (l.dest_table
       ? JSON.parse(fs.readFileSync(path.join(BUNDLE, l.dest_table), 'utf8')) : null)),
   });
+  // **The OPENING view, not every criterion.** This probe asks where the raster lands on screen;
+  // it needs a mask with edges in it to see a displacement at all. Enabling all seven criteria
+  // paints their intersection, which is nearly empty, and seven of the fourteen checks below then
+  // fail for want of structure -- the inert control included, which is the tell. The opening view
+  // is also the mask every figure in s3-10 and s3-11 was measured against, back when it was the
+  // only one the bundle could paint.
+  const opensOn = manifest.layers.map((l) => CARD.layerOpensOn(l));
+  if (!opensOn.some(Boolean)) throw new Error('no layer opens on; there is nothing to place');
   const out = send({ type: 'compute', seq: 1,
     thresholds: manifest.layers.map(() => thresholdMin),
-    enabled: manifest.layers.map(() => true) });
+    enabled: opensOn });
   globalThis.self = prevSelf;
   const result = out.find((m) => m.type === 'result');
   if (!result) throw new Error('the worker returned no result for the published bundle');

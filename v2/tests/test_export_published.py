@@ -50,17 +50,48 @@ def test_the_v1_size_baseline_is_the_plane_v1_would_have_written():
 @pytest.mark.skipif(not (PUBLISHED / "manifest.json").exists(),
                     reason="run scripts/export_published_layers.py first")
 def test_the_product_manifest_carries_only_the_chosen_grid():
-    """Pass 43 F4. Every manifest entry starts enabled in the page, so shipping the rejected
-    200 m candidate beside the product made the default answer the intersection of two versions
-    of one criterion — which removed 4,022 passing pixels at the default threshold. A candidate
-    is exported only when asked for."""
+    """Pass 43 F4. Shipping the rejected 200 m candidate beside the product made the default
+    answer the intersection of two versions of one criterion — which removed 4,022 passing pixels
+    at the default threshold. A candidate is exported only when asked for.
+
+    **This asserted `== [100.0]`, which also said "there is exactly one layer".** That was a
+    property of the bundle at the time, not the finding, and it broke the moment the bundle
+    carried the seven criteria the reading test needs. The finding had two halves and both are
+    asserted below on their own terms.
+    """
     manifest = json.loads((PUBLISHED / "manifest.json").read_text(encoding="utf-8"))
     # Read from `wire` rather than written out: the encoding set lived in five places and a
     # version bump silently missed three of them.
     assert manifest["encoding"] in wire.READABLE_ENCODINGS
-    assert [l["cell_m"] for l in manifest["layers"]] == [100.0]
+    assert manifest["layers"], "a manifest with no layers publishes nothing"
+    off_grid = [l["id"] for l in manifest["layers"] if l["cell_m"] != 100.0]
+    assert not off_grid, f"a layer on a rejected grid is shipping: {off_grid}"
     for layer in manifest["layers"]:
         assert layer["horizon_s"] > 0, "a layer with no horizon cannot decide BEYOND_HORIZON"
+
+
+@pytest.mark.skipif(not (PUBLISHED / "manifest.json").exists(),
+                    reason="run scripts/export_published_layers.py first")
+def test_exactly_one_criterion_opens_enabled():
+    """The other half of pass 43 F4, and the half that had no guard.
+
+    F4's harm was that **every manifest entry starts enabled**, so the opening answer is the
+    intersection of everything shipped. With one layer that was invisible. With seven it means a
+    household's first sight of the product is the intersection of seven criteria at seven default
+    minutes — and `drive to RDU within 10 minutes` is empty from anywhere in Chapel Hill, so the
+    first thing they would meet is a blank map.
+
+    The manifest now says which criteria open on. More than one is not automatically wrong, but
+    it is a publishing decision nobody should be able to make by accident, which is what shipping
+    a layer used to be.
+    """
+    manifest = json.loads((PUBLISHED / "manifest.json").read_text(encoding="utf-8"))
+    on = [l["id"] for l in manifest["layers"] if l.get("default_on", True)]
+    assert len(on) == 1, f"{len(on)} of {len(manifest['layers'])} criteria open enabled: {on}"
+    for layer in manifest["layers"]:
+        opens = layer.get("default_threshold_min")
+        assert isinstance(opens, int) and 1 <= opens <= 60, (
+            f"{layer['id']} opens on {opens!r}, outside the slider's own 1..60 range")
 
 
 @pytest.mark.skipif(not (PUBLISHED / "manifest.json").exists(), reason="not exported")

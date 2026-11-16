@@ -904,6 +904,104 @@ check('the real bundle\'s own explainAt replies all render, and the card never i
     + `${named} named a destination, ${several} of those a shared node`);
 });
 
+// ---- the opening state: which criteria a household meets switched ON, and on what minute ----
+// Pass 43 F4 established that every manifest entry starts enabled. That was harmless while the
+// bundle held one criterion. The 2026-11-16 build publishes seven, so "everything on" is the
+// INTERSECTION of seven criteria at seven default minutes -- and "drive to RDU in 10 minutes" is
+// empty from anywhere in Chapel Hill, so the first thing a reader would meet is a blank map and
+// the conclusion that the thing is broken.
+
+check('a criterion is named by its published label, not by its layer id', () => {
+  // Found by hovering one cell on the seven-criterion page. The card read
+  // "own_triangle_duke-hospital_drive  PASS  20 min" -- an identifier, shown to a household.
+  const html = C.renderCardHTML(reply([crit({
+    layer: 'own_triangle_duke-hospital_drive',
+    label: 'Duke University Hospital, drive',
+  })]));
+  assert(html.includes('Duke University Hospital, drive'), html);
+  assert(!html.includes('own_triangle_duke-hospital_drive'),
+    `the layer id reached the household: ${html}`);
+});
+
+check('a criterion with no published label still renders a name, not "undefined"', () => {
+  for (const label of [undefined, null, '']) {
+    const html = C.renderCardHTML(reply([crit({ layer: 'some_layer_id', label })]));
+    assert(html.includes('some_layer_id'), `${String(label)}: ${html}`);
+    assert(!html.includes('undefined'), `${String(label)}: ${html}`);
+  }
+});
+
+check('every criterion on the real bundle publishes a readable name', () => {
+  const mpath = path.join(__dirname, 'fixtures', 'published', 'manifest.json');
+  if (!fs.existsSync(mpath)) {
+    console.log('      (no published manifest on disk; skipped)');
+    return;
+  }
+  const m = JSON.parse(fs.readFileSync(mpath, 'utf8'));
+  for (const l of m.layers) {
+    assert(typeof l.label === 'string' && l.label.trim().length,
+      `${l.id} publishes no label, so the card would print its id`);
+    assert(l.label !== l.id, `${l.id} publishes its own id as its label`);
+    // What makes a string an identifier rather than a name.
+    assert(!/^own_|_walk$|_drive$|_bike$/.test(l.label),
+      `${l.id} publishes a label that is still an identifier: ${l.label}`);
+  }
+  console.log(`      ${m.layers.length} criteria, all named`);
+});
+
+check('a layer that does not say starts ON, so every bundle before this one is unchanged', () => {
+  assert(C.layerOpensOn({ mode: 'walk' }) === true);
+  assert(C.layerOpensOn({ mode: 'walk', default_on: true }) === true);
+  assert(C.layerOpensOn(undefined) === true);
+});
+
+check('only an explicit false starts a criterion OFF', () => {
+  assert(C.layerOpensOn({ mode: 'drive', default_on: false }) === false);
+  // Not falsy -- FALSE. A bundle that wrote 0 or "" meant something we cannot read, and reading
+  // it as "off" would silently drop a criterion the publisher believed was on.
+  assert(C.layerOpensOn({ mode: 'drive', default_on: 0 }) === true);
+  assert(C.layerOpensOn({ mode: 'drive', default_on: '' }) === true);
+  assert(C.layerOpensOn({ mode: 'drive', default_on: null }) === true);
+});
+
+check('a published opening minute beats the mode default', () => {
+  assert(C.layerOpeningThreshold({ mode: 'drive', default_threshold_min: 40 }) === 40);
+  assert(C.layerOpeningThreshold({ mode: 'walk', default_threshold_min: 7 }) === 7);
+});
+
+check('an unusable opening minute falls back rather than setting the slider to NaN', () => {
+  // A slider set from `undefined` reads as empty and the first compute runs on NaN, which is a
+  // worse failure than a wrong default because nothing on screen says a number is missing.
+  for (const bad of [undefined, null, 'ten', NaN, Infinity, {}]) {
+    const got = C.layerOpeningThreshold({ mode: 'drive', default_threshold_min: bad });
+    assert(typeof got === 'number' && Number.isFinite(got), `${String(bad)} -> ${got}`);
+  }
+  assert(C.layerOpeningThreshold({ mode: 'drive' }) === C.DEFAULT_THRESHOLD_MIN.drive);
+  assert(C.layerOpeningThreshold({ mode: 'bike' }) === C.DEFAULT_THRESHOLD_MIN.bike);
+  assert(C.layerOpeningThreshold({ mode: 'nonsense' }) === C.DEFAULT_THRESHOLD_MIN.walk);
+});
+
+check('the shipped bundle opens on exactly one criterion', () => {
+  // The check that would actually have caught the blank map. It reads the manifest the page
+  // loads, not a hand-built one: a rule correct on its author's fixtures and wrong on the
+  // artifact is this project's most repeated defect.
+  const mpath = path.join(__dirname, 'fixtures', 'published', 'manifest.json');
+  if (!fs.existsSync(mpath)) {
+    console.log('      (no published manifest on disk; skipped)');
+    return;
+  }
+  const m = JSON.parse(fs.readFileSync(mpath, 'utf8'));
+  const on = m.layers.filter((l) => C.layerOpensOn(l));
+  assert(on.length === 1,
+    `${on.length} of ${m.layers.length} criteria open switched on: ${on.map((l) => l.label)}`);
+  for (const l of m.layers) {
+    const min = C.layerOpeningThreshold(l);
+    assert(Number.isFinite(min) && min >= 1 && min <= 60,
+      `${l.label} opens on ${min}, outside the slider's own 1..60 range`);
+  }
+  console.log(`      ${m.layers.length} criteria, opening on "${on[0].label}"`);
+});
+
 console.log(failures === 0 ? '\nall card checks passed'
   : `\n${failures} card check(s) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

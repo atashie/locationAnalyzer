@@ -711,6 +711,11 @@ function handleExplainAt(msg) {
     }
     criteria.push({
       layer: state.manifest.layers[k].id,
+      // The household-facing name, beside the id rather than instead of it. The card printed the
+      // id for as long as the bundle had one criterion, which made it one ugly line; at seven it
+      // is most of what a reader sees, and `own_triangle_duke-hospital_drive` is not readable by
+      // anyone who did not build this.
+      label: state.manifest.layers[k].label,
       outcome,
       outcomeName: OUTCOME_NAMES[outcome],
       status,

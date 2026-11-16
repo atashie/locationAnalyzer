@@ -186,7 +186,10 @@
 
     for (const crit of msg.criteria) {
       const bits = [];
-      bits.push(`<div><span class="crit-name">${esc(crit.layer)}</span>`
+      // The published label, falling back to the id. A bundle that publishes no label must
+      // still render a name rather than the word `undefined`.
+      const critName = crit.label || crit.layer;
+      bits.push(`<div><span class="crit-name">${esc(critName)}</span>`
         + `<span class="outcome ${esc(crit.outcomeName)}">${esc(crit.outcomeName)}</span></div>`);
 
       const mins = minutesText(crit);
@@ -372,6 +375,39 @@
     };
   }
 
-  root.G3Card = { WHY_UNKNOWN, VERDICT_TEXT, ESTIMATE_NOTE, esc, cellForLonLat, minutesText,
-    destinationText, renderCardHTML, createInspector };
+  /** The minute a criterion's slider opens on when its layer publishes no preference.
+   *
+   * Per MODE, because a minute means a different distance on foot and in a car. These are the
+   * page's own priors, not measurements, and a layer that publishes `default_threshold_min`
+   * overrides them.
+   */
+  const DEFAULT_THRESHOLD_MIN = { walk: 20, bike: 15, drive: 10 };
+
+  /** Whether this published layer's criterion starts switched ON.
+   *
+   * **Absent means ON**, which is what every bundle before seven criteria did, so a decoder that
+   * never heard of the field reads the same layer. Pass 43 F4 established that every manifest
+   * entry starts enabled; with one criterion that was harmless, and with seven it makes the
+   * opening view the INTERSECTION of all of them -- a household meets a blank map and concludes
+   * the thing is broken before reading a word.
+   */
+  function layerOpensOn(layer) {
+    return !layer || layer.default_on !== false;
+  }
+
+  /** The minute this layer's slider opens on: the layer's own, else the mode's.
+   *
+   * A published default is honoured only when it is a finite number. `null`, a string and a
+   * missing field all fall back, because a slider set from `undefined` reads as empty and the
+   * first compute then runs on `NaN`.
+   */
+  function layerOpeningThreshold(layer) {
+    const published = layer && layer.default_threshold_min;
+    if (typeof published === 'number' && Number.isFinite(published)) return published;
+    return DEFAULT_THRESHOLD_MIN[layer && layer.mode] || DEFAULT_THRESHOLD_MIN.walk;
+  }
+
+  root.G3Card = { WHY_UNKNOWN, VERDICT_TEXT, ESTIMATE_NOTE, DEFAULT_THRESHOLD_MIN, esc,
+    cellForLonLat, minutesText, destinationText, renderCardHTML, createInspector,
+    layerOpensOn, layerOpeningThreshold };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -20,9 +20,24 @@ enum integers in `status.py` are in-memory array codes and must never reach a ra
 17.41% (57,541), BEYOND_HORIZON 5.83% (19,282), NO_PATH 0%. Sums to 76,823 = exactly the committed
 artifact's nodata.
 
-**NO_PATH is unreachable in every shipped configuration.** `symmetrise` runs before
-`largest_component`, so the retained walk graph is 1 strongly connected component with 0 of 539,814
-nodes unreached; bounded engines (Valhalla expansion, MOTIS) cannot claim it either. **Component
+**NO_PATH is unreachable in every shipped WALK configuration — corrected 2026-11-16.**
+`symmetrise` runs before `largest_component`, so the retained walk graph is 1 strongly connected
+component with 0 of 539,814 nodes unreached; bounded engines (Valhalla expansion, MOTIS) cannot
+claim it either.
+
+> **This sentence said "every shipped configuration" and that is now false.** `symmetrise` runs
+> for **walk only**. Every layer that had ever shipped when it was written was a walk layer, so
+> "every shipped configuration" and "the walk configuration" named the same set, and a
+> mode-specific reason read as a universal result. The 2026-11-16 criteria build ships three drive
+> layers and a bike layer, and the status appears at once: **57 `NO_PATH` cells in every drive
+> layer and 95 in the bike layer** on the 330,502-cell UTM surface (39 and 80 after reprojection
+> to the published grid). The drive figure is identical across all three drive layers, which is
+> what you would expect: a node with no directed path out has none to any destination set.
+>
+> Where they are: several small groups, the largest 19 cells near 35.87659/-79.20377 at the
+> western edge of the grid. A one-way road cut by the clip boundary would produce exactly this,
+> and that mechanism is **plausible, not established** — nobody has traced one of these cells.
+> See [[project-phase1-s3-criteria-build]]. **Component
 pruning** (3,046 components, 13,608 nodes dropped) is how a disconnected neighbourhood actually goes
 missing - such cells snap to a retained road up to 200 m away and read a finite time on a road they
 may not be able to reach. That makes S2.4's build-time diagnostic matter more than the status.

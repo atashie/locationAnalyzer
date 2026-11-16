@@ -550,18 +550,17 @@
 
   // ---- 5. layer rows (checkbox + threshold slider) ----------------------------------------------
 
-  function defaultThreshold(mode) {
-    return { walk: 20, bike: 15, drive: 10 }[mode] || 20;
-  }
-
   function buildLayerRows(manifest) {
     el.layers.innerHTML = '';
     manifest.layers.forEach((layer, i) => {
       const row = document.createElement('div');
       row.className = 'layer';
+      // Both rules live in card.js so Node can test them: pass 51's two presentation findings
+      // were both in logic that sat here, where nothing could reach it.
+      const startsOn = window.G3Card.layerOpensOn(layer);
       row.innerHTML = `
         <div class="layer-head">
-          <input type="checkbox" id="en-${i}" checked>
+          <input type="checkbox" id="en-${i}"${startsOn ? ' checked' : ''}>
           <label class="name" for="en-${i}">${layer.label}</label>
           <span class="val" id="val-${i}"></span>
         </div>
@@ -572,7 +571,7 @@
       const checkbox = row.querySelector(`#en-${i}`);
       const slider = row.querySelector(`#th-${i}`);
       const valSpan = row.querySelector(`#val-${i}`);
-      slider.value = String(defaultThreshold(layer.mode));
+      slider.value = String(window.G3Card.layerOpeningThreshold(layer));
 
       const sync = () => {
         valSpan.textContent = `<= ${slider.value} min`;
@@ -879,7 +878,7 @@
     for (let i = 0; i < 20; i++) {
       const layerIdx = i % n;
       const slider = $(`th-${layerIdx}`);
-      const base = defaultThreshold(state.manifest.layers[layerIdx].mode);
+      const base = window.G3Card.layerOpeningThreshold(state.manifest.layers[layerIdx]);
       const next = 1 + ((base + i * 7) % 60); // deterministic pseudo-random walk, 1..60
       slider.value = String(next);
       $(`val-${layerIdx}`).textContent = `<= ${next} min`;
@@ -901,11 +900,17 @@
   }
 
   function resetAll() {
+    // The OPENING state, not "everything on". Those were the same thing while the bundle held
+    // one criterion; with seven, "everything on" is the intersection of all of them and reset
+    // hands a household the blank map that `layerOpensOn` exists to prevent. The opening view
+    // was fixed first and this was still wrong, one button press away.
     state.manifest.layers.forEach((layer, i) => {
-      $(`th-${i}`).value = String(defaultThreshold(layer.mode));
-      $(`en-${i}`).checked = true;
-      $(`val-${i}`).textContent = `<= ${defaultThreshold(layer.mode)} min`;
-      $(`th-${i}`).closest('.layer').classList.remove('disabled');
+      const min = window.G3Card.layerOpeningThreshold(layer);
+      const on = window.G3Card.layerOpensOn(layer);
+      $(`th-${i}`).value = String(min);
+      $(`en-${i}`).checked = on;
+      $(`val-${i}`).textContent = `<= ${min} min`;
+      $(`th-${i}`).closest('.layer').classList.toggle('disabled', !on);
     });
     state.window = [];
     recompute('reset');
