@@ -175,7 +175,7 @@ The live corrections:
 
 ## Verified state, 2026-11-16
 
-**1,560 tests, 1,536 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
+**1,566 tests, 1,542 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
 checks, 13 probe checks. 69 of 69 worker mutations, 33 of 33 card mutations, 30 of 30
 admissibility mutations, 9 of 9 migration mutations — 0 inert, 0 survived, 0 misplaced, 0
 errored anywhere.** Every figure here was re-run on 2026-11-16, not carried forward.
@@ -220,7 +220,11 @@ Nothing below should be decided by a session on its own.
 * **28 candidate destinations and 4 masked identities** from the audit work.
 * **One repeat walk of `band15min_pass-03`**, with a recorded door, the selected destination and a
   timed duration. This is the cheapest unblock in the whole project: it is what would make the E3
-  verdict admissible, and the record currently holds **no admissible observation**.
+  verdict admissible, and the record currently holds **no admissible observation**. The page was
+  read at that cell on 2026-11-16 and shows what the record says it should — 14 min, PASS at a
+  15-minute limit, the restricted-route warning, Hill's Family Asian Markets
+  ([s3-12](../experiments/s3-12-what-the-page-says-at-the-walked-cell.json)) — so the walk now
+  has something specific to confirm or refute.
 * **Whether the Apache-licensed destination names may be published at all yet.** New with pass
   50. 35 of the 468 published place records are Apache-2.0, which in Overture means
   Foursquare-sourced, and only §4(a) of that licence is discharged: §4(b) wants a notice on the
@@ -261,7 +265,24 @@ Pointers where the reasoning is recorded; the rule itself is here so it cannot b
 
 ## Runtime constraints that cost real time to rediscover
 
-All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often:
+All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often, and one about
+the browser:
+
+* **An automated browser session cannot measure anything that completes on an animation frame.**
+  Chrome throttles `requestAnimationFrame` to **1 Hz** in a window nothing is displaying, and
+  `document.visibilityState` still says `"visible"`, `document.hidden` is `false` and
+  `document.hasFocus()` is `true` — occlusion is not the Page Visibility API's hidden state. The
+  page's "slider → repaint" stat is taken on a frame, so it read **1002 ms** median over 20
+  changes while the worker compute underneath it read 9 ms. The control that settles it: sample
+  frame gaps for ten seconds and take a screenshot during the window. They read 1000 ms at rest
+  and **17 ms for exactly the frames captured**, then return to 1000. Anything frame-timed needs
+  a person with the window on screen. Message round trips and worker-internal timings are
+  unaffected, which is why the card's 0.2 ms is trustworthy and the repaint figure is not.
+* **Getting a large result out of the page costs nothing if it goes through the access log.**
+  `python -m http.server` logs every request line verbatim, so the page can send a 10 KB document
+  as a series of GETs with the payload in the query string and `scripts/collect_probe_run.py`
+  puts it back together. Encode twice — a slice of a percent-encoded string can cut a `%XX` in
+  half. Reading it back through the browser tool instead spends the whole document on context.
 
 * **Codex cannot start a process on this machine.** Every `exec_command` fails with
   `windows unelevated restricted-token sandbox cannot enforce split writable root sets`, under
@@ -276,12 +297,13 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **49 instances**. *(This said 42 from pass 52
+[[feedback-verify-the-shape-of-the-risk]] now holds **50 instances**. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
 closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
-stands in for; and **49**, a tradeoff can stay right while its justification expires — the minute
-is `ceil` because "nothing displays it", and since 2026-11-14 the card displays it. From pass 51:
+stands in for; **49**, a tradeoff can stay right while its justification expires — the minute
+is `ceil` because "nothing displays it", and since 2026-11-14 the card displays it; and **50**,
+an index is not a location until it names its grid. From pass 51:
 a check on
 the answer is not a check on the explanation of the answer; one field cannot answer two questions;
 a rule borrowed from a different question changes meaning on arrival. From pass 52: **closing the
@@ -322,8 +344,13 @@ not the order these became known. Each item says what risk it retires, because t
 justifies its position.
 
 **Running in parallel, and only the owner can do it: one repeat walk of `band15min_pass-03`**, from
-a recorded door inside cell (286, 129), to the selected destination, timed, with the approach
-noted. The E3 record holds no admissible observation, so this is still the cheapest unblock in the
+a recorded door inside the cell at **lon -79.062476, lat 35.902334**, to the selected destination,
+timed, with the approach noted. *(Use the coordinate, not an index. The sheet's `row`/`col`
+columns say (286, 129) and those index the **UTM** grid; the published raster has a cell
+(286, 129) too, about 400 m away, and it is a different answer entirely — 24 minutes and a FAIL.
+In the published raster this door is cell **(282, 126)**, which is what the page's card heading
+shows. See [s3-12](../experiments/s3-12-what-the-page-says-at-the-walked-cell.json) and ledger
+instance 50.)* The E3 record holds no admissible observation, so this is still the cheapest unblock in the
 project — and since 2026-11-14 the sheet refuses a row that omits any of those four things, so the
 next walk is scorable the moment it is recorded rather than months later by argument.
 
@@ -649,6 +676,43 @@ instance 48.
 `window.G3Probe` in `app.js` is the read-only window it needs: seven accessors, none of which can
 set a threshold, enable a layer, move the map or render a card. *(An earlier note here and the
 commit message for `cdcd77c` both said eight; there are seven.)*
+
+### 3b. What the page says at the walked cell — **DONE 2026-11-16**
+
+Pass 54's precondition for the re-walk: *"the audit sheet's encoded 14 minutes is evidence about
+its recorded artifact; the outstanding placement question is precisely why it should not simply be
+assumed to authenticate the answer shown at a real door."* So the page was read at that door
+before anybody walks it. [s3-12](../experiments/s3-12-what-the-page-says-at-the-walked-cell.json).
+
+**The page agrees with the sheet row, at the cell the door is actually in.** At a 15-minute limit
+it shows `(row 282, col 126)`, PASS, "14 min · your limit 15 min", the restricted-route warning,
+and "measured to Hill's Family Asian Markets" — the sheet's `encoded_minutes`, `outcome_15min`,
+restricted approach and `predicted_destination`, rendered. Screenshot at
+`docs/experiments/s3-12/card-at-the-walked-cell-15min.png`.
+
+**And the reading found the probe that was supposed to make this checkable was 400 m wrong.**
+s3-10's `the_walked_cell` took the sheet's `row`/`col` — (286, 129) — as an index into the
+*published* raster. Those columns index the UTM `GridSpec`; the published grid is a different
+grid with its own indexing and also has a cell (286, 129). The two disagree about everything a
+walker would check: 14 minutes against 24, PASS at the band against FAIL, flagged restricted
+against not, Hill's Family Asian Markets against Seal The Seasons. Its own text called its card
+"the one a person can check against a walk". **Ledger instance 50**: an index is not a location
+until it names its grid. Nothing could have caught it internally — the probe was self-consistent,
+its expectations were re-derived from the planes by a second path, and the browser agreed with it
+exactly. It took comparing the apparatus against something outside it.
+
+The probe is re-pointed at the door's coordinate, and regenerating the oracle changed that one
+probe and nothing else. That made the 2026-11-15 run a run against a *different* oracle, and
+`test_the_run_is_against_the_oracle_that_is_committed` failed on it, which is the guard working.
+**The probe was re-run against the corrected oracle: eleven probes, zero disagreements, three
+sensitive probes still contradicting the card.** The first run is kept as what it was, with its
+own check that exactly one probe may now differ.
+
+**Two costs measured, one not.** The card round trip is **0.2 ms median over 17 hovers** in a
+real browser — the figure the card plan listed as unverified — which matches the Node worker-side
+measurement's order and settles that one `explainAt` per pointer move needs no batching. Worker
+compute over 20 scripted threshold changes is 9.1 ms median. The **slider-to-repaint** figure the
+page reported, 1002 ms, is **the instrument**: see the runtime constraints below.
 
 ### 4. Phone decode latency
 

@@ -71,6 +71,10 @@ ARTIFACT = V2.parent / "docs" / "experiments" / "s3-10-drawn-pixel.json"
 #: The page opens with this threshold on the one published walk layer -- `defaultThreshold` in
 #: `app.js`. It leads the list because it is the number a household meets before touching anything.
 PAGE_DEFAULT_MIN = 20
+#: The door recorded for `band15min_pass-03` in
+#: `docs/experiments/audit/triangle-grocery-walk-chapelhill.csv`, read from that row's own lon/lat
+#: columns. **Not its row/col columns**, which index the UTM `GridSpec` and not this raster.
+WALKED_DOOR_LON, WALKED_DOOR_LAT = -79.062476, 35.902334
 THRESHOLDS_MIN = (PAGE_DEFAULT_MIN, 10, 15, 25, 45)
 
 #: What `worker.js` paints for each outcome: included is translucent blue, unknown is a diagonal
@@ -306,10 +310,29 @@ def build_probes(man: dict, value: np.ndarray, status: np.ndarray, flag: np.ndar
             lon, lat, sensitive=False)
 
     # The one cell with a real-world observation behind it.
-    add("the_walked_cell", "the centre of cell (286, 129), which is the cell band15min_pass-03 was "
-                           "walked from; a cell centre, so it is inert for the displacement and "
-                           "present because its card is the one a person can check against a walk",
-        west + (129 + 0.5) * col_w, north - (286 + 0.5) * row_h, sensitive=False)
+    #
+    # **This read `west + (129 + 0.5) * col_w, north - (286 + 0.5) * row_h` until 2026-11-16, and
+    # that is a different place.** The audit sheet's (286, 129) indexes the UTM `GridSpec` the
+    # pipeline computes on. The published raster is a WGS84 lon/lat grid with its own indexing and
+    # happens to have a cell (286, 129) too, about 400 m away, and the sheet's own lon/lat columns
+    # were sitting right there unused.
+    #
+    # The two cells say different things, which is why this mattered: published (286, 129) is
+    # 24 minutes, FAIL at every threshold the page offers, no restricted route, "Seal The
+    # Seasons". The walked cell is 14 minutes, PASS at 15, route flag set, "Hill's Family Asian
+    # Markets" -- which is the sheet's own recorded destination. So the probe's card was a card
+    # about somewhere else, while its own text called it "the one a person can check against a
+    # walk". Found by reading the page before the re-walk, which is what that reading was for.
+    walked_row = int(published_rows(np.array([WALKED_DOOR_LAT]), north, south, nrows)[0])
+    walked_col = int(np.floor((WALKED_DOOR_LON - west) / (east - west) * ncols))
+    add("the_walked_cell",
+        f"the centre of published cell ({walked_row}, {walked_col}), which is the cell containing "
+        f"the door recorded for band15min_pass-03 ({WALKED_DOOR_LON}, {WALKED_DOOR_LAT}); a cell "
+        f"centre, so it is inert for the displacement, and present because its card is the one a "
+        f"person can check against a walk. NOT published cell (286, 129): that index pair is the "
+        f"UTM grid's, this probe read it as this raster's until 2026-11-16, and they are about "
+        f"400 m apart",
+        west + (walked_col + 0.5) * col_w, north - (walked_row + 0.5) * row_h, sensitive=False)
 
     # The probes that can actually fail.
     for label, row in (("north", 100), ("mid", 257), ("south", 420)):

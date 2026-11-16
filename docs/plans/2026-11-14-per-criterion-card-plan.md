@@ -164,8 +164,13 @@ Minimum that discharges the three disclosures, and nothing more:
 
 * **The page was rendered on 2026-11-15** (`docs/experiments/s3-11-browser-placement.json`). The
   pointer wiring works, the panel lays out, and the card appears with all three disclosures in it;
-  the screenshot is committed. Still unconfirmed: the real round-trip cost, which that session
-  never exercised because it changed no threshold, and anything at all about a phone.
+  the screenshot is committed. **The round-trip cost was measured on 2026-11-16**: 0.2 ms median
+  over 17 hovers of the real bundle in Chrome, which matches the order of the Node worker-side
+  figure and settles that one `explainAt` per pointer move needs neither batching nor a cached
+  outcome plane (`docs/experiments/s3-12-what-the-page-says-at-the-walked-cell.json`). Still
+  unconfirmed: the slider-to-repaint cost, which an automated session cannot measure because
+  Chrome throttles animation frames in a window nothing is displaying, and anything about a
+  phone.
 * **Which cell the pointer is over in the PICTURE.** MapLibre draws the mask as a `canvas` source
   across a Mercator quad while the published rows are linear in latitude. Over this bundle's
   latitude span the two disagree by at most **0.366 rows, which is 35.6 m at a 97.5 m row** --

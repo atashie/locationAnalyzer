@@ -262,8 +262,16 @@ the existential fifteen-minute claim for that cell. `witness_within_15min` is `n
 > time it came up, and the first two attempts got it wrong in opposite directions (Codex passes
 > 46 and 47).
 >
-> **One repeat walk clears it**: a door inside cell (286, 129), a timer, the shop you reached
-> with a pin on it, and a line saying which way you went.
+> **One repeat walk clears it**: a door inside the cell at lon -79.062476, lat 35.902334 — the
+> `query_lon`/`query_lat` of that row — a timer, the shop you reached with a pin on it, and a line
+> saying which way you went.
+>
+> *(Added 2026-11-16: this said "a door inside cell (286, 129)". That is this sheet's own `row`
+> and `col`, which index the UTM grid the pipeline computes on. The published raster is a WGS84
+> grid with its own indexing and also has a cell (286, 129), about 400 m away, holding 24 minutes
+> and a FAIL. Use the coordinate. The columns are named `row` and `col` and name no grid, which is
+> how a probe in the render spike came to point at the wrong cell for five days — ledger instance
+> 50.)*
 
 ## Two limits and one closed question
 

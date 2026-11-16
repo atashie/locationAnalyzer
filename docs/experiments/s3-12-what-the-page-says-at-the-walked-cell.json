@@ -1,0 +1,677 @@
+{
+  "what_this_is": "The reading Codex pass 54 asked for before the re-walk: what the PAGE says at the cell band15min_pass-03 was walked from, read in a browser rather than inferred from the sheet. The sheet's encoded 14 minutes is evidence about the sheet. This is the answer a household standing at that door would actually be shown.",
+  "when": "2026-11-16",
+  "where": {
+    "browser": "Chrome 157.0.0.0 on Windows, devicePixelRatio 1",
+    "page": "spikes/g3-render served on 127.0.0.1:8099 from the working tree",
+    "bundle": "the shipped published-v4 fixtures, layer own_triangle_grocery_walk"
+  },
+  "how_to_reproduce": [
+    "serve spikes/g3-render on loopback and open it",
+    "set the walk threshold to 15, which is the band this journey is in",
+    "hover the centre of published cell (282, 126): lon -79.0622862, lat 35.9026751",
+    "the card's own heading states the cell it is describing, so the reading can be checked without trusting the pointer arithmetic"
+  ],
+  "the_defect_this_reading_found": {
+    "summary": "The probe in s3-10 called `the_walked_cell` was not the walked cell. It read the audit sheet's (286, 129) as an index into the PUBLISHED raster. Those numbers index the UTM GridSpec the pipeline computes on. The published raster is a WGS84 lon/lat grid with its own indexing and also has a cell (286, 129), about 400 m away, and the sheet's own lon/lat columns were unused.",
+    "why_it_mattered": "The probe's own text called its card 'the one a person can check against a walk'. The two cells do not agree about anything a walker would check.",
+    "the_cell_the_index_pointed_at": {
+      "published_cell": {
+        "row": 286,
+        "col": 129
+      },
+      "value_byte_minutes": 24,
+      "status_byte": 0,
+      "route_flag_byte": 0,
+      "destination_index": 124,
+      "place_names": [
+        "Seal The Seasons"
+      ],
+      "outcome_at_15_min": "FAIL",
+      "outcome_at_20_min": "FAIL"
+    },
+    "the_cell_the_door_is_in": {
+      "published_cell": {
+        "row": 282,
+        "col": 126
+      },
+      "value_byte_minutes": 14,
+      "status_byte": 0,
+      "route_flag_byte": 1,
+      "destination_index": 54,
+      "place_names": [
+        "Hill's Family Asian Markets"
+      ],
+      "outcome_at_15_min": "PASS",
+      "outcome_at_20_min": "PASS"
+    },
+    "the_sheets_own_columns_are_named_row_and_col_with_no_grid_named": true,
+    "fixed": "measure_drawn_pixel.py now derives the probe from the door's lon/lat and records which cell that is. Regenerating changed that one probe and nothing else: every other probe and every exposure figure is byte-identical."
+  },
+  "the_reading": {
+    "cell_label_the_page_printed": "(row 282, col 126)",
+    "at_the_pages_default_20_min": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS14 min · your limit 20 minThis route uses a way that is not clearly public — a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to Hill's Family Asian Markets",
+    "at_the_15_min_band_this_journey_is_in": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS14 min · your limit 15 minThis route uses a way that is not clearly public — a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to Hill's Family Asian Markets",
+    "painted_pixel_under_the_pointer": [
+      24,
+      119,
+      241,
+      150
+    ],
+    "painted_pixel_note": "PX_IN (24,119,242,150) as a canvas returns it: a translucent pixel is stored premultiplied, so the blue channel reads one count low. Blue, included, and it agrees with the card -- this is a cell CENTRE, where the two placement rules agree exactly, so it is inert for the displacement by construction.",
+    "screenshot": "s3-12/card-at-the-walked-cell-15min.png"
+  },
+  "the_page_agrees_with_the_sheet_row": {
+    "checked": [
+      "encoded_minutes",
+      "outcome_15min",
+      "predicted_destination",
+      "the restricted approach"
+    ],
+    "sheet": {
+      "encoded_minutes": 14,
+      "outcome_15min": "PASS",
+      "predicted_destination": "Hill's Family Asian Markets",
+      "restricted": "routes 305 m down OSM way 1254722641, access=private"
+    },
+    "page": {
+      "minutes_shown": 14,
+      "outcome": "PASS",
+      "destination_named": "Hill's Family Asian Markets",
+      "restricted": "the restricted-route warning is rendered"
+    },
+    "so": "the re-walk's precondition is met: the page shows what the record says it should, at the cell the door is actually in. A walker now has something specific to confirm or refute -- 14 minutes to Hill's Family Asian Markets, on a route that may use a private way."
+  },
+  "the_costs_this_session_could_measure": {
+    "card_round_trip_one_cell": "0.3 ms last / 0.2 ms median over 17 hovers",
+    "card_round_trip_note": "the figure the card plan listed as unverified. It is a real browser message round trip, and it matches the order of the Node worker-side measurement (0.0002 ms median in the handler). One explainAt per pointer move is free.",
+    "worker_compute_whole_raster": "7.7 ms last / 9.1 ms median over 20 scripted changes"
+  },
+  "the_cost_this_session_could_not_measure": {
+    "what": "slider to repaint, total -- the figure a household feels",
+    "what_the_page_reported": "1002.3 ms last / 1002.7 ms median over 20 changes",
+    "why_that_number_is_the_instrument": "requestAnimationFrame was firing once a second. The page reported visibilityState 'visible', document.hidden false and hasFocus() true, because an OCCLUDED window is not a hidden document -- and Chrome throttles frames in a window nothing is displaying. Paint completion is detected on a frame, so every repaint measured one frame clock.",
+    "the_control": "frame gaps sampled for ten seconds read 1000, 450, 33, 1000, 1000, 1000, 1000, 33, 17, 17, 17, 17, 17, 17, 17, 1000, 1017, 1000 ms. The run of 17 ms frames is exactly the window in which a screenshot was captured: forcing a capture un-throttles the compositor, and the gaps return to 1000 ms after it. So the page renders at 60 fps when something is looking at it.",
+    "the_one_untainted_sample": "a single manual threshold change made immediately after two screen captures: 68.9 ms total, 54.8 ms transfer and paint, 13.5 ms compute. n=1, and reported as n=1.",
+    "to_measure_it_properly": "click Auto-bench with the window actually on screen and read the stats row. One click, and it needs a person at the machine rather than a session."
+  },
+  "what_this_establishes": [
+    "the page, at the cell the walked door is in, shows 14 min, PASS at a 15-minute limit, the restricted-route warning and Hill's Family Asian Markets -- which is the sheet row, rendered",
+    "the oracle's 'walked cell' probe was 400 m away from the walked cell, and is not any more",
+    "the card round trip in a real browser is 0.2 ms median, so the per-pointer-move explanation needs no batching and no cached outcome plane"
+  ],
+  "what_this_does_not_establish": [
+    "that the 14 minutes is right. The owner reported about 25. This reading is about what the page SAYS, not about whether it is true, and the walk is still owed",
+    "the slider-to-repaint cost, which this session measured only through a throttled frame clock and one untainted sample",
+    "anything about a phone",
+    "that a household would read this card the way the model that wrote it does"
+  ],
+  "the_rerun_against_the_corrected_oracle": {
+    "why": "the oracle changed, so the 2026-11-15 run in s3-11 is no longer a run against it. A run against a different oracle is not evidence for this one, and the test that says so failed the moment the probe was re-pointed -- which is the guard working. This is the same eleven probes, re-run against the corrected file on the same machine, and it also re-checks the page after the card's wording changed today.",
+    "disagreements": 0,
+    "sensitive_probes_contradicting_the_card": 3,
+    "the_walked_cell_now_resolves_to": {
+      "row": 282,
+      "col": 126
+    },
+    "run": {
+      "ran": true,
+      "oracle": {
+        "what": "the DRAWN pixel against the PUBLISHED pixel, which is the first of the two steps Codex pass 54 asked be kept apart. Both grids are the shipped 514 x 643 raster; the only thing that changes is which row MapLibre paints at a latitude",
+        "max_offset_rows": 0.3656,
+        "max_offset_metres": 35.63
+      },
+      "view": {
+        "bearing": 0,
+        "pitch": 0,
+        "corner_screen_y": {
+          "north": 16,
+          "south": 782
+        },
+        "drawn_rows_per_screen_pixel": 0.671
+      },
+      "probes": [
+        {
+          "id": "corner_nw",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 278.3,
+            "y": 16.747
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 0,
+            "col": 0
+          },
+          "drawn_cell": {
+            "row": 0,
+            "col": 0
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            61,
+            61,
+            61,
+            130
+          ],
+          "rgba_under_the_pointer": [
+            61,
+            61,
+            61,
+            130
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 0, col 0)",
+            "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkUNKNOWNmore than 2 min · your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 278,
+              "y": 16.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.3,
+              "y": 0.065
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 0,
+              "col": 0
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "corner_ne",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 1241.7,
+            "y": 16.747
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 0,
+            "col": 642
+          },
+          "drawn_cell": {
+            "row": 0,
+            "col": 642
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rgba_under_the_pointer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 0, col 642)",
+            "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkUNKNOWNmore than 3 min · your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 1242,
+              "y": 16.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": 0.3,
+              "y": 0.065
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 0,
+              "col": 642
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "corner_sw",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 278.3,
+            "y": 781.257
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 513,
+            "col": 0
+          },
+          "drawn_cell": {
+            "row": 513,
+            "col": 0
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            61,
+            61,
+            61,
+            130
+          ],
+          "rgba_under_the_pointer": [
+            61,
+            61,
+            61,
+            130
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 513, col 0)",
+            "card_text": "We cannot say. At least one criterion does not know, and none has ruled this out.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkUNKNOWNmore than 2 min · your limit 20 minWe cannot tell you: this spot is too far from any path we hold for us to measure from it.",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 278,
+              "y": 780.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.3,
+              "y": -0.445
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 513,
+              "col": 0
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "corner_se",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 1241.7,
+            "y": 781.257
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 513,
+            "col": 642
+          },
+          "drawn_cell": {
+            "row": 513,
+            "col": 642
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rgba_under_the_pointer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 513, col 642)",
+            "card_text": "At least one criterion is not satisfied here.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkFAIL76 min · your limit 20 minThis route uses a way that is not clearly public — a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to Food Lion",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 1242,
+              "y": 780.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": 0.3,
+              "y": -0.445
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 513,
+              "col": 642
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "the_walked_cell",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 467.379,
+            "y": 437.541
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 282,
+            "col": 126
+          },
+          "drawn_cell": {
+            "row": 282,
+            "col": 126
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "rgba_under_the_pointer": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 282, col 126)",
+            "card_text": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS14 min · your limit 20 minThis route uses a way that is not clearly public — a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to Hill's Family Asian Markets",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 467,
+              "y": 437.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.379,
+              "y": 0.271
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 282,
+              "col": 126
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "boundary_north",
+          "sensitive": true,
+          "disagreements": [],
+          "screen": {
+            "x": 387.846,
+            "y": 166.713
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 100,
+            "col": 73
+          },
+          "drawn_cell": {
+            "row": 101,
+            "col": 73
+          },
+          "drawn_minus_published_row": 1,
+          "rgba_of_the_cell_the_card_names": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "rgba_under_the_pointer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "the_picture_contradicts_the_card_here": true,
+          "hover": {
+            "cell_label": "(row 100, col 73)",
+            "card_text": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS20 min · your limit 20 minThis route uses a way that is not clearly public — a private drive, a track, or a path with restricted access. Your walk may be longer than the time above.measured to one of 2 places at this junction: Weaver Street Market, Inc, Weaver Street Market Administration",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 388,
+              "y": 166.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": 0.154,
+              "y": 0.099
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 100,
+              "col": 73
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "boundary_mid",
+          "sensitive": true,
+          "disagreements": [],
+          "screen": {
+            "x": 434.365,
+            "y": 400.886
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 257,
+            "col": 104
+          },
+          "drawn_cell": {
+            "row": 258,
+            "col": 104
+          },
+          "drawn_minus_published_row": 1,
+          "rgba_of_the_cell_the_card_names": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rgba_under_the_pointer": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "the_picture_contradicts_the_card_here": true,
+          "hover": {
+            "cell_label": "(row 257, col 104)",
+            "card_text": "At least one criterion is not satisfied here.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkFAIL22 min · your limit 20 minmeasured to Mikyins Asian Market",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 434,
+              "y": 400.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.365,
+              "y": -0.074
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 257,
+              "col": 104
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "boundary_south",
+          "sensitive": true,
+          "disagreements": [],
+          "screen": {
+            "x": 590.43,
+            "y": 643.578
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 420,
+            "col": 208
+          },
+          "drawn_cell": {
+            "row": 421,
+            "col": 208
+          },
+          "drawn_minus_published_row": 1,
+          "rgba_of_the_cell_the_card_names": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "rgba_under_the_pointer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "the_picture_contradicts_the_card_here": true,
+          "hover": {
+            "cell_label": "(row 420, col 208)",
+            "card_text": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS20 min · your limit 20 minmeasured to Jean's Neighborhood Market",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 590,
+              "y": 642.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.43,
+              "y": -0.766
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 420,
+              "col": 208
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "inert_interior",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 464.378,
+            "y": 316.81
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": {
+            "row": 201,
+            "col": 124
+          },
+          "drawn_cell": {
+            "row": 201,
+            "col": 124
+          },
+          "drawn_minus_published_row": 0,
+          "rgba_of_the_cell_the_card_names": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "rgba_under_the_pointer": [
+            24,
+            119,
+            241,
+            150
+          ],
+          "the_picture_contradicts_the_card_here": false,
+          "hover": {
+            "cell_label": "(row 201, col 124)",
+            "card_text": "The model estimates this cell meets your limits.Times are estimates: measured from the centre of this cell, and rounded up to the whole minute.own_triangle_grocery_walkPASS12 min · your limit 20 minmeasured to Harris Teeter",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 464,
+              "y": 316.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.378,
+              "y": 0.003
+            },
+            "cell_under_the_pixel_the_pointer_reached": {
+              "row": 201,
+              "col": 124
+            },
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "outside_west",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 276.05,
+            "y": 165.369
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": null,
+          "hover": {
+            "cell_label": "",
+            "card_text": "Outside the published area.",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 276,
+              "y": 165.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": -0.05,
+              "y": 0.443
+            },
+            "cell_under_the_pixel_the_pointer_reached": null,
+            "placed_on_the_probe_cell": true
+          }
+        },
+        {
+          "id": "outside_north",
+          "sensitive": false,
+          "disagreements": [],
+          "screen": {
+            "x": 427.612,
+            "y": 14.505
+          },
+          "round_trip_degrees": {
+            "lon": 0,
+            "lat": 0
+          },
+          "card_cell": null,
+          "hover": {
+            "cell_label": "",
+            "card_text": "Outside the published area.",
+            "timed_out": false,
+            "pointer_landed_at": {
+              "x": 428,
+              "y": 14.813
+            },
+            "pixels_from_the_probe_point": {
+              "x": 0.388,
+              "y": 0.307
+            },
+            "cell_under_the_pixel_the_pointer_reached": null,
+            "placed_on_the_probe_cell": true
+          }
+        }
+      ],
+      "disagreements_with_the_oracle": 0,
+      "sensitive_probes": 3,
+      "sensitive_probes_where_the_picture_contradicted_the_card": 3,
+      "what_zero_disagreements_would_mean": "that the page places the raster exactly as measure_drawn_pixel.py predicts, including the sub-row displacement, so the structure counts in that artifact describe the page a household actually gets",
+      "what_this_cannot_see": "an AFFINE placement error. The drawn row is recovered from where the quad's own corners project, so a constant offset or a uniform stretch of the texture cancels out and this probe reports agreement. Only the SHAPE of the placement is visible to it, which is the Mercator-against-latitude question it was built for. Closing the rest needs a rendered pixel: a screenshot at a colour edge, checked against the screen row predicted from corner_screen_y and drawn_rows_per_screen_pixel above."
+    }
+  }
+}

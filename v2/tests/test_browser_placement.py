@@ -46,9 +46,27 @@ def oracle() -> dict:
     return json.loads(ORACLE.read_text(encoding="utf-8"))
 
 
-def test_the_run_is_against_the_oracle_that_is_committed(doc, oracle):
+RERUN = DOCS / "experiments" / "s3-12-what-the-page-says-at-the-walked-cell.json"
+
+
+@pytest.fixture(scope="module")
+def current_run() -> dict:
+    """The newest run of the probe, which is the only one the oracle can be checked against.
+
+    **This moved on 2026-11-16 and the move is the point.** The oracle's `the_walked_cell` probe
+    was found to be 400 m from the walked cell -- it read the audit sheet's UTM index as a
+    published one -- and was re-pointed. That made the 2026-11-15 run a run against a *different*
+    oracle, and this test failed, which is what it is for. The probe was re-run against the
+    corrected file and the current run lives beside the reading that found the defect.
+    """
+    if not RERUN.exists():
+        pytest.skip(f"{RERUN.name} has not been written")
+    return json.loads(RERUN.read_text(encoding="utf-8"))["the_rerun_against_the_corrected_oracle"]
+
+
+def test_the_run_is_against_the_oracle_that_is_committed(current_run, oracle):
     """A run against a different oracle is not evidence for this one."""
-    run = doc["the_run"]
+    run = current_run["run"]
     assert run["ran"] is True
     assert run["oracle"]["max_offset_rows"] == oracle["displacement"]["max_offset_rows"]
     assert run["oracle"]["max_offset_metres"] == oracle["displacement"]["max_offset_metres"]
@@ -56,6 +74,23 @@ def test_the_run_is_against_the_oracle_that_is_committed(doc, oracle):
     for seen, want in zip(run["probes"], oracle["probes"]):
         assert seen["sensitive"] == bool(want.get("sensitive")), seen["id"]
         assert seen.get("card_cell") == want.get("expected_published_cell"), seen["id"]
+    assert current_run["disagreements"] == 0
+    assert current_run["sensitive_probes_contradicting_the_card"] == 3
+
+
+def test_the_first_run_is_kept_as_what_it_was(doc, oracle):
+    """The 2026-11-15 record is not edited to agree with a file written after it.
+
+    It is still a complete run of the same eleven probes with no disagreements. Exactly one of
+    them may now name a different cell from the current oracle -- the probe that was re-pointed
+    -- and if any other one drifts, something has edited a record rather than added to it.
+    """
+    run = doc["the_run"]
+    assert run["ran"] is True
+    assert [p["id"] for p in run["probes"]] == [p["id"] for p in oracle["probes"]]
+    moved = [seen["id"] for seen, want in zip(run["probes"], oracle["probes"])
+             if seen.get("card_cell") != want.get("expected_published_cell")]
+    assert moved == ["the_walked_cell"], moved
 
 
 def test_every_probe_agreed_and_the_sensitive_ones_showed_the_contradiction(doc):

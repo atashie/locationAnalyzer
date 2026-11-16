@@ -1135,4 +1135,44 @@ rounding rule out of the running `encode_minutes`, so the two cannot drift apart
 silence. The 30-second-unit question the docstring named is now an owner-owed decision in the
 progress note rather than a sentence waiting in a comment.
 
-Forty-nine instances now.
+### Fiftieth: an index is not a location until it names its grid
+
+The audit sheet has columns called `row` and `col`. They index the UTM `GridSpec` the pipeline
+computes on. The published raster is a **different grid** -- WGS84 lon/lat, 514 x 643, its own
+origin and its own indexing -- and it also has a cell (286, 129), about 400 m from the UTM one.
+
+`measure_drawn_pixel.py` wrote a probe called `the_walked_cell` at
+`west + (129 + 0.5) * col_w, north - (286 + 0.5) * row_h`: the sheet's numbers, read as indices
+into the published raster. The sheet's own `query_lon` and `query_lat` were in the same row and
+were not used. The two cells disagree about every single thing a walker would check:
+
+| | the walked door | the index read as published |
+|---|---|---|
+| minutes | 14 | 24 |
+| at the 15-minute band | PASS | FAIL |
+| restricted route | flagged | not flagged |
+| destination | Hill's Family Asian Markets | Seal The Seasons |
+
+And the probe's own text called its card "the one a person can check against a walk".
+
+**Nothing internal could have found it.** The probe was self-consistent. Its expectations were
+re-derived from the published bytes by a second code path that does not share the generator's
+helpers -- the control this project added precisely so an oracle cannot agree with itself. A
+browser then ran against it and agreed at all eleven probes with zero disagreements. Every check
+passed, because every check was about whether the probe was consistent, and none could ask
+whether it was *where it said it was*.
+
+> An index into a grid is not a place. It is a place only together with the grid that produced
+> it, and two grids over the same ground will both answer to the same pair of numbers with
+> different land. Carry the coordinate; where an index has to travel, make it carry the name of
+> its grid. And note what this costs to detect: a reference that is merely consistent is not
+> thereby correct, so the check has to come from outside the system that produced it.
+
+It was found by reading the page at that cell before the owner re-walked it -- a step taken
+because a reviewer said the sheet's own number should not be assumed to authenticate what a
+household is shown at a real door. The first comparison against anything outside the apparatus
+found it immediately. The probe now derives from the door's coordinate, the walk instruction in
+three documents gives the coordinate instead of the index, and the sheet's README says which grid
+its columns are in.
+
+Fifty instances now.

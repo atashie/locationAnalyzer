@@ -420,46 +420,46 @@
     },
     {
       "id": "the_walked_cell",
-      "why": "the centre of cell (286, 129), which is the cell band15min_pass-03 was walked from; a cell centre, so it is inert for the displacement and present because its card is the one a person can check against a walk",
-      "lon": -79.0590202,
-      "lat": 35.8991732,
+      "why": "the centre of published cell (282, 126), which is the cell containing the door recorded for band15min_pass-03 (-79.062476, 35.902334); a cell centre, so it is inert for the displacement, and present because its card is the one a person can check against a walk. NOT published cell (286, 129): that index pair is the UTM grid's, this probe read it as this raster's until 2026-11-16, and they are about 400 m apart",
+      "lon": -79.0622862,
+      "lat": 35.9026751,
       "sensitive": false,
       "expected_published_cell": {
-        "row": 286,
-        "col": 129
+        "row": 282,
+        "col": 126
       },
-      "expected_drawn_row": 286,
+      "expected_drawn_row": 282,
       "expected_drawn_minus_published": 0,
       "expected_card": {
-        "value_byte": 24,
+        "value_byte": 14,
         "status_byte": 0,
         "status_name": "OK",
-        "route_flag_byte": 0,
-        "destination_index": 124,
+        "route_flag_byte": 1,
+        "destination_index": 54,
         "destination": {
-          "ordinal": 124,
+          "ordinal": 54,
           "place_count": 1,
           "place_names": [
-            "Seal The Seasons"
+            "Hill's Family Asian Markets"
           ]
         },
-        "outcome": "FAIL",
-        "paint_of_the_cell_the_card_names": "transparent (excluded)",
+        "outcome": "PASS",
+        "paint_of_the_cell_the_card_names": "blue (included)",
         "rgba_of_the_cell_the_card_names": [
-          0,
-          0,
-          0,
-          0
+          24,
+          119,
+          242,
+          150
         ]
       },
-      "expected_paint_under_the_pointer": "transparent (excluded)",
+      "expected_paint_under_the_pointer": "blue (included)",
       "expected_rgba_under_the_pointer": [
-        0,
-        0,
-        0,
-        0
+        24,
+        119,
+        242,
+        150
       ],
-      "expected_outcome_under_the_pointer": "FAIL",
+      "expected_outcome_under_the_pointer": "PASS",
       "the_picture_contradicts_the_card_here": false
     },
     {
