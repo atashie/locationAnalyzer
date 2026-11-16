@@ -170,6 +170,19 @@ the owner is not caught out, and **must not be mentioned to the reader**.
 * **Parks snap to the polygon centroid.** A large park's walk time is to its *middle*, not to a
   gate. 7 of 746 parks were dropped for sitting more than 300 m from any road.
 
+* **Grey diagonal hatching marks UNKNOWN**, and there is a lot of it. 17.4% of cells are more
+  than 200 m from any road we hold, so no journey was ever measured from them and the map can only
+  say "we cannot say". It grows as the limit rises -- 38,834 cells at a 5-minute limit, 56,036 at
+  20 -- because a cell we could confidently rule out at 5 minutes cannot be ruled out at 20. That
+  is the correct reading of a lower bound, and it looks like a fault. It covers **0.71% of
+  buildings**. The owner read it as an anomaly on first sight, which is the reading test working a
+  day early. The legend calls it *"nodata in an enabled layer"* -- three words of jargon in a row,
+  on the one thing a reader is most likely to ask about.
+* **Donut holes: a parcel ruled out with every neighbour around it included.** Real, measured, and
+  caused by the access-snapping rule considering only the single nearest edge. 125 of them on
+  Park / walk at 20 minutes, holding 414 buildings. See [[project-phase1-s3-donut-holes]]. If a
+  reader points at one, they are right and it is not their misreading.
+
 Also known: of the seven criteria only *Grocery shop, walk* names a destination or discloses a
 restricted route, so the other six print two "this criterion does not say" lines each. That is
 honest and it is also a lot of text. Whether a reader finds it careful or noisy is worth recording
