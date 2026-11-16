@@ -178,3 +178,11 @@ Minimum that discharges the three disclosures, and nothing more:
   grocery, at a cell the drive criterion excludes, is arguably worth showing. Recorded here rather
   than silently chosen.
 * **Step 6, the Codex pass**, is outstanding.
+
+**Reworded 2026-11-16, after the first browser session.** Pass 54's product finding: the card
+opened with "Every criterion you have on is satisfied here", which is a claim about the place
+rather than about the model. It now opens with "The model estimates this cell meets your limits",
+every card carries "Times are estimates: measured from the centre of this cell, and rounded up to
+the whole minute", and the restricted-route warning sits on the line under the time it qualifies.
+The two negative headlines are unchanged and that is an open question, recorded in `card.js`
+beside them.

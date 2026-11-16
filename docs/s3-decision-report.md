@@ -177,7 +177,11 @@ is why it now carries dates:
    place on a shared node instead of choosing one — 550 places snap to 510 nodes and 75 share one,
    so presenting one of them as *the* destination would be a claim the pipeline never made.
 3. ~~**Which criterion was unknown, and why** — the per-criterion card is unbuilt.~~ **DONE
-   2026-11-14**: `explainAt` computes it per layer per cell and `card.js` renders it.
+   2026-11-14**: `explainAt` computes it per layer per cell and `card.js` renders it. **Reworded
+   2026-11-16**: it said "Every criterion you have on is satisfied here", which claims a fact
+   about the place. It now says "The model estimates this cell meets your limits", and every card
+   carries "Times are estimates: measured from the centre of this cell, and rounded up to the
+   whole minute" — the minute is `ceil`, so the number shown overstates by up to 60 s.
 
 **What is not done is being seen by a household.** A browser drew this page on 2026-11-15 and
 all three disclosures appeared in one card, so they have now reached one reader: the model that

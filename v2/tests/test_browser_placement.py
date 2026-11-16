@@ -154,8 +154,17 @@ def test_the_claim_stays_inside_the_evidence(doc):
     assert "phone" in nots
     assert "walked route" in nots
     assert "owner's call" in nots
+    # Both halves, for the same reason as `test_the_artifact_says_what_it_does_not_establish`
+    # in test_drawn_pixel.py: the sentence is what this run RECORDED, and it was changed the next
+    # day. Dropping the first half rewrites a record; dropping the second leaves a reader quoting
+    # a defect that has been fixed.
     assert "Every criterion you have on is satisfied here" in nots, (
-        "the card's overclaiming opening sentence is no longer flagged, and it is now on a "
-        "screenshot")
+        "the card's opening sentence as this run recorded it is gone, and the screenshot still "
+        "shows it")
+    assert "CHANGED 2026-11-16" in nots, (
+        "the wording change is no longer recorded beside the sentence it replaced, so a reader "
+        "of this artifact would report a fixed overclaim as live")
+    assert (DOCS / "experiments" / "s3-11" / "card-after-pass54-wording.png").exists(), (
+        "the screenshot of the new wording is missing, so the change is recorded only as prose")
     assert doc["where"]["browser"].startswith("Chrome")
     assert "devicePixelRatio 1" in doc["where"]["browser"]

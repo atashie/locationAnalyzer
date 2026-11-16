@@ -78,7 +78,8 @@ const MUTATIONS = [
     name: 'no criteria is rendered as everything being satisfied',
     apply: (s) => s.replace(
       /      return '<div class="verdict">No criteria are switched on, so nothing is being asked of '\r?\n        \+ 'this spot\.<\/div>';/,
-      "      return '<div class=\"verdict\">Every criterion you have on is satisfied here.</div>';"),
+      "      return '<div class=\"verdict\">The model estimates this cell meets your limits."
+      + "</div>';"),
   },
   {
     name: 'the cell lookup rounds instead of taking the floor',
@@ -212,6 +213,37 @@ const MUTATIONS = [
     name: 'the outside and not-yet-computed states are collapsed into one sentence',
     apply: (s) => s.replace("    if (msg.notComputed) return '<em>Nothing has been computed yet.</em>';",
       "    if (msg.notComputed) return '<em>Outside the published area.</em>';"),
+  },
+  // ------------------------------------------------------------------ pass 54, 2026-11-16
+  // The wording changes are one string and one block position, which is exactly the kind of edit
+  // a suite comparing the rendering against the same string cannot see. These four are the ways
+  // each could be undone without any other check noticing.
+  {
+    name: 'the estimate note is dropped from the card',
+    apply: (s) => s.replace(
+      /,(\r?\n)    `<div class="estimate">\$\{esc\(ESTIMATE_NOTE\)\}<\/div>`\];/, '];'),
+  },
+  {
+    // The whole point of the word. `encode_minutes` is `ceil`, so "to the nearest" understates
+    // our own overstatement by up to 60 s -- and it reads MORE accurate, not less.
+    name: 'the rounding is described as to the nearest minute',
+    apply: (s) => s.replace("'up to the whole minute.'", "'to the nearest whole minute.'"),
+  },
+  {
+    name: 'the estimate is described as measured from the address',
+    apply: (s) => s.replace(
+      "'Times are estimates: measured from the centre of this cell, and rounded '",
+      "'Times are estimates: measured from this address, and rounded '"),
+  },
+  {
+    // A true swap back to the order this had before pass 54: the warning below the status
+    // explanation, so "the time above" can point past another line at a time it does not mean.
+    // Not a deletion -- the warning is still rendered, in the wrong place, which is the defect
+    // pass 54 described and the one a presence check cannot see.
+    name: 'the restricted-route warning moves back below the status explanation',
+    apply: (s) => s.replace(
+      /(      \/\/ The restricted-route disclosure[\s\S]*?'restricted way\.<\/div>'\);\r?\n      \}\r?\n)(\r?\n)(      if \(crit\.outcomeName === 'UNKNOWN'\) \{[\s\S]*?\r?\n      \}\r?\n)/,
+      '$3$2$1'),
   },
 ];
 

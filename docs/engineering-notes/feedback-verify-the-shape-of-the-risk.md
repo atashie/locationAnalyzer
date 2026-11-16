@@ -1102,4 +1102,37 @@ probe ran again and agreed with the oracle at all eleven probes. Instance 46 was
 put a probe; this one is about what the probe is rehearsed against. The rehearsal was the thing
 that was wrong, and nothing in it could have shown that.
 
-Forty-eight instances now.
+### Forty-ninth: a tradeoff can stay right while its justification expires
+
+`grid.encode_minutes` rounds **up**. The argument was measured and it still holds: `ceil(s/60) <=
+T` is `s <= 60T`, which is the float comparison, so the published region is exactly what the
+pipeline asserts. `rint` was not a shift but a loss -- 590 s and 610 s encode to the same byte, so
+8.15% of the cells it showed as passing 10 minutes did not pass. Nothing about that has changed.
+
+What changed is the **price**. The docstring priced the cost of `ceil` like this:
+
+> The cost is that the minute is now an **upper bound** on our model's time rather than the
+> nearest value to it, overstating by less than 60 s. Nothing displays it -- there is no per-cell
+> readout anywhere in the render path [...] The day a per-cell number is shown, 30-second units
+> are the better answer.
+
+It even named the trigger. On 2026-11-14 the per-criterion card started printing the minute, and
+the trigger fired with nothing attached to it. A household can now read "12 min" for a model time
+of 11 minutes 1 second. Five adversarial passes read that card's code in the fortnight that
+followed and none of them connected it back, because the encoder still looked right -- and it is
+right. Only its cost had moved, and a cost is not where anyone looks for a defect.
+
+> A decision can be correct and its justification stale at the same time. When a tradeoff is
+> priced against a fact about somewhere else in the system -- nothing displays this, nobody reads
+> that, this never crosses a boundary -- that fact is a dependency, and nothing recompiles when
+> it changes. Write the trigger into the place that would fire it, not only into the place that
+> would pay.
+
+Closed in both directions: the docstring no longer claims nothing displays the minute, the card
+now says "rounded **up** to the whole minute" rather than leaving the direction to be guessed,
+and `tests/test_browser_conformance.py` reads that sentence out of the running `card.js` and the
+rounding rule out of the running `encode_minutes`, so the two cannot drift apart again in
+silence. The 30-second-unit question the docstring named is now an owner-owed decision in the
+progress note rather than a sentence waiting in a comment.
+
+Forty-nine instances now.

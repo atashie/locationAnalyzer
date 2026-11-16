@@ -179,7 +179,10 @@ pre#log {
 
 /* The per-criterion card. One block per criterion; the verdict above them. */
 #card { font-size: 13px; }
-#card .verdict { font-weight: 600; margin-bottom: 6px; }
+#card .verdict { font-weight: 600; margin-bottom: 2px; }
+/* The estimate note is a qualification of the verdict above it, so it is quiet and it is not
+   bold: at the verdict's own weight it would read as a second headline. */
+#card .estimate { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
 #card .crit {
   border-top: 1px solid var(--line);
   padding: 6px 0;

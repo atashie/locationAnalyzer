@@ -11,6 +11,7 @@ a silent pass would be worse than no test.
 """
 from __future__ import annotations
 
+import inspect
 import json
 import pathlib
 import sys
@@ -76,6 +77,70 @@ def test_the_card_says_the_right_thing_including_what_it_declines_to_say():
     # 40,000 identical passing cells would otherwise look the same from here.
     assert '"PASS":' in out.stdout and '"UNKNOWN":' in out.stdout, out.stdout
     assert "of those a shared node" in out.stdout, out.stdout
+
+
+CARD_JS = SPIKE / "card.js"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not on PATH")
+def test_the_cards_estimate_note_is_the_encoders_own_rounding_rule():
+    """**The card makes two claims about this pipeline, and this is what holds them to it.**
+
+    `card_selftest.mjs` pins the sentence as a literal, which is a tautology: the sentence is
+    checked against itself. The two claims inside it are checkable against code.
+
+    * "rounded up to the whole minute". `grid.encode_minutes` is `ceil`, so a cell displaying
+      12 min holds a model time in `(11, 12]` and the number shown **overstates** by up to 60 s.
+      "Rounded" alone reads as "to the nearest", which is a different and flattering claim --
+      601 s is 11 minutes to this encoder and 10 to the nearest. The byte is a decision input and
+      `ceil` is right; `grid.py` justified its display cost with "nothing displays it", and this
+      card displays it, so the word has to carry the direction.
+    * "measured from the centre of this cell". `build_layer_surface` evaluates
+      `grid.cell_centers_xy()`, not a door and not the pointer. A household standing at an actual
+      address is up to half a cell diagonal from the point we answered for.
+
+    Both are read from the running code rather than from a copy: the string comes out of the real
+    `card.js` through node, the minute out of the real `encode_minutes`.
+    """
+    import numpy as np
+
+    from locfinder.grid import ENCODING, encode_minutes
+    from locfinder.traveltime.layer import build_layer_surface
+
+    # The encoder, by behaviour and not by name.
+    assert int(encode_minutes(np.array([601.0]))[0]) == 11, "encode_minutes no longer rounds up"
+    assert int(np.rint(601.0 / 60.0)) == 10, "the control for what 'to the nearest' would claim"
+    assert "ceil" in ENCODING, ENCODING
+
+    src = inspect.getsource(build_layer_surface)
+    assert "cell_centers_xy()" in src, (
+        "the published seconds are no longer evaluated at cell centres, so the card's "
+        "'from the centre of this cell' is now a false claim")
+
+    # The card, from the running file rather than a transcription of it.
+    script = (
+        "require(process.argv[1]);"
+        "const C = globalThis.G3Card;"
+        "console.log(JSON.stringify({ note: C.ESTIMATE_NOTE, included: C.VERDICT_TEXT.INCLUDED }));"
+    )
+    out = subprocess.run(["node", "-e", script, str(CARD_JS)],
+                         capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, f"{out.stdout}\n{out.stderr}"
+    card = json.loads(out.stdout)
+
+    assert "rounded up" in card["note"], (
+        f"the encoder rounds up and the card does not say so: {card['note']!r}")
+    assert "nearest" not in card["note"], (
+        f"the encoder is ceil, so 'nearest' overstates its own accuracy: {card['note']!r}")
+    assert "centre of this cell" in card["note"], card["note"]
+
+    # And the headline is a claim about the model, not about the place. The sentence it replaced
+    # is recorded here because it is what a reader of `docs/experiments/s3-11/` sees on the
+    # screenshot, and a silent revert would otherwise look like the original wording.
+    assert card["included"] == "The model estimates this cell meets your limits.", card["included"]
+    assert "satisfied here" not in card["included"], (
+        "the affirmative headline asserts a fact about the place again; pass 54 asked for a "
+        "statement about the model")
 
 
 CONTROL = SPIKE / "byteswap_control.mjs"

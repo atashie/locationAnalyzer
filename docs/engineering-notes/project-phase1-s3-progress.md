@@ -114,8 +114,10 @@ repository and **less verified than the simplest thing a person could do with it
 the page. Continuing the chain is defensible; so is stopping it and spending the next hour on a
 browser. That choice is the owner's, and it should be made deliberately rather than by momentum.
 *(2026-11-15: the page was opened. Item 3 is done and the three disclosures have been seen on a
-screen. What the card looks like to somebody who is not the model that built it is still untested,
-and that is now the highest-value unblocked item — it needs a person, not a session.)*
+screen. 2026-11-16: the card's wording was corrected — see the card item. What the card looks like
+to somebody who is not the model that built it is still untested, and that is now the
+highest-value unblocked item — it needs a person, not a session, and it should now read the
+corrected words.)*
 
 Nothing else in flight. **Codex passes 49 and 50 are both integrated.** Reports at
 `docs/research/50-codex-review-pass49-counterexamples/REPORT.md` and
@@ -171,11 +173,15 @@ The live corrections:
 * **Two of my own controls confirmed on the wrong cause**, and four of my five new ledger
   instances were overstated. Both are recorded in the ledger rather than quietly fixed.
 
-## Verified state after the pass 50 integration
+## Verified state, 2026-11-16
 
-**1,543 tests, 1,519 passed, 24 skipped, 0 failures. 87 browser conformance checks, 33 card
-checks. 69 of 69 worker mutations, 29 of 29 card mutations, 30 of 30 admissibility mutations, 9 of
-9 migration mutations — 0 inert, 0 misplaced, 0 errored anywhere.**
+**1,560 tests, 1,536 passed, 24 skipped, 0 failures. 87 browser conformance checks, 36 card
+checks, 13 probe checks. 69 of 69 worker mutations, 33 of 33 card mutations, 30 of 30
+admissibility mutations, 9 of 9 migration mutations — 0 inert, 0 survived, 0 misplaced, 0
+errored anywhere.** Every figure here was re-run on 2026-11-16, not carried forward.
+*(This block was headed "after the pass 50 integration" and still gave that run's numbers —
+1,519 passed, 33 card checks, 29 card mutations — through the browser session and the wording
+change. It is the first thing a resuming session reads.)*
 
 Three of the four mutation runners now also **report where each mutation landed** and fail the run
 when it is not the function the mutation names, because a mutation that edits the wrong function is
@@ -204,6 +210,13 @@ Nothing below should be decided by a session on its own.
 * **The band choice for §12 item 6** (the suffix-aware band). Item 6 was restated from an
   impossibility to a requirement after pass 42.
 * **E1c's interval method**, and **the exact-distance cap**.
+* **Whether the published minute should become 30-second units.** New with the card's wording
+  change, 2026-11-16. `encode_minutes` is `ceil` because the byte is a decision input the worker
+  thresholds directly, which makes the displayed number an upper bound overstating by up to 60 s.
+  `grid.encode_minutes` named the fix for the day a per-cell number is shown — 30-second units,
+  also exact, display error under 30 s, the 120-minute horizon still inside 254, +32% bytes — and
+  that day was 2026-11-14. The card now discloses the direction instead, which is the cheap
+  answer; the encoding change is a wire-format decision and nothing is blocked internally.
 * **28 candidate destinations and 4 masked identities** from the audit work.
 * **One repeat walk of `band15min_pass-03`**, with a recorded door, the selected destination and a
   timed duration. This is the cheapest unblock in the whole project: it is what would make the E3
@@ -263,7 +276,13 @@ All recorded in [[reference-codex-runtime-quirks]]; the two that bite most often
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **42 instances**. From pass 51: a check on
+[[feedback-verify-the-shape-of-the-risk]] now holds **49 instances**. *(This said 42 from pass 52
+until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
+wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
+closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
+stands in for; and **49**, a tradeoff can stay right while its justification expires — the minute
+is `ceil` because "nothing displays it", and since 2026-11-14 the card displays it. From pass 51:
+a check on
 the answer is not a check on the explanation of the answer; one field cannot answer two questions;
 a rule borrowed from a different question changes meaning on arrival. From pass 52: **closing the
 instances a reviewer supplies is not closing the class** (both its High findings); a regression
@@ -367,6 +386,49 @@ two-layer fixtures and 40,000 from the shipped bundle.
 
 **Guards: 79 browser conformance checks, 27 card checks, 60 of 60 worker mutations and 21 of 21
 card mutations caught, 0 inert.**
+
+#### The wording, changed 2026-11-16 — pass 54's "cheapest immediate reduction"
+
+Pass 54's one product recommendation, and the only one of its four leftovers that was not a
+judgement call about apparatus. The card asserted a fact about the place; it now states a model
+result, and says what kind of result.
+
+* **The affirmative headline.** "Every criterion you have on is satisfied here" →
+  **"The model estimates this cell meets your limits."**
+* **A new line directly under every verdict**, so it qualifies exclusions and unknowns too and
+  not only the affirmative one: *"Times are estimates: measured from the centre of this cell, and
+  rounded up to the whole minute."* Both halves are claims about this pipeline and both are now
+  **checked against the code they describe** — `test_browser_conformance.py` reads the sentence
+  out of the running `card.js` and the rounding rule out of the running `encode_minutes`, because
+  a check that compares the card against the same string it renders is a tautology.
+* **The restricted-route warning moved up**, to the line directly under the time. Its own last
+  sentence says "longer than the time above", and it used to sit below the status explanation.
+
+**"Rounded up", not "rounded", and the reason is a stale claim in `grid.py`.** `encode_minutes`
+is `ceil`, so a cell displaying 12 min holds a model time in `(11, 12]` and the number shown
+**overstates by up to 60 s**. That docstring justified the cost with "nothing displays it — there
+is no per-cell readout anywhere in the render path", which the card falsified on 2026-11-14. It
+is corrected, and the 30-second-unit option it named for "the day a per-cell number is shown" is
+now an owner decision rather than a hypothetical.
+
+**The two negative headlines were left alone**, and that is deliberate: they are the same kind of
+claim stated the same way, and changing them was not what pass 54 asked for. The estimate note
+sits under all three so the hedge is not applied to inclusions alone — a card that qualified only
+its affirmative verdict would present an exclusion as the more certain answer.
+
+36 card checks (3 new), **33 of 33 card mutations caught, 0 inert**, 4 new: the note dropped, the
+rounding described as "to the nearest", the measurement described as from the address, and the
+warning swapped back below the status explanation. **Rendered in Chrome and photographed on 2026-11-16**, at the same cell (100, 73) as the
+2026-11-15 screenshot, which is what pass 54 asked for when it said to test the wording in
+the first browser session: `docs/experiments/s3-11/card-after-pass54-wording.png`, beside
+the old one. The live card reads, in order — the model sentence, the estimate note,
+`own_triangle_grocery_walk PASS`, "20 min · your limit 20 min", the restricted-route
+warning, and the two places at the junction.
+
+**Still not done, and still the owner's:** pass 54's other three leftovers, all deletions —
+`byteswap_control.mjs`, `bench_explain.mjs` after its measurement is recorded in the experiment
+record, and `test_the_migrated_header_is_the_generators_order` with its `mutate_migrate.py`
+mutation.
 
 ### 2. Codex pass 51 — **INTEGRATED 2026-11-14. Twelve findings, three High.**
 

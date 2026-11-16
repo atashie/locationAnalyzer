@@ -26,11 +26,42 @@
     UNKNOWN_CAUSE: 'the published data has no answer here and does not record why',
   };
 
+  /** The headline, and **why the affirmative one is hedged** -- Codex pass 54, 2026-11-16.
+   *
+   * It read "Every criterion you have on is satisfied here", which asserts a fact about the
+   * place. What the bundle holds is a model estimate: seconds computed from the CELL CENTRE
+   * (`locfinder/traveltime/layer.py:50`, `grid.cell_centers_xy()`) over our own graph and speed
+   * model, then rounded UP to the whole minute (`grid.encode_minutes`, `uint8-minutes-ceil-v1`).
+   * A cell can also be INCLUDED on a route our own flag plane calls not clearly public. None of
+   * that makes the number wrong. It makes "is satisfied here" a stronger claim than the evidence,
+   * and the household who acts on it is the one who then never checks.
+   *
+   * **The two negative headlines are left as they were, and that is the owner's call to
+   * revisit.** They are the same kind of claim, stated the same way. `ESTIMATE_NOTE` is printed
+   * under ALL THREE for that reason: a card that hedged only its affirmative verdict would
+   * present an exclusion as the more certain answer, which is a new asymmetry rather than a
+   * repair.
+   */
   const VERDICT_TEXT = {
-    INCLUDED: 'Every criterion you have on is satisfied here.',
+    INCLUDED: 'The model estimates this cell meets your limits.',
     EXCLUDED: 'At least one criterion is not satisfied here.',
     UNKNOWN: 'We cannot say. At least one criterion does not know, and none has ruled this out.',
   };
+
+  /** Printed directly under the verdict on every card that has criteria, and nowhere else.
+   *
+   * **"Rounded up", not "rounded".** `encode_minutes` is `ceil`, so a cell displaying 12 min
+   * holds a model time in `(11, 12]` minutes: the number shown OVERSTATES by up to 60 s. `ceil`
+   * is right -- the byte is a decision input the worker thresholds directly, and `grid.py` proves
+   * the encoded verdict equals the float verdict -- but its docstring justified the cost with
+   * "nothing displays it", and this card displays it. So the word has to carry it, and "rounded"
+   * alone would read as "to the nearest".
+   *
+   * It is not printed for `outside`, `notComputed` or no criteria, because there is no time on
+   * those cards to qualify.
+   */
+  const ESTIMATE_NOTE = 'Times are estimates: measured from the centre of this cell, and rounded '
+    + 'up to the whole minute.';
 
   /** Everything below comes from a published artifact, so it is escaped rather than trusted: a
    *  place name is upstream data and reaches the DOM as text. */
@@ -127,7 +158,8 @@
     }
 
     const parts = [`<div class="verdict">${esc(VERDICT_TEXT[msg.verdictName]
-      || msg.verdictName)}</div>`];
+      || msg.verdictName)}</div>`,
+    `<div class="estimate">${esc(ESTIMATE_NOTE)}</div>`];
 
     for (const crit of msg.criteria) {
       const bits = [];
@@ -142,6 +174,24 @@
           + `${esc(crit.thresholdMin)} min</div>`);
       }
 
+      // The restricted-route disclosure. `null` means this layer does not disclose, and then
+      // the card says SO -- printing "no restrictions" would be a claim the data does not make,
+      // which is the whole reason the plane is optional.
+      //
+      // **Its position is load-bearing, and it was wrong** -- pass 54 asked for the
+      // qualification "beside the relevant time". This block used to sit below the `why` block,
+      // so a warning whose own last sentence says "longer than the time above" could have an
+      // explanation of an UNKNOWN status between it and the time it was qualifying. It is now
+      // the line directly under the minute, which is what makes "above" true.
+      if (crit.routeFlag === 1) {
+        bits.push('<div class="flag">This route uses a way that is not clearly public — a '
+          + 'private drive, a track, or a path with restricted access. Your walk may be longer '
+          + 'than the time above.</div>');
+      } else if (crit.routeFlag === null || crit.routeFlag === undefined) {
+        bits.push('<div class="silent">This criterion does not say whether the route uses a '
+          + 'restricted way.</div>');
+      }
+
       if (crit.outcomeName === 'UNKNOWN') {
         bits.push('<div class="why">We cannot tell you: '
           + `${esc(WHY_UNKNOWN[crit.statusName] || crit.statusName)}.</div>`);
@@ -150,18 +200,6 @@
         // the one case where our answer does not rest on a journey at all.
         bits.push('<div class="why">Ruled out without computing a route: '
           + `${esc(WHY_UNKNOWN[crit.statusName] || crit.statusName)}.</div>`);
-      }
-
-      // The restricted-route disclosure. `null` means this layer does not disclose, and then the
-      // card says SO -- printing "no restrictions" would be a claim the data does not make, which
-      // is the whole reason the plane is optional.
-      if (crit.routeFlag === 1) {
-        bits.push('<div class="flag">This route uses a way that is not clearly public — a '
-          + 'private drive, a track, or a path with restricted access. Your walk may be longer '
-          + 'than the time above.</div>');
-      } else if (crit.routeFlag === null || crit.routeFlag === undefined) {
-        bits.push('<div class="silent">This criterion does not say whether the route uses a '
-          + 'restricted way.</div>');
       }
 
       const dest = destinationText(crit);
@@ -311,6 +349,6 @@
     };
   }
 
-  root.G3Card = { WHY_UNKNOWN, VERDICT_TEXT, esc, cellForLonLat, minutesText, destinationText,
-    renderCardHTML, createInspector };
+  root.G3Card = { WHY_UNKNOWN, VERDICT_TEXT, ESTIMATE_NOTE, esc, cellForLonLat, minutesText,
+    destinationText, renderCardHTML, createInspector };
 })(typeof self !== 'undefined' ? self : globalThis);

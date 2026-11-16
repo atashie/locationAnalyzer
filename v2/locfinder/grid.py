@@ -212,10 +212,19 @@ def encode_minutes(seconds: np.ndarray) -> np.ndarray:
     pass (`docs/experiments/s3-encoding.md`).
 
     The cost is that the minute is now an **upper bound** on our model's time rather than the
-    nearest value to it, overstating by less than 60 s. Nothing displays it -- there is no per-cell
-    readout anywhere in the render path -- and the direction matches every other conservatism here.
-    The day a per-cell number is shown, 30-second units are the better answer: also exact, display
-    error under 30 s, the 120-minute horizon still fits in 254, but +32% bytes.
+    nearest value to it, overstating by less than 60 s, and the direction matches every other
+    conservatism here.
+
+    **This said "nothing displays it -- there is no per-cell readout anywhere in the render
+    path", and that stopped being true on 2026-11-14.** The per-criterion card prints the minute
+    (`spikes/g3-render/card.js`, `minutesText`), so the overstatement now reaches a household: a
+    cell displaying 12 min holds a model time in `(11, 12]`. The card says "rounded **up** to the
+    whole minute" for that reason, and `tests/test_browser_conformance.py` reads that sentence out
+    of the running `card.js` and this rule out of this function, so the two cannot drift apart.
+
+    The sentence that followed was the plan for the day a per-cell number was shown. That day has
+    arrived, so it is now an open decision and not a hypothetical: 30-second units are also exact,
+    hold display error under 30 s and still fit the 120-minute horizon in 254, at +32% bytes.
 
     Two limits the identity carries, which `ENCODING`'s version exists to make legible:
     `MAX_MINUTES` clips, so a 300-minute journey encodes to 254 and would pass a 254-minute

@@ -644,6 +644,6 @@
   "anything about a phone: this is one desktop Chrome at devicePixelRatio 1",
   "anything about the model underneath. The probe compares the page against the publication, not the publication against the ground. The one walked route in the record still disagrees with the model by 20 minutes and that is unchanged",
   "that 36 m is acceptable. It is now measured, confirmed in a browser and visible in a picture; whether to fix it by regridding in Mercator, by placing the quad per row, or not at all, is the owner's call",
-  "that the card's opening sentence is right. 'Every criterion you have on is satisfied here' is still what it says, and pass 54 asked for 'the model estimates this cell meets your limits'. The screenshot now shows the sentence in a browser"
+  "that the card's opening sentence is right. 'Every criterion you have on is satisfied here' is what the page said on this run, and what card-at-boundary-north.jpg shows; pass 54 asked for 'the model estimates this cell meets your limits'. CHANGED 2026-11-16: the card now opens with that sentence, prints 'Times are estimates: measured from the centre of this cell, and rounded up to the whole minute' directly under it, and renders the restricted-route warning on the line under the time it qualifies. s3-11/card-after-pass54-wording.png is the same cell with the new words, beside the old one. Everything recorded above is left exactly as it was measured -- it is what the page said on 2026-11-15, and a record edited to match a later build would stop being a record"
  ]
 }

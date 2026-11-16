@@ -9,7 +9,12 @@
 //   * printing a bare "20 min" where the 20 is a LOWER BOUND, turning "at least 20 minutes, and
 //     we never computed a route" into a measurement;
 //   * printing a shop where the pipeline chose a NODE carrying several, presenting our pick as
-//     ours when we never made one.
+//     ours when we never made one;
+//   * stating a model estimate as a fact about the place -- Codex pass 54, added 2026-11-16.
+//     "Every criterion you have on is satisfied here" is a claim about the world. What we hold is
+//     seconds from a cell centre over our own graph, rounded UP to the minute, possibly along a
+//     route our own flag plane calls restricted. Nothing in the message is wrong and the sentence
+//     still overstates it, which no message-level check can see.
 //
 // The last section feeds it real `explainAt` replies from the shipped bundle rather than
 // hand-built ones, because a renderer correct on its author's fixtures and wrong on the artifact
@@ -135,7 +140,7 @@ check('a passing criterion states its time and the limit it was compared against
   assert(html.includes('12 min'), html);
   assert(html.includes('your limit 15 min'), html);
   assert(html.includes('PASS'), html);
-  assert(html.includes('Every criterion you have on is satisfied here.'), html);
+  assert(html.includes(C.VERDICT_TEXT.INCLUDED), html);
 });
 
 // ------------------------------------------------------------------ a bound is not a time
@@ -294,6 +299,71 @@ check('the cell states before a compute and outside the area are distinct senten
   assert(none.includes('No criteria are switched on'), none);
   assert(!none.includes('satisfied here'),
     `no criteria was rendered as everything qualifying: ${none}`);
+});
+
+// ------------------------------------------------------------------ a model result is not a fact
+
+check('the words are the ones pass 54 asked for, pinned here because nothing else pins them', () => {
+  // **Pinned as literals on purpose.** Every other check compares the rendering against
+  // `C.VERDICT_TEXT`, so all of them would still pass if the sentence itself were replaced. This
+  // is the one place a wording change has to be deliberate, and the reason each is what it is:
+  //
+  //  * the affirmative headline is a statement about the MODEL, not about the place. Pass 54:
+  //    "it reduces the chance that the product asserts a demonstrated real-world fact where it
+  //    possesses a model result";
+  //  * the note says "rounded UP", because `encode_minutes` is `ceil` and a displayed 12 min
+  //    holds a model time in (11, 12]. "Rounded" alone reads as "to the nearest" and would
+  //    understate the overstatement;
+  //  * it says the centre of the cell, because `build_layer_surface` evaluates
+  //    `grid.cell_centers_xy()` and not a door.
+  assert(C.VERDICT_TEXT.INCLUDED === 'The model estimates this cell meets your limits.',
+    C.VERDICT_TEXT.INCLUDED);
+  assert(C.ESTIMATE_NOTE === 'Times are estimates: measured from the centre of this cell, and '
+    + 'rounded up to the whole minute.', C.ESTIMATE_NOTE);
+  assert(/rounded up/.test(C.ESTIMATE_NOTE), C.ESTIMATE_NOTE);
+  assert(!/nearest/.test(C.ESTIMATE_NOTE), `the encoding is ceil, not round: ${C.ESTIMATE_NOTE}`);
+  assert(/centre of this cell/.test(C.ESTIMATE_NOTE), C.ESTIMATE_NOTE);
+  // And the sentence it replaced reaches no card at all, under any verdict.
+  for (const name of Object.keys(C.VERDICT_TEXT)) {
+    const html = C.renderCardHTML(reply([crit({})], { verdictName: name }));
+    assert(!html.includes('Every criterion you have on is satisfied here'),
+      `${name} still asserts satisfaction as a fact about the place: ${html}`);
+  }
+});
+
+check('the estimate note is on every card that shows a time, and on no card that does not', () => {
+  // A hedge on the affirmative verdict alone would present an exclusion as the more certain
+  // answer, so all three verdicts carry it.
+  for (const name of Object.keys(C.VERDICT_TEXT)) {
+    const html = C.renderCardHTML(reply([crit({})], { verdictName: name }));
+    assert(html.includes(C.ESTIMATE_NOTE), `${name} card does not qualify its times: ${html}`);
+    // Under the verdict, above the criteria: a qualification the reader meets after the number
+    // it qualifies is one they have already acted on.
+    assert(html.indexOf(C.ESTIMATE_NOTE) > html.indexOf(C.VERDICT_TEXT[name]), html);
+    assert(html.indexOf(C.ESTIMATE_NOTE) < html.indexOf('class="crit"'), html);
+  }
+  // And nowhere there is no time to qualify, where it would be noise claiming to be a disclosure.
+  assert(!C.renderCardHTML({ outside: true }).includes('Times are estimates'));
+  assert(!C.renderCardHTML({ notComputed: true }).includes('Times are estimates'));
+  assert(!C.renderCardHTML(reply(null)).includes('Times are estimates'));
+});
+
+check('the restricted-route warning is the line directly under the time it qualifies', () => {
+  // Its own last sentence says "longer than the time above", so anything between it and the time
+  // makes that word false. It used to sit below the status explanation, which is exactly that
+  // case: pass 54 asked for the qualification "beside the relevant time".
+  const html = C.renderCardHTML(reply([crit({
+    outcome: 2, outcomeName: 'UNKNOWN', status: 1, statusName: 'OFF_NETWORK',
+    value: null, valueIsLowerBound: false, routeFlag: 1,
+  })], { verdict: 2, verdictName: 'UNKNOWN' }));
+  const divs = html.split('class="crit"')[1].split('<div').filter((d) => d.includes('</div>'));
+  const timeAt = divs.findIndex((d) => d.includes('your limit'));
+  const flagAt = divs.findIndex((d) => d.includes('not clearly public'));
+  const whyAt = divs.findIndex((d) => d.includes('We cannot tell you'));
+  assert(timeAt >= 0 && flagAt >= 0 && whyAt >= 0, html);
+  assert(flagAt === timeAt + 1,
+    `the warning is ${flagAt - timeAt} lines below the time it qualifies: ${html}`);
+  assert(whyAt > flagAt, html);
 });
 
 check('a place name is escaped, not trusted', () => {
