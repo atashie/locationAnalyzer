@@ -125,9 +125,10 @@ POI_TYPES = {
 ## Environment Variables
 
 See `.env.example` for all configuration options. Key variables:
-- `PLACES_PROVIDER` - Which places provider backs Premium Search. Empty means none, and the
-  endpoint returns 503. (`TRIPADVISOR_API_KEY` is no longer read by anything; delete it from
-  `.env` and from the Railway environment when convenient)
+- Premium Search takes **no** environment variable. A provider is registered in code via
+  `app.services.places.register_provider`; until one is, the endpoint returns 503.
+  (`TRIPADVISOR_API_KEY` is no longer read by anything; delete it from `.env` and from the
+  Railway environment when convenient)
 - `VALHALLA_URL` - Isochrone routing server (default: public OSM server)
 - `MAX_SEARCH_RADIUS_MILES` - Limits query size for performance
 - `CORS_ORIGINS` - Allowed frontend origins

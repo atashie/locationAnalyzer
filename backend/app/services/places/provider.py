@@ -42,6 +42,7 @@ class ProviderPlace:
     rating: Optional[float] = None
     num_reviews: Optional[int] = None
     price_level: Optional[str] = None
+    ranking_string: Optional[str] = None
     web_url: Optional[str] = None
     phone: Optional[str] = None
     website: Optional[str] = None
@@ -56,19 +57,38 @@ class PlacesProvider(Protocol):
     """What premium search needs from a provider. Implement all of it.
 
     `name` identifies the provider in API responses.
-    `monthly_usage` / `monthly_limit` support the usage endpoint; a provider
-    with no quota should report a limit of 0 meaning "unlimited".
+
+    `monthly_usage` / `monthly_limit` report quota. Nothing calls them yet --
+    the usage endpoint they were written for belonged to the removed
+    TripAdvisor client -- but a metered provider needs somewhere to report
+    this, so they stay part of the contract. A provider with no quota reports
+    a limit of 0, meaning unlimited.
     """
 
     name: str
 
     def nearby_search(
-        self, lat: float, lon: float, category: str, *, limit: int = 10
+        self,
+        lat: float,
+        lon: float,
+        category: str,
+        *,
+        limit: int = 10,
+        subcategory: Optional[str] = None,
     ) -> List[ProviderPlace]:
         """Places near a point.
 
-        Returns [] only when the provider genuinely found nothing.
-        Raises ProviderUnavailable when the lookup could not be completed.
+        `subcategory` is the optional finer filter the request schema accepts
+        (for example "pizza" within "restaurants"). A provider that cannot
+        honour it should ignore it rather than fail, but it must accept the
+        argument.
+
+        Returns [] **only** when the provider genuinely found nothing.
+        Raises `ProviderUnavailable` when the lookup could not be completed.
+
+        That distinction is the whole contract. Returning [] for a failure is
+        what made a retired API look like an empty neighbourhood, and no layer
+        above can detect it, so it cannot be enforced anywhere but here.
         """
         ...
 

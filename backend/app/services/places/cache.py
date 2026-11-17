@@ -63,15 +63,26 @@ class ResultCache:
         try:
             with open(path, "r", encoding="utf-8") as handle:
                 raw = json.load(handle)
+            # `raw["payload"]`, never `.get("payload")`. A record without that
+            # key is one we CANNOT READ, not an answer of "no such place".
+            # A leftover V1 file is exactly that shape --
+            # {"found": false, "error": null, "cached_at": ...} -- so reading a
+            # missing key as None would quietly reintroduce the defect this
+            # module exists to prevent.
+            payload = raw["payload"]
             cached_at = datetime.fromisoformat(raw["cached_at"])
+            # TypeError if cached_at carries an offset and our clock does not.
+            age = self._now() - cached_at
         except (OSError, ValueError, KeyError, TypeError) as exc:
             logger.warning("Discarding unreadable cache entry %s: %s", path.name, exc)
             return None
 
-        if (self._now() - cached_at).days > self.ttl_days:
+        # Exact, not rounded down to whole days: `(a - b).days > 7` keeps an
+        # entry for 7 days and 23:59:59.
+        if age.total_seconds() > self.ttl_days * 86400:
             return None
 
-        return CacheEntry(payload=raw.get("payload"), cached_at=cached_at)
+        return CacheEntry(payload=payload, cached_at=cached_at)
 
     def store(self, key: str, payload: Payload) -> None:
         """Store a provider ANSWER. `None` means a genuine 'no such place'.
@@ -103,6 +114,12 @@ def lookup_cached(
     raises `ProviderUnavailable` the exception propagates and **nothing is
     written**, so the caller learns the lookup failed and the next attempt
     asks again.
+
+    The limit of that guarantee, stated plainly: this protects a failure that
+    is *propagated*. A `fetch` that catches its own `ProviderUnavailable` and
+    returns None is indistinguishable from an honest miss, and no caching
+    layer can tell the difference -- that is the provider's contract to keep,
+    which is why `PlacesProvider.nearby_search` says so in its docstring.
     """
     entry = cache.load(key)
     if entry is not None:

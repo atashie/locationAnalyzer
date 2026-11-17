@@ -417,6 +417,7 @@ def _to_premium_location(place: ProviderPlace, category: str) -> PremiumLocation
         rating=place.rating,
         num_reviews=place.num_reviews,
         price_level=place.price_level,
+        ranking_string=place.ranking_string,
         web_url=place.web_url,
         photos=list(place.photos),
         cuisine=list(place.categories) or None,
@@ -493,6 +494,7 @@ async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse
                 centroid_lon,
                 request.category.value,
                 limit=request.max_locations,
+                subcategory=request.subcategory,
             )
             provider_calls += 1
 
@@ -554,6 +556,8 @@ async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse
         total_found=len(valid_locations),
         locations=valid_locations,
         centroids_searched=centroids_searched,
+        # Adapter invocations, not network requests: a provider may make
+        # several calls per search, or none at all if it reads local data.
         api_calls_used=provider_calls,
         geojson={"type": "FeatureCollection", "features": features},
     )

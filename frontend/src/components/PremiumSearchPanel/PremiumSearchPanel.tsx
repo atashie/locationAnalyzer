@@ -56,6 +56,10 @@ export function PremiumSearchPanel({
       console.error('Premium search failed:', err);
       const message = err instanceof Error ? err.message : 'Search failed';
       setError(message);
+      // Clear the previous result too. Leaving it showed the error next to a
+      // stale "1 location found" summary while the map markers were cleared --
+      // a failure wearing the last success's clothes.
+      setResult(null);
       onResultsLoaded([]);
     } finally {
       setIsLoading(false);

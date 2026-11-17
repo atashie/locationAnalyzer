@@ -57,16 +57,26 @@ OUTSIDE = ProviderPlace(
 
 
 class FakeProvider:
-    """A provider that answers from a fixed list."""
+    """A provider that answers from a fixed list, and records how it was asked."""
 
     name = "fake"
 
     def __init__(self, places: List[ProviderPlace]):
         self.places = places
         self.calls = 0
+        self.asked = []
 
-    def nearby_search(self, lat, lon, category, *, limit=10):
+    def nearby_search(self, lat, lon, category, *, limit=10, subcategory=None):
         self.calls += 1
+        self.asked.append(
+            {
+                "lat": lat,
+                "lon": lon,
+                "category": category,
+                "limit": limit,
+                "subcategory": subcategory,
+            }
+        )
         return list(self.places)
 
     def monthly_usage(self):
@@ -81,7 +91,7 @@ class BrokenProvider:
 
     name = "broken"
 
-    def nearby_search(self, lat, lon, category, *, limit=10):
+    def nearby_search(self, lat, lon, category, *, limit=10, subcategory=None):
         raise ProviderUnavailable(
             "HTTP 403: User is not authorized to access this resource"
         )
@@ -131,7 +141,8 @@ def test_an_unreachable_provider_is_502_not_an_empty_success(client):
 
 
 def test_a_provider_that_finds_nothing_is_an_honest_empty_result(client):
-    register_provider(FakeProvider([]))
+    provider = FakeProvider([])
+    register_provider(provider)
 
     response = _search(client)
 
@@ -140,6 +151,37 @@ def test_a_provider_that_finds_nothing_is_an_honest_empty_result(client):
     assert body["success"] is True
     assert body["total_found"] == 0
     assert body["locations"] == []
+    assert provider.calls > 0, "an empty result must mean the provider was actually asked"
+
+
+def test_the_subcategory_filter_reaches_the_provider(client):
+    """The schema accepts it and the UI sends it, so it must not be dropped."""
+    provider = FakeProvider([INSIDE])
+    register_provider(provider)
+
+    response = _search(client, subcategory="pizza")
+
+    assert response.status_code == 200
+    assert provider.asked[0]["subcategory"] == "pizza"
+
+
+def test_ranking_survives_the_provider_boundary(client):
+    """PremiumLocation.ranking_string is rendered by the map, so a provider
+    must be able to populate it."""
+    ranked = ProviderPlace(
+        provider_id="1",
+        name="Gonza Tacos y Tequila",
+        lat=35.994,
+        lon=-78.899,
+        ranking_string="#1 of 20 Restaurants in Durham",
+    )
+    register_provider(FakeProvider([ranked]))
+
+    response = _search(client)
+
+    assert response.status_code == 200
+    location = response.json()["locations"][0]
+    assert location["ranking_string"] == "#1 of 20 Restaurants in Durham"
 
 
 def test_results_are_filtered_to_the_polygon(client):

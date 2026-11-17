@@ -37,20 +37,19 @@ class Settings(BaseSettings):
     valhalla_timeout: int = 30
     valhalla_enabled: bool = True
 
-    # Places provider settings (premium search)
+    # Premium search (places provider)
     #
-    # No provider is configured. The TripAdvisor Content API was retired in
-    # 2026 and its client was removed on 2026-11-17; premium search is kept
-    # as a module awaiting a replacement. See
-    # docs/engineering-notes/reference-places-provider-needed.md.
+    # There are deliberately NO settings here. No provider is configured --
+    # the TripAdvisor Content API was retired in 2026 and its client was
+    # removed on 2026-11-17 -- and a setting nothing reads is worse than no
+    # setting, because it implies that filling it in would do something.
+    # A provider registers in code via `app.services.places.register_provider`
+    # and brings whatever configuration it actually needs.
+    # See docs/engineering-notes/reference-places-provider-needed.md.
     #
     # `extra = "ignore"` below means a stale TRIPADVISOR_API_KEY left in a
     # .env file is harmless -- nothing reads it. Delete it from .env and from
     # the Railway environment when convenient.
-    places_provider: str = ""  # "" means premium search returns 503
-    places_cache_dir: str = "./cache/places"
-    places_cache_ttl_days: int = 7
-    places_timeout: int = 10
 
     @property
     def cors_origins_list(self) -> List[str]:

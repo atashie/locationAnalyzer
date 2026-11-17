@@ -14,7 +14,8 @@ lie: `gonza_tacos_y_tequila_35.994_-78.899.json` recorded
 These tests pin the rule down so the next provider cannot inherit the bug.
 """
 
-from datetime import datetime
+import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -30,8 +31,11 @@ class Clock:
     def __call__(self) -> datetime:
         return self.now
 
+    def advance(self, **kwargs) -> None:
+        self.now = self.now + timedelta(**kwargs)
+
     def advance_days(self, days: int) -> None:
-        self.now = self.now.replace(day=self.now.day + days)
+        self.advance(days=days)
 
 
 @pytest.fixture()
@@ -122,3 +126,68 @@ def test_a_corrupt_cache_file_is_a_miss_not_a_crash(cache, tmp_path):
     path.write_text("{ this is not json", encoding="utf-8")
 
     assert cache.load("gonza") is None
+
+
+def test_a_leftover_v1_cache_file_is_not_read_as_a_negative_answer(cache, tmp_path, clock):
+    """The exact shape V1 wrote. It has no `payload` key.
+
+    `raw.get("payload")` would turn this into CacheEntry(payload=None) -- a
+    cached "no such place" -- which is the very defect this module exists to
+    prevent, reintroduced through the back door by a file format change.
+    """
+    cache.store("gonza", {"name": "real"})
+    path = next((tmp_path / "places").glob("*.json"))
+    path.write_text(
+        json.dumps(
+            {"found": False, "error": None, "cached_at": clock().isoformat()}
+        ),
+        encoding="utf-8",
+    )
+
+    assert cache.load("gonza") is None, "a record with no payload key is unreadable"
+
+    calls = []
+
+    def fetch():
+        calls.append(1)
+        return {"name": "real"}
+
+    assert lookup_cached(cache, "gonza", fetch) == {"name": "real"}
+    assert len(calls) == 1, "an unreadable record must be re-fetched, not believed"
+
+
+def test_a_record_with_a_timezone_does_not_crash(cache, tmp_path, clock):
+    """fromisoformat accepts an offset; subtracting it from a naive now raises."""
+    cache.store("gonza", {"name": "real"})
+    path = next((tmp_path / "places").glob("*.json"))
+    path.write_text(
+        json.dumps(
+            {
+                "payload": {"name": "real"},
+                "cached_at": clock().replace(tzinfo=timezone.utc).isoformat(),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert cache.load("gonza") is None
+
+
+def test_expiry_is_exact_rather_than_rounded_down_to_whole_days(cache, clock):
+    """`(now - then).days > 7` keeps an entry for 7 days and 23:59:59."""
+    cache.store("gonza", {"name": "stale"})
+    clock.advance(days=7, seconds=1)
+
+    assert cache.load("gonza") is None
+
+
+def test_the_cache_survives_a_new_instance(tmp_path, clock):
+    """Every other cache test would pass against an in-memory dict."""
+    first = ResultCache(tmp_path / "places", ttl_days=7, now=clock)
+    first.store("gonza", {"name": "on disk"})
+
+    second = ResultCache(tmp_path / "places", ttl_days=7, now=clock)
+    entry = second.load("gonza")
+
+    assert entry is not None
+    assert entry.payload == {"name": "on disk"}
