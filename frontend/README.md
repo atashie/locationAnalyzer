@@ -45,7 +45,7 @@ src/
 │   ├── Map/               # Leaflet map with markers and popups
 │   ├── SearchForm/        # Criteria input form
 │   ├── ResultsSummary/    # Analysis results display
-│   └── PremiumSearchPanel/ # TripAdvisor Premium Search
+│   └── PremiumSearchPanel/ # Premium Search (awaiting a data provider)
 ├── hooks/
 │   └── useAnalysis.ts     # React Query hook for analysis
 ├── types/
@@ -70,7 +70,7 @@ src/
 
 ### PremiumSearchPanel
 - Toggle to enable Premium features
-- TripAdvisor category/subcategory selection
+- Category/subcategory selection (provider-neutral taxonomy)
 - Max locations input
 - Results summary with API usage stats
 

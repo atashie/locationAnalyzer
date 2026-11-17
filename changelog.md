@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.4.0] - 2026-11-17 - TripAdvisor removed, Premium Search kept as a module
+
+### Removed
+- **TripAdvisor Content API client** (`backend/app/services/tripadvisor.py`). TripAdvisor
+  retired the Content API in 2026; the key returned HTTP 403 from every origin. Keys do not
+  carry over to their replacement platform, so there was nothing to revive.
+- `GET /api/v1/poi/tripadvisor` and `GET /api/v1/tripadvisor/usage`, the
+  `TripAdvisorEnrichment` schema, the seven `tripadvisor_*` settings, and six root-level
+  probe scripts. The two frontend client methods for those endpoints were already dead code.
+
+### Fixed
+- **Premium Search failed silently in production.** `_make_request` caught the 403, returned
+  `None`, and the caller cached `{"found": false, "error": null}` -- so a retired API was
+  indistinguishable from "no such place", to the code and to the user. The one cache entry on
+  disk was that lie, recorded against a restaurant that plainly exists.
+- Failure is now loud by contract: a provider raises `ProviderUnavailable` and the result is
+  **never cached**. Over HTTP, **503** = no provider configured, **502** = provider
+  unreachable, **200 with `[]`** = the provider answered and found nothing.
+- `backend/pytest.ini` sets `testpaths = tests`. A bare `pytest` previously collected
+  root-level scripts that execute at import and fire requests at the **production** backend.
+
+### Changed
+- `POST /api/v1/premium-search` is provider-neutral. `backend/app/services/places/` holds the
+  `PlacesProvider` seam; implement it and call `register_provider` to connect a source.
+- `TripAdvisorCategory` -> `PlaceCategory`, `TRIPADVISOR_SUBCATEGORIES` ->
+  `PLACE_SUBCATEGORIES`. Wire values unchanged.
+- The UI says plainly that no data provider is connected, instead of offering a TripAdvisor
+  button.
+
+### Notes
+- Which source to use next: `docs/engineering-notes/reference-places-provider-needed.md`.
+  **Yelp cannot source a published classification** -- its terms cap storage of Yelp content
+  at 24 hours. **Foursquare OS Places** (Apache 2.0, monthly Parquet) is the better
+  candidate, with one unmeasured objection: it may already be inside our Overture extract.
+
 ## [1.3.0] - 2026-01-07 - TripAdvisor Integration
 
 ### Added

@@ -131,7 +131,7 @@ Deployment     [████████████████████] 10
 | V1 isochrones | Self-hosted Valhalla | 2025-01-06 |
 | POI data (MVP) | OpenStreetMap | 2025-01-06 |
 | Business data (v1.1) | OpenStreetMap POI query | 2026-01-06 |
-| Business data (v1.2) | Tripadvisor Locations API | Planned |
+| Business data (v1.2) | None -- TripAdvisor Content API retired 2026 | Blocked on a provider |
 | Target region (V1) | Raleigh-Durham-Chapel Hill, NC | 2025-01-06 |
 | Query optimization | Smart ordering (restrictive first) | 2026-01-06 |
 | Backend hosting | Railway | 2026-01-06 |

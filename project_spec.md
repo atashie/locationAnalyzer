@@ -17,7 +17,7 @@ Build a web application that helps non-tech-savvy users find locations based on 
 │   React App     │────▶│   FastAPI       │────▶│   External APIs │
 │   (Frontend)    │     │   (Backend)     │     │                 │
 │   - Vite        │     │   - OSMnx       │     │   - OSM         │
-│   - Leaflet     │     │   - GeoPandas   │     │   - TripAdvisor │
+│   - Leaflet     │     │   - GeoPandas   │     │   - (no places) │
 │   - Tailwind    │     │   - Shapely     │     │   - Valhalla    │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                       │
@@ -196,7 +196,7 @@ distanceFinder/
 - Distance-based buffers as fallback
 - Smart query ordering for performance
 
-### Premium Search (TripAdvisor)
+### Premium Search (no provider connected)
 - Search restaurants, hotels, attractions within analysis polygon
 - Centroid-based search algorithm (up to 5 polygon areas)
 - Polygon containment filtering - only shows locations inside your area
@@ -209,7 +209,7 @@ distanceFinder/
 
 ### Limitations
 - **Centroid limit**: Premium Search queries up to 5 polygon centroids
-- **API budget**: TripAdvisor free tier = 5000 calls/month
+- **API budget**: n/a -- no places provider is connected; the endpoint returns 503
 - **Search radius**: Maximum 25 miles
 
 ## V2 Roadmap (Future)

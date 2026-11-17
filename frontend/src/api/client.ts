@@ -7,8 +7,6 @@ import type {
   POITypesResponse,
   PremiumSearchRequest,
   PremiumSearchResponse,
-  TripAdvisorEnrichment,
-  TripAdvisorUsage,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -70,34 +68,27 @@ export const api = {
   },
 
   /**
-   * Get TripAdvisor enrichment data for a POI
-   */
-  getTripAdvisorEnrichment: async (
-    name: string,
-    lat: number,
-    lon: number,
-    poiType: string = 'Restaurant'
-  ): Promise<TripAdvisorEnrichment> => {
-    const response = await apiClient.get<TripAdvisorEnrichment>('/poi/tripadvisor', {
-      params: { name, lat, lon, poi_type: poiType },
-    });
-    return response.data;
-  },
-
-  /**
-   * Get TripAdvisor API usage statistics
-   */
-  getTripAdvisorUsage: async (): Promise<TripAdvisorUsage> => {
-    const response = await apiClient.get<TripAdvisorUsage>('/tripadvisor/usage');
-    return response.data;
-  },
-
-  /**
-   * Run premium search using TripAdvisor within analysis polygon
+   * Run premium search within the analysis polygon, using whichever places
+   * provider the backend has configured.
+   *
+   * Throws an Error carrying the server's own explanation: a 503 means no
+   * provider is configured, a 502 means the provider could not be reached.
+   * Both are shown to the user verbatim, because the defect this replaces was
+   * a failed lookup that looked exactly like an empty neighbourhood.
    */
   premiumSearch: async (request: PremiumSearchRequest): Promise<PremiumSearchResponse> => {
-    const response = await apiClient.post<PremiumSearchResponse>('/premium-search', request);
-    return response.data;
+    try {
+      const response = await apiClient.post<PremiumSearchResponse>('/premium-search', request);
+      return response.data;
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const detail = err.response?.data?.detail;
+        if (typeof detail === 'string' && detail.length > 0) {
+          throw new Error(detail);
+        }
+      }
+      throw err;
+    }
   },
 };
 

@@ -1,5 +1,40 @@
 # The TripAdvisor key cannot be revived: the API it belongs to is retired
 
+> ## ACTED ON 2026-11-17. The client is removed, the module is kept, the silent failure is fixed.
+>
+> Owner, on the three questions this note ended with: *"1) remove it, but keep that search option
+> as a module that will be reimplemented via alternative apis in the future. 2) fix it. 3) known
+> backlog"*, and *"Let's document the need for tripadviser or yelp api, but defer integrating the
+> api."*
+>
+> **What was done:**
+>
+> * `backend/app/services/tripadvisor.py` is **deleted**, along with `GET /poi/tripadvisor`,
+>   `GET /tripadvisor/usage`, the `TripAdvisorEnrichment` schema, the seven `tripadvisor_*`
+>   settings, and six root-level probe scripts that pointed at the dead API. The two frontend
+>   client methods for those endpoints were dead code -- nothing called them -- so removing them
+>   changed no behaviour.
+> * **`POST /api/v1/premium-search` stays**, now provider-neutral. `backend/app/services/places/`
+>   holds the `PlacesProvider` seam an alternative API plugs into. With no provider registered it
+>   returns **503** and says what is missing.
+> * **The silent failure is fixed**, in the module that survives rather than the client that did
+>   not. `ProviderUnavailable` is raised for a transport failure and **never cached**; an empty
+>   list now means the provider answered and found nothing. Over HTTP: 503 = no provider
+>   configured, 502 = provider unreachable, 200 with `[]` = genuinely nothing there. The removed
+>   client could not tell these apart. 14 tests, and the two that matter were confirmed to fail
+>   when `lookup_cached` is mutated back to the old behaviour.
+> * Where to look next for a source: [[reference-places-provider-needed]]. Short version: **Yelp
+>   cannot source a published classification** -- its terms cap storage of Yelp content at 24
+>   hours, which collides with Decision 17 -- and **Foursquare OS Places (Apache 2.0, monthly
+>   Parquet)** is the better candidate, with one unmeasured objection.
+>
+> One more defect found while removing this: `backend/` had no pytest config, so a bare `pytest`
+> collected the root-level `test_*.py` scripts, which **execute at import and fire requests at the
+> production backend**, then call `exit(1)`. `pytest.ini` now sets `testpaths = tests`, and the two
+> scripts worth keeping moved to `backend/scripts/manual/`.
+>
+> Everything below is kept as written. Only the verdict moved.
+
 **2026-11-17.** The owner suggested using the project's existing TripAdvisor key to backfill
 grocery and pharmacy classifications, then asked to be walked through reviving it. Two findings,
 and the second is a live defect in shipped V1.

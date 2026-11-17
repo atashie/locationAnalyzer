@@ -6,7 +6,7 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 
 - **Frontend:** React + TypeScript + Vite + Leaflet + Tailwind CSS
 - **Backend:** FastAPI + Python + GeoPandas + OSMnx + Shapely
-- **Data Sources:** OpenStreetMap, TripAdvisor Content API, Valhalla (isochrones)
+- **Data Sources:** OpenStreetMap, Valhalla (isochrones). Premium search has **no provider**; see `docs/engineering-notes/reference-places-provider-needed.md`
 
 ## Repository
 
@@ -26,12 +26,12 @@ Location finder web app helping non-tech-savvy users find areas based on proximi
 |------|---------|
 | `/backend/app/services/location_analyzer.py` | Core geospatial logic (ported from PoC) |
 | `/backend/app/services/valhalla.py` | Valhalla isochrone integration |
-| `/backend/app/services/tripadvisor.py` | TripAdvisor Content API client |
+| `/backend/app/services/places/` | Premium search provider seam -- no provider configured |
 | `/backend/app/routers/analysis.py` | API endpoints + smart query ordering |
 | `/backend/app/core/constants.py` | POI types, travel speeds, config |
 | `/frontend/src/components/Map/Map.tsx` | Leaflet map with dynamic updates |
 | `/frontend/src/components/SearchForm/SearchForm.tsx` | Criteria form + loading indicator |
-| `/frontend/src/components/PremiumSearchPanel/` | TripAdvisor premium search UI |
+| `/frontend/src/components/PremiumSearchPanel/` | Premium search UI (awaiting a provider) |
 | `/Dockerfile` | Production container config for Railway |
 | `/railway.toml` | Railway deployment configuration |
 
@@ -61,7 +61,12 @@ cd frontend && npm test
 - **Progressive filtering:** Each criterion narrows the search area, making subsequent queries faster
 - **Smart query ordering:** Backend reorders criteria (single location → POI, distance → walk → bike → drive)
 - **Valhalla isochrones:** Travel time criteria use Valhalla for accurate road-network isochrones; falls back to buffered approximation if unavailable
-- **Premium Search:** TripAdvisor integration uses centroid-based search with polygon containment filtering
+- **Premium Search:** centroid-based search with polygon containment filtering, against whichever
+  places provider is registered. **None is**, so the endpoint returns 503. The TripAdvisor Content
+  API it used was retired in 2026 and its client removed on 2026-11-17
+- **Provider failures are loud by contract:** a provider raises `ProviderUnavailable` and the
+  result is **never cached**. 503 = no provider, 502 = provider unreachable, 200 + `[]` = nothing
+  found. The removed client returned `None` for all three and cached the failure as a negative
 - **Data flow:** User input → FastAPI → OSMnx/GeoPandas/Valhalla → GeoJSON → Leaflet map
 - **Map updates:** Uses `useMap()` hook + dynamic `key` on GeoJSON to handle react-leaflet immutability
 - **Performance:** OSM POI queries are the bottleneck (95%+ of time); use "Specific Place" when possible
@@ -120,8 +125,9 @@ POI_TYPES = {
 ## Environment Variables
 
 See `.env.example` for all configuration options. Key variables:
-- `TRIPADVISOR_API_KEY` - Required for Premium Search (TripAdvisor integration)
-- `TRIPADVISOR_REFERER_DOMAIN` - Domain for API key restriction
+- `PLACES_PROVIDER` - Which places provider backs Premium Search. Empty means none, and the
+  endpoint returns 503. (`TRIPADVISOR_API_KEY` is no longer read by anything; delete it from
+  `.env` and from the Railway environment when convenient)
 - `VALHALLA_URL` - Isochrone routing server (default: public OSM server)
 - `MAX_SEARCH_RADIUS_MILES` - Limits query size for performance
 - `CORS_ORIGINS` - Allowed frontend origins
@@ -133,7 +139,7 @@ See `.env.example` for all configuration options. Key variables:
 | Polygon visualization | Implemented |
 | Distance-based criteria | Implemented |
 | Travel-time criteria (Valhalla isochrones) | Implemented |
-| Premium Search (TripAdvisor) | Implemented |
+| Premium Search | Module only -- no data provider connected |
 | POI Explorer (OSM) | Implemented |
 | User accounts | Planned (V2) |
 | Pre-computed isochrone tiles | Planned (V2) |

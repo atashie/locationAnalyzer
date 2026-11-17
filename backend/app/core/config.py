@@ -37,13 +37,20 @@ class Settings(BaseSettings):
     valhalla_timeout: int = 30
     valhalla_enabled: bool = True
 
-    # TripAdvisor API settings
-    tripadvisor_api_key: str = ""
-    tripadvisor_enabled: bool = True
-    tripadvisor_monthly_limit: int = 5000
-    tripadvisor_cache_dir: str = "./cache/tripadvisor"
-    tripadvisor_timeout: int = 10
-    tripadvisor_referer_domain: str = "https://locationanalyzer-production.up.railway.app"
+    # Places provider settings (premium search)
+    #
+    # No provider is configured. The TripAdvisor Content API was retired in
+    # 2026 and its client was removed on 2026-11-17; premium search is kept
+    # as a module awaiting a replacement. See
+    # docs/engineering-notes/reference-places-provider-needed.md.
+    #
+    # `extra = "ignore"` below means a stale TRIPADVISOR_API_KEY left in a
+    # .env file is harmless -- nothing reads it. Delete it from .env and from
+    # the Railway environment when convenient.
+    places_provider: str = ""  # "" means premium search returns 503
+    places_cache_dir: str = "./cache/places"
+    places_cache_ttl_days: int = 7
+    places_timeout: int = 10
 
     @property
     def cors_origins_list(self) -> List[str]:

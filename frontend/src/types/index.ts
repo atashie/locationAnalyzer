@@ -85,33 +85,20 @@ export interface CriterionFormData {
   complexQuery: boolean;
 }
 
-// TripAdvisor Types
-
-export interface TripAdvisorEnrichment {
-  found: boolean;
-  location_id?: string;
-  rating?: number;
-  num_reviews?: number;
-  price_level?: string;
-  ranking_string?: string;
-  tripadvisor_url?: string;
-  photos: string[];
-  cuisine?: string[];
-  error?: string;
-}
-
-export interface TripAdvisorUsage {
-  enabled: boolean;
-  monthly_limit: number;
-  current_usage: number;
-  limit_reached: boolean;
-}
-
 // Premium Search Types
+//
+// Premium search is a module with no provider behind it. The TripAdvisor
+// Content API was retired in 2026 and its client was removed on 2026-11-17;
+// an alternative API (Yelp Fusion, Foursquare, Google Places) plugs in on the
+// backend. See docs/engineering-notes/reference-places-provider-needed.md.
+//
+// These four categories are TripAdvisor's taxonomy, kept so the dropdown and
+// the wire format still work. They are provider-shaped ('geos' is not a kind
+// of place) and should be revisited when a provider is chosen.
 
-export type TripAdvisorCategory = 'restaurants' | 'hotels' | 'attractions' | 'geos';
+export type PlaceCategory = 'restaurants' | 'hotels' | 'attractions' | 'geos';
 
-export const TRIPADVISOR_SUBCATEGORIES: Record<TripAdvisorCategory, string[]> = {
+export const PLACE_SUBCATEGORIES: Record<PlaceCategory, string[]> = {
   restaurants: [
     'fine_dining', 'casual_dining', 'fast_food', 'cafes',
     'bakeries', 'bars', 'pizza', 'seafood', 'italian', 'asian'
@@ -128,7 +115,7 @@ export const TRIPADVISOR_SUBCATEGORIES: Record<TripAdvisorCategory, string[]> = 
 
 export interface PremiumSearchRequest {
   geojson: GeoJSON.FeatureCollection;
-  category: TripAdvisorCategory;
+  category: PlaceCategory;
   subcategory?: string;
   max_locations: number;
 }

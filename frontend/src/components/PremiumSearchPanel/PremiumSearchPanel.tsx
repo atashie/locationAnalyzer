@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type {
-  TripAdvisorCategory,
+  PlaceCategory,
   PremiumLocation,
   PremiumSearchResponse
 } from '../../types';
-import { TRIPADVISOR_SUBCATEGORIES } from '../../types';
+import { PLACE_SUBCATEGORIES } from '../../types';
 import { api } from '../../api/client';
 
 interface PremiumSearchPanelProps {
@@ -19,17 +19,16 @@ export function PremiumSearchPanel({
   onClear
 }: PremiumSearchPanelProps) {
   const [isPremiumEnabled, setIsPremiumEnabled] = useState(false);
-  const [provider, setProvider] = useState<'tripadvisor' | 'xyz'>('tripadvisor');
-  const [category, setCategory] = useState<TripAdvisorCategory>('restaurants');
+  const [category, setCategory] = useState<PlaceCategory>('restaurants');
   const [subcategory, setSubcategory] = useState<string>('');
   const [maxLocations, setMaxLocations] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PremiumSearchResponse | null>(null);
 
-  const subcategories = TRIPADVISOR_SUBCATEGORIES[category] || [];
+  const subcategories = PLACE_SUBCATEGORIES[category] || [];
 
-  const handleCategoryChange = (newCategory: TripAdvisorCategory) => {
+  const handleCategoryChange = (newCategory: PlaceCategory) => {
     setCategory(newCategory);
     setSubcategory(''); // Reset subcategory when category changes
   };
@@ -95,30 +94,17 @@ export function PremiumSearchPanel({
 
       {isPremiumEnabled && (
         <div className="space-y-4">
-          {/* Provider Selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Provider
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setProvider('tripadvisor')}
-                className={`px-3 py-2 text-sm rounded-md flex-1 transition-colors ${
-                  provider === 'tripadvisor'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                TripAdvisor
-              </button>
-              <button
-                disabled
-                className="px-3 py-2 text-sm rounded-md flex-1 bg-gray-100 text-gray-400 cursor-not-allowed"
-                title="Coming soon"
-              >
-                XYZ (Coming Soon)
-              </button>
-            </div>
+          {/* No provider is connected. Replace this notice with a provider
+              selector when one is added on the backend. */}
+          <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
+            <p className="text-sm font-medium text-amber-900">
+              No data provider is connected
+            </p>
+            <p className="text-sm text-amber-800 mt-1">
+              The TripAdvisor API this used was retired, so searching will
+              report that no provider is configured. The search itself is kept
+              and will work once an alternative provider is connected.
+            </p>
           </div>
 
           {/* Category Dropdown */}
@@ -128,7 +114,7 @@ export function PremiumSearchPanel({
             </label>
             <select
               value={category}
-              onChange={(e) => handleCategoryChange(e.target.value as TripAdvisorCategory)}
+              onChange={(e) => handleCategoryChange(e.target.value as PlaceCategory)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="restaurants">Restaurants</option>
@@ -225,7 +211,6 @@ export function PremiumSearchPanel({
               Complex multi-polygon results may not cover all regions.
             </p>
             <p className="text-xs text-gray-500 italic">
-              Premium search uses TripAdvisor API (5000 calls/month limit).
               Only locations inside your analysis polygon are shown.
             </p>
           </div>
@@ -234,7 +219,9 @@ export function PremiumSearchPanel({
 
       {!isPremiumEnabled && (
         <p className="text-sm text-gray-500">
-          Enable Premium to search TripAdvisor for detailed business information including ratings, reviews, and photos.
+          Premium search looks up detailed business information -- ratings,
+          reviews and photos -- inside your analysis area. It needs a data
+          provider, and none is connected at the moment.
         </p>
       )}
     </div>

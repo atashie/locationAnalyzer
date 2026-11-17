@@ -174,25 +174,17 @@ class POIsResponse(BaseModel):
     geojson: Dict[str, Any] = Field(..., description="GeoJSON FeatureCollection of POIs")
 
 
-class TripAdvisorEnrichment(BaseModel):
-    """TripAdvisor enrichment data for a POI."""
-
-    found: bool = Field(..., description="Whether a TripAdvisor match was found")
-    location_id: Optional[str] = Field(None, description="TripAdvisor location ID")
-    rating: Optional[float] = Field(None, description="Average rating (1-5)")
-    num_reviews: Optional[int] = Field(None, description="Number of reviews")
-    price_level: Optional[str] = Field(None, description="Price level ($, $$, $$$, $$$$)")
-    ranking_string: Optional[str] = Field(None, description="Ranking (e.g., '#1 of 150 Restaurants')")
-    tripadvisor_url: Optional[str] = Field(None, description="URL to TripAdvisor page")
-    photos: List[str] = Field(default=[], description="Photo URLs (up to 3)")
-    cuisine: Optional[List[str]] = Field(None, description="Cuisine types")
-    error: Optional[str] = Field(None, description="Error message if enrichment failed")
-
-
 # Premium Search Schemas
 
-class TripAdvisorCategory(str, Enum):
-    """TripAdvisor search categories."""
+class PlaceCategory(str, Enum):
+    """Categories premium search can ask a provider for.
+
+    These four values are TripAdvisor's taxonomy, kept unchanged so the wire
+    format and the frontend dropdown still work. They are provider-shaped --
+    "geos" in particular is a TripAdvisor concept, not a kind of place -- and
+    the taxonomy should be revisited when a replacement provider is chosen.
+    See `docs/engineering-notes/reference-places-provider-needed.md`.
+    """
 
     RESTAURANTS = "restaurants"
     HOTELS = "hotels"
@@ -204,9 +196,9 @@ class PremiumSearchRequest(BaseModel):
     """Request for premium search within analysis result polygon."""
 
     geojson: Dict[str, Any] = Field(..., description="GeoJSON result from analysis")
-    category: TripAdvisorCategory = Field(
-        default=TripAdvisorCategory.RESTAURANTS,
-        description="TripAdvisor category to search"
+    category: PlaceCategory = Field(
+        default=PlaceCategory.RESTAURANTS,
+        description="Category to search for"
     )
     subcategory: Optional[str] = Field(None, description="Optional subcategory filter")
     max_locations: int = Field(
@@ -227,7 +219,11 @@ class PremiumSearchRequest(BaseModel):
 
 
 class PremiumLocation(BaseModel):
-    """A premium search result location from TripAdvisor."""
+    """One place returned by premium search.
+
+    `location_id` is the provider's own identifier, so it is only meaningful
+    alongside the `provider` named in the response.
+    """
 
     location_id: str
     name: str
@@ -251,7 +247,7 @@ class PremiumSearchResponse(BaseModel):
     """Response for premium search."""
 
     success: bool
-    provider: str = "tripadvisor"
+    provider: str = Field(..., description="Which places provider answered")
     category: str
     total_found: int
     locations: List[PremiumLocation]

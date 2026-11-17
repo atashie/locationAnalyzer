@@ -115,7 +115,7 @@ function POIPopup({ poi }: { poi: POIFeature }) {
 }
 
 /**
- * Premium Location Popup with rich TripAdvisor data.
+ * Premium Location Popup, showing whatever the places provider returned.
  */
 function PremiumLocationPopup({ location }: { location: PremiumLocation }) {
   return (
@@ -207,7 +207,7 @@ function PremiumLocationPopup({ location }: { location: PremiumLocation }) {
             rel="noopener noreferrer"
             className="text-xs text-green-600 hover:underline font-medium"
           >
-            TripAdvisor →
+            Details →
           </a>
         )}
         {location.website && (

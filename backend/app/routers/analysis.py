@@ -39,11 +39,15 @@ from app.models.schemas import (
     PremiumLocation,
     PremiumSearchRequest,
     PremiumSearchResponse,
-    TripAdvisorEnrichment,
 )
 from app.services.geocoding import validate_location
 from app.services.location_analyzer import LocationAnalyzer
-from app.services.tripadvisor import enrich_poi_with_tripadvisor, get_tripadvisor_client
+from app.services.places import (
+    ProviderNotConfigured,
+    ProviderPlace,
+    ProviderUnavailable,
+    require_places_provider,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
@@ -337,49 +341,6 @@ async def health_check() -> dict:
     return {"status": "healthy"}
 
 
-@router.get(
-    "/poi/tripadvisor",
-    response_model=TripAdvisorEnrichment,
-    responses={400: {"model": ErrorResponse}},
-)
-async def get_tripadvisor_enrichment(
-    name: str = Query(..., description="POI name"),
-    lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude"),
-    poi_type: str = Query(default="Restaurant", description="POI type"),
-) -> TripAdvisorEnrichment:
-    """
-    Fetch TripAdvisor enrichment data for a POI.
-
-    Returns rating, reviews, price level, photos, and TripAdvisor URL.
-    Falls back gracefully if no match found or API limit reached.
-
-    **Rate Limited:** Max 5000 API calls per month (free tier).
-    Results are cached to minimize API usage.
-    """
-    try:
-        result = enrich_poi_with_tripadvisor(name, lat, lon, poi_type)
-        return TripAdvisorEnrichment(**result)
-    except Exception as e:
-        logger.exception(f"TripAdvisor enrichment failed: {e}")
-        return TripAdvisorEnrichment(
-            found=False,
-            error=f"Enrichment failed: {str(e)}",
-        )
-
-
-@router.get("/tripadvisor/usage")
-async def get_tripadvisor_usage() -> dict:
-    """Get TripAdvisor API usage statistics for the current month."""
-    client = get_tripadvisor_client()
-    return {
-        "enabled": client.enabled,
-        "monthly_limit": client.monthly_limit,
-        "current_usage": client.get_monthly_usage(),
-        "limit_reached": client.is_limit_reached(),
-    }
-
-
 def _parse_polygon_from_geojson(geojson: dict):
     """
     Parse GeoJSON into a shapely geometry for containment checks.
@@ -444,177 +405,155 @@ def _extract_polygon_centroids(
     return [(lat, lon) for _, lat, lon in polygons_with_area[:max_centroids]]
 
 
+def _to_premium_location(place: ProviderPlace, category: str) -> PremiumLocation:
+    """Map a provider's answer into our own response shape."""
+    return PremiumLocation(
+        location_id=place.provider_id,
+        name=place.name,
+        lat=place.lat,
+        lon=place.lon,
+        category=category,
+        address=place.address,
+        rating=place.rating,
+        num_reviews=place.num_reviews,
+        price_level=place.price_level,
+        web_url=place.web_url,
+        photos=list(place.photos),
+        cuisine=list(place.categories) or None,
+        phone=place.phone,
+        website=place.website,
+        description=place.description,
+    )
+
+
 @router.post(
     "/premium-search",
     response_model=PremiumSearchResponse,
-    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+    responses={
+        400: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
 )
 async def premium_search(request: PremiumSearchRequest) -> PremiumSearchResponse:
     """
-    Run premium search using TripAdvisor API within analysis polygon.
+    Find places inside an analysis polygon, using the configured places provider.
+
+    **No provider is currently configured, so this returns 503.** TripAdvisor's
+    Content API was retired in 2026 and its client was removed on 2026-11-17.
+    The search option is kept as a module: an alternative API (Yelp Fusion,
+    Foursquare, Google Places) plugs in by implementing `PlacesProvider` and
+    calling `register_provider`. See
+    `docs/engineering-notes/reference-places-provider-needed.md`.
 
     Algorithm:
-    1. Parse polygon from GeoJSON for containment checks
-    2. Extract centroids from up to 5 largest polygons
-    3. For each centroid, search TripAdvisor and fetch details
-    4. Filter to only locations INSIDE the polygon
-    5. Continue until max_locations valid results or all centroids exhausted
+    1. Parse the polygon from the request GeoJSON
+    2. Take centroids of up to 5 of the largest polygons
+    3. Ask the provider for places near each centroid
+    4. Keep only places that fall inside the polygon
+    5. Stop at `max_locations`
 
-    **API Usage:** This endpoint makes TripAdvisor API calls.
-    - search: 1 call per centroid searched
-    - details: 1 call per candidate location
-    - photos: 1 call per valid location
+    Failure is reported rather than disguised. A provider that cannot be
+    reached is a **502**; an empty list means the provider answered and found
+    nothing. The removed client could not tell these apart, which made a dead
+    API look like an empty neighbourhood.
     """
     from shapely.geometry import Point
 
     try:
-        client = get_tripadvisor_client()
+        provider = require_places_provider()
+    except ProviderNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
 
-        if not client.enabled:
-            raise HTTPException(status_code=400, detail="TripAdvisor not configured")
+    polygon = _parse_polygon_from_geojson(request.geojson)
+    if polygon is None:
+        raise HTTPException(status_code=400, detail="No valid polygons in GeoJSON")
 
-        if client.is_limit_reached():
-            raise HTTPException(status_code=429, detail="Monthly API limit reached")
+    centroids = _extract_polygon_centroids(request.geojson)
+    if not centroids:
+        raise HTTPException(
+            status_code=400, detail="Could not extract centroids from GeoJSON"
+        )
 
-        # Parse polygon for containment checks
-        polygon = _parse_polygon_from_geojson(request.geojson)
-        if polygon is None:
-            raise HTTPException(status_code=400, detail="No valid polygons in GeoJSON")
+    valid_locations: List[PremiumLocation] = []
+    seen_ids: set = set()
+    provider_calls = 0
+    centroids_searched = 0
+    locations_checked = 0
+    locations_outside = 0
 
-        # Extract centroids (up to 5 largest polygons)
-        centroids = _extract_polygon_centroids(request.geojson)
-        if not centroids:
-            raise HTTPException(status_code=400, detail="Could not extract centroids from GeoJSON")
-
-        # Track state
-        valid_locations: List[PremiumLocation] = []
-        seen_ids: set = set()
-        api_calls_used = 0
-        centroids_searched = 0
-        locations_checked = 0
-        locations_outside = 0
-
-        # Search centroids until we have enough valid locations
+    try:
         for centroid_lat, centroid_lon in centroids:
             if len(valid_locations) >= request.max_locations:
                 break
 
             centroids_searched += 1
+            nearby = provider.nearby_search(
+                centroid_lat,
+                centroid_lon,
+                request.category.value,
+                limit=request.max_locations,
+            )
+            provider_calls += 1
 
-            # Search this centroid
-            nearby = client.nearby_search(centroid_lat, centroid_lon, request.category.value)
-            api_calls_used += 1
-
-            for loc in nearby:
+            for place in nearby:
                 if len(valid_locations) >= request.max_locations:
                     break
 
-                location_id = loc.get("location_id")
-                if not location_id or location_id in seen_ids:
+                if not place.provider_id or place.provider_id in seen_ids:
                     continue
-                seen_ids.add(location_id)
+                seen_ids.add(place.provider_id)
                 locations_checked += 1
 
-                # Get details (this is where we get lat/lon!)
-                details = client.get_location_details(location_id)
-                api_calls_used += 1
-
-                if not details:
-                    continue
-
-                # Extract coordinates from details
-                loc_lat = details.get("latitude")
-                loc_lon = details.get("longitude")
-
-                if not loc_lat or not loc_lon:
-                    logger.warning(f"No coordinates for location {location_id}")
-                    continue
-
-                loc_lat = float(loc_lat)
-                loc_lon = float(loc_lon)
-
-                # Check if location is inside the polygon
-                point = Point(loc_lon, loc_lat)  # Point takes (x, y) = (lon, lat)
-                if not polygon.contains(point):
+                # Point takes (x, y) = (lon, lat)
+                if not polygon.contains(Point(place.lon, place.lat)):
                     locations_outside += 1
-                    logger.debug(f"Location {location_id} ({loc_lat}, {loc_lon}) outside polygon")
                     continue
 
-                # Build enriched location with data from details
-                enriched = PremiumLocation(
-                    location_id=location_id,
-                    name=details.get("name", loc.get("name", "Unknown")),
-                    lat=loc_lat,
-                    lon=loc_lon,
-                    category=request.category.value,
-                    address=details.get("address_obj", {}).get("address_string"),
-                    rating=float(details.get("rating")) if details.get("rating") else None,
-                    num_reviews=int(details.get("num_reviews")) if details.get("num_reviews") else None,
-                    price_level=details.get("price_level"),
-                    ranking_string=details.get("ranking_data", {}).get("ranking_string"),
-                    web_url=details.get("web_url"),
-                    phone=details.get("phone"),
-                    website=details.get("website"),
-                    description=details.get("description"),
+                valid_locations.append(
+                    _to_premium_location(place, request.category.value)
                 )
+    except ProviderUnavailable as exc:
+        logger.warning("Places provider %s unavailable: %s", provider.name, exc)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Places provider '{provider.name}' could not be reached: {exc}",
+        )
 
-                # Extract cuisine
-                cuisine = details.get("cuisine", [])
-                if cuisine:
-                    enriched.cuisine = [c.get("localized_name") for c in cuisine if c.get("localized_name")]
-
-                # Get photos (only for valid locations to save API calls)
-                photos = client.get_location_photos(location_id, limit=3)
-                api_calls_used += 1
-                enriched.photos = photos
-
-                valid_locations.append(enriched)
-                logger.debug(f"Added valid location: {enriched.name} at ({loc_lat}, {loc_lon})")
-
-        # Build GeoJSON FeatureCollection
-        features = []
-        for loc in valid_locations:
-            feature = {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [loc.lon, loc.lat]
-                },
-                "properties": {
-                    "location_id": loc.location_id,
-                    "name": loc.name,
-                    "category": loc.category,
-                    "rating": loc.rating,
-                    "num_reviews": loc.num_reviews,
-                    "price_level": loc.price_level,
-                }
-            }
-            features.append(feature)
-
-        geojson_result = {
-            "type": "FeatureCollection",
-            "features": features
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [loc.lon, loc.lat]},
+            "properties": {
+                "location_id": loc.location_id,
+                "name": loc.name,
+                "category": loc.category,
+                "rating": loc.rating,
+                "num_reviews": loc.num_reviews,
+                "price_level": loc.price_level,
+            },
         }
+        for loc in valid_locations
+    ]
 
-        logger.info(
-            f"Premium search: {len(valid_locations)} valid locations found, "
-            f"{centroids_searched} centroids searched, {locations_checked} checked, "
-            f"{locations_outside} outside polygon, {api_calls_used} API calls"
-        )
+    logger.info(
+        "Premium search via %s: %d inside polygon, %d centroids, %d checked, "
+        "%d outside, %d provider calls",
+        provider.name,
+        len(valid_locations),
+        centroids_searched,
+        locations_checked,
+        locations_outside,
+        provider_calls,
+    )
 
-        return PremiumSearchResponse(
-            success=True,
-            provider="tripadvisor",
-            category=request.category.value,
-            total_found=len(valid_locations),
-            locations=valid_locations,
-            centroids_searched=centroids_searched,
-            api_calls_used=api_calls_used,
-            geojson=geojson_result,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception(f"Premium search failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Premium search failed: {str(e)}")
+    return PremiumSearchResponse(
+        success=True,
+        provider=provider.name,
+        category=request.category.value,
+        total_found=len(valid_locations),
+        locations=valid_locations,
+        centroids_searched=centroids_searched,
+        api_calls_used=provider_calls,
+        geojson={"type": "FeatureCollection", "features": features},
+    )
