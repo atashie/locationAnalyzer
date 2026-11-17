@@ -94,10 +94,23 @@ const MUTATIONS = [
       'verdict[p] = V_EXCLUDED;\n          px[p] = PX_IN;'),
   },
   {
-    name: 'the unknown hatch is dropped, so unknown renders as excluded',
+    // Was 'the unknown hatch is dropped'. The hatch is gone -- it is the thing that was wrong --
+    // so the mutation now drops the TINT, which is the same defect in its remaining form: an
+    // unknown cell rendering with excluded's bytes.
+    name: 'the unknown tint is dropped, so unknown renders as excluded',
     apply: (s) => s.replace(
-      "px[p] = (((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH) ? PX_NODATA : PX_OUT;",
+      'px[p] = PX_NODATA;',
       'px[p] = PX_OUT;'),
+  },
+  {
+    // The hatch marked a quarter of the unknown cells and this reintroduces it, because that is
+    // the specific regression this change exists to prevent and nothing else would catch it: the
+    // counts, the verdict plane and the mask are all unchanged by it. Only the per-pixel check
+    // sees it.
+    name: 'the diagonal hatch returns, so three quarters of unknown renders as excluded',
+    apply: (s) => s.replace(
+      'px[p] = PX_NODATA;',
+      'px[p] = (((r + c) & 7) < 2) ? PX_NODATA : PX_OUT;'),
   },
   {
     // The disclosure must never be an eligibility input. If the flag can move a verdict, the

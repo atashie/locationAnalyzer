@@ -41,7 +41,7 @@ const packRGBA = (r, g, b, a) => (LITTLE_ENDIAN
   ? ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
   : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0);
 const PX_IN = packRGBA(24, 119, 242, 150);
-const PX_NODATA = packRGBA(60, 60, 60, 130);
+const PX_NODATA = packRGBA(60, 60, 60, 64);
 const PX_OUT = 0;
 
 let failures = 0;
@@ -599,10 +599,13 @@ for (const group of vectors.groups) {
       let p2 = 0;
       for (let r = 0; r < group.nrows; r++) {
         for (let col = 0; col < group.ncols; col++, p2++) {
-          const onStripe = ((r + col) & 7) < 2;
+          // EVERY unknown cell must carry the tint. The old expectation here mirrored the
+          // hatch -- `onStripe ? PX_NODATA : PX_OUT` -- so it asserted that three quarters of the
+          // unknown cells render EXACTLY LIKE EXCLUDED, and passed while they did. A check that
+          // encodes the defect cannot report it.
           let want;
           if (verdicts[p2] === V_INCLUDED) want = PX_IN;
-          else if (verdicts[p2] === V_UNKNOWN) want = onStripe ? PX_NODATA : PX_OUT;
+          else if (verdicts[p2] === V_UNKNOWN) want = PX_NODATA;
           else want = PX_OUT;
           assert(px[p2] === want,
             `cell ${p2} verdict ${verdicts[p2]}: pixel ${px[p2]} but ${want} renders it`);

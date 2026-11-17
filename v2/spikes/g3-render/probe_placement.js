@@ -44,12 +44,13 @@ async function g3RunPlacementProbe(oracle, options) {
    *
    *  A browser canvas stores a translucent pixel PREMULTIPLIED by its alpha in eight bits, so
    *  `getImageData` cannot hand back the byte that was written: the page's own blue
-   *  (24,119,242,150) reads back as (24,119,241,150) and its hatch grey (60,60,60,130) as
-   *  (61,61,61,130). Measured in Chrome, with opaque pixels in the same call as the control --
+   *  (24,119,242,150) reads back as (24,119,241,150) and its unknown grey (60,60,60,64) as
+   *  (61,61,61,64). Measured in Chrome, with opaque pixels in the same call as the control --
    *  those return exactly. So colour is compared to within one count per channel and the exact
    *  bytes stay in the record. ALPHA is not quantised and is compared exactly, and alpha is what
-   *  separates included (150) from nodata (130) from excluded (0), so nothing a household reads
-   *  as in or out rests on the tolerance. */
+   *  separates included (150) from unknown (64) from excluded (0), so nothing a household reads
+   *  as in or out rests on the tolerance. The unknown alpha was 130 on a quarter of the unknown
+   *  cells until 2026-11-16; it is now 64 on all of them, and the three values stay distinct. */
   const sameColour = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length
     && a[3] === b[3] && a.slice(0, 3).every((v, i) => Math.abs(v - b[i]) <= 1);
 

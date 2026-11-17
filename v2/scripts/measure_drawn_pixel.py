@@ -83,12 +83,12 @@ PAGE_DEFAULT_MIN = 20
 WALKED_QUERY_LON, WALKED_QUERY_LAT = -79.062476, 35.902334
 THRESHOLDS_MIN = (PAGE_DEFAULT_MIN, 10, 15, 25, 45)
 
-#: What `worker.js` paints for each outcome: included is translucent blue, unknown is a diagonal
-#: hatch, excluded is fully transparent and shows the basemap. The names are the words a report may
-#: use; the bytes are in `worker.js` (`PX_IN`, `PX_NODATA`, `PX_OUT`).
+#: What `worker.js` paints for each outcome: included is translucent blue, unknown is a uniform
+#: grey tint, excluded is fully transparent and shows the basemap. The names are the words a report
+#: may use; the bytes are in `worker.js` (`PX_IN`, `PX_NODATA`, `PX_OUT`).
 PAINT = {int(Outcome.PASS): "blue (included)",
          int(Outcome.FAIL): "transparent (excluded)",
-         int(Outcome.UNKNOWN): "hatched (unknown)"}
+         int(Outcome.UNKNOWN): "grey tint (unknown)"}
 
 OUTCOME_NAME = {int(Outcome.PASS): "PASS", int(Outcome.FAIL): "FAIL",
                 int(Outcome.UNKNOWN): "UNKNOWN"}
@@ -98,27 +98,30 @@ STATUS_NAME = {wire.OK: "OK", wire.OFF_NETWORK: "OFF_NETWORK",
                wire.LAYER_UNKNOWN: "LAYER_UNKNOWN", wire.OUTSIDE: "OUTSIDE",
                wire.UNKNOWN_CAUSE: "UNKNOWN_CAUSE"}
 
-#: `worker.js`'s three pixels, and the hatch it draws an unknown cell with.
+#: `worker.js`'s three pixels. One per outcome, and nothing depends on where the cell is.
 PX_IN = [24, 119, 242, 150]
-PX_NODATA = [60, 60, 60, 130]
+PX_NODATA = [60, 60, 60, 64]
 PX_OUT = [0, 0, 0, 0]
-HATCH_PERIOD, HATCH_WIDTH = 8, 2
 
 
-def paint_rgba(code: int, row: int, col: int) -> list[int]:
+def paint_rgba(code: int) -> list[int]:
     """The exact RGBA `worker.js` writes for one cell, so the probe compares bytes and not words.
 
-    The mask canvas is one pixel per published cell, and an unknown cell is hatched by cell index:
-    `((row + col) & 7) < 2` carries the grey and the rest is left transparent. So a single unknown
-    cell off the stripe is painted the same bytes as an excluded one — the hatch reads as a texture
-    over a region, not as a colour on a cell — and a probe that inferred the outcome from the pixel
-    would be guessing. Hence the expectation is computed here, from the outcome, with the phase.
+    **This took `(row, col)` until 2026-11-16, and dropping them is the point.** An unknown cell
+    used to be hatched by cell index — `((row + col) & 7) < 2` carried the grey and the rest was
+    left transparent — so three quarters of the unknown cells were painted the same bytes as an
+    excluded one, and the expectation could only be computed with the phase. `worker.js` now paints
+    every unknown cell alike, so the pixel is a function of the outcome and of nothing else.
+
+    That makes the three outcomes **pairwise distinct in the drawn bytes** for the first time,
+    which is what the `the_outcome_contradicts_the_card` / `the_colour_contradicts_the_card`
+    equality below now rests on.
     """
     if code == int(Outcome.PASS):
         return list(PX_IN)
     if code == int(Outcome.FAIL):
         return list(PX_OUT)
-    return list(PX_NODATA) if ((row + col) % HATCH_PERIOD) < HATCH_WIDTH else list(PX_OUT)
+    return list(PX_NODATA)
 
 
 def mercator_y(lat: np.ndarray) -> np.ndarray:
@@ -199,17 +202,19 @@ def exposure(outcomes: dict[int, np.ndarray], value: np.ndarray, rows_pub: np.nd
         out[str(t_min)] = {
             "structures_compared": int(len(rows_pub)),
             "rows_that_move": int((rows_drawn != rows_pub).sum()),
-            # **This counts OUTCOME disagreement, not colour disagreement** -- Codex pass
-            # 55, F8. The name said colour and the `every_direction` breakdown below proves it
-            # does not: an UNKNOWN cell off the hatch stripe is painted exactly like a FAIL, so
-            # some of these pairs are the same pixel, and shifting the hatch can change a pixel
-            # without changing an outcome. Codex reports 127 of the 5,801 with identical source
-            # RGBA, 134 same-outcome-but-different-pixel, and 5,808 with any RGBA difference.
-            # **Those three figures are its measurement, not reproduced here** -- my own attempt
-            # compared a row against itself and returned zeros, so they are cited rather than
-            # claimed. What is established here is that the field is an outcome comparison. The
-            # 2,771 PASS-to-FAIL figure is unaffected: those two paint differently by
-            # construction.
+            # This counts OUTCOME disagreement. Codex pass 55, F8, found the two names below
+            # described different quantities while holding the same number: an UNKNOWN cell off
+            # the hatch stripe was painted exactly like a FAIL, so some pairs were the same pixel
+            # and shifting the hatch could change a pixel without changing an outcome. It reported
+            # 127 of the 5,801 with identical source RGBA, 134 same-outcome-but-different-pixel,
+            # and 5,808 with any RGBA difference -- cited, not reproduced, because my own attempt
+            # compared a row against itself and returned zeros.
+            #
+            # **That gap closed on 2026-11-16 when the hatch became a uniform tint.** Every
+            # outcome now paints a distinct pixel, so outcome disagreement and colour disagreement
+            # are the same set rather than two sets with one count. The two field names below are
+            # finally synonyms rather than a known inaccuracy kept for compatibility. The 2,771
+            # PASS-to-FAIL figure was never affected: those two always painted differently.
             "the_outcome_contradicts_the_card": int((seen != card).sum()),
             "the_colour_contradicts_the_card": int((seen != card).sum()),
             "why_both_names": "the second is the old name, kept so a reader of an earlier "
@@ -246,7 +251,8 @@ def sensitive_probe(row: int, outcome: np.ndarray, north: float, south: float, n
         return None
     # **Prefer the included/excluded edge.** Any disagreement between the two rows would prove the
     # displacement, but blue against transparent is the edge a household reads as "this
-    # neighbourhood is in or out", and hatch against transparent is not. Taking the first
+    # neighbourhood is in or out", and tint against transparent is not. (Before 2026-11-16 the
+    # unknown side of such an edge was often not drawn at all.) Taking the first
     # disagreeing column instead put all three probes in the off-network fringe at the western
     # edge, where the contradiction is real and the decision is not.
     pf = {int(Outcome.PASS), int(Outcome.FAIL)}
@@ -311,10 +317,10 @@ def build_probes(man: dict, value: np.ndarray, status: np.ndarray, flag: np.ndar
             "destination": destination_record(dest_records, di),
             "outcome": OUTCOME_NAME[int(outcome[r, c])],
             "paint_of_the_cell_the_card_names": PAINT[int(outcome[r, c])],
-            "rgba_of_the_cell_the_card_names": paint_rgba(int(outcome[r, c]), r, c),
+            "rgba_of_the_cell_the_card_names": paint_rgba(int(outcome[r, c])),
         }
         rec["expected_paint_under_the_pointer"] = PAINT[int(outcome[d, c])]
-        rec["expected_rgba_under_the_pointer"] = paint_rgba(int(outcome[d, c]), d, c)
+        rec["expected_rgba_under_the_pointer"] = paint_rgba(int(outcome[d, c]))
         rec["expected_outcome_under_the_pointer"] = OUTCOME_NAME[int(outcome[d, c])]
         rec["the_picture_contradicts_the_card_here"] = bool(outcome[d, c] != outcome[r, c])
         probes.append(rec)

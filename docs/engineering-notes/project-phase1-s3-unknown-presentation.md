@@ -98,7 +98,56 @@ Antigravity puts 86.3% (2,904) of UNKNOWN buildings in those large striped regio
 complaint is where the harm is.** The one-third-of-regions headline is a count of components, and a
 component is not a household.
 
-## Options, none taken
+## What shipped, 2026-11-16
+
+**The owner chose this decision first**, and the hatch is now a **uniform tint**: `worker.js` paints
+every UNKNOWN cell `rgba(60, 60, 60, 64)` and the `(row + col) & 7` branch is gone.
+
+Alpha 64 is about **twice the hatch's average ink** (130 x 0.25 = 32.5), so a region is
+unmistakable, and **under half its peak**, so the basemap reads through. It stays distinct from
+`PX_IN`'s 150 and `PX_OUT`'s 0, which is what `probe_placement.js` uses to tell the three classes
+apart.
+
+**Verified by looking, not only by measuring.** Before: scattered dark diagonal ticks with no
+coherent boundary, over blue and over land alike -- map clutter, which is what the owner reported.
+After: Falls Lake and its forest corridor read as one continuous greyed region. The measurement
+agrees: **369 wholly unmarked regions -> 0**, at every region size and on every walk layer.
+
+What this did **not** do is make the mark zoom-independent. The tint still lives in the raster, so
+it still scales. That matters much less than it did -- a uniform fill has no period to beat against
+the sampling grid -- but the screen-space pattern in option (iv) remains the thing that would
+remove scale dependence entirely, and it needs the polygonizer and a `fill-pattern` layer.
+
+**Three things changed with it.**
+
+* `index.html` said `nodata in an enabled layer` in the legend, beside the thing the owner
+  objected to. That is debug plumbing. It now reads **"not enough data to say"**, and the swatch
+  is a solid tint rather than a miniature hatch.
+* `measure_hatch_visibility.py` diagnosed the hatch, so it would have rotted into a description of
+  code that no longer exists. It now **checks the shipped rule and exits non-zero** if any UNKNOWN
+  cell carries EXCLUDED's bytes; `--rule hatch` still reproduces the defect's own numbers. The gate
+  was shown reachable rather than assumed so: fed the old mask it reports **41,799 of 55,752
+  unmarked**, fed the shipped one it reports none.
+* The drawn-pixel oracle (`docs/experiments/s3-10-drawn-pixel.json`) carried its own copy of the
+  paint rule and had to be regenerated. **Its headline findings did not move** -- 131,571 structures
+  read a moved row, 5,801 contradictions at 20 minutes, 2,771 painted-out-but-included -- because
+  the row displacement does not depend on the paint. But one of its three sensitive probes had an
+  expected pixel of `[0, 0, 0, 0]`: an UNKNOWN cell the old renderer drew **exactly like an excluded
+  one**, sitting in the committed oracle the whole time.
+
+That last change also closed a known inaccuracy. Codex pass 55 (F8) found that
+`the_outcome_contradicts_the_card` and `the_colour_contradicts_the_card` described different
+quantities while holding the same number, because an UNKNOWN cell off the stripe painted like a
+FAIL. **Every outcome now paints a distinct pixel**, so the two names are finally synonyms.
+
+Guarded by two new mutations in `mutate_worker.mjs`, both confirmed caught and neither inert:
+dropping the tint, and **reintroducing the diagonal hatch**. Nothing else would catch the second --
+the counts, the verdict plane and the mask are all unchanged by it, and only the per-pixel check
+sees it. The conformance suite's own expectation had to be corrected too: it read
+`onStripe ? PX_NODATA : PX_OUT`, so it **asserted that three quarters of UNKNOWN renders exactly
+like EXCLUDED**, and passed while they did. A check that encodes the defect cannot report it.
+
+## Options, as they stood
 
 | option | assessment |
 |---|---|
@@ -145,7 +194,7 @@ recommendation while a 17% map-area share is not itself evidence of retired reco
 Both put it above the donut holes, and both note it is the cheapest **clear** product improvement
 available.
 
-The decision is the owner's and is not taken.
+The owner ranked this **first** on 2026-11-16 and it is done, in the narrow form above: a uniform tint, not the screen-space texture. The remaining question is whether a reader can tell the three classes apart, and that is a reading test, not a measurement.
 
 Related: [[project-phase1-s3-donut-holes]], [[project-phase1-s3-progress]],
 [[feedback-verify-the-shape-of-the-risk]], [[s3-13-reading-test]].

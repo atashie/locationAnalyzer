@@ -310,20 +310,20 @@
         "destination_index": null,
         "destination": null,
         "outcome": "UNKNOWN",
-        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "paint_of_the_cell_the_card_names": "grey tint (unknown)",
         "rgba_of_the_cell_the_card_names": [
           60,
           60,
           60,
-          130
+          64
         ]
       },
-      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_paint_under_the_pointer": "grey tint (unknown)",
       "expected_rgba_under_the_pointer": [
         60,
         60,
         60,
-        130
+        64
       ],
       "expected_outcome_under_the_pointer": "UNKNOWN",
       "the_picture_contradicts_the_card_here": false
@@ -348,20 +348,20 @@
         "destination_index": null,
         "destination": null,
         "outcome": "UNKNOWN",
-        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "paint_of_the_cell_the_card_names": "grey tint (unknown)",
         "rgba_of_the_cell_the_card_names": [
-          0,
-          0,
-          0,
-          0
+          60,
+          60,
+          60,
+          64
         ]
       },
-      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_paint_under_the_pointer": "grey tint (unknown)",
       "expected_rgba_under_the_pointer": [
-        0,
-        0,
-        0,
-        0
+        60,
+        60,
+        60,
+        64
       ],
       "expected_outcome_under_the_pointer": "UNKNOWN",
       "the_picture_contradicts_the_card_here": false
@@ -386,20 +386,20 @@
         "destination_index": null,
         "destination": null,
         "outcome": "UNKNOWN",
-        "paint_of_the_cell_the_card_names": "hatched (unknown)",
+        "paint_of_the_cell_the_card_names": "grey tint (unknown)",
         "rgba_of_the_cell_the_card_names": [
           60,
           60,
           60,
-          130
+          64
         ]
       },
-      "expected_paint_under_the_pointer": "hatched (unknown)",
+      "expected_paint_under_the_pointer": "grey tint (unknown)",
       "expected_rgba_under_the_pointer": [
         60,
         60,
         60,
-        130
+        64
       ],
       "expected_outcome_under_the_pointer": "UNKNOWN",
       "the_picture_contradicts_the_card_here": false

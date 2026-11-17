@@ -63,7 +63,7 @@ def planes() -> dict:
 
 
 def js_literals() -> dict:
-    """`worker.js`'s palette and hatch, from executable code only."""
+    """`worker.js`'s palette, from executable code only."""
     text = (SPIKE / "worker.js").read_text(encoding="utf-8")
     body = executable_mask(text)
     assert len(body) == len(text), "the comment stripper changed the file's length"
@@ -72,10 +72,9 @@ def js_literals() -> dict:
         found = declarations(text, rf"const {name} = packRGBA\(([^)]*)\)")
         assert len(found) == 1, f"{name} is declared {len(found)} times in executable code"
         out[name] = [int(v.strip()) for v in found[0].split(",")]
-    for name in ("PX_OUT", "HATCH_PERIOD_MASK", "HATCH_WIDTH"):
-        found = declarations(text, rf"const {name} = (\d+)")
-        assert len(found) == 1, f"{name} is declared {len(found)} times in executable code"
-        out[name] = int(found[0])
+    found = declarations(text, r"const PX_OUT = (\d+)")
+    assert len(found) == 1, f"PX_OUT is declared {len(found)} times in executable code"
+    out["PX_OUT"] = int(found[0])
     return out
 
 
@@ -88,28 +87,45 @@ def test_the_python_palette_is_the_workers_palette():
         f"python {m.PX_NODATA} against worker.js {js['PX_NODATA']}")
     assert js["PX_OUT"] == 0 and m.PX_OUT == [0, 0, 0, 0], (
         f"worker.js paints an excluded cell {js['PX_OUT']} and python expects {m.PX_OUT}")
-    # The worker masks with `& 7`, which is a period of 8. A period written as a mask is one of the
-    # two places this could drift without either number looking wrong on its own.
-    assert m.HATCH_PERIOD == js["HATCH_PERIOD_MASK"] + 1, (
-        f"python hatches with period {m.HATCH_PERIOD} and worker.js masks with "
-        f"{js['HATCH_PERIOD_MASK']}, which is a period of {js['HATCH_PERIOD_MASK'] + 1}")
-    assert m.HATCH_WIDTH == js["HATCH_WIDTH"]
 
 
-def test_an_unknown_cell_off_the_stripe_is_painted_like_an_excluded_one():
-    """The hatch is sparse, so the pixel alone does not carry the outcome.
+def test_every_outcome_paints_a_pixel_no_other_outcome_paints():
+    """The pixel alone carries the outcome. It did not until 2026-11-16.
 
-    This is why the oracle predeclares the RGBA from the outcome and the cell index instead of
-    letting the probe infer an outcome from what it reads.
+    This test replaces `test_an_unknown_cell_off_the_stripe_is_painted_like_an_excluded_one`,
+    which **asserted the defect**: it required that an UNKNOWN cell off the hatch stripe be
+    painted `PX_OUT`, byte-identical to an EXCLUDED one, and it passed for as long as that was
+    true. A test can hold a bug in place as firmly as it can catch one, and this one did.
     """
     import measure_drawn_pixel as m
     from locfinder.status import Outcome
 
-    on = m.paint_rgba(int(Outcome.UNKNOWN), 0, 0)
-    off = m.paint_rgba(int(Outcome.UNKNOWN), 0, 4)
-    assert on == m.PX_NODATA
-    assert off == m.PX_OUT == m.paint_rgba(int(Outcome.FAIL), 0, 4)
-    assert m.paint_rgba(int(Outcome.PASS), 0, 4) == m.PX_IN
+    painted = {int(c): m.paint_rgba(int(c))
+               for c in (Outcome.PASS, Outcome.FAIL, Outcome.UNKNOWN)}
+    assert painted[int(Outcome.PASS)] == m.PX_IN
+    assert painted[int(Outcome.FAIL)] == m.PX_OUT
+    assert painted[int(Outcome.UNKNOWN)] == m.PX_NODATA
+    assert len({tuple(v) for v in painted.values()}) == 3, (
+        f"two outcomes share a pixel, so the picture cannot distinguish them: {painted}")
+    # The alpha channel alone must separate them, because probe_placement.js compares colour to
+    # within one count per channel (canvas premultiplication) but compares alpha exactly.
+    alphas = sorted(v[3] for v in painted.values())
+    assert len(set(alphas)) == 3, f"alpha does not separate the three outcomes: {alphas}"
+
+
+def test_the_worker_paints_every_unknown_cell_and_not_a_hatch():
+    """The hatch must not come back. `mutate_worker.mjs` guards the browser side of this.
+
+    It is worth a Python test as well because the hatch was invisible to every check that looked
+    at counts, verdicts or the mask -- those are all identical with it and without it. Only
+    something that reads the paint can see it.
+    """
+    text = (SPIKE / "worker.js").read_text(encoding="utf-8")
+    body = executable_mask(text)
+    assert "HATCH" not in body, "a hatch constant is back in worker.js's executable code"
+    assert "& 7" not in body, "worker.js's executable code masks a cell index again"
+    assert body.count("px[p] = PX_NODATA;") == 1, (
+        "the unknown branch no longer paints every cell with the tint")
 
 
 def test_the_published_row_rule_keeps_its_half_open_edges():

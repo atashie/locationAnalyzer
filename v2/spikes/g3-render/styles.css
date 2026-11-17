@@ -174,7 +174,7 @@ pre#log {
   border: 1px solid var(--line);
 }
 .legend .in::before { background: rgba(24, 119, 242, 0.59); }
-.legend .nodata::before { background: repeating-linear-gradient(135deg, rgba(60,60,60,0.5) 0 2px, transparent 2px 6px); }
+.legend .nodata::before { background: rgba(60, 60, 60, 0.25); }
 .legend .poly::before { background: rgba(255, 127, 14, 0.25); border-color: #d62728; }
 
 /* The per-criterion card. One block per criterion; the verdict above them. */

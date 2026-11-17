@@ -95,10 +95,31 @@ const VERDICT_NAMES = ['INCLUDED', 'EXCLUDED', 'UNKNOWN'];
 const BOUNDED_STATUSES = [S_OFF_NETWORK, S_BEYOND_HORIZON, S_NO_PATH];
 
 const PX_IN = packRGBA(24, 119, 242, 150);     // included: translucent blue
-const PX_NODATA = packRGBA(60, 60, 60, 130);   // nodata hatch stripe
-const PX_OUT = 0;                              // fully transparent
-const HATCH_PERIOD_MASK = 7;                   // (row + col) & 7 < HATCH_WIDTH -> stripe
-const HATCH_WIDTH = 2;
+const PX_OUT = 0;                              // excluded: fully transparent
+/* UNKNOWN: a UNIFORM neutral tint over every unknown cell.
+ *
+ * This replaced a diagonal hatch on 2026-11-16, and the reason is measured rather than aesthetic.
+ * The hatch rule was `((r + c) & 7) < 2 ? PX_NODATA : PX_OUT`, so it marked a quarter of the
+ * unknown cells and left the rest at PX_OUT -- which is 0, THE SAME BYTES AN EXCLUDED CELL GETS.
+ * On the published grid that left 369 of 1,075 connected unknown regions (975 cells, 55 buildings)
+ * with no grey pixel at all: indistinguishable on screen from a confident "no". A disclosure that
+ * fires on 2 of every 8 diagonal positions is a lottery over cell coordinates, not a disclosure.
+ *
+ * The hatch also scaled with the raster, because the mask is one canvas pixel per grid cell drawn
+ * with `raster-resampling: nearest`. At the opening zoom its period lands near 9 CSS px, which
+ * reads as broad diagonal bands of roughly 200 m of ink and 600 m of gap across the 17% of the map
+ * that is off-network -- the lakes and the state forests. The owner reported exactly that and was
+ * right.
+ *
+ * Alpha 64 is about twice the hatch's AVERAGE ink (130 x 0.25 = 32.5) so a region is unmistakable,
+ * and under half its PEAK, so the basemap still reads through. It stays distinct from PX_IN's 150
+ * and PX_OUT's 0, which is what probe_placement.js uses to tell the three classes apart.
+ *
+ * NOT YET DONE, and it needs a reader rather than another measurement: a screen-space texture, so
+ * the mark stops scaling with zoom entirely. That needs the polygonizer and a `fill-pattern` layer,
+ * because a raster in grid space cannot carry one. See
+ * docs/engineering-notes/project-phase1-s3-unknown-presentation.md. */
+const PX_NODATA = packRGBA(60, 60, 60, 64);
 
 const state = {
   manifest: null,
@@ -470,7 +491,7 @@ function handleCompute(msg) {
           mask[p] = 0;
           verdict[p] = V_UNKNOWN;
           nodataCount++;
-          px[p] = (((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH) ? PX_NODATA : PX_OUT;
+          px[p] = PX_NODATA;
         } else {
           mask[p] = 1;
           verdict[p] = V_INCLUDED;

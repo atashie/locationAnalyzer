@@ -1,29 +1,34 @@
-"""Does the UNKNOWN hatch actually mark the UNKNOWN cells? Measured on the PUBLISHED grid.
+"""Is every UNKNOWN cell marked? Measured on the PUBLISHED grid.
 
-The owner reports that the grey diagonal striping is "problematic and should be rectified". That
-is a product judgement and theirs to make. This script measures a separate, factual question that
-the complaint exposed, and which nothing in the repository had measured:
+**The answer was no until 2026-11-16, and this script is what established it.** `worker.js` painted
+an UNKNOWN cell grey only where `(row + col) & 7 < 2` and painted it `PX_OUT` -- fully transparent,
+byte-identical to an EXCLUDED cell -- everywhere else. So the hatch marked at most 2 of every 8
+diagonal positions, and **369 of 1,075 connected UNKNOWN regions received no grey pixel at all**:
+on screen, indistinguishable from a confident "no".
 
-    `worker.js:473` paints an UNKNOWN cell grey only where `(row + col) & 7 < 2`, and paints it
-    `PX_OUT` -- fully transparent, byte-identical to an EXCLUDED cell -- everywhere else.
+The owner reported the visible half of the same defect -- "those striping effects are problematic
+and should be rectified" -- and `worker.js` now paints **every** UNKNOWN cell with a uniform tint.
+This script therefore runs in two modes:
 
-So the hatch marks at most 2 of every 8 diagonal positions. For a large contiguous UNKNOWN region
-that reads as a texture, which is the design intent. For a small or thin one it can paint a single
-grey dot, or nothing at all, and a region that gets nothing is indistinguishable on screen from a
-confident "no". This measures how much of each kind there is.
+* `--rule tint` (default): the shipped rule. Every UNKNOWN cell is marked, so `painted` must equal
+  `UNKNOWN`, `invisible` must be 0 and no region may be wholly unmarked. It **exits non-zero** if
+  that fails, which makes it a regression check and not just a report.
+* `--rule hatch`: the rule as it was, so the before/after numbers stay reproducible from one file.
 
-`row` and `col` in that expression are the PUBLISHED WGS84 grid's indices (`p = r * ncols + c`
-over `nrows=514`, `ncols=643`), so this reads `fixtures/published/*.bin` and not the UTM source
-surfaces. Quoting a UTM figure at a question about painted pixels is the pass-56 error class.
+`row` and `col` are the PUBLISHED WGS84 grid's indices (`p = r * ncols + c` over `nrows=514`,
+`ncols=643`), so this reads `fixtures/published/*.bin` and not the UTM source surfaces. Quoting a
+UTM figure at a question about painted pixels is the pass-56 error class.
 
 LIMITATION, stated rather than papered over: this reports CELLS, not buildings. The buildings
 raster exists only on the UTM grid, and the exporter's reprojection is nearest-neighbour, which
-duplicates and drops cells and so does not conserve a count. Weighting these components by
-buildings needs a building count computed on the published grid, which nothing produces yet.
+duplicates and drops cells and so does not conserve a count. Codex's pass-57 run did it properly by
+assigning each building centroid once to a published cell, and found **55 buildings** in the 369
+unmarked regions against **3,364** in UNKNOWN cells overall -- so the missing mark was real and the
+visible striping was where the harm was.
 
 Run from `v2/`:
     python scripts/measure_hatch_visibility.py
-    python scripts/measure_hatch_visibility.py --layer own_triangle_park_walk --thresholds 15 20
+    python scripts/measure_hatch_visibility.py --rule hatch --thresholds 15 20
 """
 from __future__ import annotations
 
@@ -68,8 +73,14 @@ def outcome(status: np.ndarray, value: np.ndarray, threshold: int, horizon_s: fl
     return out
 
 
-def hatch_mask(nrows: int, ncols: int) -> np.ndarray:
-    """The cells worker.js paints grey, for an UNKNOWN verdict: `(r + c) & 7 < 2`."""
+def mark_mask(nrows: int, ncols: int, rule: str) -> np.ndarray:
+    """The cells worker.js marks, for an UNKNOWN verdict.
+
+    `tint` is the shipped rule and marks everything. `hatch` is the rule as it stood until
+    2026-11-16 -- `(r + c) & 7 < 2` -- kept so the defect's own numbers stay reproducible.
+    """
+    if rule == "tint":
+        return np.ones((nrows, ncols), dtype=bool)
     r = np.arange(nrows, dtype=np.int64)[:, None]
     c = np.arange(ncols, dtype=np.int64)[None, :]
     return ((r + c) & HATCH_PERIOD_MASK) < HATCH_WIDTH
@@ -135,22 +146,38 @@ def shape_detail(label: str, status, value, horizon_s, hatch, threshold: int) ->
     print()
 
 
+def unmarked(stem: str, status, value, horizon_s: float, mark, thresholds) -> list[str]:
+    """Every UNKNOWN cell must be marked. Returns a line per threshold that fails."""
+    bad = []
+    for t in thresholds:
+        unk = outcome(status, value, horizon_s=horizon_s, threshold=t) == O_UNKNOWN
+        missed = int((unk & ~mark).sum())
+        if missed:
+            bad.append(f"{stem} at {t} min: {missed:,} of {int(unk.sum()):,} UNKNOWN cells "
+                       f"are painted PX_OUT")
+    return bad
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--layer", action="append", default=None,
                     help="published layer id; repeatable. Default: the three walk layers.")
     ap.add_argument("--thresholds", type=int, nargs="+", default=DEFAULT_THRESHOLDS)
+    ap.add_argument("--rule", choices=("tint", "hatch"), default="tint",
+                    help="tint: the shipped rule, checked. hatch: the rule as it was, reported.")
     args = ap.parse_args()
 
     man = json.loads((PUB / "manifest.json").read_text(encoding="utf-8"))
     nrows, ncols = int(man["nrows"]), int(man["ncols"])
     by_id = {L["id"]: L for L in man["layers"]}
     stems = args.layer or WALK_LAYERS
-    hatch = hatch_mask(nrows, ncols)
+    failures: list[str] = []
+    hatch = mark_mask(nrows, ncols, args.rule)
 
     print(f"published grid {nrows} x {ncols} = {nrows * ncols:,} cells")
-    print(f"hatch covers {int(hatch.sum()):,} cells ({hatch.mean() * 100:.2f}%) -- "
-          f"an UNKNOWN cell outside it is painted PX_OUT, the same as EXCLUDED\n")
+    print(f"rule: {args.rule} -- marks {int(hatch.sum()):,} cells ({hatch.mean() * 100:.2f}%) "
+          f"of the grid; an UNKNOWN cell outside the mark is painted PX_OUT, "
+          f"the same bytes as EXCLUDED\n")
 
     for stem in stems:
         if stem not in by_id:
@@ -160,6 +187,17 @@ def main() -> None:
         report(stem, L["label"], status, value, float(L["horizon_s"]), hatch, args.thresholds)
         shape_detail(L["label"], status, value, float(L["horizon_s"]), hatch,
                      int(L["default_threshold_min"]))
+        if args.rule == "tint":
+            failures.extend(unmarked(stem, status, value, float(L["horizon_s"]), hatch,
+                                     args.thresholds))
+
+    if args.rule == "tint":
+        if failures:
+            print("REGRESSION -- an UNKNOWN cell is rendering with EXCLUDED's bytes:")
+            for f in failures:
+                print(f"  {f}")
+            raise SystemExit(1)
+        print("OK -- every UNKNOWN cell is marked, on every layer and threshold checked.")
 
 
 if __name__ == "__main__":
