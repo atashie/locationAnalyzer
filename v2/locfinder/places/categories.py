@@ -17,6 +17,25 @@ WEDGE_CATEGORIES: dict[str, dict] = {
         "exclude_primary": {"farmers_market"},
         "osm": {("shop", "supermarket"), ("shop", "greengrocer")},
     },
+    # The owner's default meaning of "grocery", 2026-11-17: a supermarket you could do a weekly
+    # shop at. Membership is decided by `places.grocery`, from explicit tables, NOT from the
+    # taxonomy -- `grocery_store` covers a supermarket and a corner shop alike. `grocery` below is
+    # left exactly as it was, because the published layer is built from it and changing its
+    # meaning in place would move every published grocery number with nothing saying so.
+    "supermarket": {
+        "overture_primary": set(),
+        "overture_hierarchy": {"grocery_store"},
+        "exclude_primary": {"farmers_market"},
+        "osm": {("shop", "supermarket")},
+        "grocery_classes": {"supermarket"},
+    },
+    "specialty_grocery": {
+        "overture_primary": set(),
+        "overture_hierarchy": {"grocery_store"},
+        "exclude_primary": {"farmers_market"},
+        "osm": {("shop", "greengrocer")},
+        "grocery_classes": {"specialty"},
+    },
     "park": {
         "overture_primary": {"park", "state_park", "national_park"},
         "overture_hierarchy": {"park"},
@@ -104,6 +123,13 @@ def select_overture(gdf, category: str):
     """
     spec = WEDGE_CATEGORIES[category]
     mask = gdf["taxonomy"].apply(lambda t: taxonomy_matches(t, spec)).to_numpy(dtype=bool)
+    # A category may narrow the taxonomy match by what the record IS rather than how it is tagged.
+    wanted = spec.get("grocery_classes")
+    if wanted:
+        import numpy as _np
+        from .grocery import classify_grocery
+        keep = _np.array([classify_grocery(r) in wanted for _, r in gdf.iterrows()], dtype=bool)
+        mask = mask & keep
     # Owner decisions about what a record IS, applied at the one chokepoint every builder and
     # script goes through, so none can route around them by accident. See `exclusions`.
     out = drop_excluded(gdf[mask])

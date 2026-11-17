@@ -36,6 +36,54 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "'Shearon Harris Reservoir', taxonomy primary=park. The same water body as the record "
         "above under another name, and the same evidence: contained only by 'Duke Energy: Harris "
         "Nuclear Plant', outside 'Harris Lake County Park'. Owner decision 2026-11-17.",
+    "81190996-0ac4-401f-817a-a9ebff1af58c":
+        "Kroger, grocery. Overture marks it permanently_closed, and unlike the eight below the "
+        "signal is strong: it comes from `Overture-signals` at confidence 1.0 rather than from a "
+        "business registry, and OSM shows a `shop=supermarket` named Harris Teeter operating at "
+        "the same spot. So the Kroger closed and somebody else trades there -- routing a "
+        "household to 'Kroger' names a shop that is not there. Owner decision 2026-11-17: drop "
+        "this one, hold the other eight.",
+}
+
+#: Closures Overture asserts that we are NOT acting on, with why. Recorded rather than applied.
+#:
+#: **All eight come from BrightQuery**, a business-registry provider: every one carries confidence
+#: 0.55-0.65 and the same single update time, and the signal is about a legal entity rather than
+#: an observation of a storefront. An entity can deregister while the shop trades on under new
+#: ownership, and it can be registered at an address that was never a shop.
+#:
+#: Of the eight, two have a different shop within 100 m in OSM and six have no OSM shop within
+#: 100 m at all -- which is weak evidence in both directions, because OSM's coverage of small
+#: independent grocers is itself patchy.
+#:
+#: Owner decision 2026-11-17: hold them as pending. The owner also raised building a closure
+#: **likelihood index** from several sources (OSM, Google, Yelp) rather than a yes/no list; that
+#: is not built, and it carries a licensing question -- Google output may be queried live for
+#: validation but must not be persisted as a dataset.
+PENDING_CLOSURES: dict[str, str] = {
+    "0d5215b0-3192-4bc8-aee5-d5ba6fdb2973":
+        "La Tiendita Market. BrightQuery, confidence 0.65. OSM has a `shop=supermarket` named "
+        "'ktown market' within 100 m, so something trades there under another name.",
+    "27b4e2f0-fc2a-442f-be32-afdaad6fb309":
+        "Kinstar International Food Inc. BrightQuery, confidence 0.65. OSM has a "
+        "`shop=convenience` named 'Little India' within 100 m -- a different business.",
+    "3fed30d2-7538-4f0f-aece-e77ab3a4d484":
+        "Carolina Cupboard. BrightQuery, confidence 0.55 -- the lowest of the nine. No OSM shop "
+        "within 100 m.",
+    "4f318935-7d66-4a5e-833a-1131fdf4b4fe":
+        "Longview Poole Road. BrightQuery, confidence 0.65. The name is a street, not a shop, "
+        "which is what a registry record looks like. No OSM shop within 100 m.",
+    "a4cd9c69-95d2-4170-8433-c5e48adc9406":
+        "Bell Tower Mart. BrightQuery, confidence 0.65. No OSM shop within 100 m.",
+    "b7b9f517-7f58-4a53-abd2-ac8620a93726":
+        "Jinja Fair Trade Llc. BrightQuery, confidence 0.65. 'Llc' in the name is the registry "
+        "showing through. No OSM shop within 100 m.",
+    "dc09b073-d0ac-4141-8275-3127c748878d":
+        "Roofing Inc. BrightQuery, confidence 0.65. **Not a grocery under any definition** -- it "
+        "is a roofing company classified as a grocery store, and the closure flag is incidental "
+        "to the real defect. See `scripts/measure_classification_errors.py`.",
+    "fa488537-1065-4f10-80e6-8e7d978375fb":
+        "La Nueva Mexicana. BrightQuery, confidence 0.65. No OSM shop within 100 m.",
 }
 
 
