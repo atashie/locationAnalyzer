@@ -36,6 +36,7 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import osmnx as ox
+import shapely
 from scipy import ndimage
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -46,6 +47,7 @@ from locfinder.grid import encode_minutes  # noqa: E402
 from locfinder.measure.frames import file_digest  # noqa: E402
 from locfinder.places.categories import select_target  # noqa: E402
 from locfinder.status import Reason  # noqa: E402
+from locfinder.traveltime.attach import attach_points_to_edges  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.layer import build_layer_surface, write_layer  # noqa: E402
@@ -54,6 +56,13 @@ from locfinder.traveltime.speeds import add_travel_times, symmetrise  # noqa: E4
 
 BUILDINGS = METRO_DIR / "overture_buildings_accepted.parquet"
 POI_SNAP_MAX_M = 300.0
+#: Where the node bound drops a destination, try the nearest EDGE at the same bound before giving
+#: up. Pass 57: park record #456 is **356.44 m from the nearest node and 0.17 m from the nearest
+#: edge**. `simplify=True` collapses degree-two nodes, so distance-to-nearest-node measures
+#: junction density, not how far a household walks, and it was never the quantity this bound meant
+#: to cap. Fires only where the node rule already failed, and the split it performs is cost- and
+#: time-neutral -- see `locfinder.traveltime.attach`.
+POI_EDGE_FALLBACK = True
 MAX_ACCESS_M = 200.0
 CUTOFF_MIN = 120.0
 THRESHOLDS_MIN = (10, 15, 25, 45)
@@ -99,12 +108,37 @@ def main() -> None:
         G = symmetrise(G)
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
     G, comp = largest_component(G)
-    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    # Destinations are snapped BEFORE the CSR, because the edge fallback inserts nodes and a CSR
+    # built ahead of it would index a graph that no longer exists.
     places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
     sel = select_target(places, args.category)
+    # A no-op on the accepted places -- every record is a Point, which pass 57 established against
+    # a note claiming parks were polygons measured to their middle. Kept so a future polygon input
+    # does not silently snap a bounding-box corner.
     cent = sel.geometry.centroid
     nodes, dists = ox.nearest_nodes(G, cent.x.to_numpy(), cent.y.to_numpy(), return_dist=True)
-    dest_idx = sorted({index[n] for n, d in zip(nodes, dists) if d <= POI_SNAP_MAX_M})
+    keep = np.asarray(dists) <= POI_SNAP_MAX_M
+    dest_nodes = {n for n, k in zip(nodes, keep) if k}
+    recovered = 0
+    if POI_EDGE_FALLBACK and not keep.all():
+        dropped = np.flatnonzero(~keep)
+        pts = shapely.points(cent.x.to_numpy()[dropped], cent.y.to_numpy()[dropped])
+        for attached in attach_points_to_edges(G, pts, POI_SNAP_MAX_M):
+            if attached is not None:
+                dest_nodes.add(attached)
+                recovered += 1
+    out["destinations"] = {
+        "records_selected": int(len(sel)),
+        "within_node_bound": int(keep.sum()),
+        "dropped_by_node_rule": int((~keep).sum()),
+        "recovered_by_edge_fallback": recovered,
+    }
+    print(f"{args.category}: {len(sel)} records, {int(keep.sum())} within "
+          f"{POI_SNAP_MAX_M:.0f} m of a node, {recovered} of {int((~keep).sum())} dropped "
+          f"recovered on an edge", flush=True)
+
+    cost_csr, time_csr, index = graph_to_cost_time_csr(G)
+    dest_idx = sorted({index[n] for n in dest_nodes})
     surf = build_layer_surface(
         G, (cost_csr, time_csr), index, GRID, dest_idx=dest_idx, mode=args.mode,
         target=args.category, engine="own-graph", cutoff_min=CUTOFF_MIN,
@@ -232,6 +266,10 @@ def main() -> None:
             "engine": "own-graph", "aggregation": surf.aggregation,
             "horizon_s": surf.horizon_s, "cutoff_min": CUTOFF_MIN,
             "max_access_m": MAX_ACCESS_M, "poi_snap_max_m": POI_SNAP_MAX_M,
+            # What the edge fallback did, so a consumer need not assume it was off. A layer built
+            # before 2026-11-16 has no `destinations` key at all, which is the honest signal that
+            # the question was not asked rather than that the answer was zero.
+            "destinations": out["destinations"],
             "built": stamp(), "profile": profile.profile_version(),
             "grid": profile.grid_version(GRID),
             "arrays": {

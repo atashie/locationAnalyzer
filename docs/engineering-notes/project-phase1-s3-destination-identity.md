@@ -332,6 +332,105 @@ against the shipped layer**; Codex **PREMATURE**, on the ground that a blanket b
 accessible replacement. Both rank this decision third of four. Reviews in
 `docs/research/59-review-pass57/`.
 
+## What shipped, 2026-11-16: the narrow edge fallback
+
+The owner authorised the narrow repair alongside the striping fix. Where the **node** bound drops a
+destination, the builder now tries the nearest **edge** at the same 300 m bound before giving up
+(`locfinder/traveltime/attach.py`, wired into `spikes/s2_building_weighted_coverage.py`).
+
+**What the per-record measurement found, which neither reviewer reported.**
+`scripts/measure_park_edge_fallback.py` characterises all seven dropped records:
+
+| # | node m | edge m | frac | restricted | name |
+|---|---:|---:|---:|---|---|
+| 33093 | 349.39 | 158.34 | 0.473 | no | William B Umstead State Park |
+| 12457 | 363.88 | 177.65 | 0.624 | no | Shearon Harris Lake |
+| 12448 | 356.44 | **0.17** | 0.399 | no | Sharon Harris Lake |
+| 1139 | 711.09 | 707.11 | 0.415 | no | Parker Creek Campground Playground |
+| 74704 | 434.25 | 45.88 | 0.520 | no | Falls Lake State Recreation Area |
+| 10301 | 595.27 | 33.61 | 0.471 | **yes** | Shearon Harris Reservoir |
+| 3906 | 329.65 | 229.58 | 0.423 | no | Ocaneechee Park |
+
+Six are recoverable and the seventh is 707 m from any edge. Two facts follow that change the
+implementation:
+
+* **None of the six projects within a metre of an existing endpoint** — the fractions are all
+  0.40-0.62 and the nearest endpoints are 349 m to 1,099 m away. So "attach to the nearer endpoint"
+  is not available for any of them; **every recovery requires splitting an edge.**
+* **One of the six sits on an access-restricted edge.** `speeds.py` charges the restricted penalty
+  PER EDGE, so a naive split would charge it twice — the pass-56 counterexample, live.
+
+**So the split prorates the whole cost by the fraction**, which is exactly what `snap.py` already
+does for an origin's partial edge. Cutting at `f` gives halves costing `f * cost` and
+`(1 - f) * cost`. A split is then cost-neutral and time-neutral for any journey traversing the
+whole edge, and the `access_restricted` flag stays on both halves because it discloses the ground
+rather than pricing it.
+
+**Measured churn, on the real rebuild.**
+
+```text
+UTM surface      778 of 330,502 cells changed (0.235%) -- ALL faster, 0 slower
+                 finite cells 268,061 -> 268,061 (0 gained, 0 lost)
+                 reason plane: 0 changes
+                 median change -957 s, max -2,997 s
+PASS at 15 min   59,116 -> 59,267  (+151)
+published        792 bytes differ on own_triangle_park_walk, ALL smaller
+                 every other layer byte-identical, every status plane unchanged
+```
+
+**What "0 slower" does and does not establish.** It is not guaranteed by construction, which after
+ledger instance 55 is worth saying out loud: adding destinations can only lower a time, but a split
+that double-charged a penalty would RAISE the time for every journey through that edge, and none
+rose. It assumes some selected journey actually traverses the six split edges, which this does not
+separately verify; the unit tests prove the conservation directly and assume nothing.
+
+**The fallback is park-only today**, swept across every category on one graph load: grocery has 1
+dropped record and **0** recoverable, school has **0** dropped, coffee has 3 dropped and **0**
+recoverable. Rebuilding those layers produces byte-identical output, which the re-export confirms.
+
+### The six recoveries are not six parks, and that is an owner question
+
+Counting them as "6 parks recovered" would repeat pass 56's error of attaching a true number to a
+population it does not describe. By name:
+
+* **Three are the Shearon Harris nuclear plant's cooling reservoir** — #12457, #12448 (a duplicate
+  of it, spelled "Sharon") and #10301, the one on the restricted edge. This is Antigravity's W8
+  finding arriving from the other direction: the Harris site is a 9,627.8 ha `nature_reserve`
+  holding nine Overture park points. The genuine public park on that lake, **Harris Lake County
+  Park** (#12445, #12449), was already a destination and is unaffected.
+* **One is a duplicate of a park already in the layer.** #33093 "William B Umstead State Park" is
+  recovered, but **#33094 "William B. Umstead State Park"** (`state_park`) was never dropped.
+  Codex found this; the measurement confirms it.
+* **Two are genuinely new**: **Falls Lake State Recreation Area** (#74704, 45.88 m from a road) and
+  **Ocaneechee Park** (#3906, 229.58 m).
+
+The fallback is doing its job — the node bound was the wrong instrument and these records were
+excluded for a reason that had nothing to do with whether anyone can reach them. Whether a nuclear
+plant's cooling reservoir should be in the accepted **park set** at all is a different question,
+about what counts as a park, and it belongs with the grocery-definition question in the owner's
+column. Nothing here screens it, because screening it would be a policy invented mid-repair.
+
+### A bug the CSR validator caught, and it was not in the arithmetic
+
+The first real rebuild died on:
+
+```
+ValueError: edge 7110291587->14341115166 has non-positive or non-finite travel_time=0.0
+```
+
+Two nodes can be joined by more than one physical way. `split_edge_at` re-derived the split point
+from whichever parallel edge `get_edge_data` happened to yield first, so a fraction measured on the
+**matched** way was applied to a different shape — and on a long detour way, the matched way's
+midpoint projects onto its end, cutting a zero-length half. The caller now passes the point it
+matched, and any way whose own projection is not strictly interior is **left whole**, which is
+correct rather than a compromise: both endpoints survive the split, so `u -> v` remains a real
+connection beside `u -> new -> v`.
+
+Worth recording for two reasons. The synthetic reproduction I wrote first **passed**, so the test
+that mattered was the one written after watching the real failure, not the one reasoned out from
+it. And the defect was caught by a validator written for an unrelated purpose — a check on an
+invariant found a bug no test was aiming at.
+
 ## What is still open
 
 * **Which place on a shared node.** Not computed, by design. Resolving it needs either a rule

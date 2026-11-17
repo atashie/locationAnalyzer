@@ -31,10 +31,22 @@ from locfinder.places.categories import select_target  # noqa: E402
 from locfinder.traveltime.components import largest_component  # noqa: E402
 from locfinder.traveltime.csr import graph_to_cost_time_csr  # noqa: E402
 from locfinder.traveltime.layer import build_layer_seconds, write_layer  # noqa: E402
+from locfinder.traveltime.attach import attach_points_to_edges  # noqa: E402
 from locfinder.traveltime.snap import EdgeIndex  # noqa: E402
 from locfinder.traveltime.speeds import EXTRA_WAY_TAGS, add_travel_times, symmetrise  # noqa: E402
 
 POI_SNAP_MAX_M = 300.0  # drop POIs farther than this from any node (Codex pass 3: bound the access leg)
+#: Where the node bound above drops a destination, try the nearest EDGE at the same bound before
+#: giving up. Pass 57: park record #456 is **356.44 m from the nearest node and 0.17 m from the
+#: nearest edge**, so the node rule was excluding a park that sits on a road. `simplify=True`
+#: collapses degree-two nodes, so distance-to-nearest-node measures junction density rather than
+#: how far anyone walks, and it was never the quantity the 300 m bound meant to cap.
+#:
+#: This fires ONLY where the node rule already failed, so it cannot move a destination the node
+#: rule keeps. The split it performs is cost- and time-neutral by construction -- see
+#: `locfinder.traveltime.attach`, which prorates the restricted penalty rather than charging it
+#: twice, because `speeds.py` charges that penalty PER EDGE (pass 56).
+POI_EDGE_FALLBACK = True
 
 
 def load_graph(timings: dict):
@@ -91,6 +103,33 @@ def main() -> None:
     G, comp = largest_component(G)   # geometric snapping can land on a marooned stub
     timings["components"] = comp.summary
     timings["prepare_graph_s"] = time.perf_counter() - t
+
+    # Destinations are snapped BEFORE the CSR is built, because the edge fallback inserts nodes
+    # and a CSR built ahead of it would index a graph that no longer exists.
+    t = time.perf_counter()
+    places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
+    sel = select_target(places, args.category)
+    # `.centroid` is a no-op on the accepted places -- every record is a Point, and pass 57
+    # established that, against a note that had claimed parks were polygons measured to their
+    # middle. It is kept so a future polygon input does not silently snap a bounding-box corner.
+    cent = sel.geometry.centroid
+    nodes, dists = ox.nearest_nodes(G, cent.x.to_numpy(), cent.y.to_numpy(), return_dist=True)
+    keep = np.asarray(dists) <= POI_SNAP_MAX_M
+    dest_nodes = {n for n, k in zip(nodes, keep) if k}
+    n_by_node = len(dest_nodes)
+
+    recovered = 0
+    if POI_EDGE_FALLBACK and not keep.all():
+        dropped = np.flatnonzero(~keep)
+        pts = shapely.points(cent.x.to_numpy()[dropped], cent.y.to_numpy()[dropped])
+        for attached in attach_points_to_edges(G, pts, POI_SNAP_MAX_M):
+            if attached is not None:
+                dest_nodes.add(attached)
+                recovered += 1
+    timings["pois_dropped_by_node_rule"] = int((~keep).sum())
+    timings["pois_recovered_by_edge_fallback"] = recovered
+    timings["snap_pois_s"] = time.perf_counter() - t
+
     t = time.perf_counter()
     cost_csr, time_csr, index = graph_to_cost_time_csr(G)
     timings["csr_s"] = time.perf_counter() - t
@@ -98,15 +137,10 @@ def main() -> None:
     timings["restricted_edges"] = n_restricted
     print(f"graph: {n0} nodes/{e0} edges raw -> {G.number_of_nodes()} nodes/{G.number_of_edges()} edges for {args.mode}")
 
-    t = time.perf_counter()
-    places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
-    sel = select_target(places, args.category)
-    cent = sel.geometry.centroid
-    nodes, dists = ox.nearest_nodes(G, cent.x.to_numpy(), cent.y.to_numpy(), return_dist=True)
-    keep = np.asarray(dists) <= POI_SNAP_MAX_M
-    dest_idx = sorted({index[n] for n, k in zip(nodes, keep) if k})
-    timings["snap_pois_s"] = time.perf_counter() - t
-    print(f"{args.category}: {len(sel)} places, {int(keep.sum())} within {POI_SNAP_MAX_M:.0f} m of a node -> {len(dest_idx)} destination nodes")
+    dest_idx = sorted({index[n] for n in dest_nodes})
+    print(f"{args.category}: {len(sel)} places, {int(keep.sum())} within {POI_SNAP_MAX_M:.0f} m "
+          f"of a node ({n_by_node} nodes), {recovered} of {int((~keep).sum())} dropped recovered "
+          f"on an edge -> {len(dest_idx)} destination nodes")
 
     t = time.perf_counter()
     eidx = EdgeIndex.from_graph(G, index)
