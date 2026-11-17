@@ -201,3 +201,39 @@ would have meant rewriting pushed history, which is not worth a sentence.
 **So: every commit message goes through a file with `-F`, not `-m`.** This project's messages are
 long and full of backticked identifiers, which is exactly the shape that breaks. The rationale
 that was lost went into a code comment instead, where it is more useful than in a message.
+
+## 2026-11-16: `codex exec` in a background shell blocks forever on stdin
+
+A pass-57 review was launched in a background Bash shell and sat there for **1 hour 48 minutes**
+having used **0.3 seconds of CPU**. Its whole output file was one line:
+
+```
+Reading additional input from stdin...
+```
+
+`codex exec` takes the prompt as a positional argument *and* appends anything on stdin. When stdin
+is not a TTY it announces that read and blocks. An interactive shell gives it a TTY, so this never
+appears when testing by hand; a backgrounded shell hands it a pipe that nobody ever closes, so the
+run never starts. Nothing times out and nothing errors.
+
+**So: every background `codex exec` gets `< /dev/null`.**
+
+```bash
+codex.exe exec -s read-only --model gpt-6.1-sol -C <dir> "<prompt>" < /dev/null > "$OUT" 2>&1
+```
+
+Two things made this cost nearly two hours instead of two minutes:
+
+* The standing rule not to poll a background task was followed literally. It is the right default
+  for a task that reports when it exits, but a task that blocks on input never exits. **One check
+  that the CPU time is non-zero, shortly after launch, separates "thinking" from "hung"** and costs
+  nothing. `Get-Process` CPU and the output file's mtime are the two cheap signals, and neither
+  counts as waiting on the result.
+* The launch was never smoke-tested. The `--print` prompt-attachment bug in the Antigravity CLI was
+  caught the same day *because* a one-line smoke test ran first. The Codex launch skipped it.
+  **A smoke test before a long reviewer run is worth its cost every time**, since the failure it
+  catches is otherwise invisible until the report is due.
+
+This is the same shape as that `agy --print` bug: both CLIs accept a prompt in a way that looks
+right, fail silently rather than erroring, and are caught in seconds by a probe that asks only for
+the word READY and a `git log -1`.
