@@ -122,6 +122,27 @@ nearest value, is a cost against a feature that does not exist. Measured over 20
 all 60 thresholds the slider can produce: `ceil` disagrees with the float verdict **0** times,
 `rint` 101,199, `floor` 201,958. GeoTIFF size changed by −0.1%.
 
+> **Owner decision, 2026-11-17: keep the current encoding, and write the rounding down.**
+> Asked whether the published minute should become 30-second units, the owner's answer was "this is
+> fine, but note the upward rounding issue in documentation". So, stated plainly and in one place:
+>
+> **Every travel time the page displays is rounded UP to the next whole minute, and may therefore
+> overstate the real time by up to 59 seconds.** A journey of 721 seconds — 12 minutes and 1
+> second — is published as **13 min**.
+>
+> This is deliberate. The byte is not only a label: the worker thresholds it directly to decide
+> whether a cell is in or out of the region. Rounding *down* would let a 12-minute-31-second
+> journey pass a 12-minute limit, which is a false inclusion — the product would be saying "yes"
+> where the answer is no. Rounding up can only produce a false *exclusion*, which is the safer
+> direction for a household making a decision, and it keeps the displayed number an honest upper
+> bound on the modelled time.
+>
+> Two consequences worth knowing. The displayed number is an **upper bound, not an estimate**, so
+> a household that walks a journey in slightly less time than the map says has not caught an error.
+> And at a tight limit the rounding is the difference between PASS and FAIL for cells within a
+> minute of the line. The card discloses the direction in words, which is the cheap half of the
+> fix; the encoding change below is the expensive half and is **not taken**.
+
 **The option held in reserve:** `ceil` at 30-second units — same `uint8` width, exact at whole *and*
 half-minute thresholds, display error under 30 s, and the 120-minute horizon still fits (240 of
 254) — but **+32% GeoTIFF, +35% gzip**, and every consumer must learn the unit changed. It becomes

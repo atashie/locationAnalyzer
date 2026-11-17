@@ -204,14 +204,36 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
+## Decisions the owner took, 2026-11-17
+
+* **Decision 2, the restricted-road penalty: KEEP IT AS IS.** No unit change, no value change.
+  The owner rejected the question rather than the options: *"the issue is not the penalty but that
+  we are snapping to the 'wrong' nearest road."* Opened as a known issue and deliberately deferred
+  in [[project-phase1-s3-access-leg-admissibility]], with the owner's own candidate techniques --
+  DEM topography, waterbody delineation, property boundary polygons -- and the cheap first step
+  (`osm_barriers.parquet`, already on disk and already used for destinations).
+* **Decision 4, the striping: DONE.** Uniform tint, shipped `7741611`.
+* **Decision 3, the park fallback: DONE**, plus the designation rule below.
+* **Parks on the Harris nuclear site:** *"if it is designated as a public park then yes, if it is
+  just open space but not designated as a park then no."* Two records excluded, seven kept; see
+  [[project-phase1-s3-destination-identity]].
+* **The grocery definition: the DEFAULT is "a supermarket you could do a weekly shop at",** with
+  specialty grocers selectable separately or in combination. The default is decided; **the
+  classification is not built** -- see the open list below.
+* **Apache §4(b): proceed for now.** Noted, not blocking. The bundle still records
+  `apache_records_are_cleared_for_redistribution: false` on its face, which is what makes
+  proceeding honest rather than silent. Revisit before the bundle leaves this machine for a
+  public audience.
+* **30-second units: not taken. Document the rounding instead.** Written up in
+  [[project-phase1-s3-encoding-threshold-crossing]]: every displayed time is rounded **up** and may
+  overstate by up to 59 s, deliberately, because rounding down would produce false inclusions.
+
 ## Decisions the owner owes
 
 Nothing below should be decided by a session on its own.
 
-* **The grocery definition.** Still the project's biggest open modelling choice.
-* **Whether to filter the nine `permanently_closed` records.** On current evidence, **no** — 4 of
-  the 9 sit within 150 m of an open destination we already publish, and the Kroger site is an
-  operating Harris Teeter on the same node, so they are flagged records and not verified closures.
+* **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
+* **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
 * **The band choice for §12 item 6** (the suffix-aware band). Item 6 was restated from an
   impossibility to a requirement after pass 42.
 * **E1c's interval method**, and **the exact-distance cap**.

@@ -1,6 +1,9 @@
 # The reading test: what someone who did not build this concludes from the map
 
-**Status: protocol written 2026-11-16, not yet run.** Results go at the bottom, in this file.
+**Status: ready to run. Protocol written 2026-11-16, refreshed 2026-11-17** after the UNKNOWN
+hatch became a uniform tint and the park-centroid claim was withdrawn. Results go at the bottom, in
+this file; the recording sheet is
+[`audit/reading-test-01.csv`](audit/reading-test-01.csv).
 
 Every check this project has is of one shape: *the page says what we intended it to say*. 1,544
 Python tests, 41 card checks, 87 browser conformance checks and four mutation suites all check
@@ -167,10 +170,21 @@ the owner is not caught out, and **must not be mentioned to the reader**.
   penalties and no turn restrictions. Chapel Hill to RDU reads **24.9 minutes**; at eight in the
   morning it is not. A reader who says "that's a half-hour at rush hour" is right, and that is a
   finding about what the number means, not an error in it.
-* **Parks snap to the polygon centroid.** A large park's walk time is to its *middle*, not to a
-  gate. 7 of 746 parks were dropped for sitting more than 300 m from any road.
+* **A park is one point, and the route ends at a nearby junction.** *(Corrected 2026-11-17. This
+  bullet said parks snap to a polygon centroid and that a large park's time is to its middle. That
+  was wrong: all 746 accepted park records are `Point` geometries, so the `.centroid` call is a
+  no-op.)* What is true is narrower and has no guaranteed direction: a park is represented by a
+  single Overture point wherever Overture put it, the route ends at a nearby road **node**, and
+  **no walking time inside the park is charged at all**. For a large park that point may be nowhere
+  near the gate a reader would use. **5 of 744** records sit more than 300 m from any node; **4**
+  of those are now recovered by attaching to the nearest road instead.
 
-* **Grey diagonal hatching marks UNKNOWN**, and there is a lot of it. **17.0% of the cells the
+* **A uniform grey tint marks UNKNOWN**, and there is a lot of it. *(Changed 2026-11-17. It was a
+  diagonal hatch, which marked only 2 of every 8 diagonal positions and left 369 of 1,075 unknown
+  regions with no mark at all -- byte-identical to EXCLUDED on screen. The owner read the striping
+  as a fault, which it was, and it is now a flat tint over every unknown cell. **No reader has seen
+  the new treatment**, so whether it reads as "we cannot say" rather than "no" is exactly what this
+  test should establish -- do not prompt for it.)* **17.0% of the cells the
   browser paints** are more than 200 m from any road we hold, so no journey was ever measured from
   them and the map can only say "we cannot say". It grows as the limit rises -- 38,834 cells at a
   5-minute limit, 56,034 at 20, 56,036 from 21 on -- because a cell we could confidently rule out
@@ -178,8 +192,9 @@ the owner is not caught out, and **must not be mentioned to the reader**.
   looks like a fault. It covers **0.67% of buildings**. *(Every figure in this bullet is on the
   published WGS84 grid, which is what is on screen. The UTM source grid gives 17.4% and 0.71%, and
   an earlier version of this paragraph mixed the two — pass 56, claims 4 and 5.)* The owner read it as an anomaly on first sight, which is the reading test working a
-  day early. The legend calls it *"nodata in an enabled layer"* -- three words of jargon in a row,
-  on the one thing a reader is most likely to ask about.
+  day early. The legend used to call it *"nodata in an enabled layer"* -- three words of jargon in
+  a row, on the one thing a reader is most likely to ask about. It now reads **"not enough data to
+  say"**. Whether that lands is a thing to listen for rather than ask about.
 * **Donut holes: a parcel ruled out with every neighbour around it included.** Real, measured, and
   caused by the access-snapping rule considering only the single nearest edge. **121** of them on
   Park / walk at 20 minutes on the published grid, holding **356 buildings** across 76 of them.

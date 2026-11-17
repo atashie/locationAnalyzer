@@ -173,8 +173,27 @@ now.
 - **Nothing re-measured the slider budget.** Gate G3 is a median slider-to-repaint under 100 ms,
   measured on a one-layer bundle. A compute now evaluates up to seven layers over 330,502 cells
   each. The opening case is one enabled criterion and is unchanged; the all-on case is new and
-  unmeasured. One click of Auto-bench with the window on screen gives the real figure, and that is
-  still an owner item.
+  unmeasured. It is still an owner item, because it must be measured with the window **on screen**:
+  a background tab is throttled by the browser and the number would be meaningless.
+
+  **How to take it** (written out 2026-11-17, because "one click of Auto-bench" left out the step
+  that matters):
+
+  1. Serve the spike and open it: from `v2/spikes/g3-render`,
+     `python -m http.server 8099 --bind 127.0.0.1`, then <http://localhost:8099/>.
+  2. **Tick all seven criterion checkboxes.** This is the step that is easy to miss. Auto-bench
+     moves each layer's slider in turn, but the worker only evaluates **enabled** layers, so
+     clicking it on the opening view measures the one-layer case we already have.
+  3. Leave the window visible and in the foreground. Do not switch tabs while it runs.
+  4. Click **Auto-bench**. It performs 20 scripted slider changes, waiting for each repaint before
+     starting the next, and logs `auto-bench: finished 20 of 20 scripted changes`. If it stops
+     early, the number in that line is how many actually completed and the medians describe only
+     those.
+  5. Read the **Timings** panel: *Slider -> repaint, total (last / median)* is the gate. *Worker
+     compute* and *Transfer + paint* beside it say which half any overage is in.
+
+  Report the median, not the last. The panel's median is over the last 20 changes, which is exactly
+  what Auto-bench produces.
 - **Nothing checked the park destinations are places you can enter.** **Corrected 2026-11-16,
   pass 57 — the sentence that stood here was wrong.** It said a park is a polygon whose centroid
   the builder snaps. It is not: **all 746 accepted park records are `Point` geometries, and 0 are
