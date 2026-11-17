@@ -1,5 +1,36 @@
 # A walked journey took 25 minutes where the model said 13.5, down a private track
 
+> ## RESOLVED 2026-11-17, in the model's favour. The owner confirmed the track is walkable.
+>
+> Verbatim: *"Yes those dirt-tracks exist and they are walkable; your estimates are correct (even
+> google maps misses these, great work!)"*
+>
+> **So the 13.5-minute answer was right and the 25-minute walk was a different route.** This note
+> was written on the assumption that a gap between the two meant the model was wrong. It meant the
+> owner took the public way round. The audit README said exactly this would happen -- *"a walk can
+> confirm a PASS but cannot refute one"* -- and it is the first time that caveat has had to do any
+> work.
+>
+> **What this settles.** The disputed stretch, OSM way 1254722641, is `highway=track`,
+> `access=private`, `surface=dirt`, `tracktype=grade4`. It is walked in practice. Routing over it
+> is therefore legitimate, the published PASS for `band15min_pass-03` is correct, and the
+> `RESTRICTED_PENALTY_S = 120 s` the owner declined to raise did not need raising. If anything this
+> is evidence the penalty is too HIGH rather than too low, since the deterrent it models is not
+> deterring anybody here.
+>
+> **What it does not settle.** There is still **no stopwatch time** for this journey, so the E3
+> record holds no admissible timed observation and the 14-minute figure itself is unverified. What
+> is verified is the thing that was actually in dispute: whether a household may and does use that
+> ground.
+>
+> **And one claim this earns, carefully.** Our OSM-derived graph found a walkable connection that
+> Google Maps does not route over. That is a genuine strength of using OSM plus local tagging
+> rather than a commercial routing product, and it is worth knowing. It rests on **one** case
+> confirmed by **one** local person, so it is a point in favour and not a general result.
+>
+> Everything below is kept as written, because the reasoning is still the reasoning and the
+> measurements are still the measurements. Only the verdict moved.
+
 **2026-11-10.** The first finding produced by the walked audit, and it came from the owner, not from
 the instrument. **Revision 2**, after Codex pass 34 corrected six claims in revision 1 — including
 the central framing. See [[35-codex-review-pass34]].

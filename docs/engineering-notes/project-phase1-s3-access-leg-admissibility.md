@@ -61,6 +61,26 @@ The last row is the cheap one and is the obvious first step whenever this is pic
 `anchor.py`'s barrier screening from destinations to origins, and measure how many cells change.
 Nothing in this note authorises doing it.
 
+## One half of this got smaller on 2026-11-17, and the other did not
+
+The owner confirmed that the `access=private` dirt tracks in this area **are walkable in
+practice** — see [[project-phase1-s3-soft-way-dependence]]. That matters here, because this note
+opened with two failure modes in one sentence: a nearest road that is not **legally** accessible,
+and one that is not **physically** accessible.
+
+* **The legal half is weaker than it looked**, at least locally. An `access=private` tag on a rural
+  track does not reliably mean a household cannot walk it. A screen that excluded every
+  `access=private` way from origin attachment would have thrown away a route the owner says people
+  really use, and would have made the product worse. So that half needs evidence per case, not a
+  tag rule — which is an argument for *deferring* it rather than for doing it carefully.
+* **The physical half is untouched.** A stream with no bridge, an embankment, a wall or a building
+  between the household and the road it was snapped to is not a question of permission, and nothing
+  the owner said bears on it. The donut-hole measurement still stands: **49 of 125 holes are
+  blocked by a mapped building and 72 cross open ground**, and none of that is about access tags.
+
+So if this is ever picked up, the order is: **waterbodies and barriers first, access tags last or
+never.** That is close to the reverse of what the original framing implied.
+
 ## What this does NOT say
 
 * It does not say the published numbers are wrong. It says a class of them is unverified in a

@@ -1,9 +1,17 @@
 # The walk: `band15min_pass-03`
 
-**This is the cheapest unblock in the project.** Everything else we have built compares the product
-to itself. This is the one check that consults the world, and the record currently holds **no
-admissible observation** — the journey was walked once, on 2026-11-10, but nothing about it was
-recorded that could confirm or refute our number.
+> **UPDATE 2026-11-17 — the main question has been answered, so this walk is now worth much less.**
+> The owner confirmed the dirt tracks are walkable: *"Yes those dirt-tracks exist and they are
+> walkable; your estimates are correct."* That settles the dispute this walk existed to settle, and
+> it settles it in the model's favour.
+>
+> **What is left is the stopwatch.** The record still holds no timed observation, so the 14-minute
+> figure itself remains unverified even though the route is now known to be legitimate. That is
+> worth having eventually and is no longer urgent. **Do not make a special trip for it.**
+
+Everything else we have built compares the product to itself. This is the one check that consults
+the world, and the record held **no admissible observation** — the journey was walked once, on
+2026-11-10, but nothing about it was recorded that could confirm or refute our number.
 
 Carrboro / Chapel Hill. About 15 minutes each way if we are right, about 25 if the earlier report
 was.
