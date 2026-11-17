@@ -1,5 +1,39 @@
 # We need a places data source, and Yelp is the wrong one
 
+> ## MEASURED 2026-11-17. The objection is refuted; FSQ reaches what OSM cannot, with a caveat.
+>
+> Owner: *"3) yes, that sounds great, proceed."* Results in
+> [[project-phase1-s3-fsq-coverage]]; script `v2/scripts/measure_fsq_coverage.py`.
+>
+> **FSQ holds a place within 120 m for 321 of the 334 records OSM could not reach**, at a median
+> 4.4 m (grocery) and 13.8 m (pharmacy) for name-agreeing matches -- the same business, not a
+> neighbour. So the overlap-with-Overture objection this note raised is answered: FSQ adds records
+> our Overture extract does not reach.
+>
+> **But two findings outrank that number, and one corrects this note.**
+>
+> * **FSQ's categories are reliable in one direction only.** 16 of 26 "not a retail pharmacy"
+>   proposals deny what the record's own name asserts -- FSQ calls Fuquay Pharmacy a *dentist* and
+>   Kroger Pharmacy a *doctor's office*. Positives are corroborated; negatives are not. The rule
+>   is **confirm, never reject**, and the check now runs on every invocation.
+> * **This note's claim that FSQ supplies the missing "range" signal was WRONG.** The taxonomy
+>   separates Supermarket from Grocery Store; the data does not apply it consistently. Among
+>   unambiguous big chains in our bbox the split is 155 Supermarket / 38 Grocery Store / 1
+>   Convenience Store, with Trader Joe's, Publix and Wegmans in *both* main buckets and Lidl in
+>   three. Harris Teeter and Lidl came back as "Grocery Store". So 44 of the 58 grocery proposals
+>   carry no information about store size, and **nothing available to us measures range** --
+>   `OSM_CONFIRMED_SPECIALTY`'s holding position stands.
+>
+> **The unlooked-for win:** `date_closed`, a field neither OSM nor Overture carries. 25 records are
+> marked closed, 12 of them high-confidence, including Kroger (2013) and Kroger Pharmacy (2019) --
+> independent corroboration of a call the owner had already made on other evidence.
+>
+> **Conclusion unchanged on Yelp, sharpened on FSQ:** adopt FSQ as a corroborating source on the
+> footing of the `OSM_CONFIRMED_*` tables -- existence, identity and closure -- and never as a
+> classifier. Do not open a Yelp account for the V2 job.
+>
+> Everything below is kept as written, except that the "range signal" claim is corrected above.
+
 **2026-11-17.** Owner decision: *"Let's document the need for tripadviser or yelp api, but defer
 integrating the api. We can implement that in a future session."*
 
