@@ -115,6 +115,7 @@ def main() -> None:
                     help="how many reasons before a record is written to the sheet (default 2)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args()
+    args.out = args.out.resolve()
 
     places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
     osm = gpd.read_parquet(OSM_POIS).to_crs(GRID.crs)
@@ -162,7 +163,7 @@ def main() -> None:
                             "osm_features_within_100m", "score", "reasons", "verdict", "notes"])
         w.writeheader()
         w.writerows(rows)
-    print(f"\nwrote {len(rows):,} candidates to {args.out.relative_to(V2.parent)}")
+    print(f"\nwrote {len(rows):,} candidates to {args.out}")
     print("`verdict` is for a human: keep / wrong-category / not-a-place / unsure.")
 
 

@@ -1,0 +1,196 @@
+"""Propose a classification for each accepted place from the OSM feature it sits on.
+
+**Owner decision, 2026-11-17**, for both open lists — the 314 unclassified grocery records and the
+414 classification candidates: *"start with osm to prefill, then use yelp or a similar service to
+confirm / backfill as needed."*
+
+This is the OSM half. It is free, already on disk, and licence-clean (ODbL, which the project
+already uses). The Yelp half is **not built** and needs a key the owner holds; see the end of this
+docstring.
+
+**What it does.** For each record it finds nearby OSM features carrying a `shop`, `amenity`,
+`healthcare` or `leisure` tag, scores each by distance and by how well the names agree, and
+proposes a class from the best match's tag. It writes a sheet with the evidence and a blank
+`verdict` column.
+
+**What it does not do.** It does not edit any table. A proposal is a starting point for the
+curated lists in `locfinder/places/grocery.py` and `locfinder/places/exclusions.py`, which are
+meant to be read and agreed to rather than generated.
+
+**Name agreement is the load-bearing signal, not distance.** Two shops forty metres apart in a
+strip mall are both "nearby"; only the name says which is which. A match with a strong name
+agreement at 80 m is better evidence than a tag collision at 15 m, so the score weights them that
+way and the sheet prints both so a reader can disagree.
+
+**Known limits, so a reader does not over-trust a filled cell.**
+
+* OSM's coverage of small independent grocers is patchy, so `no match` means "OSM is silent", not
+  "not a supermarket". Those records stay unclassified and are exactly what the Yelp pass is for.
+* `shop=convenience` on a large independent is a common OSM under-tag. A convenience proposal is
+  weaker evidence than a supermarket one and the sheet says so.
+* An OSM feature can be stale in the same way an Overture record can.
+
+**The Yelp half, and what it needs from the owner.** The Yelp Fusion API is free at low volume but
+requires an API key tied to an account. Creating that account is the owner's to do, not a
+session's. Once a key exists, the useful fields are the business categories, the price tier and
+whether it is marked closed — enough to separate a weekly-shop supermarket from a corner shop where
+OSM is silent. Until then this script's `no match` rows are the backlog.
+
+Run from `v2/`:
+    python scripts/prefill_from_osm.py --category grocery
+    python scripts/prefill_from_osm.py --category pharmacy --out ../docs/experiments/audit/pharmacy-prefill.csv
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import re
+import sys
+from pathlib import Path
+
+import geopandas as gpd
+
+V2 = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(V2 / "spikes"))
+sys.path.insert(0, str(V2))
+
+from _common import ACCEPTED_PLACES, GRID  # noqa: E402
+from locfinder.places.categories import select_target  # noqa: E402
+
+OSM_POIS = V2 / "data" / "triangle" / "osm_pois.parquet"
+AUDIT = V2.parent / "docs" / "experiments" / "audit"
+
+#: OSM tag -> what it proposes, per wedge category. Anything not listed proposes nothing.
+PROPOSALS: dict[str, dict[tuple[str, str], str]] = {
+    "grocery": {
+        ("shop", "supermarket"): "supermarket",
+        ("shop", "wholesale"): "supermarket",
+        ("shop", "convenience"): "convenience (not a weekly shop)",
+        ("shop", "greengrocer"): "specialty",
+        ("shop", "deli"): "specialty",
+        ("shop", "butcher"): "specialty",
+        ("shop", "bakery"): "specialty",
+        ("shop", "health_food"): "specialty",
+        ("shop", "farm"): "specialty",
+        ("shop", "department_store"): "supermarket",
+    },
+    "pharmacy": {
+        ("amenity", "pharmacy"): "pharmacy",
+        ("healthcare", "pharmacy"): "pharmacy",
+        ("shop", "chemist"): "chemist (not a dispensing pharmacy)",
+        ("amenity", "hospital"): "not a retail pharmacy",
+        ("amenity", "doctors"): "not a retail pharmacy",
+        ("amenity", "clinic"): "not a retail pharmacy",
+    },
+}
+
+_WORD = re.compile(r"[a-z0-9]+")
+#: Words that agree between almost any two shop names and so carry no information.
+_STOP = {"the", "and", "of", "market", "store", "shop", "food", "foods", "inc", "llc", "co",
+         "company", "center", "centre", "supermarket", "grocery", "pharmacy"}
+
+
+def tokens(name: str) -> set[str]:
+    return {w for w in _WORD.findall((name or "").lower()) if w not in _STOP and len(w) > 2}
+
+
+def name_agreement(a: str, b: str) -> float:
+    """Jaccard over informative words. 0 when either side has none, which is honest: a name made
+    entirely of stop-words tells us nothing, and scoring it 1.0 would invent agreement."""
+    ta, tb = tokens(a), tokens(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+def place_name(rec) -> str:
+    try:
+        return str(dict(rec.get("names")).get("primary") or "")
+    except Exception:
+        return ""
+
+
+def osm_name(row) -> str:
+    v = row.get("name")
+    return "" if v is None or str(v) == "nan" else str(v)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--category", default="grocery")
+    ap.add_argument("--radius", type=float, default=120.0)
+    ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--only-unclassified", action="store_true",
+                    help="grocery only: skip records `places.grocery` already classifies")
+    args = ap.parse_args()
+    out = (args.out or (AUDIT / f"{args.category}-prefill-from-osm.csv")).resolve()
+
+    places = gpd.read_parquet(ACCEPTED_PLACES).to_crs(GRID.crs)
+    sel = select_target(places, args.category)
+    if args.only_unclassified:
+        from locfinder.places.grocery import classify_grocery
+        sel = sel[[classify_grocery(r) == "unclassified" for _, r in sel.iterrows()]]
+
+    osm = gpd.read_parquet(OSM_POIS).to_crs(GRID.crs)
+    tag_cols = [c for c in ("shop", "amenity", "healthcare", "leisure") if c in osm.columns]
+    feats = osm[osm[tag_cols].notna().any(axis=1)]
+    sidx = feats.sindex
+    table = PROPOSALS.get(args.category, {})
+
+    rows, proposed, nomatch = [], 0, 0
+    for _, rec in sel.iterrows():
+        pname = place_name(rec)
+        hits = list(sidx.query(rec.geometry.buffer(args.radius), predicate="intersects"))
+        best, best_score = None, -1.0
+        for h in hits:
+            f = feats.iloc[h]
+            dist = float(rec.geometry.distance(f.geometry))
+            agree = name_agreement(pname, osm_name(f))
+            # Name agreement dominates: a strong name match further away beats a tag collision
+            # next door, which is the common failure in a strip mall.
+            score = agree * 2.0 + max(0.0, 1.0 - dist / args.radius)
+            if score > best_score:
+                best, best_score, best_dist, best_agree = f, score, dist, agree
+        if best is None:
+            nomatch += 1
+            rows.append({"id": rec.get("id"), "name": pname, "osm_name": "", "osm_tag": "",
+                         "distance_m": "", "name_agreement": "", "proposal": "",
+                         "evidence": "no OSM feature within "
+                                     f"{args.radius:.0f} m -- OSM is silent, not negative",
+                         "verdict": "", "notes": ""})
+            continue
+        tag = next(((c, str(best[c])) for c in tag_cols
+                    if best.get(c) is not None and str(best.get(c)) != "nan"), ("", ""))
+        proposal = table.get(tag, "")
+        if proposal:
+            proposed += 1
+        weak = " (weak: OSM under-tags large independents as convenience)" \
+            if tag == ("shop", "convenience") else ""
+        rows.append({
+            "id": rec.get("id"), "name": pname, "osm_name": osm_name(best),
+            "osm_tag": f"{tag[0]}={tag[1]}" if tag[0] else "",
+            "distance_m": f"{best_dist:.1f}", "name_agreement": f"{best_agree:.2f}",
+            "proposal": proposal + weak,
+            "evidence": ("names agree" if best_agree >= 0.34 else
+                         "names do NOT agree -- the match may be a neighbour"),
+            "verdict": "", "notes": "",
+        })
+
+    rows.sort(key=lambda r: (r["proposal"] == "", -float(r["name_agreement"] or 0)))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+
+    strong = sum(1 for r in rows if r["proposal"] and float(r["name_agreement"] or 0) >= 0.34)
+    print(f"{args.category}: {len(sel):,} records considered")
+    print(f"  {proposed:>5} got a proposal from an OSM tag")
+    print(f"  {strong:>5} of those ALSO agree on the name -- the ones worth taking first")
+    print(f"  {nomatch:>5} have no OSM feature within {args.radius:.0f} m -- the Yelp backlog")
+    print(f"wrote {out}")
+
+
+if __name__ == "__main__":
+    main()
