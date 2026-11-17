@@ -366,6 +366,11 @@ does for an origin's partial edge. Cutting at `f` gives halves costing `f * cost
 whole edge, and the `access_restricted` flag stays on both halves because it discloses the ground
 rather than pricing it.
 
+> **That is true of the COST and it is not true of the answer, which I claimed too broadly on the
+> day.** Splitting also inserts a node, and a node changes the order in which the CSR indexes the
+> graph. See "An ordering sensitivity" below: 28 cells moved by up to 508 s because two *unrelated*
+> edges 30 km away were split. Cost-neutral is not the same as inert.
+
 **Measured churn, on the real rebuild.**
 
 ```text
@@ -430,6 +435,71 @@ Worth recording for two reasons. The synthetic reproduction I wrote first **pass
 that mattered was the one written after watching the real failure, not the one reasoned out from
 it. And the defect was caught by a validator written for an unrelated purpose — a check on an
 invariant found a bug no test was aiming at.
+
+## The owner's park-designation decision, 2026-11-17
+
+Asked whether a nuclear plant's cooling reservoir belongs in the park set, the owner's rule was:
+*"if it is designated as a public park then yes, if it is just open space but not designated as a
+park then no."*
+
+**The data answers it cleanly, and not the way the question implied.** The Harris Nuclear Plant's
+OSM polygon is 9,627.8 ha and contains **nine** accepted park records. **Seven** of them also lie
+inside `Harris Lake County Park` (`leisure=park`, `access=yes`, `ownership=county`, 256.3 ha) and
+are designated public park. **Two** do not: `Shearon  Harris Lake` and `Shearon Harris Reservoir`,
+the water body itself, whose only container is the plant site -- which carries no park designation,
+no access tag and no parks operator. So the rule removes **two records, not nine**, and excluding
+by site rather than by designation would have lost all nine.
+
+Recorded in `locfinder/places/exclusions.py`, applied in `select_overture`, which is the one
+chokepoint every builder and script passes through.
+
+**It is a list rather than a rule, and that was measured rather than assumed.** The obvious rule --
+drop a park record whose containing OSM polygons carry no park designation -- would drop **25**
+records. Reading them is enough: Lynn Road Park, Barwell Road Park, Dixon Drive Park, Anderson
+Community Park, Efland Cheeks Community Park, Veterans Freedom Park, Sandling Beach State
+Recreation Area, RollingView Falls Lake State Park, Falls Dam Playground. They are real parks that
+happen to sit inside a school ground or a state recreation area whose OSM polygon lacks the tag.
+The rule would delete about twenty-three genuine parks to remove two, so OSM's designation tagging
+is not consistent enough to carry it. An expanded designation set (adding `playground`, `garden`,
+`recreation_ground`, parks operators, protection titles) only moved 34 to 25.
+
+Net effect on the shipped layer, measured against the surface as it stood before any of this:
+
+```text
+778 of 330,502 cells changed, ALL faster, 0 slower, 0 reason changes
+PASS at 10 min  31,748 -> 31,875   (+127)
+PASS at 15 min  59,116 -> 59,293   (+177)   <- the layer's shipped default
+PASS at 20 min  85,838 -> 86,071   (+233)
+```
+
+## An ordering sensitivity the exclusion exposed, and I cannot yet explain it
+
+Removing the two reservoir records made **28 cells faster** — cells near **William B Umstead State
+Park**, about 30 km from the plant. Removing a destination cannot make a cell faster, so this is
+not about the destinations. What follows is what is established and what is not.
+
+**Established:**
+
+* The build is **bit-reproducible**: the same inputs run twice gave 0 differing cells.
+* With the fallback **off**, removing the two records changes **0 cells** — as it must, since both
+  were already beyond the node bound and were never destinations.
+* With the fallback **on**, splitting **six** edges instead of **four** moves those 28 cells.
+* `original -> fallback` moved each of them by exactly **-308.9 s**, a uniform shift consistent
+  with a nearer destination. `fallback -> final` moved them **irregularly, -69.6 s to -508.4 s**,
+  which is a different *route* winning, not a nearer destination.
+* The two extra splits are 30 km away and are cost-neutral for traversal.
+
+**Not established, and stated as a hypothesis rather than a finding:** the splits insert nodes, and
+node insertion order changes how `graph_to_cost_time_csr` indexes the graph, which can break a
+**cost tie** a different way. Under "selection is by cost, reporting is by time", two routes that
+tie on cost can report very different times — and near a state park with gated service roads,
+restricted edges make cost plateaus where ties are common. That would explain a 500 s swing at
+equal cost. **It has not been verified**, and no cost array was kept to check it against.
+
+If it is right, it matters beyond this change: **the reported minute for some cells depends on an
+arbitrary ordering**, which no digest or reproducibility check would ever surface, because the
+build is deterministic — it is the *meaning* that is unstable, not the bytes. It belongs with
+decision 2, since the restricted penalty is what manufactures the cost plateaus.
 
 ## What is still open
 

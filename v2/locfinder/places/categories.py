@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from .exclusions import drop_excluded
 from .named_places import is_named_place, select_named
 
 WEDGE_CATEGORIES: dict[str, dict] = {
@@ -103,7 +104,9 @@ def select_overture(gdf, category: str):
     """
     spec = WEDGE_CATEGORIES[category]
     mask = gdf["taxonomy"].apply(lambda t: taxonomy_matches(t, spec)).to_numpy(dtype=bool)
-    out = gdf[mask]
+    # Owner decisions about what a record IS, applied at the one chokepoint every builder and
+    # script goes through, so none can route around them by accident. See `exclusions`.
+    out = drop_excluded(gdf[mask])
     return out.sort_values("id") if "id" in out.columns else out
 
 
