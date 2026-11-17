@@ -41,23 +41,56 @@ or not to exist, that is itself a finding worth more than the timing.
 | At a 10-minute limit | FAIL |
 | Route flag | **restricted** — our route uses private ground |
 
+## The route, in words
+
+Head **north**. Our route leaves the start, joins a **dirt track about 100 m south-east of the
+start pin**, and follows it north for **305 m** before rejoining ordinary streets and continuing to
+the shop.
+
+**You do not have to walk our route.** Walk the way you actually would. The whole question is
+whether our route is one a person would take, so following it on purpose would answer the wrong
+question. Just note afterwards whether you ended up on the track.
+
 ## The specific thing in dispute
 
-Our route goes **305 m down OSM way `1254722641`, which is tagged `access=private`**.
+**OSM way `1254722641`** — <https://www.openstreetmap.org/way/1254722641>
 
-<https://www.openstreetmap.org/way/1254722641>
+It runs roughly south-to-north between these two points:
 
-That way is why we say 14 minutes. A route to the same shop that avoids it is **2,139.9 m
+| | |
+|---|---|
+| south end | **35.901422, -79.063358** — <https://www.openstreetmap.org/#map=18/35.90142/-79.06336> |
+| north end | **35.904659, -79.062387** — <https://www.openstreetmap.org/#map=18/35.90466/-79.06239> |
+
+Its south end is about **100 m from the start pin**, which is why our route finds it immediately.
+
+**What OSM says it is:**
+
+```
+highway       = track
+access        = private
+motor_vehicle = no
+surface       = dirt
+tracktype     = grade4      (soft; soil, sand or grass, no hard surface)
+```
+
+That way is why we say 14 minutes. A route to the same shop avoiding it is **2,139.9 m
 (1.33 miles) and 25.55 minutes** — which matches your earlier report of "1.3 miles, closer to 25
 minutes" almost exactly.
 
-So the question the walk settles is narrow and answerable: **is that private stretch something a
-household would actually walk?**
+So the walk settles a narrow, answerable question: **is that dirt track something a household
+would actually walk?**
 
-- If you walk it and it is an ordinary-looking path or driveway with nothing stopping you, our
-  14 minutes is defensible and the `access=private` tag is over-read by our model.
-- If it is gated, fenced, signed, someone's drive, or simply not there, our 14 minutes is wrong,
-  and the 25-minute route is the real one.
+- If it is an ordinary-looking path with nothing stopping you, our 14 minutes is defensible and we
+  are over-reading the `access=private` tag.
+- If it is gated, fenced, signed, somebody's land, or simply not there on the ground, our
+  14 minutes is wrong and the 25-minute route is the real one.
+
+**A second thing worth noticing while you are on it.** `surface=dirt` and `tracktype=grade4` mean a
+soft, unsurfaced track. **Our model walks every way at the same speed**, so even if you are
+perfectly entitled to use it, we may be too fast on it — and in wet weather it may not be walkable
+at all. That is a separate defect from the access question and nothing has ever measured it. If the
+going is noticeably slower than pavement, say so.
 
 ---
 
