@@ -1313,3 +1313,40 @@ borrowed from a textbook problem has to be checked against the pipeline's own co
 which here is not the textbook's.
 
 Fifty-four instances now.
+
+### Fifty-fifth: the experiment could not have produced the result that would have falsified it
+
+Pass 57, 2026-11-16. Pass 56's eight overstatements were true numbers pointed at the wrong
+population. This one is worse, because the number was not even wrong — it was **empty**.
+
+I told the owner that multi-candidate snapping "makes 77% of cells faster and **no cell slower**",
+and offered the second half as the reassuring part: a change that only improves things. Codex
+looked at how the candidate experiment selects, and the experiment **takes the minimum reported
+time across the candidate set, today's answer included**. A minimum over a set containing the
+current value cannot exceed the current value. **No cell could have come out slower.** The claim is
+a tautology wearing a measurement's clothes, and I reported it as evidence.
+
+Re-selected on **cost** — which is what `speeds.py` actually does, because selection is by cost and
+reporting is by time — **3,202 UTM OK cells are slower**. The real experiment answers the question;
+mine could only ever agree with me.
+
+> **The check is not "is this number right" but "could this instrument have returned the
+> answer I did not want".** If the construction forbids the falsifying outcome, the result is not
+> evidence, however carefully it was computed. An experiment that cannot fail has not been run.
+
+This is distinct from instances 50, 52 and 54, which are all *the number describes something other
+than what the sentence says*. Here the sentence and the number agree and the **design** is empty.
+The nearest relative is instance 51 — *a check on a true neighbouring fact is not a check on the
+claim* — one level up: there I verified the wrong proposition, here I built an instrument that
+could only verify.
+
+**Two repeats came with it**, both in what I said to the owner rather than in a note, which is its
+own lesson about where claims escape review. I gave the OFF_NETWORK area as **560 km²** by
+multiplying 56,036 published cells by 100 m squares; published cells are WGS84 lon/lat averaging
+**9,544 m²**, so the geodesic figure is **535.0 km²** — instance **50** again, *the published grid
+is not the UTM grid*, now for the third time. And I quoted park/walk at a **20-minute** limit when
+the layer ships a **15-minute** default and is not even enabled on open — instance **54** again.
+The hatch figures happen to be nearly identical at both thresholds, which is exactly why nobody
+noticed; a coincidence is not a check either.
+
+Fifty-five instances now.

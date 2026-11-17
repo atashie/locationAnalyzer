@@ -306,7 +306,7 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **54 instances**. *(This said 42 from pass 52
+[[feedback-verify-the-shape-of-the-risk]] now holds **55 instances**. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
 closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
@@ -877,6 +877,13 @@ identity where I had only matched counts, and settled W1 precisely — the recom
 **bit-identical** to the committed raster once the 7,200 s horizon and the float32 cast are
 applied.
 
+> **"The hatch is the renderer working as designed" was overturned by pass 57 — see 3f below.**
+> The rule *is* deliberate and both reviewers confirmed that again. But nobody asked whether the
+> rule marks the set it names, and it does not: **369 of 1,075 UNKNOWN regions receive no grey
+> pixel at all** and are byte-identical to EXCLUDED on screen. Pass 56 answered "is this
+> deliberate" and reported it as "is this adequate". Those are different questions and only the
+> first was asked.
+
 **What did not.** One error of reasoning and seven of scope:
 
 * **WRONG — "adding nodes would change nothing".** `speeds.py:133` charges the restricted penalty
@@ -896,6 +903,91 @@ readers not to write user-facing copy for it. Codex missed it; Gemini found it. 
 the claim in `project-phase1-s0-complete.md` and left the contract alone, which is the
 incomplete-cleanup hazard of instances 40 and 47. Corrected, including the advice, since the card's
 `NO_PATH` wording now renders from a real layer for the first time.
+
+### 3f. Pass 57 — **the analysis reviewed, not the facts. The reviewers disagree, and that is
+the useful part.**
+
+Pass 56 corrected twenty facts; those facts then became four decisions put to the owner, and this
+pass judged the **decisions**: the mechanisms claimed, the options listed, the recommendations made,
+and the owner's own four stated positions. Thirty numbered claims, thirteen declared weaknesses.
+Prompt committed before either reviewer ran (`39201c6`); reviews at
+`docs/research/59-review-pass57/`.
+
+Both reviewers were told, in the prompt, to **try to break the owner's positions rather than agree
+with them**, because a reviewer handed a hypothesis hands it back confirmed. Antigravity/Gemini
+(`gemini-4-hydrogen-xhigh`) reported 19 CONFIRMED, 9 OVERSTATED, 2 WRONG. Codex (`gpt-6.1-sol`)
+executed **38 commands** — the first pass since 48 where the Windows sandbox let it run Python —
+and reported 15 CONFIRMED, 11 OVERSTATED, 4 WRONG.
+
+**The new error class, and it is worse than pass 56's.** Pass 56's eight overstatements were true
+numbers attached to the wrong population. Pass 57's headline error is **an experiment whose
+construction guaranteed its result**. I reported that multi-candidate snapping makes "zero cells
+slower". The candidate experiment takes the **minimum reported time including today's answer**, so
+no cell *can* come out slower — the claim is true by construction and measures nothing. Codex
+re-selected on **cost**, which is what the pipeline actually does, and found **3,202 UTM OK cells
+slower**. Recorded as **ledger instance 55**.
+
+**Four claims WRONG.**
+
+* **Claim 6 — the repair rate, the denominator and the direction.** "Fixes 76% of holes" is the
+  **net** reduction 125 → 30, not original-hole repair; the executed identity test shows **all 125
+  UTM originals filled and 30 new sites appearing** (published: all 121 filled, 29 new). The 77.13%
+  share is of **272,961 comparable uncapped UTM cells**, not of all cells. The 169 m median access
+  leg describes only the **>60 s improvement subset**. And the direction claim is the construction
+  artefact above.
+* **Claim 8 — topology cannot settle walkability.** Both reviewers, independently. Geometric
+  contact without a shared node establishes a *representation* difference, not an available
+  pedestrian connection, and the absence of a mapped fence is not evidence of one.
+* **Claim 19 — the destination cap.** Matching the origins' **200 m** cap recovers **5** dropped
+  park records and **loses 4 retained ones**. The 6 recoveries need a **300 m edge** cap, which
+  loses **0**. Ocaneechee Park is 329.65 m from its nearest node and 229.58 m from its nearest
+  edge: a 300 m edge cap recovers it, the origins' 200 m cap does not.
+* **Claim 21 — parks are points.** All 746 accepted park records are `Point`; `.centroid` is a
+  no-op. Corrected where it was written, in [[project-phase1-s3-criteria-build]].
+
+**And two numbers I gave the owner in chat were wrong, both repeats.**
+
+* **535 km², not 560.** I multiplied 56,036 published cells by 100 m squares. Published cells are
+  WGS84 lon/lat and average **9,544 m²** — a 97.69 m equivalent side. Geodesic area is **535.0 km²**;
+  I overstated by 25.4 km² (4.7%). Instance **50** again: *the published grid is not the UTM grid.*
+* **park/walk's shipped default is 15 minutes, not 20** — and `default_on` is **false**; only
+  grocery/walk opens enabled. Instance **54** again: a true number at a population it did not
+  describe. The hatch figures barely move (55,752 UNKNOWN at 15 against 56,034 at 20; the 369
+  invisible regions and 975 cells are identical), which is why it went unnoticed.
+
+**Where the reviewers disagree, which is the part worth reading.**
+
+| | Antigravity | Codex |
+|---|---|---|
+| Rank by product risk retired | **4 → 3 → 2 → 1** | **2 → 4 → 3 → 1** |
+| "Measure first" (holes) | **UNSUPPORTED** as option 4 | **SUPPORTED** as a *bounded* access investigation |
+| "Per stretch" (penalty) | **PREMATURE** | **SUPPORTED** as a charging unit, not as a value |
+| "Never a centroid" (parks) | SUPPORTED in principle, PREMATURE against the shipped layer | **PREMATURE** |
+| Striping is a defect | **SUPPORTED** | **SUPPORTED** |
+
+They agree on the two ends: **striping is a real defect** and **the donut holes rank last**. My own
+presentation order — 1 → 2 → 3 → 4, the order the owner asked in — is wrong as an execution order
+under plan §0 on both rankings. The split on first place is substantive: Codex ranks the penalty
+first because it is the only one with **direct evidence of a materially misleading recommendation**
+(the walked 13.5-vs-25-minute failure); Antigravity ranks presentation first because it is the
+cheapest honest improvement and covers 17% of the map. Neither is obviously right and the owner has
+not chosen.
+
+**The one finding both reached independently, and it cuts against the owner's leaning.** Keeping
+120 s while switching to one charge per continuous restricted run makes the audited three-edge
+shortcut **cheaper**, not dearer — so per-stretch at the current value *weakens* the deterrent that
+the walk showed was already too weak. Recorded in [[project-phase1-s3-soft-way-dependence]].
+
+**What this pass bought that pass 56 could not.** Codex could execute, so several weaknesses got
+answers rather than opinions: the full two-state routing expansion costs **0.089 s → 0.196 s** of
+Dijkstra and **37.81 MB → 75.76 MB**, which retires the "per-stretch is too expensive" worry
+outright; a per-stretch prototype on grocery/walk moves **5,690 published minute values and 189
+threshold decisions**, which retires both "it changes nothing" and "it changes 20%"; and the
+invisible UNKNOWN regions hold **55 buildings — 0.011% of the published inventory**, against
+**3,364** in UNKNOWN cells overall, which says the owner's visual complaint is where the harm is and
+my "invisible patches are the serious half" framing was backwards.
+
+No production code changed. All four decisions remain the owner's and **none is taken**.
 
 ### 4. Phone decode latency
 

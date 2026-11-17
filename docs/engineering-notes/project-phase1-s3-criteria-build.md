@@ -175,11 +175,27 @@ now.
   each. The opening case is one enabled criterion and is unchanged; the all-on case is new and
   unmeasured. One click of Auto-bench with the window on screen gives the real figure, and that is
   still an owner item.
-- **Nothing checked the park destinations are places you can enter.** A park is a polygon and the
-  builder snaps its **centroid**. For a large park the centroid may be several hundred metres from
-  any gate, so the walk time is to the middle of the park rather than to its entrance. 7 of 746
-  parks were dropped for sitting more than 300 m from any node. This is a modelling choice nobody
-  has priced, and it is one of the things a local reader is well placed to catch.
+- **Nothing checked the park destinations are places you can enter.** **Corrected 2026-11-16,
+  pass 57 — the sentence that stood here was wrong.** It said a park is a polygon whose centroid
+  the builder snaps. It is not: **all 746 accepted park records are `Point` geometries, and 0 are
+  polygons**, so the `.centroid` call in `g1_own_graph_layer.py` is a **no-op** and returns the
+  input point unchanged. Both reviewers caught it independently and I reproduced it
+  (`centroid == geometry` is `True` for all 107,484 accepted places).
+
+  The real defect is **larger** than the one that was written here, and differently shaped. A park
+  is represented by **one Overture point**, placed wherever Overture put it, and the route then ends
+  at a nearby graph **node** with **no destination access time at all**. So the model's answer is
+  not "to the middle of the park"; it is "to one arbitrary point associated with the park, plus
+  nothing". Its errors are **not guaranteed to be conservative**, which the old sentence implied.
+
+  Also corrected: **7 of 746 is a count of records, not of parks.** Dropped record #88 and
+  **retained** record #293 both match William B. Umstead State Park, so at least one "missing" park
+  is in the layer under another record. The admission bound is a **node** bound: record #456 is
+  **356.44 m from the nearest node and 0.17 m from the nearest edge**.
+
+  How much this costs is **measured but disputed**, and is the live question in
+  [[project-phase1-s3-destination-identity]]. It remains a modelling choice nobody has priced and a
+  good thing for a local reader to catch.
 - **Nothing checked school catchment.** Walking distance to a school is not how a household with
   children is assigned one. The criterion answers the question it is named for and that question
   may not be the one a parent is asking — also a thing to watch for in the reading test.

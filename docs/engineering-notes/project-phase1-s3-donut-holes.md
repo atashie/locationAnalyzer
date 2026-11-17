@@ -253,5 +253,48 @@ it and the question "can you walk from here to that road" is answerable by looki
    sample of holes shows the same, part of this is a data problem with a data fix, and it can be
    contributed back — subject to Decision 17.
 
+### Pass 57 corrected the numbers under options 2 and 4, and both reviewers ranked this decision last
+
+**Option 2's figures above are three different mistakes and are left standing only so the
+correction has something to point at.**
+
+* **"Fixes 76% of holes" is a net count, not a repair count.** The executed identity test —
+  which nothing had run — shows **all 125 UTM originals filled and 30 new hole sites appearing**
+  (published: **all 121 filled, 29 new**). A net 125 → 30 was concealing complete turnover.
+  Antigravity's run of the same question at +50 m found **100 of 125 repaired and 71 created**.
+* **"Makes 77% of cells faster" is true of 272,961 comparable uncapped UTM cells**, not of all
+  330,502, and the **169 m** median access leg describes only the **>60 s improvement subset**.
+* **"No cell gets slower" is true by construction and therefore measures nothing.** The candidate
+  experiment takes the **minimum reported time including today's answer**, so a cell cannot come
+  out slower. Re-selected on **cost**, which is what the pipeline does, **3,202 UTM OK cells are
+  slower**. This is ledger instance 55.
+
+**Option 4 — "check whether these are noding gaps first" — was my recommendation and it does not
+survive.** Antigravity ran it across all 125 holes: **4 (3.2%)** are near-touches within 5 m
+without a shared node, **0** are crossings, and **96.8% do not touch at all** (median edge gap
+**67.7 m**, max 326.5 m). **49 of 125** are blocked by a mapped building and **72** cross open
+ground. So the holes are overwhelmingly real disconnected roads, not junction typos, and a
+noding-only audit would have returned "not a data problem" after doing the work.
+
+Both reviewers also rejected the test on principle, independently: **topology cannot settle
+walkability.** Geometric contact without a shared node is a representation difference, not an
+available pedestrian connection, and the absence of a mapped fence is not evidence of one. Codex's
+replacement is a five-step desk audit per hole — recover the cell, edge, route and alternative;
+inspect the original ways and nodes including any the component pruning removed; check grade
+separation, access tags, barriers and entrances; identify a physically plausible connection; then
+evaluate **that specific connection** in a routing counterfactual — classifying each hole as
+**supported missing connection**, **supported legitimate separation** or **unresolved**.
+Antigravity's is a sharper three-stage version aimed at the 72 open-ground holes against imagery
+and parcels.
+
+**Both reviewers rank this decision last of the four** (Antigravity 4 → 3 → 2 → 1; Codex
+2 → 4 → 3 → 1), on the same reasoning: the shape and the occupied-cell exposure are established,
+the **error prevalence is unknown**, and every candidate fix changes far more journeys than the
+121 cells it would repair. Corrected exposure at 20 minutes on published park/walk: **121 holes,
+356 buildings, 76 occupied cells, 45 empty**, largest hole 27 buildings, against a published
+inventory of **500,451**. Those are **raster cells, not parcels**.
+
+Related: [[project-phase1-s3-unknown-presentation]].
+
 Related: [[project-phase1-s3-criteria-build]], [[s3-13-reading-test]],
 [[project-phase1-s3-soft-way-dependence]].

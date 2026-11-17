@@ -287,6 +287,51 @@ decoder for the plane, so "no decode step" means no *further* one. That is an en
 preference bought for a known number of bytes. **Phone latency is still unmeasured**, so nothing
 here is a performance argument.
 
+## Pass 57: the park-access cost is real, measured twice, and the two measurements disagree
+
+**Settled.** The accepted park input holds **746 `Point` records and 0 polygons**, so the
+`.centroid` call is a no-op and the "walk time to the middle of the park" mechanism asserted in
+[[project-phase1-s3-criteria-build]] was never the mechanism. What is true is narrower and not
+obviously milder: a park is **one point**, the route ends at a **nearby node**, and **no
+destination access time is charged at all**, so the error has no guaranteed sign. Record #456 sits
+**356.44 m from the nearest node and 0.17 m from the nearest edge**, which is a node-admission
+defect both reviewers confirmed.
+
+**The cap, corrected.** Matching the origins' 200 m cap recovers **5** dropped records and **loses
+4 retained** ones. A **300 m edge** cap recovers **6** and loses **0** — Ocaneechee Park is
+329.65 m from its nearest node and 229.58 m from its nearest edge. So the narrow repair is an
+**edge-snap fallback at the existing 300 m bound**, not a cap change, and Antigravity reports it
+with **zero churn elsewhere**. A *general* switch to edge attachment is a different thing
+altogether: it moves the attachment point of **519/549 grocery, 656/739 park, 499/559 school,
+536/550 grocery-drive, 635/678 coffee** records, and a prototype at a 200 m destination cap moved
+**103,881 to 225,002 published minute values per layer** with **637 to 8,909 threshold flips**.
+That is a sensitivity result, not an improvement.
+
+**And here the two reviewers genuinely disagree, so neither number should be quoted alone.**
+Antigravity matched the accepted points against the **1,002 park polygons in `osm_pois.parquet`**
+and reports, for **11,427 published cells abutting large parks**, a shipped median of **31 minutes**
+against **9 minutes** to barrier-screened road entries within 50 m — error median **17 min**, p90
+**60 min**, max **117 min** — and Triangle 15-minute coverage rising **60,824 → 106,108** cells.
+Codex matched a deliberately stricter subset (same normalised name within 100 m, **204 matches**)
+and reports accepted point to matched boundary at median **43.9 m**, p95 194.8 m, max 1,283.5 m,
+with Umstead's 260 abutting OK cells at a median of 24 minutes. Its warning is the one to keep:
+**quoting a geometric gap divided by walking speed would repeat the straight-line-access mistake**,
+and neither measurement establishes that anyone may enter where it measures.
+
+**So the replacement target is the open question, not the diagnosis.** Codex's position, which the
+repository's own `locfinder/places/anchor.py` already encodes for a different purpose, is that the
+destination should be a set of **accessible entry locations** with provenance and uncertainty
+recorded — mapped entrances or verified network crossings — and that a polygon only helps
+*identify candidates*. Antigravity's W8 run shows why nearest-boundary alone is dangerous: the
+**Harris Nuclear Plant** is a 9,627.8 ha `leisure=nature_reserve` containing **9 Overture park
+points**, 136 of 29,594 boundary samples cross a mapped fence or wall, and only **2.6%** of park
+polygons have an `entrance=*` node within 20 m. Mapped gates are too sparse to be the whole answer.
+
+Verdicts on the owner's "never use a centroid": Antigravity **SUPPORTED in principle, PREMATURE
+against the shipped layer**; Codex **PREMATURE**, on the ground that a blanket ban does not name an
+accessible replacement. Both rank this decision third of four. Reviews in
+`docs/research/59-review-pass57/`.
+
 ## What is still open
 
 * **Which place on a shared node.** Not computed, by design. Resolving it needs either a rule

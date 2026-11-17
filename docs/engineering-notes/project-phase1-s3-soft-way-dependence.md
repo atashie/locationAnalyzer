@@ -76,6 +76,56 @@ chain, established rather than inferred:
    > is an unmeasured behavioural quantity; the effective penalty was never 120 s per journey, and
    > a decision about its value should probably be a decision about whether it is per edge at all.
    > See [[project-phase1-s3-donut-holes]].
+
+   > **Pass 57, 2026-11-16: per-stretch at 120 s makes this very shortcut CHEAPER. Both
+   > reviewers reached that independently and it cuts against the owner's leaning.** If the
+   > penalty becomes one charge per continuous restricted run, this journey's 360 s falls to
+   > **120 s** — so the rule that removes the segmentation artefact also *weakens* the deterrent
+   > that this walk showed was already too weak. Per-stretch is a decision about the **unit**; it
+   > does not carry the old calibration across, and changing the unit while keeping the value is
+   > the one combination that is strictly worse than today.
+   >
+   > Two further corrections to what is written above. The three hops are on two OSM ways, but
+   > **"one OSM way" does not imply one graph edge** — `simplify=True` removes only degree-two
+   > nodes, so a single way crossing retained junctions still incurs three penalties. Codex
+   > executed both halves: three same-way geometry segments collapse to **one** penalised edge,
+   > and adding junction branches to that same way restores **three edges and 360 s**. So the
+   > dependence is on **junction density**, not on arbitrary geometry-node density. Origin partial
+   > edges are prorated (`snap.py:194-197`), which the bare per-edge description also misses.
+   >
+   > **What the reviewers measured, where I had only argued.** Exposure is large: the selected
+   > route touches restricted ground for **67,676 park/walk OK cells (20.48% of the published
+   > grid)**, 57,193 grocery/walk and 55,927 school/walk. Conditional on touching it, the
+   > restricted-**edge** count is median 1, p90 3, p99 8, max 25, while the restricted-**run**
+   > count is median 1, p90 1-2, max 6-7 — so the two rules differ on a real minority, not on
+   > nobody. My fear that the median was 1 and the distinction therefore noise was **half right
+   > and the wrong half**: the median *is* 1, and the tail is substantial.
+   >
+   > A grocery/walk per-stretch prototype keeping 120 s changed **5,690 published minute values**,
+   > **189 threshold decisions at 20 minutes**, and gained **38 finite journeys while losing 0**.
+   > That retires "it changes almost nothing" and "it changes a fifth of the answers" together.
+   > Antigravity's independent run put it at 2.2-3.7% of OK cells with flips running +170/-6 —
+   > overwhelmingly toward admitting more households onto private tracks — and found that
+   > per-stretch **at 600 s still leaves the walked cell unfixed at 810.8 s**, while per-metre
+   > moves it.
+   >
+   > **The cost objection is retired.** A full two-state expansion — `(node, was the preceding
+   > edge restricted)` — costs **0.089 s -> 0.196 s** of Dijkstra and **37.81 MB -> 75.76 MB** of
+   > CSR at Triangle scale, measured. An exact compressed form needs extra labels only at mixed
+   > boundaries: Codex counts **46,043** such walk vertices, Antigravity **94,881** under a wider
+   > definition and verified **0 diffs** against the full expansion. Two implementation traps
+   > both flagged: parallel edges must not be collapsed under today's per-edge cost, because the
+   > winner can change once a run is already open; and the **time** horizon must survive a cost
+   > search, since a cost cutoff cannot stand in for a reported-time cutoff. `min_possible_s`
+   > remains a valid lower bound either way — every physical journey still obeys the speed bound.
+   >
+   > **The reviewers split on the verdict.** Codex: **SUPPORTED** — it removes a dependence on
+   > mapping accident, has effects beyond the median, and is affordable. Antigravity:
+   > **PREMATURE** — the measurable effect is small, points the wrong way, and the walked ground
+   > truth that would price any of the three units does not exist yet. Both agree the unit and the
+   > value are separate decisions and that **neither reviewer can supply the behavioural number**;
+   > only timed walks across `route_flag == 1` journeys can. The decision is the owner's and is
+   > not taken.
    Earlier revisions said "~4 edges, 480 s" from a reading of the route rather than a count; the
    real figure is smaller, which makes the penalty further from sufficient, not closer.
 4. So the private track still wins on cost — and because *selection is by cost, reporting is by
