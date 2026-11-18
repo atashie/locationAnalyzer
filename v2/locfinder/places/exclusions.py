@@ -92,8 +92,10 @@ PENDING_CLOSURES: dict[str, str] = {
 #: Owner decision 2026-11-18: *"accept the 10 closures"*. The measurement
 #: (`scripts/measure_fsq_coverage.py`, results in
 #: `docs/engineering-notes/project-phase1-s3-fsq-coverage.md`) found 25 records FSQ marks closed,
-#: of which **12** both agree on name and sit within 60 m. Two of the twelve were held back for an
-#: OSM cross-check and are listed in `FSQ_CLOSURES_HELD` below. These are the other ten.
+#: of which **12** both agree on name and sit within 60 m. **All twelve are applied.** Ten were
+#: accepted first; the other two were held for a day pending an OSM cross-check, and the owner
+#: released both once it had run -- *"1-4) yes, proceed"*. They are the last two entries, and each
+#: records what the cross-check found, INCLUDING, for Sam's Club, the objection it did not answer.
 #:
 #: **Why this table is separate from `EXCLUDED_PLACE_IDS` above.** Same reason
 #: `OSM_CONFIRMED_SUPERMARKETS` is separate from `CURATED_INDEPENDENT_SUPERMARKETS`: this is a
@@ -146,43 +148,48 @@ FSQ_CONFIRMED_CLOSURES: dict[str, str] = {
     "13e62ef8-c843-42c7-8be0-7bbaa070a70d":
         "'Rite Aid', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2024-01-26 on 'Rite Aid' at "
         "45.0 m with name agreement 1.00. Owner decision 2026-11-18.",
-}
-
-
-#: The two of the twelve NOT applied, and what would settle each. Recorded so that holding them is
-#: visible rather than looking like an oversight, and so a later session does not re-decide it.
-#:
-#: Owner decision 2026-11-18: accept ten, hold these.
-FSQ_CLOSURES_HELD: dict[str, str] = {
+    # ---- accepted on the second pass the same day, after the cross-check ran ----
     "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
-        "Sam's Club, pharmacy candidate. FSQ carries date_closed=2018-02-03 at 37.6 m with name "
-        "agreement 1.00, but the FSQ record's category is `Retail > Warehouse or Wholesale "
-        "Store` -- the CLUB, not a pharmacy counter. A counter that closes inside a club that "
-        "keeps trading is indistinguishable in this data from the whole club closing. "
-        "CROSS-CHECKED 2026-11-18 (`scripts/crosscheck_fsq_closures.py`): OSM has no feature "
-        "within 120 m and no Sam's Club within 300 m; the nearest tagged retail is a Walmart "
-        "Supercenter at 279.7 m. Nothing contradicts the closure, but absence in OSM is weak "
-        "evidence and the category objection above is untouched by it. STILL HELD, now awaiting "
-        "a decision rather than a measurement.",
+        "'Sam's Club', pharmacy candidate. FSQ OS Places 2025-01-10 carries date_closed=2018-02-03 "
+        "at 37.6 m with name agreement 1.00. Owner decision 2026-11-18, second pass. **THE "
+        "CATEGORY OBJECTION IS NOT RESOLVED**: FSQ's closed record is categorised `Retail > "
+        "Warehouse or Wholesale Store` -- the CLUB, not a pharmacy counter -- and a counter that "
+        "closes inside a club which keeps trading is indistinguishable in this data from the whole "
+        "club closing. The cross-check (`scripts/crosscheck_fsq_closures.py`) added only that OSM "
+        "holds no Sam's Club within 300 m, nearest tagged retail a Walmart Supercenter at 279.7 m. "
+        "That is CONSISTENT with the club having closed, but it is absence rather than "
+        "observation. Accepted over the stated doubt; if this record is ever disputed, this "
+        "sentence is the reason why.",
     "1937d785-1a98-49c5-9d32-51b7ec7c97af":
-        "Harris Teeter, grocery. FSQ carries date_closed=2017-09-25 at 0.0 m with name agreement "
-        "1.00. Held because the Kroger in `EXCLUDED_PLACE_IDS` above was dropped precisely "
-        "BECAUSE OSM shows a Harris Teeter trading on its site, so a closed Harris Teeter needs "
-        "to be shown to be a different address before a second store is removed. "
-        "CROSS-CHECKED 2026-11-18 (`scripts/crosscheck_fsq_closures.py`): **the reason for "
-        "holding it is gone.** This record is 15,249 m from the excluded Kroger and 23,476 m "
-        "from the Kroger accepted above -- three different sites, so no contradiction exists. "
-        "OSM is also silent within 120 m and holds no Harris Teeter within 300 m (nearest "
-        "tagged retail: Walmart Neighborhood Market at 258.2 m). STILL HELD only because the "
-        "owner accepted ten, not twelve; a session must not widen that on its own.",
+        "'Harris Teeter', grocery. FSQ OS Places 2025-01-10 carries date_closed=2017-09-25 on "
+        "'Harris Teeter' at 0.0 m with name agreement 1.00. Owner decision 2026-11-18, second "
+        "pass. Held for one day because another Kroger in `EXCLUDED_PLACE_IDS` above was dropped "
+        "precisely BECAUSE OSM shows a Harris Teeter trading on its site, so a closed Harris "
+        "Teeter had to be shown to be a different address before a second store came out. The "
+        "cross-check (`scripts/crosscheck_fsq_closures.py`) found it 15,249 m from that Kroger and "
+        "23,476 m from the Kroger accepted above -- three different sites, so the hold had no "
+        "subject. OSM is silent within 120 m and holds no Harris Teeter within 300 m.",
 }
+
+
+#: **EMPTY, and kept rather than deleted.** For one day this held the two of the twelve that were
+#: not applied. The cross-check in `scripts/crosscheck_fsq_closures.py` ran, both went back to the
+#: owner with what it found, and both were released -- *"1-4) yes, proceed"*, 2026-11-18. Their
+#: entries moved into `FSQ_CONFIRMED_CLOSURES` above and carry the cross-check with them.
+#:
+#: The name stays so that a later session reads "this was held and then decided" instead of
+#: finding nothing and having to reconstruct whether a hold ever existed. The empty dict is also
+#: what the tests assert on, which is why it is not a comment.
+FSQ_CLOSURES_HELD: dict[str, str] = {}
 
 
 #: Everything actually removed, from every table that removes anything. One name so a reader can
 #: see the whole effect in one place, and so adding a table cannot forget to apply it.
 #:
-#: `PENDING_CLOSURES` and `FSQ_CLOSURES_HELD` are deliberately NOT here: both are records of
-#: closures we are not acting on, and folding either in would quietly reverse a decision.
+#: `PENDING_CLOSURES` is deliberately NOT here: it records closures we are not acting on, and
+#: folding it in would quietly reverse a decision. `FSQ_CLOSURES_HELD` is now empty, so it would
+#: contribute nothing; it is still left out, because the day it stops being empty it would
+#: otherwise start removing records nobody had agreed to remove.
 DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
     FSQ_CONFIRMED_CLOSURES
 )

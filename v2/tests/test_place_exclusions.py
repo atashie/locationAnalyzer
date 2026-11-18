@@ -93,15 +93,24 @@ def test_the_excluded_ids_name_the_owner_decision_that_made_them(place_id):
 # `date_closed` records from `measure_fsq_coverage.py`, MINUS the two held back for an OSM
 # cross-check. See `docs/engineering-notes/project-phase1-s3-fsq-coverage.md`.
 #
+# SUPERSEDED THE SAME DAY. The cross-check ran, both held records went back to the owner with
+# what it found, and the owner answered *"1-4) yes, proceed"*. ALL TWELVE ARE NOW APPLIED.
+#
 # These tests are about the SHAPE of the decision, not about FSQ being right:
-#   * the ten are applied, so a household is not routed to a shop that closed;
-#   * the two held back are NOT applied, because holding them was the point;
+#   * all twelve are applied, so a household is not routed to a shop that closed;
+#   * the two that were held carry the cross-check that released them, and Sam's Club carries the
+#     objection that was NEVER resolved -- it was accepted over a stated doubt, which is the
+#     owner's call to make and the record's job to keep;
 #   * each entry names its date and its source, so a reader can re-check it without the sheet;
 #   * the table stays SEPARATE from `EXCLUDED_PLACE_IDS`, because it is a regenerable derivation
 #     from a dated snapshot and a hand-curated judgement is not.
-from locfinder.places.exclusions import FSQ_CONFIRMED_CLOSURES  # noqa: E402
+from locfinder.places.exclusions import (  # noqa: E402
+    FSQ_CLOSURES_HELD,
+    FSQ_CONFIRMED_CLOSURES,
+)
 
-#: The ten the owner accepted, with FSQ's `date_closed`.
+#: All twelve, with FSQ's `date_closed`. The last two were accepted on a second pass the same
+#: day, after the cross-check.
 ACCEPTED = {
     "790e99cf-ceef-415a-babb-849e75732fa4": "2013-06-25",   # Kroger
     "3e8b0d81-ca69-4cd5-9948-c8d858ff0a59": "2016-09-27",   # Southern Season
@@ -113,33 +122,63 @@ ACCEPTED = {
     "837e9f0d-d5b0-4e16-b3c4-9119c9700e9a": "2021-02-08",   # Walgreens Pharmacy
     "6ee316ab-d82f-4890-9a1e-84874d0438c7": "2021-03-13",   # Walgreens
     "13e62ef8-c843-42c7-8be0-7bbaa070a70d": "2024-01-26",   # Rite Aid
+    # Released by the cross-check and accepted on the owner's second pass, 2026-11-18.
+    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e": "2018-02-03",   # Sam's Club
+    "1937d785-1a98-49c5-9d32-51b7ec7c97af": "2017-09-25",   # Harris Teeter
 }
 
-#: Held back deliberately. Sam's Club because FSQ's closed record is the WAREHOUSE CLUB, not a
-#: pharmacy counter, and a counter closing inside a trading club looks identical in this data;
-#: Harris Teeter because one Kroger site in `EXCLUDED_PLACE_IDS` is already an operating Harris
-#: Teeter in OSM, so "Harris Teeter closed" needs to be shown to be a different address.
-HELD = {
+#: The two that were held for one day, and what released each.
+#:
+#: **Harris Teeter: the hold had no subject.** It was held because a Kroger in
+#: `EXCLUDED_PLACE_IDS` was dropped precisely BECAUSE OSM shows a Harris Teeter trading on its
+#: site, so a closed Harris Teeter had to be shown to be a different address first. It is
+#: 15,249 m from that Kroger.
+#:
+#: **Sam's Club: the objection was never resolved.** FSQ's closed record is the WAREHOUSE CLUB
+#: rather than a pharmacy counter, and a counter closing inside a club that keeps trading looks
+#: identical in this data. All the cross-check added is that OSM holds no Sam's Club within 300 m,
+#: which is CONSISTENT with the club having closed but is absence, not observation. It was
+#: accepted over the doubt, so the entry has to keep saying so.
+LATE = {
     "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e": "Sam's Club",
     "1937d785-1a98-49c5-9d32-51b7ec7c97af": "Harris Teeter",
 }
 
 
-def test_the_ten_accepted_closures_are_all_present():
-    assert set(ACCEPTED) <= set(FSQ_CONFIRMED_CLOSURES), (
+def test_the_applied_closures_are_exactly_the_twelve():
+    """Set equality both ways. A missing entry fails to drop a shop that closed; an extra one
+    removes a shop nobody decided about, from a PUBLISHED layer."""
+    assert set(FSQ_CONFIRMED_CLOSURES) == set(ACCEPTED), (
         "missing: " + ", ".join(sorted(set(ACCEPTED) - set(FSQ_CONFIRMED_CLOSURES)))
+        + " | unexpected: " + ", ".join(sorted(set(FSQ_CONFIRMED_CLOSURES) - set(ACCEPTED)))
     )
 
 
-def test_exactly_ten_were_accepted():
-    """The owner said ten. Twelve would mean the held-back pair crept in."""
-    assert len(FSQ_CONFIRMED_CLOSURES) == 10
+def test_exactly_twelve_are_applied():
+    """Ten on the first pass, two on the second. Thirteen means something crept in."""
+    assert len(FSQ_CONFIRMED_CLOSURES) == 12
 
 
-def test_the_two_held_back_records_are_not_applied():
-    """Holding them WAS the decision. An entry here would silently overturn it."""
-    for place_id, name in HELD.items():
-        assert place_id not in FSQ_CONFIRMED_CLOSURES, f"{name} was held back, not accepted"
+def test_nothing_is_held_any_more_and_the_table_still_exists():
+    """The hold is resolved, so the table is empty -- but it still EXISTS, so a later session
+    reads "this was decided" rather than having to reconstruct that it ever happened."""
+    assert FSQ_CLOSURES_HELD == {}
+
+
+def test_the_two_late_closures_name_the_cross_check_that_released_them():
+    """These two are the only entries whose evidence is not in the FSQ sheet, so the entry has to
+    point at the script that produced it."""
+    for place_id, name in LATE.items():
+        reason = FSQ_CONFIRMED_CLOSURES[place_id]
+        assert "crosscheck_fsq_closures" in reason, f"{name} does not name the cross-check"
+
+
+def test_the_sams_club_entry_still_carries_the_doubt_it_was_accepted_over():
+    """It was NOT resolved. An entry that reads as settled would lose the one thing a reader
+    needs if this record is ever disputed."""
+    reason = FSQ_CONFIRMED_CLOSURES["c7c31e4e-79a8-43d3-aa0c-4c1bf098747e"]
+    assert "arehouse" in reason, "the category objection is not stated"
+    assert "NOT RESOLVED" in reason, "the entry does not say the objection stands unresolved"
 
 
 def test_each_closure_names_its_date_and_its_source():
@@ -167,10 +206,11 @@ def test_drop_excluded_removes_an_accepted_closure():
     assert list(drop_excluded(g)["id"]) == [kept]
 
 
-def test_drop_excluded_keeps_a_held_back_closure():
-    held = next(iter(HELD))
-    g = park_frame([held, "kept-id"])
-    assert list(drop_excluded(g)["id"]) == [held, "kept-id"]
+def test_drop_excluded_removes_the_two_that_had_been_held():
+    """The first pass asserted the exact opposite. This is the behaviour the owner changed, so it
+    is asserted directly instead of being left implied by the count."""
+    g = park_frame([*LATE, "kept-id"])
+    assert list(drop_excluded(g)["id"]) == ["kept-id"]
 
 
 def test_select_overture_applies_the_closures_too():
