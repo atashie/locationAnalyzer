@@ -89,7 +89,11 @@ would have let ODbL rows into every other consumer silently. Reasoning: decision
 ODbL publication, and S2.4 rasterises to **counts** and republishes nothing (Produced Work).
 **WIDENED 2026-11-18:** footprint geometry may now inform a classification that feeds a published
 artifact, making that artifact ODbL share-alike. Footprints are still never republished. See the
-Buildings row in `docs/experiments/source-registry.md`.
+Buildings row in `docs/experiments/source-registry.md`. *(Still **not exercised** as of
+2026-11-18: the one classification that uses footprints feeds `supermarket`, and the published
+layer is built from `grocery`. And ODbL separates a derivative database from a Produced Work --
+publicly using the former also obliges offering it -- so "share-alike" is the conservative reading
+rather than the complete one.)*
 **My reading, owner's to overturn** - revisit if footprints ever feed anything published, since a
 derived *database* with ODbL rows is share-alike. The CC BY string is matched literally, so a
 reworded release will quarantine again.

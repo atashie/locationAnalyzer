@@ -40,7 +40,13 @@ count how many of those records actually have the building to themselves:
 
 The shared ones run to 13 places in one polygon and the big ones have a median area of 2,118 m².
 So nearly every record the naive rule would have promoted is a small shop in a retail parade, and
-the rule would have put 135 corner shops into a **published** weekly-shop layer.
+the rule would have put 135 records into a **published** weekly-shop layer on a footprint they
+share with their neighbours.
+
+*(Corrected 2026-11-18, third review: this used to say "135 corner shops". The measurement
+establishes 135 records SHARING a large footprint, not 135 verified corner shops -- `Brier Creek
+Walmart`, 20,903 m2 with 27 place records on it, is in that population and is a real Supercenter.
+The point stands: a shared footprint cannot tell the anchor from the unit beside it.)*
 
 ## Two things the spot-check changed, after the rule was first written
 
@@ -64,6 +70,9 @@ the rule's answer for a record named `Food Lion` is checkable without a site vis
   keeping them out of the weekly-shop layer is the correct call.
 * **2 are wrong.** Both `Wal Mart` records sit outside any building with a **3,943 m²** building
   120 m away. That is a real Walmart with a displaced point, and the rule read the wrong structure.
+  *(Corrected 2026-11-18, third review: that building is **Europa Center**, somebody else's, 67 m
+  and 81 m away. "A real Walmart with a displaced point" was a guess. The guard below is still the
+  right action -- both records belong undecided -- for the wrong reason.)*
 
 So the negative gets a second condition: **no building over the floor within 120 m either**. If a
 supermarket-sized building is nearby, the point may simply be in the wrong place and the record is
@@ -284,7 +293,8 @@ def main() -> None:
     print(f"\n  PROBE: {named} of these records are NAMED after a known chain, which makes them "
           "checkable")
     print(f"  the rule calls {wrongable} of those not-a-weekly-shop. Before the 120 m guard it "
-          "called 7, of which 2 were real Walmarts with a displaced point.")
+          "called 7, of which 2 were Wal Mart records standing near EUROPA CENTER, which is "
+          "somebody else's building (corrected 2026-11-18).")
     print(f"  {named - wrongable} are left undecided, and they are the best lead on this sheet: "
           "see the note.")
     print(f"\nwrote {out}")

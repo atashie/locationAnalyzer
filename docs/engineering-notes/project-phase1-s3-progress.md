@@ -376,15 +376,19 @@ and no table was edited.
   272 records (11%)**, all of them negatives, because the records that need deciding are units in
   strip malls wearing the parade's footprint. The naive version of this rule would have put **135
   corner shops into the published weekly-shop layer**. Two things are owed:
-  * **ANSWERED 2026-11-18, third pass: the names are recovered** (`d224945`, item 3m). 13 of
-    the 33 candidates are now in `NAME_CONFIRMED_SUPERMARKETS`; 11 were refused as service points
-    and 9 for having no building big enough nearby. **Unclassified grocery records: 272 -> 259**,
-    258 of them brandless.
+  * **ANSWERED 2026-11-18, third pass, then CORRECTED by the third review the same day**
+    (`d224945`, then `0eaa8a5`; item 3m). **7** of the 32 candidates are in
+    `NAME_CONFIRMED_SUPERMARKETS` -- it was 13 until the review found that **8 of the 13 rested on
+    a building their point is not inside**, naming Discount Tire, New Hope Baptist Church and
+    Europa Center twice. **Unclassified grocery records: 272 -> 264**, 263 of them brandless.
   * **ANSWERED 2026-11-18, third pass: the registry row is widened** (`d39141e`). Footprints may
     now inform a classification feeding a published artifact; the artifact is ODbL share-alike.
     Footprints are still never republished and CC BY rows still need their own attribution. The
     claim appeared in FIVE places and all five were updated, including the `use` string
     `fetch_buildings.py` stamps into data on every refresh.
+    **The permission is still NOT EXERCISED**, contrary to what `d224945` then claimed: the name
+    recovery feeds `supermarket`, and the published layer is built from `grocery`, which does not
+    consult it. Measured: `supermarket` 235 -> 242, `grocery` **543 -> 543**.
 
 * **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
 * **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
@@ -1302,7 +1306,10 @@ deleted -- a withheld proposal moves to a `withheld_proposal` column.
 decides 11%. **The positive branch was withdrawn: both records it produced were food production or
 distribution**, because a real Triangle supermarket sits in a shopping centre and so shares its
 footprint. A free correctness probe -- 34 records *named* after a known chain -- caught the rule
-mislabelling two real Walmarts with displaced points, and produced the better lead in the owed list.
+mislabelling two `Wal Mart` records, and produced the better lead in the owed list.
+*(Corrected 2026-11-18: those two were called "real Walmarts with displaced points". The 3,943 m2
+building they stood near is **Europa Center**, somebody else's building, 67 m and 81 m away. The
+guard that came out of the probe was the right action for the wrong reason.)*
 
 ### 3m. The chain names recovered from the `name` field -- **DONE 2026-11-18**
 
@@ -1310,14 +1317,18 @@ mislabelling two real Walmarts with displaced points, and produced the better le
 `locfinder/places/grocery.py`, sheet `grocery-name-recovery.csv`, commit `d224945`. Write-up in
 [[project-phase1-s3-brandless-grocery]].
 
-**A lookup, not a heuristic**, and `grocery.py` now draws that line in its own words. Only
-`SUPERMARKET_BRANDS` is consulted, so `Kroger Store` and `Wegmans` match nothing until somebody
-edits the table -- that alone took 34 candidates to 33.
+**`chain_in_name` is a lookup, not a heuristic** -- the service-point word list and the geometric
+screen are both heuristics, and claiming the discipline for the whole classifier was an
+overstatement the third review corrected. Only `SUPERMARKET_BRANDS` is consulted, so `Kroger
+Store` and `Wegmans` match nothing until somebody edits the table -- that alone took 34 candidates
+to 33, and the Food House exclusion takes it to 32.
 
-Two screens, each earned by a failure in the data: **11 service points** (nine `Walmart Grocery
-Pickup and Delivery`, one `Weaver Street Market Administration`, several on the chain's own
-~20,000 m2 footprint so no geometry could catch them) and **9 with no building over 650 m2 within
-120 m**. **13 accepted**, all read by name first.
+Three screens now, each earned by a failure in the data: **11 service points** (nine `Walmart
+Grocery Pickup and Delivery`, one `Weaver Street Market Administration`, several on the chain's own
+~20,000 m2 footprint so no geometry could catch them); **9 REFUTED**, with no building over 650 m2
+within 120 m; and **5 NEIGHBOUR**, where a big building stands near but the point is in none of
+them -- the screen the review's P1-2 forced, and the one that caught Discount Tire and Europa
+Center. **7 accepted**, each inside a building of its own.
 
 Two things left visible: a `Lowes Foods` on an 837 m2 building, and **two `Wal Mart` records
 sharing one 3,943 m2 building** -- probably duplicates of one store, which is a de-duplication

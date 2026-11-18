@@ -6,8 +6,9 @@ named after a chain that `SUPERMARKET_BRANDS` already holds, with an **empty `br
 roughly an eighth of the "brandless" blocker is not a classification problem at all -- it is a
 *brand-field* gap, and the answer is already in the tables.
 
-**This is a lookup, not a heuristic**, and `locfinder/places/grocery.py` now draws that line
-explicitly. Only `SUPERMARKET_BRANDS` is consulted, so `Kroger Store` and `Wegmans` -- both real,
+**`chain_in_name` is a lookup, not a heuristic**, and `locfinder/places/grocery.py` now draws
+that line explicitly. The service-point word list and the footprint screen are heuristics; the
+third adversarial review corrected this docstring for claiming the discipline for all three. Only `SUPERMARKET_BRANDS` is consulted, so `Kroger Store` and `Wegmans` -- both real,
 both trading in this metro, neither in the table -- match nothing until somebody edits the table.
 Adding a chain stays a decision.
 
@@ -33,7 +34,14 @@ applied and why the sheet reports which one fired.
 
 A generated block for `NAME_CONFIRMED_SUPERMARKETS` in `locfinder/places/grocery.py`, on the same
 footing as `OSM_CONFIRMED_SUPERMARKETS`: a **regenerable derivation**, kept apart from the
-hand-curated tables so a data refresh cannot overwrite somebody's judgement. Plus
+hand-curated tables so a data refresh cannot overwrite somebody's judgement.
+
+**"Regenerable" was false when it was first written** and is true now. This script picks its
+candidates by asking which records are still `unclassified`, so once its answers were in the table
+it stopped seeing them -- 20 candidates where there should be 33 -- and `--emit` printed a table
+WITHOUT them. Anyone following this paragraph as a workflow would have deleted the recovery. It now
+asks `classify_grocery(rec, consult_name_table=False)`, and a re-run emits exactly the ids already
+in the table. Plus
 `docs/experiments/audit/grocery-name-recovery.csv` with every one of the 34 and what happened to
 it, blank `verdict` column.
 
