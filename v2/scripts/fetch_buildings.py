@@ -20,10 +20,17 @@ because the grid is an axis-aligned UTM rectangle enclosing it. 4.54% of the Tri
 outside that geographic box and still count towards the published denominator, so the input has to
 cover the cells it weights.
 
-S2.4 needs buildings only as a **coverage diagnostic** — rasterised to counts, to weight the
-no-data audit by how many buildings sit in a gap rather than by cell area. Nothing is republished,
-so the use is a Produced Work. The report records the observed licences so the registry row can be
+S2.4 needs buildings as a **coverage diagnostic** — rasterised to counts, to weight the no-data
+audit by how many buildings sit in a gap rather than by cell area. No footprint is republished, so
+that use is a Produced Work. The report records the observed licences so the registry row can be
 verified against reality instead of against the documentation.
+
+**The permitted use was WIDENED on 2026-11-18** (owner: *"1-4) yes, proceed"*). Footprint geometry
+may now inform a classification that feeds a **published** artifact — which makes that artifact an
+**ODbL-derived database, and so share-alike**. What did not change: footprints are still never
+republished, the CC BY 4.0 rows still need their own attribution in anything published, and
+decision 17 still bars Overture- or Google-sourced data from going into OpenStreetMap. Nothing
+published depends on a footprint yet; this is permission, not a dependency.
 
 Acquisition goes through `places.acquire`, which holds the two S4.1 hazards in one tested place: a
 raw file is never reused for a different release or bounding box, and an interrupted download can
@@ -126,8 +133,11 @@ def main() -> None:
         "quarantine_reasons": dict(reasons.most_common(8)),
         "strict_allowlist": sorted(ALLOWED_LICENCES),
         "diagnostic_allowlist_used": sorted(DIAGNOSTIC_LICENCES),
-        "use": ("building-weighted coverage diagnostic (S2.4): rasterised to counts, never "
-                "republished"),
+        "use": ("building-weighted coverage diagnostic (S2.4), rasterised to counts; and, "
+                "since 2026-11-18, footprint geometry may inform a classification that feeds a "
+                "PUBLISHED artifact, which makes that artifact ODbL share-alike. Footprints "
+                "themselves are still never republished and CC BY rows still need their own "
+                "attribution. See the Buildings row in docs/experiments/source-registry.md"),
     }
     (out_dir / "overture_buildings_report.json").write_text(
         json.dumps(report, indent=1), encoding="utf-8")

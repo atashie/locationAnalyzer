@@ -87,6 +87,9 @@ OpenStreetMap 437,549 + Microsoft ML Buildings 345,045) and a **non-SPDX free-te
 `allowed` set and `fetch_buildings.py` passes `DIAGNOSTIC_LICENCES`. Mutating the module-level set
 would have let ODbL rows into every other consumer silently. Reasoning: decision 17 welcomes
 ODbL publication, and S2.4 rasterises to **counts** and republishes nothing (Produced Work).
+**WIDENED 2026-11-18:** footprint geometry may now inform a classification that feeds a published
+artifact, making that artifact ODbL share-alike. Footprints are still never republished. See the
+Buildings row in `docs/experiments/source-registry.md`.
 **My reading, owner's to overturn** - revisit if footprints ever feed anything published, since a
 derived *database* with ODbL rows is share-alike. The CC BY string is matched literally, so a
 reworded release will quarantine again.
@@ -176,7 +179,10 @@ checking. Reporting the cell-dominant reason alone would have aimed the next wor
 thing.
 Caveats kept explicit: **building-weighted, not home-weighted** (no residential flag; sheds, barns
 and a hospital campus's many structures each count one), and the weights are ODbL/CC BY counts under
-decision 17 — a Produced Work, footprints never republished.
+decision 17 — a Produced Work, footprints never republished. *(The permitted use was widened
+2026-11-18: a classification derived from footprints may now be published, which makes the
+published artifact share-alike. The footprints themselves are still never republished, so this
+sentence stays true.)*
 
 **A defect found on disk, not by test** (`5446d5e`). The `overturemaps` CLI writes a sidecar
 `<output>.state` — *exactly* `acquire`'s own state-file convention.

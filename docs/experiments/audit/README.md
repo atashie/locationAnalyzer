@@ -362,6 +362,9 @@ hyperlink.
 - CC BY 4.0: <https://creativecommons.org/licenses/by/4.0/legalcode.en>
 
 Whether the full count *raster* is a Produced Work or a derivative database is **not settled here**,
-and should be before anything wider than these sheets is published; see
+and should be before anything wider than these sheets is published. **Partly settled 2026-11-18**:
+the owner widened the permitted use so that a classification derived from footprints may feed a
+published artifact, accepting that this makes the artifact ODbL share-alike. That does not settle
+the status of the count raster itself, which is a different object. See
 `project-v2-rethink-decisions` decision 17. Nothing above should be read as a finding that this sheet
 breaches an obligation — only that the notice now says what it is attributing and to whom.
