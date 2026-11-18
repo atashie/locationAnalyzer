@@ -1464,3 +1464,44 @@ off-screen.
 Related to instance 47 in shape -- both are about what is already written down being more reliable
 than what I am about to write -- but the population here is CSS rather than notes. Fifty-nine
 instances now.
+## A sixtieth, 2026-11-18: I verified the mechanism and asserted the consequence
+
+The name recovery put 13 records into `NAME_CONFIRMED_SUPERMARKETS`, and I measured it there: 13
+rows, 272 -> 259, 33 tests, every entry carrying its own evidence string. Then I wrote that it
+"writes 13 records into a published grocery layer" and that the published artifact was therefore
+ODbL share-alike.
+
+The third adversarial review measured the other end. **`supermarket` 235 -> 242. `grocery`
+543 -> 543.** The published manifest has no `supermarket` layer, and `categories.py` carries a
+comment, written before any of this work, saying exactly why: *"`grocery` below is left exactly as
+it was, because the published layer is built from it."* Nothing published depends on a footprint,
+which is what `d39141e` had itself said -- *"authorised, not yet exercised"* -- one commit before
+`d224945` claimed the opposite.
+
+Every number I checked was right. The numbers I did not check were in the sentence that mattered.
+
+> **Measure the end of the pipeline, not the end of your change.** A change ends where you stopped
+> typing. A consequence is a claim about a system, and the system is longer than the diff.
+
+The same review found the same shape in the geometry: `corroboration` was taking the largest
+building within 120 m, so **8 of the 13** rested on a building their point was not inside --
+Discount Tire 105 m from a `Lowes Foods`, New Hope Baptist Church 115 m from an `ALDI`, Europa
+Center 67 m and 81 m from two `Wal Mart` records. I had even written, about one of them, *"possibly
+a point on a neighbouring structure"*, and filed it as a curiosity rather than following it. And
+the claim that protected all 13 -- *"every one checked by name before it went in"* -- was TRUE and
+IRRELEVANT: reading a name cannot tell you which building a point sits in, and that was the only
+thing the acceptance rested on.
+
+Two things that worked, and both were cheap:
+
+* **The prompt found its own author out again**, as in instance 58. Item 1 said *"find one that
+  should not be there -- look for one I have not flagged"* and item 7 said *"the previous review
+  caught me conflating two populations in exactly this way."* Both invitations were taken and both
+  landed. Writing the attack on your own strongest claim is now two for two.
+* **Reproducing before believing.** The reviewer's numbers came back identical in four independent
+  places -- 20 vs 33 candidates, 235 -> 248, 543 -> 543, and four buildings it named -- which is
+  why its external citations (a state WARN filing, an NCDA plant number) were credited rather than
+  taken on trust. One of its claims I could NOT confirm on the street number, and that one is
+  recorded as a doubt attached to the record instead of acted on.
+
+Sixty instances now.

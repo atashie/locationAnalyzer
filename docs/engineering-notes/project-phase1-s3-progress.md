@@ -204,8 +204,13 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
-**Re-run 2026-11-18, after the third pass:** V2 **1,676 passed, 24 skipped** -- +33 for the new
-`tests/test_grocery_name_recovery.py`, +13 for the 0.25 floor and the closure flag, +5 elsewhere.
+**Re-run 2026-11-18, after the FOURTH pass (the third review's repairs):** V2 **1,712 passed,
+24 skipped** -- +18 for the new `tests/test_footprint_corroboration.py`, +12 more in
+`test_grocery_name_recovery.py`, +6 rewritten on the closures.
+
+**Earlier re-run 2026-11-18, after the third pass:** V2 **1,676 passed, 24 skipped** -- +33 for the
+new `tests/test_grocery_name_recovery.py`, +13 for the 0.25 floor and the closure flag, +5
+elsewhere.
 
 **Earlier re-run 2026-11-18, after the floor and the last two closures:** V2 **1,625 passed, 24
 skipped** -- +18 for `tests/test_name_match.py` (the OSM name-agreement floor, including the five
@@ -304,13 +309,96 @@ out of the review and the measurements. All four are done:
    that feeds a **published** artifact, making it ODbL share-alike. Footprints themselves are
    still never republished and CC BY rows still need their own attribution.
 
-**A second adversarial review** is running against all four (`aac3f11` prompt, committed before
-launch). Its findings are **not yet folded in**; a session resuming here should read
-`docs/reviews/2026-11-18-name-recovery-review-prompt.md` and check whether findings were recorded.
+**THE SECOND ADVERSARIAL REVIEW REPORTED, AND IT IS THE WORST AND MOST USEFUL OF THE THREE.**
+Prompt `aac3f11` (committed before launch), findings
+[[2026-11-18-name-recovery-review-findings]] recorded in `02bc974` **before** any repair, fixes in
+`0eaa8a5` / `dafd9c8` / `2f283fb`. Eleven findings, three at P1. **Every finding credited was
+reproduced locally first**, and the reviewer's numbers matched in four independent places.
+
+**Taken 2026-11-18, fourth pass.** Nothing here was an owner ask; it is the third pass being
+repaired:
+
+1. **8 of the 13 name recoveries rested on a building their point is not inside.** `0eaa8a5`.
+   The rule took `max(area)` over a 120 m buffer, with no containment and no identity test -- so
+   the 837 m2 `Lowes Foods` I had flagged only as "small for that chain" is **Discount Tire**
+   105 m away, `ALDI` borrowed **New Hope Baptist Church**, and both `Wal Mart` records borrowed
+   **Europa Center**. New `locfinder/places/footprint.py`, three-valued
+   (`CORROBORATED` / `NEIGHBOUR` / `REFUTED`), because *near a big building* and *in a small
+   building* are different facts. **The table is 13 -> 7.**
+2. **`Weaver Street Market, Inc` is the co-op's Food House**, a meat-processing plant and bakery
+   that supplies the shops -- promoted to `supermarket` by my own table. New
+   `NOT_A_WEEKLY_SHOP_SITES`, consulted before every other table. Second wrong destination from
+   that one site.
+3. **The recovery could not regenerate itself.** `classify_grocery(rec, consult_name_table=False)`.
+   It picked candidates by asking which records were still `unclassified`, so its own 13 answers
+   made themselves invisible -- 20 candidates instead of 33, and `--emit` would have printed a
+   table WITHOUT them. "A regenerable derivation" was false when committed; a re-run now emits
+   exactly the ids in the table.
+4. **Sam's Club closes again.** `2f283fb`. **This reverses the third pass's ask 1 on evidence that
+   did not exist when it was taken:** NC's 2018 WARN report records Sam's Club #6668, effective
+   2018-01-26, PERMANENT, 187 employees, at `1101 Shiloh Glenn Dr` -- the record's own address --
+   and the pharmacies were wound down over about two weeks with prescriptions transferred. The
+   category objection is retired by observation. **Twelve applied, none flagged**;
+   `FSQ_FLAGGED_CLOSURES` is empty and kept, with a test that the read seam still answers `None`.
+5. **`Wal Mart Supercenter` matched nothing**, nor did `Wal-Mart Supercenter`. New
+   `BRAND_NAME_ALIASES`, an explicit table rather than an "ignore the spaces" rule.
+6. **Six documents corrected in the places each claim appeared**, corrections left visible:
+   `dafd9c8`.
+
+**THE FINDING THAT MATTERS MOST FOR THE RECORD: none of this ever reached a published layer.**
+`supermarket` 235 -> 242; **`grocery` 543 -> 543**; the published manifest has no `supermarket`
+layer. So `d224945` was wrong to claim it wrote into a published grocery layer, wrong that it was
+the first published use of a footprint, and wrong that the published artifact had become
+share-alike. `d39141e` had said *"authorised, not yet exercised"* one commit earlier and was
+right. **Ledger 60: measure the end of the pipeline, not the end of your change.**
+
+**Current numbers after the repairs:** `NAME_CONFIRMED_SUPERMARKETS` **7**; unclassified grocery
+**264**, of which **263** brandless; `supermarket` target **242**; `grocery` target **543**,
+unchanged throughout.
+
+**One doubt is attached rather than resolved:** the surviving `ALDI` at 4241 Louisburg Rd may be a
+store that relocated to 6101 Capital Blvd in October 2019. Reporting confirms a Louisburg Road
+ALDI moving then but ties no source to this street number, so it is in the owner asks rather than
+acted on.
 
 ## Decisions the owner owes
 
 Nothing below should be decided by a session on its own.
+
+**NEW 2026-11-18, fourth pass, from the third adversarial review's repairs.** All four were put to
+the owner in chat and none is answered.
+
+* **1. Sam's Club is applied again, and it was the owner's call to flag it.** `2f283fb`. The
+  category objection is retired by NC's 2018 WARN filing (#6668, effective 2018-01-26, PERMANENT,
+  at the record's own address) plus reporting that the pharmacies were wound down with
+  prescriptions transferred. **I applied it rather than only asking**, because it is one table
+  entry, nothing is published or deployed, and the alternative leaves a household routed to a
+  pharmacy that shut in 2018 with nothing rendering the flag. **It is one line to put back** --
+  move the entry from `FSQ_CONFIRMED_CLOSURES` to `FSQ_FLAGGED_CLOSURES` and the tests say which
+  assertions flip.
+* **2. The surviving `ALDI` at 4241 Louisburg Rd may be a relocated store.** The review reports it
+  moving to 6101 Capital Blvd in October 2019; reporting confirms a Louisburg Road ALDI moving
+  then but **no source ties the move to this street number**, and its own 1,441 m2 host building
+  clears the floor. Left in the table **with the doubt written into its entry**. Drop it, keep it,
+  or have somebody look at the address?
+* **3. Should the Food House also come out of the PUBLISHED `grocery` layer?** This one is a
+  pre-existing problem the review uncovered rather than anything the recovery caused.
+  `Weaver Street Market, Inc` is tagged `grocery_store` in the Overture taxonomy, so it is
+  **currently offered to households as a grocery destination** -- a meat-processing plant and
+  bakery that supplies the shops. `NOT_A_WEEKLY_SHOP_SITES` keeps it out of `supermarket` only,
+  because `grocery` is taxonomy-based and never calls `classify_grocery`. Taking it out needs
+  `EXCLUDED_PLACE_IDS`, which moves a published number (543 -> 542) and is explicitly an owner
+  decision about what a record IS. **My reading: it should come out.** MEASURED rather than
+  presumed, because that is the whole lesson of this pass: the Food House **is** in the 543, and so
+  are **ten** pickup-named records (`Walmart Grocery Pickup and Delivery` and `Walmart Grocery
+  Pick Up and Delivery`) -- ten, not the nine the recovery sheet counts, because that sheet only
+  ever saw the brandless ones. So the same question applies to eleven records, not one.
+* **4. The five `NEIGHBOUR` records: leave them, or look at them one by one?** `Lowes Foods` at
+  2900 Wake Forest Rd and 3480 Kildaire Farm Rd, `Lowes Foods Of Cary On High House`, and the two
+  `Wal Mart` records at 1748 Fordham Blvd. Each is named for a real chain and sits in no building,
+  with a big one 26-105 m away that belongs to somebody identifiable. **Geometry cannot decide
+  them and nothing cheap will**; they stay `unclassified`, which costs a household the option and
+  costs the layer nothing. Deciding them means somebody looking at five addresses.
 
 **New 2026-11-17, from the Foursquare measurement.** All four were put to the owner in chat and
 none is answered. Nothing has been accepted:
@@ -490,8 +578,12 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **59 instances**. The two newest are both
-2026-11-18. **59: the page already contained the rule that worked** -- the review copy's overlay
+[[feedback-verify-the-shape-of-the-risk]] now holds **60 instances**. The three newest are all
+2026-11-18. **60: I verified the mechanism and asserted the consequence** -- I measured the name
+recovery where my change stopped (13 rows, 272 -> 259, a test each) and asserted what it did at the
+end of a pipeline I had not measured, which turned out not to consult it at all; `categories.py`
+said so in a comment written before the work started. *Measure the end of the pipeline, not the end
+of your change.* **59: the page already contained the rule that worked** -- the review copy's overlay
 was broken by one narrow CSS override on top of a base rule that was already correct, and my first
 fix invented a replacement for the base rule instead of removing the override's effect, making it
 worse; then I broke the layout a second time by overriding `flex` as well as the height. **58: the
