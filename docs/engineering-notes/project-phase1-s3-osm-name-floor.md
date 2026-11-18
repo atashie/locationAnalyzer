@@ -226,3 +226,24 @@ are the same objects, so `measure_fsq_accuracy`, `measure_fsq_coverage`,
   0.00 agreement 0.9% of the time against OSM's 12.4%. Adversarial review finding 6.
 * **It does not answer whether FSQ should take over the identity pass.** That is still owed, and
   this makes the case for it stronger rather than settling it.
+## Third pass, 2026-11-18: the 0.25 floor was adopted, and it nearly reintroduced the bug
+
+Owner, *"1-4) yes, proceed"*. The inclusive 0.25 Jaccard floor the review surfaced is now in, with
+the caveat stated rather than buried: **0.25 was chosen by looking at the same fifteen rows that
+would judge it.** On the two sheets it costs exactly one proposal and buys exactly one — the same
+row, `Han-Ah-Rum Mart` against `Han-Dee Hugo's` 78.5 m away, sharing only the generic `han` and
+scoring 1/5. A small, well-understood change, not a breakthrough.
+
+**Implementing it is the part worth reading.** Applied naively to `name_agreement`, the floor
+would have rejected `A&C Supermarket` against an OSM feature of the **same name** 12.0 m away —
+because the strict tokeniser erases every word in that name and the score is 0.00. That is the
+defect the review found one commit earlier, walking back in through a different door, and it was
+caught only by measuring the floor's effect on the real sheets before writing it.
+
+So the floor is applied to **`agreement_used`**, the Jaccard over whichever token set the verdict
+was actually taken on, and a test asserts the two disagree for that row: `name_agreement` says
+0.00, `agreement_used` says 1.00. The `name_agreement` column in both sheets now reports
+`agreement_used`, because the evidence text tells a reader to compare it against the floor and it
+would otherwise be the wrong number.
+
+After it: grocery **30 proposals surviving, 51 withheld**; pharmacy unchanged at 73 and 17.

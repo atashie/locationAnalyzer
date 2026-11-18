@@ -87,12 +87,22 @@ rejects `Han-Ah-Rum Mart` / `Han-Dee Hugo's`, which scores 1/5 = 0.20, while the
 the other two generic-word matches, and no stricter scalar floor catches them while keeping the
 twelve.
 
-It is **not adopted**, and the reason is not that it fails: it is that 0.25 was chosen by looking
-at the same fifteen rows that would judge it, which is how a threshold gets fitted to its own test
-set. It is recorded here as a measured, costless-looking option for the owner rather than taken
-silently. What survives unchanged from the original claim is the narrower and more useful part: the
+**ADOPTED 2026-11-18, third pass**, on the owner's *"1-4) yes, proceed"*, with the caveat
+stated rather than buried: 0.25 was chosen by looking at the same fifteen rows that would judge
+it. On the two sheets it costs exactly one proposal (`Han-Ah-Rum Mart`) and buys exactly one
+(the same row, now correctly refused) -- it is a small, well-understood change, not a
+breakthrough.
+
+**Implementing it turned up the trap that makes it worth reading.** Applied naively to
+`name_agreement`, the floor would have rejected `A&C Supermarket` against an OSM feature of the
+SAME NAME, because the strict tokeniser erases every word in it and the score is 0.00. That is
+the defect the review found one commit earlier, walking back in through a different door. The
+floor is applied to `agreement_used`, the Jaccard over whichever token set the verdict was
+actually taken on.
+
+What survives unchanged from the original claim is its narrower, more useful half: the
 *magnitude* of the score is not what separates good matches from bad ones in this band, the
-*genericness of the shared word* is.
+*genericness of the shared word* is. 0.25 is a proxy for genericness, not a measure of it.
 """
 from __future__ import annotations
 
@@ -116,10 +126,21 @@ STOP_WORDS = frozenset({
     "company", "center", "centre", "supermarket", "grocery", "pharmacy",
 })
 
-#: What the floor is, written as prose because it is not a number. A proposal needs **at least one
-#: shared informative word**. Expressed as `match_verdict(...) == AGREES` rather than as
-#: `name_agreement(...) > 0` so that the unverified case cannot silently fall on the blocking side.
-FLOOR = "at least one shared informative word"
+#: What the floor is in words. A proposal needs **at least one shared informative word, and that
+#: shared word has to be a big enough share of the two names** -- see `AGREEMENT_FLOOR`. Expressed
+#: as `match_verdict(...) == AGREES` rather than as a comparison on `name_agreement` so that the
+#: unverified case cannot silently fall on the blocking side, and so that the floor is applied to
+#: the same token set that decided the verdict rather than to the strict one.
+FLOOR = "at least one shared informative word, and at least a quarter of the two names"
+
+#: Owner decision 2026-11-18, third pass. The review's finding 3: an inclusive floor here keeps
+#: all twelve correct partial matches in the measured band AND rejects `Han-Ah-Rum Mart` against
+#: `Han-Dee Hugo's` 78.5 m away, which share only the generic `han` and score 1/5 = 0.20. The
+#: correct `Handee Hugo 77` / `Han Dee Hugo` scores exactly 1/4, which is why this is `>=`.
+#:
+#: **It was adopted knowing it was fitted to the rows that judged it.** The honest summary is that
+#: it costs one proposal and buys one, on fifteen rows; the owner took it with that stated.
+AGREEMENT_FLOOR = 0.25
 
 
 def tokens(name: str) -> set[str]:
@@ -149,6 +170,30 @@ def name_agreement(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
+def _deciding_tokens(our_name: str, their_name: str) -> tuple[set[str], set[str]]:
+    """The two token sets a verdict is actually taken on: strict, or the length-filter-free
+    fallback when strict comes back empty on either side."""
+    ours, theirs = tokens(our_name), tokens(their_name)
+    if not ours or not theirs:
+        ours, theirs = short_tokens(our_name), short_tokens(their_name)
+    return ours, theirs
+
+
+def agreement_used(our_name: str, their_name: str) -> float:
+    """The Jaccard over the token sets that `match_verdict` actually decided on.
+
+    **This, not `name_agreement`, is what the floor is applied to**, and the difference is not
+    cosmetic: `name_agreement` returns 0.00 for two IDENTICAL names made only of short words and
+    category words, so a floor applied to it would reject `A&C Supermarket` against an OSM feature
+    of the same name 12.0 m away -- reintroducing, through a different door, the exact defect the
+    adversarial review found one commit earlier.
+    """
+    ours, theirs = _deciding_tokens(our_name, their_name)
+    if not ours or not theirs:
+        return 0.0
+    return len(ours & theirs) / len(ours | theirs)
+
+
 def match_verdict(our_name: str, their_name: str) -> str:
     """`AGREES`, `DIFFERS` or `UNVERIFIED` for a candidate match.
 
@@ -157,17 +202,21 @@ def match_verdict(our_name: str, their_name: str) -> str:
     distance in the sheet so a human can still use them, they just do not get a proposal asserted
     on their behalf.
     """
-    ours, theirs = tokens(our_name), tokens(their_name)
+    # THE FALLBACK, inside `_deciding_tokens`. `A&C Supermarket` tokenises to nothing -- `a` and
+    # `c` are under the length rule, `supermarket` is a category word -- so two IDENTICAL names
+    # 12.0 m apart scored `unverified` and a correct proposal was withheld. Both sides are retried
+    # without the length filter: an initialism is a name. The stop list still applies, so
+    # `Grocery Store` stays unverified, which the length rule was never the reason for.
+    ours, theirs = _deciding_tokens(our_name, their_name)
     if not ours or not theirs:
-        # THE FALLBACK. `A&C Supermarket` tokenises to nothing -- `a` and `c` are under the
-        # length rule, `supermarket` is a category word -- so two IDENTICAL names 12.0 m apart
-        # scored `unverified` and a correct proposal was withheld. Retry both sides without the
-        # length filter: an initialism is a name. The stop list still applies, so `Grocery Store`
-        # stays unverified, which is the case the length rule was never the reason for.
-        ours, theirs = short_tokens(our_name), short_tokens(their_name)
-        if not ours or not theirs:
-            return UNVERIFIED
-    return AGREES if ours & theirs else DIFFERS
+        return UNVERIFIED
+    if not ours & theirs:
+        return DIFFERS
+    # A shared word is necessary and not sufficient: in this data a single word shared across two
+    # long names is usually a GENERIC one (`han`, `mandi`, `produce`), not the business.
+    if len(ours & theirs) / len(ours | theirs) < AGREEMENT_FLOOR:
+        return DIFFERS
+    return AGREES
 
 
 def clears_the_floor(verdict: str) -> bool:
@@ -178,8 +227,10 @@ def clears_the_floor(verdict: str) -> bool:
 def why_withheld(verdict: str) -> str:
     """The sentence a sheet prints instead of a proposal, so a reader is never guessing."""
     if verdict == DIFFERS:
-        return ("names do NOT agree -- the nearest tagged feature is a DIFFERENT business, so no "
-                "proposal is made from its tag")
+        return ("names do NOT agree -- either the nearest tagged feature is a DIFFERENT business, "
+                f"or the two names share only a generic word and fall under the "
+                f"{AGREEMENT_FLOOR:.2f} agreement floor. Either way the match is not worth a "
+                "proposal; the agreement column says which")
     if verdict == UNVERIFIED:
         return ("no name to compare -- the OSM feature is unnamed or both names are category "
                 "words only, so the match is unverified rather than wrong")

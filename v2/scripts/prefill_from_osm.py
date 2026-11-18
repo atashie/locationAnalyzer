@@ -78,6 +78,7 @@ from locfinder.places.categories import select_target  # noqa: E402
 # set it. Re-exported under the old names so those four keep working unchanged; a test asserts
 # these are the same objects.
 from locfinder.places.name_match import (  # noqa: E402,F401
+    agreement_used,
     clears_the_floor,
     match_verdict,
     name_agreement,
@@ -177,7 +178,7 @@ def main() -> None:
         for h in hits:
             f = feats.iloc[h]
             dist = float(rec.geometry.distance(f.geometry))
-            agree = name_agreement(pname, osm_name(f))
+            agree = agreement_used(pname, osm_name(f))
             # Name agreement dominates: a strong name match further away beats a tag collision
             # next door, which is the common failure in a strip mall.
             score = agree * 2.0 + max(0.0, 1.0 - dist / args.radius)

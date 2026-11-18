@@ -25,9 +25,11 @@ from __future__ import annotations
 import pytest
 
 from locfinder.places.name_match import (
+    AGREEMENT_FLOOR,
     AGREES,
     DIFFERS,
     UNVERIFIED,
+    agreement_used,
     clears_the_floor,
     match_verdict,
     name_agreement,
@@ -197,3 +199,53 @@ def test_a_warning_suffix_is_never_a_proposal_on_its_own():
     assert proposal_text("pharmacy", ("shop", "convenience")).startswith("pharmacy")
     assert "weak" in proposal_text("pharmacy", ("shop", "convenience"))
     assert proposal_text("pharmacy", ("amenity", "pharmacy")) == "pharmacy"
+# --------------------------------------------------------------------------------------------
+# Owner decision 2026-11-18, third pass: "1-4) yes, proceed" -- adopt the inclusive 0.25 Jaccard
+# floor the adversarial review surfaced (finding 3). It keeps all twelve correct partial matches
+# in the band and rejects `Han-Ah-Rum Mart` / `Han-Dee Hugo's`, which share only the generic `han`.
+#
+# THE TRAP, FOUND BY MEASURING BEFORE IMPLEMENTING: a floor applied to `name_agreement` would
+# reject `A&C Supermarket` against an OSM feature of the SAME NAME, because the strict tokeniser
+# erases every word in it and `name_agreement` therefore returns 0.00. That is the defect the
+# review made us fix one commit ago, reintroduced through a different door. The floor has to be
+# applied to whichever token set DECIDED the verdict, which is what `agreement_used` reports.
+def test_the_floor_is_applied_to_the_token_set_that_decided_the_verdict():
+    """`name_agreement` says 0.00 and `agreement_used` says 1.00 for two identical names."""
+    assert name_agreement("A&C Supermarket", "A&C Supermarket") == 0.0
+    assert agreement_used("A&C Supermarket", "A&C Supermarket") == 1.0
+    assert match_verdict("A&C Supermarket", "A&C Supermarket") == AGREES
+
+
+def test_a_single_generic_word_in_a_long_name_no_longer_clears_the_floor():
+    """Measured row: 78.5 m apart, sharing only `han`, scoring 1/5 = 0.20."""
+    assert agreement_used("Han-Ah-Rum Mart", "Han-Dee Hugo's") == pytest.approx(0.20)
+    assert match_verdict("Han-Ah-Rum Mart", "Han-Dee Hugo's") == DIFFERS
+
+
+def test_the_floor_is_inclusive_so_a_quarter_still_agrees():
+    """`Handee Hugo 77` / `Han Dee Hugo` scores exactly 1/4. An exclusive floor loses it, and it
+    is the same shop at 0.0 m -- which is why the floor is `>=` and not `>`."""
+    assert agreement_used("Handee Hugo 77", "Han Dee Hugo") == pytest.approx(0.25)
+    assert match_verdict("Handee Hugo 77", "Han Dee Hugo") == AGREES
+
+
+@pytest.mark.parametrize(
+    "ours,theirs",
+    [
+        ("Walmart Grocery Pickup and Delivery", "Walmart Supercenter"),
+        ("Handee Hugo 77", "Han Dee Hugo"),
+        ("Angadi Halal Meat Market", "Angadi - Indian Grocery Store"),
+        ("Brier Creek Walmart", "Walmart Supercenter"),
+        ("Apna Bazar", "Apna Bazaar"),
+        ("La Marqueta Tienda y Carniceria", "La Marqueta"),
+        ("Larry's Super Market", "Larry's Supermarket"),
+        ("H Mart Cary", "H Mart"),
+        ("A&C Supermarket", "A&C Supermarket"),
+    ],
+)
+def test_every_correct_match_in_the_band_survives_the_new_floor(ours, theirs):
+    assert clears_the_floor(match_verdict(ours, theirs)), f"{ours!r} vs {theirs!r} was lost"
+
+
+def test_the_floor_value_is_stated_once_and_not_scattered():
+    assert AGREEMENT_FLOOR == 0.25
