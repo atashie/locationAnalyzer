@@ -1378,3 +1378,30 @@ describing what I have just built and want to be true. The narrower claim is wha
 says now.
 
 Fifty-six instances now.
+## Instance 57, 2026-11-18: one case was promoted to a mechanism, and the mechanism was measured away
+
+`KBI Biopharma` -- a contract biologics manufacturer that FSQ labels `Retail > Pharmacy` at 0.0 m
+with name agreement 1.00, and that our own Overture-derived candidate list also carries as a
+pharmacy candidate -- is a real false positive. From that single case I wrote a mechanism:
+Foursquare feeds Overture, our places are Overture-derived, therefore **"shared lineage is not
+independent confirmation"**, and committed it in `785e76a`.
+
+Then I gave it two falsifiable tests and it failed both. Coordinate coincidence came back at 7.0%
+and 4.9%, not the high share a shared upstream record would produce. The branded/brandless
+agreement gap came back +6.7 for grocery and **-2.7 for pharmacy**, not the consistent positive the
+reading predicts.
+
+> **One case tells you the failure exists. It does not tell you what produces it.** The jump from
+> "here is a false positive, and here is a plausible mechanism" to "the mechanism is operating" is
+> the whole error, and it is invisible because the mechanism is *true in the abstract* -- Foursquare
+> really does feed Overture. What was never checked is whether it operates at a scale that matters
+> here.
+
+Same family as instances 50, 54 and 56; the population this time is **which records**, and the
+sample was one. What rescued it was that the claim had been written down sharply enough to be
+testable at all: "shared lineage is not independent confirmation" names a measurable consequence,
+so the next run could refute it. A vaguer sentence -- "FSQ may not be fully independent" -- would
+have survived indefinitely.
+
+The lesson is not "do not hypothesise". It is **predict a number before believing a mechanism**,
+and say in the note which number would refute it. Fifty-seven instances now.

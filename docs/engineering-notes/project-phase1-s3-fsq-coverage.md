@@ -52,6 +52,13 @@ lesson already recorded for brand fields, where a brand naming a vendor *inside*
 evidence about the shop. The check is now in the script and prints on every run, so this cannot be
 rediscovered by spot-check next time.
 
+> **SUPERSEDED 2026-11-18.** This rule is drawn in the wrong place. The accuracy run found a case
+> -- `Cameron Village ABC Store` -- where FSQ's **negative** is right and OSM's positive came from
+> a neighbour at name agreement 0.00, and two cases where FSQ's negative is wrong because it denies
+> what the record's own name asserts. One rule covers all three, for either source: **a proposal is
+> worth what its match is worth, and a proposal that denies what the record's own name asserts is
+> evidence against the proposal.** See [[project-phase1-s3-fsq-accuracy]].
+
 ### Corroborated in aggregate is not corroborated one by one
 
 Added 2026-11-17, found while restating this result for the owner. **The sentence above is true of
@@ -67,7 +74,14 @@ batch.**
 * **Both sources carry the same error.** Our own candidate list already holds that record
   (`a6a8f2de`, in `pharmacy-prefill-from-osm.csv`, OSM silent). Foursquare contributes to Overture
   and our places are Overture-derived, so FSQ agreeing with our record can be FSQ agreeing with
-  itself. Shared lineage is not independent confirmation.
+  itself.
+  **MEASURED AND REFUTED, 2026-11-18.** That last sentence generalised one case into a mechanism,
+  and the mechanism is not there. [[project-phase1-s3-fsq-accuracy]] gave it two falsifiable tests
+  and it failed both: only **7.0% (grocery) and 4.9% (pharmacy)** of FSQ matches sit within 0.5 m
+  of our record, where a shared upstream record would put most of them; and the branded/brandless
+  agreement gap is **+6.7 points for grocery but -2.7 for pharmacy**, not the consistent positive
+  the echo reading predicts. The agreement is largely real. `KBI Biopharma` remains a genuine
+  false positive at maximum confidence -- it is simply not a symptom of lineage.
 
 So the 72 are a **shortlist to review**, not a set to accept. The defensible claim is that FSQ's
 positives are far better than its negatives, not that they are clean. `date_closed` is not exposed
@@ -126,8 +140,10 @@ This may be the most useful thing FSQ offers us, and it is not the thing we went
   The public Source Cooperative mirror needs no credentials and exposes only this release.
 * **No proposal has been accepted.** Both sheets have a blank `verdict` column and no table was
   edited. 334 records remain exactly as classified as they were this morning.
-* **The pharmacy confirmations are not independent confirmation**, and one of them is wrong at
-  maximum confidence. See the subsection added under Finding 1.
+* **One pharmacy confirmation is wrong at maximum confidence** (`KBI Biopharma`) and three rest
+  on proximity alone. See the subsection added under Finding 1. The stronger claim made here on
+  2026-11-17 -- that the confirmations are *not independent* because FSQ feeds Overture -- was
+  measured on 2026-11-18 and does not hold; see [[project-phase1-s3-fsq-accuracy]].
 * **It does not test FSQ against the records OSM *did* reach**, where the two could be compared
   for agreement. That would measure FSQ's accuracy rather than its coverage, and would be the
   right next measurement if anyone wants to trust it further.
