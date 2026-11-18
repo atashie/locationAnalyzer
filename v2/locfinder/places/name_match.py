@@ -35,6 +35,24 @@ reader who disagrees with the gate still needs to see how close the call was.
 which would have justified a more elaborate rule. It was 17.6%. The prediction was wrong and the
 simpler rule stands; ledger instance 57.)*
 
+## When every word is erased
+
+Found by the adversarial review of 2026-11-18, finding 2, and it was a real defect in the first
+version of this module. `A&C Supermarket` matched against an OSM feature of the **same name**
+12.0 m away scored `unverified`, and its correct supermarket proposal was withheld: `a` and `c`
+fall to the length rule and `supermarket` is a category word, so both token sets came back empty
+and the code read that as "nothing to compare". There was plenty to compare. The tokeniser had
+thrown it away.
+
+So when the strict pass is empty on either side, both sides are retried **without the length
+filter** by `short_tokens`. The stop list still applies, so `Grocery Store` against `Food Lion`
+remains `unverified` — the length rule was never the reason for that one. `A&C` against `B&B`
+becomes `differs` rather than `unverified`, which is also an improvement: they are different
+businesses and now the sheet says so.
+
+The fallback is deliberately not a string-equality special case, because that would have fixed
+only the exact spelling: `A&C Supermarket` against `A & C Supermarket` has to work too.
+
 ## Why the floor is "one shared word" and not a Jaccard threshold
 
 This is the counter-intuitive half, and the reason the constant below is a token test rather than
@@ -59,6 +77,22 @@ threshold, and raising the threshold punishes the good rows to catch three bad o
 stated rather than fixed: `han` and `mandi` are parts of real business names and excluding them
 would cost more than they do. Two of the three sit at 78.5 m and 83.3 m, which the distance column
 already shows.
+
+**CORRECTION, from the adversarial review, finding 3.** The claim above that a Jaccard threshold is
+simply the wrong knob is **too strong**, and the review found the counter-example by doing the
+arithmetic I had not: an inclusive floor at **0.25** keeps all twelve of the correct matches and
+rejects `Han-Ah-Rum Mart` / `Han-Dee Hugo's`, which scores 1/5 = 0.20, while the correct
+`Handee Hugo 77` / `Han Dee Hugo` scores 1/4 = 0.25. On the measured sample a 0.25 floor therefore
+**strictly dominates** this one — one fewer false match, no correct match lost. It does not catch
+the other two generic-word matches, and no stricter scalar floor catches them while keeping the
+twelve.
+
+It is **not adopted**, and the reason is not that it fails: it is that 0.25 was chosen by looking
+at the same fifteen rows that would judge it, which is how a threshold gets fitted to its own test
+set. It is recorded here as a measured, costless-looking option for the owner rather than taken
+silently. What survives unchanged from the original claim is the narrower and more useful part: the
+*magnitude* of the score is not what separates good matches from bad ones in this band, the
+*genericness of the shared word* is.
 """
 from __future__ import annotations
 
@@ -93,6 +127,15 @@ def tokens(name: str) -> set[str]:
     return {w for w in _WORD.findall((name or "").lower()) if w not in STOP_WORDS and len(w) > 2}
 
 
+def short_tokens(name: str) -> set[str]:
+    """`tokens` without the length filter, for names that are nothing but an initialism.
+
+    Used only as a fallback, and only when the strict pass came back empty on one side. See
+    "when every word is erased" in the module docstring.
+    """
+    return {w for w in _WORD.findall((name or "").lower()) if w not in STOP_WORDS}
+
+
 def name_agreement(a: str, b: str) -> float:
     """Jaccard over informative words. 0 when either side has none, which is honest: a name made
     entirely of stop-words tells us nothing, and scoring it 1.0 would invent agreement.
@@ -116,7 +159,14 @@ def match_verdict(our_name: str, their_name: str) -> str:
     """
     ours, theirs = tokens(our_name), tokens(their_name)
     if not ours or not theirs:
-        return UNVERIFIED
+        # THE FALLBACK. `A&C Supermarket` tokenises to nothing -- `a` and `c` are under the
+        # length rule, `supermarket` is a category word -- so two IDENTICAL names 12.0 m apart
+        # scored `unverified` and a correct proposal was withheld. Retry both sides without the
+        # length filter: an initialism is a name. The stop list still applies, so `Grocery Store`
+        # stays unverified, which is the case the length rule was never the reason for.
+        ours, theirs = short_tokens(our_name), short_tokens(their_name)
+        if not ours or not theirs:
+            return UNVERIFIED
     return AGREES if ours & theirs else DIFFERS
 
 

@@ -112,6 +112,24 @@ PROPOSALS: dict[str, dict[tuple[str, str], str]] = {
     },
 }
 
+def proposal_text(proposal: str, tag: tuple[str, str]) -> str:
+    """The proposal with its caveat, or the empty string.
+
+    **A WARNING IS NOT A PROPOSAL.** The caveat used to be concatenated unconditionally, so a
+    pharmacy record matched to an OSM `shop=convenience` -- a tag with no pharmacy mapping at all
+    -- produced a non-empty cell containing nothing but the warning. Twelve pharmacy rows had that
+    shape and the first version of
+    `docs/engineering-notes/project-phase1-s3-osm-name-floor.md` counted all twelve as proposals,
+    reporting 102/29 (28.4%) where the real figures are 90/17 (18.9%). Found by the adversarial
+    review of 2026-11-18, finding 5.
+    """
+    if not proposal:
+        return ""
+    if tag == ("shop", "convenience"):
+        return proposal + " (weak: OSM under-tags large independents as convenience)"
+    return proposal
+
+
 def place_name(rec) -> str:
     try:
         return str(dict(rec.get("names")).get("primary") or "")
@@ -177,8 +195,6 @@ def main() -> None:
         tag = next(((c, str(best[c])) for c in tag_cols
                     if best.get(c) is not None and str(best.get(c)) != "nan"), ("", ""))
         proposal = table.get(tag, "")
-        weak = " (weak: OSM under-tags large independents as convenience)" \
-            if tag == ("shop", "convenience") else ""
 
         # THE FLOOR. A proposal is worth what its match is worth, so a tag read off a feature
         # carrying a different business's name proposes nothing. The text is kept in
@@ -191,12 +207,13 @@ def main() -> None:
         elif proposal:
             withheld[verdict] += 1
 
+        text = proposal_text(proposal, tag)
         rows.append({
             "id": rec.get("id"), "name": pname, "osm_name": osm_name(best),
             "osm_tag": f"{tag[0]}={tag[1]}" if tag[0] else "",
             "distance_m": f"{best_dist:.1f}", "name_agreement": f"{best_agree:.2f}",
-            "proposal": (proposal + weak) if kept else "",
-            "withheld_proposal": "" if kept else (proposal + weak),
+            "proposal": text if kept else "",
+            "withheld_proposal": "" if kept else text,
             "match": verdict,
             "evidence": why_withheld(verdict),
             "verdict": "", "notes": "",

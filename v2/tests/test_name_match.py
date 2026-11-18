@@ -136,3 +136,64 @@ def test_the_prefill_script_still_exports_what_four_other_scripts_import():
         sys.path.remove(str(scripts))
     assert prefill_from_osm.name_agreement is name_agreement
     assert prefill_from_osm.tokens is tokens
+# --------------------------------------------------------------------------------------------
+# Found by the adversarial review of 2026-11-18 (`docs/reviews/2026-11-18-name-floor-review-
+# prompt.md`, finding 2), which is the whole reason that review was run. The floor withheld a
+# CORRECT supermarket proposal for two IDENTICAL names 12.0 m apart, because every word in them
+# is erased: `a` and `c` by the length rule, `supermarket` by the stop list. "Nothing to compare"
+# was the wrong reading -- there was plenty to compare, the tokeniser had just thrown it away.
+#
+# The fix is a fallback, not a special case for equality: when the strict token set is empty on
+# either side, both sides are retried WITHOUT the length filter. An initialism is a name.
+def test_two_identical_names_agree_even_when_every_word_is_erased():
+    """`A&C Supermarket` against itself, 12.0 m apart in grocery-unclassified-prefill.csv."""
+    assert tokens("A&C Supermarket") == set(), "the premise of the bug has changed"
+    assert match_verdict("A&C Supermarket", "A&C Supermarket") == AGREES
+
+
+def test_the_fallback_survives_punctuation_and_spacing():
+    assert match_verdict("A&C Supermarket", "A & C Supermarket") == AGREES
+
+
+def test_the_fallback_still_separates_two_different_initialisms():
+    """The fallback must not turn into "any short name matches any other"."""
+    assert match_verdict("A&C Supermarket", "B&B Supermarket") == DIFFERS
+    assert match_verdict("A1 Grocery", "A2 Grocery") == DIFFERS
+    # NOT `A1 Food Mart` vs `A2 Food Mart`, which was this test's first version and was wrong:
+    # those two share the informative token `mart` and never reach the fallback at all. That
+    # raised the question of whether `mart` belongs in STOP_WORDS; measured across both sheets,
+    # exactly ONE agreement rests on `mart` alone -- `H Mart Cary` against `H Mart` at 2.2 m,
+    # which is correct -- so adding it would break the only case it touches. It stays.
+
+
+def test_a_name_that_is_only_category_words_is_still_unverified_after_the_fallback():
+    """The fallback drops the LENGTH rule, not the stop list. `Grocery Store` still says nothing
+    about which grocery store, so the unverified case is preserved rather than papered over."""
+    assert match_verdict("Grocery Store", "Food Lion") == UNVERIFIED
+    assert match_verdict("Flower Gallery", "") == UNVERIFIED
+
+
+def test_the_fallback_only_fires_when_the_strict_pass_is_empty():
+    """A long informative name must not be re-scored on short words it happens to share."""
+    assert match_verdict("Harris Teeter", "H Mart") == DIFFERS
+# --------------------------------------------------------------------------------------------
+# Adversarial review finding 5: the `weak` suffix was concatenated onto an EMPTY proposal, so a
+# pharmacy row matched to an OSM `shop=convenience` -- a tag with no pharmacy mapping -- produced
+# a non-empty cell containing nothing but the warning text. Twelve pharmacy rows had this shape,
+# and the measurement I wrote then counted all twelve as proposals: 102/29 (28.4%) instead of
+# 90/17 (18.9%). A warning is not a proposal.
+def test_a_warning_suffix_is_never_a_proposal_on_its_own():
+    import pathlib
+    import sys
+
+    scripts = pathlib.Path(__file__).resolve().parent.parent / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        from prefill_from_osm import proposal_text
+    finally:
+        sys.path.remove(str(scripts))
+
+    assert proposal_text("", ("shop", "convenience")) == ""
+    assert proposal_text("pharmacy", ("shop", "convenience")).startswith("pharmacy")
+    assert "weak" in proposal_text("pharmacy", ("shop", "convenience"))
+    assert proposal_text("pharmacy", ("amenity", "pharmacy")) == "pharmacy"
