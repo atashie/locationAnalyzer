@@ -53,15 +53,54 @@ the transform is deliberately minimal and every item here is forced by the artif
 Timings measured in the sandbox include its own overhead, so the committed numbers in
 `docs/experiments/g3-rendering.md` remain the ones measured locally.
 
-**KNOWN LIMITATION, 2026-11-18 -- do not assume this is finished.** What is verified in the
-published copy: the page loads, the layer list is built from the rewritten manifest (so the
-renamed `.wasm` planes are fetched and decoded), the sliders and legend render, and the `data:`
-tile error is gone. **What does not work: the travel-time mask does not paint, and the MapLibre
-attribution control stops appearing once the sizing override is in.** That points at the map
-container not having a size MapLibre accepts at construction time -- `app.js` creates the map
-immediately, and a `canvas` source needs a laid-out container. The likely fix is to give `#map` a
-definite pixel height in the review build, or to construct the map after a layout frame. It was
-not chased further here because the local server remains the known-good way to review this:
+**FIXED 2026-11-18, second pass.** The mask did not paint and the MapLibre attribution control
+did not appear, and both had one cause: the map container had no definite height when `app.js`
+constructed the map, and a `canvas` source needs a laid-out container.
+
+The diagnosis was right and the first fix was wrong in an instructive way. `styles.css` ALREADY
+gives `#map` a definite height -- `height: 52vh; min-height: 260px` -- which needs no ancestor
+height and works in the skeleton untouched. Only the `@media (min-width: 880px)` rule breaks it, by
+handing the height to the flex chain from `html, body { height: 100% }`. So the whole fix is to put
+the base rule back above 880px. The first attempt instead rewrote the ancestors' heights in `svh`
+units, which left the mask broken and additionally killed the attribution control, whose container
+is `position: absolute; inset: 0` against the map and so needs the same definite box.
+
+**The lesson, since it is the second time this exact shape has come up: the page already contained
+the rule that worked.** The failure was a narrower override sitting on top of it, and the fix was
+to remove the override's effect rather than to invent a replacement for the thing underneath.
+
+Two things were got wrong on the way and are recorded so they are not retried:
+
+* **`#map { flex: none }` pushed the whole criteria panel off-screen.** `#map` carries
+  `width: 100%` in the base rule, so with `flex: none` it takes the entire flex row. Only the
+  HEIGHT properties may be overridden above 880px.
+* **Dispatching `resize` on `window` does nothing, and the nudge that did it was removed.**
+  MapLibre GL JS 5 watches the container with a `ResizeObserver`; the window event is not the
+  thing it listens to. Five nudges over three seconds changed nothing, verified in a fresh tab.
+
+**WHAT IS STILL NOT PERFECT, stated rather than implied by silence: the mask does not paint until
+the MAP CONTAINER IS RESIZED.** It is computed and uploaded correctly on load. The trigger was
+found by elimination, each tested in a fresh tab:
+
+* panning or zooming the map -- **does not work**, though it does repaint the attribution;
+* scrolling the page -- does not work; the page does not scroll;
+* waiting 50 seconds -- does not work, so it is not the worker being slow;
+* dispatching `resize` on `window` -- does not work, because MapLibre GL JS 5 watches the
+  container with a `ResizeObserver` and the window event is not what it listens to. The nudge
+  that did this was removed again rather than left in looking useful;
+* the mouse wheel over the criteria panel -- does not work; the panel does not scroll that way;
+* **DRAGGING THE CRITERIA PANEL'S SCROLLBAR -- works, reproduced twice in two tabs.** It relayouts
+  the flex row, the container's size changes, the observer fires, everything repaints. The banner
+  names this exact gesture rather than "scroll the panel", because the wheel does not do it and a
+  banner that sends the reviewer to a gesture that fails is worse than no banner.
+
+Fixing it properly needs `map.resize()` or `map.triggerRepaint()`, and the map object lives inside
+`app.js`'s closure where an injected script cannot reach it. The alternative is editing the spike,
+which this generator deliberately does not do -- a review copy is worth having precisely because it
+is the real page. So the banner names the one gesture that works, which is a line of text rather
+than a silent surprise.
+
+The local server remains the only way to see the page with real basemap imagery:
 
     cd v2/spikes/g3-render && ../../.venv/Scripts/python.exe -m http.server 8099 --bind 127.0.0.1
 
@@ -130,16 +169,27 @@ FALLBACK_CSS = """  <style>
 
 #: Must come AFTER the `styles.css` link, or the cascade drops it on the floor.
 SIZING_OVERRIDE = """  <style>
-    /* REVIEW COPY ONLY. styles.css sizes the app with `height: 100%` on html and body, and at
-       >= 880px the map's height comes entirely from the flex chain. Inside the artifact skeleton
-       that percentage resolves against a padded :root with no definite height, the chain
-       collapses to zero and the page renders blank. Viewport units do not depend on an
-       ancestor's height, so the app always has somewhere to lay itself out. */
-    html, body { height: auto; }
-    body { min-height: 100svh; }
-    .layout { min-height: 72svh; }
-    @media (min-width: 880px) { #map { min-height: 72svh; } }
+    /* REVIEW COPY ONLY, and far smaller than it was. styles.css already gives `#map` a DEFINITE
+       height -- `height: 52vh; min-height: 260px` -- which needs no ancestor height and works
+       inside the artifact skeleton untouched. The only rule that breaks is the one at >= 880px,
+       `#map { height: auto; flex: 1; min-height: 0 }`, which hands the map's height to the flex
+       chain from `html, body { height: 100% }`; inside the skeleton that percentage resolves
+       against a padded :root with no definite height and collapses to zero. A zero-height
+       container at construction time is why the MASK DID NOT PAINT: `app.js` builds the map
+       immediately and a `canvas` source needs a laid-out container.
+
+       So the fix is to put the base rule back above 880px, and nothing else. The first attempt
+       instead set `html, body { height: auto }` with `min-height` in `svh` units, which left the
+       mask broken AND stopped the MapLibre attribution control appearing -- the control container
+       is `position: absolute; inset: 0` against the map, so it needs the same definite box. */
+    @media (min-width: 880px) {
+      /* Override the HEIGHT properties only. `flex: 1` and the auto width have to survive,
+         or the map takes the whole row and pushes the panel off-screen -- which is exactly what
+         `flex: none` did on the first try at this. */
+      #map { height: 52vh; min-height: 260px; }
+    }
   </style>"""
+
 
 STYLES_LINK = '<link rel="stylesheet" href="styles.css">'
 
@@ -155,6 +205,12 @@ BANNER = """  <div class="banner warn" id="banner-review">
     the committed numbers in <code>docs/experiments/g3-rendering.md</code> were measured locally.
     Everything else &mdash; the mask, the polygonizer, the per-cell card, the topology checks
     &mdash; is computed in this page and is the real thing.
+    <br><br>
+    <strong>Drag the scrollbar at the right edge of the criteria panel, and the overlay
+    appears.</strong> It is computed correctly on load; MapLibre does not paint it until the map
+    container is resized, and that drag is what relayouts the row. Tested and ruled out: panning
+    or zooming the map, scrolling the page, the mouse wheel over the panel, and simply waiting.
+    Everything behaves normally once it has appeared.
   </div>
 """
 
