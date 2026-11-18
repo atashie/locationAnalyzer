@@ -58,6 +58,33 @@ derived from the ODbL `osm_pois` extract and feeds the same published layer, and
 ODbL publication of OSM-derived work is welcome. But it is the owner's line to move, not a
 script's, so this script measures and stops.
 
+
+---
+
+## SECOND PASS, 2026-11-18, AND WHY THE FIRST RUN DECIDED NOTHING
+
+The first run printed `REFUTED`. **That verdict was not trustworthy and has been replaced**, for
+two reasons found by reading the output rather than the headline:
+
+1. **The calibration sets were n=9 and n=3.** "66.7% of convenience stores below the threshold"
+   was two shops out of three. Nothing can be concluded either way from that, and `REFUTED` on
+   that basis would have been the mirror image of yesterday's error -- believing a mechanism from
+   one case, then *rejecting* one from three.
+2. **The tenancy partition was wrong.** It sent 169 of 178 supermarkets into the "multi-tenant"
+   bucket, because a supermarket with an in-store pharmacy, bank counter or coffee shop has
+   several Overture place records inside one footprint. That is not a mall. "Shares a building
+   with another place" turned out to be a bad proxy for "is one unit in a retail parade", so it is
+   no longer the partition the verdict rests on; it is reported as a covariate.
+
+**The replacement calibration uses OSM's own tags**, which gives two populations large enough to
+decide with: **292 `shop=supermarket`** and **431 `shop=convenience`** features in the Triangle
+extract, independent of our place records. Where the OSM feature is itself a polygon -- 103 of the
+supermarkets and 269 of the convenience stores -- its own geometry is the footprint and no join is
+needed at all. For the points, the Overture building under the point is used.
+
+The predictions above stand unchanged and are judged against this larger measurement. The
+thresholds that would refute them were fixed before either run.
+
 Run from `v2/`:
     python scripts/measure_footprint_separation.py
 """
@@ -116,6 +143,26 @@ def describe(label: str, areas: list[float]) -> dict[str, float]:
           f"IQR {stats['q1']:>8,.0f} - {stats['q3']:>8,.0f}   "
           f"range {stats['min']:>7,.0f} - {stats['max']:>9,.0f}")
     return stats
+
+
+def osm_area(feat, bld, bidx) -> tuple[float | None, str]:
+    """The footprint of an OSM feature, and where the number came from.
+
+    A polygon feature IS its own footprint -- that is the cleanest case and needs no join, and it
+    keeps the licence story identical to the `osm_pois` extract the project already uses. A point
+    feature has to borrow the Overture building underneath it.
+    """
+    geom = feat.geometry
+    if geom is None:
+        return None, "no geometry"
+    if geom.geom_type in ("Polygon", "MultiPolygon"):
+        return float(geom.area), "its own polygon"
+    hit = list(bidx.query(geom, predicate="within"))
+    if not hit:
+        hit = list(bidx.query(geom.buffer(NEAR_M), predicate="intersects"))[:1]
+    if not hit:
+        return None, "no building under the point"
+    return float(bld["footprint_m2"].iloc[hit[0]]), "the building under the point"
 
 
 def main() -> None:
@@ -197,13 +244,36 @@ def main() -> None:
         elif cls == "unclassified" and area is not None:
             open_brandless.append(area)
 
-    print("\nSEPARATION -- single-tenant buildings only, where the polygon is the shop")
-    s = describe("known weekly-shop supermarkets", known_super)
-    c = describe("OSM convenience, names agreeing", known_conv)
+    # ------------------------------------------------------------ the real calibration
+    # OSM's own tags, which give two populations big enough to decide with. The sets above are
+    # kept as a secondary check on OUR records, not as the thing the verdict rests on.
+    print("\nCALIBRATION -- OSM's own tags, the only sets here large enough to decide with")
+    osm_super, osm_conv = [], []
+    src = collections.Counter()
+    for tag, bucket in (("supermarket", osm_super), ("convenience", osm_conv)):
+        feats = osm[osm["shop"] == tag] if "shop" in osm.columns else osm.iloc[0:0]
+        reached = 0
+        for _, f in feats.iterrows():
+            reached += 1
+            a, how = osm_area(f, bld, bidx)
+            src[f"{tag}: {how}"] += 1
+            if a is not None and a > 0:
+                bucket.append(a)
+        gate(f"OSM shop={tag} has a footprint", reached, len(bucket))
+    for k, v in sorted(src.items()):
+        print(f"      {k}: {v}")
+    print()
+    s = describe("OSM shop=supermarket", osm_super)
+    c = describe("OSM shop=convenience", osm_conv)
 
-    print("\nthe confounder: buildings shared with other places")
-    describe("supermarkets, multi-tenant", multi_super)
-    describe("convenience, multi-tenant", multi_conv)
+    print("\nSECONDARY -- our own records, too few to decide with, reported for consistency")
+    describe("our supermarkets, sole place in bldg", known_super)
+    describe("our convenience, sole place in bldg", known_conv)
+    describe("our supermarkets, shared bldg", multi_super)
+    describe("our convenience, shared bldg", multi_conv)
+    print("  (169 of 178 of our supermarkets land in 'shared': an in-store pharmacy or coffee")
+    print("   shop is a separate place record, which is NOT the mall confounder this was meant")
+    print("   to catch. The partition is a covariate, not the basis of the verdict below.)")
 
     print("\nthe population the rule is FOR")
     describe("open brandless, unclassified", open_brandless)
@@ -219,14 +289,14 @@ def main() -> None:
           f"(refuted below 3x, as predicted)")
 
     best, best_acc = None, -1.0
-    for thr in range(100, 6001, 50):
-        tp = sum(1 for a in known_super if a >= thr) / len(known_super)
-        tn = sum(1 for a in known_conv if a < thr) / len(known_conv)
+    for thr in range(100, 8001, 25):
+        tp = sum(1 for a in osm_super if a >= thr) / len(osm_super)
+        tn = sum(1 for a in osm_conv if a < thr) / len(osm_conv)
         acc = min(tp, tn)
         if acc > best_acc:
             best, best_acc = thr, acc
-    tp = sum(1 for a in known_super if a >= best) / len(known_super)
-    tn = sum(1 for a in known_conv if a < best) / len(known_conv)
+    tp = sum(1 for a in osm_super if a >= best) / len(osm_super)
+    tn = sum(1 for a in osm_conv if a < best) / len(osm_conv)
     print(f"  best single threshold = {best:,} m2: "
           f"{tp * 100:.1f}% of supermarkets above it, {tn * 100:.1f}% of convenience below it")
     print(f"  worse side = {best_acc * 100:.1f}% (prediction was >=85% on BOTH)")
@@ -235,6 +305,17 @@ def main() -> None:
     if verdict == "REFUTED":
         print("     The rule stays owed. Footprint area is not the mechanism, and saying so is "
               "the result -- not a reason to look for a number that agrees with me.")
+
+    # What the threshold would do to the records the rule is actually for. Printed whether the
+    # prediction held or not, because the owner needs the size of the effect either way.
+    if open_brandless:
+        above = sum(1 for a in open_brandless if a >= best)
+        print(f"\n  applied to the {len(open_brandless)} open brandless records that HAVE a "
+              f"footprint, at {best:,} m2:")
+        print(f"    {above} would be proposed a weekly shop, "
+              f"{len(open_brandless) - above} a corner shop")
+        print(f"    and {323 - len(open_brandless)} of the 323 brandless records are not "
+              "reachable this way at all")
 
 
 if __name__ == "__main__":
