@@ -63,6 +63,15 @@ sys.path.insert(0, str(V2))
 
 from _common import ACCEPTED_PLACES, GRID  # noqa: E402
 from locfinder.places.categories import select_target  # noqa: E402
+from locfinder.places.footprint import (  # noqa: E402
+    CORROBORATED,
+    FLOOR_M2,
+    NEAR_LOOK_M,
+    NEIGHBOUR,
+    corroboration,
+    licenses_supermarket,
+    why_not_corroborated,
+)
 from locfinder.places.grocery import (  # noqa: E402
     chain_in_name,
     classify_grocery,
@@ -72,14 +81,15 @@ from locfinder.places.grocery import (  # noqa: E402
 BUILDINGS = V2 / "data" / "triangle" / "overture_buildings_accepted.parquet"
 AUDIT = V2.parent / "docs" / "experiments" / "audit"
 
-#: Square metres, from the clean polygon-only calibration in
-#: `scripts/measure_footprint_separation.py`: 94.2% of OSM `shop=supermarket` footprints are at or
-#: above it. Same constant as `shortlist_brandless_grocery.py` and the same justification.
-FLOOR_M2 = 650.0
-
-#: How far to look for a building big enough to be a supermarket. 120 m is what separated the five
-#: chain-named records with nothing near them from the two real Walmarts with displaced points.
-NEAR_LOOK_M = 120.0
+# FLOOR_M2 and NEAR_LOOK_M used to be defined here AND in `shortlist_brandless_grocery.py`,
+# with the same comment in both. Both copies implemented the rule the third adversarial review
+# broke -- `max(area)` over a 120 m buffer, which let a neighbour's building corroborate a shop --
+# so the rule and its two numbers now live in `locfinder.places.footprint` and both scripts import
+# them. A stale claim is a class, not a line, and so is a defect.
+#
+# The old comment here also said 120 m "separated the five chain-named records with nothing near
+# them from the two real Walmarts with displaced points". That second half is withdrawn: the
+# building those two Wal Mart records stood near is EUROPA CENTER, 67 m and 81 m away.
 
 
 def place_name(rec) -> str:
@@ -113,10 +123,13 @@ def main() -> None:
     grocery = select_target(places, "grocery")
     rows, accepted = [], {}
     reached = {"named": 0, "service": 0, "footprint": 0}
-    fired = {"service": 0, "footprint": 0}
+    fired = {"service": 0, "footprint": 0, "neighbour": 0}
 
     for _, rec in grocery.iterrows():
-        if classify_grocery(rec) != "unclassified":
+        # `consult_name_table=False`: ask whether this record would be unclassified WITHOUT this
+        # script's own previous answers. Otherwise every record already in the table is skipped
+        # and `--emit` prints a table missing them -- 20 candidates instead of 33, measured.
+        if classify_grocery(rec, consult_name_table=False) != "unclassified":
             continue
         name = place_name(rec)
         brand = chain_in_name(name)
@@ -126,7 +139,7 @@ def main() -> None:
         pid = str(rec.get("id"))
 
         near = list(bidx.query(rec.geometry.buffer(NEAR_LOOK_M), predicate="intersects"))
-        biggest = max((float(bld["footprint_m2"].iloc[h]) for h in near), default=0.0)
+        geom = corroboration(rec.geometry, [bld.geometry.iloc[h] for h in near])
 
         reached["service"] += 1
         if names_a_service_point(name):
@@ -138,26 +151,29 @@ def main() -> None:
             )
         else:
             reached["footprint"] += 1
-            if biggest < FLOOR_M2:
+            if not licenses_supermarket(geom):
                 fired["footprint"] += 1
-                outcome, why = "", (
-                    f"named for {brand}, but the largest building within {NEAR_LOOK_M:.0f} m is "
-                    f"{biggest:,.0f} m2, under the {FLOOR_M2:,.0f} m2 floor. No supermarket stands "
-                    "here, whatever this record calls itself"
-                )
+                if geom.verdict == NEIGHBOUR:
+                    fired["neighbour"] += 1
+                outcome = ""
+                why = f"named for {brand}, but {why_not_corroborated(geom)}"
             else:
                 outcome = "supermarket"
                 why = (
                     f"name carries '{brand}', which is already in SUPERMARKET_BRANDS, while the "
-                    f"Overture `brand` field is EMPTY. Corroborated by a {biggest:,.0f} m2 "
-                    f"building within {NEAR_LOOK_M:.0f} m."
+                    f"Overture `brand` field is EMPTY. Corroborated by the "
+                    f"{geom.host_m2:,.0f} m2 building the point SITS INSIDE."
                 )
                 accepted[pid] = f"{name} -- {why}"
 
         rows.append({
             "id": pid, "name": name, "chain_in_name": brand,
             "service_point": "yes" if names_a_service_point(name) else "",
-            "biggest_within_120m": f"{biggest:,.0f}" if biggest else "",
+            # Both areas, because the gap between them IS the finding: a record whose host is 0
+            # and whose neighbour is 3,943 m2 was being accepted on the 3,943.
+            "host_m2": f"{geom.host_m2:,.0f}" if geom.host_m2 else "",
+            "biggest_within_120m": f"{geom.near_m2:,.0f}" if geom.near_m2 else "",
+            "geometry": geom.verdict,
             "proposal": outcome, "evidence": why, "verdict": "", "notes": "",
         })
 
@@ -172,6 +188,7 @@ def main() -> None:
     print(f"\n{reached['named']} unclassified brandless records carry a chain name")
     gate("the service-point screen", reached["service"], fired["service"])
     gate("the footprint corroboration", reached["footprint"], fired["footprint"])
+    gate("  of which: a NEIGHBOUR'S building", reached["footprint"], fired["neighbour"])
     print(f"\n  {len(accepted):>4} ACCEPTED as supermarkets")
     print(f"  {reached['named'] - len(accepted):>4} left unclassified, each with the reason")
     by_brand = collections.Counter(r["chain_in_name"] for r in rows if r["proposal"])

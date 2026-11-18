@@ -23,7 +23,9 @@ from __future__ import annotations
 import pytest
 
 from locfinder.places.grocery import (
+    BRAND_NAME_ALIASES,
     CURATED_INDEPENDENT_SUPERMARKETS,
+    NOT_A_WEEKLY_SHOP_SITES,
     NAME_CONFIRMED_SUPERMARKETS,
     OSM_CONFIRMED_SPECIALTY,
     OSM_CONFIRMED_SUPERMARKETS,
@@ -167,3 +169,127 @@ def test_every_recovered_name_really_does_carry_a_table_chain():
     """Closes the loop: the table is only allowed to hold records the matcher would match."""
     for reason in NAME_CONFIRMED_SUPERMARKETS.values():
         assert chain_in_name(reason.split(" -- ")[0]) is not None, reason
+# ==============================================================================================
+# What the third adversarial review found, 2026-11-18.
+# docs/reviews/2026-11-18-name-recovery-review-findings.md
+# ==============================================================================================
+
+
+def _bare(place_id: str) -> dict:
+    """A record carrying nothing but an id: no brand, no taxonomy. The table is all that can
+    classify it, which is what these tests are about."""
+    return {"id": place_id, "brand": None, "taxonomy": None}
+
+
+def test_the_recovery_can_be_recomputed_without_its_own_answers():
+    """**Review P2-4.** `recover_brandless_by_name.py` picks its candidates by asking
+    `classify_grocery` which records are still `unclassified`. Once it has written its 13 answers
+    into `NAME_CONFIRMED_SUPERMARKETS`, those 13 are no longer unclassified, so a re-run skips
+    them and `--emit` prints a table **without** them.
+
+    Measured on the real data before this fix: **20 candidates where there should be 33**, so
+    following the documented regeneration workflow would have silently deleted the recovery. The
+    commit that created the table called it "a regenerable derivation"; that was false when it was
+    written. So the question has to be askable without the answer."""
+    place_id = next(iter(NAME_CONFIRMED_SUPERMARKETS))
+    assert classify_grocery(_bare(place_id)) == "supermarket"
+    assert classify_grocery(_bare(place_id), consult_name_table=False) == "unclassified"
+
+
+def test_every_single_recovered_record_comes_back_as_a_candidate():
+    """Not just one: the whole table must be re-derivable, or the next refresh loses part of it."""
+    for place_id in NAME_CONFIRMED_SUPERMARKETS:
+        assert classify_grocery(_bare(place_id), consult_name_table=False) == "unclassified", (
+            f"{place_id} would be skipped by its own script"
+        )
+
+
+def test_switching_off_the_name_table_leaves_the_other_tables_alone():
+    """The seam is for one table only. A refresh that also forgot the curated judgements would
+    be a far worse bug than the one it fixes."""
+    for table in (OSM_CONFIRMED_SUPERMARKETS, CURATED_INDEPENDENT_SUPERMARKETS):
+        place_id = next(iter(table))
+        assert classify_grocery(_bare(place_id), consult_name_table=False) == "supermarket"
+    specialty = next(iter(OSM_CONFIRMED_SPECIALTY))
+    assert classify_grocery(_bare(specialty), consult_name_table=False) == "specialty"
+
+
+def test_the_default_still_consults_the_name_table():
+    """Callers that do not pass the flag -- every caller but the one script -- must be unchanged."""
+    place_id = next(iter(NAME_CONFIRMED_SUPERMARKETS))
+    assert classify_grocery(_bare(place_id)) == "supermarket"
+
+
+# ---------------------------------------------------------------- the spaced spelling, review P2-7
+
+@pytest.mark.parametrize("name", [
+    "Wal Mart",
+    "Wal Mart Supercenter",
+    "Wal-Mart Supercenter",
+    "Walmart Supercenter",
+    "Wal Mart Neighborhood Market",
+])
+def test_the_spaced_spelling_matches_even_with_a_suffix(name):
+    """**Review P2-7.** The old space-insensitive fallback compared the **whole** collapsed name
+    with the brand, so `Wal Mart` matched and `Wal Mart Supercenter` matched nothing -- and nor did
+    `Wal-Mart Supercenter`, which is the common historical spelling. A wrong negative is free
+    under this project's asymmetry, so it was P2; it is also free to fix."""
+    assert chain_in_name(name) == "Walmart"
+
+
+def test_the_alias_is_a_lookup_and_not_a_space_insensitive_rule():
+    """The fix must not become "ignore spaces", which would match anything spelled apart.
+    `Food Li on` is not Food Lion, and no entry in the alias table says it is."""
+    assert chain_in_name("Food Li on") is None
+    assert chain_in_name("Har ris Teeter") is None
+
+
+def test_the_alias_still_respects_word_boundaries():
+    assert chain_in_name("Wall Martin Realty") is None
+    assert chain_in_name("Walton Market Research") is None
+
+
+def test_every_alias_points_at_a_brand_that_is_really_in_the_table():
+    """An alias for a chain nobody has adopted would smuggle a brand in through the back door."""
+    assert BRAND_NAME_ALIASES, "the table exists so that adding a spelling stays a decision"
+    for alias, brand in BRAND_NAME_ALIASES.items():
+        assert brand in SUPERMARKET_BRANDS, f"alias {alias!r} names {brand!r}, which is not a brand"
+        assert alias == alias.lower(), f"{alias!r} must be given normalised"
+# -------------------------------------------- the chain's own production site, review P1-1
+
+#: `Weaver Street Market, Inc`, at `437 Dimmocks Mill Rd Ste 10`: the co-op's **Food House**.
+WEAVER_FOOD_HOUSE = "1e99e399-b118-4d95-8c78-6770a47287c8"
+
+
+def test_the_food_house_is_not_a_shop():
+    """**Review P1-1.** The name recovery promoted this record to `supermarket`. The address is
+    the co-op's Food House -- a commercial kitchen, an NC Dept of Agriculture meat-processing
+    plant (P-317), a bread bakery, a pastry bakery and warehousing, which delivers to the four
+    shops twice a day. It is a **supplier**, and our own record says `operating_status: open`.
+
+    Nothing already in the module could catch it: the name carries no service-point word, it is
+    the co-op's real legal name, and the 13,127 m2 Eno Mill footprint it borrowed proves neither
+    retail access nor identity. So it is a judgement, recorded as one."""
+    assert classify_grocery(_bare(WEAVER_FOOD_HOUSE)) == "not_a_grocery"
+
+
+def test_the_food_house_stays_excluded_when_the_name_table_is_off():
+    """The regeneration seam must not re-open a record that was ruled out on its identity."""
+    assert classify_grocery(_bare(WEAVER_FOOD_HOUSE), consult_name_table=False) == "not_a_grocery"
+
+
+def test_the_food_house_is_not_in_the_recovered_table():
+    assert WEAVER_FOOD_HOUSE not in NAME_CONFIRMED_SUPERMARKETS
+
+
+def test_a_site_cannot_be_ruled_out_and_recovered_at_once():
+    """For these two tables that overlap would be the decision silently reversed, which is the
+    same guard the FSQ closures carry."""
+    overlap = set(NOT_A_WEEKLY_SHOP_SITES) & set(NAME_CONFIRMED_SUPERMARKETS)
+    assert not overlap, f"ruled out and recovered at the same time: {overlap}"
+
+
+def test_every_ruled_out_site_says_why_in_enough_detail_to_check():
+    for place_id, why in NOT_A_WEEKLY_SHOP_SITES.items():
+        assert len(place_id) == 36, f"{place_id!r} is not an Overture uuid"
+        assert len(why) > 60, f"{place_id} gives no checkable reason"

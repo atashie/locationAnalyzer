@@ -135,7 +135,7 @@ AUDIT = V2.parent / "docs" / "experiments" / "audit"
 #: `scripts/measure_footprint_separation.py`: 94.2% of OSM `shop=supermarket` footprints are at or
 #: above it and 95.2% of `shop=convenience` below. The wider calibration that includes borrowed
 #: buildings prefers 750 m² and scores slightly worse, so the clean number is used.
-FLOOR_M2 = 650.0
+FLOOR_M2 = 650.0  # kept in step with locfinder.places.footprint.FLOOR_M2, asserted by a test
 
 #: A footprint further than this from the place point is not the building the place is in.
 NEAR_M = 20.0
@@ -215,7 +215,12 @@ def main() -> None:
         b = bld_of.get(pid)
         area = float(bld["footprint_m2"].iloc[b]) if b is not None else None
         n = tenants.get(b, 0) if b is not None else 0
-        near = list(bidx.query(rec.geometry.buffer(NEAR_LOOK_M), predicate="intersects"))
+        # NOTE 2026-11-18: this selection is the same one the third adversarial review broke in
+    # `recover_brandless_by_name.py` -- a building found at this range may be a NEIGHBOUR'S. Here
+    # the nearby area is only ever reported as a DOUBT ("the point may be on the wrong
+    # structure"), never as a positive, which is why this script survived the finding. The
+    # three-valued rule now lives in `locfinder.places.footprint`; see `corroboration`.
+    near = list(bidx.query(rec.geometry.buffer(NEAR_LOOK_M), predicate="intersects"))
         biggest_near = max((float(bld["footprint_m2"].iloc[h]) for h in near), default=0.0)
         proposal, why = decide(area, n, biggest_near)
         counts[proposal or "undecided"] += 1

@@ -233,31 +233,42 @@ OSM_CONFIRMED_SPECIALTY: dict[str, str] = {
 #: so. Footprints themselves are still never republished.
 NAME_CONFIRMED_SUPERMARKETS: dict[str, str] = {
     "1630d1dc-61cd-4764-bc2b-2da3ebd2f5af":
-        "ALDI -- name carries 'ALDI', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 5,156 m2 building within 120 m.",
+        "ALDI -- name carries 'ALDI', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 1,441 m2 building the point SITS INSIDE. **DOUBT, 2026-11-18:** the third review reports this address, 4241 Louisburg Rd, as an ALDI that RELOCATED to 6101 Capital Blvd in October 2019. Reporting confirms a Louisburg Road ALDI moving then, but no source ties the move to this street number, so the record may be stale rather than wrong. Its own 1,441 m2 host building does clear the floor. Left in with the doubt attached rather than dropped on an unconfirmed match -- it is in the owner asks.",
     "e59e353c-6e8b-4ca8-b727-e4df899ac824":
-        "Brier Creek Walmart -- name carries 'Walmart', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 20,903 m2 building within 120 m.",
+        "Brier Creek Walmart -- name carries 'Walmart', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 20,903 m2 building the point SITS INSIDE.",
     "ac8293ab-9579-45e9-8e1c-d8bcff094fe9":
-        "Carlie C’s Iga -- name carries 'IGA', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 7,339 m2 building within 120 m.",
+        "Carlie C’s Iga -- name carries 'IGA', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 6,942 m2 building the point SITS INSIDE.",
     "d544275c-dfa4-42aa-8ee4-fb789444be83":
-        "Food Lion -- name carries 'Food Lion', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 11,617 m2 building within 120 m.",
+        "Food Lion -- name carries 'Food Lion', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 11,617 m2 building the point SITS INSIDE.",
     "dd182894-0561-4ab9-81a3-1e97f0f78ef2":
-        "Harris Teeter -- name carries 'Harris Teeter', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 4,181 m2 building within 120 m.",
+        "Harris Teeter -- name carries 'Harris Teeter', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 4,181 m2 building the point SITS INSIDE.",
     "28efacfc-ccaf-4eda-bbe5-580213dc3d77":
-        "Harris Teeter Supermarkets -- name carries 'Harris Teeter', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 8,937 m2 building within 120 m.",
-    "b6eafe53-9275-45f9-97df-ce49c87e3d6d":
-        "Lowes Foods -- name carries 'Lowes Foods', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 5,228 m2 building within 120 m.",
-    "bc7f2c15-586b-4846-afca-b2f12e2c5ac4":
-        "Lowes Foods -- name carries 'Lowes Foods', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 837 m2 building within 120 m.",
-    "b6ecac05-f6d7-42da-a9c6-a720ae725c32":
-        "Lowes Foods Of Cary On High House Road -- name carries 'Lowes Foods', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 4,064 m2 building within 120 m.",
+        "Harris Teeter Supermarkets -- name carries 'Harris Teeter', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 8,937 m2 building the point SITS INSIDE.",
     "8c644ec3-24e8-419a-a81f-90a3bc84d4c6":
-        "Lowes Foods On Rowlock Way -- name carries 'Lowes Foods', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 7,056 m2 building within 120 m.",
-    "8e0b7fef-449b-4074-854a-a7f7271eb502":
-        "Wal Mart -- name carries 'Walmart', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 3,943 m2 building within 120 m.",
-    "b046d53b-12cc-4ec8-a951-c15167855a0f":
-        "Wal Mart -- name carries 'Walmart', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 3,943 m2 building within 120 m.",
+        "Lowes Foods On Rowlock Way -- name carries 'Lowes Foods', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by the 7,056 m2 building the point SITS INSIDE.",
+}
+
+
+#: Place ids that are a chain's own NON-RETAIL site: a production plant, a depot, a commissary.
+#:
+#: **Found by the third adversarial review, 2026-11-18** (P1-1), which caught the name recovery
+#: promoting `Weaver Street Market, Inc` to `supermarket`. Nothing in this module could have
+#: stopped it: the name carries no service-point word -- it is the co-op's real legal name -- and
+#: the footprint it stood near is the largest building for 100 m.
+#:
+#: So this is a **judgement about one record**, kept where judgements go, and distinct from
+#: `SERVICE_POINT_WORDS`, which is a word list. A site here is not a weekly shop no matter what
+#: any later rule concludes about it, which is why `classify_grocery` consults it before the
+#: tables and why the regeneration seam cannot re-open it.
+NOT_A_WEEKLY_SHOP_SITES: dict[str, str] = {
     "1e99e399-b118-4d95-8c78-6770a47287c8":
-        "Weaver Street Market, Inc -- name carries 'Weaver Street Market', which is already in SUPERMARKET_BRANDS, while the Overture `brand` field is EMPTY. Corroborated by a 13,127 m2 building within 120 m.",
+        "Weaver Street Market, Inc at 437 Dimmocks Mill Rd Ste 10 -- the co-op's FOOD HOUSE, not "
+        "a shop: a commercial kitchen, an NC Dept of Agriculture meat-processing plant (P-317), a "
+        "bread and bagel bakery, a pastry bakery and warehousing, which delivers to the four "
+        "shops twice a day. The Hillsborough SHOP is a different address. Our record says "
+        "`operating_status: open`, and it is: as a supplier. This is the second wrong destination "
+        "from this one site -- the `Weaver Street Market Administration` record at the same place "
+        "was caught by SERVICE_POINT_WORDS, and this one walked straight past it.",
 }
 
 
@@ -282,8 +293,16 @@ def _primary(record) -> str | None:
         return None
 
 
-def classify_grocery(record) -> str:
+def classify_grocery(record, consult_name_table: bool = True) -> str:
     """One of `supermarket`, `specialty`, `not_a_grocery`, `unclassified`.
+
+    `consult_name_table=False` answers the question **without**
+    `NAME_CONFIRMED_SUPERMARKETS`, which only `recover_brandless_by_name.py` needs. That script
+    picks its candidates by asking which records are still `unclassified`, so once it has written
+    its own answers into that table it stops seeing them: the third review measured **20
+    candidates where there should be 33**, meaning `--emit` would print a table missing all 13
+    recoveries and the documented regeneration workflow would silently delete them. A derivation
+    that erases itself on re-run is not regenerable, whatever its commit message says.
 
     `unclassified` is the answer for the records that carry no brand and are on none of the
     tables -- 323 when this was written, fewer now that OSM and the name recovery have taken
@@ -291,18 +310,22 @@ def classify_grocery(record) -> str:
     weekly-shop layer -- and deliberately NOT `specialty` either, because nobody has looked at
     them and asserting a category nobody checked is how "Roofing Inc." became a grocery.
     """
+    place_id = str(record.get("id"))
+    # Before anything else: a site ruled out on its identity cannot be argued back in by a brand,
+    # a name or a footprint. The Food House carries the co-op's own brand name.
+    if place_id in NOT_A_WEEKLY_SHOP_SITES:
+        return "not_a_grocery"
     brand = _brand_name(record)
     if brand in NOT_A_GROCERY_BRANDS:
         return "not_a_grocery"
     if brand in SUPERMARKET_BRANDS:
         return "supermarket"
-    place_id = str(record.get("id"))
     if place_id in OSM_CONFIRMED_SPECIALTY:
         return "specialty"
     if (
         place_id in CURATED_INDEPENDENT_SUPERMARKETS
         or place_id in OSM_CONFIRMED_SUPERMARKETS
-        or place_id in NAME_CONFIRMED_SUPERMARKETS
+        or (consult_name_table and place_id in NAME_CONFIRMED_SUPERMARKETS)
     ):
         return "supermarket"
     if brand in SPECIALTY_BRANDS:
@@ -328,6 +351,14 @@ def classify_grocery(record) -> str:
 
 #: Words that mean the record is a place the chain OPERATES rather than a place you can shop.
 #:
+#: **This list is a heuristic, and saying otherwise was an overstatement.** Chain membership
+#: below is a lookup -- an explicit table, edited deliberately. *This* is a word list chosen by
+#: reading 34 rows, and the third review produced a real business it rejects wrongly:
+#: `Norseman IGA and Post Office` is a combined supermarket and post office, refused here for the
+#: word `office`. The review looked for a local false rejection among the current candidates and
+#: found none, so this is a limit rather than a present defect -- but "a lookup, not a heuristic"
+#: describes `chain_in_name` and not the classifier it is part of.
+#:
 #: **This screen is not optional and footprint evidence cannot replace it.** Nine of the 34 are
 #: `Walmart Grocery Pickup and Delivery`, and several sit on the Supercenter's own 20,000 m2
 #: footprint -- so every geometric signal says "supermarket" and only the name says "collection
@@ -340,6 +371,22 @@ SERVICE_POINT_WORDS = frozenset({
 
 #: Two-word forms of the above, matched on the normalised string.
 SERVICE_POINT_PHRASES = ("pick up",)
+
+#: Alternative SPELLINGS of a brand already in `SUPERMARKET_BRANDS`, normalised, mapped to the
+#: table entry they mean.
+#:
+#: This replaces a whole-string comparison that the third review broke in one line: it tested
+#: `"walmart" == collapsed(name)`, so `Wal Mart` matched and **`Wal Mart Supercenter` matched
+#: nothing** -- nor did `Wal-Mart Supercenter`, which is the common historical spelling. Any
+#: descriptive suffix defeated it.
+#:
+#: An explicit table rather than an "ignore the spaces" rule, for the same reason
+#: `SUPERMARKET_BRANDS` is explicit: ignoring spaces would make `Food Li on` a Food Lion. Adding a
+#: spelling stays a decision, and a test asserts every alias here names a brand that really is in
+#: the table.
+BRAND_NAME_ALIASES: dict[str, str] = {
+    "wal mart": "Walmart",
+}
 
 
 def _normalise(name: str) -> str:
@@ -372,7 +419,11 @@ def chain_in_name(name: str) -> str | None:
     edits the table. Adding a chain stays a decision, not a side effect of a name.
 
     The longest match wins, so `Weaver Street Market` is preferred over any shorter entry that
-    happens to be inside it.
+    happens to be inside it. `BRAND_NAME_ALIASES` is searched with the brands, so `Wal Mart` and
+    `Wal-Mart Supercenter` reach `Walmart` while `Food Li on` reaches nothing.
+
+    **This function is the lookup.** `names_a_service_point` and the footprint screen are
+    heuristics, so "a lookup, not a heuristic" is true of this and not of the classifier.
 
     This reports the match even when the record is a service point; `names_a_service_point` is the
     separate screen, so that a sheet can show both the chain and the reason it was skipped.
@@ -380,12 +431,12 @@ def chain_in_name(name: str) -> str | None:
     hay = _normalise(name)
     if not hay:
         return None
-    for brand in sorted(SUPERMARKET_BRANDS, key=len, reverse=True):
-        needle = _normalise(brand)
+    # Aliases are searched alongside the brands, longest spelling first, so that a longer match
+    # still wins: `Wal Mart` must not be beaten by a shorter brand that sits inside the name.
+    spellings = [(_normalise(b), b) for b in SUPERMARKET_BRANDS]
+    spellings += [(alias, brand) for alias, brand in BRAND_NAME_ALIASES.items()]
+    for needle, brand in sorted(spellings, key=lambda pair: len(pair[0]), reverse=True):
         if _contains_words(hay, needle):
-            return brand
-        # `Wal Mart` and `Walmart` are the same chain written two ways, and both are in the data.
-        if needle.replace(" ", "") == hay.replace(" ", ""):
             return brand
     return None
 
