@@ -1350,3 +1350,31 @@ The hatch figures happen to be nearly identical at both thresholds, which is exa
 noticed; a coincidence is not a check either.
 
 Fifty-five instances now.
+
+### Fifty-sixth: the overstatement was in the review prompt, handed to the reviewer as a premise
+
+2026-11-17, the V1 places module. The Codex prompt stated the module's guarantee as
+
+> a provider failure can no longer be cached as a negative result
+
+and asked the reviewer to find a way around it. **That is not a universal guarantee.**
+`ResultCache.store` is public and accepts `None`, so a caller that catches its own
+`ProviderUnavailable` and returns nothing can still write a negative entry. What the module
+guarantees is narrower: a failure that is **propagated** is never cached.
+
+Codex found **no path** where a correctly propagated failure becomes a negative entry -- the code
+was right -- and refuted the claim anyway. The defect was in the sentence, and the sentence was in
+the one document whose whole job was to be attacked.
+
+> An overstated claim in a review prompt is worse than the same claim in a note, because the
+> prompt sets the reviewer's search space. "X is guaranteed, find a hole in X" sends a reviewer
+> looking for holes in X. "X holds for propagated failures, and `store` is public" sends them to
+> the public method. Overstating it removes the ground the real weakness stands on.
+
+Same family as instances 50 and 54 -- *a claim that does not name its population* -- with the
+population being **which paths**. The new part is where it happened: the document most likely to
+carry an overstatement is the one I write to invite correction, because that is where I am
+describing what I have just built and want to be true. The narrower claim is what the docstring
+says now.
+
+Fifty-six instances now.

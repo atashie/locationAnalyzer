@@ -40,5 +40,28 @@ different reasons, and the interaction between them was never evaluated.
   while giving 0.9943% at k=1, n=400 against the correct 1.1804%: **enough to flip the verdict.**
   Always add non-zero fixtures computed by an independent route.
 
-Related: [[feedback-match-statistical-machinery-to-the-design]],
+## A second shape, 2026-11-17: the gate that never fired
+
+The same lesson from the other end. `v2/scripts/measure_fsq_coverage.py` carries a contradiction
+diagnostic: per category, a regex over the record's own name and the sentence that would deny it,
+so a proposal of "not a grocery" about a record called *Super Mercado* is reported as evidence
+against **the provider**, not against the record. In the pharmacy half it found the session's most
+useful result -- FSQ calls Fuquay Pharmacy a dentist, and 16 of 26 negative proposals deny the
+record's own name.
+
+In the grocery half it reported nothing, because FSQ made **zero** "not a grocery" proposals for
+that set. The gate did not pass. **It was never reached**, and a clean result from a gate that
+could not have fired looks exactly like a clean result from one that did.
+
+> Report how many times a gate was **reached**, not only what it found. A diagnostic that prints
+> nothing is ambiguous between "no contradictions" and "no opportunity to contradict", and a report
+> will be read as the first.
+
+The same shape caught a test the same day: an assertion that the cache is empty after a provider
+failure **passes trivially against code that never caches at all**. The three cache fixes were each
+proved by reverting to the defect and watching the specific test fail. A gate must be shown
+reachable and a test must be shown to discriminate; neither is established by it being green.
+
+Related: [[project-phase1-s3-fsq-coverage]],
+[[feedback-match-statistical-machinery-to-the-design]],
 [[feedback-computable-property-is-not-the-claim]], [[feedback-codex-adversarial-review]].

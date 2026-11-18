@@ -1,11 +1,11 @@
 ---
 name: project-phase1-s3-progress
-description: "S3 resume point as of 2026-11-14: what is done, the ordered queue of what comes next, what decisions the owner owes, and the constraints that live nowhere else"
+description: "S3 resume point as of 2026-11-17: what is done, the ordered queue of what comes next, what decisions the owner owes, and the constraints that live nowhere else"
 metadata:
   type: project
 ---
 
-# S3: where the work stands, 2026-11-14
+# S3: where the work stands, 2026-11-17
 
 **This note exists to be the single place a session resumes from.** Everything here is either not
 recorded elsewhere, or recorded in several places and worth stating once. The detail lives in the
@@ -204,6 +204,12 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
+**Re-run 2026-11-17, after the V1 places work:** V2 **1,591 passed, 24 skipped**, nothing
+regressed. The **backend** suite now exists and runs: **20 passed** under a new
+`backend/pytest.ini`, which also closes a real hazard -- the root-level `test_*.py` scripts fired
+live requests at the **production** backend on import and then called `exit(1)`, so `pytest` could
+not be run in `backend/` at all. Frontend `tsc --noEmit` exit 0 and `vite build` clean.
+
 ## Decisions the owner took, 2026-11-17
 
 * **Decision 2, the restricted-road penalty: KEEP IT AS IS.** No unit change, no value change.
@@ -227,10 +233,40 @@ check, so it is listed as absent rather than left to look like an oversight.
 * **30-second units: not taken. Document the rounding instead.** Written up in
   [[project-phase1-s3-encoding-threshold-crossing]]: every displayed time is rounded **up** and may
   overstate by up to 59 s, deliberately, because rounding down would produce false inclusions.
+* **The places API: document the need, defer the integration.** *"Let's document the need for
+  tripadviser or yelp api, but defer integrating the api. We can implement that in a future
+  session."* Three parts, all done: **(1)** the TripAdvisor client removed and premium search kept
+  as a pluggable module at `backend/app/services/places/`; **(2)** the silent-failure and
+  cache-poisoning defect fixed; **(3)** the 154 grocery and 180 pharmacy unreached records are
+  **documented backlog**, not work in flight. See [[reference-places-provider-needed]].
+* **Deployment: off the table.** *"forget about deployment - nobody is using our app, and we will
+  completely redevelop it in the future anyway."* Repeated as a standing constraint below, because
+  it changes what counts as urgent.
+* **Run the Foursquare measurement.** *"3) yes, that sounds great, proceed."* Done, `d422005`; see
+  item 3h in the queue and [[project-phase1-s3-fsq-coverage]].
 
 ## Decisions the owner owes
 
 Nothing below should be decided by a session on its own.
+
+**New 2026-11-17, from the Foursquare measurement.** All four were put to the owner in chat and
+none is answered. Nothing has been accepted:
+`docs/experiments/audit/{grocery,pharmacy}-fsq-coverage.csv` both carry a blank `verdict` column
+and no table was edited.
+
+* **Whether to accept the 12 high-confidence FSQ closures**, with FSQ's `date_closed` as the
+  evidence -- including **Kroger 2013-06-25** and **Kroger Pharmacy 2019-08-02**, which corroborate
+  a call the owner had already made on other evidence. This is the one FSQ result worth acting on
+  without a further measurement, and it changes a **published** layer.
+* **Whether to bank the 72 FSQ pharmacy confirmations** as an `FSQ_CONFIRMED_PHARMACY` table, kept
+  apart from hand-curated judgements on the footing of `OSM_CONFIRMED_*`. Pharmacy is not a
+  published layer, so this is cheap to do and still a choice about what the project treats as
+  evidence.
+* **Whether to run the FSQ accuracy measurement** -- FSQ against the records OSM *did* reach, which
+  measures agreement rather than coverage. Coverage is now answered; this is the measurement that
+  would justify trusting FSQ further.
+* **The 44 ambiguous grocery proposals.** FSQ's `Grocery Store` label does not measure store size,
+  so these need the same human read the 323 brandless records need, and they sit in the same sheet.
 
 * **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
 * **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
@@ -287,6 +323,10 @@ Pointers where the reasoning is recorded; the rule itself is here so it cannot b
   advised and is unconfirmed; mention once if it becomes relevant, do not nag.
 * **`~/.codex/config.toml`** pins an unusable model (`gpt-5.5`). **Do not edit it unasked** —
   always pass `--model gpt-6.1-sol` instead.
+* **Deployment: do not.** 2026-11-17: *"forget about deployment - nobody is using our app, and we
+  will completely redevelop it in the future anyway."* Nothing is deployed, nothing is prepared for
+  deploy, and **a V1 defect is not a release blocker**. V1 fixes are worth making for the code and
+  for the lesson; the Railway and Vercel URLs in `CLAUDE.md` are V1's and are not a target.
 * **Prose:** short, plain, concrete sentences. The owner rejected decorated writing in those words.
   Do not write a sentence whose meaning cannot be checked.
 * **Replies to the owner, 2026-11-16:** plain English, bullet points wherever they fit, and
@@ -328,7 +368,9 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **55 instances**. *(This said 42 from pass 52
+[[feedback-verify-the-shape-of-the-risk]] now holds **56 instances**. The newest, 2026-11-17, is
+**56**: I wrote an overstated guarantee into my own Codex review prompt and handed it to the
+reviewer as a premise; Codex refuted the claim while finding the code itself correct. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
 closing the class, for the second time; **48**, a stub must be at least as hostile as the thing it
@@ -1010,6 +1052,73 @@ invisible UNKNOWN regions hold **55 buildings — 0.011% of the published invent
 my "invisible patches are the serious half" framing was backwards.
 
 No production code changed. All four decisions remain the owner's and **none is taken**.
+
+### 3g. V1 premium search: provider removed, module kept, failure made loud -- **DONE 2026-11-17**
+
+Not S3 work and not ordered by product risk. It was on the table because the owner asked, and it is
+recorded here so a resuming session does not rediscover the defect from scratch.
+
+**What was wrong.** The TripAdvisor Content API was retired in 2026, so every premium search
+failed. The client returned `None` for three different things -- no provider configured, the API
+refused us, and no such place -- and **wrote the failure to disk as a negative answer**. The
+evidence was a single cache file, `gonza_tacos_y_tequila_35.994_-78.899.json` holding
+`{"found": false, "error": null}`: a real Durham restaurant recorded as nonexistent, and it would
+have stayed that way for the cache's lifetime.
+
+**What replaced it.** `backend/app/services/places/` -- a `PlacesProvider` protocol, a
+`ProviderUnavailable` / `ProviderNotConfigured` pair, and a cache whose contract is **a failure is
+not an answer**: a transport failure propagates and is never stored. Three states are now
+distinguishable at the HTTP boundary: **503** no provider, **502** provider unreachable,
+**200 + `[]`** provider answered and found nothing. 20 tests, and the fix was proved by
+**reverting to the defect three times** -- V1's `lookup_cached` behaviour, `.get("payload")` in
+place of `raw["payload"]`, and `.days` expiry -- each caught by the test written for it, because an
+assertion that the cache is empty after a failure passes trivially against code that never caches.
+
+Codex reviewed it and **refuted one of my own claims**; that is instance 56 in
+[[feedback-verify-the-shape-of-the-risk]]. Prompt at
+`docs/reviews/2026-11-17-places-module-review-prompt.md`, committed before the run, findings beside
+it. Commits `670a4a1`, `6d5a7d9`, `7fda06c`. The stale `TRIPADVISOR_API_KEY` still sits in
+`backend/.env` and in the Railway environment; nothing reads it.
+
+### 3h. Does Foursquare reach the records OSM cannot? -- **DONE 2026-11-17, and the answer changes what FSQ is for**
+
+The measurement [[reference-places-provider-needed]] named as the thing to do before choosing a
+provider. Script `v2/scripts/measure_fsq_coverage.py`, write-up in
+[[project-phase1-s3-fsq-coverage]], commit `d422005`.
+
+**The objection is refuted.** FSQ holds a place within 120 m for **321 of the 334** records where
+OSM is silent -- 143 of 154 grocery, 178 of 180 pharmacy -- at a median **4.4 m** and **13.8 m**
+for name-agreeing matches, so the same business and not a neighbour in the same strip mall.
+Comparability was deliberate: the pass reuses `prefill_from_osm`'s own `name_agreement`, its score
+formula and its 0.34 threshold at the same 120 m radius, because a second scoring rule would make
+the two passes incomparable.
+
+**But two findings outrank the headline, and one corrects me.**
+
+* **FSQ confirms; it never rejects.** 16 of the 26 "not a retail pharmacy" proposals deny what the
+  record's own name asserts -- Fuquay Pharmacy as a *dentist*, Kroger Pharmacy as a *doctor's
+  office*. A proposal denying the name is evidence against the provider's category, not against the
+  record. The check now runs on every invocation instead of being found by eye.
+* **My claim that FSQ supplies the missing range signal was WRONG.** The taxonomy separates
+  Supermarket from Grocery Store; the data does not apply it. Among unambiguous big chains the
+  split is **155 / 38 / 1**, with Trader Joe's, Publix and Wegmans in *both* main buckets. So 44 of
+  the 58 grocery proposals say nothing about store size, and counting only proposals that decide
+  something, grocery yields **13 of 154**, not 58; pharmacy yields **72**, or 94 with `drugstore`.
+  **Nothing available to us measures range** -- `OSM_CONFIRMED_SPECIALTY`'s holding position stands
+  exactly as written.
+* **The unlooked-for win:** `date_closed`, a field neither OSM nor Overture carries. 25 records
+  marked closed, 12 high-confidence, including Kroger 2013 and Kroger Pharmacy 2019.
+
+**What it does not establish, and the first one matters.** The grocery contradiction gate **never
+fired** -- zero "not a grocery" proposals -- so grocery looking clean is not evidence that it is,
+and only the pharmacy half of the first finding is measured; see
+[[feedback-a-predeclared-gate-must-be-shown-reachable]]. The snapshot is `2025-01-10`, so closures
+are a lower bound. No proposal was accepted and no table was edited.
+
+**Licence.** FSQ OS Places is Apache 2.0 with attribution, so it can source a committed, published
+derivation; Yelp's 24-hour storage cap means Yelp cannot. **Do not open a Yelp account for the V2
+job.** This clears FSQ for our ODbL layers and **not** for uploading into OSM -- Decision 17 is
+untouched.
 
 ### 4. Phone decode latency
 
