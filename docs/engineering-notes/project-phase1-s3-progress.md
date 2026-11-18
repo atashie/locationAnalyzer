@@ -258,10 +258,14 @@ and no table was edited.
   evidence -- including **Kroger 2013-06-25** and **Kroger Pharmacy 2019-08-02**, which corroborate
   a call the owner had already made on other evidence. This is the one FSQ result worth acting on
   without a further measurement, and it changes a **published** layer.
-* **Whether to bank the 72 FSQ pharmacy confirmations** as an `FSQ_CONFIRMED_PHARMACY` table, kept
+* **Whether to bank the FSQ pharmacy confirmations** as an `FSQ_CONFIRMED_PHARMACY` table, kept
   apart from hand-curated judgements on the footing of `OSM_CONFIRMED_*`. Pharmacy is not a
   published layer, so this is cheap to do and still a choice about what the project treats as
-  evidence.
+  evidence. **Sharpened 2026-11-17: the 72 cannot be banked as a batch.** Three match on proximity
+  alone, and `KBI Biopharma` -- a contract biologics manufacturer, not a dispensing pharmacy -- is
+  labelled `Retail > Pharmacy` by FSQ at 0.0 m and agreement 1.00, which is the same error our own
+  Overture-derived candidate list already makes. 69 clear the name threshold and are a shortlist to
+  review, not a set to accept. See [[project-phase1-s3-fsq-coverage]].
 * **Whether to run the FSQ accuracy measurement** -- FSQ against the records OSM *did* reach, which
   measures agreement rather than coverage. Coverage is now answered; this is the measurement that
   would justify trusting FSQ further.

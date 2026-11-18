@@ -52,6 +52,27 @@ lesson already recorded for brand fields, where a brand naming a vendor *inside*
 evidence about the shop. The check is now in the script and prints on every run, so this cannot be
 rediscovered by spot-check next time.
 
+### Corroborated in aggregate is not corroborated one by one
+
+Added 2026-11-17, found while restating this result for the owner. **The sentence above is true of
+the set and false of the members, and the difference decides whether the 72 can be accepted as a
+batch.**
+
+* **Three of the 72 match on proximity alone**, `name_agreement` below the 0.34 threshold. One is
+  `Myra Greene`, matched to a **Walgreens 26 m away at agreement 0.00** — the strip-mall failure
+  mode, sitting inside the confirmations.
+* **One match is perfect and still wrong.** `KBI Biopharma`: 0.0 m, agreement **1.00**, FSQ
+  category **`Retail > Pharmacy`**. KBI Biopharma is a biologics contract development and
+  manufacturing organisation in RTP. No household fills a prescription there.
+* **Both sources carry the same error.** Our own candidate list already holds that record
+  (`a6a8f2de`, in `pharmacy-prefill-from-osm.csv`, OSM silent). Foursquare contributes to Overture
+  and our places are Overture-derived, so FSQ agreeing with our record can be FSQ agreeing with
+  itself. Shared lineage is not independent confirmation.
+
+So the 72 are a **shortlist to review**, not a set to accept. The defensible claim is that FSQ's
+positives are far better than its negatives, not that they are clean. `date_closed` is not exposed
+to this, because Overture does not carry the field at all — there is nothing for FSQ to echo.
+
 ## Finding 2: I was wrong that FSQ supplies the missing "range" signal
 
 Before running this I wrote that FSQ "separates Supermarket from Grocery Store from Convenience
@@ -105,6 +126,8 @@ This may be the most useful thing FSQ offers us, and it is not the thing we went
   The public Source Cooperative mirror needs no credentials and exposes only this release.
 * **No proposal has been accepted.** Both sheets have a blank `verdict` column and no table was
   edited. 334 records remain exactly as classified as they were this morning.
+* **The pharmacy confirmations are not independent confirmation**, and one of them is wrong at
+  maximum confidence. See the subsection added under Finding 1.
 * **It does not test FSQ against the records OSM *did* reach**, where the two could be compared
   for agreement. That would measure FSQ's accuracy rather than its coverage, and would be the
   right next measurement if anyone wants to trust it further.
