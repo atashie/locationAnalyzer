@@ -150,6 +150,23 @@ FSQ_CONFIRMED_CLOSURES: dict[str, str] = {
     "13e62ef8-c843-42c7-8be0-7bbaa070a70d":
         "'Rite Aid', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2024-01-26 on 'Rite Aid' at "
         "45.0 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
+        "'Sam's Club', pharmacy candidate. FSQ OS Places 2025-01-10 carries date_closed=2018-02-03 at 37.6 "
+        "m with name agreement 1.00. **THE CATEGORY OBJECTION IS NOW RESOLVED, and by evidence from outside "
+        "this dataset.** It was this: FSQ files the closed record under `Retail > Warehouse or Wholesale "
+        "Store` -- the CLUB, not a pharmacy counter -- and a counter closing inside a club that keeps "
+        "trading is indistinguishable in this data from the whole club closing. The answer is that THE "
+        "WHOLE CLUB CLOSED. North Carolina's 2018 WARN report records Sam's Club #6668, notice 2018-01-11, "
+        "EFFECTIVE 2018-01-26, 187 employees, closure type PERMANENT, at 1101 Shiloh Glenn Dr -- this "
+        "record's own address; Walmart closed 63 clubs nationally that month. Contemporary reporting "
+        "settles the pharmacy specifically: the pharmacies stayed open about two weeks while prescriptions "
+        "were transferred. So the evidence is no longer OSM's SILENCE but an affirmative dated public "
+        "filing, and the FSQ date sits five weeks after the effective date rather than standing alone. The "
+        "cross-check (`scripts/crosscheck_fsq_closures.py`) still adds only that OSM holds no Sam's Club "
+        "within 300 m, nearest tagged retail a Walmart Supercenter at 279.7 m. HISTORY, because the entry "
+        "should say how it got here: applied on the owner's second pass 2026-11-18, turned into a flag on "
+        "the third while the objection stood, applied again the same day once the third adversarial review "
+        "found the WARN filing.",
     # ---- accepted on the second pass the same day, after the cross-check ran ----
     "1937d785-1a98-49c5-9d32-51b7ec7c97af":
         "'Harris Teeter', grocery. FSQ OS Places 2025-01-10 carries date_closed=2017-09-25 on "
@@ -189,19 +206,16 @@ FSQ_CLOSURES_HELD: dict[str, str] = {}
 #: the project, because the drop was asserting a fact we do not have. The flag is the honest
 #: state; it is not yet the finished feature. `flagged_closure_reason` is the seam a renderer
 #: would read, and it exists so that "surface the flag" is a UI change rather than a data change.
-FSQ_FLAGGED_CLOSURES: dict[str, str] = {
-    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
-        "'Sam's Club', pharmacy candidate. FSQ OS Places 2025-01-10 carries date_closed=2018-02-03 "
-        "at 37.6 m with name agreement 1.00. **THE CATEGORY OBJECTION IS NOT RESOLVED**: FSQ's "
-        "closed record is categorised `Retail > Warehouse or Wholesale Store` -- the CLUB, not a "
-        "pharmacy counter -- and a counter that closes inside a club which keeps trading is "
-        "indistinguishable in this data from the whole club closing. The cross-check "
-        "(`scripts/crosscheck_fsq_closures.py`) added only that OSM holds no Sam's Club within "
-        "300 m, nearest tagged retail a Walmart Supercenter at 279.7 m: CONSISTENT with the club "
-        "having closed, but absence rather than observation. Applied 2026-11-18 on the owner's "
-        "second pass, then turned into this flag on the third rather than left as a silent "
-        "removal.",
-}
+#: **EMPTY SINCE 2026-11-18, and kept.** Sam's Club was the one entry, for part of one day. The
+#: third adversarial review then produced the thing the flag was waiting for -- a dated state
+#: filing -- so the record moved into `FSQ_CONFIRMED_CLOSURES` above, where the doubt it carried
+#: is answered rather than deleted.
+#:
+#: The table and `flagged_closure_reason` stay for the same reason `FSQ_CLOSURES_HELD` stays: the
+#: mechanism was right, and the next genuinely uncertain closure belongs here rather than in a
+#: comment. A later session reads "this was used and then resolved" instead of having to
+#: reconstruct whether it ever existed.
+FSQ_FLAGGED_CLOSURES: dict[str, str] = {}
 
 
 def flagged_closure_reason(place_id: str) -> str | None:

@@ -116,8 +116,9 @@ from locfinder.places.exclusions import (  # noqa: E402
 )
 
 #: All twelve, with FSQ's `date_closed`. The last two were accepted on a second pass the same
-#: day, after the cross-check.
+#: day, after the cross-check; Sam's Club went flag -> applied later the same day on a WARN filing.
 ACCEPTED = {
+    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e": "2018-02-03",   # Sam's Club
     "790e99cf-ceef-415a-babb-849e75732fa4": "2013-06-25",   # Kroger
     "3e8b0d81-ca69-4cd5-9948-c8d858ff0a59": "2016-09-27",   # Southern Season
     "4fe3f836-f1f6-45e9-9553-a92a6c9f8752": "2024-06-26",   # El Atoron
@@ -132,10 +133,12 @@ ACCEPTED = {
     "1937d785-1a98-49c5-9d32-51b7ec7c97af": "2017-09-25",   # Harris Teeter
 }
 
-#: Sam's Club, 2018-02-03. Applied on the second pass and then **turned into a flag on the third**
-#: -- owner, *"1-4) yes, proceed"*, taking the adversarial review's argument that the record was
-#: being removed more decisively than the evidence warranted. It is believed closed and it stays
-#: in the layer, with the doubt carried as data rather than as a source comment.
+#: Sam's Club, 2018-02-03. The one record that went applied -> flagged -> applied, all on
+#: 2026-11-18. The flag was right while the CATEGORY OBJECTION stood: FSQ's closed record is the
+#: warehouse club, not a pharmacy counter. The third adversarial review retired the objection with
+#: evidence from outside this dataset -- NC's 2018 WARN report, Sam's Club #6668, permanent,
+#: effective 2018-01-26, at this record's own address, with the pharmacies wound down over about
+#: two weeks. Absence of an OSM feature was never going to settle it; a state filing does.
 SAMS_CLUB = "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e"
 
 #: The two that were held for one day, and what released each.
@@ -165,36 +168,46 @@ def test_the_applied_closures_are_exactly_the_twelve():
     )
 
 
-def test_exactly_eleven_are_applied_and_one_is_flagged():
-    """Ten on the first pass, two on the second, one turned back into a flag on the third.
-    Twelve applied would mean the flag decision was quietly reversed."""
-    assert len(FSQ_CONFIRMED_CLOSURES) == 11
-    assert len(FSQ_FLAGGED_CLOSURES) == 1
+def test_all_twelve_are_applied_and_nothing_is_flagged():
+    """Ten on the first pass, two on the second, and Sam's Club on the third after its objection
+    was answered by a state filing. The flag table is empty and still exists."""
+    assert len(FSQ_CONFIRMED_CLOSURES) == 12
+    assert FSQ_FLAGGED_CLOSURES == {}
 
 
-def test_the_flagged_record_is_not_removed_from_the_layer():
-    """THE WHOLE POINT OF THE FLAG. A household still sees this place."""
+def test_the_club_is_removed_from_the_layer():
+    """It closed permanently on 2018-01-26 and a household must not be routed to it."""
     g = park_frame([SAMS_CLUB, "kept-id"])
-    assert list(drop_excluded(g)["id"]) == [SAMS_CLUB, "kept-id"]
+    assert list(drop_excluded(g)["id"]) == ["kept-id"]
 
 
-def test_the_flagged_record_is_not_in_the_applied_table():
-    assert SAMS_CLUB not in FSQ_CONFIRMED_CLOSURES
-    assert SAMS_CLUB in FSQ_FLAGGED_CLOSURES
+def test_the_club_is_in_the_applied_table_and_not_flagged():
+    assert SAMS_CLUB in FSQ_CONFIRMED_CLOSURES
+    assert SAMS_CLUB not in FSQ_FLAGGED_CLOSURES
 
 
-def test_a_flagged_record_can_be_asked_for_its_reason():
-    """A flag nothing can read is a comment. This is the seam a renderer would use."""
-    reason = flagged_closure_reason(SAMS_CLUB)
-    assert reason is not None
-    assert "2018-02-03" in reason
+def test_the_read_seam_survives_the_table_being_empty():
+    """`flagged_closure_reason` is kept for the next genuinely uncertain closure. It must answer
+    `None` cleanly now rather than raise, or the seam is only as good as its first user."""
+    assert flagged_closure_reason(SAMS_CLUB) is None
     assert flagged_closure_reason("not-a-real-id") is None
 
 
-def test_the_flag_says_what_is_believed_and_what_is_doubted():
-    reason = FSQ_FLAGGED_CLOSURES[SAMS_CLUB]
-    assert "arehouse" in reason, "the category doubt is not stated"
-    assert "NOT RESOLVED" in reason
+def test_the_entry_records_the_filing_that_retired_the_objection():
+    """The whole decision turns on this evidence, so it has to be re-checkable from the entry
+    alone: who closed, when it took effect, and where it is recorded."""
+    reason = FSQ_CONFIRMED_CLOSURES[SAMS_CLUB]
+    assert "WARN" in reason, "the filing is not named"
+    assert "2018-01-26" in reason, "the effective date is missing"
+    assert "6668" in reason, "the club number is missing"
+    assert "1101 Shiloh Glenn" in reason, "the address that matches is missing"
+    assert "prescriptions were transferred" in reason, "the pharmacy-specific detail is missing"
+
+
+def test_the_entry_still_says_what_the_objection_WAS():
+    """A resolved doubt that stops being written down becomes a decision nobody can audit."""
+    reason = FSQ_CONFIRMED_CLOSURES[SAMS_CLUB]
+    assert "arehouse" in reason, "the category objection is no longer stated"
     assert "crosscheck_fsq_closures" in reason
 
 
@@ -210,13 +223,14 @@ def test_nothing_is_held_any_more_and_the_table_still_exists():
     assert FSQ_CLOSURES_HELD == {}
 
 
-def test_the_late_closure_names_the_cross_check_that_released_it():
-    """Harris Teeter's evidence is not in the FSQ sheet, so the entry points at the script that
-    produced it. Sam's Club is now flagged rather than applied and is checked separately."""
+def test_the_late_closures_name_the_cross_check_that_released_them():
+    """Their evidence is not in the FSQ sheet, so each entry points at the script that produced
+    it. Both are applied now, so neither needs the flag table looked up."""
     for place_id, name in LATE.items():
-        table = FSQ_CONFIRMED_CLOSURES if place_id in FSQ_CONFIRMED_CLOSURES \
-            else FSQ_FLAGGED_CLOSURES
-        assert "crosscheck_fsq_closures" in table[place_id], f"{name} misses the cross-check"
+        assert place_id in FSQ_CONFIRMED_CLOSURES, f"{name} is no longer applied"
+        assert "crosscheck_fsq_closures" in FSQ_CONFIRMED_CLOSURES[place_id], (
+            f"{name} misses the cross-check"
+        )
 
 
 def test_each_applied_closure_is_actually_dropped():
@@ -251,12 +265,13 @@ def test_drop_excluded_removes_an_accepted_closure():
     assert list(drop_excluded(g)["id"]) == [kept]
 
 
-def test_drop_excluded_removes_harris_teeter_but_keeps_sams_club():
-    """The two that were held together ended up on opposite sides, which is the clearest single
-    assertion of where this landed."""
+def test_drop_excluded_removes_both_records_that_were_held():
+    """The two held together landed on opposite sides for one day -- Harris Teeter applied, Sam's
+    Club flagged -- and then on the SAME side once the WARN filing retired the category objection.
+    This is the clearest single assertion of where they finally landed."""
     harris = "1937d785-1a98-49c5-9d32-51b7ec7c97af"
     g = park_frame([harris, SAMS_CLUB, "kept-id"])
-    assert list(drop_excluded(g)["id"]) == [SAMS_CLUB, "kept-id"]
+    assert list(drop_excluded(g)["id"]) == ["kept-id"]
 
 
 def test_select_overture_applies_the_closures_too():
