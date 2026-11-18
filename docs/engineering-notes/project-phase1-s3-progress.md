@@ -1,11 +1,11 @@
 ---
 name: project-phase1-s3-progress
-description: "S3 resume point as of 2026-11-17: what is done, the ordered queue of what comes next, what decisions the owner owes, and the constraints that live nowhere else"
+description: "S3 resume point as of 2026-11-18: what is done, the ordered queue of what comes next, what decisions the owner owes, and the constraints that live nowhere else"
 metadata:
   type: project
 ---
 
-# S3: where the work stands, 2026-11-17
+# S3: where the work stands, 2026-11-18
 
 **This note exists to be the single place a session resumes from.** Everything here is either not
 recorded elsewhere, or recorded in several places and worth stating once. The detail lives in the
@@ -204,6 +204,11 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
+**Re-run 2026-11-18, after the FSQ closures:** V2 **1,599 passed, 24 skipped** -- the +8 are
+the new `tests/test_place_exclusions.py` cases for `FSQ_CONFIRMED_CLOSURES`, written and watched to
+fail first and then proved by two mutations (pointing `drop_excluded` back at `EXCLUDED_PLACE_IDS`
+alone -> 2 failures; slipping a held-back record into the applied table -> 4 failures).
+
 **Re-run 2026-11-17, after the V1 places work:** V2 **1,591 passed, 24 skipped**, nothing
 regressed. The **backend** suite now exists and runs: **20 passed** under a new
 `backend/pytest.ini`, which also closes a real hazard -- the root-level `test_*.py` scripts fired
@@ -245,6 +250,21 @@ not be run in `backend/` at all. Frontend `tsc --noEmit` exit 0 and `vite build`
 * **Run the Foursquare measurement.** *"3) yes, that sounds great, proceed."* Done, `d422005`; see
   item 3h in the queue and [[project-phase1-s3-fsq-coverage]].
 
+**Taken 2026-11-18**, from *"proceed with 1-3, accept the 10 closures"*:
+
+* **Accept ten of the twelve high-confidence FSQ closures.** Applied in a new
+  `FSQ_CONFIRMED_CLOSURES` in `locfinder/places/exclusions.py`, commit `102e4f8`. Five grocery
+  (Kroger 2013, Southern Season 2016, El Atoron 2024, Family Market 2024, Usf Sales 2024) and five
+  pharmacy (Kroger Pharmacy 2019, Rite Aid 2020, Walgreens Pharmacy 2021, Walgreens 2021, Rite Aid
+  2024). **Two were held and are still held** -- see the owed list below, which is now a yes/no
+  rather than a measurement.
+* **Run the FSQ accuracy measurement.** Done, `afd549b`; see item 3i and
+  [[project-phase1-s3-fsq-accuracy]]. **It refuted a claim I had committed the day before.**
+* **Publish the g3-render spike for review.** *"recreate a version of the interactive html that you
+  shared earlier in this session so that users can review the current version."* Generator
+  committed at `v2/spikes/g3-render/make_review_page.py` (`ed41adf`); see item 3j, including what
+  does **not** work in the published copy.
+
 ## Decisions the owner owes
 
 Nothing below should be decided by a session on its own.
@@ -254,10 +274,18 @@ none is answered. Nothing has been accepted:
 `docs/experiments/audit/{grocery,pharmacy}-fsq-coverage.csv` both carry a blank `verdict` column
 and no table was edited.
 
-* **Whether to accept the 12 high-confidence FSQ closures**, with FSQ's `date_closed` as the
-  evidence -- including **Kroger 2013-06-25** and **Kroger Pharmacy 2019-08-02**, which corroborate
-  a call the owner had already made on other evidence. This is the one FSQ result worth acting on
-  without a further measurement, and it changes a **published** layer.
+* **ANSWERED 2026-11-18 for ten of the twelve.** The ten are applied (`102e4f8`). What is still
+  owed is the other two, and both were cross-checked against OSM on 2026-11-18
+  (`scripts/crosscheck_fsq_closures.py`), so this is now a decision rather than a measurement:
+  * **Harris Teeter, closed 2017-09-25. The reason for holding it is gone.** It was held because
+    the Kroger in `EXCLUDED_PLACE_IDS` was dropped precisely BECAUSE OSM shows a Harris Teeter
+    trading on its site. This record is **15,249 m** from that Kroger and 23,476 m from the Kroger
+    accepted above -- three different sites, no contradiction. OSM holds no Harris Teeter within
+    300 m.
+  * **Sam's Club, closed 2018-02-03.** Nothing contradicts it -- no Sam's Club in OSM within
+    300 m, nearest tagged retail a Walmart Supercenter at 279.7 m -- but the original objection
+    stands untouched: FSQ's closed record is the **warehouse club**, and a pharmacy counter
+    closing inside a club that keeps trading looks identical in this data.
 * **Whether to bank the FSQ pharmacy confirmations** as an `FSQ_CONFIRMED_PHARMACY` table, kept
   apart from hand-curated judgements on the footing of `OSM_CONFIRMED_*`. Pharmacy is not a
   published layer, so this is cheap to do and still a choice about what the project treats as
@@ -266,11 +294,29 @@ and no table was edited.
   labelled `Retail > Pharmacy` by FSQ at 0.0 m and agreement 1.00, which is the same error our own
   Overture-derived candidate list already makes. 69 clear the name threshold and are a shortlist to
   review, not a set to accept. See [[project-phase1-s3-fsq-coverage]].
-* **Whether to run the FSQ accuracy measurement** -- FSQ against the records OSM *did* reach, which
-  measures agreement rather than coverage. Coverage is now answered; this is the measurement that
-  would justify trusting FSQ further.
+* **ANSWERED 2026-11-18: the accuracy measurement was run** (`afd549b`,
+  [[project-phase1-s3-fsq-accuracy]]). It raised three new decisions, all of them about **our own**
+  pass rather than about FSQ:
+  * **Whether to put a name-agreement floor on the OSM prefill.** **42 of 338 (12.4%) of OSM's
+    proposals in the comparable set rest on a match with name agreement 0.00** -- a different
+    business -- against **3 of 338 (0.9%)** for FSQ. This is in the half of the data that was
+    treated as the good half. The sheets already carry the number per row; nothing has been
+    withdrawn.
+  * **Whether to promote FSQ from corroborator to the identity pass**, keeping OSM's tag as the
+    category signal. The measurement says FSQ is better at *which business this is* and worse at
+    *what kind of thing it is*; the project currently uses them the other way round.
+  * **Whether to replace "FSQ confirms, never rejects"** with the one rule that explains all three
+    contradictions, for either source: *a proposal is worth what its match is worth, and a
+    proposal that denies what the record's own name asserts is evidence against the proposal.*
 * **The 44 ambiguous grocery proposals.** FSQ's `Grocery Store` label does not measure store size,
   so these need the same human read the 323 brandless records need, and they sit in the same sheet.
+  **Sharpened 2026-11-18: 8 of the 44 are free** -- Harris Teeter, Food Lion, Kroger, Lidl x3 and
+  Walmart Grocery Pickup x2, all of which FSQ calls `Grocery Store`, which is itself the proof the
+  label says nothing about size. The other **36 are brandless**, so they are not a separate
+  decision at all; they are 36 more instances of the grocery rule below. Decide the rule once.
+  One lead, not a rule: FSQ's `Health Food Store` and `Organic Grocery` labels land on Earth Fare,
+  The Grain Mill Grocery Co-op and Whole Foods Market -- the `OSM_CONFIRMED_SPECIALTY` boundary --
+  but the same labels misfire on three `Walmart Neighborhood Market` records.
 
 * **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
 * **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
@@ -372,8 +418,13 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **56 instances**. The newest, 2026-11-17, is
-**56**: I wrote an overstated guarantee into my own Codex review prompt and handed it to the
+[[feedback-verify-the-shape-of-the-risk]] now holds **57 instances**. The newest, 2026-11-18, is
+**57**: from one false positive (`KBI Biopharma`) I wrote a *mechanism* -- "shared lineage is not
+independent confirmation" -- into a committed note, then measured it the next day and it failed
+both of its own tests. One case tells you the failure exists; it does not tell you what produces
+it. **Predict a number before believing a mechanism**, and name in the note which number would
+refute it -- that is the only reason this one was catchable. **56**, 2026-11-17: I wrote an
+overstated guarantee into my own Codex review prompt and handed it to the
 reviewer as a premise; Codex refuted the claim while finding the code itself correct. *(This said 42 from pass 52
 until 2026-11-16; the count had not been updated for passes 53 and 54, the browser session or the
 wording change.)* The three most recent: **47**, closing the instances a reviewer gives you is not
@@ -1099,7 +1150,8 @@ the two passes incomparable.
 
 **But two findings outrank the headline, and one corrects me.**
 
-* **FSQ confirms; it never rejects.** 16 of the 26 "not a retail pharmacy" proposals deny what the
+* **FSQ confirms; it never rejects.** **SUPERSEDED 2026-11-18 by item 3i** -- the rule is drawn in
+  the wrong place; see [[project-phase1-s3-fsq-accuracy]]. As measured here: 16 of the 26 "not a retail pharmacy" proposals deny what the
   record's own name asserts -- Fuquay Pharmacy as a *dentist*, Kroger Pharmacy as a *doctor's
   office*. A proposal denying the name is evidence against the provider's category, not against the
   record. The check now runs on every invocation instead of being found by eye.
@@ -1123,6 +1175,56 @@ are a lower bound. No proposal was accepted and no table was edited.
 derivation; Yelp's 24-hour storage cap means Yelp cannot. **Do not open a Yelp account for the V2
 job.** This clears FSQ for our ODbL layers and **not** for uploading into OSM -- Decision 17 is
 untouched.
+
+### 3i. Is FSQ right where OSM also speaks? -- **DONE 2026-11-18, and it inverts how we use both**
+
+`v2/scripts/measure_fsq_accuracy.py`, write-up [[project-phase1-s3-fsq-accuracy]], commit
+`afd549b`. The inverse selection: the records OSM **did** reach, same radius and scoring.
+Comparable set **256 grocery / 82 pharmacy**; agree-or-compatible **93.0% / 97.6%**.
+
+* **My echo prediction was refuted, in both of its tests.** Coordinate coincidence came back at
+  **7.0% / 4.9%**, not the high share a shared upstream record would produce; the branded/brandless
+  agreement gap came back **+6.7 grocery but -2.7 pharmacy**, not the consistent positive the
+  reading predicts. The agreement is largely real. Corrected in
+  [[project-phase1-s3-fsq-coverage]] where the claim lives, and recorded as ledger instance 57.
+* **FSQ wins on identity, OSM wins on category.** OSM proposals built on a 0.00 name agreement:
+  **42 of 338**. FSQ's: **3 of 338**. But FSQ calls three `Walmart Neighborhood Market` records
+  *Organic Grocery*, `Lidl` and `Ray's Supermarket` *Convenience Store* and `Casablanca Market` a
+  *Butcher*, all at name agreement 1.00.
+* **"FSQ confirms, never rejects" is superseded.** `Cameron Village ABC Store` is the case it got
+  backwards: FSQ's **negative** was right (a state liquor store) and OSM's positive came from *The
+  Fresh Market* 35 m away at agreement 0.00.
+* **The gates report their reach now.** "OSM denies what FSQ proposes" was **never reached** in
+  either category and says so in its own line, where a blank previously read as a clean result.
+
+Follow-on: `v2/scripts/shortlist_fsq_pharmacy.py` (`b266b7b`) turns the 72 pharmacy confirmations
+into **66 corroborated twice over and 6 needing a human**, written as
+`pharmacy-fsq-shortlist.csv` -- a shortlist, deliberately **not** the `FSQ_CONFIRMED_PHARMACY`
+table that was put to the owner, because whether that table should exist is still open.
+
+### 3j. The spike published for review -- **PARTLY WORKING, 2026-11-18**
+
+Owner: *"recreate a version of the interactive html that you shared earlier in this session so that
+users can review the current version."* Generator committed at
+`v2/spikes/g3-render/make_review_page.py` (`ed41adf`); its docstring carries the full reasoning.
+
+**Verified:** the published page loads, the layer list is built from the rewritten manifest (so the
+`.bin` planes renamed to `.wasm` really are fetched and decoded), sliders and legend render, the
+attribution and licences travel with the fixtures.
+
+**Not working:** the travel-time **mask does not paint**, and the MapLibre attribution control
+stops appearing once the sizing override is in. That points at the map container lacking a size
+MapLibre accepts at construction time. Two candidate fixes are in the docstring. **The loopback
+server remains the known-good way to review the spike:**
+
+    cd v2/spikes/g3-render && ../../.venv/Scripts/python.exe -m http.server 8099 --bind 127.0.0.1
+
+Three sandbox facts worth not rediscovering: a cdnjs **stylesheet** is blocked silently while the
+script is fine; `.bin` is not a served file type and `.wasm` is the only served extension that is
+binary by nature; and MapLibre's tile loader **rejects a `data:` URI** outright
+(`AJAXError: Failed to fetch (0)`), so a blank basemap has to be a real same-origin file. Also: a
+browser tab that has been scrolled renders the artifact **blank** on every later load -- viewer
+state, not the page; a fresh tab is fine.
 
 ### 4. Phone decode latency
 

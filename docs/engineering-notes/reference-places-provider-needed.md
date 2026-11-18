@@ -16,6 +16,10 @@
 >   proposals deny what the record's own name asserts -- FSQ calls Fuquay Pharmacy a *dentist* and
 >   Kroger Pharmacy a *doctor's office*. Positives are corroborated; negatives are not. The rule
 >   is **confirm, never reject**, and the check now runs on every invocation.
+>   **Superseded 2026-11-18:** the accuracy run found a case where FSQ's *negative* is right and
+>   OSM's positive came from a neighbour, so the line is not "which source" but *a proposal is
+>   worth what its match is worth, and a proposal that denies what the record's own name asserts is
+>   evidence against the proposal*. See [[project-phase1-s3-fsq-accuracy]].
 > * **This note's claim that FSQ supplies the missing "range" signal was WRONG.** The taxonomy
 >   separates Supermarket from Grocery Store; the data does not apply it consistently. Among
 >   unambiguous big chains in our bbox the split is 155 Supermarket / 38 Grocery Store / 1
