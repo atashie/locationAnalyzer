@@ -148,3 +148,46 @@ module is *"use big brands, and a curated list for the independents"*, and a mac
 is not a curated list. The artefact is named a shortlist rather than `FOOTPRINT_CONFIRMED_*` for
 the same reason `pharmacy-fsq-shortlist.csv` is: a script must not pre-empt an open decision by
 choosing a filename.
+## The lead was taken up the same day, and it worked
+
+Owner, *"1-4) yes, proceed"*. The 34 chain-named records are now recovered where the evidence
+supports it: `v2/scripts/recover_brandless_by_name.py`, table `NAME_CONFIRMED_SUPERMARKETS` in
+`locfinder/places/grocery.py`, sheet `docs/experiments/audit/grocery-name-recovery.csv`.
+
+**It is a lookup, not a heuristic**, and `grocery.py` now draws that line in its own words: still
+refused is *parsing* a name to guess what kind of shop it is; now allowed is *looking a name up in
+the same explicit table the brand is looked up in*. Only `SUPERMARKET_BRANDS` is consulted — so
+`Kroger Store` and `Wegmans`, both real and both trading here, match nothing until somebody edits
+the table. That dropped the candidates from 34 to 33 on its own.
+
+**Two screens, each earned by a failure in the data:**
+
+| | refused | why nothing else could catch it |
+|---|---|---|
+| **service point** | 11 | Nine `Walmart Grocery Pickup and Delivery` and a `Weaver Street Market Administration`. Several sit on the chain's own ~20,000 m² footprint, so **every geometric signal says supermarket** and only the name says collection bay. |
+| **no building** | 9 | `Food Lion` at 536 m², `ALDI` at 489, `Walmart` at 446, `Lidl` at 224 — nothing over 650 m² within 120 m. The name alone would have promoted all of them. |
+
+**13 accepted**, every one checked by name before it went in: `Brier Creek Walmart` (20,903 m²),
+`Food Lion` (11,617), `Harris Teeter Supermarkets` (8,937), `Carlie C's IGA` (7,339), `Lowes Foods
+On Rowlock Way` (7,056), `ALDI` (5,156), `Weaver Street Market, Inc` (13,127), and six more.
+
+**Two things left visible rather than tidied away:**
+
+* One `Lowes Foods` is corroborated by an **837 m²** building — just over the floor and small for
+  that chain, possibly a point on a neighbouring structure. The number is in its entry so it can
+  be struck.
+* **Two `Wal Mart` records share one 3,943 m² building** and are very probably duplicates of one
+  store. That is a de-duplication problem, not a classification one, and this table does not
+  pretend to solve it. Both are the records the *footprint* rule got wrong this morning, so the
+  name rule has fixed a known error.
+
+**Effect on the blocker:** unclassified grocery records fall from **272 to 259**, of which 258
+carry no brand. So this took an eighth of what was left, and the honest summary of the day is that
+the blocker went 323 → 259 by two different routes, neither of which was the "rule for splitting
+the 323" that was originally asked for.
+
+**Licence.** This is the first thing to use footprints for a **published** classification. The
+owner widened the Buildings registry row on the same pass; see
+`docs/experiments/source-registry.md`. The published layer is now an ODbL-derived database and so
+share-alike. Footprints themselves are still never republished, and the CC BY 4.0 rows still need
+their own attribution.
