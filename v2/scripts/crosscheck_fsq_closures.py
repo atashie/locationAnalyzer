@@ -1,5 +1,12 @@
 """Cross-check against OSM the two FSQ closures that were held back from the owner's accept.
 
+**OUTCOME, 2026-11-18: BOTH WERE RELEASED AND ARE NOW APPLIED** (`80cec78`). The owner answered
+*"1-4) yes, proceed"* once this had run. Harris Teeter because the hold had no subject -- it is
+15,249 m from the Kroger it was supposed to contradict. Sam's Club **over an objection this script
+did not answer**: its closed FSQ record is the warehouse club, not a pharmacy counter, and all
+this added was that OSM holds no Sam's Club within 300 m, which is absence rather than
+observation. `FSQ_CLOSURES_HELD` is now `{}`. Everything below describes the state when it ran.
+
 **Owner decision 2026-11-18:** *"accept the 10 closures"* -- ten of the twelve high-confidence
 `date_closed` records from `measure_fsq_coverage.py`. Two were held back, each for a specific
 reason, and this script is the check that settles them. It is committed rather than run ad hoc

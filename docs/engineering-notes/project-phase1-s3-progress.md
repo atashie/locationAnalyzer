@@ -204,7 +204,11 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
-**Re-run 2026-11-18, after the FSQ closures:** V2 **1,599 passed, 24 skipped** -- the +8 are
+**Re-run 2026-11-18, after the floor and the last two closures:** V2 **1,625 passed, 24
+skipped** -- +18 for `tests/test_name_match.py` (the OSM name-agreement floor, including the five
+cases the adversarial review forced) and +8 net on the closures.
+
+**Earlier re-run 2026-11-18, after the FSQ closures only:** V2 **1,599 passed, 24 skipped** -- the +8 are
 the new `tests/test_place_exclusions.py` cases for `FSQ_CONFIRMED_CLOSURES`, written and watched to
 fail first and then proved by two mutations (pointing `drop_excluded` back at `EXCLUDED_PLACE_IDS`
 alone -> 2 failures; slipping a held-back record into the applied table -> 4 failures).
@@ -256,14 +260,30 @@ not be run in `backend/` at all. Frontend `tsc --noEmit` exit 0 and `vite build`
   `FSQ_CONFIRMED_CLOSURES` in `locfinder/places/exclusions.py`, commit `102e4f8`. Five grocery
   (Kroger 2013, Southern Season 2016, El Atoron 2024, Family Market 2024, Usf Sales 2024) and five
   pharmacy (Kroger Pharmacy 2019, Rite Aid 2020, Walgreens Pharmacy 2021, Walgreens 2021, Rite Aid
-  2024). **Two were held and are still held** -- see the owed list below, which is now a yes/no
-  rather than a measurement.
+  2024). Two were held that morning and **both were released the same day** on the owner's second
+  pass; see the entry under *Taken 2026-11-18, second pass*.
 * **Run the FSQ accuracy measurement.** Done, `afd549b`; see item 3i and
   [[project-phase1-s3-fsq-accuracy]]. **It refuted a claim I had committed the day before.**
 * **Publish the g3-render spike for review.** *"recreate a version of the interactive html that you
   shared earlier in this session so that users can review the current version."* Generator
-  committed at `v2/spikes/g3-render/make_review_page.py` (`ed41adf`); see item 3j, including what
-  does **not** work in the published copy.
+  committed at `v2/spikes/g3-render/make_review_page.py` (`ed41adf`); see item 3j.
+
+**Taken 2026-11-18, second pass**, from *"1-4) yes, proceed"* -- the four asks put after the
+cross-check. All four are done:
+
+1. **Apply the last two closures.** `80cec78`. All twelve are now in `FSQ_CONFIRMED_CLOSURES` and
+   `FSQ_CLOSURES_HELD` is `{}` and kept. **Sam's Club was accepted over an objection that was
+   never answered**, and its entry says so in those words.
+2. **Put a name-agreement floor on the OSM prefill.** `398b501`, corrected by `4cd975e`. New
+   `locfinder/places/name_match.py`; see item 3k and [[project-phase1-s3-osm-name-floor]].
+3. **The brandless grocery rule.** `90aa77e` (predictions first) and `868ec1b`. Floor area
+   measured; see item 3l and [[project-phase1-s3-brandless-grocery]].
+4. **Finish the published review page.** `43a03d8`. Version 9 is live and a rebuild is
+   byte-identical to it; see item 3j.
+
+**An adversarial review ran against 1 and 2** (`69c9b98` prompt, committed before launch;
+`4cd975e` fixes; [[2026-11-18-name-floor-review-findings]]). It found **two real defects and four
+overclaims that my own tests did not**, which is ledger instance 58.
 
 ## Decisions the owner owes
 
@@ -274,9 +294,16 @@ none is answered. Nothing has been accepted:
 `docs/experiments/audit/{grocery,pharmacy}-fsq-coverage.csv` both carry a blank `verdict` column
 and no table was edited.
 
-* **ANSWERED 2026-11-18 for ten of the twelve.** The ten are applied (`102e4f8`). What is still
-  owed is the other two, and both were cross-checked against OSM on 2026-11-18
-  (`scripts/crosscheck_fsq_closures.py`), so this is now a decision rather than a measurement:
+* **CLOSED 2026-11-18: all twelve are applied** (`102e4f8`, then `80cec78`). One thing came back
+  out of it and is owed: **should Sam's Club be a FLAG rather than a DROP?** The adversarial review
+  argues the record is removed more decisively than the evidence warrants -- the category objection
+  was never answered, the positive evidence is OSM's *silence*, and the doubt now survives only in
+  a source comment while `DROPPED_PLACE_IDS` removes the record completely. It calls this *"a
+  publication risk, not a demonstrated false closure"*. A flag that keeps the record would carry
+  the doubt in the data instead of in a comment. Not acted on: the owner made this call today over
+  exactly this doubt.
+
+  The original cross-check, kept because it is the evidence:
   * **Harris Teeter, closed 2017-09-25. The reason for holding it is gone.** It was held because
     the Kroger in `EXCLUDED_PLACE_IDS` was dropped precisely BECAUSE OSM shows a Harris Teeter
     trading on its site. This record is **15,249 m** from that Kroger and 23,476 m from the Kroger
@@ -297,11 +324,13 @@ and no table was edited.
 * **ANSWERED 2026-11-18: the accuracy measurement was run** (`afd549b`,
   [[project-phase1-s3-fsq-accuracy]]). It raised three new decisions, all of them about **our own**
   pass rather than about FSQ:
-  * **Whether to put a name-agreement floor on the OSM prefill.** **42 of 338 (12.4%) of OSM's
-    proposals in the comparable set rest on a match with name agreement 0.00** -- a different
-    business -- against **3 of 338 (0.9%)** for FSQ. This is in the half of the data that was
-    treated as the good half. The sheets already carry the number per row; nothing has been
-    withdrawn.
+  * **ANSWERED 2026-11-18: the floor is in** (`398b501`, `4cd975e`, item 3k). On the open records
+    it was far worse than the 12.4% headline -- 43.6% of grocery proposals and 18.9% of pharmacy.
+    **One thing is owed from it: an inclusive Jaccard floor at 0.25**, which the review showed
+    *strictly dominates* the adopted rule on the measured sample -- it keeps all twelve correct
+    partial matches and additionally rejects `Han-Ah-Rum Mart` / `Han-Dee Hugo's` at 0.20. Not
+    adopted, because 0.25 was chosen by looking at the same fifteen rows that would judge it.
+    Costless-looking and fitted to its own test set at the same time, so it is the owner's call.
   * **Whether to promote FSQ from corroborator to the identity pass**, keeping OSM's tag as the
     category signal. The measurement says FSQ is better at *which business this is* and worse at
     *what kind of thing it is*; the project currently uses them the other way round.
@@ -317,6 +346,26 @@ and no table was edited.
   One lead, not a rule: FSQ's `Health Food Store` and `Organic Grocery` labels land on Earth Fare,
   The Grain Mill Grocery Co-op and Whole Foods Market -- the `OSM_CONFIRMED_SPECIALTY` boundary --
   but the same labels misfire on three `Walmart Neighborhood Market` records.
+
+* **The brandless grocery rule: MEASURED 2026-11-18, and floor area is not the answer**
+  (`868ec1b`, item 3l, [[project-phase1-s3-brandless-grocery]]). Floor area separates OSM
+  `shop=supermarket` from `shop=convenience` at **94.2% / 95.2%**, and still decides only **30 of
+  272 records (11%)**, all of them negatives, because the records that need deciding are units in
+  strip malls wearing the parade's footprint. The naive version of this rule would have put **135
+  corner shops into the published weekly-shop layer**. Two things are owed:
+  * **Whether to recover the 34 chain-named records from the NAME field.** 34 of the 272 are named
+    `Food Lion`, `Harris Teeter Supermarkets`, `ALDI`, `Lidl`, five `Walmart Grocery Pickup and
+    Delivery` and so on, with an EMPTY `brand` field. So an eighth of the blocker is a brand-FIELD
+    gap, recoverable by matching the name against the **same explicit chain table** the brand is
+    matched against -- not a name heuristic. `grocery.py` records the opposite instruction
+    (*"deliberately no heuristic on the name"*), so this needs the owner. Worth having while
+    deciding: all three examples that module gives for distrusting the data are cases where the
+    BRAND is wrong and the NAME is right.
+  * **Whether to move the buildings registry row.** Using footprints to classify a *published*
+    layer makes it an ODbL-derived database and falsifies `"never republished"` in
+    `overture_buildings_report.json`. Same exposure the project already carries through
+    `OSM_CONFIRMED_SUPERMARKETS`, and decision 17 welcomes ODbL publication -- but the row would
+    need rewriting. Nothing was adopted, so nothing is falsified yet.
 
 * **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
 * **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
@@ -418,7 +467,17 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **57 instances**. The newest, 2026-11-18, is
+[[feedback-verify-the-shape-of-the-risk]] now holds **59 instances**. The two newest are both
+2026-11-18. **59: the page already contained the rule that worked** -- the review copy's overlay
+was broken by one narrow CSS override on top of a base rule that was already correct, and my first
+fix invented a replacement for the base rule instead of removing the override's effect, making it
+worse; then I broke the layout a second time by overriding `flex` as well as the height. **58: the
+code was careful and the prose was not** -- I built a three-valued verdict so that two meanings of
+"0.00 agreement" could never be confused, then conflated them in the sentence explaining it, and an
+adversarial review found that plus three more overclaims and two real defects the tests had missed.
+The countermeasure that worked was already in place: the review prompt was committed before launch
+and asked the reviewer, in those words, to attack my own strongest claim.
+
 **57**: from one false positive (`KBI Biopharma`) I wrote a *mechanism* -- "shared lineage is not
 independent confirmation" -- into a committed note, then measured it the next day and it failed
 both of its own tests. One case tells you the failure exists; it does not tell you what produces
@@ -1202,7 +1261,31 @@ into **66 corroborated twice over and 6 needing a human**, written as
 `pharmacy-fsq-shortlist.csv` -- a shortlist, deliberately **not** the `FSQ_CONFIRMED_PHARMACY`
 table that was put to the owner, because whether that table should exist is still open.
 
-### 3j. The spike published for review -- **PARTLY WORKING, 2026-11-18**
+### 3k. The OSM name-agreement floor -- **DONE 2026-11-18**
+
+`v2/locfinder/places/name_match.py`, write-up [[project-phase1-s3-osm-name-floor]], commits
+`398b501` and `4cd975e`. Two findings worth not relearning:
+
+* **0.00 agreement is two different facts** -- a different business, or nothing to compare -- so
+  the gate is a three-valued verdict and the float is only ever reported. 82.4% / 17.6% on grocery.
+* **A Jaccard threshold is the wrong knob**, mostly. The obvious 0.34 would reject twelve matches
+  that are plainly the same shop (`Walmart Grocery Pickup and Delivery` against an OSM `Walmart
+  Supercenter` at 0.0 m scores 0.25). The wrong ones in that band share a GENERIC word. See the
+  owed list for the 0.25 option the review surfaced.
+
+Effect: **50 of 81 grocery proposals withheld (61.7%)**, 17 of 90 pharmacy (18.9%). Nothing is
+deleted -- a withheld proposal moves to a `withheld_proposal` column.
+
+### 3l. Floor area for the brandless grocery rule -- **DONE 2026-11-18, and it is not the answer**
+
+`v2/scripts/measure_footprint_separation.py` and `shortlist_brandless_grocery.py`, write-up
+[[project-phase1-s3-brandless-grocery]], commits `90aa77e` and `868ec1b`. Separates at 94%+,
+decides 11%. **The positive branch was withdrawn: both records it produced were food production or
+distribution**, because a real Triangle supermarket sits in a shopping centre and so shares its
+footprint. A free correctness probe -- 34 records *named* after a known chain -- caught the rule
+mislabelling two real Walmarts with displaced points, and produced the better lead in the owed list.
+
+### 3j. The spike published for review -- **WORKING, 2026-11-18, with one quirk**
 
 Owner: *"recreate a version of the interactive html that you shared earlier in this session so that
 users can review the current version."* Generator committed at
@@ -1212,10 +1295,18 @@ users can review the current version."* Generator committed at
 `.bin` planes renamed to `.wasm` really are fetched and decoded), sliders and legend render, the
 attribution and licences travel with the fixtures.
 
-**Not working:** the travel-time **mask does not paint**, and the MapLibre attribution control
-stops appearing once the sizing override is in. That points at the map container lacking a size
-MapLibre accepts at construction time. Two candidate fixes are in the docstring. **The loopback
-server remains the known-good way to review the spike:**
+**Fixed in `43a03d8`**, published at **version 9**, and a rebuild from the generator is
+byte-identical to what is live. `styles.css` already gave `#map` a definite height that works in
+the skeleton; only the `@media (min-width: 880px)` rule broke it. The whole fix was to put the base
+rule back. Ledger 59.
+
+**The one quirk, named on the page itself:** the overlay does not paint until the map container is
+resized. Tested and ruled out in fresh tabs -- panning or zooming the map, scrolling the page, the
+mouse wheel over the panel, waiting 50 seconds, and dispatching `resize` on `window` (MapLibre 5
+uses a `ResizeObserver`, so the window event is ignored; that nudge was removed again). **Dragging
+the criteria panel's scrollbar works**, reproduced twice. Fixing it properly needs `map.resize()`,
+and the map object is inside `app.js`'s closure. **The loopback server is still the only way to see
+it with real basemap imagery:**
 
     cd v2/spikes/g3-render && ../../.venv/Scripts/python.exe -m http.server 8099 --bind 127.0.0.1
 

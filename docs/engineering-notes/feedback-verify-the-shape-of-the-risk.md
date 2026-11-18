@@ -1404,4 +1404,63 @@ so the next run could refute it. A vaguer sentence -- "FSQ may not be fully inde
 have survived indefinitely.
 
 The lesson is not "do not hypothesise". It is **predict a number before believing a mechanism**,
-and say in the note which number would refute it. Fifty-seven instances now.
+and say in the note which number would refute it.
+
+## A fifty-eighth, 2026-11-18: the code was careful and the prose was not
+
+The name-agreement floor exists because `name_agreement` returns 0.0 for two different facts, and
+I built a three-valued `match_verdict` so the two could never be confused. Eighteen tests. Then I
+wrote the note that explains it, and in the note I said **"42 of 338 of OSM's proposals rest on a
+match with name agreement 0.00, a different business"** -- conflating exactly the two facts the
+code had just been built to separate.
+
+An adversarial review found it, along with three more overclaims in the same note and two real
+defects in the code the tests had not caught:
+
+* **`A&C Supermarket` against an OSM feature of the SAME NAME 12.0 m away scored `unverified`**
+  and had its correct proposal withheld, because `a` and `c` fall to the length rule and
+  `supermarket` is a stop-word, so both token sets emptied. The code read "nothing to compare"
+  where there was plenty to compare -- `unverified` was dressing a bug as a category.
+* **The "weak" caveat was concatenated onto an EMPTY proposal**, so twelve pharmacy rows held
+  warning text in a proposal cell, and my measurement counted all twelve as proposals: 28.4%
+  where the truth is 18.9%.
+* **"63% of the proposals were not evidence"** stated a *withholding rate* as a *wrong-match
+  rate*, which it is not, in both directions.
+* **"a Jaccard threshold is the wrong knob"** was partly refuted by arithmetic I had not done: an
+  inclusive floor at 0.25 keeps all twelve correct matches in the band *and* rejects the false
+  pair at 0.20.
+
+> **Tests check what you thought of. Prose is where the thing you did not think of gets asserted
+> anyway** -- and it is read more often than the code. The defects and the overclaims are the same
+> failure wearing two coats: in both, a distinction I had established was quietly dropped at the
+> point of use.
+
+The cheap countermeasure already existed and worked: the review prompt was committed before launch
+and its item 6 asked the reviewer, in those words, to attack the note's "63%" phrasing. The prompt
+found its own author out. **Write the attack on your own strongest claim into the prompt, before
+you see what comes back.**
+
+## A fifty-ninth, 2026-11-18: the page already contained the rule that worked
+
+The published review copy did not paint its overlay, and the MapLibre attribution control had
+vanished. Diagnosis, correct: the map container had no definite height when the map was
+constructed, and a `canvas` source needs a laid-out container.
+
+The fix I wrote the first time rewrote the ancestors' heights in `svh` units, added `min-height`
+to three selectors, and made things worse -- the mask stayed broken and the attribution control
+disappeared. **`styles.css` already gave `#map` a definite height** (`height: 52vh;
+min-height: 260px`) which needs no ancestor height and works untouched. Only one narrower rule, in
+a `@media (min-width: 880px)` block, overrode it. The entire fix was to put the base rule back
+above 880px.
+
+Then I got it wrong a second time in the same five minutes, by overriding `flex` as well as the
+height, which let `#map`'s `width: 100%` take the whole row and pushed the criteria panel
+off-screen.
+
+> **When something is broken by an override, the fix is to remove the override's effect, not to
+> invent a replacement for the thing underneath it.** Inventing a replacement means two rules now
+> compete where one worked, and the new one has had no testing at all.
+
+Related to instance 47 in shape -- both are about what is already written down being more reliable
+than what I am about to write -- but the population here is CSS rather than notes. Fifty-nine
+instances now.
