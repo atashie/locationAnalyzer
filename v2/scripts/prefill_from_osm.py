@@ -22,6 +22,21 @@ strip mall are both "nearby"; only the name says which is which. A match with a 
 agreement at 80 m is better evidence than a tag collision at 15 m, so the score weights them that
 way and the sheet prints both so a reader can disagree.
 
+**THERE IS NOW A FLOOR, and it changes what this script outputs.** Owner decision 2026-11-18,
+*"1-4) yes, proceed"*. Until then a proposal was made from the best match's tag however badly the
+names disagreed, and on this sheet that was **51 of 117 grocery proposals (43.6%)** and **29 of
+102 pharmacy (28.4%)** resting on a match with a different business's name -- `Flower Gallery`
+proposed as a supermarket because an OSM Harris Teeter sat 32.6 m away. Those proposals are now
+WITHHELD: the row keeps its tag, distance and agreement, the proposal moves to
+`withheld_proposal`, and `evidence` says which of the two reasons applies. Nothing is deleted,
+because a withheld row is still the best lead a human has for that record.
+
+The rule lives in `locfinder/places/name_match.py` with its own tests and the measurement behind
+it. Two things in there are counter-intuitive enough to be worth reading before changing this
+script: 0.00 agreement is **two different facts**, and a Jaccard threshold is the **wrong knob** --
+the obvious floor of 0.34 would reject `Walmart Grocery Pickup and Delivery` against an OSM
+`Walmart Supercenter` at 0.0 m.
+
 **Known limits, so a reader does not over-trust a filled cell.**
 
 * OSM's coverage of small independent grocers is patchy, so `no match` means "OSM is silent", not
@@ -44,8 +59,8 @@ from __future__ import annotations
 
 import argparse
 import csv
-import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 import geopandas as gpd
@@ -56,6 +71,19 @@ sys.path.insert(0, str(V2))
 
 from _common import ACCEPTED_PLACES, GRID  # noqa: E402
 from locfinder.places.categories import select_target  # noqa: E402
+
+# `name_agreement` and `tokens` used to be defined here and are imported from here by
+# `measure_fsq_accuracy`, `measure_fsq_coverage`, `crosscheck_fsq_closures` and
+# `shortlist_fsq_pharmacy`. They now live in the library, with the floor and the measurement that
+# set it. Re-exported under the old names so those four keep working unchanged; a test asserts
+# these are the same objects.
+from locfinder.places.name_match import (  # noqa: E402,F401
+    clears_the_floor,
+    match_verdict,
+    name_agreement,
+    tokens,
+    why_withheld,
+)
 
 OSM_POIS = V2 / "data" / "triangle" / "osm_pois.parquet"
 AUDIT = V2.parent / "docs" / "experiments" / "audit"
@@ -83,25 +111,6 @@ PROPOSALS: dict[str, dict[tuple[str, str], str]] = {
         ("amenity", "clinic"): "not a retail pharmacy",
     },
 }
-
-_WORD = re.compile(r"[a-z0-9]+")
-#: Words that agree between almost any two shop names and so carry no information.
-_STOP = {"the", "and", "of", "market", "store", "shop", "food", "foods", "inc", "llc", "co",
-         "company", "center", "centre", "supermarket", "grocery", "pharmacy"}
-
-
-def tokens(name: str) -> set[str]:
-    return {w for w in _WORD.findall((name or "").lower()) if w not in _STOP and len(w) > 2}
-
-
-def name_agreement(a: str, b: str) -> float:
-    """Jaccard over informative words. 0 when either side has none, which is honest: a name made
-    entirely of stop-words tells us nothing, and scoring it 1.0 would invent agreement."""
-    ta, tb = tokens(a), tokens(b)
-    if not ta or not tb:
-        return 0.0
-    return len(ta & tb) / len(ta | tb)
-
 
 def place_name(rec) -> str:
     try:
@@ -139,6 +148,10 @@ def main() -> None:
     table = PROPOSALS.get(args.category, {})
 
     rows, proposed, nomatch = [], 0, 0
+    # Every gate reports how often it was REACHED, not only what it caught. A gate that is never
+    # reached prints a blank that reads as a clean result; that mistake is ledger instance 47.
+    reached: Counter[str] = Counter()
+    withheld: Counter[str] = Counter()
     for _, rec in sel.iterrows():
         pname = place_name(rec)
         hits = list(sidx.query(rec.geometry.buffer(args.radius), predicate="intersects"))
@@ -156,6 +169,7 @@ def main() -> None:
             nomatch += 1
             rows.append({"id": rec.get("id"), "name": pname, "osm_name": "", "osm_tag": "",
                          "distance_m": "", "name_agreement": "", "proposal": "",
+                         "withheld_proposal": "", "match": "no feature",
                          "evidence": "no OSM feature within "
                                      f"{args.radius:.0f} m -- OSM is silent, not negative",
                          "verdict": "", "notes": ""})
@@ -163,17 +177,28 @@ def main() -> None:
         tag = next(((c, str(best[c])) for c in tag_cols
                     if best.get(c) is not None and str(best.get(c)) != "nan"), ("", ""))
         proposal = table.get(tag, "")
-        if proposal:
-            proposed += 1
         weak = " (weak: OSM under-tags large independents as convenience)" \
             if tag == ("shop", "convenience") else ""
+
+        # THE FLOOR. A proposal is worth what its match is worth, so a tag read off a feature
+        # carrying a different business's name proposes nothing. The text is kept in
+        # `withheld_proposal` rather than dropped: the row is still the best lead for that record.
+        verdict = match_verdict(pname, osm_name(best))
+        reached[verdict] += 1
+        kept = proposal and clears_the_floor(verdict)
+        if kept:
+            proposed += 1
+        elif proposal:
+            withheld[verdict] += 1
+
         rows.append({
             "id": rec.get("id"), "name": pname, "osm_name": osm_name(best),
             "osm_tag": f"{tag[0]}={tag[1]}" if tag[0] else "",
             "distance_m": f"{best_dist:.1f}", "name_agreement": f"{best_agree:.2f}",
-            "proposal": proposal + weak,
-            "evidence": ("names agree" if best_agree >= 0.34 else
-                         "names do NOT agree -- the match may be a neighbour"),
+            "proposal": (proposal + weak) if kept else "",
+            "withheld_proposal": "" if kept else (proposal + weak),
+            "match": verdict,
+            "evidence": why_withheld(verdict),
             "verdict": "", "notes": "",
         })
 
@@ -184,11 +209,23 @@ def main() -> None:
         w.writeheader()
         w.writerows(rows)
 
-    strong = sum(1 for r in rows if r["proposal"] and float(r["name_agreement"] or 0) >= 0.34)
+    exact = sum(1 for r in rows if r["proposal"] and float(r["name_agreement"] or 0) == 1.0)
     print(f"{args.category}: {len(sel):,} records considered")
-    print(f"  {proposed:>5} got a proposal from an OSM tag")
-    print(f"  {strong:>5} of those ALSO agree on the name -- the ones worth taking first")
+    print(f"  {proposed:>5} got a proposal from an OSM tag whose name AGREES")
+    print(f"  {exact:>5} of those agree exactly -- the ones worth taking first")
     print(f"  {nomatch:>5} have no OSM feature within {args.radius:.0f} m -- the Yelp backlog")
+    print("  the floor, by how often each verdict was reached:")
+    for v in ("agrees", "differs", "unverified"):
+        if reached[v] == 0:
+            print(f"    [gate] {v:>10}: NEVER REACHED (0 opportunities) -- "
+                  "a blank here would otherwise read as a clean result")
+        else:
+            print(f"    [gate] {v:>10}: reached {reached[v]:>4}, "
+                  f"withheld {withheld[v]:>4} proposal(s)")
+    total_withheld = sum(withheld.values())
+    print(f"  {total_withheld:>5} proposals WITHHELD by the floor "
+          f"({total_withheld / (total_withheld + proposed) * 100:.1f}% of what would have been "
+          "proposed before 2026-11-18)")
     print(f"wrote {out}")
 
 
