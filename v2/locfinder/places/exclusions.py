@@ -87,6 +87,107 @@ PENDING_CLOSURES: dict[str, str] = {
 }
 
 
+#: Closures FSQ asserts that we ARE acting on. Ten records, by stable Overture id.
+#:
+#: Owner decision 2026-11-18: *"accept the 10 closures"*. The measurement
+#: (`scripts/measure_fsq_coverage.py`, results in
+#: `docs/engineering-notes/project-phase1-s3-fsq-coverage.md`) found 25 records FSQ marks closed,
+#: of which **12** both agree on name and sit within 60 m. Two of the twelve were held back for an
+#: OSM cross-check and are listed in `FSQ_CLOSURES_HELD` below. These are the other ten.
+#:
+#: **Why this table is separate from `EXCLUDED_PLACE_IDS` above.** Same reason
+#: `OSM_CONFIRMED_SUPERMARKETS` is separate from `CURATED_INDEPENDENT_SUPERMARKETS`: this is a
+#: REGENERABLE DERIVATION from a dated third-party snapshot, and a hand-made judgement is not. Re-run
+#: the script against a newer FSQ release and this set moves; a curated entry is somebody's decision
+#: and must not be overwritten by a data refresh.
+#:
+#: **What `date_closed` is and is not.** The snapshot is FSQ OS Places 2025-01-10, so every date is
+#: a LOWER BOUND -- a shop that closed after that release still looks open here, and the absence of
+#: a date is not evidence of trading. The dates are also not independently verified; what makes
+#: them usable is that `date_closed` is a field neither OSM nor Overture carries at all, so unlike
+#: FSQ's CATEGORIES it cannot be an echo of our own Overture-derived data. FSQ's categories are
+#: reliable in one direction only and must never reject a record; see the coverage note.
+#:
+#: Licence: FSQ OS Places is Apache-2.0 with attribution. It is cleared for our own ODbL layers and
+#: NOT for upload into OpenStreetMap, which needs explicit import permission. Decision 17 stands.
+FSQ_CONFIRMED_CLOSURES: dict[str, str] = {
+    "790e99cf-ceef-415a-babb-849e75732fa4":
+        "'Kroger', grocery. FSQ OS Places 2025-01-10 carries date_closed=2013-06-25 on 'Kroger' at 0.0 "
+        "m with name agreement 1.00. Owner decision 2026-11-18. Corroborates the OTHER Kroger dropped "
+        "above, which was decided on independent Overture-signals evidence rather than on FSQ.",
+    "3e8b0d81-ca69-4cd5-9948-c8d858ff0a59":
+        "'Southern Season', grocery. FSQ OS Places 2025-01-10 carries date_closed=2016-09-27 on "
+        "'Southern Season' at 6.3 m with name agreement 1.00. Owner decision 2026-11-18. FSQ files it "
+        "under Business and Professional Services rather than food retail, so the CATEGORY is "
+        "unreliable here; only the closure is being taken.",
+    "4fe3f836-f1f6-45e9-9553-a92a6c9f8752":
+        "'El Atoron', grocery. FSQ OS Places 2025-01-10 carries date_closed=2024-06-26 on 'El Atoron' "
+        "at 19.4 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "2f30a8c1-497f-4ca7-9be4-0654fe808c57":
+        "'Family Market', grocery. FSQ OS Places 2025-01-10 carries date_closed=2024-07-07 on 'Family "
+        "Market' at 0.0 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "0aa4c24d-6a8f-4d54-a1b3-bd684db6bbfc":
+        "'Usf Sales', grocery. FSQ OS Places 2025-01-10 carries date_closed=2024-11-04 on 'Usf Sales' "
+        "at 0.0 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "d3de68dd-7695-47a3-bff5-ece45da1a8b1":
+        "'Kroger Pharmacy', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2019-08-02 on "
+        "'Kroger Pharmacy' at 0.0 m with name agreement 1.00. Owner decision 2026-11-18. The pharmacy "
+        "counter of the same chain, and the second record corroborating the owner's earlier Kroger "
+        "call.",
+    "f389d1a5-5f4a-48a5-8055-e00206faba86":
+        "'Rite Aid', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2020-02-11 on 'Rite Aid' at "
+        "53.3 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "837e9f0d-d5b0-4e16-b3c4-9119c9700e9a":
+        "'Walgreens Pharmacy', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2021-02-08 on "
+        "'Walgreens' at 1.2 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "6ee316ab-d82f-4890-9a1e-84874d0438c7":
+        "'Walgreens', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2021-03-13 on 'Walgreens' "
+        "at 4.8 m with name agreement 1.00. Owner decision 2026-11-18.",
+    "13e62ef8-c843-42c7-8be0-7bbaa070a70d":
+        "'Rite Aid', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2024-01-26 on 'Rite Aid' at "
+        "45.0 m with name agreement 1.00. Owner decision 2026-11-18.",
+}
+
+
+#: The two of the twelve NOT applied, and what would settle each. Recorded so that holding them is
+#: visible rather than looking like an oversight, and so a later session does not re-decide it.
+#:
+#: Owner decision 2026-11-18: accept ten, hold these.
+FSQ_CLOSURES_HELD: dict[str, str] = {
+    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
+        "Sam's Club, pharmacy candidate. FSQ carries date_closed=2018-02-03 at 37.6 m with name "
+        "agreement 1.00, but the FSQ record's category is `Retail > Warehouse or Wholesale "
+        "Store` -- the CLUB, not a pharmacy counter. A counter that closes inside a club that "
+        "keeps trading is indistinguishable in this data from the whole club closing. "
+        "CROSS-CHECKED 2026-11-18 (`scripts/crosscheck_fsq_closures.py`): OSM has no feature "
+        "within 120 m and no Sam's Club within 300 m; the nearest tagged retail is a Walmart "
+        "Supercenter at 279.7 m. Nothing contradicts the closure, but absence in OSM is weak "
+        "evidence and the category objection above is untouched by it. STILL HELD, now awaiting "
+        "a decision rather than a measurement.",
+    "1937d785-1a98-49c5-9d32-51b7ec7c97af":
+        "Harris Teeter, grocery. FSQ carries date_closed=2017-09-25 at 0.0 m with name agreement "
+        "1.00. Held because the Kroger in `EXCLUDED_PLACE_IDS` above was dropped precisely "
+        "BECAUSE OSM shows a Harris Teeter trading on its site, so a closed Harris Teeter needs "
+        "to be shown to be a different address before a second store is removed. "
+        "CROSS-CHECKED 2026-11-18 (`scripts/crosscheck_fsq_closures.py`): **the reason for "
+        "holding it is gone.** This record is 15,249 m from the excluded Kroger and 23,476 m "
+        "from the Kroger accepted above -- three different sites, so no contradiction exists. "
+        "OSM is also silent within 120 m and holds no Harris Teeter within 300 m (nearest "
+        "tagged retail: Walmart Neighborhood Market at 258.2 m). STILL HELD only because the "
+        "owner accepted ten, not twelve; a session must not widen that on its own.",
+}
+
+
+#: Everything actually removed, from every table that removes anything. One name so a reader can
+#: see the whole effect in one place, and so adding a table cannot forget to apply it.
+#:
+#: `PENDING_CLOSURES` and `FSQ_CLOSURES_HELD` are deliberately NOT here: both are records of
+#: closures we are not acting on, and folding either in would quietly reverse a decision.
+DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
+    FSQ_CONFIRMED_CLOSURES
+)
+
+
 def drop_excluded(gdf):
     """Remove any listed record. A no-op on a frame with no `id` column.
 
@@ -95,4 +196,4 @@ def drop_excluded(gdf):
     """
     if "id" not in getattr(gdf, "columns", ()):
         return gdf
-    return gdf[~gdf["id"].isin(EXCLUDED_PLACE_IDS)]
+    return gdf[~gdf["id"].isin(DROPPED_PLACE_IDS)]
