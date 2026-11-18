@@ -204,7 +204,10 @@ One guard is deliberately **unguarded** and says so in `mutate_worker.mjs`: rese
 would expose a stale value refuses until a compute has run. A mutation removing it survives every
 check, so it is listed as absent rather than left to look like an oversight.
 
-**Re-run 2026-11-18, after the floor and the last two closures:** V2 **1,625 passed, 24
+**Re-run 2026-11-18, after the third pass:** V2 **1,676 passed, 24 skipped** -- +33 for the new
+`tests/test_grocery_name_recovery.py`, +13 for the 0.25 floor and the closure flag, +5 elsewhere.
+
+**Earlier re-run 2026-11-18, after the floor and the last two closures:** V2 **1,625 passed, 24
 skipped** -- +18 for `tests/test_name_match.py` (the OSM name-agreement floor, including the five
 cases the adversarial review forced) and +8 net on the closures.
 
@@ -285,6 +288,26 @@ cross-check. All four are done:
 `4cd975e` fixes; [[2026-11-18-name-floor-review-findings]]). It found **two real defects and four
 overclaims that my own tests did not**, which is ledger instance 58.
 
+**Taken 2026-11-18, third pass**, from a second *"1-4) yes, proceed"* -- the four asks that came
+out of the review and the measurements. All four are done:
+
+1. **Sam's Club becomes a FLAG, not a drop.** `6aba508`. New `FSQ_FLAGGED_CLOSURES`: closures we
+   believe but do not act on. The record stays in the layer; `flagged_closure_reason()` is the
+   read seam. **Nothing renders the flag yet**, so for now a household is routed to a probably
+   closed pharmacy with no warning -- worse for that household, honest for the project, and said
+   in the table's own docstring. Eleven applied, one flagged.
+2. **The 0.25 agreement floor is adopted.** `2c322c8`. Applied to `agreement_used`, NOT to
+   `name_agreement` -- the naive version would have re-broken `A&C Supermarket`.
+3. **The chain names are recovered from the `name` field.** `d224945`. 13 records into
+   `NAME_CONFIRMED_SUPERMARKETS`; see item 3m.
+4. **The Buildings registry row is widened.** `d39141e`. Footprints may now inform a classification
+   that feeds a **published** artifact, making it ODbL share-alike. Footprints themselves are
+   still never republished and CC BY rows still need their own attribution.
+
+**A second adversarial review** is running against all four (`aac3f11` prompt, committed before
+launch). Its findings are **not yet folded in**; a session resuming here should read
+`docs/reviews/2026-11-18-name-recovery-review-prompt.md` and check whether findings were recorded.
+
 ## Decisions the owner owes
 
 Nothing below should be decided by a session on its own.
@@ -353,19 +376,15 @@ and no table was edited.
   272 records (11%)**, all of them negatives, because the records that need deciding are units in
   strip malls wearing the parade's footprint. The naive version of this rule would have put **135
   corner shops into the published weekly-shop layer**. Two things are owed:
-  * **Whether to recover the 34 chain-named records from the NAME field.** 34 of the 272 are named
-    `Food Lion`, `Harris Teeter Supermarkets`, `ALDI`, `Lidl`, five `Walmart Grocery Pickup and
-    Delivery` and so on, with an EMPTY `brand` field. So an eighth of the blocker is a brand-FIELD
-    gap, recoverable by matching the name against the **same explicit chain table** the brand is
-    matched against -- not a name heuristic. `grocery.py` records the opposite instruction
-    (*"deliberately no heuristic on the name"*), so this needs the owner. Worth having while
-    deciding: all three examples that module gives for distrusting the data are cases where the
-    BRAND is wrong and the NAME is right.
-  * **Whether to move the buildings registry row.** Using footprints to classify a *published*
-    layer makes it an ODbL-derived database and falsifies `"never republished"` in
-    `overture_buildings_report.json`. Same exposure the project already carries through
-    `OSM_CONFIRMED_SUPERMARKETS`, and decision 17 welcomes ODbL publication -- but the row would
-    need rewriting. Nothing was adopted, so nothing is falsified yet.
+  * **ANSWERED 2026-11-18, third pass: the names are recovered** (`d224945`, item 3m). 13 of
+    the 33 candidates are now in `NAME_CONFIRMED_SUPERMARKETS`; 11 were refused as service points
+    and 9 for having no building big enough nearby. **Unclassified grocery records: 272 -> 259**,
+    258 of them brandless.
+  * **ANSWERED 2026-11-18, third pass: the registry row is widened** (`d39141e`). Footprints may
+    now inform a classification feeding a published artifact; the artifact is ODbL share-alike.
+    Footprints are still never republished and CC BY rows still need their own attribution. The
+    claim appeared in FIVE places and all five were updated, including the `use` string
+    `fetch_buildings.py` stamps into data on every refresh.
 
 * **The grocery definition -- the DEFAULT is decided, the CLASSIFICATION is not.** 2026-11-17: a grocery means "a supermarket you could do a weekly shop at" by default, with specialty grocers selectable. 218 of the 541 open records carry an Overture `brand` (Food Lion 90, Harris Teeter 45, Lowes Foods 19, Publix 12, ALDI 9, Lidl 9), which is strong signal; **323 carry none**, and `grocery_store` covers a supermarket and a corner shop alike. Splitting those 323 needs a rule the owner has not been shown yet.
 * **Whether to filter the nine `permanently_closed` records.** **The earlier "no" was based on too little.** 2026-11-17, provenance traced: **eight of the nine come from BrightQuery**, a business-registry provider, all at confidence 0.55-0.65 and all stamped with one identical update time -- a registry signal about a legal entity, not an observation of a storefront. **One, the Kroger, comes from `Overture-signals` at confidence 1.0**, and OSM shows a Harris Teeter operating at that spot, so that closure is almost certainly true. Of the other eight, two have a different shop nearby in OSM and six have no OSM shop within 100 m at all. One of the eight is **"Roofing Inc."**, which is not a grocery under any definition. See the note below.
@@ -1284,6 +1303,25 @@ decides 11%. **The positive branch was withdrawn: both records it produced were 
 distribution**, because a real Triangle supermarket sits in a shopping centre and so shares its
 footprint. A free correctness probe -- 34 records *named* after a known chain -- caught the rule
 mislabelling two real Walmarts with displaced points, and produced the better lead in the owed list.
+
+### 3m. The chain names recovered from the `name` field -- **DONE 2026-11-18**
+
+`v2/scripts/recover_brandless_by_name.py`, table `NAME_CONFIRMED_SUPERMARKETS` in
+`locfinder/places/grocery.py`, sheet `grocery-name-recovery.csv`, commit `d224945`. Write-up in
+[[project-phase1-s3-brandless-grocery]].
+
+**A lookup, not a heuristic**, and `grocery.py` now draws that line in its own words. Only
+`SUPERMARKET_BRANDS` is consulted, so `Kroger Store` and `Wegmans` match nothing until somebody
+edits the table -- that alone took 34 candidates to 33.
+
+Two screens, each earned by a failure in the data: **11 service points** (nine `Walmart Grocery
+Pickup and Delivery`, one `Weaver Street Market Administration`, several on the chain's own
+~20,000 m2 footprint so no geometry could catch them) and **9 with no building over 650 m2 within
+120 m**. **13 accepted**, all read by name first.
+
+Two things left visible: a `Lowes Foods` on an 837 m2 building, and **two `Wal Mart` records
+sharing one 3,943 m2 building** -- probably duplicates of one store, which is a de-duplication
+problem this table does not solve.
 
 ### 3j. The spike published for review -- **WORKING, 2026-11-18, with one quirk**
 
