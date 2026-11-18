@@ -92,10 +92,12 @@ PENDING_CLOSURES: dict[str, str] = {
 #: Owner decision 2026-11-18: *"accept the 10 closures"*. The measurement
 #: (`scripts/measure_fsq_coverage.py`, results in
 #: `docs/engineering-notes/project-phase1-s3-fsq-coverage.md`) found 25 records FSQ marks closed,
-#: of which **12** both agree on name and sit within 60 m. **All twelve are applied.** Ten were
-#: accepted first; the other two were held for a day pending an OSM cross-check, and the owner
-#: released both once it had run -- *"1-4) yes, proceed"*. They are the last two entries, and each
-#: records what the cross-check found, INCLUDING, for Sam's Club, the objection it did not answer.
+#: of which **12** both agree on name and sit within 60 m. **Eleven are applied here and the
+#: twelfth is flagged, not dropped** -- see `FSQ_FLAGGED_CLOSURES` below. Ten were accepted first;
+#: the other two were held for a day pending an OSM cross-check and then released; then Sam's Club
+#: was moved out of this table into the flag on a third pass, because it had been accepted over an
+#: objection nobody had answered. The last entry here, Harris Teeter, records what the cross-check
+#: found.
 #:
 #: **Why this table is separate from `EXCLUDED_PLACE_IDS` above.** Same reason
 #: `OSM_CONFIRMED_SUPERMARKETS` is separate from `CURATED_INDEPENDENT_SUPERMARKETS`: this is a
@@ -149,17 +151,6 @@ FSQ_CONFIRMED_CLOSURES: dict[str, str] = {
         "'Rite Aid', pharmacy. FSQ OS Places 2025-01-10 carries date_closed=2024-01-26 on 'Rite Aid' at "
         "45.0 m with name agreement 1.00. Owner decision 2026-11-18.",
     # ---- accepted on the second pass the same day, after the cross-check ran ----
-    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
-        "'Sam's Club', pharmacy candidate. FSQ OS Places 2025-01-10 carries date_closed=2018-02-03 "
-        "at 37.6 m with name agreement 1.00. Owner decision 2026-11-18, second pass. **THE "
-        "CATEGORY OBJECTION IS NOT RESOLVED**: FSQ's closed record is categorised `Retail > "
-        "Warehouse or Wholesale Store` -- the CLUB, not a pharmacy counter -- and a counter that "
-        "closes inside a club which keeps trading is indistinguishable in this data from the whole "
-        "club closing. The cross-check (`scripts/crosscheck_fsq_closures.py`) added only that OSM "
-        "holds no Sam's Club within 300 m, nearest tagged retail a Walmart Supercenter at 279.7 m. "
-        "That is CONSISTENT with the club having closed, but it is absence rather than "
-        "observation. Accepted over the stated doubt; if this record is ever disputed, this "
-        "sentence is the reason why.",
     "1937d785-1a98-49c5-9d32-51b7ec7c97af":
         "'Harris Teeter', grocery. FSQ OS Places 2025-01-10 carries date_closed=2017-09-25 on "
         "'Harris Teeter' at 0.0 m with name agreement 1.00. Owner decision 2026-11-18, second "
@@ -183,13 +174,56 @@ FSQ_CONFIRMED_CLOSURES: dict[str, str] = {
 FSQ_CLOSURES_HELD: dict[str, str] = {}
 
 
+#: Closures we BELIEVE but do not ACT ON. The record **stays in the layer**; the doubt travels
+#: with it as data instead of as a comment in this file.
+#:
+#: **Owner decision 2026-11-18, third pass: *"1-4) yes, proceed"***, taking the argument an
+#: adversarial review made against the second pass. Sam's Club had been applied that morning over
+#: a category objection nobody had answered, and the review's point was that the entry then read
+#: as settled while `DROPPED_PLACE_IDS` removed the record outright -- *"a publication risk, not a
+#: demonstrated false closure"*. A flag keeps the record and keeps the doubt attached to it.
+#:
+#: **WHAT THIS COSTS, SAID PLAINLY.** Nothing renders this flag yet. Until something does, a
+#: household searching for a pharmacy is routed to a place that is probably closed, with no
+#: warning -- which is a worse outcome than the drop for that one household, and a better one for
+#: the project, because the drop was asserting a fact we do not have. The flag is the honest
+#: state; it is not yet the finished feature. `flagged_closure_reason` is the seam a renderer
+#: would read, and it exists so that "surface the flag" is a UI change rather than a data change.
+FSQ_FLAGGED_CLOSURES: dict[str, str] = {
+    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e":
+        "'Sam's Club', pharmacy candidate. FSQ OS Places 2025-01-10 carries date_closed=2018-02-03 "
+        "at 37.6 m with name agreement 1.00. **THE CATEGORY OBJECTION IS NOT RESOLVED**: FSQ's "
+        "closed record is categorised `Retail > Warehouse or Wholesale Store` -- the CLUB, not a "
+        "pharmacy counter -- and a counter that closes inside a club which keeps trading is "
+        "indistinguishable in this data from the whole club closing. The cross-check "
+        "(`scripts/crosscheck_fsq_closures.py`) added only that OSM holds no Sam's Club within "
+        "300 m, nearest tagged retail a Walmart Supercenter at 279.7 m: CONSISTENT with the club "
+        "having closed, but absence rather than observation. Applied 2026-11-18 on the owner's "
+        "second pass, then turned into this flag on the third rather than left as a silent "
+        "removal.",
+}
+
+
+def flagged_closure_reason(place_id: str) -> str | None:
+    """Why this record is doubted, or `None` if it is not.
+
+    The read seam for anything that wants to SHOW the doubt -- a map popup, a result row, an
+    export column. It exists so that surfacing a flag is a change to a renderer rather than a
+    change to this table, and so that a flag nobody can read is distinguishable from a flag
+    nobody has chosen to read yet.
+    """
+    return FSQ_FLAGGED_CLOSURES.get(place_id)
+
+
 #: Everything actually removed, from every table that removes anything. One name so a reader can
 #: see the whole effect in one place, and so adding a table cannot forget to apply it.
 #:
-#: `PENDING_CLOSURES` is deliberately NOT here: it records closures we are not acting on, and
-#: folding it in would quietly reverse a decision. `FSQ_CLOSURES_HELD` is now empty, so it would
-#: contribute nothing; it is still left out, because the day it stops being empty it would
-#: otherwise start removing records nobody had agreed to remove.
+#: `PENDING_CLOSURES` and `FSQ_FLAGGED_CLOSURES` are deliberately NOT here. Both record closures
+#: we are not acting on, and folding either in would quietly reverse a decision -- for the flag
+#: table that reversal is the entire point of it existing, so a test asserts the two sets do not
+#: intersect. `FSQ_CLOSURES_HELD` is now empty, so it would contribute nothing; it is still left
+#: out, because the day it stops being empty it would otherwise start removing records nobody had
+#: agreed to remove.
 DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
     FSQ_CONFIRMED_CLOSURES
 )

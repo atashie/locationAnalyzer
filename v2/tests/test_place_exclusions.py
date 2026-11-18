@@ -23,7 +23,11 @@ import pytest
 from shapely.geometry import Point
 
 from locfinder.places.categories import select_overture
-from locfinder.places.exclusions import EXCLUDED_PLACE_IDS, drop_excluded
+from locfinder.places.exclusions import (
+    DROPPED_PLACE_IDS,
+    EXCLUDED_PLACE_IDS,
+    drop_excluded,
+)
 
 HARRIS_LAKE = "5a1c8da5-ce62-41fc-af4a-fa2c0c4bd703"
 HARRIS_RESERVOIR = "dc218eca-83a0-4889-acde-0ec39b54224d"
@@ -107,6 +111,8 @@ def test_the_excluded_ids_name_the_owner_decision_that_made_them(place_id):
 from locfinder.places.exclusions import (  # noqa: E402
     FSQ_CLOSURES_HELD,
     FSQ_CONFIRMED_CLOSURES,
+    FSQ_FLAGGED_CLOSURES,
+    flagged_closure_reason,
 )
 
 #: All twelve, with FSQ's `date_closed`. The last two were accepted on a second pass the same
@@ -123,9 +129,14 @@ ACCEPTED = {
     "6ee316ab-d82f-4890-9a1e-84874d0438c7": "2021-03-13",   # Walgreens
     "13e62ef8-c843-42c7-8be0-7bbaa070a70d": "2024-01-26",   # Rite Aid
     # Released by the cross-check and accepted on the owner's second pass, 2026-11-18.
-    "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e": "2018-02-03",   # Sam's Club
     "1937d785-1a98-49c5-9d32-51b7ec7c97af": "2017-09-25",   # Harris Teeter
 }
+
+#: Sam's Club, 2018-02-03. Applied on the second pass and then **turned into a flag on the third**
+#: -- owner, *"1-4) yes, proceed"*, taking the adversarial review's argument that the record was
+#: being removed more decisively than the evidence warranted. It is believed closed and it stays
+#: in the layer, with the doubt carried as data rather than as a source comment.
+SAMS_CLUB = "c7c31e4e-79a8-43d3-aa0c-4c1bf098747e"
 
 #: The two that were held for one day, and what released each.
 #:
@@ -154,9 +165,43 @@ def test_the_applied_closures_are_exactly_the_twelve():
     )
 
 
-def test_exactly_twelve_are_applied():
-    """Ten on the first pass, two on the second. Thirteen means something crept in."""
-    assert len(FSQ_CONFIRMED_CLOSURES) == 12
+def test_exactly_eleven_are_applied_and_one_is_flagged():
+    """Ten on the first pass, two on the second, one turned back into a flag on the third.
+    Twelve applied would mean the flag decision was quietly reversed."""
+    assert len(FSQ_CONFIRMED_CLOSURES) == 11
+    assert len(FSQ_FLAGGED_CLOSURES) == 1
+
+
+def test_the_flagged_record_is_not_removed_from_the_layer():
+    """THE WHOLE POINT OF THE FLAG. A household still sees this place."""
+    g = park_frame([SAMS_CLUB, "kept-id"])
+    assert list(drop_excluded(g)["id"]) == [SAMS_CLUB, "kept-id"]
+
+
+def test_the_flagged_record_is_not_in_the_applied_table():
+    assert SAMS_CLUB not in FSQ_CONFIRMED_CLOSURES
+    assert SAMS_CLUB in FSQ_FLAGGED_CLOSURES
+
+
+def test_a_flagged_record_can_be_asked_for_its_reason():
+    """A flag nothing can read is a comment. This is the seam a renderer would use."""
+    reason = flagged_closure_reason(SAMS_CLUB)
+    assert reason is not None
+    assert "2018-02-03" in reason
+    assert flagged_closure_reason("not-a-real-id") is None
+
+
+def test_the_flag_says_what_is_believed_and_what_is_doubted():
+    reason = FSQ_FLAGGED_CLOSURES[SAMS_CLUB]
+    assert "arehouse" in reason, "the category doubt is not stated"
+    assert "NOT RESOLVED" in reason
+    assert "crosscheck_fsq_closures" in reason
+
+
+def test_nothing_is_both_dropped_and_flagged():
+    """The two tables answer opposite questions; an id in both would make the layer's behaviour
+    depend on which one a reader happened to look at."""
+    assert not (set(FSQ_FLAGGED_CLOSURES) & set(DROPPED_PLACE_IDS))
 
 
 def test_nothing_is_held_any_more_and_the_table_still_exists():
@@ -165,20 +210,20 @@ def test_nothing_is_held_any_more_and_the_table_still_exists():
     assert FSQ_CLOSURES_HELD == {}
 
 
-def test_the_two_late_closures_name_the_cross_check_that_released_them():
-    """These two are the only entries whose evidence is not in the FSQ sheet, so the entry has to
-    point at the script that produced it."""
+def test_the_late_closure_names_the_cross_check_that_released_it():
+    """Harris Teeter's evidence is not in the FSQ sheet, so the entry points at the script that
+    produced it. Sam's Club is now flagged rather than applied and is checked separately."""
     for place_id, name in LATE.items():
-        reason = FSQ_CONFIRMED_CLOSURES[place_id]
-        assert "crosscheck_fsq_closures" in reason, f"{name} does not name the cross-check"
+        table = FSQ_CONFIRMED_CLOSURES if place_id in FSQ_CONFIRMED_CLOSURES \
+            else FSQ_FLAGGED_CLOSURES
+        assert "crosscheck_fsq_closures" in table[place_id], f"{name} misses the cross-check"
 
 
-def test_the_sams_club_entry_still_carries_the_doubt_it_was_accepted_over():
-    """It was NOT resolved. An entry that reads as settled would lose the one thing a reader
-    needs if this record is ever disputed."""
-    reason = FSQ_CONFIRMED_CLOSURES["c7c31e4e-79a8-43d3-aa0c-4c1bf098747e"]
-    assert "arehouse" in reason, "the category objection is not stated"
-    assert "NOT RESOLVED" in reason, "the entry does not say the objection stands unresolved"
+def test_each_applied_closure_is_actually_dropped():
+    """The applied table exists to remove records. An entry that is not in `DROPPED_PLACE_IDS`
+    would read as applied while changing nothing."""
+    for place_id in FSQ_CONFIRMED_CLOSURES:
+        assert place_id in DROPPED_PLACE_IDS, f"{place_id} is listed but never removed"
 
 
 def test_each_closure_names_its_date_and_its_source():
@@ -206,11 +251,12 @@ def test_drop_excluded_removes_an_accepted_closure():
     assert list(drop_excluded(g)["id"]) == [kept]
 
 
-def test_drop_excluded_removes_the_two_that_had_been_held():
-    """The first pass asserted the exact opposite. This is the behaviour the owner changed, so it
-    is asserted directly instead of being left implied by the count."""
-    g = park_frame([*LATE, "kept-id"])
-    assert list(drop_excluded(g)["id"]) == ["kept-id"]
+def test_drop_excluded_removes_harris_teeter_but_keeps_sams_club():
+    """The two that were held together ended up on opposite sides, which is the clearest single
+    assertion of where this landed."""
+    harris = "1937d785-1a98-49c5-9d32-51b7ec7c97af"
+    g = park_frame([harris, SAMS_CLUB, "kept-id"])
+    assert list(drop_excluded(g)["id"]) == [SAMS_CLUB, "kept-id"]
 
 
 def test_select_overture_applies_the_closures_too():
