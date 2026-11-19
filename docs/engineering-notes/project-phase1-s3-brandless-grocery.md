@@ -255,7 +255,12 @@ not exercise it.**
 
 The table feeds the **`supermarket`** target. The published manifest carries **`grocery`**, which
 is taxonomy-based and does not consult `classify_grocery` at all. Measured: `supermarket`
-235 → 242, **`grocery` 543 → 543**. `categories.py` says why, in a comment written before any of
+235 → 242, **`grocery` 543 → 543**. *(The 543 was the live count when this was measured. It became
+**532** the same day in `ae89174`, for an unrelated reason — the owner's ask 3 removed eleven
+records by id. The 543 → 543 above is still the right measurement of what the RECOVERY did, which
+is what this section is about. Re-checked after `ae89174`: no exclusion entry cites a building
+area, so nothing published depends on a footprint and the registry's "authorised, not yet
+exercised" still holds.)* `categories.py` says why, in a comment written before any of
 this: *"`grocery` below is left exactly as it was, because the published layer is built from it."*
 
 So **nothing published depends on a footprint yet**, and the registry row's own words —

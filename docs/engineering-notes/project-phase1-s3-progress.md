@@ -352,9 +352,25 @@ the first published use of a footprint, and wrong that the published artifact ha
 share-alike. `d39141e` had said *"authorised, not yet exercised"* one commit earlier and was
 right. **Ledger 60: measure the end of the pipeline, not the end of your change.**
 
-**Current numbers after the repairs:** `NAME_CONFIRMED_SUPERMARKETS` **7**; unclassified grocery
-**264**, of which **263** brandless; `supermarket` target **242**; `grocery` target **543**,
-unchanged throughout.
+**Taken 2026-11-18, FIFTH pass -- the fourth pass's ask 3, answered "come out".** `ae89174`.
+Eleven records leave the PUBLISHED `grocery` layer: the Food House and ten collection bays.
+**Published `grocery` 543 -> 532**; `supermarket` unchanged at **242**, because all eleven were
+already outside it. Cut by explicit id with evidence per entry, never by the service-point screen
+-- that screen is a heuristic with a known false rejection (`Norseman IGA and Post Office`), and a
+test now asserts an unlisted bay-shaped name is still published, so the table cannot quietly become
+a name rule.
+
+**THE ASK'S OWN CO-LOCATION CLAIM WAS WRONG, AND MEASURING IS WHAT SHOWED IT.** I told the owner a
+bay bolted to its own Supercenter costs a household nothing. That reasoned from the FOOTPRINT note
+-- *"several sit on the Supercenter's own 20,000 m2 footprint"* -- which is about buildings, not
+about the published layer. Measured against the layer: only **two** of the ten have another
+published grocery record within 150 m; **six** have nothing published within 150 m once the eleven
+are gone, one of them nothing inside **2 km**. Ledger 60 one pass later, inside the ask itself.
+
+**Current numbers:** `NAME_CONFIRMED_SUPERMARKETS` **7**; unclassified grocery **264**, of which
+**263** brandless; `supermarket` target **242**; **`grocery` target 532** -- 543 until `ae89174`.
+Every earlier *"543 -> 543"* in these notes is a true statement about the THIRD review, not a live
+count; do not rewrite them.
 
 **One doubt is attached rather than resolved:** the surviving `ALDI` at 4241 Louisburg Rd may be a
 store that relocated to 6101 Capital Blvd in October 2019. Reporting confirms a Louisburg Road
@@ -365,8 +381,9 @@ acted on.
 
 Nothing below should be decided by a session on its own.
 
-**NEW 2026-11-18, fourth pass, from the third adversarial review's repairs.** All four were put to
-the owner in chat and none is answered.
+**ALL FOUR ANSWERED by the owner 2026-11-18** (*"1) keep; 2) keep; 3) come out; 4) leave
+unclassified"*). Kept here with the answers attached, because the reasoning is what a later session
+needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 
 * **1. Sam's Club is applied again, and it was the owner's call to flag it.** `2f283fb`. The
   category objection is retired by NC's 2018 WARN filing (#6668, effective 2018-01-26, PERMANENT,
@@ -375,33 +392,66 @@ the owner in chat and none is answered.
   entry, nothing is published or deployed, and the alternative leaves a household routed to a
   pharmacy that shut in 2018 with nothing rendering the flag. **It is one line to put back** --
   move the entry from `FSQ_CONFIRMED_CLOSURES` to `FSQ_FLAGGED_CLOSURES` and the tests say which
-  assertions flip.
+  assertions flip. **ANSWERED: KEEP IT APPLIED.** The reversal of the owner's own same-day call
+  stands, on the WARN filing. Twelve applied, none flagged.
 * **2. The surviving `ALDI` at 4241 Louisburg Rd may be a relocated store.** The review reports it
   moving to 6101 Capital Blvd in October 2019; reporting confirms a Louisburg Road ALDI moving
   then but **no source ties the move to this street number**, and its own 1,441 m2 host building
   clears the floor. Left in the table **with the doubt written into its entry**. Drop it, keep it,
-  or have somebody look at the address?
-* **3. Should the Food House also come out of the PUBLISHED `grocery` layer?** This one is a
-  pre-existing problem the review uncovered rather than anything the recovery caused.
-  `Weaver Street Market, Inc` is tagged `grocery_store` in the Overture taxonomy, so it is
-  **currently offered to households as a grocery destination** -- a meat-processing plant and
-  bakery that supplies the shops. `NOT_A_WEEKLY_SHOP_SITES` keeps it out of `supermarket` only,
-  because `grocery` is taxonomy-based and never calls `classify_grocery`. Taking it out needs
-  `EXCLUDED_PLACE_IDS`, which moves a published number (543 -> 542) and is explicitly an owner
-  decision about what a record IS. **My reading: it should come out.** MEASURED rather than
-  presumed, because that is the whole lesson of this pass: the Food House **is** in the 543, and so
-  are **ten** pickup-named records (`Walmart Grocery Pickup and Delivery` and `Walmart Grocery
-  Pick Up and Delivery`) -- ten, not the nine the recovery sheet counts, because that sheet only
-  ever saw the brandless ones. So the same question applies to eleven records, not one.
+  or have somebody look at the address? **ANSWERED: KEEP.** It stays in
+  `NAME_CONFIRMED_SUPERMARKETS`, and **the doubt stays written into its entry** -- keeping the
+  record was the decision, not resolving the street number.
+* **3. Should the Food House also come out of the PUBLISHED `grocery` layer?** A pre-existing
+  problem the review uncovered rather than anything the recovery caused. `Weaver Street Market,
+  Inc` is tagged `grocery_store`, so a meat-processing plant and bakery was **offered to households
+  as a grocery destination**; `NOT_A_WEEKLY_SHOP_SITES` governs `supermarket` only, because
+  `grocery` is taxonomy-based and never calls `classify_grocery`. MEASURED rather than presumed:
+  the Food House **is** in the 543, and so are **ten** pickup-named records -- ten, not the nine
+  the recovery sheet counts, because that sheet only ever saw the brandless ones. Eleven records.
+  **ANSWERED: COME OUT. Applied in `ae89174`, published `grocery` 543 -> 532** -- not the 542 this
+  ask predicted, because the ask priced one record and the owner was asked about eleven.
 * **4. The five `NEIGHBOUR` records: leave them, or look at them one by one?** `Lowes Foods` at
   2900 Wake Forest Rd and 3480 Kildaire Farm Rd, `Lowes Foods Of Cary On High House`, and the two
   `Wal Mart` records at 1748 Fordham Blvd. Each is named for a real chain and sits in no building,
   with a big one 26-105 m away that belongs to somebody identifiable. **Geometry cannot decide
   them and nothing cheap will**; they stay `unclassified`, which costs a household the option and
   costs the layer nothing. Deciding them means somebody looking at five addresses.
+  **ANSWERED: LEAVE THEM UNCLASSIFIED.** No further work; the five stay out of `supermarket`.
+
+**NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
+and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
+
+* **5. SIX REAL WALMART SUPERCENTERS ARE MISSING FROM THE PUBLISHED `grocery` LAYER.** Of the ten
+  Walmart store-form records in the accepted places, **four reach the layer and six do not**:
+  Overture files four as `department_store`, one as `superstore` and one as `warehouse_club_store`,
+  and the `grocery` wedge matches only the `grocery_store` hierarchy. This is why removing the
+  collection bays costs coverage at six sites -- **the bay had been standing in for the store.** A
+  Supercenter is a weekly shop by any reading of the owner's own definition, so the layer is
+  currently wrong at those six addresses, and it was wrong before ask 3 in a way the bays hid.
+  Adding them is a decision about what a record IS **and it moves a published number UPWARD**
+  (532 -> 538 if all six go in), which is why no session should take it. The ids:
+  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63`, `182dc975-ff2e-4be1-8811-0dc710b42547`,
+  `d3a09343-a70b-4444-a5d8-543fca5b91ec`, `50ada728-6b96-4536-b42b-87c7e192bb8e` (all
+  `department_store`), `efdcc3bc-9b12-4a20-9473-2a69a93f4d3c` (`superstore`),
+  `a61f0a63-773f-45dc-9003-814e0e460dd5` (`warehouse_club_store`). **There is no table for
+  ADDITIONS yet** -- `EXCLUDED_PLACE_IDS` only removes -- so this needs a decision about mechanism
+  as well as about these six records. **My reading: they should go in**, and the mechanism question
+  is the more interesting half, because a taxonomy that files a supermarket as a department store
+  will do it again for another brand.
+* **6. Three more records the service-point screen flags, which ask 3 did NOT cover.** Deliberately
+  left in: the owner decided eleven records and these are not among them, and extending an answer
+  past what was asked is how a table stops being reviewable.
+  **`Weaver Street Market Administration`** (`4ff51c50-4e5d-4b0d-8bbe-ddb55a26be53`) -- the office
+  on the Food House site, a **third** wrong destination from that one address, and the destination
+  audit has already seen it chosen. **`Food Line Distribution Center`**
+  (`ee14e175-556e-4b89-af7b-adea914d618c`) -- already classified `not_a_grocery` and published
+  anyway, which is the same taxonomy-versus-classifier gap as the Food House. **`Variety Pick-Up`**
+  (`c8899cfc-9df9-4d98-b186-063ed5581515`) -- `unclassified`, and **this one may be a real corner
+  shop**: the name is not evidence either way, so it needs somebody to look rather than a ruling.
 
 **New 2026-11-17, from the Foursquare measurement.** All four were put to the owner in chat and
-none is answered. Nothing has been accepted:
+**one of the four is now CLOSED and the question it left behind is SETTLED** -- see the first
+bullet. The other three are still unanswered, and nothing has been accepted for them:
 `docs/experiments/audit/{grocery,pharmacy}-fsq-coverage.csv` both carry a blank `verdict` column
 and no table was edited.
 
@@ -411,8 +461,14 @@ and no table was edited.
   was never answered, the positive evidence is OSM's *silence*, and the doubt now survives only in
   a source comment while `DROPPED_PLACE_IDS` removes the record completely. It calls this *"a
   publication risk, not a demonstrated false closure"*. A flag that keeps the record would carry
-  the doubt in the data instead of in a comment. Not acted on: the owner made this call today over
-  exactly this doubt.
+  the doubt in the data instead of in a comment.
+
+  **SETTLED 2026-11-18, and the record is APPLIED.** The flag was the owner's third-pass call, and
+  it was waiting on the category objection. The third adversarial review retired that objection
+  with evidence from outside the dataset -- NC's 2018 WARN report, Sam's Club #6668, effective
+  2018-01-26, PERMANENT, at the record's own address -- so `2f283fb` applied the closure again and
+  the owner confirmed **keep it applied** the same day (ask 1 of the fourth pass). Twelve applied,
+  none flagged; `FSQ_FLAGGED_CLOSURES` is empty and kept for the next genuinely uncertain closure.
 
   The original cross-check, kept because it is the evidence:
   * **Harris Teeter, closed 2017-09-25. The reason for holding it is gone.** It was held because
