@@ -27,7 +27,10 @@ from locfinder.places.exclusions import (
     DROPPED_PLACE_IDS,
     EXCLUDED_PLACE_IDS,
     HELD_SERVICE_POINTS,
+    INCLUDED_PLACE_IDS,
     drop_excluded,
+    forced_into,
+    inclusion_reason,
 )
 
 HARRIS_LAKE = "5a1c8da5-ce62-41fc-af4a-fa2c0c4bd703"
@@ -435,3 +438,87 @@ def test_the_published_layer_excludes_by_id_and_never_by_name():
 def test_the_food_house_is_in_dropped_place_ids():
     """The one derived set every builder goes through, so none can route around the decision."""
     assert FOOD_HOUSE in DROPPED_PLACE_IDS
+# ---------------------------------------------------------------------------
+# The INCLUSION mechanism, added 2026-11-19 when ask 5 was rebuilt. `EXCLUDED_PLACE_IDS` only ever
+# removed; there was no way to admit a record whose taxonomy fails to claim something it IS, which
+# is why a real Walmart Supercenter filed as `department_store` could not reach the `grocery`
+# wedge no matter how good the evidence was.
+#
+# The table is EMPTY and these tests are the seam's proof, not its population. Adding a record
+# moves a published number upward and is the owner's decision.
+# ---------------------------------------------------------------------------
+
+FORCED = "11111111-2222-4333-8444-555555555555"
+
+
+def department_store_frame(ids):
+    """A frame the `grocery` wedge does NOT match: the Walmart Supercenter problem exactly."""
+    tax = {"primary": "department_store", "hierarchy": ["shopping", "department_store"]}
+    return gpd.GeoDataFrame(
+        {
+            "id": list(ids),
+            "taxonomy": [tax] * len(ids),
+            "names": [{"primary": "Walmart"} for _ in ids],
+        },
+        geometry=[Point(i, 0) for i in range(len(ids))],
+        crs="EPSG:32617",
+    )
+
+
+def test_the_inclusion_table_is_empty_and_that_is_deliberate():
+    """Populating it moves a published number UPWARD, which no session should do alone."""
+    assert INCLUDED_PLACE_IDS["grocery"] == {}
+
+
+def test_a_department_store_does_not_reach_grocery_on_its_own():
+    """The defect the mechanism exists for. If this ever passes without an inclusion, the wedge
+    has been widened and `grocery` now means something else."""
+    g = department_store_frame([FORCED])
+    assert list(select_overture(g, "grocery")["id"]) == []
+
+
+def test_an_included_id_reaches_grocery_despite_its_taxonomy(monkeypatch):
+    monkeypatch.setitem(INCLUDED_PLACE_IDS["grocery"], FORCED, "a real Supercenter, corroborated")
+    g = department_store_frame([FORCED])
+    assert list(select_overture(g, "grocery")["id"]) == [FORCED]
+
+
+def test_exclusion_beats_inclusion(monkeypatch):
+    """A record in BOTH tables is dropped. The exclusion table is the owner saying the record is
+    not the thing it claims to be, which outranks counting it in; if this ever flips, an excluded
+    record could be forced back into a published layer by a second table."""
+    monkeypatch.setitem(INCLUDED_PLACE_IDS["grocery"], HARRIS_LAKE, "mistakenly admitted")
+    g = department_store_frame([HARRIS_LAKE])
+    assert list(select_overture(g, "grocery")["id"]) == []
+
+
+def test_inclusion_is_per_category_and_does_not_leak(monkeypatch):
+    """A grocery inclusion must not admit the record to `park`, or one decision would silently
+    become several."""
+    monkeypatch.setitem(INCLUDED_PLACE_IDS["grocery"], FORCED, "grocery only")
+    assert FORCED in forced_into("grocery")
+    assert FORCED not in forced_into("park")
+    g = park_frame([FORCED])
+    g["id"] = [FORCED]
+    assert list(select_overture(g, "grocery")["id"]) == [FORCED]
+
+
+def test_the_seam_answers_cleanly_with_an_empty_table():
+    """A seam is only worth having if it survives its first user leaving -- the same reason
+    `flagged_closure_reason` stayed when its table emptied."""
+    assert forced_into("grocery") == frozenset()
+    assert forced_into("park") == frozenset()
+    assert forced_into("a category that does not exist") == frozenset()
+    assert inclusion_reason("grocery", FORCED) is None
+
+
+def test_every_inclusion_would_have_to_record_why(monkeypatch):
+    """Vacuously true today. It is here so that the day the table is populated, an entry with no
+    reason fails rather than being noticed later."""
+    for category, entries in INCLUDED_PLACE_IDS.items():
+        for place_id, reason in entries.items():
+            assert len(place_id) == 36, f"{place_id!r} is not an Overture uuid"
+            assert len(reason) > 40, f"{category}/{place_id} has no usable reason: {reason!r}"
+    monkeypatch.setitem(INCLUDED_PLACE_IDS["grocery"], FORCED, "too short")
+    bad = [pid for pid, why in INCLUDED_PLACE_IDS["grocery"].items() if len(why) <= 40]
+    assert bad == [FORCED], "the check above must actually be able to fail"

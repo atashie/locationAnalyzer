@@ -357,6 +357,43 @@ DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
 )
 
 
+#: Records an owner decision ADDS to a published wedge, keyed by wedge category.
+#:
+#: **The mirror of `EXCLUDED_PLACE_IDS`, and the mechanism owner ask 5 had nowhere to land in.**
+#: That table removes a record whose taxonomy claims something it is not. This one admits a record
+#: whose taxonomy fails to claim something it IS -- Overture files a Walmart Supercenter under
+#: `department_store`, `superstore` or `warehouse_club_store`, and the `grocery` wedge matches only
+#: the `grocery_store` hierarchy, so a real weekly shop never reaches the layer.
+#:
+#: **EMPTY, DELIBERATELY.** `scripts/rebuild_missing_grocery_stores.py` proposes the candidates
+#: with their evidence and writes `docs/experiments/audit/missing-grocery-stores.csv`; adding any
+#: of them moves a published number UPWARD and is an owner decision. The script's `--emit` prints
+#: entries in this shape so that applying an approved decision is mechanical rather than retyped.
+#:
+#: **Why a screen feeds a table here, rather than a rule feeding the wedge.** Widening the wedge to
+#: accept `department_store` would admit every department store in the Triangle; narrowing that
+#: with the brand tables would change what `grocery` MEANS, which `categories.py` warns against
+#: because the published layer is built from it. An id table changes which records, not which rule.
+INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
+    "grocery": {},
+}
+
+
+def forced_into(category: str) -> frozenset[str]:
+    """Ids an owner decision admits to `category`, whatever their taxonomy says.
+
+    Answers cleanly for a category with no inclusions, which is every category today -- a seam is
+    only worth having if it survives its first user leaving, the same reason
+    `flagged_closure_reason` stayed when its table emptied.
+    """
+    return frozenset(INCLUDED_PLACE_IDS.get(category, {}))
+
+
+def inclusion_reason(category: str, place_id: str) -> str | None:
+    """Why this record was admitted, or `None`. An addition with no reason is unreviewable."""
+    return INCLUDED_PLACE_IDS.get(category, {}).get(place_id)
+
+
 def drop_excluded(gdf):
     """Remove any listed record. A no-op on a frame with no `id` column.
 

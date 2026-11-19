@@ -77,16 +77,22 @@ headless operation needs `--dangerously-skip-permissions`. So no second reviewer
 Codex finding, and passes should say so. Failed configurations are in
 [[reference-codex-runtime-quirks]].
 
-**What is open, in the owner's own numbering:** **ask 5** -- the missing Walmart stores -- must be
-**rebuilt from scratch** and its current list is explicitly untrustworthy (one of its five closed
-in 2016); **ask 6** -- the Weaver Street office, `Food Line Distribution Center` and
-`Variety Pick-Up`. Both are in "Decisions the owner owes" below, along with the older carried
-items. [[feedback-verify-the-shape-of-the-risk]] stands at **61 instances**.
+**What is open, in the owner's own numbering:** **ask 5** was **REBUILT on 2026-11-19** and is now
+a screen rather than a list -- `scripts/rebuild_missing_grocery_stores.py`, sheet at
+`docs/experiments/audit/missing-grocery-stores.csv`, **20 stores proposed and none applied**;
+**ask 6** -- the Weaver Street office, `Food Line Distribution Center` and `Variety Pick-Up` -- is
+untouched. Both are in "Decisions the owner owes" below with the older carried items.
+[[feedback-verify-the-shape-of-the-risk]] stands at **61 instances**.
 
-**The obvious next piece of work, not yet agreed:** rebuilding ask 5 properly -- search by what is
-at the place rather than by the shape of a name, cross-check every candidate against the FSQ
-closure dates *before* proposing it, deduplicate against the published layer, and decide the
-mechanism, because `EXCLUDED_PLACE_IDS` only removes and there is still no table for additions.
+**The mechanism that ask 5 had nowhere to land in now exists and is EMPTY:** `INCLUDED_PLACE_IDS`
+in `locfinder/places/exclusions.py`, applied at the same chokepoint as `drop_excluded`, with seven
+tests including that **exclusion beats inclusion**. Nothing is in it, so no published number has
+moved -- `grocery` is still **542**.
+
+**The next decision is the owner's, not a session's:** approving any of the 20 moves published
+`grocery` above 542, and three of them are specifically what would allow three held collection bays
+to be removed. **No session should populate that table unasked.** The six `REVIEW: no category`
+rows need a person rather than a rule, two of them being real `Publix Super Market` stores.
 
 ---
 
@@ -540,90 +546,105 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 **NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
 and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
 
-* **5. WALMART STORES ARE MISSING FROM THE PUBLISHED `grocery` LAYER. THIS ASK MUST BE REBUILT
-  FROM SCRATCH; the list below is not trustworthy.** Owner decision 3 of 2026-11-19. The fifth
-  review found two independent faults in it, each enough on its own:
-  **(a) one of the five closed in 2016** -- `a61f0a63`, 1010 Martin Luther King Pkwy, Durham, store
-  #4369, now Triangle Rock Club. **Our own FSQ snapshot said so and I never looked:**
-  `fsq_os_places_2025-01-10.parquet` carries `date_closed=2022-05-09` at that address and lists
-  Triangle Rock Club, Planet Fitness and the Boys and Girls Club as current tenants. The project
-  has a closure cross-check script built for exactly this and it was not run against these
-  candidates. Implementing the ask as written **would have added a false destination** -- the
-  precise harm the pass was about.
-  **(b) it names mostly the WRONG stores.** The real parents of three removed bays are recorded as
-  plain `Walmart` (`88f1168d` 63.4 m, `30614a3f` 20.0 m, `aec747a0` 27.4 m), while Oxford, Chapel
-  Hill and the closed Durham store are the parents of nothing. So the list could not have repaired
-  the coverage it was presented as explaining.
-  **And 26 was never an upper bound:** `specialty_foods_store` holds omitted Whole Foods, Weaver
-  Street and Trader Joe's records too. The reviewer's own count, accepted on its reproductions
-  rather than re-derived here, is about **21 credible missing current shops** (15 Walmart, 6 ALDI),
-  plus **three** duplicates of published shops (Garner `bf4a3b75`, Brier Creek `136df00e` at
-  ~50.0 m, Lidl `2f7ca644` at ~99.6 m), one closed, one identity error (`e71befb5` says *Wal-Mart*
-  at 4005 Durham Chapel Hill Blvd, which is now **Sam's Club #4831**), and two real Publix among
-  the no-primary rows.
-  **What a rebuild must do:** search by what is at the place rather than by the shape of a name;
-  cross-check every candidate against the FSQ closure dates before proposing it; deduplicate
-  against the published layer; and decide the MECHANISM, because `EXCLUDED_PLACE_IDS` only removes
-  and there is still no table for additions. A taxonomy that files a supermarket as a department
-  store will do it again for another brand.
+* **5. REBUILT 2026-11-19 on the owner's instruction. TWENTY stores are missing from the
+  published `grocery` layer, and the mechanism to admit them now exists and is EMPTY.** The
+  2026-11-18 version of this ask is superseded in full; it proposed five stores, one of which had
+  closed in 2016, and named mostly the parents of nothing. Its faults are recorded in
+  [[2026-11-19-grocery-layer-exclusions-review-findings]] and it survives only in git history.
 
-  The superseded text, kept because the diff is the record: *Of the ten Walmart store-form
-  records, four reach the layer and six do not --- but one of those six,*
-  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63` at *'5141 NC 42, Garner'*, is **33.3 m from the published
-  `84059dec` at '5141 Nc Highway 42 W, Garner': the same store recorded twice**, once as
-  `grocery_store` and once as `department_store`. So six records are absent and **five stores are
-  missing**. I wrote 'six' from a name-and-category filter without checking for duplicates, which
-  is the same error one pass later: counting what my query returned instead of what it meant.
-  Overture files four as `department_store`, one as `superstore` and one as `warehouse_club_store`,
-  and the `grocery` wedge matches only the `grocery_store` hierarchy. This is why removing the
-  collection bays costs coverage at six sites -- **the bay had been standing in for the store.** A
-  Supercenter is a weekly shop by any reading of the owner's own definition, so the layer is
-  currently wrong at those six addresses, and it was wrong before ask 3 in a way the bays hid.
-  Adding them is a decision about what a record IS **and it moves a published number UPWARD**
-  (532 -> 537 if all five go in), which is why no session should take it. The ids, with the
-  duplicate marked:
-`182dc975-ff2e-4be1-8811-0dc710b42547` (805 Town Centre Blvd, Clayton),
-  `d3a09343-a70b-4444-a5d8-543fca5b91ec` (1001 Shiloh Glenn Dr, Morrisville -- the same street as
-  the closed Sam's Club, and the *'Walmart Supercenter at 279.7 m'* the closure cross-check already
-  mentioned), `50ada728-6b96-4536-b42b-87c7e192bb8e` (1015 Lewis St, Oxford), all three
-  `department_store`; `efdcc3bc-9b12-4a20-9473-2a69a93f4d3c` (12500 US Hwy 15 501 N, Chapel Hill,
-  `superstore`); `a61f0a63-773f-45dc-9003-814e0e460dd5` (1010 Martin Luther King Pkwy, Durham,
-  `warehouse_club_store`). **None of the five has ANY published grocery record within 200 m**
-  (nearest: 254.7 m, 1,658.5 m, 1,688.6 m, 2,003.0 m, 2,732.2 m), so each is a real gap rather than
-  a second record for a shop already in the layer. **NOT a missing store:**
-  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63`, the Garner duplicate above.
+  **A SCREEN, NOT A LIST:** `v2/scripts/rebuild_missing_grocery_stores.py`, writing
+  `docs/experiments/audit/missing-grocery-stores.csv` with a blank `verdict` column, the project's
+  convention for an owner review sheet. A screen because the cause is systematic -- Overture files
+  a Supercenter under `department_store`, `superstore` or `warehouse_club_store` while the
+  `grocery` wedge matches only the `grocery_store` hierarchy -- so it will recur for other brands
+  and other releases, and a hand list would go stale in silence.
 
-  **THE GAP IS WIDER THAN WALMART, and I only looked at Walmart when I wrote this ask.** Measured
-  2026-11-19 with the project's own brand lookup: **347** records carry a `SUPERMARKET_BRANDS`
-  name and never reach the published layer, or **267** after excluding service-point names.
-  *(Corrected 2026-11-19: this first said 267 without disclosing that a filter had been applied,
-  which the fifth review caught. Both figures reproduce exactly.)* Most belong out of it -- **132**
-  are
-  `money_transfer_service` counters like *'WALMART #003182'* and *'FOOD LION #1608'*, plus
-  bakeries, delicatessens and in-store concessions; note that the service-point SCREEN cannot see
-  these, because the giveaway is the category and not the name. The store-shaped remainder is what
-  matters: **`department_store` 13, `discount_store` 7, `superstore` 5,
-  `warehouse_club_store` 1**, and **6** with no primary at all. Those have NOT been deduplicated or
-  checked one by one. **And 26 is NOT an upper bound on the missing-shop problem**, as the fifth
-  review showed: `specialty_foods_store` holds omitted Whole Foods, Weaver Street and Trader Joe's
-  records that no store-format category would ever have surfaced. Treat 26 as an upper bound on the
-  store-FORMAT categories only, and nothing here as a verified store count.
-  **A separate thread worth its own look, with its reach CORRECTED 2026-11-19 by the fifth
-  review:** in North Carolina, `Family Fare` is a petrol-station convenience chain, not the
-  Michigan supermarket of the same name, and the brand sits in `SUPERMARKET_BRANDS`. The collision
-  is real -- `7a083a11`, 5800 Duraleigh Rd, which sells Shell fuel, classifies as `supermarket`.
-  **But my description of its reach was wrong.** The **28** `convenience_store` rows never enter
-  `select_overture(..., "supermarket")` at all, because the taxonomy gate rejects them first; the
-  demonstrated promotion is **five Family Fare records tagged `grocery_store`**, all already in
-  `grocery`. The reviewer found **no second homonymous-brand collision** among the other brands,
-  but noted that Walmart concessions, Harris Teeter pharmacies and a Publix-branded mall all
-  receive `supermarket` from the classifier alone, with only the taxonomy gate containing them --
-  so the gate is doing load-bearing work nobody chose it for. `supermarket` is not published, so
-  nothing reaches a household from it today. **There is no table for
-  ADDITIONS yet** -- `EXCLUDED_PLACE_IDS` only removes -- so this needs a decision about mechanism
-  as well as about these six records. **My reading: they should go in**, and the mechanism question
-  is the more interesting half, because a taxonomy that files a supermarket as a department store
-  will do it again for another brand.
+  **EVERY GATE FAILS CLOSED, because the asymmetry is not symmetric:** a wrong ADDITION sends a
+  household to a shop that is not there; a wrong REFUSAL leaves the layer exactly as it is today.
+  The first is a new harm, the second is the status quo.
+
+  | gate | count |
+  |---|---|
+  | already an owner exclusion -- never re-propose what the owner removed | 4 |
+  | considered | 106,938 |
+  | no supermarket brand (name lookup, then Overture's brand field) | 106,600 |
+  | names a service point | 70 |
+  | **REVIEW: no Overture category at all** | **6** |
+  | not a store format | 235 |
+  | **REFUSED: Foursquare says closed, and nothing agreeing is open there** | **2** |
+  | closure overridden -- a DEPARTMENT closed while the shop trades on | 3 |
+  | **REFUSED: already published under another record** | **3** |
+  | **REVIEW: a brandless published record sits within 150 m** | **1** |
+  | **REFUSED: uncorroborated** | **1** |
+  | **PROPOSED** | **20** |
+
+  **The 20 are 14 Walmart and 6 ALDI.** Fifteen are corroborated **twice over** -- an OSM
+  `shop=supermarket` with an agreeing name at 0.0-13.4 m **and** an open Foursquare record -- and
+  **two rest on Foursquare alone**, both of them records where a department closed. Quote the split,
+  not the 20.
+
+  **THREE OF THE TWENTY ARE WHAT WOULD LET THE HOLD BE LIFTED**, and the sheet says so per row:
+  `88f1168d` (3151 Apex Peakway) replaces held bay `38c97738` at 63.4 m; `30614a3f` (2114 S Main
+  St, Wake Forest) replaces `8226f374` at 20.0 m; `182dc975` (805 Town Centre Blvd, Clayton)
+  replaces `2023f7f8` at 110.7 m. A fourth, `aec747a0` (1725 New Hope Church Rd), is the parent of
+  bay `cee0e25b` at 27.4 m and sits in **REVIEW** rather than PROPOSED, because brandless
+  *Total Oriental Foods* is 147.9 m away. **The screen had to be taught that a held bay is not the
+  shop**: on its first run it refused all three parents as duplicates of the very bays the hold is
+  waiting to replace, which would have made the hold permanent.
+
+  **What the new gates caught that the old ask could not:**
+  * The **Durham Walmart at 1010 Martin Luther King Pkwy** -- the one the old ask proposed -- is
+    refused: Foursquare carries a `date_closed` there and the records open at that address are
+    Triangle Rock Club and Planet Fitness, whose names do not agree with Walmart.
+  * A **Harris Teeter at 2741 NC Highway 55 W** refused on a 2017-09-25 closure.
+  * **`Wal-Mart` at 4005 Durham Chapel Hill Blvd** refused as uncorroborated; the review reports
+    that site is now Sam's Club #4831, so the record is a stale identity rather than a missing shop.
+  * The **Lidl at 1105 N Harrison Ave** refused as a duplicate: the same shop is already published
+    as *'Cary NC - N. Harrison Ave'* 99.6 m away. A name-based test cannot see that, because a
+    store-code name carries no chain; **Overture's brand FIELD says `Lidl` for both**, which is why
+    the duplicate gate reads the field and not the name.
+  * **Three real Walmarts were nearly refused for the Sam's Club reason, pointing the other way.**
+    Foursquare lists `Walmart Garden Center` (closed 2019-02-13, twice) and
+    `Walmart Photo Printing` (closed 2017-12-15) at their addresses, and those names share the
+    word "Walmart" so they clear the agreement floor against a record named `Walmart`. **A
+    department closing inside a shop that keeps trading is not the shop closing.** The
+    discriminator is evidence, not a word list: a closure refuses only when no agreeing record is
+    still open at the same site.
+
+  **ONE DECLARED GATE WAS UNREACHED ON THE FIRST RUNS AND IS PRINTED AS `NEVER REACHED`** in those
+  words. It became reachable only once the held-bay exception admitted the parent stores. A gate
+  nothing reaches is decoration, so if it returns to zero on a later release it should be deleted
+  rather than kept for comfort.
+
+  **THE MECHANISM.** `INCLUDED_PLACE_IDS` in `locfinder/places/exclusions.py`, keyed by wedge
+  category, applied at the same chokepoint as `drop_excluded`. **Empty, deliberately**, with seven
+  tests: that a `department_store` does NOT reach `grocery` on its own, that an included id does,
+  that **exclusion beats inclusion** so an excluded record can never be forced back into a
+  published layer, that inclusion does not leak between categories, and that the seam answers
+  cleanly while the table is empty. `--emit` prints entries in that shape so an approved decision
+  is mechanical rather than retyped. Widening the wedge instead was rejected: accepting
+  `department_store` would admit every department store in the Triangle, and narrowing that with
+  the brand tables would change what `grocery` MEANS, which `categories.py` warns against because
+  the published layer is built from it. **An id table changes which records, not which rule.**
+
+  **STILL THE OWNER'S, and nothing has been applied:** approving any of the 20 moves published
+  `grocery` upward from 542 (all twenty would make it 562), and three of them also unlock removing
+  three held bays. The **six REVIEW: no category** rows need a person: two are real
+  `Publix Super Market` stores, three are `Family Fare`, and one is `Manpower at Walmart`, a
+  staffing desk inside a store -- and no category rule can separate the Publix from the Manpower,
+  because the giveaway is that one is a shop and the other is a desk in one.
+
+  **The Family Fare brand collision, carried forward from the 2026-11-18 ask with its reach
+  corrected by the fifth review:** in North Carolina, `Family Fare` is a petrol-station
+  convenience chain, not the Michigan supermarket of the same name, and the brand sits in
+  `SUPERMARKET_BRANDS`. `7a083a11`, 5800 Duraleigh Rd, which sells Shell fuel, classifies as
+  `supermarket`. **But the 28 `convenience_store` rows never enter
+  `select_overture(..., "supermarket")`** -- the taxonomy gate rejects them first -- so the
+  demonstrated promotion is **five Family Fare records tagged `grocery_store`**, already in
+  `grocery`. No second homonymous-brand collision was found, though Walmart concessions, Harris
+  Teeter pharmacies and a Publix-branded mall all receive `supermarket` from the classifier alone,
+  with only the taxonomy gate containing them -- load-bearing work nobody chose it for.
+
 * **6. Three more records the service-point screen flags, which ask 3 did NOT cover.** Deliberately
   left in: the owner decided eleven records and these are not among them, and extending an answer
   past what was asked is how a table stops being reviewable.

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .exclusions import drop_excluded
+from .exclusions import drop_excluded, forced_into
 from .named_places import is_named_place, select_named
 
 WEDGE_CATEGORIES: dict[str, dict] = {
@@ -132,6 +132,14 @@ def select_overture(gdf, category: str):
         mask = mask & keep
     # Owner decisions about what a record IS, applied at the one chokepoint every builder and
     # script goes through, so none can route around them by accident. See `exclusions`.
+    #
+    # INCLUSIONS FIRST, THEN EXCLUSIONS, and the order is the decision: a record in both tables is
+    # dropped. `EXCLUDED_PLACE_IDS` is the owner saying "this is not the thing it claims to be",
+    # which is a stronger statement than "count this one in", and a test asserts the precedence so
+    # a later reordering cannot quietly reverse it.
+    forced = forced_into(category)
+    if forced and "id" in getattr(gdf, "columns", ()):
+        mask = mask | gdf["id"].isin(forced).to_numpy(dtype=bool)
     out = drop_excluded(gdf[mask])
     return out.sort_values("id") if "id" in out.columns else out
 
