@@ -353,37 +353,88 @@ share-alike. `d39141e` had said *"authorised, not yet exercised"* one commit ear
 right. **Ledger 60: measure the end of the pipeline, not the end of your change.**
 
 **Taken 2026-11-18, FIFTH pass -- the fourth pass's ask 3, answered "come out".** `ae89174`.
-Eleven records leave the PUBLISHED `grocery` layer: the Food House and ten collection bays.
-**Published `grocery` 543 -> 532**; `supermarket` unchanged at **242**, because all eleven were
-already outside it. Cut by explicit id with evidence per entry, never by the service-point screen
--- that screen is a heuristic with a known false rejection (`Norseman IGA and Post Office`), and a
-test now asserts an unlisted bay-shaped name is still published, so the table cannot quietly become
-a name rule.
+Eleven records left the PUBLISHED `grocery` layer: the Food House and ten collection bays.
+**TEN OF THE ELEVEN WERE PUT BACK ON 2026-11-19.** What stands from that commit is the Food House
+removal alone. See the sixth pass immediately below; do not read `ae89174`'s own message as current
+state.
 
-**THE ASK'S OWN CO-LOCATION CLAIM WAS WRONG, AND MEASURING IS WHAT SHOWED IT.** I told the owner a
-bay bolted to its own Supercenter costs a household nothing. That reasoned from the FOOTPRINT note
--- *"several sit on the Supercenter's own 20,000 m2 footprint"* -- which is about buildings, not
-about the published layer. Measured against the layer: only **two** of the ten have another
-published grocery record within 150 m; **six** have nothing published within 150 m once the eleven
-are gone, one of them nothing inside **2 km**. Ledger 60 one pass later, inside the ask itself.
+**Taken 2026-11-19, SIXTH pass -- the fifth adversarial review and its repairs.** Findings
+[[2026-11-19-grocery-layer-exclusions-review-findings]], recorded in `ec6b362` **before any
+repair**; prompt `551fe74`, committed before launch. Reviewer **Codex `gpt-6.1-sol`** only --
+**ONE reviewer, not two**, by owner decision on Antigravity (see the standing constraints). **The
+most damaging of the five reviews, and the first to find a change had taken no effect at all.**
 
-**Current numbers:** `NAME_CONFIRMED_SUPERMARKETS` **7**; unclassified grocery **264**, of which
-**263** brandless; `supermarket` target **242**; **`grocery` target 532** -- 543 until `ae89174`.
-Every earlier *"543 -> 543"* in these notes is a true statement about the THIRD review, not a live
-count; do not rewrite them.
+1. **THE REMOVAL NEVER REACHED WHAT HOUSEHOLDS SEE. This is ledger 61.**
+   `v2/spikes/g3-render/fixtures/published/own_triangle_grocery_walk.destinations.json` still held
+   **ten of the eleven** removed records. I measured the selector (`543 -> 532`), looked for a
+   `data/published` directory, found none, and concluded there was no published artifact to
+   update. The published fixtures are one directory away. It cut both ways: **no household-visible
+   harm had occurred, so holding cost nothing.**
+2. **THE TEN BAYS ARE HELD, NOT REMOVED.** Owner decisions 1 and 2 of 2026-11-19, on the review's
+   recommendation. New `HELD_SERVICE_POINTS` in `exclusions.py`, on the footing of
+   `PENDING_CLOSURES`: what we are not acting on, with the evidence. **Published `grocery` is
+   542** -- 543 less the Food House alone. The argument that won is not a defect argument: a
+   collection bay is not a shop you walk round, but it **is** a way to get a weekly shop, so *"a
+   collection bay is not a weekly shop"* is a policy judgement about eligible shopping methods
+   rather than a fact about food access. Against it, removing a bay erases the only published
+   record at its site **while the shop it serves is not in the layer to replace it**. The ten are
+   removed together with their replacements or not at all.
+3. **It is THREE and SEVEN, not two and six.** `cee0e25b` sits at **147.9 m**, inside the 150 m
+   threshold I chose myself. So the removal would have left **seven** sites with no published
+   grocery record -- including in the subject line of `ae89174`, which cannot be corrected now.
+4. **An entry in the committed table was FALSE.** `cee0e25b`'s evidence said the removal cost a
+   household nothing because *"the shop it collects for is itself in the layer"*, naming **Total
+   Oriental Foods** at 147.9 m. The real parent, `aec747a0`, is **27.4 m** away and **absent from
+   the layer**. I read parentage off proximity: the borrowed building for the third time, in the
+   pass that was repairing it.
+5. **The guard test I cited to the owner tested nothing.** `grocery_frame` supplied no `names`
+   field, so the "unlisted bay-shaped name" had no name; the reviewer added a name filter to the
+   published path and all 33 tests still passed. Fixed, and **mutation-proved both ways**. The
+   review also sharpened the design claim worth keeping: discovery by heuristic is legitimate so
+   long as **adjudication** is by evidence and decision -- so the prose must separate discovery
+   from adjudication, which it now does.
+6. **Three of the bays' real parent stores are recorded as plain `Walmart`** -- 63.4 m, 20.0 m and
+   27.4 m from their bays, none in the published layer. The search behind ask 5 required
+   "Supercenter" or "Neighborhood Market" in the name, so it could never have found them. They are
+   named in `HELD_SERVICE_POINTS` and in `tests/test_place_exclusions.py`.
+
+**Current numbers, 2026-11-19, measured after the hold:** `NAME_CONFIRMED_SUPERMARKETS` **7**;
+**`grocery` target 542**; `supermarket` target **242**, unchanged by any of this; unclassified in
+the published layer **264**.
+
+**That 264 moved twice in two days and the trail matters**, because the obvious reading of the
+review is wrong. It was 264 before `ae89174`; the review measured **254** while the eleven were
+excluded, and was right; holding the ten bays returns ten `unclassified` records to the layer, so
+it is **264** again. I first wrote 254 into this line by adopting the reviewer's figure after
+changing the state it was measured in -- the same error as the rest of the pass, one step smaller.
+The Food House does not enter it either way, since it classifies `not_a_grocery`, which is why
+254 + 10 is exactly 264. The **brandless** sub-count is still not quoted here, because it depends
+on a definition this note never fixed: the reviewer reports 253 and "unclassified with no
+`chain_in_name` match" gives **239**. Settle the definition before using either. Every earlier *"543 -> 543"* in these notes is a true
+statement about the THIRD review, not a live count; do not rewrite them.
+
+**THE ONE REMAINING PUBLICATION INCONSISTENCY.** The bays are consistent again -- held in the
+selector, present in the fixtures. **The Food House is not:** it is excluded from the selector and
+still present in `own_triangle_grocery_walk.destinations.json`, so the published artifact still
+offers a meat-processing plant as a grocery destination. Regenerating the fixtures is compute and
+touches a published artifact, and deployment is explicitly out of scope, so it is recorded rather
+than done -- but **any future claim that the Food House is "removed" must say removed from the
+selector**, which is the whole of ledger 61.
 
 **THE GROCERY TRAVEL-TIME RASTERS ARE STALE, AND NOT ONLY BECAUSE OF THIS PASS.** Changing the
-destination set changes nothing that was already computed from it. Every `own_*grocery*` layer
-under `v2/data/layers/` was built **2026-11-10 to 2026-11-16** -- before the Kroger drop, before
-the twelve FSQ closures, and before today's eleven removals. So **no grocery travel-time number
-should be quoted until they are rebuilt**, and the direction is known: removing a destination can
-only make the time to the nearest grocery longer or leave it unchanged, so the rasters currently
-**understate** it. Ask 5 pushes the other way, since five missing Supercenters would shorten it.
-Rebuilding is compute rather than a decision, so it is not an owner ask -- but it is not free, and
-nothing is deployed, so it is listed here rather than done. `v2/data/` is gitignored, which is why
-this belongs in the resume point: it is true of this machine and invisible in a diff. Found by
-checking the end of the pipeline rather than the end of the change (ledger 60), while writing the
-review prompt.
+destination set changes nothing already computed from it. The legacy `own_grocery_*` rasters carry
+**2026-11-03** timestamps and the later `own_triangle_grocery_*` artifacts **2026-11-10 to
+2026-11-16** -- all before the Kroger drop, the twelve FSQ closures and the Food House removal. So
+**no grocery travel-time number should be quoted until they are rebuilt.**
+
+**The direction is NOT known, and the earlier claim here that it was is wrong.** I wrote that
+removing a destination can only lengthen the time to the nearest grocery. The router minimises
+**penalised cost** and reports the chosen route's **unpenalised time**, so dropping the
+cost-cheapest destination can select a route that is *faster* in reported time. Verified against
+the real `arrival_seconds_two_weight`: `200.0` becomes `100.0` when a destination is removed, and
+driven through `build_layer_surface` a 150 s horizon flips `BEYOND_HORIZON -> OK`. **"Stale"
+stands; "understates" does not.** `v2/data/` is gitignored, which is why this belongs in the
+resume point: it is true of this machine and invisible in a diff.
 
 **One doubt is attached rather than resolved:** the surviving `ALDI` at 4241 Louisburg Rd may be a
 store that relocated to 6101 Capital Blvd in October 2019. Reporting confirms a Louisburg Road
@@ -421,8 +472,11 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
   `grocery` is taxonomy-based and never calls `classify_grocery`. MEASURED rather than presumed:
   the Food House **is** in the 543, and so are **ten** pickup-named records -- ten, not the nine
   the recovery sheet counts, because that sheet only ever saw the brandless ones. Eleven records.
-  **ANSWERED: COME OUT. Applied in `ae89174`, published `grocery` 543 -> 532** -- not the 542 this
-  ask predicted, because the ask priced one record and the owner was asked about eleven.
+  **ANSWERED: COME OUT -- then PARTLY REVERSED on 2026-11-19.** Applied in `ae89174` as
+  543 -> 532; the fifth review then showed the removal left seven sites with no published grocery
+  record and had not reached the published fixtures at all, and the owner **held the ten bays**.
+  **Net effect: the Food House alone, published `grocery` 543 -> 542** -- which is, by coincidence,
+  the number this ask originally predicted for the wrong reason.
 * **4. The five `NEIGHBOUR` records: leave them, or look at them one by one?** `Lowes Foods` at
   2900 Wake Forest Rd and 3480 Kildaire Farm Rd, `Lowes Foods Of Cary On High House`, and the two
   `Wal Mart` records at 1748 Fordham Blvd. Each is named for a real chain and sits in no building,
@@ -434,9 +488,35 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 **NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
 and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
 
-* **5. FIVE REAL WALMART SUPERCENTERS ARE MISSING FROM THE PUBLISHED `grocery` LAYER.**
-  **CORRECTED 2026-11-19 from six, before any review saw it.** Of the ten Walmart store-form
-  records, **four reach the layer and six do not** --- but one of those six,
+* **5. WALMART STORES ARE MISSING FROM THE PUBLISHED `grocery` LAYER. THIS ASK MUST BE REBUILT
+  FROM SCRATCH; the list below is not trustworthy.** Owner decision 3 of 2026-11-19. The fifth
+  review found two independent faults in it, each enough on its own:
+  **(a) one of the five closed in 2016** -- `a61f0a63`, 1010 Martin Luther King Pkwy, Durham, store
+  #4369, now Triangle Rock Club. **Our own FSQ snapshot said so and I never looked:**
+  `fsq_os_places_2025-01-10.parquet` carries `date_closed=2022-05-09` at that address and lists
+  Triangle Rock Club, Planet Fitness and the Boys and Girls Club as current tenants. The project
+  has a closure cross-check script built for exactly this and it was not run against these
+  candidates. Implementing the ask as written **would have added a false destination** -- the
+  precise harm the pass was about.
+  **(b) it names mostly the WRONG stores.** The real parents of three removed bays are recorded as
+  plain `Walmart` (`88f1168d` 63.4 m, `30614a3f` 20.0 m, `aec747a0` 27.4 m), while Oxford, Chapel
+  Hill and the closed Durham store are the parents of nothing. So the list could not have repaired
+  the coverage it was presented as explaining.
+  **And 26 was never an upper bound:** `specialty_foods_store` holds omitted Whole Foods, Weaver
+  Street and Trader Joe's records too. The reviewer's own count, accepted on its reproductions
+  rather than re-derived here, is about **21 credible missing current shops** (15 Walmart, 6 ALDI),
+  plus **three** duplicates of published shops (Garner `bf4a3b75`, Brier Creek `136df00e` at
+  ~50.0 m, Lidl `2f7ca644` at ~99.6 m), one closed, one identity error (`e71befb5` says *Wal-Mart*
+  at 4005 Durham Chapel Hill Blvd, which is now **Sam's Club #4831**), and two real Publix among
+  the no-primary rows.
+  **What a rebuild must do:** search by what is at the place rather than by the shape of a name;
+  cross-check every candidate against the FSQ closure dates before proposing it; deduplicate
+  against the published layer; and decide the MECHANISM, because `EXCLUDED_PLACE_IDS` only removes
+  and there is still no table for additions. A taxonomy that files a supermarket as a department
+  store will do it again for another brand.
+
+  The superseded text, kept because the diff is the record: *Of the ten Walmart store-form
+  records, four reach the layer and six do not --- but one of those six,*
   `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63` at *'5141 NC 42, Garner'*, is **33.3 m from the published
   `84059dec` at '5141 Nc Highway 42 W, Garner': the same store recorded twice**, once as
   `grocery_store` and once as `department_store`. So six records are absent and **five stores are
@@ -462,19 +542,32 @@ and neither is answered. Neither is caused by any of this work; ask 3 is what ex
   `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63`, the Garner duplicate above.
 
   **THE GAP IS WIDER THAN WALMART, and I only looked at Walmart when I wrote this ask.** Measured
-  2026-11-19 with the project's own brand lookup: **267** records carry a `SUPERMARKET_BRANDS` name
-  and never reach the published layer. Most belong out of it -- **132** are
+  2026-11-19 with the project's own brand lookup: **347** records carry a `SUPERMARKET_BRANDS`
+  name and never reach the published layer, or **267** after excluding service-point names.
+  *(Corrected 2026-11-19: this first said 267 without disclosing that a filter had been applied,
+  which the fifth review caught. Both figures reproduce exactly.)* Most belong out of it -- **132**
+  are
   `money_transfer_service` counters like *'WALMART #003182'* and *'FOOD LION #1608'*, plus
   bakeries, delicatessens and in-store concessions; note that the service-point SCREEN cannot see
   these, because the giveaway is the category and not the name. The store-shaped remainder is what
   matters: **`department_store` 13, `discount_store` 7, `superstore` 5,
   `warehouse_club_store` 1**, and **6** with no primary at all. Those have NOT been deduplicated or
-  checked one by one, so treat 26 as an upper bound and five as the only verified figure.
-  **A separate thread worth its own look:** `Family Fare` appears **28** times as
-  `convenience_store` while the brand sits in `SUPERMARKET_BRANDS`; in North Carolina Family Fare
-  is a petrol-station convenience chain, not the Michigan supermarket of the same name, so the
-  brand table may be promoting corner shops. `supermarket` is not published, so nothing reaches a
-  household from it today. **There is no table for
+  checked one by one. **And 26 is NOT an upper bound on the missing-shop problem**, as the fifth
+  review showed: `specialty_foods_store` holds omitted Whole Foods, Weaver Street and Trader Joe's
+  records that no store-format category would ever have surfaced. Treat 26 as an upper bound on the
+  store-FORMAT categories only, and nothing here as a verified store count.
+  **A separate thread worth its own look, with its reach CORRECTED 2026-11-19 by the fifth
+  review:** in North Carolina, `Family Fare` is a petrol-station convenience chain, not the
+  Michigan supermarket of the same name, and the brand sits in `SUPERMARKET_BRANDS`. The collision
+  is real -- `7a083a11`, 5800 Duraleigh Rd, which sells Shell fuel, classifies as `supermarket`.
+  **But my description of its reach was wrong.** The **28** `convenience_store` rows never enter
+  `select_overture(..., "supermarket")` at all, because the taxonomy gate rejects them first; the
+  demonstrated promotion is **five Family Fare records tagged `grocery_store`**, all already in
+  `grocery`. The reviewer found **no second homonymous-brand collision** among the other brands,
+  but noted that Walmart concessions, Harris Teeter pharmacies and a Publix-branded mall all
+  receive `supermarket` from the classifier alone, with only the taxonomy gate containing them --
+  so the gate is doing load-bearing work nobody chose it for. `supermarket` is not published, so
+  nothing reaches a household from it today. **There is no table for
   ADDITIONS yet** -- `EXCLUDED_PLACE_IDS` only removes -- so this needs a decision about mechanism
   as well as about these six records. **My reading: they should go in**, and the mechanism question
   is the more interesting half, because a taxonomy that files a supermarket as a department store
@@ -616,6 +709,12 @@ Pointers where the reasoning is recorded; the rule itself is here so it cannot b
   The 2026-11-03 "never push" policy was overridden. See [[feedback-autonomous-work-style]].
 * **Codex:** run a pass **very regularly** — after every major plan and every analysed result set.
   Commit the prompt first. Trust order: **experimental results > research > priors.**
+* **Antigravity/Gemini: do NOT use as a reviewer.** Owner decision 2026-11-19: *"if it requires
+  multiple dangerously-skip-permissions calls then I do not think it is worth the effort"*. Its
+  headless mode auto-denies the `command` permission and there is no working scoped configuration
+  recorded. **Consequence to state plainly in any pass: reviews are now single-reviewer**, so the
+  cross-reviewer disagreement that made pass 56 valuable is gone, and a Codex finding has nothing
+  independent contradicting it. See [[reference-codex-runtime-quirks]].
 * **Listings:** legal and free means only — deep links and official or free APIs, **no scraping**.
 * **Google:** query live for validation only. **Do not** persist a per-pair table of Google values
   as a dataset, and **do not** use Google output to calibrate the speed model. Places: store
@@ -675,8 +774,13 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **60 instances**. The three newest are all
-2026-11-18. **60: I verified the mechanism and asserted the consequence** -- I measured the name
+[[feedback-verify-the-shape-of-the-risk]] now holds **61 instances**. **61, 2026-11-19: I looked
+for the published artifact, did not find it, and called that a measurement** -- the removal of
+eleven records never reached
+`v2/spikes/g3-render/fixtures/published/own_triangle_grocery_walk.destinations.json`, which still
+held ten of them, because `find data -name manifest.json` came back empty and I read that as "there
+is no published artifact" rather than "I have not found it yet". *"I could not find it" is not "it
+does not exist."* **60: I verified the mechanism and asserted the consequence** -- I measured the name
 recovery where my change stopped (13 rows, 272 -> 259, a test each) and asserted what it did at the
 end of a pipeline I had not measured, which turned out not to consult it at all; `categories.py`
 said so in a comment written before the work started. *Measure the end of the pipeline, not the end

@@ -26,6 +26,7 @@ from locfinder.places.categories import select_overture
 from locfinder.places.exclusions import (
     DROPPED_PLACE_IDS,
     EXCLUDED_PLACE_IDS,
+    HELD_SERVICE_POINTS,
     drop_excluded,
 )
 
@@ -280,30 +281,30 @@ def test_select_overture_applies_the_closures_too():
     g = park_frame([closed, HARRIS_COUNTY_PARK])
     assert list(select_overture(g, "park")["id"]) == [HARRIS_COUNTY_PARK]
 # ---------------------------------------------------------------------------
-# Owner ask 3, answered "come out" on 2026-11-18. Eleven records leave the PUBLISHED `grocery`
-# layer: the co-op's Food House and ten `Walmart Grocery Pickup and Delivery` collection bays.
+# Owner ask 3 of 2026-11-18 said "come out" for eleven records. On 2026-11-19 the fifth
+# adversarial review found that the removal erased the only published record at SEVEN sites, and
+# the owner HELD the ten collection bays while keeping the Food House removed.
 #
-# `grocery` is taxonomy-based and never calls `classify_grocery`, so `NOT_A_WEEKLY_SHOP_SITES`
-# kept the Food House out of `supermarket` only. The published layer needs the id table.
+# WHY THE HOLD. A collection bay is not a weekly shop, but it IS a way to get one, so "not a
+# weekly shop" is a policy judgement about eligible shopping methods rather than a fact about food
+# access. At three of the bay sites the real parent store exists in the data, recorded as plain
+# `Walmart` -- 63.4 m, 20.0 m and 27.4 m away -- and is absent from the published layer, so the bay
+# had been standing in for the store. Removal and replacement ship together or not at all.
 #
-# WHAT THE REMOVAL COSTS, MEASURED BEFORE IT WAS MADE. The claim in the ask -- that a bay bolted
-# to its own Supercenter costs a household nothing -- WAS WRONG, and only measurement showed it.
-# Two of the ten have another published grocery record within 150 m. SIX have nothing published
-# within 150 m once all eleven are gone, one of them nothing inside 2 km. At those sites a real
-# Walmart Supercenter stands and is absent from the layer, because Overture files it under
-# `department_store`, `superstore` or `warehouse_club_store` and `grocery` matches only
-# `grocery_store`. Four Walmart store records reach the layer and six do not -- of which one is a
-# duplicate of a published record, so FIVE distinct stores are missing.
+# The Food House removal is independent and stands: a meat-processing plant and bakery that
+# supplies the shops is not a shop by any reading, and nothing else represents that site as a
+# destination except an office record the owner has not decided on.
 #
-# That gap is NOT fixed here. Adding a store is a decision about what a record IS and it moves a
-# published number upward, so it is an owner ask, recorded in the progress note. Each bay entry
-# carries its own measured distance so the cost is reviewable in a diff rather than argued later.
+# THESE TESTS NOW ASSERT THE HOLD. They are rewritten, not deleted, because yesterday they
+# asserted the opposite and the diff is the record of the decision changing.
 # ---------------------------------------------------------------------------
 
 FOOD_HOUSE = "1e99e399-b118-4d95-8c78-6770a47287c8"
 
-#: Bay id -> metres to the nearest OTHER published grocery record, measured before the removal.
-COLLECTION_BAYS: dict[str, float] = {
+#: Bay id -> metres to the nearest OTHER published grocery record. Measured 2026-11-18 and
+#: re-verified by the fifth review in EPSG:32617, which agreed to within 0.7 m on every one.
+#: THREE are within 150 m, not the two first reported: `cee0e25b` sits at 147.9 m.
+HELD_COLLECTION_BAYS: dict[str, float] = {
     "686a0d8f-b451-45c5-af0b-1dc3cc76a426": 0.2,
     "b570ea04-a662-4fee-9823-16d464eb02a2": 75.4,
     "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": 147.9,
@@ -316,8 +317,16 @@ COLLECTION_BAYS: dict[str, float] = {
     "2023f7f8-de17-4056-8d77-67f8cf180b0f": 2002.3,
 }
 
+#: Bay id -> the real parent store, recorded as plain `Walmart` and ABSENT from the published
+#: layer. Found by the fifth review; the search that produced ask 5 required the name to contain
+#: "Supercenter" or "Neighborhood Market", so it could never have found these.
+BAY_PARENT_STORES: dict[str, str] = {
+    "38c97738-83e4-4227-bffe-e352043c8606": "88f1168d-25de-48ae-b495-73dde8fe674e",
+    "8226f374-206c-4e30-88d5-8dfed581b3ee": "30614a3f-db5b-4c11-94c6-116a59512152",
+    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": "aec747a0-3bc4-4b87-81fe-94fae9b03f24",
+}
+
 #: Walmart STORE records that DO reach the published grocery layer, and must keep reaching it.
-#: Three Neighborhood Markets and one Supercenter, all `primary=grocery_store`.
 PUBLISHED_WALMART_STORES = (
     "dbf82b6a-815f-41a8-8738-809754aafd4f",
     "ccff8ac5-0b7d-4ac7-8d5d-3a7f5e0fa768",
@@ -325,12 +334,27 @@ PUBLISHED_WALMART_STORES = (
     "84059dec-19b8-4741-aa20-0f2cad92744c",
 )
 
+BAY_NAME = "Walmart Grocery Pickup and Delivery"
 
-def grocery_frame(ids):
-    """A minimal Overture-shaped frame that the `grocery` wedge matches."""
+
+def grocery_frame(ids, names=None):
+    """A minimal Overture-shaped frame the `grocery` wedge matches.
+
+    **Carries a `names` field.** The version written on 2026-11-18 did not, which made
+    `test_the_published_layer_excludes_by_id_and_never_by_name` vacuous: the record it called
+    "bay-shaped" had no name at all, so a name rule added to the published path would not have
+    failed it. The fifth review demonstrated exactly that.
+    """
+    ids = list(ids)
     tax = {"primary": "grocery_store", "hierarchy": ["eat_and_drink", "grocery_store"]}
+    if names is None:
+        names = [f"Shop {i}" for i in range(len(ids))]
     return gpd.GeoDataFrame(
-        {"id": list(ids), "taxonomy": [tax] * len(ids)},
+        {
+            "id": ids,
+            "taxonomy": [tax] * len(ids),
+            "names": [{"primary": n} for n in names],
+        },
         geometry=[Point(i, 0) for i in range(len(ids))],
         crs="EPSG:32617",
     )
@@ -341,24 +365,50 @@ def test_the_food_house_is_excluded():
     assert FOOD_HOUSE in EXCLUDED_PLACE_IDS
 
 
-def test_all_ten_collection_bays_are_excluded():
-    missing = [b for b in COLLECTION_BAYS if b not in EXCLUDED_PLACE_IDS]
-    assert not missing, f"{len(missing)} bays are not excluded: {missing}"
-
-
 def test_the_food_house_does_not_reach_the_published_grocery_layer():
     """The END of the pipeline, not the end of the change. `grocery` is what households get."""
     g = grocery_frame([FOOD_HOUSE, HARRIS_COUNTY_PARK])
     assert list(select_overture(g, "grocery")["id"]) == [HARRIS_COUNTY_PARK]
 
 
-def test_no_collection_bay_reaches_the_published_grocery_layer():
-    g = grocery_frame(list(COLLECTION_BAYS) + ["kept-id"])
-    assert list(select_overture(g, "grocery")["id"]) == ["kept-id"]
+def test_no_collection_bay_is_excluded_while_its_parent_store_is_missing():
+    """OWNER DECISION 2026-11-19: the bays are HELD. Removing one erases the only published
+    record at its site, and the shop it serves is not in the layer to take its place."""
+    wrongly = [b for b in HELD_COLLECTION_BAYS if b in DROPPED_PLACE_IDS]
+    assert not wrongly, f"{len(wrongly)} bays are excluded but were held: {wrongly}"
+
+
+def test_every_held_bay_still_reaches_the_published_grocery_layer():
+    """The hold has to be true at the end of the pipeline, not just in the table."""
+    g = grocery_frame(list(HELD_COLLECTION_BAYS))
+    assert len(select_overture(g, "grocery")) == len(HELD_COLLECTION_BAYS)
+
+
+def test_the_hold_records_its_reason_for_every_bay():
+    """A record kept for a reason nobody wrote down is indistinguishable from one nobody looked
+    at. Mirrors `PENDING_CLOSURES`: what we are NOT acting on, and why."""
+    assert HELD_SERVICE_POINTS, "the held table is empty"
+    for bay, metres in HELD_COLLECTION_BAYS.items():
+        assert bay in HELD_SERVICE_POINTS, f"{bay} is held with no reason recorded"
+        reason = HELD_SERVICE_POINTS[bay]
+        assert len(reason) > 40, f"{bay} has no usable reason: {reason!r}"
+        assert f"{metres:.1f} m" in reason, f"{bay} does not carry its measured {metres:.1f} m"
+
+
+def test_nothing_is_both_held_and_dropped():
+    """Folding the held table into `DROPPED_PLACE_IDS` would silently reverse the owner's call."""
+    assert not (set(HELD_SERVICE_POINTS) & set(EXCLUDED_PLACE_IDS))
+    assert not (set(HELD_SERVICE_POINTS) & set(DROPPED_PLACE_IDS))
+
+
+def test_the_known_parent_stores_are_never_excluded():
+    """These are the shops the bays stand in for. Excluding one would remove the destination the
+    hold exists to protect."""
+    for bay, parent in BAY_PARENT_STORES.items():
+        assert parent not in DROPPED_PLACE_IDS, f"{parent}, the parent of {bay}, is excluded"
 
 
 def test_the_four_published_walmart_stores_are_not_excluded():
-    """The bays go; the shops stay. A removal that took the store with it would be the defect."""
     for store in PUBLISHED_WALMART_STORES:
         assert store not in DROPPED_PLACE_IDS, f"{store} is a real Walmart store"
     g = grocery_frame(PUBLISHED_WALMART_STORES)
@@ -366,30 +416,22 @@ def test_the_four_published_walmart_stores_are_not_excluded():
 
 
 def test_the_published_layer_excludes_by_id_and_never_by_name():
-    """`Norseman IGA and Post Office` is a real supermarket the service-point SCREEN rejects.
+    """A record NAMED like a collection bay, whose id nobody listed, is still published.
 
-    The screen is a heuristic and belongs to candidate selection. The published layer is cut by
-    an explicit id table, so a record whose name is bay-shaped but whose id nobody listed is
-    still published. Collapsing the table into a name rule would fail here.
+    REWRITTEN 2026-11-19. The previous version passed a frame with no `names` field, so it
+    asserted nothing: the fifth review added a name filter to the published path and all 33 tests
+    still passed. This version supplies the name, so collapsing the id table into a name rule
+    fails here.
     """
     from locfinder.places.grocery import names_a_service_point
-    assert names_a_service_point("Norseman IGA and Post Office")
+    assert names_a_service_point(BAY_NAME), "the screen must reject this name for the test to bite"
     unlisted = "7c0ffee0-0000-4000-8000-000000000000"
     assert unlisted not in DROPPED_PLACE_IDS
-    g = grocery_frame([unlisted])
+    g = grocery_frame([unlisted], names=[BAY_NAME])
+    assert g.iloc[0]["names"]["primary"] == BAY_NAME, "the frame must actually carry the name"
     assert list(select_overture(g, "grocery")["id"]) == [unlisted]
 
 
-def test_every_bay_entry_records_what_its_removal_cost():
-    """A removal whose cost is not written down cannot be reviewed, and six of these cost real
-    coverage. Each entry must name the distance to the nearest surviving grocery record."""
-    for bay, metres in COLLECTION_BAYS.items():
-        reason = EXCLUDED_PLACE_IDS[bay]
-        assert "nearest" in reason.lower(), f"{bay} does not say what survives near it"
-        assert f"{metres:.1f} m" in reason, f"{bay} does not carry its measured {metres:.1f} m"
-
-
-def test_the_eleven_are_all_in_dropped_place_ids():
+def test_the_food_house_is_in_dropped_place_ids():
     """The one derived set every builder goes through, so none can route around the decision."""
-    for place_id in [FOOD_HOUSE, *COLLECTION_BAYS]:
-        assert place_id in DROPPED_PLACE_IDS
+    assert FOOD_HOUSE in DROPPED_PLACE_IDS

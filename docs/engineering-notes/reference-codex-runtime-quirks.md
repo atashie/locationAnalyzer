@@ -237,3 +237,36 @@ Two things made this cost nearly two hours instead of two minutes:
 This is the same shape as that `agy --print` bug: both CLIs accept a prompt in a way that looks
 right, fail silently rather than erroring, and are caught in seconds by a probe that asks only for
 the word READY and a `git log -1`.
+## 2026-11-19: Antigravity headless cannot be given scoped permissions, and `--mode plan` reviews nothing
+
+**Owner decision the same day: do not use Antigravity as a reviewer.** *"If it requires multiple
+dangerously-skip-permissions calls then I do not think it is worth the effort."* Recorded here so
+nobody spends the three attempts again.
+
+What was tried, in order:
+
+* `--dangerously-skip-permissions` — **refused by the Claude Code auto-mode classifier** as
+  undermining oversight, which is correct: it auto-approves every tool, writes included. An agent
+  cannot launch Antigravity headless this way.
+* `--mode plan` alone — runs, exits **0**, and produces **no review**. Plan mode makes the agent
+  write an implementation plan and stop to ask for confirmation. It wrote the plan to
+  `~/.gemini/antigravity-cli/brain/<id>/implementation_plan.md` and asked a question. **Exit 0 with
+  a plan is the failure mode**, and it looks like success in a task notification.
+* `--settings <file>` with `permissions.allow` entries of the form `command(git)`, `command(python)`
+  and so on — **same auto-denial**. The error names the permission as `command` and suggests
+  `command(<target>)`, but no spelling tried was accepted, and **there is no `agy` settings.json
+  anywhere on this machine** to copy a working schema from. The pass-56 note records that the
+  reviewer "was given no write access" without recording how, so that configuration is lost.
+
+So the only configuration known to work is the blanket flag, run **by the owner**, with
+`--mode auto` rather than `--mode plan`.
+
+**The smoke test earned its cost for the third time.** One probe asking for the word READY and a
+`git log -1` caught the `--mode plan` behaviour in seconds; the alternative was waiting for a
+review that was never going to arrive. Codex passed the same probe first try and its review ran
+fine.
+
+**The consequence is not just tooling.** Reviews are now single-reviewer. Pass 56's most useful
+output was the *disagreement* between Codex and Antigravity on how to rank product risk, and that
+is no longer available. Any pass that reports a Codex finding should say that nothing independent
+was in a position to contradict it.

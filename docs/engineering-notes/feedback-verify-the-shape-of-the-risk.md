@@ -1505,3 +1505,40 @@ Two things that worked, and both were cheap:
   recorded as a doubt attached to the record instead of acted on.
 
 Sixty instances now.
+## A sixty-first, 2026-11-19: I looked for the published artifact, did not find it, and called that a measurement
+
+Instance 60 was *measure the end of the pipeline, not the end of your change*, and I wrote it the
+day before. Then I removed eleven records from the published `grocery` layer, measured the selector
+(`543 -> 532`), went looking for the published artifact, ran `find data -name manifest.json`, got
+nothing, and concluded there was no published bundle to update.
+
+The published fixtures are at `v2/spikes/g3-render/fixtures/published/`. The fifth adversarial
+review found **ten of the eleven removed records still in
+`own_triangle_grocery_walk.destinations.json`**. The change had no effect on anything a household
+could see.
+
+> **"I could not find it" is not "it does not exist."** A search that comes back empty measures the
+> search, not the world. When the thing you are asserting about would be *disproved* by the artifact
+> you failed to find, failing to find it is a reason to look harder, not a licence to conclude.
+
+What makes this its own instance rather than a repeat of 60: in 60 I never looked at the end of the
+pipeline. Here I did look, found nothing, and treated absence of evidence as evidence of absence --
+with the asymmetry pointing the wrong way, because the conclusion I drew was the one that let me
+stop looking.
+
+**It cut both ways, and that is worth keeping too.** Because nothing published had changed, holding
+the removal cost nothing. The same error that made the change ineffective made it harmless, and the
+owner could reverse it for free. That is luck, not process.
+
+Three more things in the same pass, all from asserting an identity I had not established:
+
+* The `cee0e25b` entry said *"the shop it collects for is itself in the layer"*, naming a shop
+  147.9 m away. The real parent was 27.4 m away and absent. **Proximity read as parentage** -- the
+  borrowed building, third time, inside the commit that was repairing the borrowed building.
+* Ask 5 named five missing stores. **One had closed in 2016, and our own FSQ snapshot carried a
+  `date_closed` at that address.** I researched outward instead of querying the data I had.
+* The search that produced ask 5 required the name to contain "Supercenter". The stores that were
+  actually missing are recorded as plain `Walmart`. **I searched for the shape of a name instead of
+  for the thing at the place.**
+
+Sixty-one instances now.
