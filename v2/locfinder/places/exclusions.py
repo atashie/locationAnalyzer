@@ -1,4 +1,11 @@
-"""Place records excluded by an owner decision about what the thing IS, not by a tag.
+"""Place records an owner decision ADDS to or REMOVES from a layer, by what the thing IS.
+
+**EVERY DECISION IN THIS MODULE IS PRELIMINARY.** Owner instruction 2026-11-19: push through the
+QA of businesses and establishments, note that the data are preliminary, and leave a robust
+approach built on well-vetted sources as future work. See
+`docs/engineering-notes/reference-business-data-is-preliminary.md` for what that covers, what
+these tables are actually built from, and the five things a robust source would have to supply.
+Each entry repeats the word PRELIMINARY in its own text so the caveat travels with the record.
 
 Overture's taxonomy answers "is this record categorised as a park". It does not answer "is this a
 park", and for a handful of records those differ in a way no tag in the data distinguishes. Those
@@ -43,6 +50,76 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "the same spot. So the Kroger closed and somebody else trades there -- routing a "
         "household to 'Kroger' names a shop that is not there. Owner decision 2026-11-17: drop "
         "this one, hold the other eight.",
+    # ---- 2026-11-19: seven bays lifted, their parents admitted; and ask 6 settled ----
+    #
+    # Owner instruction to push through on preliminary data. Each bay below came out ONLY
+    # because its parent store is now in the layer -- the condition the hold stated.
+    "686a0d8f-b451-45c5-af0b-1dc3cc76a426":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `ccff8ac5-0b7d-4ac7-8d5d-3a7f5e0fa768` at 0.2 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "b570ea04-a662-4fee-9823-16d464eb02a2":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `84059dec-19b8-4741-aa20-0f2cad92744c` at 75.4 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "8226f374-206c-4e30-88d5-8dfed581b3ee":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `30614a3f-db5b-4c11-94c6-116a59512152` at 20.0 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "38c97738-83e4-4227-bffe-e352043c8606":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `88f1168d-25de-48ae-b495-73dde8fe674e` at 63.4 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "2023f7f8-de17-4056-8d77-67f8cf180b0f":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `182dc975-ff2e-4be1-8811-0dc710b42547` at 110.7 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "ea38688f-cdfe-46e4-8ab4-d6373e611d63":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `d3a09343-a70b-4444-a5d8-543fca5b91ec` at 249.3 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41":
+        "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
+        "now published**: `aec747a0-3bc4-4b87-81fe-94fae9b03f24` at 27.4 m, admitted via "
+        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
+        "now routes to the shop. PRELIMINARY.",
+    "4ff51c50-4e5d-4b0d-8bbe-ddb55a26be53":
+        "'Weaver Street Market Administration', taxonomy hierarchy=grocery_store. The co-op's OFFICE, at "
+        "the same coordinate as the Food House already removed above -- the third wrong destination from "
+        "that one address, and the destination audit has already seen it chosen. Checked against both "
+        "second sources before removing: NO agreeing Foursquare record within 120 m (of 14 records there) "
+        "and NO shop-tagged OSM feature within 120 m, so nothing says a shop is here. Owner instruction "
+        "2026-11-19 to push through. PRELIMINARY.",
+    "ee14e175-556e-4b89-af7b-adea914d618c":
+        "'Food Line Distribution Center', taxonomy hierarchy=grocery_store. A DISTRIBUTION CENTRE, and "
+        "`classify_grocery` already returned `not_a_grocery` for it while the published layer went on "
+        "offering it -- the same taxonomy-versus-classifier gap as the Food House. **Foursquare disagrees "
+        "and is not trusted here:** it carries a record of this name, not closed, labelled BOTH 'Retail > "
+        "Drugstore' AND food-and-beverage retail, which is a category guess rather than an observation of a "
+        "shopfront. No shop-tagged OSM feature within 120 m. A distribution centre is not a weekly shop. "
+        "PRELIMINARY.",
+    "c8899cfc-9df9-4d98-b186-063ed5581515":
+        "'Variety Pick-Up', taxonomy hierarchy=grocery_store, `unclassified`. **THE WEAKEST ENTRY IN THIS "
+        "TABLE, AND DELIBERATELY RECORDED AS SUCH.** The name is very nearly all the evidence there is: NO "
+        "agreeing Foursquare record within 120 m (of 13 records there) and NO shop-tagged OSM feature "
+        "within 120 m, so no second source says a shop is here -- but absence of corroboration is not proof "
+        "of absence, and the project has been burned before by reading a name as a fact. Removed under the "
+        "owner's 2026-11-19 instruction to push through on preliminary data, on the asymmetry that a wrong "
+        "destination costs a household a journey while a wrong removal costs them an option they may not "
+        "have had. **Revisit this one first** when a well-vetted source is available. PRELIMINARY.",
     # ---- owner ask 3, 2026-11-18, PARTLY HELD 2026-11-19 ----
     #
     # The ask covered eleven records. ONE is removed here; the ten collection bays are HELD in
@@ -266,33 +343,16 @@ FSQ_FLAGGED_CLOSURES: dict[str, str] = {}
 #: never have found them. The remaining parents are NOT yet identified, and finding them is part of
 #: rebuilding ask 5.
 #:
-#: **These ten are removed only together with their replacements, or not at all.** Nothing may
-#: fold this table into `DROPPED_PLACE_IDS`; a test asserts the two do not intersect.
+#: **SEVEN OF THE TEN WERE REMOVED ON 2026-11-19** once their parent stores were admitted to the
+#: layer, which is the condition this table always stated. **THREE REMAIN**, and they are the
+#: interesting ones: `9011ca8b`, `0f2b2452` and `fb500d70` have **no Walmart store record within
+#: 6.3, 11.8 and 13.7 km** respectively, so they are not bays bolted to a shop at all -- they look
+#: like standalone collection points, and they are the only grocery-ish record at their locations.
+#: Removing one of those would erase the site with nothing to replace it, so the original argument
+#: still holds for exactly these three.
+#:
+#: Nothing may fold this table into `DROPPED_PLACE_IDS`; a test asserts the two do not intersect.
 HELD_SERVICE_POINTS: dict[str, str] = {
-    "686a0d8f-b451-45c5-af0b-1dc3cc76a426":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 0.2 m, 'Walmart Neighborhood Market' -- the shop this bay collects for, "
-        "and it IS in the published layer, so removing the bay would cost this site nothing. Held anyway, "
-        "because the ten are one decision and splitting them by site would leave the table saying different "
-        "things about identical records.",
-    "b570ea04-a662-4fee-9823-16d464eb02a2":
-        "'Walmart Grocery Pick Up and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. "
-        "Nearest surviving grocery record 75.4 m, 'Walmart Supercenter' -- the shop this bay collects for, "
-        "and it IS in the published layer, so removing the bay would cost this site nothing. Held anyway, "
-        "because the ten are one decision and splitting them by site would leave the table saying different "
-        "things about identical records.",
-    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 147.9 m, 'Total Oriental Foods' -- **which is NOT the shop this bay "
-        "collects for.** The real parent is `aec747a0-3bc4-4b87-81fe-94fae9b03f24 at 27.4 m`, a plain "
-        "`Walmart` record, ABSENT from the published layer. The 2026-11-18 entry for this record claimed "
-        "the shop it collects for was itself in the layer, which was false: it read parentage off "
-        "proximity. Removing this bay erases the site.",
-    "ea38688f-cdfe-46e4-8ab4-d6373e611d63":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 256.5 m, 'Tazza Mandi'. **Nothing published remains within 150 m if this "
-        "bay goes**, and the parent store has NOT yet been identified -- finding it is part of rebuilding "
-        "ask 5. Removing this bay erases the site.",
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d":
         "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
         "surviving grocery record 567.7 m, 'Aldi'. **Nothing published remains within 150 m if this bay "
@@ -308,25 +368,6 @@ HELD_SERVICE_POINTS: dict[str, str] = {
         "surviving grocery record 680.8 m, 'a second Carlie C's IGA record'. **Nothing published remains "
         "within 150 m if this bay goes**, and the parent store has NOT yet been identified -- finding it is "
         "part of rebuilding ask 5. Removing this bay erases the site.",
-    "8226f374-206c-4e30-88d5-8dfed581b3ee":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 944.2 m, 'Harris Teeter' -- **which is NOT the shop this bay collects "
-        "for.** The real parent is `30614a3f-db5b-4c11-94c6-116a59512152 at 20.0 m`, a plain `Walmart` "
-        "record, ABSENT from the published layer. The 2026-11-18 entry for this record claimed the shop it "
-        "collects for was itself in the layer, which was false: it read parentage off proximity. Removing "
-        "this bay erases the site.",
-    "38c97738-83e4-4227-bffe-e352043c8606":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 1097.8 m, 'Grand India Mart' -- **which is NOT the shop this bay collects "
-        "for.** The real parent is `88f1168d-25de-48ae-b495-73dde8fe674e at 63.4 m`, a plain `Walmart` "
-        "record, ABSENT from the published layer. The 2026-11-18 entry for this record claimed the shop it "
-        "collects for was itself in the layer, which was false: it read parentage off proximity. Removing "
-        "this bay erases the site.",
-    "2023f7f8-de17-4056-8d77-67f8cf180b0f":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 2002.3 m, 'Lowes Foods of Clayton'. **Nothing published remains within "
-        "150 m if this bay goes**, and the parent store has NOT yet been identified -- finding it is part "
-        "of rebuilding ask 5. Removing this bay erases the site.",
 }
 
 
@@ -365,7 +406,9 @@ DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
 #: `department_store`, `superstore` or `warehouse_club_store`, and the `grocery` wedge matches only
 #: the `grocery_store` hierarchy, so a real weekly shop never reaches the layer.
 #:
-#: **EMPTY, DELIBERATELY.** `scripts/rebuild_missing_grocery_stores.py` proposes the candidates
+#: **POPULATED 2026-11-19 with 23 records, on the owner's instruction to push through.**
+#: All are PRELIMINARY: see [[reference-business-data-is-preliminary]].
+#: `scripts/rebuild_missing_grocery_stores.py` proposes the candidates
 #: with their evidence and writes `docs/experiments/audit/missing-grocery-stores.csv`; adding any
 #: of them moves a published number UPWARD and is an owner decision. The script's `--emit` prints
 #: entries in this shape so that applying an approved decision is mechanical rather than retyped.
@@ -375,7 +418,136 @@ DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
 #: with the brand tables would change what `grocery` MEANS, which `categories.py` warns against
 #: because the published layer is built from it. An id table changes which records, not which rule.
 INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
-    "grocery": {},
+    "grocery": {
+        "0da6a7a0-a80a-4791-a971-d12369f300c7":
+            "Walmart at 7106 Knightdale Blvd, Knightdale, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: FSQ 'Walmart' open at 19.8 m; "
+            "note: a DEPARTMENT closed here -- FSQ 'Walmart Garden Center' at 7106 Knightdale Blvd carries "
+            "date_closed=2019-02-13 -- but FSQ 'Walmart' is OPEN at 7106 Knightdale Blvd, so the shop trades "
+            "on. Nearest published grocery 250.4 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. "
+            "PRELIMINARY.",
+        "182dc975-ff2e-4be1-8811-0dc710b42547":
+            "Walmart Supercenter at 805 Town Centre Blvd, Clayton, Overture primary=department_store so outside "
+            "the `grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` "
+            "named 'Walmart Supercenter' at 6.6 m; FSQ 'Walmart Grocery Pickup and Delivery' open at 110.7 m; "
+            "REPLACEMENT FOR HELD BAY 2023f7f8-de17-4056-8d77-67f8cf180b0f at 110.7 m -- approving this store "
+            "is what allows that bay to be removed. Nearest published grocery 110.7 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "1e4d47b1-3070-4824-ad66-bdea1e99e688":
+            "Aldi at 1770 West Williams Street, Apex, Overture primary=discount_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'ALDI' at 0.0 m; FSQ 'ALDI' open at 22.6 m. Nearest published grocery 261.9 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "28180454-c72d-495b-a239-5b50dbc3c579":
+            "Walmart at 7016 Gb Alford Hwy, Holly Springs, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Bakery' open at 30.1 m. Nearest published grocery "
+            "225.1 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "30614a3f-db5b-4c11-94c6-116a59512152":
+            "Walmart at 2114 S Main St, Wake Forest, Overture primary=superstore so outside the `grocery_store` "
+            "hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named 'Walmart "
+            "Supercenter' at 0.0 m; FSQ 'Walmart Grocery Pickup and Delivery' open at 20.0 m; REPLACEMENT FOR "
+            "HELD BAY 8226f374-206c-4e30-88d5-8dfed581b3ee at 20.0 m -- approving this store is what allows "
+            "that bay to be removed. Nearest published grocery 20.0 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "4e8d15fb-950d-40c7-8bd9-7245edfb80d1":
+            "Walmart at 1051 E Broad St, Fuquay-Varina, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Vision & Glasses' open at 20.7 m. Nearest published "
+            "grocery 496.1 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "5074229c-e884-4097-8759-4308ddbab7e8":
+            "Publix Super Market at Buffaloe Village, 7330 Buffaloe Rd, Raleigh. Same shape as the record "
+            "above: no Overture primary, listed for a person, and plainly a supermarket. Nearest published "
+            "grocery was 2,433.2 m, so this one adds real coverage. PRELIMINARY.",
+        "50ada728-6b96-4536-b42b-87c7e192bb8e":
+            "Walmart Supercenter at 1015 Lewis St, Oxford, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Photo Center' open at 34.7 m. Nearest published "
+            "grocery 2732.6 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "5a7ca34c-e4b3-4252-b29f-5d72c26469e2":
+            "Aldi at 750 Timber Drive, Garner, Overture primary=discount_store so outside the `grocery_store` "
+            "hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named 'ALDI' at 0.0 m; "
+            "FSQ 'ALDI' open at 16.2 m. Nearest published grocery 138.6 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "61939d74-fce6-429f-9681-e33d49507697":
+            "Walmart at 1525 Glenn School Rd, Durham, Overture primary=superstore so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 1.1 m; FSQ 'Walmart Supercenter' open at 41.8 m. Nearest published "
+            "grocery 401.6 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "620e6fd2-19b2-4813-b5da-1ce42473f517":
+            "Aldi at 4031 Wake Forest Rd, Raleigh, Overture primary=discount_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'ALDI' at 13.4 m; FSQ 'ALDI' open at 11.5 m. Nearest published grocery 471.9 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "73868d1a-9765-4391-a822-09065645c63b":
+            "Aldi at 2132 S Main St, Wake Forest, Overture primary=discount_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'ALDI' at 0.0 m; FSQ 'ALDI' open at 24.5 m. Nearest published grocery 466.5 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "7cd72bd3-e72b-473c-9205-3465b34d9ac6":
+            "Walmart at 8000 Town Dr, Raleigh, Overture primary=department_store so outside the `grocery_store` "
+            "hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named 'Walmart "
+            "Supercenter' at 9.3 m; FSQ 'Walmart Supercenter' open at 25.4 m. Nearest published grocery 668.0 "
+            "m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "84c14b53-6df7-4b18-adc2-a9147ac9b440":
+            "Walmart at 1318 Mebane Oaks Rd, Mebane, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Auto Care Centers' open at 12.1 m. Nearest published "
+            "grocery 812.6 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "88f1168d-25de-48ae-b495-73dde8fe674e":
+            "Walmart at 3151 Apex Peakway, Apex, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Supercenter' open at 19.2 m; REPLACEMENT FOR HELD BAY "
+            "38c97738-83e4-4227-bffe-e352043c8606 at 63.4 m -- approving this store is what allows that bay to "
+            "be removed. Nearest published grocery 63.4 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "8e1fc43f-a5e0-47bc-82e9-3d0766510cbd":
+            "Walmart at 6600 Glenwood Ave, Raleigh, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: FSQ 'Walmart' open at 20.0 m; "
+            "note: a DEPARTMENT closed here -- FSQ 'Walmart Garden Center' at 6600 Glenwood Ave carries "
+            "date_closed=2019-02-13 -- but FSQ 'Walmart' is OPEN at 6600 Glenwood Ave, so the shop trades on. "
+            "Nearest published grocery 504.4 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. "
+            "PRELIMINARY.",
+        "9a9272e3-a667-4207-bce2-88092a86193d":
+            "Aldi at 2900 Sunrise Valley Place, Raleigh, Overture primary=discount_store so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Aldi' at 10.6 m; FSQ 'ALDI' open at 31.7 m. Nearest published grocery 342.8 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "aec747a0-3bc4-4b87-81fe-94fae9b03f24":
+            "Walmart, 1725 New Hope Church Rd, Raleigh, Overture primary=department_store so outside the "
+            "`grocery_store` hierarchy. **THE PARENT STORE OF HELD BAY `cee0e25b`, 27.4 m away.** The screen "
+            "put it in REVIEW rather than PROPOSED because brandless 'Total Oriental Foods' sits 147.9 m away "
+            "and the proximity-doubt gate cannot tell a different shop from the same shop under a store code. "
+            "Looking at it settles it: Total Oriental Foods is a different business, not this Walmart under "
+            "another name. Admitted on that judgement, which is exactly what the REVIEW bucket is for. "
+            "PRELIMINARY.",
+        "c7fee873-a3c5-4691-8b12-f2c76bb101b9":
+            "Publix Super Market at Middle Creek Commons, 16100 North Carolina 50, Garner. Overture carries NO "
+            "primary category at all, which is absence of information rather than a claim to be something else, "
+            "so the screen listed it for a person instead of refusing it. A Publix Super Market is a weekly "
+            "shop by any reading of the owner's definition. PRELIMINARY.",
+        "d3a09343-a70b-4444-a5d8-543fca5b91ec":
+            "Walmart Supercenter at 1001 Shiloh Glenn Dr, Morrisville, Overture primary=department_store so "
+            "outside the `grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM "
+            "`shop=supermarket` named 'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Photo Center' open at 40.1 "
+            "m. Nearest published grocery 249.3 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. "
+            "PRELIMINARY.",
+        "dae36e6e-2766-4dfd-95c5-76061fedb1ec":
+            "Walmart at 5450 New Hope Commons Dr, Durham, Overture primary=superstore so outside the "
+            "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
+            "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Auto Care Centers' open at 28.3 m. Nearest published "
+            "grocery 1450.8 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "edb63737-4b7d-4172-9767-cef1f5d91cf9":
+            "Aldi at 6300 Creedmoor Rd, Raleigh, Overture primary=discount_store so outside the `grocery_store` "
+            "hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named 'Aldi' at 9.2 m; "
+            "FSQ 'ALDI' open at 16.1 m. Nearest published grocery 1491.9 m. Generated by "
+            "`scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+        "efdcc3bc-9b12-4a20-9473-2a69a93f4d3c":
+            "Walmart Supercenter at 12500 US Hwy 15 501 N, Chapel Hill, Overture primary=superstore so outside "
+            "the `grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` "
+            "named 'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Vision Center' open at 37.3 m. Nearest "
+            "published grocery 1688.7 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
+    },
 }
 
 

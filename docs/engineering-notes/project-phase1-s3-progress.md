@@ -77,22 +77,33 @@ headless operation needs `--dangerously-skip-permissions`. So no second reviewer
 Codex finding, and passes should say so. Failed configurations are in
 [[reference-codex-runtime-quirks]].
 
-**What is open, in the owner's own numbering:** **ask 5** was **REBUILT on 2026-11-19** and is now
-a screen rather than a list -- `scripts/rebuild_missing_grocery_stores.py`, sheet at
-`docs/experiments/audit/missing-grocery-stores.csv`, **20 stores proposed and none applied**;
-**ask 6** -- the Weaver Street office, `Food Line Distribution Center` and `Variety Pick-Up` -- is
-untouched. Both are in "Decisions the owner owes" below with the older carried items.
+**ALL THE BUSINESS AND ESTABLISHMENT DATA IS PRELIMINARY, AND THAT IS NOW THE STANDING POSITION.**
+Owner instruction 2026-11-19: push through this QA more quickly, note the data are preliminary, and
+leave a robust approach built on well-vetted sources as future work.
+**[[reference-business-data-is-preliminary]]** is the single place that says so and lists what a
+robust source would have to supply; every table entry repeats the word PRELIMINARY so the caveat
+travels with the record. **Do not present these layers to a household as authoritative.**
+
+**Asks 5 and 6 are both CLOSED, 2026-11-19, by pushing through:**
+* **23 stores admitted** to `INCLUDED_PLACE_IDS["grocery"]` -- the 20 the screen proposed, plus two
+  `Publix Super Market` stores Overture gives no category at all, plus one Walmart the
+  proximity-doubt gate had flagged against a different shop 147.9 m away.
+* **SEVEN of the ten held bays removed**, each only once its parent store was published within
+  400 m. **THREE remain held**: `9011ca8b`, `0f2b2452` and `fb500d70` have no Walmart store record
+  within **6.3, 11.8 and 13.7 km**, so they are standalone collection points rather than bays
+  bolted to a shop, and they are the only grocery-ish record at their locations.
+* **Ask 6 settled:** the Weaver Street office, `Food Line Distribution Center` and
+  `Variety Pick-Up` are all excluded. Both second sources were checked first and neither says a
+  shop is at any of the three. **`Variety Pick-Up` is the weakest entry in the whole table** -- its
+  name plus the absence of corroboration -- and its entry says so and says to revisit it first.
+
+**Published `grocery` is 555**, from 542: `+23` admitted, `-7` bays, `-3` ask-6 records.
+`supermarket` is unchanged at **242**, because the inclusion table has a `grocery` key only; a
+Supercenter admitted to `grocery` is deliberately NOT in `supermarket`, which is not published.
+**I predicted 558 and measured 555** -- the three ask-6 records were themselves inside the 542 and
+I had left them out of the arithmetic.
+
 [[feedback-verify-the-shape-of-the-risk]] stands at **61 instances**.
-
-**The mechanism that ask 5 had nowhere to land in now exists and is EMPTY:** `INCLUDED_PLACE_IDS`
-in `locfinder/places/exclusions.py`, applied at the same chokepoint as `drop_excluded`, with seven
-tests including that **exclusion beats inclusion**. Nothing is in it, so no published number has
-moved -- `grocery` is still **542**.
-
-**The next decision is the owner's, not a session's:** approving any of the 20 moves published
-`grocery` above 542, and three of them are specifically what would allow three held collection bays
-to be removed. **No session should populate that table unasked.** The six `REVIEW: no category`
-rows need a person rather than a rule, two of them being real `Publix Super Market` stores.
 
 ---
 
@@ -546,7 +557,7 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 **NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
 and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
 
-* **5. REBUILT 2026-11-19 on the owner's instruction. TWENTY stores are missing from the
+* **5. CLOSED 2026-11-19 -- 23 stores admitted, nothing left pending. REBUILT the same day on the owner's instruction. TWENTY stores are missing from the
   published `grocery` layer, and the mechanism to admit them now exists and is EMPTY.** The
   2026-11-18 version of this ask is superseded in full; it proposed five stores, one of which had
   closed in 2016, and named mostly the parents of nothing. Its faults are recorded in
@@ -645,7 +656,7 @@ and neither is answered. Neither is caused by any of this work; ask 3 is what ex
   Teeter pharmacies and a Publix-branded mall all receive `supermarket` from the classifier alone,
   with only the taxonomy gate containing them -- load-bearing work nobody chose it for.
 
-* **6. Three more records the service-point screen flags, which ask 3 did NOT cover.** Deliberately
+* **6. CLOSED 2026-11-19: all three excluded. Three more records the service-point screen flags, which ask 3 did NOT cover.** Deliberately
   left in: the owner decided eleven records and these are not among them, and extending an answer
   past what was asked is how a table stops being reviewable.
   **`Weaver Street Market Administration`** (`4ff51c50-4e5d-4b0d-8bbe-ddb55a26be53`) -- the office

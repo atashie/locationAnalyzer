@@ -304,29 +304,29 @@ def test_select_overture_applies_the_closures_too():
 
 FOOD_HOUSE = "1e99e399-b118-4d95-8c78-6770a47287c8"
 
-#: Bay id -> metres to the nearest OTHER published grocery record. Measured 2026-11-18 and
-#: re-verified by the fifth review in EPSG:32617, which agreed to within 0.7 m on every one.
-#: THREE are within 150 m, not the two first reported: `cee0e25b` sits at 147.9 m.
-HELD_COLLECTION_BAYS: dict[str, float] = {
-    "686a0d8f-b451-45c5-af0b-1dc3cc76a426": 0.2,
-    "b570ea04-a662-4fee-9823-16d464eb02a2": 75.4,
-    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": 147.9,
-    "ea38688f-cdfe-46e4-8ab4-d6373e611d63": 256.5,
+#: Bay id -> the parent store that was admitted so the bay could be removed, 2026-11-19.
+#:
+#: **The hold always said these come out "together with their replacements".** This is that
+#: condition met, per bay rather than all at once: each bay left `HELD_SERVICE_POINTS` only once a
+#: same-brand store was published within 400 m of it.
+LIFTED_BAY_PARENTS: dict[str, str] = {
+    "686a0d8f-b451-45c5-af0b-1dc3cc76a426": "ccff8ac5-0b7d-4ac7-8d5d-3a7f5e0fa768",
+    "b570ea04-a662-4fee-9823-16d464eb02a2": "84059dec-19b8-4741-aa20-0f2cad92744c",
+    "8226f374-206c-4e30-88d5-8dfed581b3ee": "30614a3f-db5b-4c11-94c6-116a59512152",
+    "38c97738-83e4-4227-bffe-e352043c8606": "88f1168d-25de-48ae-b495-73dde8fe674e",
+    "2023f7f8-de17-4056-8d77-67f8cf180b0f": "182dc975-ff2e-4be1-8811-0dc710b42547",
+    "ea38688f-cdfe-46e4-8ab4-d6373e611d63": "d3a09343-a70b-4444-a5d8-543fca5b91ec",
+    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": "aec747a0-3bc4-4b87-81fe-94fae9b03f24",
+}
+
+#: The three bays STILL held, and the reason they are the interesting ones: each has no Walmart
+#: store record within 6.3, 11.8 and 13.7 km. They are not bays bolted to a shop -- they look like
+#: standalone collection points, and they are the only grocery-ish record at their locations, so
+#: removing one would erase the site with nothing to take its place.
+STILL_HELD_BAYS: dict[str, float] = {
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d": 567.7,
     "0f2b2452-b74f-422d-b081-ccbf625ad2fb": 577.6,
     "fb500d70-085c-4652-b9bd-fd3545550483": 680.8,
-    "8226f374-206c-4e30-88d5-8dfed581b3ee": 944.2,
-    "38c97738-83e4-4227-bffe-e352043c8606": 1097.8,
-    "2023f7f8-de17-4056-8d77-67f8cf180b0f": 2002.3,
-}
-
-#: Bay id -> the real parent store, recorded as plain `Walmart` and ABSENT from the published
-#: layer. Found by the fifth review; the search that produced ask 5 required the name to contain
-#: "Supercenter" or "Neighborhood Market", so it could never have found these.
-BAY_PARENT_STORES: dict[str, str] = {
-    "38c97738-83e4-4227-bffe-e352043c8606": "88f1168d-25de-48ae-b495-73dde8fe674e",
-    "8226f374-206c-4e30-88d5-8dfed581b3ee": "30614a3f-db5b-4c11-94c6-116a59512152",
-    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": "aec747a0-3bc4-4b87-81fe-94fae9b03f24",
 }
 
 #: Walmart STORE records that DO reach the published grocery layer, and must keep reaching it.
@@ -374,41 +374,76 @@ def test_the_food_house_does_not_reach_the_published_grocery_layer():
     assert list(select_overture(g, "grocery")["id"]) == [HARRIS_COUNTY_PARK]
 
 
-def test_no_collection_bay_is_excluded_while_its_parent_store_is_missing():
-    """OWNER DECISION 2026-11-19: the bays are HELD. Removing one erases the only published
-    record at its site, and the shop it serves is not in the layer to take its place."""
-    wrongly = [b for b in HELD_COLLECTION_BAYS if b in DROPPED_PLACE_IDS]
-    assert not wrongly, f"{len(wrongly)} bays are excluded but were held: {wrongly}"
+def test_every_lifted_bay_is_excluded_and_its_parent_is_published():
+    """THE INVARIANT THIS WHOLE EPISODE IS ABOUT: a bay may only be removed when the shop it
+    stood in for is in the layer. If a bay is ever dropped without a published parent, a site
+    loses its only grocery record -- which is what the fifth review caught."""
+    for bay, parent in LIFTED_BAY_PARENTS.items():
+        assert bay in EXCLUDED_PLACE_IDS, f"{bay} was lifted but is not excluded"
+        assert bay not in HELD_SERVICE_POINTS, f"{bay} is both lifted and held"
+        assert (parent in INCLUDED_PLACE_IDS["grocery"]
+                or parent in PUBLISHED_WALMART_STORES), \
+            f"{bay} was removed but its parent {parent} reaches no published layer"
+        assert parent not in DROPPED_PLACE_IDS, f"the parent {parent} is itself excluded"
 
 
-def test_every_held_bay_still_reaches_the_published_grocery_layer():
-    """The hold has to be true at the end of the pipeline, not just in the table."""
-    g = grocery_frame(list(HELD_COLLECTION_BAYS))
-    assert len(select_overture(g, "grocery")) == len(HELD_COLLECTION_BAYS)
+def test_each_lifted_bay_entry_names_the_parent_that_justified_it():
+    """A removal whose justification is not written beside it cannot be reviewed, and these
+    reverse a decision taken hours earlier."""
+    for bay, parent in LIFTED_BAY_PARENTS.items():
+        reason = EXCLUDED_PLACE_IDS[bay]
+        assert parent in reason, f"{bay}'s entry does not name its parent {parent}"
+        assert "PRELIMINARY" in reason, f"{bay}'s entry is not marked preliminary"
 
 
-def test_the_hold_records_its_reason_for_every_bay():
-    """A record kept for a reason nobody wrote down is indistinguishable from one nobody looked
-    at. Mirrors `PENDING_CLOSURES`: what we are NOT acting on, and why."""
+def test_the_three_standalone_bays_are_still_held():
+    """These have no store within kilometres, so the original argument still holds for them."""
+    for bay in STILL_HELD_BAYS:
+        assert bay in HELD_SERVICE_POINTS, f"{bay} should still be held"
+        assert bay not in DROPPED_PLACE_IDS, f"{bay} is held but also dropped"
+
+
+def test_every_still_held_bay_still_reaches_the_published_grocery_layer():
+    g = grocery_frame(list(STILL_HELD_BAYS))
+    assert len(select_overture(g, "grocery")) == len(STILL_HELD_BAYS)
+
+
+def test_the_hold_records_its_reason_for_every_remaining_bay():
     assert HELD_SERVICE_POINTS, "the held table is empty"
-    for bay, metres in HELD_COLLECTION_BAYS.items():
-        assert bay in HELD_SERVICE_POINTS, f"{bay} is held with no reason recorded"
+    assert len(HELD_SERVICE_POINTS) == len(STILL_HELD_BAYS)
+    for bay, metres in STILL_HELD_BAYS.items():
         reason = HELD_SERVICE_POINTS[bay]
         assert len(reason) > 40, f"{bay} has no usable reason: {reason!r}"
         assert f"{metres:.1f} m" in reason, f"{bay} does not carry its measured {metres:.1f} m"
 
 
 def test_nothing_is_both_held_and_dropped():
-    """Folding the held table into `DROPPED_PLACE_IDS` would silently reverse the owner's call."""
     assert not (set(HELD_SERVICE_POINTS) & set(EXCLUDED_PLACE_IDS))
     assert not (set(HELD_SERVICE_POINTS) & set(DROPPED_PLACE_IDS))
 
 
-def test_the_known_parent_stores_are_never_excluded():
-    """These are the shops the bays stand in for. Excluding one would remove the destination the
-    hold exists to protect."""
-    for bay, parent in BAY_PARENT_STORES.items():
-        assert parent not in DROPPED_PLACE_IDS, f"{parent}, the parent of {bay}, is excluded"
+def test_no_admitted_record_is_also_excluded():
+    """Admitting and excluding the same record is a contradiction the chokepoint would resolve
+    silently in favour of exclusion. Better to fail here."""
+    assert not (set(INCLUDED_PLACE_IDS["grocery"]) & set(DROPPED_PLACE_IDS))
+
+
+def test_the_three_ask_six_records_are_excluded():
+    """The office at the Food House coordinate, the distribution centre our own classifier calls
+    `not_a_grocery`, and `Variety Pick-Up`."""
+    for pid in ("4ff51c50-4e5d-4b0d-8bbe-ddb55a26be53",
+                "ee14e175-556e-4b89-af7b-adea914d618c",
+                "c8899cfc-9df9-4d98-b186-063ed5581515"):
+        assert pid in EXCLUDED_PLACE_IDS
+        assert "PRELIMINARY" in EXCLUDED_PLACE_IDS[pid]
+
+
+def test_variety_pickup_records_that_it_is_the_weakest_entry():
+    """It was removed on its name plus the absence of corroboration, which is the thinnest basis
+    in the table. The entry has to say so, because the next session will not remember."""
+    reason = EXCLUDED_PLACE_IDS["c8899cfc-9df9-4d98-b186-063ed5581515"]
+    assert "WEAKEST" in reason
+    assert "Revisit" in reason or "revisit" in reason
 
 
 def test_the_four_published_walmart_stores_are_not_excluded():
@@ -465,9 +500,17 @@ def department_store_frame(ids):
     )
 
 
-def test_the_inclusion_table_is_empty_and_that_is_deliberate():
-    """Populating it moves a published number UPWARD, which no session should do alone."""
-    assert INCLUDED_PLACE_IDS["grocery"] == {}
+def test_the_inclusion_table_is_populated_and_every_entry_is_preliminary():
+    """POPULATED 2026-11-19 on the owner's instruction to push through. 23 records: 20 from the
+    screen, two Publix stores the screen could only list for review because Overture gives them
+    no category at all, and one Walmart the proximity-doubt gate flagged against a different
+    shop. Every entry must carry its evidence AND say the data are preliminary."""
+    entries = INCLUDED_PLACE_IDS["grocery"]
+    assert len(entries) == 23, f"expected 23 admitted records, got {len(entries)}"
+    for place_id, reason in entries.items():
+        assert len(place_id) == 36, f"{place_id!r} is not an Overture uuid"
+        assert len(reason) > 80, f"{place_id} has no usable evidence: {reason!r}"
+        assert "PRELIMINARY" in reason, f"{place_id} is not marked preliminary"
 
 
 def test_a_department_store_does_not_reach_grocery_on_its_own():
@@ -506,10 +549,11 @@ def test_inclusion_is_per_category_and_does_not_leak(monkeypatch):
 def test_the_seam_answers_cleanly_with_an_empty_table():
     """A seam is only worth having if it survives its first user leaving -- the same reason
     `flagged_closure_reason` stayed when its table emptied."""
-    assert forced_into("grocery") == frozenset()
-    assert forced_into("park") == frozenset()
+    assert len(forced_into("grocery")) == 23, "grocery was populated 2026-11-19"
+    assert forced_into("park") == frozenset(), "no category but grocery has inclusions"
     assert forced_into("a category that does not exist") == frozenset()
-    assert inclusion_reason("grocery", FORCED) is None
+    assert inclusion_reason("grocery", FORCED) is None, "an id nobody admitted has no reason"
+    assert inclusion_reason("park", FORCED) is None
 
 
 def test_every_inclusion_would_have_to_record_why(monkeypatch):
