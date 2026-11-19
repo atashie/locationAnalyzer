@@ -41,6 +41,58 @@ it was built, at the top of the document a resuming session reads first.
 
 ## In flight right now, and what comes next
 
+### CURRENT STATE, 2026-11-19. Read this block first; everything below it is older.
+
+**Nothing is running.** `v2-rethink` at **`7bed67b`**, pushed, working tree clean. V2 suite
+**1,722 passed, 24 skipped**. *(`pyproject.toml` sets `addopts = "-q"`, so `pytest -q` becomes
+`-qq` and prints NO summary line at all -- use `--junitxml` to get totals.)*
+
+**What the last three days were:** a five-review adversarial sequence on the **places/grocery**
+work, separate from the pass 49-54 engine chain that the owner closed. Reviews on 2026-11-17,
+2026-11-18 (x3) and 2026-11-19, prompts and findings in `docs/reviews/`. The latest is
+[[2026-11-19-grocery-layer-exclusions-review-findings]] (`ec6b362`, recorded before repairs) with
+the repairs in `7bed67b`.
+
+**Live numbers:** published `grocery` **542**; `supermarket` **242**; unclassified in the published
+layer **264**; `NAME_CONFIRMED_SUPERMARKETS` **7**. The sixth-pass section below has the trail for
+each, and says which earlier figures are history rather than stale.
+
+**THE ONE THING MOST LIKELY TO BE MISREAD AFTER COMPACTION.** The Food House is removed from the
+**selector** and is still in the **published fixtures**
+(`v2/spikes/g3-render/fixtures/published/own_triangle_grocery_walk.destinations.json`). This is not
+theoretical: the single browser observation this project has, the 2026-11-15 hover at (row 100,
+col 73) recorded in the section above, shows a household being told *"measured to one of 2 places
+at this junction: Weaver Street Market, Inc, Weaver Street Market Administration"* -- the
+meat-processing plant and its office. **That is still what the published bundle says.** Ledger 61
+is about exactly this gap. Any claim that the Food House is "removed" must say removed from the
+selector.
+
+**The ten collection bays are HELD, not removed** -- `HELD_SERVICE_POINTS` in
+`locfinder/places/exclusions.py`, owner decision 2026-11-19. They are removed together with their
+replacement parent stores or not at all. `ae89174`'s commit message describes a state that no
+longer holds; read the sixth-pass section, not that message.
+
+**Reviews are single-reviewer from now on.** The owner declined Antigravity on 2026-11-19 because
+headless operation needs `--dangerously-skip-permissions`. So no second reviewer contradicts a
+Codex finding, and passes should say so. Failed configurations are in
+[[reference-codex-runtime-quirks]].
+
+**What is open, in the owner's own numbering:** **ask 5** -- the missing Walmart stores -- must be
+**rebuilt from scratch** and its current list is explicitly untrustworthy (one of its five closed
+in 2016); **ask 6** -- the Weaver Street office, `Food Line Distribution Center` and
+`Variety Pick-Up`. Both are in "Decisions the owner owes" below, along with the older carried
+items. [[feedback-verify-the-shape-of-the-risk]] stands at **61 instances**.
+
+**The obvious next piece of work, not yet agreed:** rebuilding ask 5 properly -- search by what is
+at the place rather than by the shape of a name, cross-check every candidate against the FSQ
+closure dates *before* proposing it, deduplicate against the published layer, and decide the
+mechanism, because `EXCLUDED_PLACE_IDS` only removes and there is still no table for additions.
+
+---
+
+**HISTORY, 2026-11-15 onward. The paragraph below was written while pass 54 was in flight and is
+kept for the record; it is not current state.**
+
 **Codex pass 54 is running, and the owner asked for it as the FINAL round of this chain.**
 Prompt at `docs/research/55-codex-review-pass54-prompt.md`, committed before the run. It is
 deliberately **not** a sixth defect hunt on the repairs: it is a fitness review in the shape of
