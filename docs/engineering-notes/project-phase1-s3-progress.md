@@ -372,6 +372,19 @@ are gone, one of them nothing inside **2 km**. Ledger 60 one pass later, inside 
 Every earlier *"543 -> 543"* in these notes is a true statement about the THIRD review, not a live
 count; do not rewrite them.
 
+**THE GROCERY TRAVEL-TIME RASTERS ARE STALE, AND NOT ONLY BECAUSE OF THIS PASS.** Changing the
+destination set changes nothing that was already computed from it. Every `own_*grocery*` layer
+under `v2/data/layers/` was built **2026-11-10 to 2026-11-16** -- before the Kroger drop, before
+the twelve FSQ closures, and before today's eleven removals. So **no grocery travel-time number
+should be quoted until they are rebuilt**, and the direction is known: removing a destination can
+only make the time to the nearest grocery longer or leave it unchanged, so the rasters currently
+**understate** it. Ask 5 pushes the other way, since five missing Supercenters would shorten it.
+Rebuilding is compute rather than a decision, so it is not an owner ask -- but it is not free, and
+nothing is deployed, so it is listed here rather than done. `v2/data/` is gitignored, which is why
+this belongs in the resume point: it is true of this machine and invisible in a diff. Found by
+checking the end of the pipeline rather than the end of the change (ledger 60), while writing the
+review prompt.
+
 **One doubt is attached rather than resolved:** the surviving `ALDI` at 4241 Louisburg Rd may be a
 store that relocated to 6101 Capital Blvd in October 2019. Reporting confirms a Louisburg Road
 ALDI moving then but ties no source to this street number, so it is in the owner asks rather than
@@ -421,19 +434,47 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 **NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
 and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
 
-* **5. SIX REAL WALMART SUPERCENTERS ARE MISSING FROM THE PUBLISHED `grocery` LAYER.** Of the ten
-  Walmart store-form records in the accepted places, **four reach the layer and six do not**:
+* **5. FIVE REAL WALMART SUPERCENTERS ARE MISSING FROM THE PUBLISHED `grocery` LAYER.**
+  **CORRECTED 2026-11-19 from six, before any review saw it.** Of the ten Walmart store-form
+  records, **four reach the layer and six do not** --- but one of those six,
+  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63` at *'5141 NC 42, Garner'*, is **33.3 m from the published
+  `84059dec` at '5141 Nc Highway 42 W, Garner': the same store recorded twice**, once as
+  `grocery_store` and once as `department_store`. So six records are absent and **five stores are
+  missing**. I wrote 'six' from a name-and-category filter without checking for duplicates, which
+  is the same error one pass later: counting what my query returned instead of what it meant.
   Overture files four as `department_store`, one as `superstore` and one as `warehouse_club_store`,
   and the `grocery` wedge matches only the `grocery_store` hierarchy. This is why removing the
   collection bays costs coverage at six sites -- **the bay had been standing in for the store.** A
   Supercenter is a weekly shop by any reading of the owner's own definition, so the layer is
   currently wrong at those six addresses, and it was wrong before ask 3 in a way the bays hid.
   Adding them is a decision about what a record IS **and it moves a published number UPWARD**
-  (532 -> 538 if all six go in), which is why no session should take it. The ids:
-  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63`, `182dc975-ff2e-4be1-8811-0dc710b42547`,
-  `d3a09343-a70b-4444-a5d8-543fca5b91ec`, `50ada728-6b96-4536-b42b-87c7e192bb8e` (all
-  `department_store`), `efdcc3bc-9b12-4a20-9473-2a69a93f4d3c` (`superstore`),
-  `a61f0a63-773f-45dc-9003-814e0e460dd5` (`warehouse_club_store`). **There is no table for
+  (532 -> 537 if all five go in), which is why no session should take it. The ids, with the
+  duplicate marked:
+`182dc975-ff2e-4be1-8811-0dc710b42547` (805 Town Centre Blvd, Clayton),
+  `d3a09343-a70b-4444-a5d8-543fca5b91ec` (1001 Shiloh Glenn Dr, Morrisville -- the same street as
+  the closed Sam's Club, and the *'Walmart Supercenter at 279.7 m'* the closure cross-check already
+  mentioned), `50ada728-6b96-4536-b42b-87c7e192bb8e` (1015 Lewis St, Oxford), all three
+  `department_store`; `efdcc3bc-9b12-4a20-9473-2a69a93f4d3c` (12500 US Hwy 15 501 N, Chapel Hill,
+  `superstore`); `a61f0a63-773f-45dc-9003-814e0e460dd5` (1010 Martin Luther King Pkwy, Durham,
+  `warehouse_club_store`). **None of the five has ANY published grocery record within 200 m**
+  (nearest: 254.7 m, 1,658.5 m, 1,688.6 m, 2,003.0 m, 2,732.2 m), so each is a real gap rather than
+  a second record for a shop already in the layer. **NOT a missing store:**
+  `bf4a3b75-ed99-4dd5-86e9-bd3e80652b63`, the Garner duplicate above.
+
+  **THE GAP IS WIDER THAN WALMART, and I only looked at Walmart when I wrote this ask.** Measured
+  2026-11-19 with the project's own brand lookup: **267** records carry a `SUPERMARKET_BRANDS` name
+  and never reach the published layer. Most belong out of it -- **132** are
+  `money_transfer_service` counters like *'WALMART #003182'* and *'FOOD LION #1608'*, plus
+  bakeries, delicatessens and in-store concessions; note that the service-point SCREEN cannot see
+  these, because the giveaway is the category and not the name. The store-shaped remainder is what
+  matters: **`department_store` 13, `discount_store` 7, `superstore` 5,
+  `warehouse_club_store` 1**, and **6** with no primary at all. Those have NOT been deduplicated or
+  checked one by one, so treat 26 as an upper bound and five as the only verified figure.
+  **A separate thread worth its own look:** `Family Fare` appears **28** times as
+  `convenience_store` while the brand sits in `SUPERMARKET_BRANDS`; in North Carolina Family Fare
+  is a petrol-station convenience chain, not the Michigan supermarket of the same name, so the
+  brand table may be promoting corner shops. `supermarket` is not published, so nothing reaches a
+  household from it today. **There is no table for
   ADDITIONS yet** -- `EXCLUDED_PLACE_IDS` only removes -- so this needs a decision about mechanism
   as well as about these six records. **My reading: they should go in**, and the mechanism question
   is the more interesting half, because a taxonomy that files a supermarket as a department store

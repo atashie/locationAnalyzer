@@ -56,7 +56,9 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
     # within 150 m afterwards, one nothing inside 2 km -- and at those sites a real Walmart
     # Supercenter stands, absent from the layer because Overture files it under `department_store`,
     # `superstore` or `warehouse_club_store` while `grocery` matches only `grocery_store`. Four of
-    # the ten Walmart store records reach the layer; six do not. THAT GAP IS NOT FIXED HERE --
+    # the ten Walmart store records reach the layer and six do not, but ONE of those six is a
+    # duplicate of a published record (same store, same address, 33.3 m apart), so the layer is
+    # missing FIVE distinct stores, not six. THAT GAP IS NOT FIXED HERE --
     # adding a store is an owner decision that moves a published number upward, and it is ask 5 in
     # the progress note. No bay was its own nearest neighbour, so the distances below are unchanged
     # by the removal.

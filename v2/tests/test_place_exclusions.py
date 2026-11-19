@@ -292,7 +292,8 @@ def test_select_overture_applies_the_closures_too():
 # within 150 m once all eleven are gone, one of them nothing inside 2 km. At those sites a real
 # Walmart Supercenter stands and is absent from the layer, because Overture files it under
 # `department_store`, `superstore` or `warehouse_club_store` and `grocery` matches only
-# `grocery_store`. Four Walmart store records reach the layer; six do not.
+# `grocery_store`. Four Walmart store records reach the layer and six do not -- of which one is a
+# duplicate of a published record, so FIVE distinct stores are missing.
 #
 # That gap is NOT fixed here. Adding a store is a decision about what a record IS and it moves a
 # published number upward, so it is an owner ask, recorded in the progress note. Each bay entry
