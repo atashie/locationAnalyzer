@@ -43,6 +43,124 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "the same spot. So the Kroger closed and somebody else trades there -- routing a "
         "household to 'Kroger' names a shop that is not there. Owner decision 2026-11-17: drop "
         "this one, hold the other eight.",
+    # ---- owner ask 3, 2026-11-18: not a weekly shop, and the PUBLISHED layer offered it ----
+    #
+    # `grocery` is taxonomy-based and never calls `classify_grocery`, so `NOT_A_WEEKLY_SHOP_SITES`
+    # kept the Food House out of `supermarket` alone while the published layer went on offering it.
+    # Eleven records, each `grocery_store` in Overture, none of them a shop a household could do a
+    # weekly shop at. Published `grocery` 543 -> 532.
+    #
+    # EVERY ENTRY CARRIES WHAT ITS REMOVAL COST, measured before the removal was made. The claim
+    # that a bay bolted to its own Supercenter costs a household nothing was WRONG: only two of
+    # the ten have another published grocery record within 150 m. Six have nothing published
+    # within 150 m afterwards, one nothing inside 2 km -- and at those sites a real Walmart
+    # Supercenter stands, absent from the layer because Overture files it under `department_store`,
+    # `superstore` or `warehouse_club_store` while `grocery` matches only `grocery_store`. Four of
+    # the ten Walmart store records reach the layer; six do not. THAT GAP IS NOT FIXED HERE --
+    # adding a store is an owner decision that moves a published number upward, and it is ask 5 in
+    # the progress note. No bay was its own nearest neighbour, so the distances below are unchanged
+    # by the removal.
+    "1e99e399-b118-4d95-8c78-6770a47287c8":
+        "'Weaver Street Market, Inc', taxonomy hierarchy=grocery_store. It is the co-op's FOOD HOUSE: a "
+        "commercial kitchen, an NCDA-inspected meat-processing plant (P-317), two bakeries and warehousing "
+        "that supply the four Weaver Street shops twice a day. A SUPPLIER, not a shop, and nothing in the "
+        "data distinguishes them -- the name is the co-op's legal name, so it carries no service-point word "
+        "for any screen to catch. Already in `NOT_A_WEEKLY_SHOP_SITES`, which governs `supermarket` only; "
+        "this entry is what removes it from the PUBLISHED `grocery` layer. Nearest surviving grocery record "
+        "0.0 m, 'Weaver Street Market Administration' -- an office on the same site, which the destination "
+        "audit has already seen chosen as a destination and which the owner has NOT yet decided on. Found "
+        "by the third adversarial review 2026-11-18; owner decision the same day, ask 3, answered 'come "
+        "out'.",
+    "686a0d8f-b451-45c5-af0b-1dc3cc76a426":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 0.2 m, 'Walmart Neighborhood Market' -- a supermarket, so removing the "
+        "bay costs a household nothing here: the shop it collects for is itself in the layer. Owner "
+        "decision 2026-11-18, ask 3, answered 'come out'.",
+    "b570ea04-a662-4fee-9823-16d464eb02a2":
+        "'Walmart Grocery Pick Up and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 75.4 m, 'Walmart Supercenter' -- a supermarket, so removing the bay costs "
+        "a household nothing here: the shop it collects for is itself in the layer. Owner decision "
+        "2026-11-18, ask 3, answered 'come out'.",
+    "cee0e25b-aef4-410c-ae89-a0be7ad2bf41":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 147.9 m, 'Total Oriental Foods' -- a grocery record but not a "
+        "supermarket, so removing the bay costs a household nothing here: the shop it collects for is "
+        "itself in the layer. Owner decision 2026-11-18, ask 3, answered 'come out'.",
+    "ea38688f-cdfe-46e4-8ab4-d6373e611d63":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 256.5 m, 'Tazza Mandi' -- a grocery record but not a supermarket. SO THIS "
+        "REMOVAL COSTS COVERAGE: nothing published remains within 150 m, although a real Walmart "
+        "Supercenter stands here, kept out of the layer by its `department_store` taxonomy. Removing the "
+        "bay is still right -- a collection bay is not a weekly shop, and letting it stand in for the store "
+        "is accepting one entity's evidence for another. The missing store is ask 5. Owner decision "
+        "2026-11-18, ask 3, answered 'come out'.",
+    "9011ca8b-301c-40d9-a7c1-a61f6894a42d":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 567.7 m, 'Aldi' -- a supermarket. SO THIS REMOVAL COSTS COVERAGE: nothing "
+        "published remains within 150 m, although a real Walmart Supercenter stands here, kept out of the "
+        "layer by its `department_store` taxonomy. Removing the bay is still right -- a collection bay is "
+        "not a weekly shop, and letting it stand in for the store is accepting one entity's evidence for "
+        "another. The missing store is ask 5. Owner decision 2026-11-18, ask 3, answered 'come out'.",
+    "0f2b2452-b74f-422d-b081-ccbf625ad2fb":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 577.6 m, 'Carlie C's IGA' -- a supermarket. SO THIS REMOVAL COSTS "
+        "COVERAGE: nothing published remains within 150 m, although a real Walmart Supercenter stands here, "
+        "kept out of the layer by its `department_store` taxonomy. Removing the bay is still right -- a "
+        "collection bay is not a weekly shop, and letting it stand in for the store is accepting one "
+        "entity's evidence for another. The missing store is ask 5. Owner decision 2026-11-18, ask 3, "
+        "answered 'come out'.",
+    "fb500d70-085c-4652-b9bd-fd3545550483":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 680.8 m, 'Carlie C's IGA, a second record of that brand' -- a "
+        "supermarket. SO THIS REMOVAL COSTS COVERAGE: nothing published remains within 150 m, although a "
+        "real Walmart Supercenter stands here, kept out of the layer by its `department_store` taxonomy. "
+        "Removing the bay is still right -- a collection bay is not a weekly shop, and letting it stand in "
+        "for the store is accepting one entity's evidence for another. The missing store is ask 5. Owner "
+        "decision 2026-11-18, ask 3, answered 'come out'.",
+    "8226f374-206c-4e30-88d5-8dfed581b3ee":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 944.2 m, 'Harris Teeter' -- a supermarket. SO THIS REMOVAL COSTS "
+        "COVERAGE: nothing published remains within 150 m, although a real Walmart Supercenter stands here, "
+        "kept out of the layer by its `department_store` taxonomy. Removing the bay is still right -- a "
+        "collection bay is not a weekly shop, and letting it stand in for the store is accepting one "
+        "entity's evidence for another. The missing store is ask 5. Owner decision 2026-11-18, ask 3, "
+        "answered 'come out'.",
+    "38c97738-83e4-4227-bffe-e352043c8606":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 1097.8 m, 'Grand India Mart' -- a grocery record but not a supermarket. "
+        "SO THIS REMOVAL COSTS COVERAGE: nothing published remains within 150 m, although a real Walmart "
+        "Supercenter stands here, kept out of the layer by its `department_store` taxonomy. Removing the "
+        "bay is still right -- a collection bay is not a weekly shop, and letting it stand in for the store "
+        "is accepting one entity's evidence for another. The missing store is ask 5. Owner decision "
+        "2026-11-18, ask 3, answered 'come out'.",
+    "2023f7f8-de17-4056-8d77-67f8cf180b0f":
+        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY: an "
+        "online order is brought out to a parked car. No weekly shop happens here, and no geometry "
+        "distinguishes the bay from the store it is bolted to, which is why the name screen exists. Nearest "
+        "surviving grocery record 2002.3 m, 'Lowes Foods of Clayton' -- a supermarket. SO THIS REMOVAL "
+        "COSTS COVERAGE: nothing published remains within 150 m, although a real Walmart Supercenter stands "
+        "here, kept out of the layer by its `department_store` taxonomy. Removing the bay is still right -- "
+        "a collection bay is not a weekly shop, and letting it stand in for the store is accepting one "
+        "entity's evidence for another. The missing store is ask 5. Owner decision 2026-11-18, ask 3, "
+        "answered 'come out'.",
 }
 
 #: Closures Overture asserts that we are NOT acting on, with why. Recorded rather than applied.
