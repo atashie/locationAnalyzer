@@ -319,14 +319,39 @@ LIFTED_BAY_PARENTS: dict[str, str] = {
     "cee0e25b-aef4-410c-ae89-a0be7ad2bf41": "aec747a0-3bc4-4b87-81fe-94fae9b03f24",
 }
 
-#: The three bays STILL held, and the reason they are the interesting ones: each has no Walmart
-#: store record within 6.3, 11.8 and 13.7 km. They are not bays bolted to a shop -- they look like
-#: standalone collection points, and they are the only grocery-ish record at their locations, so
-#: removing one would erase the site with nothing to take its place.
+#: The three bays STILL held -> metres to the nearest OTHER published grocery record, re-measured
+#: 2026-11-19 in EPSG:32617 after the +23/-7 change moved the published set.
+#:
+#: **The description these three carried on 2026-11-19 was wrong and the correction matters.** They
+#: were called "standalone collection points" on the strength of an absence: no Walmart STORE record
+#: nearby in Overture. Looking at the other two sources instead of the one that came back empty,
+#: TWO OF THE THREE have a real Walmart Supercenter at the site -- OSM `shop=supermarket` 40.0 m
+#: from `9011ca8b`, an open FSQ 'Walmart Supercenter' 83.4 m from it and 229.7 m from `0f2b2452`.
+#: The hold is right; the reason was the opposite of the truth. [[feedback-verify-the-shape-of-the-risk]]
+#: instance 61: an empty search measures the search.
 STILL_HELD_BAYS: dict[str, float] = {
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d": 567.7,
-    "0f2b2452-b74f-422d-b081-ccbf625ad2fb": 577.6,
-    "fb500d70-085c-4652-b9bd-fd3545550483": 680.8,
+    "0f2b2452-b74f-422d-b081-ccbf625ad2fb": 577.7,
+    "fb500d70-085c-4652-b9bd-fd3545550483": 681.0,
+}
+
+#: Held bay -> metres to the nearest Overture WALMART STORE record. Each number was real on
+#: 2026-11-19 and each was attached to the WRONG BAY in the note and the commit message: the set
+#: {6.3, 11.8, 13.7} was quoted in id order when the measured order is 13.67, 6.06, 11.78.
+HELD_BAY_NEAREST_WALMART_STORE_KM: dict[str, float] = {
+    "9011ca8b-301c-40d9-a7c1-a61f6894a42d": 13.67,
+    "0f2b2452-b74f-422d-b081-ccbf625ad2fb": 6.06,
+    "fb500d70-085c-4652-b9bd-fd3545550483": 11.78,
+}
+
+#: Held bay -> whether a real STORE is corroborated at its site by a source other than Overture.
+#: This is the distinction the word "standalone" destroyed, and it is the one that decides what to
+#: do next: a bay with a corroborated store has a store Overture does not record (so nothing can be
+#: admitted in its place), while a bay without one may really be a lone pickup kiosk.
+HELD_BAY_STORE_IS_CORROBORATED: dict[str, bool] = {
+    "9011ca8b-301c-40d9-a7c1-a61f6894a42d": True,
+    "0f2b2452-b74f-422d-b081-ccbf625ad2fb": True,
+    "fb500d70-085c-4652-b9bd-fd3545550483": False,
 }
 
 #: Walmart STORE records that DO reach the published grocery layer, and must keep reaching it.
@@ -415,6 +440,45 @@ def test_the_hold_records_its_reason_for_every_remaining_bay():
         reason = HELD_SERVICE_POINTS[bay]
         assert len(reason) > 40, f"{bay} has no usable reason: {reason!r}"
         assert f"{metres:.1f} m" in reason, f"{bay} does not carry its measured {metres:.1f} m"
+
+
+def test_no_held_bay_is_called_standalone_without_checking_the_other_sources():
+    """THE DEFECT THIS REPLACES: all three bays were called "standalone collection points" because
+    Overture had no Walmart store record near them. Two of the three have a real Supercenter at the
+    site according to OSM and FSQ. An absence in one source is not an absence in the world, so an
+    entry may only claim standalone where the OTHER sources were checked and also came back empty.
+    """
+    for bay, corroborated in HELD_BAY_STORE_IS_CORROBORATED.items():
+        reason = HELD_SERVICE_POINTS[bay]
+        if corroborated:
+            # NOT `"STANDALONE" not in ... or "NOT" in ...`, which was the first version of this
+            # assertion and is vacuous: "NOTHING TO ADMIT" contains the letters NOT.
+            assert "STANDALONE COLLECTION POINT" not in reason.upper(), \
+                f"{bay} has a corroborated store at its site and must not be called standalone"
+            assert "OSM" in reason or "FSQ" in reason, \
+                f"{bay} must name the source that corroborates the store at its site"
+        else:
+            assert "STANDALONE" in reason.upper(), \
+                f"{bay} has no corroborating store and the entry should say so plainly"
+            assert "250 m" in reason, f"{bay} must say how far the empty search looked"
+
+
+def test_each_held_bay_carries_its_own_nearest_store_distance():
+    """The three km figures were each real and each attached to the wrong bay. Pinning them per id
+    is what makes that impossible to repeat."""
+    for bay, km in HELD_BAY_NEAREST_WALMART_STORE_KM.items():
+        reason = HELD_SERVICE_POINTS[bay]
+        assert f"{km:.2f} km" in reason, f"{bay} does not carry its measured {km:.2f} km"
+    assert len(set(HELD_BAY_NEAREST_WALMART_STORE_KM.values())) == 3, \
+        "three distinct distances; if two collide the pairing cannot be checked by eye"
+
+
+def test_the_corrected_total_oriental_foods_distance_names_both_pairs():
+    """`aec747a0`'s entry quoted the BAY's 147.9 m in a sentence about the STORE, whose distance is
+    133.6 m. Both numbers are real, which is exactly why the entry has to say which is which."""
+    reason = INCLUDED_PLACE_IDS["grocery"]["aec747a0-3bc4-4b87-81fe-94fae9b03f24"]
+    assert "133.6 m" in reason and "147.9 m" in reason
+    assert "THIS STORE" in reason
 
 
 def test_nothing_is_both_held_and_dropped():

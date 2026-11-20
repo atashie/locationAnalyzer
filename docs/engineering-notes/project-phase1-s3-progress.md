@@ -67,10 +67,12 @@ meat-processing plant and its office. **That is still what the published bundle 
 is about exactly this gap. Any claim that the Food House is "removed" must say removed from the
 selector.
 
-**The ten collection bays are HELD, not removed** -- `HELD_SERVICE_POINTS` in
-`locfinder/places/exclusions.py`, owner decision 2026-11-19. They are removed together with their
-replacement parent stores or not at all. `ae89174`'s commit message describes a state that no
-longer holds; read the sixth-pass section, not that message.
+**SEVEN of the ten collection bays are now REMOVED and THREE are still HELD** --
+`HELD_SERVICE_POINTS` in `locfinder/places/exclusions.py`. The owner's decision of 2026-11-19 was
+that bays come out together with their replacement parent stores or not at all; that condition was
+then met for seven of them, per bay. `ae89174`'s commit message describes a state that no longer
+holds, and the paragraph that used to stand here said all ten were still held, which stopped being
+true in `de4c17f`. Read the dated bullets below, not either of those.
 
 **Reviews are single-reviewer from now on.** The owner declined Antigravity on 2026-11-19 because
 headless operation needs `--dangerously-skip-permissions`. So no second reviewer contradicts a
@@ -89,9 +91,19 @@ travels with the record. **Do not present these layers to a household as authori
   `Publix Super Market` stores Overture gives no category at all, plus one Walmart the
   proximity-doubt gate had flagged against a different shop 147.9 m away.
 * **SEVEN of the ten held bays removed**, each only once its parent store was published within
-  400 m. **THREE remain held**: `9011ca8b`, `0f2b2452` and `fb500d70` have no Walmart store record
-  within **6.3, 11.8 and 13.7 km**, so they are standalone collection points rather than bays
-  bolted to a shop, and they are the only grocery-ish record at their locations.
+  400 m. All seven are corroborated: OSM carries `shop=supermarket` named Walmart within
+  4.8--245.5 m of every one, and FSQ an open `Walmart Supercenter`.
+* **THREE remain held, and the reason first given for holding them was wrong.** They were called
+  "standalone collection points" because Overture has no Walmart STORE record near them -- 13.67 km
+  from `9011ca8b`, 6.06 km from `0f2b2452`, 11.78 km from `fb500d70`. (The note and `de4c17f`'s
+  message quoted those three figures **paired with the wrong ids**, as 6.3/11.8/13.7 in id order.)
+  Checking the sources that had not come back empty says the opposite: **two of the three have a
+  real Walmart Supercenter at the site** -- OSM `shop=supermarket` 40.0 m from `9011ca8b`, an open
+  FSQ `Walmart Supercenter` 83.4 m from it and 229.7 m from `0f2b2452`. So those two serve a store
+  **Overture does not record at all**, which is why nothing can be admitted in their place and why
+  the bay is the only record this project holds of a real supermarket. Only `fb500d70` has nothing
+  corroborating a store within 250 m. Corrected 2026-11-19, same day, by measurement:
+  [[feedback-verify-the-shape-of-the-risk]] instance 61 again, in my own repair of instance 61.
 * **Ask 6 settled:** the Weaver Street office, `Food Line Distribution Center` and
   `Variety Pick-Up` are all excluded. Both second sources were checked first and neither says a
   shop is at any of the three. **`Variety Pick-Up` is the weakest entry in the whole table** -- its

@@ -57,6 +57,15 @@ calibrate anything** (owner constraint). Nothing is scraped.
   the first thing to revisit.
 * **Published counts move with these decisions**, so a count quoted without a date is meaningless.
   See the dated block in [[project-phase1-s3-progress]].
+* **A screen over Overture cannot propose a store Overture omits.** This is the sharpest known
+  limit of the current approach and it was found by measurement on 2026-11-19: at
+  501 Hampton Pointe, Hillsborough and 4431 New Bern Ave, Raleigh there is a real Walmart
+  Supercenter — OSM `shop=supermarket` at 40.0 m in the first case, an open FSQ
+  `Walmart Supercenter` at 83.4 m and 229.7 m — and **Overture has no store record for either**.
+  The only Overture record at each site is a grocery pickup bay. Those two households are served
+  today only because the bay is published, which is the right answer at the right place arrived at
+  for the wrong reason. A screen that reads Overture rows can never see this class; only a source
+  with its own store list can.
 * **The screens are re-runnable**, which matters more than the current answers:
   `scripts/rebuild_missing_grocery_stores.py` and `scripts/crosscheck_fsq_closures.py` regenerate
   their sheets, so a new Overture release is a re-run rather than a re-litigation.

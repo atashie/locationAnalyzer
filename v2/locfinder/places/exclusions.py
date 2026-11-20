@@ -354,20 +354,30 @@ FSQ_FLAGGED_CLOSURES: dict[str, str] = {}
 #: Nothing may fold this table into `DROPPED_PLACE_IDS`; a test asserts the two do not intersect.
 HELD_SERVICE_POINTS: dict[str, str] = {
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 567.7 m, 'Aldi'. **Nothing published remains within 150 m if this bay "
-        "goes**, and the parent store has NOT yet been identified -- finding it is part of rebuilding ask "
-        "5. Removing this bay erases the site.",
+        "'Walmart Grocery Pickup and Delivery', 501 Hampton Pointe B, Hillsborough NC. A COLLECTION BAY, "
+        "and HELD BECAUSE THE STORE IT SERVES HAS NO OVERTURE RECORD AT ALL -- not because it stands "
+        "alone. Re-measured 2026-11-19 in EPSG:32617: OSM carries `shop=supermarket` named "
+        "'Walmart Supercenter' brand Walmart at 40.0 m, and FSQ carries an OPEN 'Walmart Supercenter' at "
+        "83.4 m, so a real supermarket IS here. Overture has no store record for it: the only Overture "
+        "record at this address is this bay, and the nearest Overture Walmart STORE record is 13.67 km "
+        "away. There is therefore nothing to admit in its place, and this bay is the only record this "
+        "project holds of a real supermarket. Nearest other published grocery 567.7 m, 'Aldi'. "
+        "PRELIMINARY.",
     "0f2b2452-b74f-422d-b081-ccbf625ad2fb":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 577.6 m, 'Carlie C's IGA'. **Nothing published remains within 150 m if "
-        "this bay goes**, and the parent store has NOT yet been identified -- finding it is part of "
-        "rebuilding ask 5. Removing this bay erases the site.",
+        "'Walmart Grocery Pickup and Delivery', 4431 New Bern Ave, Raleigh NC. A COLLECTION BAY, and HELD "
+        "FOR THE SAME REASON as `9011ca8b`: FSQ carries an OPEN 'Walmart Supercenter' at 229.7 m, so a "
+        "store is at or beside the site, and Overture records no Walmart store on New Bern Ave at all -- "
+        "its nearest Walmart STORE record is 6.06 km away. OSM has no shop-tagged feature within 250 m, "
+        "which is weaker corroboration than `9011ca8b` has. Nothing to admit in its place. Nearest other "
+        "published grocery 577.7 m, 'Carlie C's IGA'. PRELIMINARY.",
     "fb500d70-085c-4652-b9bd-fd3545550483":
-        "'Walmart Grocery Pickup and Delivery', taxonomy hierarchy=grocery_store. A COLLECTION BAY. Nearest "
-        "surviving grocery record 680.8 m, 'a second Carlie C's IGA record'. **Nothing published remains "
-        "within 150 m if this bay goes**, and the parent store has NOT yet been identified -- finding it is "
-        "part of rebuilding ask 5. Removing this bay erases the site.",
+        "'Walmart Grocery Pickup and Delivery', 4500 Fayetteville Rd, Raleigh NC. A COLLECTION BAY, and "
+        "THE ONLY ONE OF THE THREE THAT LOOKS GENUINELY STANDALONE: no OSM shop-tagged feature within "
+        "250 m, and the only FSQ record at the site is the pickup point itself. Nearest Overture Walmart "
+        "STORE record 11.78 km. So there is no evidence of a store here to admit, and no evidence the bay "
+        "misrepresents one either -- it is held because removing it erases the site and nothing has been "
+        "found to replace it. Nearest other published grocery 681.0 m, a second 'Carlie C's IGA' record. "
+        "PRELIMINARY.",
 }
 
 
@@ -516,8 +526,10 @@ INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
         "aec747a0-3bc4-4b87-81fe-94fae9b03f24":
             "Walmart, 1725 New Hope Church Rd, Raleigh, Overture primary=department_store so outside the "
             "`grocery_store` hierarchy. **THE PARENT STORE OF HELD BAY `cee0e25b`, 27.4 m away.** The screen "
-            "put it in REVIEW rather than PROPOSED because brandless 'Total Oriental Foods' sits 147.9 m away "
-            "and the proximity-doubt gate cannot tell a different shop from the same shop under a store code. "
+            "put it in REVIEW rather than PROPOSED because brandless 'Total Oriental Foods' sits 133.6 m from "
+            "THIS STORE (147.9 m from the bay -- two different pairs, and an earlier version of this entry "
+            "quoted the bay's distance in a sentence about the store) and the proximity-doubt gate cannot "
+            "tell a different shop from the same shop under a store code. "
             "Looking at it settles it: Total Oriental Foods is a different business, not this Walmart under "
             "another name. Admitted on that judgement, which is exactly what the REVIEW bucket is for. "
             "PRELIMINARY.",
