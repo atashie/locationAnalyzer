@@ -52,6 +52,7 @@ import pandas as pd  # noqa: E402
 from _common import ACCEPTED_PLACES  # noqa: E402
 from locfinder.places.categories import select_overture  # noqa: E402
 from locfinder.places.exclusions import (  # noqa: E402
+    DROPPED_PLACE_IDS,
     EXCLUDED_PLACE_IDS,
     HELD_SERVICE_POINTS,
 )
@@ -125,6 +126,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--emit", action="store_true",
                     help="print table entries for an approved decision, instead of the sheet")
+    ap.add_argument("--write-sheet", action="store_true",
+                    help="overwrite the audit sheet. Required, because a rerun AFTER an admission "
+                         "no longer screens the admitted records -- the first gate skips anything "
+                         "already published -- so an unguarded rerun would replace the sheet that "
+                         "records WHY 23 records were admitted with the residual rows only.")
     args = ap.parse_args()
 
     places = gpd.read_parquet(ACCEPTED_PLACES)
@@ -155,6 +161,7 @@ def main() -> None:
 
     gates = Counter()
     gate_order = ["owner_excluded", "considered", "brand", "service_point",
+                  "fsq_row_is_a_service_point",
                   "REVIEW: no category", "store_format", "fsq_closure",
                   "closure_overridden_by_open_record", "duplicate",
                   "REVIEW: possible duplicate", "uncorroborated", "PROPOSED"]
@@ -167,7 +174,11 @@ def main() -> None:
         # one. Without this the screen re-proposes the Food House, whose whole entry says it is a
         # meat-processing plant -- and refuses it for the accidental reason that its own office
         # record sits 0.0 m away. Right outcome, wrong reason, and only by luck.
-        if rec["id"] in EXCLUDED_PLACE_IDS:
+        # `DROPPED_PLACE_IDS`, not `EXCLUDED_PLACE_IDS`: the second omits the twelve confirmed
+        # closures, so a shop already recorded as shut was screened from scratch and refused again
+        # by the closure gate -- the right outcome reached at the wrong gate, which is how a gate
+        # count stops meaning what it says. Found by the sixth review.
+        if rec["id"] in DROPPED_PLACE_IDS:
             gates["owner_excluded"] += 1
             continue
         gates["considered"] += 1
@@ -228,6 +239,14 @@ def main() -> None:
         open_agreeing = ""
         for _, f in near_fsq.iterrows():
             if not clears_the_floor(match_verdict(name, str(f["name"]))):
+                continue
+            # **THE RECORD THAT OVERRIDES A CLOSURE MUST BE A SHOP.** This test was applied to the
+            # Overture candidate's name and never to the FSQ row's, so an open `Walmart Vision &
+            # Glasses` beside a CLOSED `Walmart Supercenter` was read as the store trading on. The
+            # sixth review built exactly that case and the screen returned PROPOSED, explaining
+            # that an optician established continued trading -- a conclusion invented by the code.
+            if names_a_service_point(str(f["name"])):
+                gates["fsq_row_is_a_service_point"] += 1
                 continue
             if pd.isna(f["date_closed"]):
                 if not open_agreeing:
@@ -321,6 +340,14 @@ def main() -> None:
         for _, f in near_fsq.iterrows():
             if not pd.isna(f["date_closed"]):
                 continue
+            # Same test, same reason: before this, NINE of the fourteen proposed Walmarts were
+            # corroborated by a department or a bay -- `Walmart Auto Care Centers`,
+            # `Walmart Vision & Glasses`, `Walmart Bakery`, `Walmart Photo Center`, and TWICE by
+            # `Walmart Grocery Pickup and Delivery`, which is the exact record type this project
+            # removes as not-a-shop. A bay cannot be evidence for the store it serves.
+            if names_a_service_point(str(f["name"])):
+                gates["fsq_row_is_a_service_point"] += 1
+                continue
             if clears_the_floor(match_verdict(name, str(f["name"]))):
                 support.append(f"FSQ '{f['name']}' open at "
                                f"{fsq_g.geometry.distance(here).loc[_]:.1f} m")
@@ -354,6 +381,18 @@ def main() -> None:
             print(f'        "{r["name"]} at {r["address"]}, Overture primary={r["primary"]} '
                   f'so outside the `grocery_store` hierarchy. Corroborated: {r["evidence"]}. '
                   f'Nearest published grocery {r["nearest_published_m"]} m.",')
+        return
+
+    if SHEET.exists() and not args.write_sheet:
+        print(f"{SHEET.relative_to(ROOT.parent)} already exists and is the record of an applied "
+              "decision.")
+        print("A rerun no longer screens the records that were admitted from it, so writing now "
+              "would replace that record with the residual rows.")
+        print("Pass --write-sheet to overwrite it deliberately. Gate counts for this run:")
+        print()
+        for g in gate_order:
+            n = gates.get(g, 0)
+            print(f"  {g:<42} {n}" if n else f"  {g:<42} NEVER REACHED")
         return
 
     AUDIT.mkdir(parents=True, exist_ok=True)

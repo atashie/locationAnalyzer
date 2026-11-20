@@ -53,9 +53,21 @@ work, separate from the pass 49-54 engine chain that the owner closed. Reviews o
 [[2026-11-19-grocery-layer-exclusions-review-findings]] (`ec6b362`, recorded before repairs) with
 the repairs in `7bed67b`.
 
-**Live numbers:** published `grocery` **542**; `supermarket` **242**; unclassified in the published
-layer **264**; `NAME_CONFIRMED_SUPERMARKETS` **7**. The sixth-pass section below has the trail for
-each, and says which earlier figures are history rather than stale.
+**LIVE NUMBERS, AND WHAT THEY ARE NUMBERS OF.** The sixth pass found that the old version of this
+line was the place the confusion was manufactured: it quoted a SELECTOR result as though it
+described the product.
+
+| | count | what it counts |
+|---|---:|---|
+| `grocery`, **selected** | **555** | what `select_overture` returns today |
+| `grocery`, **published** | **unchanged since 2026-11-14** | the browser bundle: 468 place records across 432 destination nodes, still carrying the Food House and six of the seven lifted bays |
+| `supermarket`, selected | **242** | not a published layer; **none of the 23 admitted records reach it**, though `classify_grocery` calls 20 of them supermarkets |
+| unclassified in the selected layer | **258** | was written as 264, which was measured before the +23/-7 change |
+| `NAME_CONFIRMED_SUPERMARKETS` | **7** | the other table sizes are in [[reference-business-data-is-preliminary]] and were also wrong until 2026-11-19 |
+
+**Never write a bare "published grocery is N" again.** Say *selected* or *published*, and for
+published give the bundle's own build date. "532 published, 555 selected" is equally wrong: 532 is
+just the selector with the inclusion table emptied.
 
 **THE ONE THING MOST LIKELY TO BE MISREAD AFTER COMPACTION.** The Food House is removed from the
 **selector** and is still in the **published fixtures**
@@ -575,8 +587,10 @@ needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
 **NEW 2026-11-18, fifth pass, uncovered while executing ask 3.** Both were put to the owner in chat
 and neither is answered. Neither is caused by any of this work; ask 3 is what exposed them.
 
-* **5. CLOSED 2026-11-19 -- 23 stores admitted, nothing left pending. REBUILT the same day on the owner's instruction. TWENTY stores are missing from the
-  published `grocery` layer, and the mechanism to admit them now exists and is EMPTY.** The
+* **5. CLOSED 2026-11-19 -- 23 stores admitted and the inclusion mechanism POPULATED.** (The
+  sentence here said the mechanism "exists and is EMPTY" for several hours after it had been
+  filled; the sixth pass caught it.) Rebuilt the same day on the owner's instruction, after the
+  2026-11-18 version proposed five stores of which one had closed in 2016. The
   2026-11-18 version of this ask is superseded in full; it proposed five stores, one of which had
   closed in 2016, and named mostly the parents of nothing. Its faults are recorded in
   [[2026-11-19-grocery-layer-exclusions-review-findings]] and it survives only in git history.
@@ -607,10 +621,18 @@ and neither is answered. Neither is caused by any of this work; ask 3 is what ex
   | **REFUSED: uncorroborated** | **1** |
   | **PROPOSED** | **20** |
 
-  **The 20 are 14 Walmart and 6 ALDI.** Fifteen are corroborated **twice over** -- an OSM
+  **The 20 are 14 Walmart and 6 ALDI. EIGHTEEN are corroborated twice over** -- an OSM
   `shop=supermarket` with an agreeing name at 0.0-13.4 m **and** an open Foursquare record -- and
-  **two rest on Foursquare alone**, both of them records where a department closed. Quote the split,
-  not the 20.
+  **two rest on Foursquare alone**: `8e1fc43f` (6600 Glenwood Ave) and `0da6a7a0`
+  (7106 Knightdale Blvd), both records where a department closed and a plain `Walmart` row
+  overrode the closure. Quote the split, not the 20. **The figure here said fifteen until
+  2026-11-19; the sheet has always said eighteen.**
+
+  **Those two are the weakest of the 20 and are the ones to re-examine first.** After the
+  sixth-pass repair the screen no longer lets a department or a bay corroborate a store, and it
+  was re-run against the pre-admission state to check what that costs: **all 20 still propose**,
+  62 FSQ rows were skipped as service points, and the closure-override path dropped from 3 uses to
+  2 -- both of them these two records.
 
   **THREE OF THE TWENTY ARE WHAT WOULD LET THE HOLD BE LIFTED**, and the sheet says so per row:
   `88f1168d` (3151 Apex Peakway) replaces held bay `38c97738` at 63.4 m; `30614a3f` (2114 S Main

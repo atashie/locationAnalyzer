@@ -38,32 +38,37 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "no access tag and no parks operator. Seven of the nine accepted park records on that site "
         "DO fall inside 'Harris Lake County Park' (leisure=park, access=yes, ownership=county) and "
         "are kept. Owner decision 2026-11-17: designated as a public park yes, open space that is "
-        "not designated a park no.",
+        "not designated a park no. PRELIMINARY.",
     "dc218eca-83a0-4889-acde-0ec39b54224d":
         "'Shearon Harris Reservoir', taxonomy primary=park. The same water body as the record "
         "above under another name, and the same evidence: contained only by 'Duke Energy: Harris "
-        "Nuclear Plant', outside 'Harris Lake County Park'. Owner decision 2026-11-17.",
+        "Nuclear Plant', outside 'Harris Lake County Park'. Owner decision 2026-11-17. PRELIMINARY.",
     "81190996-0ac4-401f-817a-a9ebff1af58c":
         "Kroger, grocery. Overture marks it permanently_closed, and unlike the eight below the "
         "signal is strong: it comes from `Overture-signals` at confidence 1.0 rather than from a "
         "business registry, and OSM shows a `shop=supermarket` named Harris Teeter operating at "
         "the same spot. So the Kroger closed and somebody else trades there -- routing a "
         "household to 'Kroger' names a shop that is not there. Owner decision 2026-11-17: drop "
-        "this one, hold the other eight.",
+        "this one, hold the other eight. PRELIMINARY.",
     # ---- 2026-11-19: seven bays lifted, their parents admitted; and ask 6 settled ----
     #
     # Owner instruction to push through on preliminary data. Each bay below came out ONLY
     # because its parent store is now in the layer -- the condition the hold stated.
     "686a0d8f-b451-45c5-af0b-1dc3cc76a426":
         "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
-        "now published**: `ccff8ac5-0b7d-4ac7-8d5d-3a7f5e0fa768` at 0.2 m, admitted via "
-        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "now published**: `ccff8ac5-0b7d-4ac7-8d5d-3a7f5e0fa768` at 0.2 m, which was ALREADY in the "
+        "published layer and is NOT in `INCLUDED_PLACE_IDS` -- an earlier version of this entry said it "
+        "was admitted there, which was false. Corroborated independently: OSM `shop=supermarket` named "
+        "'Walmart Neighborhood Market' 14.5 m away, a different FORMAT from a Supercenter and still a "
+        "weekly shop. The hold said these come out together with their replacements and that "
         "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
         "now routes to the shop. PRELIMINARY.",
     "b570ea04-a662-4fee-9823-16d464eb02a2":
         "A Walmart collection bay, held 2026-11-19 and removed the same day because **its parent store is "
-        "now published**: `84059dec-19b8-4741-aa20-0f2cad92744c` at 75.4 m, admitted via "
-        "`INCLUDED_PLACE_IDS`. The hold said these come out together with their replacements and that "
+        "now published**: `84059dec-19b8-4741-aa20-0f2cad92744c` at 75.4 m, which was ALREADY in the "
+        "published layer and is NOT in `INCLUDED_PLACE_IDS` -- an earlier version of this entry said it "
+        "was admitted there, which was false. The hold said these come out together with their "
+        "replacements and that "
         "condition is met for this one. A bay is not a weekly shop; the shop beside it is, and a household "
         "now routes to the shop. PRELIMINARY.",
     "8226f374-206c-4e30-88d5-8dfed581b3ee":
@@ -112,14 +117,19 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "shopfront. No shop-tagged OSM feature within 120 m. A distribution centre is not a weekly shop. "
         "PRELIMINARY.",
     "c8899cfc-9df9-4d98-b186-063ed5581515":
-        "'Variety Pick-Up', taxonomy hierarchy=grocery_store, `unclassified`. **THE WEAKEST ENTRY IN THIS "
-        "TABLE, AND DELIBERATELY RECORDED AS SUCH.** The name is very nearly all the evidence there is: NO "
-        "agreeing Foursquare record within 120 m (of 13 records there) and NO shop-tagged OSM feature "
-        "within 120 m, so no second source says a shop is here -- but absence of corroboration is not proof "
-        "of absence, and the project has been burned before by reading a name as a fact. Removed under the "
-        "owner's 2026-11-19 instruction to push through on preliminary data, on the asymmetry that a wrong "
-        "destination costs a household a journey while a wrong removal costs them an option they may not "
-        "have had. **Revisit this one first** when a well-vetted source is available. PRELIMINARY.",
+        "'Variety Pick-Up', taxonomy hierarchy=grocery_store, `unclassified`. **STILL THE WEAKEST ENTRY IN "
+        "THIS TABLE, AND ITS FIRST REASON WAS FALSE.** That reason said no second source says a shop is "
+        "here. The sixth review executed the check: FSQ holds **'Harveys Supermarkets' at 1830 New Bern "
+        "Ave -- this record's own address -- 16.3 m away with no closure date**, alongside a Shell and a "
+        "Valero fuel pin and 'NYC Grill' at the same address. The search had required the NAME to agree, "
+        "and reported 'no evidence of a shop' when what it had was an unresolved IDENTITY. "
+        "**WHAT THE EXCLUSION NOW RESTS ON was also already on disk and was not cited: "
+        "`docs/experiments/audit/grocery-brandless-footprint-shortlist.csv` records this record inside a "
+        "181 m2 building** (largest within 120 m: 427 m2), far below `footprint.py`'s 650 m2 floor, which "
+        "yields `not_a_weekly_shop` by the project's own measured rule. A fuel-station forecourt unit is "
+        "not a weekly shop whatever the name beside it. **STILL REVISIT THIS ONE FIRST**, and when a "
+        "vetted source arrives the question to ask is which business is at 1830 New Bern Ave, not whether "
+        "the name matches. PRELIMINARY.",
     # ---- owner ask 3, 2026-11-18, PARTLY HELD 2026-11-19 ----
     #
     # The ask covered eleven records. ONE is removed here; the ten collection bays are HELD in
@@ -145,7 +155,8 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "it removes the record that claims to be a shop and leaves the one that claims to be an office. "
         "Found by the third adversarial review 2026-11-18, owner decision the same day, and KEPT when the "
         "ten bays beside it were held on 2026-11-19: a plant that supplies shops is not a shop by any "
-        "reading of the owner's definition, and no judgement about shopping methods turns on it.",
+        "reading of the owner's definition, and no judgement about shopping methods turns on it. "
+        "PRELIMINARY.",
 }
 
 #: Closures Overture asserts that we are NOT acting on, with why. Recorded rather than applied.
@@ -344,40 +355,56 @@ FSQ_FLAGGED_CLOSURES: dict[str, str] = {}
 #: rebuilding ask 5.
 #:
 #: **SEVEN OF THE TEN WERE REMOVED ON 2026-11-19** once their parent stores were admitted to the
-#: layer, which is the condition this table always stated. **THREE REMAIN**, and they are the
-#: interesting ones: `9011ca8b`, `0f2b2452` and `fb500d70` have **no Walmart store record within
-#: 6.3, 11.8 and 13.7 km** respectively, so they are not bays bolted to a shop at all -- they look
-#: like standalone collection points, and they are the only grocery-ish record at their locations.
-#: Removing one of those would erase the site with nothing to replace it, so the original argument
-#: still holds for exactly these three.
+#: layer, which is the condition this table always stated. **THREE REMAIN, AND ALL THREE SIT AT A
+#: REAL WALMART SUPERCENTER THAT OVERTURE DOES NOT RECORD AS A STORE.** That is the opposite of
+#: what this header said for most of 2026-11-19, and the correction is the point:
+#:
+#: * The first description -- "no Walmart store record within 6.3, 11.8 and 13.7 km... standalone
+#:   collection points" -- had the three figures PAIRED WITH THE WRONG BAYS and read an absence in
+#:   ONE source as a fact about the world.
+#: * The second description, in `3859f26`, fixed the entries and left this header alone, and still
+#:   called `fb500d70` the only genuinely standalone one. The sixth review executed the check: an
+#:   open FSQ `Walmart Supercenter` sits at `fb500d70`'s OWN ADDRESS, 462.9 m away, with a Walmart
+#:   bakery and pharmacy at 0.0 m, and Walmart's own locator calls it Supercenter #1372.
+#: * A third error ran through both: distances to OSM features were measured from their CENTROIDS,
+#:   and OSM supermarkets are POLYGONS. By polygon distance `9011ca8b` is INSIDE the Walmart
+#:   polygon and `0f2b2452` is 209.0 m from one -- inside the 250 m search that reported neither.
+#:
+#: So these three are held for one reason: **the store they serve has no Overture record, so there
+#: is nothing to admit in its place, and removing the bay would erase the site.** The hold is a
+#: TEMPORARY measure pending a store record, NOT a standing argument for publishing a parking bay
+#: as a grocery destination. Both sixth-pass reviewers said so independently.
 #:
 #: Nothing may fold this table into `DROPPED_PLACE_IDS`; a test asserts the two do not intersect.
 HELD_SERVICE_POINTS: dict[str, str] = {
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d":
         "'Walmart Grocery Pickup and Delivery', 501 Hampton Pointe B, Hillsborough NC. A COLLECTION BAY, "
-        "and HELD BECAUSE THE STORE IT SERVES HAS NO OVERTURE RECORD AT ALL -- not because it stands "
-        "alone. Re-measured 2026-11-19 in EPSG:32617: OSM carries `shop=supermarket` named "
-        "'Walmart Supercenter' brand Walmart at 40.0 m, and FSQ carries an OPEN 'Walmart Supercenter' at "
-        "83.4 m, so a real supermarket IS here. Overture has no store record for it: the only Overture "
-        "record at this address is this bay, and the nearest Overture Walmart STORE record is 13.67 km "
-        "away. There is therefore nothing to admit in its place, and this bay is the only record this "
-        "project holds of a real supermarket. Nearest other published grocery 567.7 m, 'Aldi'. "
-        "PRELIMINARY.",
+        "HELD because the Supercenter it serves has NO OVERTURE STORE RECORD, so nothing can be admitted "
+        "in its place. **THE BAY IS INSIDE THE STORE'S OSM POLYGON** -- polygon distance 0.0 m to "
+        "`shop=supermarket` named 'Walmart Supercenter' brand Walmart; the 40.0 m first reported was the "
+        "distance to that polygon's CENTROID, which is a different quantity. FSQ carries an OPEN "
+        "'Walmart Supercenter' at 83.4 m. Nearest Overture Walmart STORE record 13.67 km. Nearest other "
+        "published grocery 567.7 m, 'Aldi'. Held as a TEMPORARY stand-in for a missing store record, not "
+        "as a grocery destination on its merits. PRELIMINARY.",
     "0f2b2452-b74f-422d-b081-ccbf625ad2fb":
-        "'Walmart Grocery Pickup and Delivery', 4431 New Bern Ave, Raleigh NC. A COLLECTION BAY, and HELD "
-        "FOR THE SAME REASON as `9011ca8b`: FSQ carries an OPEN 'Walmart Supercenter' at 229.7 m, so a "
-        "store is at or beside the site, and Overture records no Walmart store on New Bern Ave at all -- "
-        "its nearest Walmart STORE record is 6.06 km away. OSM has no shop-tagged feature within 250 m, "
-        "which is weaker corroboration than `9011ca8b` has. Nothing to admit in its place. Nearest other "
-        "published grocery 577.7 m, 'Carlie C's IGA'. PRELIMINARY.",
+        "'Walmart Grocery Pickup and Delivery', 4431 New Bern Ave, Raleigh NC. A COLLECTION BAY, HELD for "
+        "the same reason as `9011ca8b`. **THE CLAIM THAT NO OSM SHOP LAY WITHIN 250 m WAS WRONG**: the "
+        "Walmart `shop=supermarket` POLYGON is 209.0 m away, inside that search; only its centroid, at "
+        "270.6 m, falls outside, and the search measured centroids. FSQ also carries an OPEN "
+        "'Walmart Supercenter' at 229.7 m. Overture records no Walmart store on New Bern Ave at all; its "
+        "nearest Walmart STORE record is 6.06 km. Nothing to admit in its place. Nearest other published "
+        "grocery 577.7 m, 'Carlie C's IGA'. Held as a TEMPORARY stand-in. PRELIMINARY.",
     "fb500d70-085c-4652-b9bd-fd3545550483":
-        "'Walmart Grocery Pickup and Delivery', 4500 Fayetteville Rd, Raleigh NC. A COLLECTION BAY, and "
-        "THE ONLY ONE OF THE THREE THAT LOOKS GENUINELY STANDALONE: no OSM shop-tagged feature within "
-        "250 m, and the only FSQ record at the site is the pickup point itself. Nearest Overture Walmart "
-        "STORE record 11.78 km. So there is no evidence of a store here to admit, and no evidence the bay "
-        "misrepresents one either -- it is held because removing it erases the site and nothing has been "
-        "found to replace it. Nearest other published grocery 681.0 m, a second 'Carlie C's IGA' record. "
-        "PRELIMINARY.",
+        "'Walmart Grocery Pickup and Delivery', 4500 Fayetteville Rd, Raleigh NC. A COLLECTION BAY, HELD "
+        "for the same reason as the other two. **I CALLED THIS ONE 'GENUINELY STANDALONE' AND IT IS NOT.** "
+        "The sixth review executed the check: FSQ carries an OPEN 'Walmart Supercenter' AT THIS RECORD'S "
+        "OWN ADDRESS, 4500 Fayetteville Rd, 462.9 m away, with 'Walmart Bakery' and 'Walmart Pharmacy' at "
+        "the same address 0.0 m from the bay; the OSM Walmart `shop=supermarket` POLYGON is 413.5 m away "
+        "(centroid 485.6 m); and Walmart's own locator calls it Supercenter #1372 at this address with "
+        "grocery pickup attached to that store. My search looked 250 m and matched on RADIUS rather than "
+        "on the address printed in the record, then promoted a radius-limited absence into a site "
+        "classification. Nearest Overture Walmart STORE record 11.78 km. Nearest other published grocery "
+        "681.0 m, a second 'Carlie C's IGA' record. Held as a TEMPORARY stand-in. PRELIMINARY.",
 }
 
 
@@ -466,9 +493,15 @@ INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
             "'Walmart Supercenter' at 0.0 m; FSQ 'Walmart Vision & Glasses' open at 20.7 m. Nearest published "
             "grocery 496.1 m. Generated by `scripts/rebuild_missing_grocery_stores.py`. PRELIMINARY.",
         "5074229c-e884-4097-8759-4308ddbab7e8":
-            "Publix Super Market at Buffaloe Village, 7330 Buffaloe Rd, Raleigh. Same shape as the record "
-            "above: no Overture primary, listed for a person, and plainly a supermarket. Nearest published "
-            "grocery was 2,433.2 m, so this one adds real coverage. PRELIMINARY.",
+            "Publix Super Market at **Buffaloe Bend**, 7330 Buffaloe Rd, Raleigh -- not 'Buffaloe Village', "
+            "which an earlier version of this entry invented, and that version also said 'same shape as the "
+            "record above' when the record above it is a Walmart. Overture carries NO primary category, "
+            "which is absence of information rather than a claim to be something else, so the screen listed "
+            "it for a person. CORROBORATED INDEPENDENTLY, after the sixth review pointed out that the "
+            "original reason cited nothing: `docs/experiments/audit/s3-7-destinations-to-check.csv` already "
+            "held an OSM 'Publix At Buffaloe Bend' at this site, and Publix's own locator lists store "
+            "#1886 at this address with a grocery department. Nearest published grocery was 2,433.2 m, so "
+            "it adds real coverage. PRELIMINARY.",
         "50ada728-6b96-4536-b42b-87c7e192bb8e":
             "Walmart Supercenter at 1015 Lewis St, Oxford, Overture primary=department_store so outside the "
             "`grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM `shop=supermarket` named "
@@ -534,10 +567,14 @@ INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
             "another name. Admitted on that judgement, which is exactly what the REVIEW bucket is for. "
             "PRELIMINARY.",
         "c7fee873-a3c5-4691-8b12-f2c76bb101b9":
-            "Publix Super Market at Middle Creek Commons, 16100 North Carolina 50, Garner. Overture carries NO "
-            "primary category at all, which is absence of information rather than a claim to be something else, "
-            "so the screen listed it for a person instead of refusing it. A Publix Super Market is a weekly "
-            "shop by any reading of the owner's definition. PRELIMINARY.",
+            "Publix Super Market at **Middle Creek Crossings**, 16100 North Carolina 50, Garner -- not "
+            "'Middle Creek Commons', which an earlier version of this entry invented. Overture carries NO "
+            "primary category at all, which is absence of information rather than a claim to be something "
+            "else, so the screen listed it for a person instead of refusing it. CORROBORATED "
+            "INDEPENDENTLY, after the sixth review pointed out that the original reason rested on the brand "
+            "name alone: an OSM supermarket polygon sits 71.8 m away, and Publix's own locator lists store "
+            "#2031 at this address with a grocery department. Nearest published grocery 320.3 m. "
+            "PRELIMINARY.",
         "d3a09343-a70b-4444-a5d8-543fca5b91ec":
             "Walmart Supercenter at 1001 Shiloh Glenn Dr, Morrisville, Overture primary=department_store so "
             "outside the `grocery_store` hierarchy and invisible to the wedge. Corroborated: OSM "

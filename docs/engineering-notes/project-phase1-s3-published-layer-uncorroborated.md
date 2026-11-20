@@ -42,15 +42,21 @@ heuristic); or an OSM `shop`-tagged feature within 150 m whose name **agrees** b
 | held collection bays, published by owner decision | 3 |
 | admitted by owner decision, corroboration already in the entry | 23 |
 | brand names a chain in `SUPERMARKET_BRANDS` | 239 |
-| OSM `shop` tag within 150 m, name agrees | 54 |
+| OSM `shop` tag within 150 m, name agrees | 55 |
 | open FSQ record within 150 m, name agrees | 114 |
 | WEAK: OSM shop within 60 m, name does **not** agree | 13 |
 | WEAK: FSQ grocery category within 60 m, name does not agree | 30 |
-| **UNCORROBORATED** | **79** |
+| **UNCORROBORATED** | **78** |
 | of those, named like a place rather than a shop | 1 |
 
-**433 of 555 corroborated, 122 for a person, 79 with nothing at all.** That is 14% of the
+**434 of 555 corroborated, 121 for a person, 78 with nothing at all.** That is 14% of the
 published layer.
+
+**The first run of this screen said 79 and 54, because it measured to OSM feature CENTROIDS.** OSM
+supermarkets are polygons; the sixth review caught the same mistake in the held-bay analysis, where
+one bay sits *inside* its store's polygon and was recorded 40 m away from it. Fixed to measure to
+the geometry, which moved one record out of the uncorroborated set. A distance is not a number
+until the geometry it was measured between is named.
 
 ## The 79 are at least three different things, and that is the whole problem
 
@@ -71,7 +77,8 @@ decision, not a side effect of a name"*. The screen is right to report them and 
 not to have guessed. **This is the one group with a clean, safe action: an owner decision to add
 chains to the table.** It would not move published `grocery` at all, since they are already in it.
 
-**(c) Records that are not shops.** `Roofing Inc.`, **`No longer`** (a record whose name is the
+**(c) Records that are not shops.** (`Roofing Inc.` in this group is also in the **published
+browser bundle** today, which the sixth-pass reviewers found independently.) `Roofing Inc.`, **`No longer`** (a record whose name is the
 first two words of "no longer in business"), `Longview Poole Road`, `Tower Market Place Partners`
 (a property partnership), `McKee Foods Corp` (a manufacturer), `Seal The Seasons` ×2 (a frozen-food
 brand), `Aloe Verapol, Llc`, `Body Agape Holistic`, `Insain Hot Sauce` and `KismetCrackers` at

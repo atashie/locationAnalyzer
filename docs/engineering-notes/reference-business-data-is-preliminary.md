@@ -25,7 +25,8 @@ rather than living only in this file.
 | `HELD_SERVICE_POINTS` | recorded, deliberately not acted on | 3 |
 | `FSQ_CONFIRMED_CLOSURES` | this shop has closed | 12 |
 | `PENDING_CLOSURES` | a closure asserted and not acted on | 8 |
-| `NAME_CONFIRMED_SUPERMARKETS`, `OSM_CONFIRMED_SUPERMARKETS`, `CURATED_INDEPENDENT_SUPERMARKETS` | this record is a supermarket | 7 / 9 / 3 |
+| `NAME_CONFIRMED_SUPERMARKETS`, `OSM_CONFIRMED_SUPERMARKETS`, `CURATED_INDEPENDENT_SUPERMARKETS` | this record is a supermarket | 7 / 28 / 2 |
+| `OSM_CONFIRMED_SPECIALTY`, `NOT_A_WEEKLY_SHOP_SITES` | this record is specialty, or is not a shop at all | 8 / 1 |
 
 ## What it is actually built from
 
@@ -58,14 +59,22 @@ calibrate anything** (owner constraint). Nothing is scraped.
 * **Published counts move with these decisions**, so a count quoted without a date is meaningless.
   See the dated block in [[project-phase1-s3-progress]].
 * **A screen over Overture cannot propose a store Overture omits.** This is the sharpest known
-  limit of the current approach and it was found by measurement on 2026-11-19: at
-  501 Hampton Pointe, Hillsborough and 4431 New Bern Ave, Raleigh there is a real Walmart
-  Supercenter — OSM `shop=supermarket` at 40.0 m in the first case, an open FSQ
-  `Walmart Supercenter` at 83.4 m and 229.7 m — and **Overture has no store record for either**.
-  The only Overture record at each site is a grocery pickup bay. Those two households are served
-  today only because the bay is published, which is the right answer at the right place arrived at
-  for the wrong reason. A screen that reads Overture rows can never see this class; only a source
-  with its own store list can.
+  limit of the current approach. At **all three** remaining bay sites — 501 Hampton Pointe in
+  Hillsborough, 4431 New Bern Ave and 4500 Fayetteville Rd in Raleigh — there is a real Walmart
+  Supercenter, and **Overture has no store record for any of them**. The only Overture record at
+  each site is a grocery pickup bay, so those households are served today only because the bay is
+  published. A screen that reads Overture rows can never see this class; only a source with its own
+  store list can.
+* **Measure to the polygon, not to its centroid.** The three sites above were first written up as
+  "standalone", then as two-of-three, and both were wrong, partly because OSM distances were taken
+  from feature **centroids** while OSM supermarkets are **polygons**. One bay is *inside* its
+  store's polygon (0.0 m) and was recorded as 40.0 m away; another is 209.0 m from one and was
+  reported as having nothing within 250 m. A distance is not a number until the geometry it was
+  measured between is named.
+* **A radius is not an address.** The third site was called standalone because a 250 m search came
+  back empty. An open Foursquare `Walmart Supercenter` carrying that record's **own street
+  address** sat 462.9 m away. Compare the identifiers the record already holds before trusting a
+  spatial search.
 * **The screens are re-runnable**, which matters more than the current answers:
   `scripts/rebuild_missing_grocery_stores.py` and `scripts/crosscheck_fsq_closures.py` regenerate
   their sheets, so a new Overture release is a re-run rather than a re-litigation.

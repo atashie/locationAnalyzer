@@ -140,7 +140,7 @@ def main() -> None:
         crs="EPSG:4326",
     ).to_crs(CRS)
     fsq_open = fsq[fsq["date_closed"].isna()].reset_index(drop=True)
-    fsq_pts = fsq_open.geometry
+    fsq_pts = fsq_open.geometry  # FSQ rows are points, so no polygon question arises here
     fsq_names = fsq_open["name"].astype("string").fillna("")
     fsq_cats = fsq_open["fsq_category_labels"].astype("string").fillna("")
 
@@ -149,7 +149,12 @@ def main() -> None:
         osm_shops = osm[osm["shop"].notna()].reset_index(drop=True)
     else:
         osm_shops = osm.iloc[0:0].reset_index(drop=True)
-    osm_pts = osm_shops.geometry.centroid
+    # **NOT `.centroid`.** OSM supermarkets are polygons, and the sixth review showed that
+    # measuring to the centroid gets the answer wrong in both directions: one held bay is INSIDE
+    # its store's polygon (0.0 m) and was recorded as 40.0 m away, and another is 209.0 m from one
+    # -- inside a 250 m search that reported nothing. `GeoSeries.distance` to the geometry itself
+    # returns 0.0 for containment, which is the number that means what it says.
+    osm_geoms = osm_shops.geometry
     osm_names = (osm_shops["name"].astype("string").fillna("")
                  if "name" in osm_shops.columns else pd.Series([""] * len(osm_shops)))
 
@@ -189,7 +194,7 @@ def main() -> None:
             gates["brand_in_table"] += 1
             continue
 
-        od = osm_pts.distance(here)
+        od = osm_geoms.distance(here)
         onear = od <= NEAR_M
         osm_agree, osm_weak = None, None
         for j in od[onear].sort_values().index:

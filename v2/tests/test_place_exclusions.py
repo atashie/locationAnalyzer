@@ -18,6 +18,8 @@ Sandling Beach State Recreation Area, Falls Dam Playground. It would delete roug
 genuine parks to remove two. The OSM designation tags are not reliable enough to carry a general
 rule, so the decision is recorded per record, with its evidence, where it can be reviewed.
 """
+import pathlib
+
 import geopandas as gpd
 import pytest
 from shapely.geometry import Point
@@ -345,13 +347,20 @@ HELD_BAY_NEAREST_WALMART_STORE_KM: dict[str, float] = {
 }
 
 #: Held bay -> whether a real STORE is corroborated at its site by a source other than Overture.
-#: This is the distinction the word "standalone" destroyed, and it is the one that decides what to
-#: do next: a bay with a corroborated store has a store Overture does not record (so nothing can be
-#: admitted in its place), while a bay without one may really be a lone pickup kiosk.
+#:
+#: **ALL THREE ARE `True`, and this table said `False` for one of them for several hours.** The
+#: sixth review executed the check that the repair had not: `fb500d70` has an open FSQ
+#: `Walmart Supercenter` at its OWN ADDRESS, 462.9 m away, a Walmart bakery and pharmacy at 0.0 m,
+#: an OSM Walmart polygon 413.5 m away, and a store number on Walmart's own locator. The search
+#: behind the `False` looked 250 m from a point and never compared the ADDRESS the record carries.
+#:
+#: So there is no "lone pickup kiosk" in this data, and a `False` here now means only *"no store
+#: found yet"* -- which is a statement about the search. Any future `False` must name the extent
+#: searched AND say that the record's own address was checked.
 HELD_BAY_STORE_IS_CORROBORATED: dict[str, bool] = {
     "9011ca8b-301c-40d9-a7c1-a61f6894a42d": True,
     "0f2b2452-b74f-422d-b081-ccbf625ad2fb": True,
-    "fb500d70-085c-4652-b9bd-fd3545550483": False,
+    "fb500d70-085c-4652-b9bd-fd3545550483": True,
 }
 
 #: Walmart STORE records that DO reach the published grocery layer, and must keep reaching it.
@@ -421,8 +430,11 @@ def test_each_lifted_bay_entry_names_the_parent_that_justified_it():
         assert "PRELIMINARY" in reason, f"{bay}'s entry is not marked preliminary"
 
 
-def test_the_three_standalone_bays_are_still_held():
-    """These have no store within kilometres, so the original argument still holds for them."""
+def test_the_three_remaining_bays_are_still_held():
+    """All three sit at a real Walmart Supercenter that Overture does not record as a store, so
+    there is nothing to admit in their place and removing one would erase the site. The name of
+    this test used to be `..._standalone_bays_...`, which asserted the falsehood in the one place
+    a reader cannot miss it."""
     for bay in STILL_HELD_BAYS:
         assert bay in HELD_SERVICE_POINTS, f"{bay} should still be held"
         assert bay not in DROPPED_PLACE_IDS, f"{bay} is held but also dropped"
@@ -455,12 +467,23 @@ def test_no_held_bay_is_called_standalone_without_checking_the_other_sources():
             # assertion and is vacuous: "NOTHING TO ADMIT" contains the letters NOT.
             assert "STANDALONE COLLECTION POINT" not in reason.upper(), \
                 f"{bay} has a corroborated store at its site and must not be called standalone"
+            # The `fb500d70` entry QUOTES the phrase in order to retract it, so the rule is
+            # not "never say the word" -- it is "never say it without the retraction".
+            if "STANDALONE" in reason.upper():
+                assert "AND IT IS NOT" in reason.upper(), (
+                    f"{bay} may mention standalone only while retracting it; this entry says it"
+                )
             assert "OSM" in reason or "FSQ" in reason, \
                 f"{bay} must name the source that corroborates the store at its site"
         else:
+            # No bay is in this branch any more. It stays because the day one is, the entry has to
+            # say how far it looked AND that the record's own address was checked -- the two things
+            # the `False` that used to live here did not say.
             assert "STANDALONE" in reason.upper(), \
                 f"{bay} has no corroborating store and the entry should say so plainly"
             assert "250 m" in reason, f"{bay} must say how far the empty search looked"
+            assert "address" in reason.lower(), \
+                f"{bay} must say the record's own address was checked, not just a radius"
 
 
 def test_each_held_bay_carries_its_own_nearest_store_distance():
@@ -475,10 +498,91 @@ def test_each_held_bay_carries_its_own_nearest_store_distance():
 
 def test_the_corrected_total_oriental_foods_distance_names_both_pairs():
     """`aec747a0`'s entry quoted the BAY's 147.9 m in a sentence about the STORE, whose distance is
-    133.6 m. Both numbers are real, which is exactly why the entry has to say which is which."""
+    133.6 m. Both numbers are real, which is exactly why the entry has to say which is which.
+
+    THE FIRST VERSION OF THIS TEST ASSERTED ONLY THAT BOTH NUMBERS AND THE PHRASE WERE PRESENT, and
+    the sixth review showed it passes over prose that SWAPS them. So it now checks the ORDER: the
+    store's distance has to come before the phrase naming the store, and the bay's after it.
+    """
     reason = INCLUDED_PLACE_IDS["grocery"]["aec747a0-3bc4-4b87-81fe-94fae9b03f24"]
     assert "133.6 m" in reason and "147.9 m" in reason
     assert "THIS STORE" in reason
+    store_m, phrase, bay_m = reason.index("133.6 m"), reason.index("THIS STORE"), \
+        reason.index("147.9 m")
+    assert store_m < phrase < bay_m, (
+        "the store's 133.6 m must precede 'THIS STORE' and the bay's 147.9 m must follow it; "
+        "swapping them is the defect this test exists for"
+    )
+
+
+#: The real accepted frame. Every other test in this module reads the tables or a synthetic frame,
+#: so none of them can tell whether a table names a record that EXISTS.
+#:
+#: NOT named `ACCEPTED`: that name is already taken in this file by the set of applied closures,
+#: and the first version of this constant shadowed it and broke four passing tests.
+ACCEPTED_PLACES_PARQUET = (pathlib.Path(__file__).resolve().parents[1] / "data" / "triangle"
+                           / "overture_places_accepted.parquet")
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_every_table_id_exists_in_the_accepted_frame_and_lands_where_it_should():
+    """THE ONLY TEST HERE THAT CONSULTS THE WORLD, and it exists because of a demonstrated hole.
+
+    The sixth review replaced an admitted id with the nonexistent UUID
+    `00000000-0000-4000-8000-000000000123`, kept its reason and the count of 23, and **all 49
+    tests passed** while the real published selection fell 555 to 554. Every assertion in this
+    module was about the shape of a table.
+
+    So this one asserts the four things the tables actually promise about the data:
+
+    * every id in every table **exists** in the accepted frame;
+    * every admitted record **reaches** the published `grocery` selection;
+    * every excluded record does **not** reach it;
+    * every held bay **does** reach it, and every lifted bay's parent **does** too -- which is the
+      invariant the whole bay episode was about, checked against the selector rather than against
+      another table.
+    """
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    ids = set(places["id"])
+    selected = set(select_overture(places, "grocery")["id"])
+
+    tables = {
+        "EXCLUDED_PLACE_IDS": EXCLUDED_PLACE_IDS,
+        "HELD_SERVICE_POINTS": HELD_SERVICE_POINTS,
+        "INCLUDED_PLACE_IDS['grocery']": INCLUDED_PLACE_IDS["grocery"],
+    }
+    missing = {f"{label}:{pid}" for label, table in tables.items() for pid in table
+               if pid not in ids}
+    assert not missing, f"these ids are in a table and not in the data: {sorted(missing)}"
+
+    not_selected = [pid for pid in INCLUDED_PLACE_IDS["grocery"] if pid not in selected]
+    assert not not_selected, f"admitted but not published: {not_selected}"
+
+    still_selected = [pid for pid in EXCLUDED_PLACE_IDS if pid in selected]
+    assert not still_selected, f"excluded but still published: {still_selected}"
+
+    bays_gone = [pid for pid in HELD_SERVICE_POINTS if pid not in selected]
+    assert not bays_gone, f"held but not published, so the site lost its only record: {bays_gone}"
+
+    orphaned = [f"{bay}->{parent}" for bay, parent in LIFTED_BAY_PARENTS.items()
+                if parent not in selected]
+    assert not orphaned, f"a bay was removed and its replacement is not published: {orphaned}"
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
+    """A count quoted without a date is meaningless, so the number the notes carry is pinned here.
+
+    **This is a count of what the SELECTOR returns, not of what the published bundle contains.**
+    The bundle has not been rebuilt since 2026-11-14 and contains a different population; both
+    sixth-pass reviewers ranked that gap above every other finding. If this test and the published
+    artifact ever need to agree, that is a rebuild, not an edit to this number.
+    """
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    assert len(select_overture(places, "grocery")) == 555
+    assert len(select_overture(places, "supermarket")) == 242
 
 
 def test_nothing_is_both_held_and_dropped():
@@ -507,7 +611,7 @@ def test_variety_pickup_records_that_it_is_the_weakest_entry():
     in the table. The entry has to say so, because the next session will not remember."""
     reason = EXCLUDED_PLACE_IDS["c8899cfc-9df9-4d98-b186-063ed5581515"]
     assert "WEAKEST" in reason
-    assert "Revisit" in reason or "revisit" in reason
+    assert "REVISIT" in reason.upper()
 
 
 def test_the_four_published_walmart_stores_are_not_excluded():
@@ -543,7 +647,9 @@ def test_the_food_house_is_in_dropped_place_ids():
 # is why a real Walmart Supercenter filed as `department_store` could not reach the `grocery`
 # wedge no matter how good the evidence was.
 #
-# The table is EMPTY and these tests are the seam's proof, not its population. Adding a record
+# POPULATED 2026-11-19 with 23 records. These tests are the seam's proof, NOT evidence that any
+# admitted record is a shop -- see `test_every_table_id_exists_in_the_accepted_frame` for the only
+# test here that consults the world. Adding a record
 # moves a published number upward and is the owner's decision.
 # ---------------------------------------------------------------------------
 
@@ -621,7 +727,7 @@ def test_the_seam_answers_cleanly_with_an_empty_table():
 
 
 def test_every_inclusion_would_have_to_record_why(monkeypatch):
-    """Vacuously true today. It is here so that the day the table is populated, an entry with no
+    """No longer vacuous: the table holds 23 records. It is here so that an entry with no
     reason fails rather than being noticed later."""
     for category, entries in INCLUDED_PLACE_IDS.items():
         for place_id, reason in entries.items():
