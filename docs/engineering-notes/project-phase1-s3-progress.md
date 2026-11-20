@@ -133,7 +133,34 @@ Supercenter admitted to `grocery` is deliberately NOT in `supermarket`, which is
 **I predicted 558 and measured 555** -- the three ask-6 records were themselves inside the 542 and
 I had left them out of the arithmetic.
 
-[[feedback-verify-the-shape-of-the-risk]] stands at **61 instances**.
+**SIXTH ADVERSARIAL PASS DONE, 2026-11-19, WITH TWO REVIEWERS WHO DISAGREED.**
+[[../reviews/2026-11-19-establishment-pushthrough-review-findings]], with both raw reports beside
+it. **Antigravity: revert the 23. Codex, which executed the data: do not revert.** The repairs are
+in `dcf3516`; no published number moved. The three things to carry forward:
+
+1. **All three held bays sit at a real Walmart Supercenter that Overture does not record as a
+   store.** My own repair had said two of three, and before that the table had said none. The third
+   correction was made by executing the check: an open FSQ `Walmart Supercenter` at the bay's OWN
+   ADDRESS, and Walmart's locator naming Supercenter #1372 there.
+2. **Measure to the polygon, and compare the address before trusting a radius.** OSM supermarkets
+   are polygons; one bay is INSIDE its store and was recorded 40 m away.
+3. **The screen was using a pickup bay to corroborate the store it serves.** Fixed, and re-run
+   against the pre-admission state to check the cost: **all 20 proposals survive**, 62 FSQ rows now
+   skipped as service points. The two weakest of the 20 are named: `8e1fc43f` and `0da6a7a0`, which
+   have no OSM support at all.
+
+**[[feedback-verify-the-shape-of-the-risk]] stands at 62 instances**, and 62 is the repair for 61
+being a new instance of 61.
+
+**NEW AND UNTRIAGED: 78 of the 555 selected `grocery` records have no evidence from any source that
+a shop is there** -- [[project-phase1-s3-published-layer-uncorroborated]], sheet at
+`docs/experiments/audit/uncorroborated-grocery.csv`, nothing applied. That is 14% of the layer, and
+it is the audit in the harmful direction, which had never been run. It splits three ways: real
+shops our sources do not cover, real chains missing from `SUPERMARKET_BRANDS` (`Wegmans`,
+`The Fresh Market`, `Kroger Store`), and things that are not shops at all (`Roofing Inc.`,
+`No longer`, `Longview Poole Road`, a property partnership, farms, LLC registrations at residential
+addresses). **The careful work this week was pointed at 23 records while a dozen plainly-wrong ones
+were already published.**
 
 ---
 
@@ -544,6 +571,42 @@ acted on.
 
 Nothing below should be decided by a session on its own.
 
+**ASKS 7-11 ARE NEW, 2026-11-19, from the sixth adversarial pass.** Both reviewers ranked 7 and 8
+above every defect they found, including above the question of whether the 23 admissions were
+right.
+
+* **7. Rebuild the published bundle, or accept that none of this reaches a household.** The
+  browser fixture is unchanged since **2026-11-14**: 468 place records across 432 destination
+  nodes, still carrying the Food House and its administration office (ordinal 105, which appears in
+  **439 published cells**), six of the seven lifted bays, four confirmed closures, `Roofing Inc.`,
+  and **none of the 23 admitted records**. Across every record excluded in this chain, affected
+  ordinals appear in **2,358 cells**. Rebuilding means re-running the routing and exporting the
+  planes and the destination table together -- replacing the names alone would leave the computed
+  journeys wrong. *"forget about deployment"* was the instruction and this is not deployment, but
+  it is a day of compute and it changes what the one published page says, so it is the owner's
+  call.
+* **8. PRELIMINARY cannot reach a household, and that is a schema decision, not a missing call.**
+  `export_published_layers.py` permits exactly `gers_id, name, brand, category, operating_status,
+  licence`; `card.js` discloses grid geometry and whole-minute rounding and nothing about the place
+  list. The owner asked to *"simple note that our data are preliminary"* and the note currently
+  lives only where a developer reads it. Options: a layer-level line in the manifest and the card,
+  a per-record flag, or an explicit decision that the caveat stays internal for now.
+* **9. Triage the 78 uncorroborated published records.**
+  [[project-phase1-s3-published-layer-uncorroborated]]; sheet with an empty `verdict` column. The
+  cheap safe part is sub-ask **9a: add `Wegmans`, `The Fresh Market`, `Kroger Store` and
+  `Rowe's supermarket` to `SUPERMARKET_BRANDS`?** They are real chains already in the published
+  layer, so `grocery` does not move; only `supermarket` does, and *"adding a chain stays a
+  decision"*. **9b** is the dozen or so records that are plainly not shops.
+* **10. The `supermarket` layer excludes all 23 admitted records, 20 of which `classify_grocery`
+  calls supermarkets.** The inclusion table has a `grocery` key only. Latent while `supermarket` is
+  unpublished, incoherent under the owner's own definition of a weekly shop. Copying every grocery
+  inclusion across automatically would be another semantic shortcut, so it needs a decision.
+* **11. Are the two FSQ-only Walmarts good enough?** `8e1fc43f` (6600 Glenwood Ave) and `0da6a7a0`
+  (7106 Knightdale Blvd) are the only two of the 20 with no OSM support: each rests on a plain
+  `Walmart` row in a January 2025 snapshot that also overrode a `Walmart Garden Center` closure.
+  They are already admitted and published. Keeping them is defensible; they are the first two to
+  withdraw if the acceptance standard is raised.
+
 **ALL FOUR ANSWERED by the owner 2026-11-18** (*"1) keep; 2) keep; 3) come out; 4) leave
 unclassified"*). Kept here with the answers attached, because the reasoning is what a later session
 needs and a bare "done" loses it. Asks **5 and 6 below are new and unanswered.**
@@ -898,7 +961,7 @@ the browser:
 
 ## The feedback ledger
 
-[[feedback-verify-the-shape-of-the-risk]] now holds **61 instances**. **61, 2026-11-19: I looked
+[[feedback-verify-the-shape-of-the-risk]] now holds **62 instances**. **61, 2026-11-19: I looked
 for the published artifact, did not find it, and called that a measurement** -- the removal of
 eleven records never reached
 `v2/spikes/g3-render/fixtures/published/own_triangle_grocery_walk.destinations.json`, which still

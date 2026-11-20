@@ -1542,3 +1542,72 @@ Three more things in the same pass, all from asserting an identity I had not est
   for the thing at the place.**
 
 Sixty-one instances now.
+
+## 62. The repair for instance 61 was instance 61. Three times in one day, and the third time I had the ledger entry open
+
+2026-11-19, the sixth adversarial pass, two reviewers.
+
+Instance 61 was: *an empty search measures the search, not the world.* The repair for it, in
+`3859f26`, looked at three collection bays that had been described as "standalone collection
+points" on the strength of Overture having no Walmart store record nearby, checked the other two
+sources, found a Supercenter at two of the three sites, and corrected the record.
+
+**That repair was the same error again.** For the third bay, `fb500d70`, the check searched 250 m
+from the bay's point, found nothing, and wrote *"the only one of the three that looks genuinely
+standalone"* into the table. Codex executed the check I had not:
+
+* an **open** Foursquare `Walmart Supercenter` at **the record's own street address**, 462.9 m away;
+* a Walmart bakery and a Walmart pharmacy at that address, 0.0 m from the bay;
+* an OSM Walmart polygon 413.5 m away;
+* and Walmart's own store locator naming **Supercenter #1372 at that address**, with grocery pickup
+  attached to it.
+
+All three bays sit at a real Supercenter. The sentence I wrote while repairing instance 61 was a
+new instance of it.
+
+> **A radius is not an address.** A record usually carries identifiers -- a street address, a store
+> number, a brand -- that are stronger evidence of identity than any distance. Compare those
+> BEFORE trusting a spatial search, and when a spatial search comes back empty, say how far it
+> looked, in the entry, as part of the claim.
+
+### And the search itself was measuring the wrong geometry
+
+The same repair reported distances to OSM features from their **centroids**. OSM supermarkets are
+**polygons**:
+
+| bay | to the polygon | to its centroid |
+|---|---:|---:|
+| `9011ca8b` | **0.0 m — the bay is inside the store** | 40.0 m |
+| `0f2b2452` | **209.0 m — inside the 250 m search that reported nothing** | 270.6 m |
+| `fb500d70` | 413.5 m | 485.6 m |
+
+So one bay was recorded as 40 m from a shop it is **in**, and another as having no shop within
+250 m when one was 209 m away.
+
+> **A distance is not a number until the geometry it was measured between is named.** Point to
+> polygon, point to centroid and polygon to polygon are three different quantities. An entry that
+> quotes a distance without saying which one it is cannot be checked, and a threshold compared
+> against the wrong one fails silently in whichever direction the shapes happen to fall.
+
+The identical bug was in a screen written **hours earlier** in the same session, which is the usual
+shape: the lesson was learned about the instance and not about the operation.
+
+### What made this pass different: a second reviewer disagreed
+
+The two reviewers reached opposite conclusions on the central question — Antigravity said revert
+the 23 admitted records, Codex said do not, *"the evidence does not establish that these 23
+additions are false"* — and the disagreement was more useful than either answer. Codex could
+**execute**: it looked up store numbers, re-ran the screen through `main()` with synthetic input,
+and mutated the test suite. Antigravity, reading only, called two independently verifiable Publix
+stores brand-name guesses.
+
+**The day before, the notes had recorded that Antigravity was unusable and reviews were
+single-reviewer from then on.** That conclusion came from three failures with *one kind* of
+permission, generalised to the tool. Two probes disproved it in about a minute.
+
+> **"The tool does not work" is the same error as "the shop is not there."** Both are an absence
+> observed through one narrow attempt, written down as a property of the world. The cost here was
+> a day without the one thing these passes produce that nothing else does: a reviewer who
+> disagrees with the other reviewer.
+
+Sixty-two instances now.
