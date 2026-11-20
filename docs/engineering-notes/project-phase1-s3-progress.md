@@ -74,10 +74,16 @@ then met for seven of them, per bay. `ae89174`'s commit message describes a stat
 holds, and the paragraph that used to stand here said all ten were still held, which stopped being
 true in `de4c17f`. Read the dated bullets below, not either of those.
 
-**Reviews are single-reviewer from now on.** The owner declined Antigravity on 2026-11-19 because
-headless operation needs `--dangerously-skip-permissions`. So no second reviewer contradicts a
-Codex finding, and passes should say so. Failed configurations are in
-[[reference-codex-runtime-quirks]].
+**TWO REVIEWERS ARE AVAILABLE AGAIN, and the reason they were not is worth knowing.** The owner
+asked for an Antigravity review again on 2026-11-19 and two probes settled it: a **read-only**
+Antigravity pass needs **no** `--dangerously-skip-permissions` — `agy --print "<task>" --sandbox`
+reads files fine — and `--mode auto` **does not exist for this account**, so the earlier advice to
+use it was advice to pass a no-op flag. What the three failed attempts had actually shown was that
+*terminal commands* are auto-denied, and that was generalised to the whole tool. **Do not pass
+`--mode` at all; do not pass the blanket flag; use `--sandbox`.** Codex also executed a PowerShell
+command successfully the same evening, so the "Codex cannot execute anything" section is not
+currently true either. Both in [[reference-codex-runtime-quirks]]; **check with the one-line smoke
+test rather than trusting either section.**
 
 **ALL THE BUSINESS AND ESTABLISHMENT DATA IS PRELIMINARY, AND THAT IS NOW THE STANDING POSITION.**
 Owner instruction 2026-11-19: push through this QA more quickly, note the data are preliminary, and
@@ -805,12 +811,12 @@ Pointers where the reasoning is recorded; the rule itself is here so it cannot b
   The 2026-11-03 "never push" policy was overridden. See [[feedback-autonomous-work-style]].
 * **Codex:** run a pass **very regularly** — after every major plan and every analysed result set.
   Commit the prompt first. Trust order: **experimental results > research > priors.**
-* **Antigravity/Gemini: do NOT use as a reviewer.** Owner decision 2026-11-19: *"if it requires
-  multiple dangerously-skip-permissions calls then I do not think it is worth the effort"*. Its
-  headless mode auto-denies the `command` permission and there is no working scoped configuration
-  recorded. **Consequence to state plainly in any pass: reviews are now single-reviewer**, so the
-  cross-reviewer disagreement that made pass 56 valuable is gone, and a Codex finding has nothing
-  independent contradicting it. See [[reference-codex-runtime-quirks]].
+* **Antigravity/Gemini: usable again, READ-ONLY, with no blanket flag.** The owner's condition
+  stands — *"if it requires multiple dangerously-skip-permissions calls then I do not think it is
+  worth the effort"* — and a read-only pass requires none:
+  `agy --print "<task>" --sandbox --model gemini-4-hydrogen-xhigh`. Only a pass that must *execute*
+  something needs the owner. Never pass `--mode`; `auto` is unavailable for this account and `plan`
+  exits 0 having reviewed nothing. See [[reference-codex-runtime-quirks]].
 * **Listings:** legal and free means only — deep links and official or free APIs, **no scraping**.
 * **Google:** query live for validation only. **Do not** persist a per-pair table of Google values
   as a dataset, and **do not** use Google output to calibrate the speed model. Places: store

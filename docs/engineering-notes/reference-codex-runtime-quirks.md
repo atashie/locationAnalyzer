@@ -258,15 +258,47 @@ What was tried, in order:
   anywhere on this machine** to copy a working schema from. The pass-56 note records that the
   reviewer "was given no write access" without recording how, so that configuration is lost.
 
-So the only configuration known to work is the blanket flag, run **by the owner**, with
-`--mode auto` rather than `--mode plan`.
+**Both of those conclusions were too strong, and two probes on the evening of 2026-11-19
+corrected them.** The owner asked for an Antigravity review again the same day, so the launch was
+retried with no `--dangerously-skip-permissions` anywhere:
+
+* **A READ-ONLY review needs no blanket flag at all.** `agy --print "<task>" --sandbox` read a file
+  out of the repository and answered correctly on the first try. What was auto-denied in the three
+  earlier attempts was *terminal commands*, not file reads, and the note above did not separate
+  them. So Antigravity is usable as a reviewer for prose, records, tables and code — which is where
+  it found most of pass 56's findings anyway — and only a pass that must *execute* something needs
+  the owner.
+* **`--mode auto` is not available for this account.** It prints
+  `warning: --mode auto is not available for this account; continuing in the default mode` and
+  continues. The recommendation above to use `--mode auto` instead of `--mode plan` was therefore
+  advice to pass a flag that does nothing; the *default* mode is what works. The real lesson of the
+  `--mode plan` failure was narrower than it looked: **do not pass `--mode` at all.**
+* `--sandbox` ("run in a sandbox with terminal restrictions enabled") exists and is the right flag
+  for a review, because it states the restriction rather than discovering it.
+* `agy models` lists what the account can use. `gemini-4-hydrogen-xhigh` is available, which is the
+  model pass 56 used.
+
+**What this cost to learn: two commands and about a minute.** The earlier conclusion that
+Antigravity was unusable held for a day and removed the second reviewer, which the section above
+correctly called a real loss — and it was wrong because three failures with one *kind* of
+permission were generalised to the tool. The probe that settled it is the same one-line smoke test
+that has now earned its cost four times.
+
+**Codex executed commands again on 2026-11-19.** The smoke test ran
+`powershell -Command 'git log -1 --oneline'` and returned exit 0, so the 2026-11-13 section above —
+"Codex cannot execute anything sandboxed on this machine" — is not currently true either. Check
+with the smoke test rather than assuming; both of these sections have been wrong in both
+directions.
 
 **The smoke test earned its cost for the third time.** One probe asking for the word READY and a
 `git log -1` caught the `--mode plan` behaviour in seconds; the alternative was waiting for a
 review that was never going to arrive. Codex passed the same probe first try and its review ran
 fine.
 
-**The consequence is not just tooling.** Reviews are now single-reviewer. Pass 56's most useful
-output was the *disagreement* between Codex and Antigravity on how to rank product risk, and that
-is no longer available. Any pass that reports a Codex finding should say that nothing independent
-was in a position to contradict it.
+**The consequence I drew here was wrong, and it is left standing because the mistake is the
+lesson.** I wrote: *"Reviews are now single-reviewer. Pass 56's most useful output was the
+disagreement between Codex and Antigravity on how to rank product risk, and that is no longer
+available."* The first sentence was a prediction dressed as a consequence, and the paragraph above
+this one disproves it the same evening. The second sentence is still true and is the reason the
+first one mattered: a cross-reviewer disagreement is the most valuable thing these passes produce,
+which is exactly why "the tool does not work" deserved one more probe before it became policy.
