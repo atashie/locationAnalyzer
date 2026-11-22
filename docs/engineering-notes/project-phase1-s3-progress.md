@@ -620,7 +620,7 @@ whether the 23 admissions were right, and the answers follow that ranking.
 | **7** rebuild the published bundle | **REPUBLISH** | the work item; nothing else here reaches a household until it is done |
 | **8** how PRELIMINARY reaches a household | **our own documentation only, nothing outward facing** | CLOSED by decision. No schema change, no `card.js` change, no manifest line |
 | **9** triage the 78 | **9a only** | APPLIED 2026-11-22. 9b not authorised |
-| **10** `supermarket` excludes the 23 | **have Codex review the options** | review commissioned, prompt committed before launch |
+| **10** `supermarket` excludes the 23 | **have Codex review the options** | **REVIEWED 2026-11-22, still the owner's decision.** Codex ranks **3, 1, 4, 2** and calls option 2 incoherent. [[../reviews/2026-11-22-supermarket-layer-inclusion-review-findings]] |
 | **11** the two FSQ-only Walmarts | **ok -- keep them** | CLOSED by decision |
 
 **8 IS CLOSED AND THE CONSEQUENCE IS WORTH STATING PLAINLY.** The caveat stays where a developer
@@ -694,6 +694,29 @@ screen on its own.
   calls supermarkets.** The inclusion table has a `grocery` key only. Latent while `supermarket` is
   unpublished, incoherent under the owner's own definition of a weekly shop. Copying every grocery
   inclusion across automatically would be another semantic shortcut, so it needs a decision.
+
+  **REVIEWED 2026-11-22 on the owner's instruction**
+  ([[../reviews/2026-11-22-supermarket-layer-inclusion-review-findings]]). Codex ranks the four
+  options **3, 1, 4, 2** and rejects option 2: grocery admission establishes eligibility for the
+  broad destination set, not membership of the narrow class. The sizes: option 3 and option
+  1-listing-20 both give **262**; option 1 listing all 23 gives **265** and means explicitly
+  overriding the classifier for `182dc975`, `5074229c` and `c7fee873`; option 4 leaves **242**. The
+  number that settles it against a classifier-only layer: **52** classifier-positive non-excluded
+  records sit outside the taxonomy gate, so a classifier-only `supermarket` would be **294** -- 32
+  unreviewed records beyond option 3.
+
+  Two corrections to our own framing were accepted. The cross-category rule **is** a new policy
+  decision, not "no new judgement". And **ask 7 did not force the timing**: the exporter enumerates
+  source surfaces, so rebuilding `grocery` cannot publish `supermarket` -- which the republish then
+  confirmed by touching no `supermarket` artifact. Codex could not run Python or pytest (it decoded
+  the parquet in JavaScript), so **the commissioned mutation run was predicted rather than observed
+  and is still owed** -- and that was the question that mattered most, given that rewriting all
+  twenty inclusion reasons broke none of the previous fifty-one tests.
+
+  One more thing it found: **the two 20s are different sets**, overlapping in 19. `182dc975` names
+  the generator and is `unclassified`; `aec747a0` was admitted by hand and is classifier-positive.
+  Both counts are 20 and the populations differ, so "the 20 generated" and "the 20 the classifier
+  calls supermarkets" must not be used interchangeably.
 * **11. Are the two FSQ-only Walmarts good enough? SHARPER AFTER 2026-11-22, and this is now the
   weakest standard in the table.** `8e1fc43f` (6600 Glenwood Ave) and `0da6a7a0`
   (7106 Knightdale Blvd) are the only two of the 20 with no OSM support. Their reasons used to say
@@ -759,9 +782,12 @@ and neither is answered. Neither is caused by any of this work; ask 3 is what ex
   **A SCREEN, NOT A LIST:** `v2/scripts/rebuild_missing_grocery_stores.py`, writing
   `docs/experiments/audit/missing-grocery-stores.csv` with a blank `verdict` column, the project's
   convention for an owner review sheet. A screen because the cause is systematic -- Overture files
-  a Supercenter under `department_store`, `superstore` or `warehouse_club_store` while the
-  `grocery` wedge matches only the `grocery_store` hierarchy -- so it will recur for other brands
-  and other releases, and a hand list would go stale in silence.
+  these shops outside the `grocery_store` hierarchy, which is the only one the `grocery` wedge
+  matches -- so it will recur for other brands and other releases, and a hand list would go stale
+  in silence. **The 23 measured: 11 `department_store`, 6 `discount_store`, 4 `superstore`, 2 with
+  no primary at all, and no `warehouse_club_store`** -- earlier wording here named that primary,
+  which no admitted record uses, and omitted `discount_store`, which six of them do (Codex, ask
+  10, 2026-11-22).
 
   **EVERY GATE FAILS CLOSED, because the asymmetry is not symmetric:** a wrong ADDITION sends a
   household to a shop that is not there; a wrong REFUSAL leaves the layer exactly as it is today.

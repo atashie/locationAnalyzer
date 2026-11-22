@@ -1445,3 +1445,40 @@ Still open: the walk gap is not zero either (+6 to +12 s at the median with a p9
 - timings (s): {"load_graph_s": 35.03, "prepare_graph_s": 37.52, "csr_s": 2.48, "snap_pois_s": 1.45, "edge_index_s": 0.0, "dijkstra_s": 2.86, "snap_s": 2.86}; total 82.2
 - profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
 
+
+### Own-graph layer: grocery / walk (2026-11-22 17:08:22)
+- graph: 539814 nodes, 1436992 edges (graphml cache; 3046 components; kept 539814 nodes (97.5%), dropped 13608); destinations 518 nodes from 555 places (2 dropped > 300 m)
+- reachable cells 77.6%; one-way-adjacent cells 3.4%
+- timings (s): {"load_graph_s": 36.38, "prepare_graph_s": 45.62, "snap_pois_s": 6.45, "csr_s": 3.91, "edge_index_s": 0.0, "dijkstra_s": 3.75, "snap_s": 3.42}; total 99.5
+- profile: static speeds, access tags honoured, no intersection penalties, no turn restrictions
+
+
+### S0 status provenance and the H2 bracket: grocery / walk (2026-11-22 17:15:54)
+
+- graph after preparation: 3046 components; kept 539814 nodes (97.5%), dropped 13608; **1 strongly connected component(s)**
+- destinations: 518 nodes from 555 places (2 beyond the 300 m snap bound)
+- nodes unreached by the unbounded cost search: **0** of 539,814
+- `build_layer_surface(...).validate()` passes on 330,502 cells
+
+| status | cells | share |
+|---|---|---|
+| `OK` | 256,569 | 77.6301% |
+| `OFF_NETWORK` | 57,541 | 17.4102% |
+| `BEYOND_HORIZON` | 16,392 | 4.9597% |
+
+- against the committed `own_triangle_grocery_walk.npy`: finiteness identical=**True**, max abs diff 0.000000 s (the artifact is float32, so a sub-millisecond difference is quantisation)
+
+**The H2 bracket.** `cost_selected` (shipped) minus `time_min` (minimum over destinations, access cost ignored). The shipped surface is an upper bound, so the gap is where a category criterion could exclude a cell that a qualifying destination would have satisfied.
+
+- comparable cells 256,569; differing by more than 1 s **24,497 (9.5479%)**
+- where they differ: median **26.0 s**, p90 129.7 s, max 668.6 s
+
+| threshold | cells excluded by the shipped surface that the lower bound includes | share of passing cells |
+|---|---|---|
+| 10min | 172 | 0.6941% |
+| 15min | 296 | 0.6114% |
+| 25min | 335 | 0.3525% |
+| 45min | 256 | 0.1563% |
+
+- profile `speeds-v0+7bd6d52dbf33d8fe`, grid `grid-v0+7ab61db26b3cc98e`
+

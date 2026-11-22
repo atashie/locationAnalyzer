@@ -347,8 +347,8 @@ FSQ_FLAGGED_CLOSURES: dict[str, str] = {}
 #: it** -- so the removal is correct about the record and wrong about the place.
 #:
 #: **WHY THE SHOP IS MISSING, which is the real defect under all of this.** Overture files these
-#: Walmart stores under `department_store`, `superstore` or `warehouse_club_store`, and the
-#: `grocery` wedge matches only the `grocery_store` hierarchy. Three parents were identified by
+#: Walmart stores under `department_store` or `superstore`, and the `grocery` wedge matches only
+#: the `grocery_store` hierarchy. Three parents were identified by
 #: the fifth review and are named below; they are recorded as plain `Walmart`, which is why the
 #: search behind ask 5 -- requiring 'Supercenter' or 'Neighborhood Market' in the name -- could
 #: never have found them. The remaining parents are NOT yet identified, and finding them is part of
@@ -441,9 +441,16 @@ DROPPED_PLACE_IDS: frozenset[str] = frozenset(EXCLUDED_PLACE_IDS) | frozenset(
 #:
 #: **The mirror of `EXCLUDED_PLACE_IDS`, and the mechanism owner ask 5 had nowhere to land in.**
 #: That table removes a record whose taxonomy claims something it is not. This one admits a record
-#: whose taxonomy fails to claim something it IS -- Overture files a Walmart Supercenter under
-#: `department_store`, `superstore` or `warehouse_club_store`, and the `grocery` wedge matches only
-#: the `grocery_store` hierarchy, so a real weekly shop never reaches the layer.
+#: whose taxonomy fails to claim something it IS -- Overture files these shops outside the
+#: `grocery_store` hierarchy, which is the only hierarchy the `grocery` wedge matches, so a real
+#: weekly shop never reaches the layer.
+#:
+#: **The taxonomy of the 23, MEASURED rather than described.** 11 `department_store`, 6
+#: `discount_store`, 4 `superstore`, 2 with NO primary category at all. **No
+#: `warehouse_club_store`** -- this comment named that primary and omitted `discount_store`, which
+#: is the six ALDIs, until Codex counted the population on 2026-11-22 (owner ask 10). The two
+#: uncategorised records are the Publix stores, and absence of a category is absence of
+#: information rather than a claim to be something else, which is why they went to a person.
 #:
 #: **POPULATED 2026-11-19 with 23 records, on the owner's instruction to push through.**
 #: All are PRELIMINARY: see [[reference-business-data-is-preliminary]].

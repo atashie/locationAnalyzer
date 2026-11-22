@@ -32,9 +32,10 @@ rather than living only in this file.
 
 Three free sources, cross-checked against each other, and nothing else:
 
-* **Overture Places** — the base. Its taxonomy is the problem as often as the answer: it files a
-  Walmart Supercenter under `department_store`, `superstore` or `warehouse_club_store`, and it
-  gives some real Publix stores no category at all.
+* **Overture Places** — the base. Its taxonomy is the problem as often as the answer: of the 23
+  shops admitted by hand because the `grocery` wedge could not see them, it files **11 as
+  `department_store`, 6 as `discount_store`, 4 as `superstore` and 2 with no category at all**.
+  The two uncategorised ones are real Publix stores.
 * **OpenStreetMap POIs** — the strongest corroboration available here, because `shop=supermarket`
   is an observation of a shopfront rather than a business-registry inference. Coverage of small
   independent grocers is patchy, so its silence means little.

@@ -16,9 +16,11 @@ harm, the second is the status quo, so every gate here fails closed: ambiguity r
 
 **Why this is a screen and not a list.** `EXCLUDED_PLACE_IDS` is a short hand-curated list because
 its population is a handful of judgement calls. This population is different: it is produced by a
-systematic taxonomy gap -- Overture files a Walmart Supercenter under `department_store`,
-`superstore` or `warehouse_club_store`, and the `grocery` wedge matches only the `grocery_store`
-hierarchy -- so the same failure will recur for other brands and other releases. A screen that can
+systematic taxonomy gap -- Overture files these shops outside the `grocery_store` hierarchy, which
+is the only one the `grocery` wedge matches -- so the same failure will recur for other brands and
+other releases. Of the 23 eventually admitted: 11 `department_store`, 6 `discount_store`, 4
+`superstore`, 2 with no primary. `STORE_FORMATS` below is wider than that on purpose, because it
+is the set of formats the screen will CONSIDER rather than a description of what it found. A screen that can
 be re-run is the right shape; a list would go stale silently.
 
 **Each gate is counted and printed, including the ones nothing reaches.** A predeclared gate that
