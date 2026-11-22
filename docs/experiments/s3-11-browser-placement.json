@@ -8,6 +8,14 @@
   "threshold": "the page default, 20 minutes, on the single published layer"
  },
  "oracle": "docs/experiments/s3-10-drawn-pixel.json, written 2026-11-15 before this ran",
+ "superseded_by": {
+  "event": "the ask-7 republish of 2026-11-22",
+  "when": "2026-11-22",
+  "why": "The owner answered ask 7 with \"republish\". Rebuilding own_triangle_grocery_walk regenerated the planes and therefore the oracle this session was read against: s3-10-drawn-pixel.json now picks a different probe set, because the probes are chosen where the painted colour can contradict the card and that depends on the planes. Four probes name a different published cell than they did on 2026-11-15.",
+  "what_is_no_longer_established": "That a browser has drawn THIS publication. The session is still a true record of a browser drawing the 2026-11-14 bundle, and that bundle is kept in v2/data/layers/prerepublish-2026-11-22/. Nothing has rendered the 2026-11-22 bundle.",
+  "what_would_restore_it": "Re-running probe_placement.js against the republished bundle in one desktop Chrome at devicePixelRatio 1, as docs/experiments/s3-11-browser-placement.json's how_to_reproduce describes. The page's known defect -- the overlay needs a panel scrollbar drag before it first paints -- is unrelated and still unfixed, and is in the way of doing it unattended.",
+  "the_oracle_it_was_read_against": "s3-10-drawn-pixel.json as it stood before 2026-11-22"
+ },
  "how_to_reproduce": [
   "serve v2/spikes/g3-render on loopback",
   "append <script src='probe_placement.js'> to the page (NOT eval: the file is strict-mode so eval keeps the function in its own scope)",

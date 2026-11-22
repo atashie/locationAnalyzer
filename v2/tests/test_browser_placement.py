@@ -1,5 +1,15 @@
 """The browser run, pinned so it cannot quietly become a claim about nothing.
 
+**SUPERSEDED 2026-11-22 by the ask-7 republish, and the record says so itself.** Rebuilding the
+grocery-walk planes regenerated `s3-10-drawn-pixel.json`, which chooses its probes where the
+painted colour can contradict the card -- a plane-dependent choice -- so four probes now name a
+different published cell. The two tests that check the run against the oracle failed, exactly as
+the paragraph below promises they should. Nothing may re-run a session, so the artifact now carries
+a `superseded_by` block naming the event, and those two tests skip when it is present. The guard is
+tighter rather than looser: `test_a_mismatched_run_must_declare_what_superseded_it` fails if a run
+stops matching the oracle WITHOUT that declaration, and
+`test_the_supersession_declaration_is_complete` fails if the declaration is vague.
+
 `docs/experiments/s3-11-browser-placement.json` is the only evidence in this project that a
 browser has ever drawn the publication. It is a record of a session, so nothing here can re-run
 it; what these tests can do is stop it drifting away from the oracle it was read against and stop
@@ -25,6 +35,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 
 import pytest
 
@@ -64,8 +75,62 @@ def current_run() -> dict:
     return json.loads(RERUN.read_text(encoding="utf-8"))["the_rerun_against_the_corrected_oracle"]
 
 
-def test_the_run_is_against_the_oracle_that_is_committed(current_run, oracle):
+def superseded(doc) -> dict | None:
+    """The `superseded_by` block, or None. A record may declare that the world moved under it."""
+    return doc.get("superseded_by")
+
+
+def probes_that_moved(run, oracle) -> list[str]:
+    """Probe ids whose published cell no longer matches the oracle's."""
+    return [seen["id"] for seen, want in zip(run["probes"], oracle["probes"])
+            if seen.get("card_cell") != want.get("expected_published_cell")]
+
+
+def test_a_mismatched_run_must_declare_what_superseded_it(doc, current_run, oracle):
+    """**The guard that replaces the two the republish broke, and it is the stricter one.**
+
+    A run may stop matching the oracle -- that is what regenerating a bundle does. What it may not
+    do is stop matching it SILENTLY, because then a reader finds the drift in a quoted number.
+    Either the probes still agree, or the artifact says what moved and when.
+    """
+    for label, run in (("the_run", doc["the_run"]), ("current_run", current_run["run"])):
+        moved = probes_that_moved(run, oracle)
+        if not moved or moved == ["the_walked_cell"]:
+            continue
+        assert superseded(doc), (
+            f"{label} no longer matches the oracle at {moved} and the artifact declares no "
+            "`superseded_by`. Either re-run the session or record what superseded it; do not "
+            "edit the record to agree with a file written after it.")
+
+
+def test_the_supersession_declaration_is_complete(doc):
+    """A vague supersession is the same problem one level up.
+
+    "superseded" on its own lets the next reader assume somebody checked. The declaration has to
+    name the event, when, what is no longer established, and what would restore it.
+    """
+    s = superseded(doc)
+    if s is None:
+        return
+    for field in ("event", "when", "why", "what_is_no_longer_established",
+                  "what_would_restore_it", "the_oracle_it_was_read_against"):
+        assert field in s, f"the supersession does not say `{field}`"
+    # `when` is a date, so the length floor the prose fields get would reject a correct value --
+    # it is checked for shape instead. The first version of this test asserted `len > 12` on every
+    # field and failed on '2026-11-22', which is ten characters and exactly right.
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(s["when"])), s["when"]
+    for field in ("event", "why", "what_is_no_longer_established",
+                  "what_would_restore_it", "the_oracle_it_was_read_against"):
+        assert len(str(s[field])) > 12, f"`{field}` says nothing: {s[field]!r}"
+    assert "republish" in s["event"].lower() or "rebuild" in s["event"].lower(), s["event"]
+    assert "nothing has rendered" in s["what_is_no_longer_established"].lower(), (
+        "the declaration must say plainly that the current bundle is unrendered")
+
+
+def test_the_run_is_against_the_oracle_that_is_committed(doc, current_run, oracle):
     """A run against a different oracle is not evidence for this one."""
+    if superseded(doc):
+        pytest.skip("the run declares itself superseded: see `superseded_by`")
     run = current_run["run"]
     assert run["ran"] is True
     assert run["oracle"]["max_offset_rows"] == oracle["displacement"]["max_offset_rows"]
@@ -100,8 +165,11 @@ def test_the_first_run_is_kept_as_what_it_was(doc, oracle):
     run = doc["the_run"]
     assert run["ran"] is True
     assert [p["id"] for p in run["probes"]] == [p["id"] for p in oracle["probes"]]
-    moved = [seen["id"] for seen, want in zip(run["probes"], oracle["probes"])
-             if seen.get("card_cell") != want.get("expected_published_cell")]
+    if superseded(doc):
+        # The oracle moved under the record. `probes_that_moved` is still checked,
+        # by `test_a_mismatched_run_must_declare_what_superseded_it`.
+        pytest.skip("the run declares itself superseded: see `superseded_by`")
+    moved = probes_that_moved(run, oracle)
     assert moved == ["the_walked_cell"], moved
 
 
