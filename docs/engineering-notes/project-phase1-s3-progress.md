@@ -610,9 +610,58 @@ acted on.
 
 Nothing below should be decided by a session on its own.
 
-**ASKS 7-11 ARE NEW, 2026-11-19, from the sixth adversarial pass.** Both reviewers ranked 7 and 8
-above every defect they found, including above the question of whether the 23 admissions were
-right.
+**ASKS 7-11 ARE ALL ANSWERED, 2026-11-22**, verbatim: *"7) republish. 8) note in our own
+documentation, nothing outward facing. 9) 9a. 10) have codex review our options here. 11) ok"*.
+Both reviewers had ranked 7 and 8 above every defect they found, including above the question of
+whether the 23 admissions were right, and the answers follow that ranking.
+
+| ask | answer | state |
+|---|---|---|
+| **7** rebuild the published bundle | **REPUBLISH** | the work item; nothing else here reaches a household until it is done |
+| **8** how PRELIMINARY reaches a household | **our own documentation only, nothing outward facing** | CLOSED by decision. No schema change, no `card.js` change, no manifest line |
+| **9** triage the 78 | **9a only** | APPLIED 2026-11-22. 9b not authorised |
+| **10** `supermarket` excludes the 23 | **have Codex review the options** | review commissioned, prompt committed before launch |
+| **11** the two FSQ-only Walmarts | **ok -- keep them** | CLOSED by decision |
+
+**8 IS CLOSED AND THE CONSEQUENCE IS WORTH STATING PLAINLY.** The caveat stays where a developer
+reads it: [[reference-business-data-is-preliminary]], the entries in `exclusions.py`, and these
+notes. Nothing the household sees will say the place list is preliminary, and
+`export_published_layers.py` keeps its six permitted fields. **This is a decision and not an
+oversight**, so a later session must not "fix" it by adding a disclosure line -- and must not
+re-raise it as an open ask. What the reviewers found was a mismatch between the owner's words and
+the pipeline; the owner has now resolved it in favour of the pipeline.
+
+**9a AS APPLIED, AND IT IS NOT WHAT THE ASK SAID IT WAS.** `Wegmans`, `The Fresh Market` and
+`Kroger` are in `SUPERMARKET_BRANDS`. Measured first: **`grocery` 555 -> 555 and `supermarket`
+242 -> 242**, because `classify_grocery` keys the brand branch off the Overture brand FIELD and
+every record of all three chains has an empty one -- the ones already in `supermarket` arrive by
+an OSM polygon matched by id. So the ask as worded ("add the chains so the layer recognises them")
+is a no-op on the layer; what the entries actually do is let `chain_in_name` read these chains out
+of a NAME, which feeds the recovery screen and the corroboration gate. Effects, all measured:
+uncorroborated **78 -> 76**, and `recover_brandless_by_name.py` now proposes exactly one new
+record, `a2a12800` *The Fresh Market*, as a supermarket. **That proposal is unapplied and needs a
+decision** -- `NAME_CONFIRMED_SUPERMARKETS` is an owner table. `d92ad73b` *Kroger Store* is now a
+visible candidate but is NOT proposed, because the footprint screen does not corroborate it.
+
+Three further things the 9a measurement turned up, none of them acted on:
+
+* **The fourth name was refused.** `Rowe's supermarket` is ONE record, `3bc821c2`, whose address
+  is the bare word "Raleigh" with no street, and it is uncorroborated by every source. A table of
+  chains is the wrong home for a single independent; `CURATED_INDEPENDENT_SUPERMARKETS` by id is
+  the right one, once somebody has evidence the shop exists. It belongs to 9b.
+* **`Kroger` is the entry, not `Kroger Store`.** Seventeen other Kroger-named records sit in the
+  frame and none is published: four check-cashing counters, three pharmacies, a sushi bar, a gas
+  station. An entry of `Kroger Store` would have matched one record and missed the chain.
+* **`The Fresh Market` is three words deliberately**, because a brand of `Fresh Market` also
+  matches `Las Carolinas Fresh Market`, a `mexican_grocery_store` in Durham that is a different
+  shop. A test asserts it stays unmatched.
+
+**The name-recovery sheet was stale and three of the 23 admitted records appear in it.** It fell
+from 32 rows to 29: eight left because decisions already applied to them (the seven lifted bays
+and the Food House administration office are no longer unclassified candidates), and five arrived
+-- including `182dc975`, `5074229c` and `c7fee873`, which are **the three of the 23 that
+`classify_grocery` leaves unclassified**. That is ask 10's population showing up in a second
+screen on its own.
 
 * **7. Rebuild the published bundle, or accept that none of this reaches a household.** The
   browser fixture is unchanged since **2026-11-14**: 468 place records across 432 destination

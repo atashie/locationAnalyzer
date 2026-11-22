@@ -41,15 +41,26 @@ heuristic); or an OSM `shop`-tagged feature within 150 m whose name **agrees** b
 | published `grocery` | **555** |
 | held collection bays, published by owner decision | 3 |
 | admitted by owner decision, corroboration already in the entry | 23 |
-| brand names a chain in `SUPERMARKET_BRANDS` | 239 |
-| OSM `shop` tag within 150 m, name agrees | 55 |
+| brand names a chain in `SUPERMARKET_BRANDS` | 250 |
+| OSM `shop` tag within 150 m, name agrees | 46 |
 | FSQ record within 150 m, name agrees, no closure recorded in the 2025-01-10 snapshot | 114 |
 | WEAK: OSM shop within 60 m, name does **not** agree | 13 |
 | WEAK: FSQ grocery category within 60 m, name does not agree | 30 |
-| **UNCORROBORATED** | **78** |
+| **UNCORROBORATED** | **76** |
 | of those, named like a place rather than a shop | 1 |
 
-**434 of 555 corroborated, 121 for a person, 78 with nothing at all.** That is 14% of the
+**ASK 9a APPLIED 2026-11-22, so these figures are now 250 / 46 / 76.** Adding `Wegmans`,
+`The Fresh Market` and `Kroger` to `SUPERMARKET_BRANDS` moved **two** records out of
+UNCORROBORATED -- `d92ad73b` *Kroger Store* and `a2a12800` *The Fresh Market* -- and moved
+nine more from the OSM gate to the earlier brand gate, which is why 239 rose by eleven while
+55 fell by nine. **No published number changed: `grocery` 555 and `supermarket` 242 both
+stand**, because `classify_grocery` keys that table off the Overture brand FIELD and every
+record of all three chains has an empty one. The fourth name in the ask, `Rowe's
+supermarket`, was REFUSED as a brand: it is one record whose address is the bare word
+"Raleigh", and a table of chains is the wrong home for a single independent. It stays in the
+76 and belongs to ask 9b.
+
+**436 of 555 corroborated, 119 for a person, 76 with nothing at all.** That is 14% of the
 published layer.
 
 **The first run of this screen said 79 and 54, because it measured to OSM feature CENTROIDS.** OSM

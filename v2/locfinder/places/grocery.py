@@ -43,6 +43,30 @@ SUPERMARKET_BRANDS = frozenset({
     # Carrboro's co-op. One store, but a full grocery and the obvious weekly shop for its
     # neighbourhood.
     "Weaver Street Market",
+    # OWNER ASK 9a, ANSWERED 2026-11-22: *"9a"*. Three real multi-store chains that the
+    # uncorroborated screen surfaced because NOTHING in our sources could name them -- every
+    # record of all three carries an EMPTY Overture brand field, so the brand route never saw
+    # them, and the ones already in the `supermarket` layer got there by an OSM polygon matched
+    # by id. Measured before adding: `grocery` 555 -> 555 and `supermarket` 242 -> 242, because
+    # `classify_grocery` keys this table off the brand FIELD. What the entries change is that
+    # `chain_in_name` can now read these chains out of a NAME, which is what feeds
+    # `recover_brandless_by_name.py` and the corroboration gate of the uncorroborated screen.
+    "Wegmans",
+    # `The Fresh Market`, three words DELIBERATELY. A brand of `Fresh Market` also matches
+    # `Las Carolinas Fresh Market` at 2107 Allendown Dr, Durham, which is a
+    # `mexican_grocery_store` and a different shop.
+    "The Fresh Market",
+    # `Kroger`, the chain -- not `Kroger Store`, which is only what one Durham record is called.
+    # Seventeen other Kroger-named records exist in the frame and none is in the published layer:
+    # four check-cashing counters, three pharmacies, a sushi bar, a gas station. `Kroger Pharmacy`
+    # is caught by `names_a_service_point` and `Jfe Sushi Bar In Kroger` by
+    # `names_part_of_a_store`, which is what those two screens are for.
+    "Kroger",
+    # NOT ADDED, and the fourth name in ask 9a: `Rowe's supermarket`. It is ONE record
+    # (`3bc821c2`) whose address is the bare word "Raleigh" with no street, and it sits in the 78
+    # uncorroborated because no source corroborates it. A table of chains is the wrong home for a
+    # single independent; `CURATED_INDEPENDENT_SUPERMARKETS` by id is the right one, once there is
+    # evidence the shop exists. Left for ask 9b.
 })
 
 #: Grocers people make a special trip to, for a particular range. Real shops; not a weekly shop.

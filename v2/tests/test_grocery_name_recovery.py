@@ -62,11 +62,62 @@ def test_the_apostrophe_and_the_mojibake_do_not_matter():
 
 
 def test_only_the_existing_table_is_consulted():
-    """THE POINT OF THE RULE. Kroger and Wegmans trade nearby and are NOT in `SUPERMARKET_BRANDS`,
-    so the name must not conjure them. Adding a chain stays an edit to the table."""
-    assert "Kroger" not in SUPERMARKET_BRANDS
-    assert chain_in_name("Kroger Store") is None
-    assert chain_in_name("Wegmans") is None
+    """THE POINT OF THE RULE. `Save-A-Lot` and `Costco` trade nearby -- three and seven records in
+    the accepted frame -- and are NOT in `SUPERMARKET_BRANDS`, so the name must not conjure them.
+    Adding a chain stays an edit to the table.
+
+    This test used to make the same point with Kroger and Wegmans. **Owner decision 2026-11-22
+    (ask 9a) put those in the table**, which is the edit this rule requires rather than an
+    exception to it, so the rule is now demonstrated with two chains nobody has decided about.
+    """
+    assert "Save-A-Lot" not in SUPERMARKET_BRANDS
+    assert "Costco" not in SUPERMARKET_BRANDS
+    assert chain_in_name("Save-A-Lot") is None
+    assert chain_in_name("Costco Wholesale") is None
+
+
+def test_the_three_chains_the_owner_added_are_in_the_table():
+    """Owner ask 9a, answered 2026-11-22: *"9a"*.
+
+    All three are real multi-store chains already present in the published `grocery` layer, each
+    found by the uncorroborated screen because nothing in our sources could name them.
+    """
+    for brand in ("Wegmans", "The Fresh Market", "Kroger"):
+        assert brand in SUPERMARKET_BRANDS, brand
+    assert chain_in_name("Wegmans") == "Wegmans"
+    assert chain_in_name("The Fresh Market") == "The Fresh Market"
+
+
+def test_kroger_is_the_chain_and_kroger_store_is_a_record_name():
+    """The table holds the CHAIN. `Kroger Store` is what one Durham record happens to be called,
+    and an entry of `Kroger Store` would miss every other way Kroger spells itself."""
+    assert "Kroger" in SUPERMARKET_BRANDS
+    assert "Kroger Store" not in SUPERMARKET_BRANDS
+    assert chain_in_name("Kroger Store") == "Kroger"
+    assert chain_in_name("Kroger") == "Kroger"
+
+
+def test_the_fresh_market_does_not_reach_las_carolinas_fresh_market():
+    """**The reason the entry is three words.** `Las Carolinas Fresh Market` at 2107 Allendown Dr,
+    Durham is a `mexican_grocery_store` and a different shop; a brand of `Fresh Market` would have
+    swept it into the weekly-shop layer on a shared pair of words.
+    """
+    assert "Fresh Market" not in SUPERMARKET_BRANDS
+    assert chain_in_name("Las Carolinas Fresh Market") is None
+
+
+def test_rowes_supermarket_was_refused_as_a_brand():
+    """The fourth name in ask 9a, and it is NOT a chain -- so it is not in a table of chains.
+
+    `3bc821c2` is ONE record, named `Rowe's supermarket`, whose address is the bare word
+    *"Raleigh"* with no street, and it is in the 78 uncorroborated precisely because no source
+    corroborates it. A single independent belongs in `CURATED_INDEPENDENT_SUPERMARKETS` by id with
+    its evidence, once somebody has evidence; putting it in `SUPERMARKET_BRANDS` would assert a
+    chain that does not exist and would classify every future record sharing the name.
+    """
+    assert "Rowe's supermarket" not in SUPERMARKET_BRANDS
+    assert "Rowe's" not in SUPERMARKET_BRANDS
+    assert chain_in_name("Rowe's supermarket") is None
 
 
 def test_a_chain_name_must_be_whole_words():
