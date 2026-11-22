@@ -43,6 +43,22 @@ Three free sources, cross-checked against each other, and nothing else:
   distribution centre both *'Retail > Drugstore'* and food retail, and a contract biologics
   manufacturer as a pharmacy.
 
+  **A BLANK `date_closed` IN IT IS NOT A REPORT THAT A SHOP IS OPEN.** The snapshot is dated
+  2025-01-10, so an empty field means no closure had been recorded by then: twenty-two months of
+  silence, not a statement about today. Until 2026-11-22 the proposal screen read that absence as
+  “open” and, worse, let it OVERRULE a closure that WAS recorded -- a closed Supercenter beside an
+  open optician returned PROPOSED. Ten of the 23 admitted records carried a reason built on it.
+  Every claim read out of this file now quotes the snapshot date, so the age of a claim travels
+  with the claim, and a test asserts the date matches the filename.
+
+  **A record carrying a brand is not necessarily the shop.** `Walmart Bakery` is a counter,
+  `Harris Teeter Parking Lot` is tarmac, `Wal-Mart DC` is a distribution centre, and all three
+  clear a name-agreement floor against a record called `Walmart`. Two screens guard this and both
+  are HEURISTICS over names rather than lookups, which is why they are listed here:
+  `names_a_service_point` (brand-independent -- a `Grocery Pickup` is a bay whoever runs it) and
+  `names_part_of_a_store` (brand-qualified, so a standalone `Sunrise Bakery` stays a shop; its
+  eleven words were counted off this snapshot rather than guessed).
+
 Google is queried for live validation only and **never persisted as a dataset or used to
 calibrate anything** (owner constraint). Nothing is scraped.
 

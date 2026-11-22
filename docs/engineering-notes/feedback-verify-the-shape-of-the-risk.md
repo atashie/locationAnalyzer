@@ -1611,3 +1611,66 @@ permission, generalised to the tool. Two probes disproved it in about a minute.
 > disagrees with the other reviewer.
 
 Sixty-two instances now.
+
+## 63. Fixing the generator does not fix what the generator already wrote down
+
+2026-11-22, integrating the sixth pass's findings.
+
+`dcf3516` repaired the screen that proposes grocery additions: it applied the service-point test to
+the Foursquare row as well as to the Overture candidate, so a pickup bay could no longer be the
+evidence that a supermarket exists. The repair was correct, measured, and committed with the cost
+quantified.
+
+**It did not touch the twenty entries the broken screen had already written into
+`INCLUDED_PLACE_IDS`.** Those entries ARE the project's record of why twenty-three published
+records were admitted, and they still said:
+
+| the admitted record | what its reason gave as the evidence |
+|---|---|
+| `182dc975`, `30614a3f` | **`Walmart Grocery Pickup and Delivery`** -- the exact record type this project spent two days removing |
+| `28180454` | `Walmart Bakery` |
+| `4e8d15fb` | `Walmart Vision & Glasses` |
+| `50ada728`, `d3a09343` | `Walmart Photo Center` |
+| `84c14b53`, `dae36e6e` | `Walmart Auto Care Centers` |
+| `0da6a7a0`, `8e1fc43f` | a closed `Walmart Garden Center`, overruled by a blank field |
+
+**Ten of twenty-three.** A test written today catches all ten and fails on the table as it stood;
+the fifty-one tests that existed yesterday caught none of them, because every one of them asks
+whether a reason EXISTS and none asks what it CLAIMS. Rewriting all twenty reasons broke no test.
+
+> **A fix to a generator is half a fix. The other half is every artifact it has already produced.**
+> Code is re-run and self-corrects; a sentence written into a table, a sheet or a note is read by
+> the next person as current, and it does not re-derive itself. So the repair has to name the
+> artifacts downstream of the thing repaired and go and look at each one.
+
+### This is the third time in four days, and the shape rotates
+
+* `3859f26` fixed the three bay ENTRIES and left the table HEADER asserting the falsified
+  "standalone collection points" -- found by the reviewers.
+* `dcf3516` fixed the SCREEN and left the twenty ENTRIES it had written -- found above.
+* And the progress note's own write-up of instance 62 called a Foursquare record **"open"**, which
+  is the very inference instance 62 was written to retire. The paragraph announcing the lesson
+  committed it.
+
+What the three have in common is not carelessness about a line. It is that **the fix was scoped to
+the thing that was wrong rather than to the claim that was wrong**, and a claim lives in more
+places than a defect does. `grep` for the SENTENCE across every tracked file, not for the symbol.
+That is already written down in this ledger, and the grep run after `dcf3516` searched for the word
+"standalone" -- the previous instance's sentence -- and not for "open at", this one's.
+
+### The underlying arithmetic, for completeness
+
+A Foursquare row with no `date_closed` in a snapshot dated **2025-01-10** was being read as a
+report that the shop is trading. It is twenty-two months old and the field being blank means no
+closure had been recorded by then. Worse, that absence was allowed to OVERRULE a closure that WAS
+recorded, so the screen answered a closed Supercenter with an open optician and concluded the store
+traded on. The fix is symmetric and needs no override: a record that is not the store is evidence
+about neither its existence nor its closure, and a recorded closure refuses. Every claim read out
+of that file now carries its date, and a test asserts the date matches the filename so the two
+cannot drift.
+
+Measured cost of the whole repair: **the twenty proposals are unchanged**, and two of them --
+`8e1fc43f` and `0da6a7a0` -- now state in their own reason that they rest on nothing but a
+twenty-two-month-old record with a blank field, which is what owner ask 11 is for.
+
+Sixty-three instances now.

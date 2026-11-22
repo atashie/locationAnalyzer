@@ -43,7 +43,7 @@ heuristic); or an OSM `shop`-tagged feature within 150 m whose name **agrees** b
 | admitted by owner decision, corroboration already in the entry | 23 |
 | brand names a chain in `SUPERMARKET_BRANDS` | 239 |
 | OSM `shop` tag within 150 m, name agrees | 55 |
-| open FSQ record within 150 m, name agrees | 114 |
+| FSQ record within 150 m, name agrees, no closure recorded in the 2025-01-10 snapshot | 114 |
 | WEAK: OSM shop within 60 m, name does **not** agree | 13 |
 | WEAK: FSQ grocery category within 60 m, name does not agree | 30 |
 | **UNCORROBORATED** | **78** |
