@@ -19,6 +19,7 @@ genuine parks to remove two. The OSM designation tags are not reliable enough to
 rule, so the decision is recorded per record, with its evidence, where it can be reviewed.
 """
 import pathlib
+import re
 
 import geopandas as gpd
 import pytest
@@ -724,6 +725,75 @@ def test_the_seam_answers_cleanly_with_an_empty_table():
     assert forced_into("a category that does not exist") == frozenset()
     assert inclusion_reason("grocery", FORCED) is None, "an id nobody admitted has no reason"
     assert inclusion_reason("park", FORCED) is None
+
+
+#: Every name a reason quotes as its witness: `FSQ 'X'`, `named 'X'`.
+WITNESS_RE = re.compile(r"(?:FSQ|named) '([^']+)'")
+
+
+def witnesses(reason: str) -> list[str]:
+    """The record names a reason offers as evidence, as a person reading it would list them."""
+    clause = reason.split("Corroborated: ", 1)
+    return WITNESS_RE.findall(clause[1] if len(clause) > 1 else reason)
+
+
+def test_no_inclusion_is_witnessed_by_a_bay_or_a_department():
+    """**The guard that was missing.** Twenty of the 23 reasons were rewritten and nothing failed.
+
+    Before `dcf3516` the screen applied `names_a_service_point` to the Overture candidate and not
+    to the Foursquare row it matched, so nine of fourteen proposed Walmarts were corroborated by a
+    department or a bay -- and TWICE by `Walmart Grocery Pickup and Delivery`, the exact record
+    type this project spends its time removing. That fix went into the screen and the TABLE kept
+    the sentences, which is `3859f26` fixing the entries and not the header with the halves
+    swapped.
+
+    A reason is not prose. It is the record of why a published number went up, so what it NAMES as
+    its witness has to survive the same test the witness itself would.
+    """
+    from locfinder.places.grocery import names_a_service_point, names_part_of_a_store
+
+    offenders = []
+    for category, entries in INCLUDED_PLACE_IDS.items():
+        for place_id, reason in entries.items():
+            for name in witnesses(reason):
+                if names_a_service_point(name) or names_part_of_a_store(name):
+                    offenders.append(f"{category}/{place_id[:8]} cites {name!r}")
+    assert not offenders, "a reason cites a record that is not a shop:\n  " + "\n  ".join(offenders)
+
+
+def test_the_witness_check_can_actually_fail(monkeypatch):
+    """A guard nobody has watched fail is decoration."""
+    monkeypatch.setitem(
+        INCLUDED_PLACE_IDS["grocery"], FORCED,
+        "Walmart at 1 Example Rd. Corroborated: FSQ 'Walmart Grocery Pickup and Delivery' at "
+        "20.0 m, no closure recorded in the 2025-01-10 snapshot. PRELIMINARY.")
+    with pytest.raises(AssertionError, match="not a shop"):
+        test_no_inclusion_is_witnessed_by_a_bay_or_a_department()
+
+
+def test_no_reason_asserts_that_a_record_is_open():
+    """Nothing in these sources reports that a shop is trading TODAY.
+
+    The Foursquare snapshot is dated 2025-01-10 and a blank `date_closed` in it means no closure
+    had been recorded by then -- twenty-two months ago. Every reason that said `open at 19.8 m`
+    was converting an absent field into a present fact, which is ledger instance 61 wearing a
+    different hat: *an empty search measures the search, not the world.*
+    """
+    for category, entries in INCLUDED_PLACE_IDS.items():
+        for place_id, reason in entries.items():
+            lowered = reason.lower()
+            assert "' open at" not in lowered, f"{category}/{place_id}: {reason}"
+            assert "is open at" not in lowered, f"{category}/{place_id}: {reason}"
+
+
+def test_every_fsq_witness_dates_itself_to_the_snapshot():
+    """A claim read off a snapshot carries the snapshot's date, so its age is visible."""
+    for category, entries in INCLUDED_PLACE_IDS.items():
+        for place_id, reason in entries.items():
+            if "FSQ '" not in reason:
+                continue
+            assert "2025-01-10" in reason, (
+                f"{category}/{place_id} quotes a Foursquare record without dating it: {reason}")
 
 
 def test_every_inclusion_would_have_to_record_why(monkeypatch):

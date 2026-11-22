@@ -33,6 +33,12 @@ than retyped.
 Run:
     python scripts/rebuild_missing_grocery_stores.py
     python scripts/rebuild_missing_grocery_stores.py --emit
+
+To regenerate the committed evidence sheet -- the record of why the 23 records were admitted --
+the screen has to see the world as it was before them, because its first gate skips anything
+already published:
+
+    python scripts/rebuild_missing_grocery_stores.py --pre-admission --write-sheet
 """
 from __future__ import annotations
 
@@ -40,7 +46,9 @@ import argparse
 import csv
 import sys
 from collections import Counter
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -55,12 +63,14 @@ from locfinder.places.exclusions import (  # noqa: E402
     DROPPED_PLACE_IDS,
     EXCLUDED_PLACE_IDS,
     HELD_SERVICE_POINTS,
+    INCLUDED_PLACE_IDS,
 )
 from locfinder.places.grocery import (  # noqa: E402
     SUPERMARKET_BRANDS,
     _brand_name,
     chain_in_name,
     names_a_service_point,
+    names_part_of_a_store,
 )
 
 # `_brand_name` is private to `places.grocery`. It is imported rather than reimplemented because
@@ -70,6 +80,10 @@ from locfinder.places.name_match import clears_the_floor, match_verdict  # noqa:
 
 CRS = 32617
 FSQ_PATH = ROOT / "data" / "triangle" / "fsq_os_places_2025-01-10.parquet"
+#: The snapshot's own date, named in every claim read out of it. A blank `date_closed` here is
+#: "no closure recorded by this date", which is twenty-two months stale, and not "open today".
+#: A test asserts this string is in `FSQ_PATH.name`, so the two cannot drift apart.
+FSQ_SNAPSHOT_DATE = "2025-01-10"
 OSM_PATH = ROOT / "data" / "triangle" / "osm_pois.parquet"
 AUDIT = ROOT.parent / "docs" / "experiments" / "audit"
 SHEET = AUDIT / "missing-grocery-stores.csv"
@@ -122,6 +136,78 @@ def address_of(rec) -> str:
     return ""
 
 
+@dataclass(frozen=True)
+class FsqReading:
+    """What the Foursquare snapshot says about one candidate site, and nothing more than that.
+
+    Four fields rather than a boolean, because the two counts are the diagnostics that made the
+    defect findable: `bays_skipped` and `parts_skipped` say which rule did the work, and a run
+    whose proposals rest on nothing but skipped rows shows up as support that is empty.
+    """
+
+    #: A closure recorded against a record OF THE STORE ITSELF. Non-empty means refuse.
+    closure: str = ""
+    #: An agreeing store-level record, with the snapshot's own date attached to the claim.
+    support: str = ""
+    #: Rows skipped by `names_a_service_point` -- a bay, counter, office or depot.
+    bays_skipped: int = 0
+    #: Rows skipped by `names_part_of_a_store` -- a department, car park, ATM or toilet.
+    parts_skipped: int = 0
+
+    @property
+    def refuses(self) -> bool:
+        """A recorded closure refuses, whatever else is at the site. Gates fail closed."""
+        return bool(self.closure)
+
+
+def read_fsq_records(name: str, rows: Iterable[tuple[str, object, str, float]]) -> FsqReading:
+    """Read the nearby Foursquare rows for one candidate. `rows` is (name, date_closed, addr, m).
+
+    **This function exists because the logic it replaces could not be tested.** It was inline in
+    `main()`, reachable only by building synthetic parquet files, and the sixth adversarial pass
+    had to do exactly that to find the two defects below. Both were defects of reasoning:
+
+    1. **A missing `date_closed` was read as the record being OPEN**, and an "open" record was then
+       allowed to OVERRULE a recorded closure. The snapshot is dated 2025-01-10. A blank closure
+       field in a file from January 2025 means no closure had been recorded by then -- it is not a
+       report that the shop trades today, and it cannot outweigh a date that IS recorded. So there
+       is no override any more: a closure on a store-level record refuses, full stop.
+    2. **A part of the store was allowed to speak for the store**, in both directions. An open
+       `Walmart Vision & Glasses` beside a CLOSED `Walmart Supercenter` returned PROPOSED,
+       explaining that an optician established continued trading. And a closed
+       `Walmart Garden Center` was read as the store having shut -- which is what made the
+       override look necessary, so defect 2 is what manufactured defect 1.
+
+    The replacement rule is symmetric and needs no override: **a record that is not the store is
+    evidence about neither the store's existence nor its closure.** It is counted and dropped.
+    """
+    reading = FsqReading()
+    for fsq_name, date_closed, address, metres in rows:
+        fsq_name = str(fsq_name)
+        if not clears_the_floor(match_verdict(name, fsq_name)):
+            continue
+        # A bay cannot be evidence for the store it serves, and a department cannot be evidence
+        # for the store it sits inside. Counted separately so the diagnostics name the rule.
+        if names_a_service_point(fsq_name):
+            reading = replace(reading, bays_skipped=reading.bays_skipped + 1)
+            continue
+        if names_part_of_a_store(fsq_name):
+            reading = replace(reading, parts_skipped=reading.parts_skipped + 1)
+            continue
+        if date_closed is not None and not pd.isna(date_closed):
+            if not reading.closure:
+                reading = replace(reading, closure=(
+                    f"FSQ '{fsq_name}' at {address} carries date_closed={date_closed}"))
+        elif not reading.support:
+            # **The wording is part of the fix.** This said `FSQ 'X' open at 12.0 m`, which
+            # asserts something nobody measured. It says what it knows: a record agreeing by name
+            # stood here in a snapshot, and that snapshot recorded no closure for it.
+            reading = replace(reading, support=(
+                f"FSQ '{fsq_name}' at {metres:.1f} m, no closure recorded in the "
+                f"{FSQ_SNAPSHOT_DATE} snapshot"))
+    return reading
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--emit", action="store_true",
@@ -131,7 +217,21 @@ def main() -> None:
                          "no longer screens the admitted records -- the first gate skips anything "
                          "already published -- so an unguarded rerun would replace the sheet that "
                          "records WHY 23 records were admitted with the residual rows only.")
+    ap.add_argument("--pre-admission", action="store_true",
+                    help="empty INCLUDED_PLACE_IDS['grocery'] FOR THIS RUN ONLY, so the screen "
+                         "sees the world as it was before the 23 admissions. This is what "
+                         "regenerates docs/experiments/audit/missing-grocery-stores.csv, which is "
+                         "the record of why those records were admitted: after the admission the "
+                         "first gate skips them as already published, so a plain rerun cannot "
+                         "reproduce the sheet. Nothing on disk is changed by the flag.")
     args = ap.parse_args()
+
+    if args.pre_admission:
+        # In memory only. The table is a module-level dict and `select_overture` reads it through
+        # `forced_into`, so emptying it here is enough and the file is never touched.
+        INCLUDED_PLACE_IDS["grocery"] = {}
+        print("--pre-admission: INCLUDED_PLACE_IDS['grocery'] emptied for this run only")
+        print()
 
     places = gpd.read_parquet(ACCEPTED_PLACES)
     published = set(select_overture(places, "grocery")["id"])
@@ -161,9 +261,8 @@ def main() -> None:
 
     gates = Counter()
     gate_order = ["owner_excluded", "considered", "brand", "service_point",
-                  "fsq_row_is_a_service_point",
-                  "REVIEW: no category", "store_format", "fsq_closure",
-                  "closure_overridden_by_open_record", "duplicate",
+                  "fsq_row_is_a_service_point", "fsq_row_is_part_of_a_store",
+                  "REVIEW: no category", "store_format", "fsq_closure", "duplicate",
                   "REVIEW: possible duplicate", "uncorroborated", "PROPOSED"]
     rows = []
 
@@ -223,51 +322,42 @@ def main() -> None:
 
         # ---- GATE: refuted by a Foursquare closure. The gate ask 5 did not have. ----
         #
-        # A CLOSURE ONLY REFUSES IF NOTHING AGREEING IS STILL OPEN AT THE SAME SITE. This is the
-        # Sam's Club category objection pointing the other way: a department closing inside a
-        # store that keeps trading is not the store closing. The first version of this gate
-        # refused three real Walmarts because FSQ lists `Walmart Garden Center` (closed 2019-02-13,
-        # twice) and `Walmart Photo Printing` (closed 2017-12-15) at their addresses -- those names
-        # share the word "Walmart" and so clear the agreement floor against a record named
-        # `Walmart`. The discriminator is evidence rather than a word list: if an AGREEING FSQ
-        # record is still open at the same site, the shop trades on and the closed row is a
-        # counter. Durham's 1010 Martin Luther King Pkwy still refuses, because the records open
-        # there are Triangle Rock Club and Planet Fitness, whose names do not agree with Walmart.
+        # **A RECORDED CLOSURE REFUSES. THERE IS NO OVERRIDE.** The previous version let an
+        # agreeing record with a BLANK `date_closed` overrule a closure, on the reasoning that a
+        # department closing inside a trading store is not the store closing. The reasoning was
+        # right and the implementation of it was not: a blank closure field in a snapshot dated
+        # 2025-01-10 is not a report that the shop trades today, so it was outweighing a date that
+        # IS recorded with the absence of one that is not.
+        #
+        # The department problem is real and is now solved where it belongs, by asking whether the
+        # CLOSING record is the store: `Walmart Garden Center` (closed 2019-02-13, twice) and
+        # `Walmart Photo Printing` (closed 2017-12-15) are parts of a store, so they never produce
+        # closure evidence and nothing has to overrule them. The three real Walmarts the first
+        # version of this gate refused still pass, for a reason that is true. Durham's 1010 Martin
+        # Luther King Pkwy still refuses: the closed record there IS the store, and the records
+        # standing at the site are Triangle Rock Club and Planet Fitness, which do not agree.
+        #
+        # `read_fsq_records` holds the rule, so that it can be tested at all --
+        # `tests/test_grocery_proposal_screen.py`. It was inline here, and unreachable except by
+        # building synthetic parquet files, which is what the sixth review had to do to find it.
         d_fsq = fsq_g.geometry.distance(here)
         near_fsq = fsq_g[d_fsq <= NEAR_M]
-        closed_evidence = ""
-        open_agreeing = ""
-        for _, f in near_fsq.iterrows():
-            if not clears_the_floor(match_verdict(name, str(f["name"]))):
-                continue
-            # **THE RECORD THAT OVERRIDES A CLOSURE MUST BE A SHOP.** This test was applied to the
-            # Overture candidate's name and never to the FSQ row's, so an open `Walmart Vision &
-            # Glasses` beside a CLOSED `Walmart Supercenter` was read as the store trading on. The
-            # sixth review built exactly that case and the screen returned PROPOSED, explaining
-            # that an optician established continued trading -- a conclusion invented by the code.
-            if names_a_service_point(str(f["name"])):
-                gates["fsq_row_is_a_service_point"] += 1
-                continue
-            if pd.isna(f["date_closed"]):
-                if not open_agreeing:
-                    open_agreeing = f"FSQ '{f['name']}' is OPEN at {f['address']}"
-            elif not closed_evidence:
-                closed_evidence = (f"FSQ '{f['name']}' at {f['address']} carries "
-                                   f"date_closed={f['date_closed']}")
-        closure_note = ""
-        if closed_evidence and not open_agreeing:
+        reading = read_fsq_records(name, [
+            (f["name"], f["date_closed"], f["address"], d_fsq.loc[j])
+            for j, f in near_fsq.iterrows()
+        ])
+        gates["fsq_row_is_a_service_point"] += reading.bays_skipped
+        gates["fsq_row_is_part_of_a_store"] += reading.parts_skipped
+        if reading.refuses:
             gates["fsq_closure"] += 1
             rows.append({
                 "place_id": rec["id"], "name": name, "address": address_of(rec),
                 "primary": primary, "brand": brand, "outcome": "REFUSED: closed",
-                "evidence": f"{closed_evidence}, and no agreeing FSQ record is open at this site",
+                "evidence": f"{reading.closure}, and the records agreeing by name at this site "
+                            "are parts of a store or carry a closure of their own",
                 "nearest_published_m": f"{d_pub_all.min():.1f}", "verdict": "",
             })
             continue
-        if closed_evidence:
-            gates["closure_overridden_by_open_record"] += 1
-            closure_note = (f"note: a DEPARTMENT closed here -- {closed_evidence} -- but "
-                            f"{open_agreeing}, so the shop trades on")
 
         # ---- GATE: we already publish this shop under another record ----
         #
@@ -337,28 +427,28 @@ def main() -> None:
                                 if str(osm_shops.loc[j].get(k) or "").lower() == v), "shop")
                     support.append(f"OSM `{tag}` named '{osm_name}' at {dist:.1f} m")
                     break
-        for _, f in near_fsq.iterrows():
-            if not pd.isna(f["date_closed"]):
-                continue
-            # Same test, same reason: before this, NINE of the fourteen proposed Walmarts were
-            # corroborated by a department or a bay -- `Walmart Auto Care Centers`,
-            # `Walmart Vision & Glasses`, `Walmart Bakery`, `Walmart Photo Center`, and TWICE by
-            # `Walmart Grocery Pickup and Delivery`, which is the exact record type this project
-            # removes as not-a-shop. A bay cannot be evidence for the store it serves.
-            if names_a_service_point(str(f["name"])):
-                gates["fsq_row_is_a_service_point"] += 1
-                continue
-            if clears_the_floor(match_verdict(name, str(f["name"]))):
-                support.append(f"FSQ '{f['name']}' open at "
-                               f"{fsq_g.geometry.distance(here).loc[_]:.1f} m")
-                break
+        # The same reading, reused rather than recomputed. Before the service-point and
+        # store-part tests reached this side, NINE of the fourteen proposed Walmarts were
+        # corroborated by a department or a bay -- `Walmart Auto Care Centers`,
+        # `Walmart Vision & Glasses`, `Walmart Bakery`, `Walmart Photo Center`, and TWICE by
+        # `Walmart Grocery Pickup and Delivery`, which is the exact record type this project
+        # removes as not-a-shop. A bay cannot be evidence for the store it serves, and a counter
+        # cannot be evidence for the store it sits inside.
+        #
+        # Reusing one `FsqReading` for both the closure gate and this one is also the fix for a
+        # smaller defect: the two loops applied different tests to the same rows, which is how a
+        # row could be a department when refusing and a witness when corroborating.
+        if reading.support:
+            support.append(reading.support)
         if not support:
             gates["uncorroborated"] += 1
             rows.append({
                 "place_id": rec["id"], "name": name, "address": address_of(rec),
                 "primary": primary, "brand": brand, "outcome": "REFUSED: uncorroborated",
-                "evidence": "no OSM supermarket tag and no open FSQ record with an agreeing name "
-                            f"within {NEAR_M:.0f} m",
+                "evidence": "no OSM supermarket tag, and no FSQ record of the STORE with an "
+                            f"agreeing name within {NEAR_M:.0f} m -- "
+                            f"{reading.bays_skipped} bay and {reading.parts_skipped} store-part "
+                            "rows at this site were skipped",
                 "nearest_published_m": f"{d_pub.min():.1f}", "verdict": "",
             })
             continue
@@ -367,7 +457,7 @@ def main() -> None:
         rows.append({
             "place_id": rec["id"], "name": name, "address": address_of(rec),
             "primary": primary, "brand": brand, "outcome": "PROPOSED",
-            "evidence": "; ".join(support + [n for n in (closure_note, replaces) if n]),
+            "evidence": "; ".join(support + ([replaces] if replaces else [])),
             "nearest_published_m": f"{d_pub.min():.1f}", "verdict": "",
         })
 

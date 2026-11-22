@@ -451,3 +451,43 @@ def names_a_service_point(name: str) -> bool:
     if any(phrase in f" {hay} " for phrase in (f" {p} " for p in SERVICE_POINT_PHRASES)):
         return True
     return any(_contains_words(hay, word) for word in SERVICE_POINT_WORDS)
+
+
+#: Words that, standing beside a brand this project holds, name something INSIDE or ATTACHED TO a
+#: store rather than the store itself.
+#:
+#: **Read off the data, not invented.** Every word here appears in `fsq_os_places_2025-01-10` in a
+#: name that `chain_in_name` resolves to a brand, and a test asserts that. The list came from
+#: counting the words that occur beside a brand in that snapshot and keeping the ones that are not
+#: a shop: `Walmart Garden Center` (24 rows), `Walmart Bakery` (23), `Walmart Auto Care Centers`,
+#: `Lowes Foods Gas Station`, `The Bar At Harris Teeter`, `Harris Teeter Parking Lot`,
+#: `Presto! ATM at Publix`, `Wal-Mart DC` -- and `Wal-Mart's Shitter`, which is a real row in a
+#: real snapshot and would otherwise have been admissible evidence that a Walmart trades.
+#:
+#: **Witnessed-only is a deliberate limit and it cuts the unsafe way.** A future snapshot naming a
+#: `Walmart Deli` would not be caught here, and a department that corroborates a store is a wrong
+#: ADDITION, which is the harmful direction. What covers that gap is not a longer guess: it is that
+#: the screen writes the NAME of the record it accepted as support into its sheet, which is how
+#: these eight words were found in the first place.
+STORE_PART_WORDS = frozenset({
+    "garden", "bakery", "auto", "care", "gas", "bar", "parking", "lot", "atm", "dc", "shitter",
+})
+
+
+def names_part_of_a_store(name: str) -> bool:
+    """True when the name is a brand we hold PLUS a word naming a part of the store.
+
+    The distinction from `names_a_service_point` is the brand, and it is load-bearing in both
+    directions. That function is brand-independent, because a `Grocery Pickup` is a bay whoever
+    runs it. This one requires the brand, because a **standalone** bakery is a real shop and
+    `Sunrise Bakery` must stay one -- only `Walmart Bakery` is a counter.
+
+    **The sixth adversarial pass found this missing in both directions at once.** An open
+    `Walmart Vision & Glasses` beside a closed `Walmart Supercenter` was read as the store trading
+    on, and a closed `Walmart Garden Center` was read as the store having shut. A part of a shop is
+    evidence about that part. It is not evidence about the shop.
+    """
+    if chain_in_name(name) is None:
+        return False
+    hay = _normalise(name)
+    return any(_contains_words(hay, word) for word in STORE_PART_WORDS)
