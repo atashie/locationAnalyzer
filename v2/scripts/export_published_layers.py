@@ -58,22 +58,71 @@ METRO = get_metro()
 #: `(stem, label, cell_m, default_on, default_threshold_min)`. The last two are what the PAGE
 #: opens with, not statements about the data: pass 43 F4 established that every manifest entry
 #: starts enabled, so with seven criteria the opening view would be the intersection of all seven
-#: and a household would meet a blank map. Only the grocery walk starts on; the rest are there to
-#: be switched on one at a time, which is also how somebody actually searches.
+#: and a household would meet a blank map. Only ONE layer starts on; the rest are there to be
+#: switched on one at a time, which is also how somebody actually searches.
 #:
 #: The default minutes are chosen to be *plausible*, not to flatter the layer -- 10 minutes to RDU
 #: is not reachable from anywhere in Chapel Hill, and a slider that starts on an impossible number
 #: teaches a reader that the map is broken before they have read a word of it.
+#:
+#: OWNER ASK 13(a), 2026-11-23. The layer that opens on is `supermarket`, implementing the owner
+#: definition of 2026-11-17: *a supermarket you could do a weekly shop at*, with the broader
+#: grocery set switchable. `grocery` keeps its own entry and is switched OFF rather than removed,
+#: because the point of the decision is that the smaller shops stay AVAILABLE rather than being
+#: deleted -- the tiendas, tortillerias and the halal, Asian, African and Caribbean markets are in
+#: that set, and all three of our sources under-record exactly those.
+#:
+#: WHAT IT COSTS, measured 2026-11-23 and recorded here because the default is what most people
+#: will ever see: at this layer own opening threshold of 20 minutes, 176,983 buildings have an
+#: answer against 243,908 under `grocery` -- 66,925 buildings, 13.1 points, lose one. Over any
+#: horizon at all the gap is much smaller, 492,149 against 498,981, because nearly every building
+#: reaches SOME supermarket eventually. The 20-minute figure is the one a household meets.
+#:
+#: The labels changed with it. "Grocery shop, walk" meant all 553 records while it was the only
+#: grocery layer; with two of them shipping, "Supermarket" against "Any grocery shop" is the
+#: distinction a household is actually choosing between.
 SOURCES = [
-    ("own_triangle_grocery_walk", "Grocery shop, walk", 100.0, True, 20),
+    ("own_triangle_supermarket_walk", "Supermarket, walk", 100.0, True, 20),
+    ("own_triangle_grocery_walk", "Any grocery shop, walk", 100.0, False, 20),
     ("own_triangle_park_walk", "Park, walk", 100.0, False, 15),
     ("own_triangle_school_walk", "School, walk", 100.0, False, 20),
-    ("own_triangle_grocery_drive", "Grocery shop, drive", 100.0, False, 10),
+    ("own_triangle_supermarket_drive", "Supermarket, drive", 100.0, False, 10),
+    ("own_triangle_grocery_drive", "Any grocery shop, drive", 100.0, False, 10),
     ("own_triangle_coffee_bike", "Coffee shop, bike", 100.0, False, 15),
     ("own_triangle_duke-hospital_drive", "Duke University Hospital, drive", 100.0, False, 30),
     ("own_triangle_rdu-airport_drive", "RDU airport, drive", 100.0, False, 40),
     ("own_triangle_grocery_walk_cell200", "Grocery, walk (200 m candidate)", 200.0, False, 20),
 ]
+
+
+def undeclared_files(out: pathlib.Path, declared: set[str]) -> list[str]:
+    """Files in the bundle directory that the manifest does not declare.
+
+    Paths are relative to the bundle root with forward slashes, the way the manifest spells them,
+    so a reader can compare the two lists without translating a separator.
+
+    WHY THIS EXISTS. The exporter writes into a directory and, until now, never looked at what
+    else was in it. `own_triangle_grocery_walk_cell200.{value,status}.bin` from 2026-11-13 sat in
+    the published bundle unmentioned by the 2026-11-22 manifest, because candidate layers are
+    skipped unless `--candidates` is passed -- so two files were served with no manifest record,
+    no licence entry and no attribution line, and no build would ever have said so.
+
+    A run that STOPS producing a layer does not remove what it already produced. That is the same
+    failure as the stale drive surface beside a freshly encoded one, and the reason this is a
+    check on the directory rather than one more thing to remember.
+    """
+    found = []
+    for path in out.rglob("*"):
+        if path.is_dir():
+            continue
+        rel = path.relative_to(out).as_posix()
+        if rel not in declared:
+            found.append(rel)
+    # Sorted as STRINGS, not as paths. `sorted()` over `WindowsPath` compares case-insensitively,
+    # so the same bundle listed `LICENSES/stale.txt` before `left_behind.value.bin` on one
+    # platform and after it on another. A refusal message that reorders itself by host is a
+    # refusal two people cannot compare.
+    return sorted(found)
 
 
 def load_route_flag(stem: str, shape, horizon_s: float,
@@ -588,6 +637,10 @@ def v1_plane(value: np.ndarray, status: np.ndarray) -> np.ndarray:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--allow-undeclared", action="store_true",
+                    help="publish even though the directory holds files this build does not "
+                         "declare. The default refuses, because an undeclared file is served "
+                         "with no manifest record and no licence entry")
     ap.add_argument("--candidates", action="store_true",
                     help="also export the rejected 200 m candidate. Pass 43 F4: every manifest "
                          "entry starts enabled in the page, so shipping the candidate beside the "
@@ -788,6 +841,29 @@ def main(argv: list[str] | None = None) -> int:
         "transfer_bytes": sizes,
     }
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2, allow_nan=False), encoding="utf-8")
+
+    # Everything this build declares, by the name it is served under. `licensing` is None where
+    # nothing with a licence obligation ships, which is a different statement from an empty
+    # bundle and is why this is not just `licensing["files"]`.
+    declared = {"manifest.json"}
+    declared |= set(licensing["files"]) if licensing else set()
+    for entry in entries:
+        for key in ("value_file", "status_file", "dest_file", "dest_table", "flag_file"):
+            name = entry.get(key)
+            if name:
+                declared.add(str(name))
+    left_behind = undeclared_files(args.out, declared)
+    if left_behind and not args.allow_undeclared:
+        raise SystemExit(
+            "the bundle directory holds files this build does not declare, so they would be "
+            "served with no manifest record, no licence entry and no attribution line:\n  "
+            + "\n  ".join(left_behind)
+            + "\n\nA layer dropped from SOURCES, or skipped because --candidates was not passed, "
+              "leaves its bytes behind. Delete them, or re-run with the flag that produced them, "
+              "or pass --allow-undeclared if they are deliberate.")
+    if left_behind:
+        print(f"  WARNING: {len(left_behind)} undeclared file(s) kept by --allow-undeclared: "
+              + ", ".join(left_behind))
 
     print(f"wrote {len(entries)} layers to {args.out}")
     print(f"\n{'layer':30s} {'raw':>10s} {'deflated':>10s} {'flag':>9s} {'dest':>9s} "

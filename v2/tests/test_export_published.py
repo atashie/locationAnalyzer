@@ -615,3 +615,41 @@ def test_the_licence_record_does_not_claim_apache_clearance(tmp_path):
     assert got["apache_records_are_cleared_for_redistribution"] is False
     assert "4(c)" in got["what_this_does_not_establish"]
     assert "4(d)" in got["what_this_does_not_establish"]
+# ----------------------------------------------------------------------------------------------
+# What else is in the directory.
+
+
+def test_undeclared_files_are_found(tmp_path):
+    """A file in the published directory that the manifest does not declare is served with no
+    licence entry and no attribution line. The exporter writes into that directory and has never
+    looked at what else is in it, so a layer dropped from `SOURCES` -- or skipped, as every
+    candidate layer is unless `--candidates` is passed -- leaves its bytes behind for good."""
+    (tmp_path / "LICENSES").mkdir()
+    for name in ["manifest.json", "ATTRIBUTION.md", "a.value.bin", "a.status.bin",
+                 "LICENSES/CDLA-Permissive-2.0.txt"]:
+        (tmp_path / name).write_text("x", encoding="utf-8")
+    (tmp_path / "left_behind.value.bin").write_text("x", encoding="utf-8")
+    (tmp_path / "LICENSES" / "stale.txt").write_text("x", encoding="utf-8")
+
+    declared = {"manifest.json", "ATTRIBUTION.md", "a.value.bin", "a.status.bin",
+                "LICENSES/CDLA-Permissive-2.0.txt"}
+    assert exporter.undeclared_files(tmp_path, declared) == [
+        "LICENSES/stale.txt", "left_behind.value.bin"]
+
+
+def test_a_clean_directory_has_nothing_undeclared(tmp_path):
+    (tmp_path / "manifest.json").write_text("x", encoding="utf-8")
+    assert exporter.undeclared_files(tmp_path, {"manifest.json"}) == []
+
+
+def test_the_paths_are_reported_the_way_the_manifest_spells_them(tmp_path):
+    """Forward slashes, relative to the bundle root, on every platform. A reader comparing the
+    report against the manifest should not have to translate a separator, and a Windows-shaped
+    path would not match a declared name."""
+    (tmp_path / "LICENSES").mkdir()
+    (tmp_path / "LICENSES" / "orphan.txt").write_text("x", encoding="utf-8")
+    assert exporter.undeclared_files(tmp_path, set()) == ["LICENSES/orphan.txt"]
+
+
+def test_an_empty_directory_is_not_an_error(tmp_path):
+    assert exporter.undeclared_files(tmp_path, {"manifest.json"}) == []
