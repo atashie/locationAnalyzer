@@ -6,21 +6,47 @@ status: published; owner asks 17-19 outstanding
 
 # What was republished, and what moved
 
-Owner decisions of 2026-11-23: **13(a)** the default layer becomes `supermarket`; **14** remove the
-two records our own classifier refuses; **16** rebuild the drive layer and give it a destination
-plane. **15** is approved and not yet done.
+Owner decisions of 2026-11-23, all six: **13(a)** the default layer becomes `supermarket`;
+**14** remove the two records our own classifier refuses; **15** remove the records that are not
+shops you can walk into; **16** rebuild the drive layer and give it a destination plane;
+**17** make grocery scope a choice rather than a second checkbox; **18** admit the three chain
+stores whose Overture `brand` field is empty.
 
 Nine layers, up from seven. Reproduce with the runbook at the end.
 
+**THE BUNDLE WAS REPUBLISHED TWICE ON THIS DATE** and the numbers below are the SECOND one, which
+is what ships. The first carried 13(a), 14 and 16 with `grocery` at 553 and `supermarket` at 262;
+the second adds 15, 17 and 18 and ships `grocery` 542 and `supermarket` 265. Where a figure below
+describes the first republish it says so, because the two are a day apart in nothing and easy to
+confuse.
+
+| | records | |
+|---|---:|---|
+| `grocery` | 555 -> 553 -> **542** | ask 14 removed 2, ask 15 removed 11 |
+| `supermarket` | 242 -> 262 -> **265** | the inclusion fix added 20, ask 18 added 3 |
+| `specialty_grocery` | 33 -> **32** | one ask-15 removal was published as a specialty grocer |
+
+**56 of the 265 supermarkets lie OUTSIDE the published grid**, and 99 of the 542 groceries. They
+still serve cells near the map's edge, but "265 published supermarkets" is the wrong phrasing: 209
+sit inside the extent. `Publix Super Market at Middle Creek Crossings`, admitted under ask 18, is
+about 11 km south of the southern edge, so no published cell is near enough for it to be anybody's
+nearest shop and it is absent from the destination table. Ask 18 admitted all three; one of them
+cannot change what a household on this map sees.
+
 ## The bundle, before against after
 
-| layer | cells answered | change |
+| layer | cells answered | change against the 2026-11-22 bundle |
 |---|---:|---|
 | `own_triangle_supermarket_walk` | 246,950 | **NEW, and the layer that opens on** |
-| `own_triangle_grocery_walk` | 258,497 | unchanged in count; 303 cells name a different shop |
+| `own_triangle_grocery_walk` | 258,048 | 449 lost, 0 gained; 3,651 changed minute, 3,637 of them slower, median +8 and up to +31; 3,733 name a different shop |
 | `own_triangle_supermarket_drive` | 267,317 | **NEW** |
 | `own_triangle_grocery_drive` | 267,317 | unchanged in count; 6,177 cells changed minute; **destination plane added** |
 | `park_walk`, `school_walk`, `coffee_bike`, `duke-hospital_drive`, `rdu-airport_drive` | — | **byte-identical** |
+
+In the FIRST republish, which carried only ask 14, `grocery_walk` lost nothing and exactly 303
+cells changed shop -- `Pet Dairy` was answering 44 and `Market at Colonnade Center` 259, and
+44 + 259 = 303. The second republish added ask 15 on top, which is where the 449 lost cells and the
++8 minute median come from.
 
 The five unrebuilt layers changing in **zero** cells is the control: it says the export is
 deterministic and that what moved, moved because a surface was rebuilt.
@@ -113,9 +139,20 @@ one. The oracle was regenerated; no household-facing answer changed for that pro
 
 ## Known and not fixed
 
-* **Ticking "Any grocery shop" cannot broaden the map.** Criteria are intersected, so adding the
-  broader layer while the narrower one is ticked can only narrow the result. A household must untick
-  `Supermarket` first. Owner ask 17.
+* ~~Ticking "Any grocery shop" cannot broaden the map.~~ **FIXED under ask 17** in the second
+  republish. Grocery scope is now a choice: `scope_group` in the manifest, enforced by
+  `enabledAfterToggle` in `card.js`. The cost is recorded there -- a household can no longer hold
+  "a supermarket within 20 minutes' walk" and "any grocery within 5 minutes' walk" at the same
+  time, which was a sensible compound question.
+* **The flag writer stamps a surface fingerprint it has not verified.** It fingerprints whatever
+  stored surface sits at the stem without checking its own recomputation matches, which the
+  destination writer does check. Found by the 2026-11-23 review, not repaired.
+* **The ask-14 guard skips on a clean checkout**, because the accepted-places parquet is gitignored.
+  A green suite on a fresh clone does not establish that it ran.
+* **Four farms are held, not removed**, under ask 15: `Homestead Harvest Farm`, `Currin Farm`,
+  `Wilkerson Farms` and `Hamm's Greenhouse`. Two others were checked and KEPT, which is why the
+  rest are held rather than swept: `Funny Girl Farm` has a farm stand with posted hours and
+  `Allen Powell Memorial Collard Patch` is an operating family farm selling direct.
 * **`measure_drawn_pixel.py` and the walked-cell oracle still read `own_triangle_grocery_walk`**,
   which is no longer the layer a household opens with. They now measure a layer nobody is shown by
   default.
@@ -145,6 +182,7 @@ uv run python scripts/flag_restricted_routes.py --category grocery     --mode wa
 
 uv run python scripts/export_published_layers.py
 uv run python scripts/measure_drawn_pixel.py        # the oracle, after the bundle moves
+uv run python scripts/write_s3_12_walked_cell.py    # the walked-cell record, likewise
 uv run python -m pytest
 ```
 
