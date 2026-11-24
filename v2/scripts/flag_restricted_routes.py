@@ -42,7 +42,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from _common import ACCEPTED_PLACES, METRO, METRO_DIR, load_roads_graph, stamp  # noqa: E402
 from locfinder import wire                                        # noqa: E402
 from locfinder.measure.frames import structure_population          # noqa: E402
-from locfinder.places.categories import select_overture            # noqa: E402
+from locfinder.places.categories import WEDGE_CATEGORIES, select_overture            # noqa: E402
 from locfinder.status import (CATEGORY_COST_SELECTED, ENGINES,      # noqa: E402
                               Criterion, Surface, Verdict, evaluate, node_reasons)
 from locfinder.traveltime.arrival import (arrival_seconds,          # noqa: E402
@@ -52,8 +52,12 @@ from locfinder.traveltime.csr import graph_to_cost_time_flag_csr    # noqa: E402
 from locfinder.traveltime.snap import (EdgeIndex,                 # noqa: E402
                                        cell_arrival_with_provenance,
                                        cell_route_flag)
-from locfinder.traveltime.speeds import add_travel_times, symmetrise  # noqa: E402
+from locfinder.traveltime.speeds import (GRAPH_MODES,                 # noqa: E402
+                                         add_travel_times,
+                                         symmetrise_for_mode)
 
+#: DEFAULTS. `main` overwrites the first two from its arguments, and everything that reads
+#: them does so inside `main`, after that assignment.
 MODE = "walk"
 CATEGORY = "grocery"
 POI_SNAP_MAX_M = 300.0
@@ -64,6 +68,14 @@ THRESHOLDS_MIN = (10, 15, 25, 45)
 #: because that bundle is what "published in the layer bundle" means and what the graph-free
 #: exporter reads.
 STEM = "own_triangle_grocery_walk"
+
+
+def layer_stem(category: str, mode: str) -> str:
+    """The stem of the surface triple this flag belongs beside. One expression, so a flag
+    cannot be written next to a surface it was not computed against."""
+    return f"own_triangle_{category}_{mode}"
+
+
 #: Where the surface triple and the flag raster live together.
 LAYERS_DIR = pathlib.Path(__file__).resolve().parents[1] / "data" / "layers"
 
@@ -72,21 +84,49 @@ ARTIFACT = V2.parent / "docs" / "experiments" / "s3-8-restricted-routes.json"
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Declared before the parser, because `--mode` and `--category` take their DEFAULTS from
+    # these names and Python refuses a `global` that follows a use in the same function.
+    global MODE, CATEGORY, STEM
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--out", type=pathlib.Path, default=ARTIFACT)
+    ap.add_argument("--out", type=pathlib.Path, default=None,
+                    help="where to write the run report. Defaults to the s3-8 artifact for "
+                         "the grocery walk and to a per-layer file otherwise, so a second "
+                         "layer cannot overwrite the first layer's record")
+    ap.add_argument("--category", default=CATEGORY,
+                    help="the wedge category to measure to (default: %(default)s)")
+    ap.add_argument("--mode", default=MODE, choices=sorted(GRAPH_MODES),
+                    help="travel mode (default: %(default)s)")
     ap.add_argument("--write-raster", action="store_true",
                     help="persist the per-cell flag beside the layer's surface triple, which is "
                          "what 'published in the layer bundle' means. The exporter is graph-free "
                          "and reads it from there")
     args = ap.parse_args(argv)
 
+    MODE, CATEGORY = args.mode, args.category
+    STEM = layer_stem(CATEGORY, MODE)
+    if CATEGORY not in WEDGE_CATEGORIES:
+        raise SystemExit(f"unknown category {CATEGORY!r}: "
+                         f"expected one of {sorted(WEDGE_CATEGORIES)}")
+    surface = LAYERS_DIR / f"{STEM}.npy"
+    if not surface.exists():
+        raise SystemExit(
+            f"{surface} is not on disk, so there is no surface for this flag to describe. "
+            f"Build it first with: uv run python "
+            f"spikes/s2_building_weighted_coverage.py {CATEGORY} {MODE}")
+    if args.out is None:
+        args.out = (ARTIFACT if (CATEGORY, MODE) == ("grocery", "walk")
+                    else ARTIFACT.with_name(
+                        f"{ARTIFACT.stem}-{CATEGORY}-{MODE}{ARTIFACT.suffix}"))
+
     grid = METRO.grid()
     t0 = time.perf_counter()
     G = load_roads_graph()
     G = ox.project_graph(G, to_crs=grid.crs)
     G = add_travel_times(G, mode=MODE)
-    G = symmetrise(G)
+    # Walk only: see `symmetrise_for_mode`. This call was unconditional and correct only
+    # because MODE above read "walk".
+    G = symmetrise_for_mode(G, MODE)
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
     G, _comp = largest_component(G)
     restricted_edges = sum(1 for _u, _v, d in G.edges(data=True) if d.get("access_restricted"))
