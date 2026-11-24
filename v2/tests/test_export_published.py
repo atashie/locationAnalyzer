@@ -653,3 +653,44 @@ def test_the_paths_are_reported_the_way_the_manifest_spells_them(tmp_path):
 
 def test_an_empty_directory_is_not_an_error(tmp_path):
     assert exporter.undeclared_files(tmp_path, {"manifest.json"}) == []
+def test_files_outside_the_layers_being_published_are_found_before_anything_is_written(tmp_path):
+    """The companion to `undeclared_files`, and the one that can run FIRST.
+
+    `undeclared_files` needs the finished manifest to know what was declared, so it can only run
+    after the bundle has been written -- which is exactly the defect Codex found: the export
+    refused *after* replacing the served files. This one needs only the stems the build is about
+    to publish, so it can refuse before a single byte is touched.
+
+    It accepts the exact filenames a layer can produce and nothing else, so a stray note beside a
+    legitimate layer is caught too, not just a whole dropped layer.
+    """
+    (tmp_path / "LICENSES").mkdir()
+    for name in ["manifest.json", "ATTRIBUTION.md", "LICENSES/CDLA-Permissive-2.0.txt",
+                 "a.value.bin", "a.status.bin", "a.dest.bin", "a.destinations.json", "a.flag.bin"]:
+        (tmp_path / name).write_text("x", encoding="utf-8")
+    (tmp_path / "dropped.value.bin").write_text("x", encoding="utf-8")
+    (tmp_path / "dropped.status.bin").write_text("x", encoding="utf-8")
+    (tmp_path / "a.notes.txt").write_text("x", encoding="utf-8")
+
+    assert exporter.files_outside_these_layers(tmp_path, ["a"]) == [
+        "a.notes.txt", "dropped.status.bin", "dropped.value.bin"]
+
+
+def test_a_layer_about_to_be_published_is_not_an_orphan(tmp_path):
+    """Its files are about to be overwritten, which is the opposite of being left behind."""
+    (tmp_path / "a.value.bin").write_text("x", encoding="utf-8")
+    (tmp_path / "b.status.bin").write_text("x", encoding="utf-8")
+    assert exporter.files_outside_these_layers(tmp_path, ["a", "b"]) == []
+
+
+def test_an_empty_or_absent_directory_has_no_orphans(tmp_path):
+    assert exporter.files_outside_these_layers(tmp_path, ["a"]) == []
+    assert exporter.files_outside_these_layers(tmp_path / "nope", ["a"]) == []
+
+
+def test_the_licence_directory_is_left_to_the_licence_bundle(tmp_path):
+    """Which licences ship depends on which records do, so it is not knowable from the stems. The
+    post-write `undeclared_files` check is what covers a stale licence file."""
+    (tmp_path / "LICENSES").mkdir()
+    (tmp_path / "LICENSES" / "whatever.txt").write_text("x", encoding="utf-8")
+    assert exporter.files_outside_these_layers(tmp_path, ["a"]) == []

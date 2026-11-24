@@ -1,0 +1,101 @@
+{
+  "what_this_is": "step 8's disclosure aggregation: which published answers depend on a restricted way. The owner's 2026-11-10 decision to keep the 120 s penalty was conditional on disclosing this gap rather than pricing it away",
+  "built": "2026-11-23 21:43:19",
+  "mode": "walk",
+  "category": "supermarket",
+  "graph": {
+    "edges": 1436992,
+    "restricted_edges": 123756,
+    "destination_nodes": 243
+  },
+  "nodes": {
+    "reachable": 539814,
+    "reachable_with_a_restricted_route": 65678
+  },
+  "units": {
+    "grid_cells": {
+      "population": 330502,
+      "thresholds": {
+        "10": {
+          "included": 14019,
+          "included_on_a_restricted_route": 1054,
+          "share_of_included": 0.0751836792923889
+        },
+        "15": {
+          "included": 30372,
+          "included_on_a_restricted_route": 2619,
+          "share_of_included": 0.08623073883840379
+        },
+        "25": {
+          "included": 71344,
+          "included_on_a_restricted_route": 7504,
+          "share_of_included": 0.10518053375196232
+        },
+        "45": {
+          "included": 138029,
+          "included_on_a_restricted_route": 18277,
+          "share_of_included": 0.13241420281245245
+        }
+      },
+      "answered_at_all": 243417,
+      "answered_on_a_restricted_route": 48697
+    },
+    "structures_at_their_own_coordinate": {
+      "population": 512633,
+      "thresholds": {
+        "10": {
+          "included": 41237,
+          "included_on_a_restricted_route": 3475,
+          "share_of_included": 0.08426898173969978
+        },
+        "15": {
+          "included": 101604,
+          "included_on_a_restricted_route": 8773,
+          "share_of_included": 0.08634502578638636
+        },
+        "25": {
+          "included": 244924,
+          "included_on_a_restricted_route": 23651,
+          "share_of_included": 0.09656464862569614
+        },
+        "45": {
+          "included": 401389,
+          "included_on_a_restricted_route": 38849,
+          "share_of_included": 0.09678640919407358
+        }
+      },
+      "answered_at_all": 492159,
+      "answered_on_a_restricted_route": 60338
+    },
+    "structures_at_their_published_cell": {
+      "population": 512633,
+      "thresholds": {
+        "10": {
+          "included": 42236,
+          "included_on_a_restricted_route": 3191,
+          "share_of_included": 0.07555166208921299
+        },
+        "15": {
+          "included": 102651,
+          "included_on_a_restricted_route": 7733,
+          "share_of_included": 0.0753329241799885
+        },
+        "25": {
+          "included": 245651,
+          "included_on_a_restricted_route": 21414,
+          "share_of_included": 0.08717245197454926
+        },
+        "45": {
+          "included": 401711,
+          "included_on_a_restricted_route": 36055,
+          "share_of_included": 0.08975357906554712
+        }
+      },
+      "answered_at_all": 492149,
+      "answered_on_a_restricted_route": 57141
+    }
+  },
+  "which_unit_a_disclosure_figure_may_use": "structures_at_their_published_cell. The product answers for a cell, so that is what a household is told; the coordinate figures are model sensitivity. Pass 46 F2 found the first version's headline built on the coordinate unit -- 8,033 of 78,627 at T=10 -- where the published cell gives 7,271 of 80,067, and 23,330 structures carry a different flag between the two",
+  "what_is_still_not_the_shipped_answer": "even the published-cell figure is the SOURCE grid's. The browser receives a WGS84 re-tiling and MapLibre places it in Mercator, each of which moves the lookup again (see s3-5-browser-path). A flag plane IS now shipped in the layer bundle (published-v3, 2026-11-13), so these counts are no longer candidates for want of a format. They remain candidates for want of a reprojection: the browser's count is taken on the re-tiled plane, not this one, and no interface SHOWS a flagged answer yet -- the per-criterion card is unbuilt, so the decoder counts the disclosure and nothing displays it",
+  "the_statistic_this_does_not_compute": "the SIGNED ERROR on restricted-route journeys. That needs walked journeys: this computes the denominator -- which answers are in the class -- and leaves the numerator empty. One walked journey found about 25 minutes against a published 13.5, so the known direction of the bias is OPTIMISTIC, but one journey is existence evidence and not a rate"
+}

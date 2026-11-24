@@ -95,6 +95,42 @@ SOURCES = [
 ]
 
 
+#: Everything a layer can contribute to the bundle, by suffix. Listed rather than pattern-matched
+#: so a file that merely LOOKS like a layer file is still reported.
+LAYER_SUFFIXES = ("value.bin", "status.bin", "dest.bin", "destinations.json", "flag.bin")
+#: Bundle-level files that belong to no single layer.
+BUNDLE_FILES = ("manifest.json", "ATTRIBUTION.md")
+
+
+def files_outside_these_layers(out: pathlib.Path, stems) -> list[str]:
+    """Files already in the bundle that belong to no layer this build is about to publish.
+
+    The companion to `undeclared_files`, and the one that can run FIRST. `undeclared_files` needs
+    the finished manifest to know what was declared, so it can only run once the bundle has been
+    written -- which was the defect: the export refused AFTER replacing the served planes, the
+    licence bundle and the manifest, so a failed publish had changed the publication anyway.
+
+    This needs only the stems, which are known from `SOURCES` before any routing or encoding, so
+    it can refuse before a byte is touched.
+
+    `LICENSES/` is left alone here. Which licences ship depends on which records ship, which is not
+    knowable from the stems; a stale licence file is caught by `undeclared_files` afterwards.
+    """
+    if not out.exists():
+        return []
+    allowed = {f"{stem}.{suffix}" for stem in stems for suffix in LAYER_SUFFIXES}
+    allowed.update(BUNDLE_FILES)
+    found = []
+    for path in out.rglob("*"):
+        if path.is_dir():
+            continue
+        rel = path.relative_to(out).as_posix()
+        if rel in allowed or rel.startswith("LICENSES/"):
+            continue
+        found.append(rel)
+    return sorted(found)
+
+
 def undeclared_files(out: pathlib.Path, declared: set[str]) -> list[str]:
     """Files in the bundle directory that the manifest does not declare.
 
@@ -654,6 +690,25 @@ def main(argv: list[str] | None = None) -> int:
     e = METRO.evaluation
     bounds = (e.west, e.south, e.east, e.north)
     args.out.mkdir(parents=True, exist_ok=True)
+
+    # BEFORE ANYTHING IS WRITTEN. The same stem filter the publishing loop below applies, so the
+    # two cannot disagree about which layers this build covers.
+    will_publish = [stem for stem, _label, cell_m, _on, _thr in SOURCES
+                    if (cell_m == 100.0 or args.candidates)
+                    and (LAYERS / f"{stem}.npy").exists()]
+    strays = files_outside_these_layers(args.out, will_publish)
+    if strays and not args.allow_undeclared:
+        raise SystemExit(
+            "the bundle directory already holds files that belong to no layer this build "
+            "publishes, and they would be served with no manifest record, no licence entry and no "
+            "attribution line:\n  " + "\n  ".join(strays)
+            + "\n\nA layer dropped from SOURCES, or skipped because --candidates was not passed, "
+              "leaves its bytes behind. This check runs BEFORE the bundle is written, so nothing "
+              "has changed yet: delete them, or re-run with the flag that produced them, or pass "
+              "--allow-undeclared if they are deliberate.")
+    if strays:
+        print(f"  WARNING: {len(strays)} pre-existing stray file(s) kept by --allow-undeclared: "
+              + ", ".join(strays))
 
     entries = []
     sizes = []

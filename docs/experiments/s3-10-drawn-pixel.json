@@ -44,74 +44,74 @@
     "20": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 5873,
-      "the_colour_contradicts_the_card": 5873,
+      "the_outcome_contradicts_the_card": 5910,
+      "the_colour_contradicts_the_card": 5910,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 2820,
-      "painted_included_card_excluded": 2821,
+      "painted_excluded_card_included": 2838,
+      "painted_included_card_excluded": 2840,
       "every_direction": {
-        "painted_PASS_card_FAIL": 2821,
+        "painted_PASS_card_FAIL": 2840,
         "painted_PASS_card_UNKNOWN": 32,
-        "painted_FAIL_card_PASS": 2820,
+        "painted_FAIL_card_PASS": 2838,
         "painted_FAIL_card_UNKNOWN": 97,
         "painted_UNKNOWN_card_PASS": 18,
         "painted_UNKNOWN_card_FAIL": 85
       },
-      "and_the_minute_differs": 102688
+      "and_the_minute_differs": 102679
     },
     "10": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 6521,
-      "the_colour_contradicts_the_card": 6521,
+      "the_outcome_contradicts_the_card": 6506,
+      "the_colour_contradicts_the_card": 6506,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 3010,
+      "painted_excluded_card_included": 2995,
       "painted_included_card_excluded": 3264,
       "every_direction": {
         "painted_PASS_card_FAIL": 3264,
         "painted_PASS_card_UNKNOWN": 11,
-        "painted_FAIL_card_PASS": 3010,
+        "painted_FAIL_card_PASS": 2995,
         "painted_FAIL_card_UNKNOWN": 128,
         "painted_UNKNOWN_card_PASS": 9,
         "painted_UNKNOWN_card_FAIL": 99
       },
-      "and_the_minute_differs": 102688
+      "and_the_minute_differs": 102679
     },
     "15": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 6984,
-      "the_colour_contradicts_the_card": 6984,
+      "the_outcome_contradicts_the_card": 6967,
+      "the_colour_contradicts_the_card": 6967,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 3281,
-      "painted_included_card_excluded": 3471,
+      "painted_excluded_card_included": 3265,
+      "painted_included_card_excluded": 3470,
       "every_direction": {
-        "painted_PASS_card_FAIL": 3471,
+        "painted_PASS_card_FAIL": 3470,
         "painted_PASS_card_UNKNOWN": 26,
-        "painted_FAIL_card_PASS": 3281,
+        "painted_FAIL_card_PASS": 3265,
         "painted_FAIL_card_UNKNOWN": 103,
         "painted_UNKNOWN_card_PASS": 12,
         "painted_UNKNOWN_card_FAIL": 91
       },
-      "and_the_minute_differs": 102688
+      "and_the_minute_differs": 102679
     },
     "25": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 4579,
-      "the_colour_contradicts_the_card": 4579,
+      "the_outcome_contradicts_the_card": 4594,
+      "the_colour_contradicts_the_card": 4594,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 2171,
-      "painted_included_card_excluded": 2176,
+      "painted_excluded_card_included": 2178,
+      "painted_included_card_excluded": 2184,
       "every_direction": {
-        "painted_PASS_card_FAIL": 2176,
+        "painted_PASS_card_FAIL": 2184,
         "painted_PASS_card_UNKNOWN": 39,
-        "painted_FAIL_card_PASS": 2171,
+        "painted_FAIL_card_PASS": 2178,
         "painted_FAIL_card_UNKNOWN": 90,
         "painted_UNKNOWN_card_PASS": 23,
         "painted_UNKNOWN_card_FAIL": 80
       },
-      "and_the_minute_differs": 102688
+      "and_the_minute_differs": 102679
     },
     "45": {
       "structures_compared": 500451,
@@ -129,7 +129,7 @@
         "painted_UNKNOWN_card_PASS": 28,
         "painted_UNKNOWN_card_FAIL": 75
       },
-      "and_the_minute_differs": 102688
+      "and_the_minute_differs": 102679
     }
   },
   "controls": {
@@ -199,74 +199,74 @@
         "20": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 22469,
-          "the_colour_contradicts_the_card": 22469,
+          "the_outcome_contradicts_the_card": 22561,
+          "the_colour_contradicts_the_card": 22561,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 11091,
-          "painted_included_card_excluded": 10345,
+          "painted_excluded_card_included": 11133,
+          "painted_included_card_excluded": 10395,
           "every_direction": {
-            "painted_PASS_card_FAIL": 10345,
+            "painted_PASS_card_FAIL": 10395,
             "painted_PASS_card_UNKNOWN": 106,
-            "painted_FAIL_card_PASS": 11091,
+            "painted_FAIL_card_PASS": 11133,
             "painted_FAIL_card_UNKNOWN": 358,
             "painted_UNKNOWN_card_PASS": 83,
             "painted_UNKNOWN_card_FAIL": 486
           },
-          "and_the_minute_differs": 390144
+          "and_the_minute_differs": 390121
         },
         "10": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 24734,
-          "the_colour_contradicts_the_card": 24734,
+          "the_outcome_contradicts_the_card": 24690,
+          "the_colour_contradicts_the_card": 24690,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 11164,
-          "painted_included_card_excluded": 12482,
+          "painted_excluded_card_included": 11126,
+          "painted_included_card_excluded": 12476,
           "every_direction": {
-            "painted_PASS_card_FAIL": 12482,
+            "painted_PASS_card_FAIL": 12476,
             "painted_PASS_card_UNKNOWN": 34,
-            "painted_FAIL_card_PASS": 11164,
+            "painted_FAIL_card_PASS": 11126,
             "painted_FAIL_card_UNKNOWN": 464,
             "painted_UNKNOWN_card_PASS": 26,
             "painted_UNKNOWN_card_FAIL": 564
           },
-          "and_the_minute_differs": 390144
+          "and_the_minute_differs": 390121
         },
         "15": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 27064,
-          "the_colour_contradicts_the_card": 27064,
+          "the_outcome_contradicts_the_card": 27013,
+          "the_colour_contradicts_the_card": 27013,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 12882,
-          "painted_included_card_excluded": 13147,
+          "painted_excluded_card_included": 12845,
+          "painted_included_card_excluded": 13133,
           "every_direction": {
-            "painted_PASS_card_FAIL": 13147,
+            "painted_PASS_card_FAIL": 13133,
             "painted_PASS_card_UNKNOWN": 71,
-            "painted_FAIL_card_PASS": 12882,
+            "painted_FAIL_card_PASS": 12845,
             "painted_FAIL_card_UNKNOWN": 394,
             "painted_UNKNOWN_card_PASS": 55,
             "painted_UNKNOWN_card_FAIL": 515
           },
-          "and_the_minute_differs": 390144
+          "and_the_minute_differs": 390121
         },
         "25": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 18047,
-          "the_colour_contradicts_the_card": 18047,
+          "the_outcome_contradicts_the_card": 18100,
+          "the_colour_contradicts_the_card": 18100,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 8844,
-          "painted_included_card_excluded": 8170,
+          "painted_excluded_card_included": 8868,
+          "painted_included_card_excluded": 8199,
           "every_direction": {
-            "painted_PASS_card_FAIL": 8170,
+            "painted_PASS_card_FAIL": 8199,
             "painted_PASS_card_UNKNOWN": 131,
-            "painted_FAIL_card_PASS": 8844,
+            "painted_FAIL_card_PASS": 8868,
             "painted_FAIL_card_UNKNOWN": 333,
             "painted_UNKNOWN_card_PASS": 114,
             "painted_UNKNOWN_card_FAIL": 455
           },
-          "and_the_minute_differs": 390144
+          "and_the_minute_differs": 390121
         },
         "45": {
           "structures_compared": 500451,
@@ -284,7 +284,7 @@
             "painted_UNKNOWN_card_PASS": 179,
             "painted_UNKNOWN_card_FAIL": 390
           },
-          "and_the_minute_differs": 390144
+          "and_the_minute_differs": 390121
         }
       }
     }
@@ -421,9 +421,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 1,
-        "destination_index": 303,
+        "destination_index": 302,
         "destination": {
-          "ordinal": 303,
+          "ordinal": 302,
           "place_count": 1,
           "place_names": [
             "Food Lion"
@@ -509,9 +509,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 1,
-        "destination_index": 430,
+        "destination_index": 428,
         "destination": {
-          "ordinal": 430,
+          "ordinal": 428,
           "place_count": 1,
           "place_names": [
             "Aldi"
@@ -597,9 +597,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 0,
-        "destination_index": 389,
+        "destination_index": 388,
         "destination": {
-          "ordinal": 389,
+          "ordinal": 388,
           "place_count": 1,
           "place_names": [
             "Jean's Neighborhood Market"

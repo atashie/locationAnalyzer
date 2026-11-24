@@ -1,98 +1,98 @@
 {
   "what_this_is": "step 8's disclosure aggregation: which published answers depend on a restricted way. The owner's 2026-11-10 decision to keep the 120 s penalty was conditional on disclosing this gap rather than pricing it away",
-  "built": "2026-11-22 17:20:36",
+  "built": "2026-11-23 21:46:08",
   "mode": "walk",
   "category": "grocery",
   "graph": {
     "edges": 1436992,
     "restricted_edges": 123756,
-    "destination_nodes": 518
+    "destination_nodes": 516
   },
   "nodes": {
     "reachable": 539814,
-    "reachable_with_a_restricted_route": 73415
+    "reachable_with_a_restricted_route": 73378
   },
   "units": {
     "grid_cells": {
       "population": 330502,
       "thresholds": {
         "10": {
-          "included": 24607,
-          "included_on_a_restricted_route": 2511,
-          "share_of_included": 0.10204413378306985
+          "included": 24517,
+          "included_on_a_restricted_route": 2469,
+          "share_of_included": 0.10070563282620222
         },
         "15": {
-          "included": 48119,
-          "included_on_a_restricted_route": 5504,
-          "share_of_included": 0.11438309191795341
+          "included": 47991,
+          "included_on_a_restricted_route": 5454,
+          "share_of_included": 0.11364630868287803
         },
         "25": {
-          "included": 94699,
-          "included_on_a_restricted_route": 12478,
-          "share_of_included": 0.13176485496150964
+          "included": 94669,
+          "included_on_a_restricted_route": 12438,
+          "share_of_included": 0.13138408560352385
         },
         "45": {
           "included": 163491,
-          "included_on_a_restricted_route": 27298,
-          "share_of_included": 0.1669694356264259
+          "included_on_a_restricted_route": 27265,
+          "share_of_included": 0.16676758965325308
         }
       },
       "answered_at_all": 256569,
-      "answered_on_a_restricted_route": 56693
+      "answered_on_a_restricted_route": 56660
     },
     "structures_at_their_own_coordinate": {
       "population": 512633,
       "thresholds": {
         "10": {
-          "included": 79262,
-          "included_on_a_restricted_route": 7619,
-          "share_of_included": 0.0961242461709268
+          "included": 79097,
+          "included_on_a_restricted_route": 7582,
+          "share_of_included": 0.0958569857263866
         },
         "15": {
-          "included": 165128,
-          "included_on_a_restricted_route": 16515,
-          "share_of_included": 0.10001332299791676
+          "included": 164744,
+          "included_on_a_restricted_route": 16462,
+          "share_of_included": 0.09992473170494828
         },
         "25": {
-          "included": 301322,
-          "included_on_a_restricted_route": 32969,
-          "share_of_included": 0.10941451337771553
+          "included": 301265,
+          "included_on_a_restricted_route": 32939,
+          "share_of_included": 0.10933563474017892
         },
         "45": {
           "included": 428300,
-          "included_on_a_restricted_route": 50128,
-          "share_of_included": 0.11703945832360495
+          "included_on_a_restricted_route": 50108,
+          "share_of_included": 0.11699276208265234
         }
       },
       "answered_at_all": 499000,
-      "answered_on_a_restricted_route": 69632
+      "answered_on_a_restricted_route": 69612
     },
     "structures_at_their_published_cell": {
       "population": 512633,
       "thresholds": {
         "10": {
-          "included": 80787,
-          "included_on_a_restricted_route": 6879,
-          "share_of_included": 0.08514983846410933
+          "included": 80613,
+          "included_on_a_restricted_route": 6844,
+          "share_of_included": 0.08489945790381204
         },
         "15": {
-          "included": 166236,
-          "included_on_a_restricted_route": 14925,
-          "share_of_included": 0.08978199667941962
+          "included": 165866,
+          "included_on_a_restricted_route": 14877,
+          "share_of_included": 0.08969288461770344
         },
         "25": {
-          "included": 301681,
-          "included_on_a_restricted_route": 30510,
-          "share_of_included": 0.10113331631756724
+          "included": 301616,
+          "included_on_a_restricted_route": 30469,
+          "share_of_included": 0.10101917670150125
         },
         "45": {
           "included": 428566,
-          "included_on_a_restricted_route": 47178,
-          "share_of_included": 0.11008339438966228
+          "included_on_a_restricted_route": 47152,
+          "share_of_included": 0.11002272695454142
         }
       },
       "answered_at_all": 498981,
-      "answered_on_a_restricted_route": 66283
+      "answered_on_a_restricted_route": 66257
     }
   },
   "which_unit_a_disclosure_figure_may_use": "structures_at_their_published_cell. The product answers for a cell, so that is what a household is told; the coordinate figures are model sensitivity. Pass 46 F2 found the first version's headline built on the coordinate unit -- 8,033 of 78,627 at T=10 -- where the published cell gives 7,271 of 80,067, and 23,330 structures carry a different flag between the two",
