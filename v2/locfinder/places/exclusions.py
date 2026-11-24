@@ -157,6 +157,46 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "ten bays beside it were held on 2026-11-19: a plant that supplies shops is not a shop by any "
         "reading of the owner's definition, and no judgement about shopping methods turns on it. "
         "PRELIMINARY.",
+    # ---- owner ask 14, 2026-11-23 ----
+    #
+    # Two records published in the `grocery` layer that `classify_grocery` calls `not_a_grocery`.
+    # Not a judgement call and not a borderline reading: BOTH brands were already in
+    # `NOT_A_GROCERY_BRANDS` before today. The layer published them because `grocery` is
+    # taxonomy-based and never calls the classifier, so two parts of this codebase disagreed and
+    # the published artifact carried the one that was never asked. Published `grocery` 555 -> 553.
+    #
+    # `test_no_published_grocery_record_is_one_our_own_classifier_refuses` now fails if a third
+    # one appears. It is a GUARD and not a filter on purpose: a class filter on `grocery` would
+    # mean the next brand typed into `NOT_A_GROCERY_BRANDS` silently removed published records,
+    # and a published number may not move as a side effect of a name being added to a table.
+    "8bfc9ae7-468e-4008-892a-02cd09f52b08":
+        "'Pet Dairy', taxonomy hierarchy=grocery_store, confidence 0.957, 8812 Midway West Rd, Raleigh. "
+        "The record's OWN `brand` field reads 'Pet Dairy' and its own `websites` field reads "
+        "petdairy.com: a regional DAIRY BRAND, which is why 'Pet Dairy' was already in "
+        "`NOT_A_GROCERY_BRANDS` before this entry existed. `classify_grocery` has therefore returned "
+        "`not_a_grocery` for it all along, and the published layer offered it as a grocery destination "
+        "anyway, for 44 answered cells. The evidence here is the record's own brand and website, not its "
+        "name -- nothing is inferred from the words 'Pet' or 'Dairy'. WHAT THE FOOTPRINT DOES AND DOES "
+        "NOT SAY: the point sits inside a 779 m2 building (largest within 120 m: 1,745 m2), so "
+        "`corroboration` returns CORROBORATED. That verdict means a building of weekly-shop size stands "
+        "there. It does NOT mean a shop stands there, and it is not evidence for or against this removal; "
+        "reading it as support either way would repeat the error of reading REFUTED as 'no shop here'. "
+        "Nearest surviving grocery record 720.8 m, 'El encanto market', so the removal does not orphan "
+        "the site, but it does change the answer for cells that were being sent 720 m short of a shop.",
+    "8c5d8cb0-755c-40f2-844a-03a5a679740e":
+        "'Market at Colonnade Center', taxonomy hierarchy=grocery_store, confidence 0.920, 8511 Colonnade "
+        "Center Dr, Raleigh. The record's OWN `brand` field reads 'Regency Centers' -- a listed retail "
+        "property company, already in `NOT_A_GROCERY_BRANDS` -- and its own `websites` field is a Regency "
+        "Centers PROPERTY DETAIL PAGE, regencycenters.com/property/detail/60301. So the record is the "
+        "shopping centre itself rather than a shop inside it, established from the record's own brand and "
+        "website rather than from its name. `classify_grocery` returns `not_a_grocery`; the published "
+        "layer carried it for 259 answered cells. THE SHOPS IN THE CENTRE ARE NOT REMOVED WITH IT: the "
+        "nearest surviving grocery record is 548.1 m away and is 'Food Lion', the centre's own anchor "
+        "supermarket, published as its own record. That is the distinction this entry turns on -- the "
+        "centre is not a shop, and removing the centre does not remove the shop. WHAT THE FOOTPRINT DOES "
+        "AND DOES NOT SAY: the point sits inside a 1,864 m2 building (largest within 120 m: 3,596 m2), so "
+        "`corroboration` returns CORROBORATED, which means a large building stands there and says nothing "
+        "about whether the thing at that address is a shop or a landlord's leasing office.",
 }
 
 #: Closures Overture asserts that we are NOT acting on, with why. Recorded rather than applied.

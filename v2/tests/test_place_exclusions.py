@@ -581,6 +581,10 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     the 555; the published DRIVE layer was built on 2026-11-16 and does not. If this test and a
     published artifact disagree, that is a rebuild, not an edit to these numbers.
 
+    `grocery` moved from 555 to 553 on 2026-11-23: owner ask 14 removed `Pet Dairy` and
+    `Market at Colonnade Center`, both of which `classify_grocery` already refused. Neither was in
+    `supermarket`, so that count does not move with them.
+
     `supermarket` moved from 242 to 262 on 2026-11-23, and the reason is a decision rather than
     drift. Owner ask 13(a) made `supermarket` the layer a household is served by default, which
     made it a published category for the first time; the 23 owner admissions had been keyed on
@@ -589,7 +593,7 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     carry no `brand` field and are pinned separately below.
     """
     places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
-    assert len(select_overture(places, "grocery")) == 555
+    assert len(select_overture(places, "grocery")) == 553
     assert len(select_overture(places, "supermarket")) == 262
     assert len(select_overture(places, "specialty_grocery")) == 33
 
@@ -624,6 +628,37 @@ def test_every_admission_a_supermarket_reaches_the_default_layer():
     for _, record in rows.iterrows():
         if str(record["id"]) in in_default:
             assert classify_grocery(record) == "supermarket", primary_name(record)
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_no_published_grocery_record_is_one_our_own_classifier_refuses():
+    """Two parts of this codebase disagreeing, with the published layer carrying the one that was
+    never asked, is not a judgement call -- it is a defect.
+
+    `grocery` is taxonomy-based and never calls `classify_grocery`, so a record whose BRAND is in
+    `NOT_A_GROCERY_BRANDS` was published as a grocery destination anyway. Owner ask 14, 2026-11-23:
+    remove them.
+
+    This is a guard and deliberately NOT a filter. Giving `grocery` a class filter would mean the
+    next brand added to `NOT_A_GROCERY_BRANDS` silently removed published records, and a published
+    number may not move as a side effect of a name being typed into a table. A red test puts a
+    person in front of the next contradiction instead, which is the whole difference.
+    """
+    from locfinder.places.grocery import classify_grocery
+
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    published = select_overture(places, "grocery")
+
+    def primary_name(record):
+        names = record.get("names")
+        return str(names.get("primary") or "") if hasattr(names, "get") else ""
+
+    refused = [f"{record['id']} {primary_name(record)!r}"
+               for _, record in published.iterrows()
+               if classify_grocery(record) == "not_a_grocery"]
+    assert not refused, (
+        "published as a grocery while `classify_grocery` refuses them: " + "; ".join(refused))
 
 
 def test_nothing_is_both_held_and_dropped():
