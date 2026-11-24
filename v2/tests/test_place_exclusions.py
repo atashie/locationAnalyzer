@@ -585,8 +585,11 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     `Market at Colonnade Center`, both of which `classify_grocery` already refused. Neither was in
     `supermarket`, so that count does not move with them.
 
-    `supermarket` moved from 242 to 262 on 2026-11-23, and the reason is a decision rather than
-    drift. Owner ask 13(a) made `supermarket` the layer a household is served by default, which
+    `supermarket` moved 242 -> 262 -> 265 on 2026-11-23, and every step is a decision rather than
+    drift. Ask 18 added the last three: two Publix and a Walmart Supercenter whose Overture `brand`
+    field is empty, admitted by id in `CURATED_CHAIN_SUPERMARKETS` on their OSM and store-locator
+    evidence. The footprint could not speak for them -- we hold no building data within 500 m of
+    two of the three sites. Owner ask 13(a) made `supermarket` the layer a household is served by default, which
     made it a published category for the first time; the 23 owner admissions had been keyed on
     `grocery` alone, so the narrow selector could not see them. 20 of the 23 are Aldi, Walmart and
     Publix records our own classifier calls supermarkets, and they now select. The other three
@@ -594,7 +597,7 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     """
     places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
     assert len(select_overture(places, "grocery")) == 553
-    assert len(select_overture(places, "supermarket")) == 262
+    assert len(select_overture(places, "supermarket")) == 265
     assert len(select_overture(places, "specialty_grocery")) == 33
 
 
@@ -606,9 +609,12 @@ def test_every_admission_a_supermarket_reaches_the_default_layer():
     the claim is that no record the owner admitted by hand is missing from the layer a household
     actually gets.
 
-    The three that stay out are brandless records whose names carry a chain already in
-    `SUPERMARKET_BRANDS`. They are listed by name, not counted, so that promoting one shows up
-    here as a decision instead of a number moving.
+    All 23 reach it as of owner ask 18, 2026-11-23. The three that used to stay out were brandless
+    records whose names carry a chain already in `SUPERMARKET_BRANDS`; they are now admitted by id
+    in `CURATED_CHAIN_SUPERMARKETS` against their OSM and store-locator evidence.
+
+    The expectation is an EMPTY LIST rather than a count of zero, so that a record falling out
+    again names itself here instead of reporting a number that moved.
     """
     from locfinder.places.grocery import classify_grocery
 
@@ -622,9 +628,7 @@ def test_every_admission_a_supermarket_reaches_the_default_layer():
         return str(names.get("primary") or "") if hasattr(names, "get") else ""
 
     out = sorted(primary_name(r) for _, r in rows.iterrows() if str(r["id"]) not in in_default)
-    assert out == ["Publix Super Market at Buffaloe Bend",
-                   "Publix Super Market at Middle Creek Crossings",
-                   "Walmart Supercenter"], out
+    assert out == [], out
     for _, record in rows.iterrows():
         if str(record["id"]) in in_default:
             assert classify_grocery(record) == "supermarket", primary_name(record)

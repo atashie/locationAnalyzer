@@ -105,6 +105,60 @@ CURATED_INDEPENDENT_SUPERMARKETS: dict[str, str] = {
 }
 
 
+#: CHAIN supermarkets admitted by an owner decision, by Overture id, with the evidence each one
+#: rests on. **Hand-curated and written by no script**, which a test asserts: a judgement placed in
+#: `NAME_CONFIRMED_SUPERMARKETS` or `OSM_CONFIRMED_SUPERMARKETS` is erased the next time
+#: `recover_brandless_by_name.py` or `prefill_from_osm.py` runs.
+#:
+#: Kept apart from `CURATED_INDEPENDENT_SUPERMARKETS` because that table is for independents the
+#: owner recognises one at a time. These are the opposite case: large chains whose Overture record
+#: carries an EMPTY `brand` field, so every automatic route misses them while the name says Publix
+#: or Walmart in plain sight.
+#:
+#: **Owner ask 18, 2026-11-23.** All three were already admitted to the published `grocery` layer
+#: by an owner decision; `classify_grocery` returned `unclassified` for them, so when `supermarket`
+#: became the layer a household opens with they fell out of it. Two Publix stores and a Walmart
+#: Supercenter missing from a supermarket map is not defensible.
+#:
+#: **WHY NOT THE FOOTPRINT.** The first plan was to corroborate them with their host buildings.
+#: That plan is dead, and finding out why produced the `UNSURVEYED` verdict: we hold NO BUILDING
+#: DATA within 500 m of two of these three sites, and the nearest building of any size is 10.6 km
+#: and 2.8 km away. The geometry cannot speak for or against them, so these entries rest on OSM and
+#: on each chain's own store locator, which is what their inclusion reasons already carried.
+CURATED_CHAIN_SUPERMARKETS: dict[str, str] = {
+    "5074229c-e884-4097-8759-4308ddbab7e8":
+        "Publix Super Market at Buffaloe Bend, 7330 Buffaloe Rd, Raleigh. Overture carries NO primary "
+        "category and an EMPTY brand field, which is absence of information rather than a claim to be "
+        "something else. Evidence: OSM carries 'Publix At Buffaloe Bend' at this site, recorded in "
+        "`docs/experiments/audit/s3-7-destinations-to-check.csv`, and Publix's own locator lists store "
+        "#1886 at this address with a grocery department. A Publix with a grocery department is a "
+        "weekly shop by the owner's definition of 2026-11-17. THE FOOTPRINT SAYS NOTHING EITHER WAY: "
+        "38 buildings stand within 500 m so the area IS covered, but nothing within 120 m clears the "
+        "650 m2 floor -- this store's own footprint is missing from our data while its neighbours' are "
+        "not. Nearest published grocery was 2,433.2 m, so it adds real coverage. Owner ask 18, "
+        "2026-11-23.",
+    "c7fee873-a3c5-4691-8b12-f2c76bb101b9":
+        "Publix Super Market at Middle Creek Crossings, 16100 North Carolina 50, Garner. Overture "
+        "carries NO primary category and an EMPTY brand field. Evidence: an OSM supermarket polygon "
+        "sits 71.8 m away and Publix's own locator lists store #2031 at this address with a grocery "
+        "department. THE FOOTPRINT CANNOT BE CONSULTED HERE AT ALL: we hold NO BUILDING DATA for this "
+        "place -- the nearest building of ANY size is 10,606 m away and there are none within 500 m -- "
+        "so the geometry supports no conclusion in either direction. Reading that absence as 'no "
+        "supermarket stands here' is exactly the error the `UNSURVEYED` verdict was added to stop. "
+        "Nearest published grocery 320.3 m. Owner ask 18, 2026-11-23.",
+    "182dc975-ff2e-4be1-8811-0dc710b42547":
+        "Walmart Supercenter, 805 Town Centre Blvd, Clayton. Overture primary=department_store, so "
+        "outside the `grocery_store` hierarchy and invisible to the wedge, with an EMPTY brand field. "
+        "Evidence: OSM `shop=supermarket` named 'Walmart Supercenter' at 6.6 m, and FSQ 'Walmart "
+        "Supercenter' at 111.3 m with no closure recorded in the 2025-01-10 snapshot -- a 22-month-old "
+        "absence of a closure, which is not a report that it is open, but the OSM tag is a positive "
+        "record of a supermarket. THE FOOTPRINT CANNOT BE CONSULTED: we hold NO BUILDING DATA for this "
+        "place, nearest building of ANY size 2,857 m, none within 500 m. A Walmart Supercenter is "
+        "roughly 20,000 m2 of building, so that absence is a hole in our data and nothing about the "
+        "site. Nearest published grocery 110.7 m. Owner ask 18, 2026-11-23.",
+}
+
+
 #: Records OSM independently confirms as `shop=supermarket`, seeded 2026-11-17 by
 #: `scripts/prefill_from_osm.py` on the owner's instruction to "start with osm to
 #: prefill". Admitted only where the evidence is unambiguous: OSM carries
@@ -348,6 +402,11 @@ def classify_grocery(record, consult_name_table: bool = True) -> str:
         return "specialty"
     if (
         place_id in CURATED_INDEPENDENT_SUPERMARKETS
+        # Not behind `consult_name_table`. That flag exists so the name-recovery script can ask
+        # what the answer would be WITHOUT its own output; a hand-curated decision is not that
+        # script's output, and hiding it behind the flag would have the script re-propose these
+        # three records on every run for ever.
+        or place_id in CURATED_CHAIN_SUPERMARKETS
         or place_id in OSM_CONFIRMED_SUPERMARKETS
         or (consult_name_table and place_id in NAME_CONFIRMED_SUPERMARKETS)
     ):
