@@ -1,67 +1,67 @@
 {
   "what_this_is": "step 8's disclosure aggregation: which published answers depend on a restricted way. The owner's 2026-11-10 decision to keep the 120 s penalty was conditional on disclosing this gap rather than pricing it away",
-  "built": "2026-11-23 21:43:19",
+  "built": "2026-11-23 23:26:59",
   "mode": "walk",
   "category": "supermarket",
   "graph": {
     "edges": 1436992,
     "restricted_edges": 123756,
-    "destination_nodes": 243
+    "destination_nodes": 246
   },
   "nodes": {
     "reachable": 539814,
-    "reachable_with_a_restricted_route": 65678
+    "reachable_with_a_restricted_route": 65672
   },
   "units": {
     "grid_cells": {
       "population": 330502,
       "thresholds": {
         "10": {
-          "included": 14019,
-          "included_on_a_restricted_route": 1054,
-          "share_of_included": 0.0751836792923889
+          "included": 14082,
+          "included_on_a_restricted_route": 1057,
+          "share_of_included": 0.07506036074421248
         },
         "15": {
-          "included": 30372,
-          "included_on_a_restricted_route": 2619,
-          "share_of_included": 0.08623073883840379
+          "included": 30533,
+          "included_on_a_restricted_route": 2649,
+          "share_of_included": 0.08675858906756624
         },
         "25": {
-          "included": 71344,
-          "included_on_a_restricted_route": 7504,
-          "share_of_included": 0.10518053375196232
+          "included": 71887,
+          "included_on_a_restricted_route": 7592,
+          "share_of_included": 0.10561019377634343
         },
         "45": {
-          "included": 138029,
-          "included_on_a_restricted_route": 18277,
-          "share_of_included": 0.13241420281245245
+          "included": 139436,
+          "included_on_a_restricted_route": 18636,
+          "share_of_included": 0.13365271522418887
         }
       },
       "answered_at_all": 243417,
-      "answered_on_a_restricted_route": 48697
+      "answered_on_a_restricted_route": 48711
     },
     "structures_at_their_own_coordinate": {
       "population": 512633,
       "thresholds": {
         "10": {
-          "included": 41237,
-          "included_on_a_restricted_route": 3475,
-          "share_of_included": 0.08426898173969978
+          "included": 41284,
+          "included_on_a_restricted_route": 3479,
+          "share_of_included": 0.08426993508380971
         },
         "15": {
-          "included": 101604,
-          "included_on_a_restricted_route": 8773,
-          "share_of_included": 0.08634502578638636
+          "included": 101900,
+          "included_on_a_restricted_route": 8844,
+          "share_of_included": 0.08679097154072621
         },
         "25": {
-          "included": 244924,
-          "included_on_a_restricted_route": 23651,
-          "share_of_included": 0.09656464862569614
+          "included": 246018,
+          "included_on_a_restricted_route": 23801,
+          "share_of_included": 0.09674495362127974
         },
         "45": {
-          "included": 401389,
-          "included_on_a_restricted_route": 38849,
-          "share_of_included": 0.09678640919407358
+          "included": 404151,
+          "included_on_a_restricted_route": 39421,
+          "share_of_included": 0.09754027578800993
         }
       },
       "answered_at_all": 492159,
@@ -71,24 +71,24 @@
       "population": 512633,
       "thresholds": {
         "10": {
-          "included": 42236,
+          "included": 42279,
           "included_on_a_restricted_route": 3191,
-          "share_of_included": 0.07555166208921299
+          "share_of_included": 0.07547482201565789
         },
         "15": {
-          "included": 102651,
-          "included_on_a_restricted_route": 7733,
-          "share_of_included": 0.0753329241799885
+          "included": 102938,
+          "included_on_a_restricted_route": 7794,
+          "share_of_included": 0.07571547922050166
         },
         "25": {
-          "included": 245651,
-          "included_on_a_restricted_route": 21414,
-          "share_of_included": 0.08717245197454926
+          "included": 246785,
+          "included_on_a_restricted_route": 21567,
+          "share_of_included": 0.08739185931073606
         },
         "45": {
-          "included": 401711,
-          "included_on_a_restricted_route": 36055,
-          "share_of_included": 0.08975357906554712
+          "included": 404481,
+          "included_on_a_restricted_route": 36627,
+          "share_of_included": 0.09055307913103458
         }
       },
       "answered_at_all": 492149,

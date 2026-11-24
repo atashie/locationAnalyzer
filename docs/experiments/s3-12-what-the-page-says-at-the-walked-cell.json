@@ -21,12 +21,12 @@
         "row": 286,
         "col": 129
       },
-      "value_byte_minutes": 24,
+      "value_byte_minutes": 28,
       "status_byte": 0,
       "route_flag_byte": 0,
-      "destination_index": 124,
+      "destination_index": 52,
       "place_names": [
-        "Seal The Seasons"
+        "Hill's Family Asian Markets"
       ],
       "outcome_at_15_min": "FAIL",
       "outcome_at_20_min": "FAIL"
@@ -39,7 +39,7 @@
       "value_byte_minutes": 14,
       "status_byte": 0,
       "route_flag_byte": 1,
-      "destination_index": 54,
+      "destination_index": 52,
       "place_names": [
         "Hill's Family Asian Markets"
       ],

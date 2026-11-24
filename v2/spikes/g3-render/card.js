@@ -407,7 +407,54 @@
     return DEFAULT_THRESHOLD_MIN[layer && layer.mode] || DEFAULT_THRESHOLD_MIN.walk;
   }
 
+  /** Which criteria are enabled after a household ticks or unticks one.
+   *
+   * **Criteria are INTERSECTED.** `worker.js` folds every enabled layer's outcome into `anyFail`
+   * and excludes the cell if any one of them fails. So two layers that are alternative SCOPES of
+   * the same question must never both be on: ticking "Any grocery shop" while "Supermarket" is
+   * ticked leaves the supermarket criterion failing and the cell excluded, which narrows the map
+   * when the household asked to widen it. Owner ask 17, 2026-11-23.
+   *
+   * A layer declares its alternatives with `scope_group` in the manifest. Switching one ON
+   * switches its siblings OFF. Switching one OFF does nothing to anything else -- it must not
+   * switch a sibling on, because "I do not want this criterion" is not "I want that one".
+   *
+   * WHAT THIS COSTS, recorded because it is a real loss and not only a fix. Before this rule a
+   * household could hold BOTH "a supermarket within 20 minutes' walk" and "any grocery within 5
+   * minutes' walk" -- a sensible compound question: a weekly shop somewhere near and a corner shop
+   * very near. Making the scope a choice removes that. The alternative considered was to let the
+   * broader criterion REPLACE the narrower one only when the household explicitly asks to widen,
+   * which keeps the compound query at the price of a control nobody can predict from looking at
+   * it. The owner chose the plain choice on 2026-11-23.
+   *
+   * Pure, and returns a new array: the DOM is the source of truth for what is ticked, and a rule
+   * that mutated it could not be tested without one.
+   */
+  function enabledAfterToggle(layers, index, wanted, enabled) {
+    const list = Array.isArray(layers) ? layers : [];
+    const next = list.map((_layer, i) => (i === index ? !!wanted : !!(enabled && enabled[i])));
+    const group = list[index] && list[index].scope_group;
+    if (wanted && group) {
+      list.forEach((layer, i) => {
+        if (i !== index && layer && layer.scope_group === group) next[i] = false;
+      });
+    }
+    return next;
+  }
+
+  /** The other layers a household is choosing BETWEEN when it picks this one, by index. Empty
+   *  where the layer declares no `scope_group`, which is every layer but the grocery pair. */
+  function scopeSiblings(layers, index) {
+    const list = Array.isArray(layers) ? layers : [];
+    const group = list[index] && list[index].scope_group;
+    if (!group) return [];
+    return list.reduce((acc, layer, i) => {
+      if (i !== index && layer && layer.scope_group === group) acc.push(i);
+      return acc;
+    }, []);
+  }
+
   root.G3Card = { WHY_UNKNOWN, VERDICT_TEXT, ESTIMATE_NOTE, DEFAULT_THRESHOLD_MIN, esc,
     cellForLonLat, minutesText, destinationText, renderCardHTML, createInspector,
-    layerOpensOn, layerOpeningThreshold };
+    layerOpensOn, layerOpeningThreshold, enabledAfterToggle, scopeSiblings };
 })(typeof self !== 'undefined' ? self : globalThis);

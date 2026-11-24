@@ -1,6 +1,6 @@
 {
   "what_this_is": "which grocery each published answer was measured to. The plane names the destination NODE and the side table carries every place on it, because a node is not a shop and the cost model routed to the node",
-  "built": "2026-11-23 21:37:43",
+  "built": "2026-11-23 23:21:42",
   "mode": "walk",
   "category": "grocery",
   "the_presentation_rule": "the owner's decision, 2026-11-13: THE NODE PLUS THE SET, and the card chooses. The set is the truthful answer rather than a convenience -- the selection is a cost-argmin over NODES, so which of the places on the chosen node a household walks to is not something this pipeline computed and the artifact must not assert it",
@@ -9,27 +9,27 @@
     "nodes": 539814
   },
   "places": {
-    "in_category": 553,
-    "within_snap_distance": 551,
+    "in_category": 542,
+    "within_snap_distance": 540,
     "snap_max_m": 300.0,
-    "distinct_destination_nodes": 516,
+    "distinct_destination_nodes": 505,
     "nodes_carrying_more_than_one_place": 32,
     "largest_set_on_one_node": 3
   },
   "cells": {
     "total": 330502,
-    "with_a_published_destination": 256569,
-    "distinct_destinations_selected": 435,
-    "why_this_number_sets_the_plane_width": "435 distinct destinations are named by at least one cell. A dense ordinal over those fits a uint8 plane only if it is at most 254; scripts/price_destination_encodings.py prices the options on the real plane rather than assuming"
+    "with_a_published_destination": 255879,
+    "distinct_destinations_selected": 425,
+    "why_this_number_sets_the_plane_width": "425 distinct destinations are named by at least one cell. A dense ordinal over those fits a uint8 plane only if it is at most 254; scripts/price_destination_encodings.py prices the options on the real plane rather than assuming"
   },
   "the_set_a_household_would_be_shown": {
     "destinations_by_set_size": {
-      "1": 406,
+      "1": 396,
       "2": 26,
       "3": 3
     },
     "cells_by_set_size": {
-      "1": 240673,
+      "1": 239983,
       "2": 15572,
       "3": 324
     },

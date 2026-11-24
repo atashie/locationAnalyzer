@@ -104,7 +104,20 @@ def test_no_door_has_been_recorded_for_this_journey(sheet_row):
 
 
 def test_the_two_cells_that_share_an_index_still_contradict_each_other(doc, planes):
-    """The witness for the defect. If these ever agree, the record's account is wrong."""
+    """The witness for the defect: reading the audit sheet's UTM index as a published one lands on
+    a cell about 400 m away that disagrees about what a walker would check.
+
+    **ONE OF THE THREE WITNESSES DISAPPEARED ON 2026-11-23, and the defect did not.** The two
+    cells used to name different shops -- the lookalike named `Seal The Seasons`, which owner ask
+    15 then removed as a frozen-produce company rather than a shop. Both cells now name
+    `Hill's Family Asian Markets`, and the lookalike's time moved from 24 to 28 minutes because
+    its next-nearest shop is further away.
+
+    So the name check is now asserted in the direction it actually holds, rather than deleted. The
+    two surviving witnesses are stronger than the one that went: 14 minutes against 28, PASS
+    against FAIL at the 15-minute band, and a restricted route flag on one and not the other.
+    Confusing the two cells still misreports everything a walker would check.
+    """
     walked = published_cell(planes, -79.062476, 35.902334)
     lookalike = (int(286), int(126 + 3))  # (286, 129), the sheet's index read as a published one
     assert lookalike == (286, 129)
@@ -122,7 +135,12 @@ def test_the_two_cells_that_share_an_index_still_contradict_each_other(doc, plan
     assert (a["minutes"] <= 15) and not (b["minutes"] <= 15), (
         "the point of the defect is that one passes the 15-minute band and the other does not")
     assert a["flag"] != b["flag"], "one route is flagged restricted and the other is not"
-    assert a["names"] != b["names"], "the two cells name the same shop"
+    # Asserted in the direction it holds since ask 15, not dropped. If these diverge again, a
+    # record moved and this account needs re-reading -- which is the same service the inequality
+    # used to provide, pointing the other way.
+    assert a["names"] == b["names"] == ["Hill's Family Asian Markets"], (
+        "the two cells name different shops again, so a record near the walked cell has moved "
+        "and the recorded account of this defect needs re-checking", a, b)
 
     rec = doc["the_defect_this_reading_found"]
     assert rec["the_cell_the_door_is_in"]["value_byte_minutes"] == a["minutes"]

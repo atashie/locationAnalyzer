@@ -44,92 +44,92 @@
     "20": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 5910,
-      "the_colour_contradicts_the_card": 5910,
+      "the_outcome_contradicts_the_card": 5907,
+      "the_colour_contradicts_the_card": 5907,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 2838,
-      "painted_included_card_excluded": 2840,
+      "painted_excluded_card_included": 2833,
+      "painted_included_card_excluded": 2842,
       "every_direction": {
-        "painted_PASS_card_FAIL": 2840,
-        "painted_PASS_card_UNKNOWN": 32,
-        "painted_FAIL_card_PASS": 2838,
-        "painted_FAIL_card_UNKNOWN": 97,
+        "painted_PASS_card_FAIL": 2842,
+        "painted_PASS_card_UNKNOWN": 31,
+        "painted_FAIL_card_PASS": 2833,
+        "painted_FAIL_card_UNKNOWN": 98,
         "painted_UNKNOWN_card_PASS": 18,
         "painted_UNKNOWN_card_FAIL": 85
       },
-      "and_the_minute_differs": 102679
+      "and_the_minute_differs": 102622
     },
     "10": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 6506,
-      "the_colour_contradicts_the_card": 6506,
+      "the_outcome_contradicts_the_card": 6449,
+      "the_colour_contradicts_the_card": 6449,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 2995,
-      "painted_included_card_excluded": 3264,
+      "painted_excluded_card_included": 2960,
+      "painted_included_card_excluded": 3242,
       "every_direction": {
-        "painted_PASS_card_FAIL": 3264,
+        "painted_PASS_card_FAIL": 3242,
         "painted_PASS_card_UNKNOWN": 11,
-        "painted_FAIL_card_PASS": 2995,
+        "painted_FAIL_card_PASS": 2960,
         "painted_FAIL_card_UNKNOWN": 128,
         "painted_UNKNOWN_card_PASS": 9,
         "painted_UNKNOWN_card_FAIL": 99
       },
-      "and_the_minute_differs": 102679
+      "and_the_minute_differs": 102622
     },
     "15": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 6967,
-      "the_colour_contradicts_the_card": 6967,
+      "the_outcome_contradicts_the_card": 6966,
+      "the_colour_contradicts_the_card": 6966,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 3265,
-      "painted_included_card_excluded": 3470,
+      "painted_excluded_card_included": 3237,
+      "painted_included_card_excluded": 3497,
       "every_direction": {
-        "painted_PASS_card_FAIL": 3470,
-        "painted_PASS_card_UNKNOWN": 26,
-        "painted_FAIL_card_PASS": 3265,
-        "painted_FAIL_card_UNKNOWN": 103,
+        "painted_PASS_card_FAIL": 3497,
+        "painted_PASS_card_UNKNOWN": 25,
+        "painted_FAIL_card_PASS": 3237,
+        "painted_FAIL_card_UNKNOWN": 104,
         "painted_UNKNOWN_card_PASS": 12,
         "painted_UNKNOWN_card_FAIL": 91
       },
-      "and_the_minute_differs": 102679
+      "and_the_minute_differs": 102622
     },
     "25": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 4594,
-      "the_colour_contradicts_the_card": 4594,
+      "the_outcome_contradicts_the_card": 4581,
+      "the_colour_contradicts_the_card": 4581,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 2178,
-      "painted_included_card_excluded": 2184,
+      "painted_excluded_card_included": 2161,
+      "painted_included_card_excluded": 2188,
       "every_direction": {
-        "painted_PASS_card_FAIL": 2184,
-        "painted_PASS_card_UNKNOWN": 39,
-        "painted_FAIL_card_PASS": 2178,
-        "painted_FAIL_card_UNKNOWN": 90,
+        "painted_PASS_card_FAIL": 2188,
+        "painted_PASS_card_UNKNOWN": 38,
+        "painted_FAIL_card_PASS": 2161,
+        "painted_FAIL_card_UNKNOWN": 91,
         "painted_UNKNOWN_card_PASS": 23,
         "painted_UNKNOWN_card_FAIL": 80
       },
-      "and_the_minute_differs": 102679
+      "and_the_minute_differs": 102622
     },
     "45": {
       "structures_compared": 500451,
       "rows_that_move": 131571,
-      "the_outcome_contradicts_the_card": 1972,
-      "the_colour_contradicts_the_card": 1972,
+      "the_outcome_contradicts_the_card": 1973,
+      "the_colour_contradicts_the_card": 1973,
       "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-      "painted_excluded_card_included": 809,
-      "painted_included_card_excluded": 931,
+      "painted_excluded_card_included": 794,
+      "painted_included_card_excluded": 947,
       "every_direction": {
-        "painted_PASS_card_FAIL": 931,
+        "painted_PASS_card_FAIL": 947,
         "painted_PASS_card_UNKNOWN": 56,
-        "painted_FAIL_card_PASS": 809,
+        "painted_FAIL_card_PASS": 794,
         "painted_FAIL_card_UNKNOWN": 73,
         "painted_UNKNOWN_card_PASS": 28,
         "painted_UNKNOWN_card_FAIL": 75
       },
-      "and_the_minute_differs": 102679
+      "and_the_minute_differs": 102622
     }
   },
   "controls": {
@@ -199,92 +199,92 @@
         "20": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 22561,
-          "the_colour_contradicts_the_card": 22561,
+          "the_outcome_contradicts_the_card": 22537,
+          "the_colour_contradicts_the_card": 22537,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 11133,
-          "painted_included_card_excluded": 10395,
+          "painted_excluded_card_included": 11107,
+          "painted_included_card_excluded": 10397,
           "every_direction": {
-            "painted_PASS_card_FAIL": 10395,
-            "painted_PASS_card_UNKNOWN": 106,
-            "painted_FAIL_card_PASS": 11133,
-            "painted_FAIL_card_UNKNOWN": 358,
+            "painted_PASS_card_FAIL": 10397,
+            "painted_PASS_card_UNKNOWN": 105,
+            "painted_FAIL_card_PASS": 11107,
+            "painted_FAIL_card_UNKNOWN": 359,
             "painted_UNKNOWN_card_PASS": 83,
             "painted_UNKNOWN_card_FAIL": 486
           },
-          "and_the_minute_differs": 390121
+          "and_the_minute_differs": 389763
         },
         "10": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 24690,
-          "the_colour_contradicts_the_card": 24690,
+          "the_outcome_contradicts_the_card": 24618,
+          "the_colour_contradicts_the_card": 24618,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 11126,
-          "painted_included_card_excluded": 12476,
+          "painted_excluded_card_included": 11047,
+          "painted_included_card_excluded": 12483,
           "every_direction": {
-            "painted_PASS_card_FAIL": 12476,
+            "painted_PASS_card_FAIL": 12483,
             "painted_PASS_card_UNKNOWN": 34,
-            "painted_FAIL_card_PASS": 11126,
+            "painted_FAIL_card_PASS": 11047,
             "painted_FAIL_card_UNKNOWN": 464,
             "painted_UNKNOWN_card_PASS": 26,
             "painted_UNKNOWN_card_FAIL": 564
           },
-          "and_the_minute_differs": 390121
+          "and_the_minute_differs": 389763
         },
         "15": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 27013,
-          "the_colour_contradicts_the_card": 27013,
+          "the_outcome_contradicts_the_card": 26976,
+          "the_colour_contradicts_the_card": 26976,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 12845,
-          "painted_included_card_excluded": 13133,
+          "painted_excluded_card_included": 12734,
+          "painted_included_card_excluded": 13207,
           "every_direction": {
-            "painted_PASS_card_FAIL": 13133,
-            "painted_PASS_card_UNKNOWN": 71,
-            "painted_FAIL_card_PASS": 12845,
-            "painted_FAIL_card_UNKNOWN": 394,
+            "painted_PASS_card_FAIL": 13207,
+            "painted_PASS_card_UNKNOWN": 70,
+            "painted_FAIL_card_PASS": 12734,
+            "painted_FAIL_card_UNKNOWN": 395,
             "painted_UNKNOWN_card_PASS": 55,
             "painted_UNKNOWN_card_FAIL": 515
           },
-          "and_the_minute_differs": 390121
+          "and_the_minute_differs": 389763
         },
         "25": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 18100,
-          "the_colour_contradicts_the_card": 18100,
+          "the_outcome_contradicts_the_card": 18124,
+          "the_colour_contradicts_the_card": 18124,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 8868,
-          "painted_included_card_excluded": 8199,
+          "painted_excluded_card_included": 8836,
+          "painted_included_card_excluded": 8255,
           "every_direction": {
-            "painted_PASS_card_FAIL": 8199,
-            "painted_PASS_card_UNKNOWN": 131,
-            "painted_FAIL_card_PASS": 8868,
-            "painted_FAIL_card_UNKNOWN": 333,
+            "painted_PASS_card_FAIL": 8255,
+            "painted_PASS_card_UNKNOWN": 130,
+            "painted_FAIL_card_PASS": 8836,
+            "painted_FAIL_card_UNKNOWN": 334,
             "painted_UNKNOWN_card_PASS": 114,
             "painted_UNKNOWN_card_FAIL": 455
           },
-          "and_the_minute_differs": 390121
+          "and_the_minute_differs": 389763
         },
         "45": {
           "structures_compared": 500451,
           "rows_that_move": 499694,
-          "the_outcome_contradicts_the_card": 7469,
-          "the_colour_contradicts_the_card": 7469,
+          "the_outcome_contradicts_the_card": 7478,
+          "the_colour_contradicts_the_card": 7478,
           "why_both_names": "the second is the old name, kept so a reader of an earlier quotation finds the same number. It was never a colour count",
-          "painted_excluded_card_included": 3220,
-          "painted_included_card_excluded": 3216,
+          "painted_excluded_card_included": 3176,
+          "painted_included_card_excluded": 3269,
           "every_direction": {
-            "painted_PASS_card_FAIL": 3216,
+            "painted_PASS_card_FAIL": 3269,
             "painted_PASS_card_UNKNOWN": 204,
-            "painted_FAIL_card_PASS": 3220,
+            "painted_FAIL_card_PASS": 3176,
             "painted_FAIL_card_UNKNOWN": 260,
             "painted_UNKNOWN_card_PASS": 179,
             "painted_UNKNOWN_card_FAIL": 390
           },
-          "and_the_minute_differs": 390121
+          "and_the_minute_differs": 389763
         }
       }
     }
@@ -421,9 +421,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 1,
-        "destination_index": 302,
+        "destination_index": 294,
         "destination": {
-          "ordinal": 302,
+          "ordinal": 294,
           "place_count": 1,
           "place_names": [
             "Food Lion"
@@ -465,9 +465,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 1,
-        "destination_index": 54,
+        "destination_index": 52,
         "destination": {
-          "ordinal": 54,
+          "ordinal": 52,
           "place_count": 1,
           "place_names": [
             "Hill's Family Asian Markets"
@@ -509,9 +509,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 1,
-        "destination_index": 428,
+        "destination_index": 418,
         "destination": {
-          "ordinal": 428,
+          "ordinal": 418,
           "place_count": 1,
           "place_names": [
             "Aldi"
@@ -553,9 +553,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 0,
-        "destination_index": 100,
+        "destination_index": 98,
         "destination": {
-          "ordinal": 100,
+          "ordinal": 98,
           "place_count": 1,
           "place_names": [
             "Mikyins Asian Market"
@@ -597,9 +597,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 0,
-        "destination_index": 388,
+        "destination_index": 378,
         "destination": {
-          "ordinal": 388,
+          "ordinal": 378,
           "place_count": 1,
           "place_names": [
             "Jean's Neighborhood Market"
@@ -641,9 +641,9 @@
         "status_byte": 0,
         "status_name": "OK",
         "route_flag_byte": 0,
-        "destination_index": 98,
+        "destination_index": 96,
         "destination": {
-          "ordinal": 98,
+          "ordinal": 96,
           "place_count": 1,
           "place_names": [
             "Harris Teeter"

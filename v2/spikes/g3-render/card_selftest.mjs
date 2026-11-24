@@ -1002,6 +1002,88 @@ check('the shipped bundle opens on exactly one criterion', () => {
   console.log(`      ${m.layers.length} criteria, opening on "${on[0].label}"`);
 });
 
+// ---- owner ask 17, 2026-11-23: alternative scopes cannot both be on -------------------------
+//
+// Criteria are INTERSECTED. Before this rule, ticking "Any grocery shop" while "Supermarket" was
+// ticked left the supermarket criterion failing, so the map got NARROWER when the household asked
+// to widen it. The decision was taken on the understanding that the broader set was switchable.
+
+const SCOPED = [
+  { id: 'supermarket_walk', label: 'Supermarket, walk', scope_group: 'grocery-walk' },
+  { id: 'grocery_walk', label: 'Any grocery shop, walk', scope_group: 'grocery-walk' },
+  { id: 'park_walk', label: 'Park, walk' },
+  { id: 'supermarket_drive', label: 'Supermarket, drive', scope_group: 'grocery-drive' },
+  { id: 'grocery_drive', label: 'Any grocery shop, drive', scope_group: 'grocery-drive' },
+];
+
+check('ticking the broader scope switches the narrower one off', () => {
+  const next = C.enabledAfterToggle(SCOPED, 1, true, [true, false, false, false, false]);
+  assert(next[1] === true, 'the layer just ticked is not on');
+  assert(next[0] === false, 'the narrower scope is still on, so the map only narrowed');
+});
+
+check('ticking the narrower scope switches the broader one off', () => {
+  const next = C.enabledAfterToggle(SCOPED, 0, true, [false, true, false, false, false]);
+  assert(next[0] === true && next[1] === false, JSON.stringify(next));
+});
+
+check('unticking a scope does NOT switch its sibling on', () => {
+  // "I do not want this criterion" is not "I want that one". Switching the sibling on would put a
+  // criterion the household never asked for into the intersection.
+  const next = C.enabledAfterToggle(SCOPED, 0, false, [true, false, false, false, false]);
+  assert(next[0] === false, 'the unticked layer is still on');
+  assert(next[1] === false, 'unticking one scope switched the other on');
+});
+
+check('a different scope group is untouched', () => {
+  const next = C.enabledAfterToggle(SCOPED, 1, true, [true, false, true, true, false]);
+  assert(next[2] === true, 'an unrelated criterion was switched off');
+  assert(next[3] === true, 'the drive group was switched off by a walk choice');
+});
+
+check('a layer in no scope group leaves every other layer alone', () => {
+  const next = C.enabledAfterToggle(SCOPED, 2, true, [true, false, false, true, false]);
+  assert(next[0] === true && next[3] === true, JSON.stringify(next));
+});
+
+check('the rule does not mutate what it was given', () => {
+  const enabled = [true, false, false, false, false];
+  C.enabledAfterToggle(SCOPED, 1, true, enabled);
+  assert(enabled[0] === true && enabled[1] === false, 'the input array was mutated');
+});
+
+check('scopeSiblings names the choice, and is empty where there is none', () => {
+  assert(JSON.stringify(C.scopeSiblings(SCOPED, 0)) === '[1]', 'walk pair not found');
+  assert(JSON.stringify(C.scopeSiblings(SCOPED, 4)) === '[3]', 'drive pair not found');
+  assert(JSON.stringify(C.scopeSiblings(SCOPED, 2)) === '[]', 'park claims a sibling');
+});
+
+check('a malformed manifest does not throw', () => {
+  assert(JSON.stringify(C.enabledAfterToggle(null, 0, true, null)) === '[]');
+  assert(JSON.stringify(C.scopeSiblings(undefined, 3)) === '[]');
+});
+
+check('the shipped manifest declares the grocery scopes, and at most one per group opens on',
+  () => {
+    const m = JSON.parse(fs.readFileSync(
+      path.join(__dirname, 'fixtures', 'published', 'manifest.json'), 'utf8'));
+    const groups = new Map();
+    m.layers.forEach((l, i) => {
+      if (!l.scope_group) return;
+      if (!groups.has(l.scope_group)) groups.set(l.scope_group, []);
+      groups.get(l.scope_group).push(i);
+    });
+    assert(groups.size >= 1, 'the shipped manifest declares no scope group at all');
+    for (const [group, idx] of groups) {
+      assert(idx.length >= 2, `scope group ${group} has ${idx.length} member, so it is no choice`);
+      const on = idx.filter((i) => C.layerOpensOn(m.layers[i]));
+      assert(on.length <= 1,
+        `${on.length} of scope group ${group} open switched on, and they intersect`);
+    }
+    console.log(`      ${groups.size} scope group(s): `
+      + [...groups.keys()].join(', '));
+  });
+
 console.log(failures === 0 ? '\nall card checks passed'
   : `\n${failures} card check(s) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

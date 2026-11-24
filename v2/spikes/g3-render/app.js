@@ -552,6 +552,9 @@
 
   function buildLayerRows(manifest) {
     el.layers.innerHTML = '';
+    //: Every row's own display refresh. Collected because choosing one scope changes ANOTHER
+    //: row's checkbox, and that row's label has to follow.
+    const syncs = [];
     manifest.layers.forEach((layer, i) => {
       const row = document.createElement('div');
       row.className = 'layer';
@@ -577,10 +580,18 @@
         valSpan.textContent = `<= ${slider.value} min`;
         row.classList.toggle('disabled', !checkbox.checked);
       };
+      syncs.push(sync);
       sync();
 
       checkbox.addEventListener('change', () => {
-        sync();
+        // Alternative SCOPES of the same question cannot both be on, because the worker
+        // intersects enabled criteria -- see `enabledAfterToggle`. The rule lives in card.js so
+        // Node can test it; this only applies its answer to the boxes.
+        const next = window.G3Card.enabledAfterToggle(
+          manifest.layers, i, checkbox.checked, currentThresholdsEnabled().enabled);
+        manifest.layers.forEach((_layer, j) => { $(`en-${j}`).checked = next[j]; });
+        // Assigning `.checked` fires no `change` event, so this cannot recurse.
+        syncs.forEach((f) => f());
         recompute('checkbox');
       });
       slider.addEventListener('input', () => {

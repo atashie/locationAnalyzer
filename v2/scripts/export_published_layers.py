@@ -81,6 +81,21 @@ METRO = get_metro()
 #: The labels changed with it. "Grocery shop, walk" meant all 553 records while it was the only
 #: grocery layer; with two of them shipping, "Supermarket" against "Any grocery shop" is the
 #: distinction a household is actually choosing between.
+#: Layers that are alternative SCOPES of the same question, and so must never both be enabled:
+#: the worker INTERSECTS enabled criteria, and ticking a broader scope beside a narrower one
+#: narrows the map instead of widening it. `card.js` enforces one-per-group in the UI. Owner ask
+#: 17, 2026-11-23.
+#:
+#: Grouped by MODE, not across modes: "within 20 minutes' walk of a supermarket" and "within 10
+#: minutes' drive of any grocery" are a sensible pair of criteria to hold at once, while
+#: "supermarket, walk" and "any grocery, walk" are two answers to one question.
+SCOPE_GROUPS = {
+    "own_triangle_supermarket_walk": "grocery-walk",
+    "own_triangle_grocery_walk": "grocery-walk",
+    "own_triangle_supermarket_drive": "grocery-drive",
+    "own_triangle_grocery_drive": "grocery-drive",
+}
+
 SOURCES = [
     ("own_triangle_supermarket_walk", "Supermarket, walk", 100.0, True, 20),
     ("own_triangle_grocery_walk", "Any grocery shop, walk", 100.0, False, 20),
@@ -760,6 +775,8 @@ def main(argv: list[str] | None = None) -> int:
             "value_file": f"{stem}.value.bin", "status_file": f"{stem}.status.bin",
             "source_shape": list(value.shape),
         }
+        if stem in SCOPE_GROUPS:
+            entry["scope_group"] = SCOPE_GROUPS[stem]
         db = None
         if dest is not None:
             dplane = reproject_plane(dest, transform, crs, src_fill=wire.DEST_NONE,
