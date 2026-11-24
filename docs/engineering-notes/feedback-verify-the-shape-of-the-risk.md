@@ -1674,3 +1674,66 @@ Measured cost of the whole repair: **the twenty proposals are unchanged**, and t
 twenty-two-month-old record with a blank field, which is what owner ask 11 is for.
 
 Sixty-three instances now.
+
+---
+
+## Instance 64, 2026-11-23: a saturated number priced a decision at a twentieth of its cost
+
+Owner ask 13(a) made `supermarket` the layer a household is served by default instead of
+`grocery`. I measured what that costs and reported, in a draft reply, that it was a cheap trade:
+**498,981 buildings keep an answer against 492,149, a drop of 1.3 points.**
+
+That number is correct and it is the wrong row. At the threshold the layer actually opens on, 20
+minutes' walk, the same two surfaces give **243,908 buildings against 176,983 -- 66,925 lost, 13.1
+points, 27% of the buildings that have an answer today.** Same surfaces, same denominator, one row
+up the table, and "cheap" becomes the largest single change this product has published.
+
+### Why the row I picked could not have answered the question
+
+The horizon is 7,200 s and the cutoff 120 minutes. Over two hours on foot nearly every building in
+the Triangle reaches *some* supermarket, so the *any answer at all* row is close to saturated for
+both layers and the difference between them is squeezed into the last point and a half. A
+saturated measure has no room left to show a difference, so it reports a small one whatever is
+true.
+
+The same instrument made the point unmissable one table over. Building-weighted drive coverage is
+**identical to four decimal places** for 553 groceries, 262 supermarkets, one hospital and one
+airport: 80.5677%, 511,926 buildings, every time. The surfaces are not copies -- the two drive
+surfaces differ on 110,090 cells, one slower by up to 17.2 minutes. At a two-hour drive horizon
+that total has stopped measuring destinations and is measuring **whether a building can reach the
+road network at all**, which is the same for every destination set because it is a fact about
+roads. Three unrelated destination sets agreeing exactly is the instrument saying so out loud.
+
+### What this shares with the sixty-three before it
+
+An instrument answering a narrower question than the one asked of it, and an answer read as though
+it had answered the wider one:
+
+* `footprint.REFUTED` means *not a supermarket*, because the floor is 650 m2. It was read as *no
+  shop here*.
+* A blank Foursquare `date_closed` in a 22-month-old snapshot means *no closure recorded by then*.
+  It was read as *the shop is open*.
+* A coverage total at a 120-minute horizon means *can reach the network*. I read it as *can reach a
+  supermarket*.
+
+Each time the number was correct, the arithmetic was right, and the sentence quoting it said
+something the number does not support.
+
+### The rule, and where it is now written
+
+**Before reading a coverage figure as a comparison, check whether it is saturated at the horizon
+applied.** If nearly everything is covered whatever the destination, the figure measures access to
+the network, not proximity to the destination. Report the threshold rows; report the total only to
+say what it is.
+
+Written up with the tables in
+`docs/engineering-notes/feedback-a-coverage-total-can-measure-the-wrong-thing.md`, and the
+thresholds are recorded beside the defaults in `export_published_layers.py` so the next person to
+change which layer opens on meets the cost where they make the change.
+
+What makes this one worth a number rather than a footnote: nothing was broken. No test could have
+gone red, because no code was wrong. The only defect was in the sentence I wrote around a true
+number, and the only defence is the one this ledger keeps arriving at -- say what the measure
+measures, in the sentence that quotes it.
+
+Sixty-four instances now.
