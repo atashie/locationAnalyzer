@@ -56,7 +56,27 @@ NEIGHBOUR = "neighbour"
 """A big building stands nearby but the point is not inside one. Geometry cannot decide."""
 
 REFUTED = "refuted"
-"""No building within reach is big enough. No supermarket stands here."""
+"""No building within reach is big enough, AND the area is covered by our building data. No
+supermarket stands here."""
+
+UNSURVEYED = "unsurveyed"
+"""We hold no building footprints for this place, so the geometry says nothing in either
+direction.
+
+Added 2026-11-23, after the fourth review of the week found the instrument asserting absence from
+missing data. Measured at the three records it was found on:
+
+    Publix Super Market at Middle Creek Crossings   nearest building of ANY size  10,606 m
+    Walmart Supercenter, Clayton                    nearest building of ANY size   2,857 m
+    Publix Super Market at Buffaloe Bend            nearest 203 m, 32 m2, 38 within 500 m
+
+A Walmart Supercenter is roughly 20,000 m2 of building, and OSM maps a `shop=supermarket` of that
+name 6.6 m from the second point. `REFUTED` was nevertheless written into
+`docs/experiments/audit/grocery-name-recovery.csv` for all three, as *"No supermarket stands here,
+whatever this record calls itself"*.
+
+15 of the 30 `REFUTED` records in the 2026-11-22 triage of the published uncorroborated layer have
+no building of any size within 500 m. Half that column meant this instead."""
 
 # ------------------------------------------------------------------------------- the two numbers
 
@@ -69,6 +89,16 @@ NEAR_LOOK_M = 120.0
 """How far the caller looks for buildings. Kept here with the floor so the two cannot drift apart
 in two scripts. A building found at this range can only ever produce `NEIGHBOUR`."""
 
+SURVEY_LOOK_M = 500.0
+"""How far the caller looks to decide whether we hold building data for this place AT ALL -- any
+building, at any size, not just one over the floor.
+
+Deliberately much wider than `NEAR_LOOK_M`. The question is different: `NEAR_LOOK_M` asks *is
+there a big building by this point*, and this asks *does our data cover this patch of ground*. At
+500 m a genuinely surveyed rural site still finds a shed or a house, and a gap in the download
+finds nothing. The 15 contaminated records each had ZERO buildings of any size inside it, and the
+two worst had none within 2.8 km and 10.6 km, so the threshold is not a close call for them."""
+
 
 class Corroboration(NamedTuple):
     """What the geometry says, and the two areas it says it with."""
@@ -80,12 +110,25 @@ class Corroboration(NamedTuple):
     """Area of the largest building the caller offered, contained or not."""
 
 
-def corroboration(point, nearby: Sequence) -> Corroboration:
+def corroboration(point, nearby: Sequence, *, surveyed: bool | None = None) -> Corroboration:
     """Judge a point against the buildings within `NEAR_LOOK_M` of it.
 
     `point` and `nearby` must be in a projected CRS in **metres** -- areas are read straight off
     the geometry. The caller does the spatial selection, because it holds the index; this function
     holds the rule.
+
+    `surveyed` says whether we hold building data for this place at all: pass
+    `bool(any building of ANY size within SURVEY_LOOK_M)`. The caller has to answer it because
+    only the caller holds the index, and `nearby` cannot: an empty `nearby` means EITHER that
+    nothing big stands here OR that our data does not cover here, and those are different
+    findings.
+
+      * `surveyed=True`  -- data present. `REFUTED` means no supermarket stands here.
+      * `surveyed=False` -- no data. `UNSURVEYED`, which supports no conclusion either way.
+      * `surveyed=None`  -- the caller did not ask. Behaves exactly as before this argument
+        existed, because silently reclassifying an existing caller's refusals would rewrite
+        conclusions nobody re-measured. Absence of the claim is not the claim -- which is the same
+        rule this whole verdict exists to enforce.
     """
     host = 0.0
     near = 0.0
@@ -100,10 +143,18 @@ def corroboration(point, nearby: Sequence) -> Corroboration:
         if geom.intersects(point) and area > host:
             host = area
 
+    if surveyed is False and (host > 0.0 or near > 0.0):
+        raise ValueError(
+            f"surveyed=False was passed with a building in hand ({near:,.0f} m2 nearby), and a "
+            "building proves the area HAS data. One of the two is wrong, and guessing which is "
+            "how a silent wrong verdict reaches a published sheet")
+
     if host >= FLOOR_M2:
         verdict = CORROBORATED
     elif near >= FLOOR_M2:
         verdict = NEIGHBOUR
+    elif surveyed is False:
+        verdict = UNSURVEYED
     else:
         verdict = REFUTED
     return Corroboration(verdict, host, near)
@@ -129,7 +180,16 @@ def why_not_corroborated(got: Corroboration) -> str:
             f"is how Discount Tire came to corroborate a Lowes Foods. A footprint is an upper "
             f"bound on the shop inside it, so a building the point is not in says nothing"
         )
+    if got.verdict == UNSURVEYED:
+        return (
+            f"we hold NO BUILDING DATA for this place -- not a small building, none at all within "
+            f"{SURVEY_LOOK_M:.0f} m. So the footprint supports no conclusion in either direction, "
+            f"and in particular it does NOT say the site is empty. This verdict exists because "
+            f"the refusal below was written into a sheet for three large chain stores whose "
+            f"nearest building of any size was 203 m, 2.8 km and 10.6 km away"
+        )
     return (
         f"the largest building within {NEAR_LOOK_M:.0f} m is {got.near_m2:,.0f} m2, under the "
-        f"{FLOOR_M2:,.0f} m2 floor. No supermarket stands here, whatever this record calls itself"
+        f"{FLOOR_M2:,.0f} m2 floor, and our building data DOES cover this place. No supermarket "
+        f"stands here, whatever this record calls itself"
     )

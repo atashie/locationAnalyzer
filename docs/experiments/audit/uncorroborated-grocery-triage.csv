@@ -2,7 +2,7 @@ id,name,address,cells,verdict,host_m2,near_m2,suite,company,producer,no_address
 7a49bf61-5f7f-4e40-9b88-ecbf218f6107,Jean's Neighborhood Market,"38 Lewter Shop Rd, Apex",4554,refuted,331.6,331.6,False,False,False,False
 a83150ff-265c-4e91-b791-89c93d29889e,Homestead Harvest Farm,"3721 Graham Sherron Rd, Wake Forest",3590,refuted,161.9,161.9,False,False,True,False
 55ebe45c-fbd3-4ec0-9cc8-1e529ea6cbdd,Allen Powell Memorial Collard Patch,"2107 Hamlin Rd, Durham",3228,refuted,203.1,203.1,False,False,True,False
-22eeb716-36fe-4696-9bdd-a54918b40dd8,ABC Meats,"6811 Oak Grove Church Rd, Mebane",2897,refuted,0.0,0.0,False,False,False,False
+22eeb716-36fe-4696-9bdd-a54918b40dd8,ABC Meats,"6811 Oak Grove Church Rd, Mebane",2897,unsurveyed,0.0,0.0,False,False,False,False
 e548c2e2-db94-456e-b3eb-3ce0947b5ca9,May's Grocery,"4072 Mays Store Rd, Franklinton",2493,refuted,0.0,154.2,False,False,False,False
 b800947e-2939-4a9d-a985-2b6edd0d59d9,Foodmart,"7723 Guess Rd, Hillsborough",2400,refuted,577.7,577.7,False,False,False,False
 f2057db8-e3b8-4a4a-8932-784f245067dd,Funny Girl Farm,"504 Erwin Rd, Durham",1875,refuted,151.9,227.6,False,False,True,False
@@ -19,7 +19,7 @@ d9283ba3-23d2-472e-9ef6-8738062fe2c9,Tortilleria El Rodeo Mexican store ,"110 Bo
 c9c8235c-8860-4c38-a06a-5731865ea0a4,Variedades Orozco,"3119 Guess Rd, Durham",641,refuted,150.3,592.9,False,False,False,False
 89b985a6-a61a-4a46-b2de-32dfb08df47b,Jerusalem Inc,"201 Central Ave, Butner",598,refuted,206.4,590.7,False,True,False,False
 d2f1e817-cb2f-4a48-b6d3-75765a460fc0,No longer,"1025 Blue Ridge Rd, Raleigh",540,neighbour,0.0,4365.7,False,False,False,False
-c2b874a3-cff2-42a9-a889-e2b1206f5e85,KismetCrackers,"9522 Hampton Rd, Rougemont",499,refuted,0.0,0.0,False,False,False,False
+c2b874a3-cff2-42a9-a889-e2b1206f5e85,KismetCrackers,"9522 Hampton Rd, Rougemont",499,unsurveyed,0.0,0.0,False,False,False,False
 7d1e5255-55ab-41ed-9233-46f42653897c,El Ranchito,"3110 New Bern Ave #112, Raleigh",437,neighbour,0.0,4303.7,False,False,False,False
 c8531647-c9ed-4440-9366-3803355f77e8,AZ Halal and Mangoes,"1015 Glendale Chase Ct, Morrisville",421,neighbour,0.0,1083.8,False,False,False,False
 f0f627ed-9836-49d2-abe3-8a197ebc5447,Strong America Nc Llc,"3400 Westgate Dr Ste 14a, Durham",416,neighbour,0.0,4695.3,True,True,False,False
@@ -61,17 +61,17 @@ dc09b073-d0ac-4141-8275-3127c748878d,Roofing Inc.,"206 New Edition Ct, Cary",16,
 baa84496-a937-4098-949f-2ae51d3a242e,INTERFOOD 3 HERMANOS 2,"4020 Capital Boulevard, Raleigh",9,corroborated,17274.1,17274.1,False,False,False,False
 5f7edf5e-5888-4db4-9ac2-03d065839483,Tar Heel Marketplace,"110 Pheasant Wood Ct, Morrisville",4,corroborated,718.9,1604.4,False,False,False,False
 bfc169f3-0cd0-46d3-8b79-77d7ef5aba4e,Tortilleria Y Carniceria Migueleña,"3205 University Dr, Durham",1,corroborated,1371.6,1371.6,False,False,False,False
-5fd1dd37-da52-4a32-b98b-57b128018325,Amish Roots Bulk Foods,"201 Post Office Rd, Moncure",0,refuted,0.0,0.0,False,False,False,False
-ad7e27f1-64d6-4bb1-b52c-aae63fbb3426,"Ohm Mahalaxmi, Inc","4956 S NC Highway 54, Graham",0,refuted,0.0,0.0,False,True,False,False
-cd80c125-6a96-4050-bc21-b0b4cd35b56b,The Fruit Shack,"1206 E Main St, Haw River",0,refuted,0.0,0.0,False,False,False,False
-f4f83562-7244-4d65-9f15-7c7a02a9c700,McKee Foods Corp,"106 Gibson Rd, Mebane",0,refuted,0.0,0.0,False,True,False,False
-4af025ec-f8f8-405f-8f5f-183dea5b4a43,SpicesHut FUQUAY,"1301 N Judd Pkwy NE, Fuquay-Varina",0,refuted,0.0,0.0,False,False,False,False
-d507fffd-3a37-42c2-958e-6f8c2a1a2a6d,Ciudad Caribe ,"1308 N Main St, Fuquay-Varina",0,refuted,0.0,0.0,False,False,False,False
-e1590944-81ec-48d3-a694-8bd6acc8a297,Grocerind,"624 Lakestone Commons Ave, Fuquay-Varina",0,refuted,0.0,0.0,False,False,False,False
-0d534c57-1043-4096-9f8f-8a7be191f6e2,Wilkerson Farms,"7630 Panther Lake Rd, Willow Spring",0,refuted,0.0,0.0,False,False,True,False
-c1c158fc-6fd1-4433-a537-acce467a02e9,Wilson's Family Market,"5368 Wilsons Mills Rd, Clayton",0,refuted,0.0,0.0,False,False,False,False
-3b089889-3aba-439a-ad1e-fad1ffcdac15,The Shop @ 268,"268 Derann Dr, Timberlake",0,refuted,0.0,0.0,False,False,False,False
+5fd1dd37-da52-4a32-b98b-57b128018325,Amish Roots Bulk Foods,"201 Post Office Rd, Moncure",0,unsurveyed,0.0,0.0,False,False,False,False
+ad7e27f1-64d6-4bb1-b52c-aae63fbb3426,"Ohm Mahalaxmi, Inc","4956 S NC Highway 54, Graham",0,unsurveyed,0.0,0.0,False,True,False,False
+cd80c125-6a96-4050-bc21-b0b4cd35b56b,The Fruit Shack,"1206 E Main St, Haw River",0,unsurveyed,0.0,0.0,False,False,False,False
+f4f83562-7244-4d65-9f15-7c7a02a9c700,McKee Foods Corp,"106 Gibson Rd, Mebane",0,unsurveyed,0.0,0.0,False,True,False,False
+4af025ec-f8f8-405f-8f5f-183dea5b4a43,SpicesHut FUQUAY,"1301 N Judd Pkwy NE, Fuquay-Varina",0,unsurveyed,0.0,0.0,False,False,False,False
+d507fffd-3a37-42c2-958e-6f8c2a1a2a6d,Ciudad Caribe ,"1308 N Main St, Fuquay-Varina",0,unsurveyed,0.0,0.0,False,False,False,False
+e1590944-81ec-48d3-a694-8bd6acc8a297,Grocerind,"624 Lakestone Commons Ave, Fuquay-Varina",0,unsurveyed,0.0,0.0,False,False,False,False
+0d534c57-1043-4096-9f8f-8a7be191f6e2,Wilkerson Farms,"7630 Panther Lake Rd, Willow Spring",0,unsurveyed,0.0,0.0,False,False,True,False
+c1c158fc-6fd1-4433-a537-acce467a02e9,Wilson's Family Market,"5368 Wilsons Mills Rd, Clayton",0,unsurveyed,0.0,0.0,False,False,False,False
+3b089889-3aba-439a-ad1e-fad1ffcdac15,The Shop @ 268,"268 Derann Dr, Timberlake",0,unsurveyed,0.0,0.0,False,False,False,False
 6098ae5b-2002-4844-91a6-8400c7f739c6,Body Agape Holistic,"1003 Mulford Ct  # 751, Knightdale",0,corroborated,775.3,775.3,False,False,False,False
-42f6d72b-689b-4279-96ab-4b15c863c22c,From GMA 2 U,"303 N Arendell Ave, Zebulon",0,refuted,0.0,0.0,False,False,False,False
-b43e2619-7ea5-43e3-8753-f81ba4d209c1,Baileys store LLC,"6708 Zebulon Rd, Wake Forest",0,refuted,0.0,0.0,False,True,False,False
-dd390b99-af9a-49ef-92a2-62c5209ebe91,Hamm's Greenhouse,"136 Oak Grove Church Rd, Youngsville",0,refuted,0.0,0.0,False,False,True,False
+42f6d72b-689b-4279-96ab-4b15c863c22c,From GMA 2 U,"303 N Arendell Ave, Zebulon",0,unsurveyed,0.0,0.0,False,False,False,False
+b43e2619-7ea5-43e3-8753-f81ba4d209c1,Baileys store LLC,"6708 Zebulon Rd, Wake Forest",0,unsurveyed,0.0,0.0,False,True,False,False
+dd390b99-af9a-49ef-92a2-62c5209ebe91,Hamm's Greenhouse,"136 Oak Grove Church Rd, Youngsville",0,unsurveyed,0.0,0.0,False,False,True,False

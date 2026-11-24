@@ -165,3 +165,103 @@ def test_the_other_script_keeps_the_same_floor():
     found = re.search(r"^FLOOR_M2 = ([\d.]+)", src, re.MULTILINE)
     assert found, "FLOOR_M2 is no longer defined in shortlist_brandless_grocery.py"
     assert float(found.group(1)) == FLOOR_M2
+def small_building():
+    """A building well under the weekly-shop floor, for the cases that need data present but
+    nothing big. 10 m square, so 100 m2 against a 650 m2 floor."""
+    from shapely.geometry import Polygon
+
+    return Polygon([(-5, -5), (5, -5), (5, 5), (-5, 5)])
+# ----------------------------------------------------------------------------------------------
+# A verdict for "we hold no building data here", 2026-11-23.
+
+
+def test_an_unsurveyed_place_is_not_refuted():
+    """`REFUTED` asserts no supermarket stands here. That is only sayable where the building data
+    is PRESENT, and at two of the three sites this was found on, the nearest building of any size
+    is 2.8 km and 10.6 km away. An empty `nearby` means one of two completely different things and
+    the old rule returned the same verdict for both."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import REFUTED, UNSURVEYED, corroboration
+
+    got = corroboration(Point(0, 0), [], surveyed=False)
+    assert got.verdict == UNSURVEYED
+    assert got.verdict != REFUTED
+    assert (got.host_m2, got.near_m2) == (0.0, 0.0)
+
+
+def test_an_unsurveyed_place_does_not_license_a_weekly_shop_either():
+    """The asymmetry is unchanged: not knowing is not a yes. `UNSURVEYED` must fail the licence
+    exactly as `REFUTED` does, so this change can only ever REMOVE a false refusal and never add a
+    false admission."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import corroboration, licenses_supermarket
+
+    assert not licenses_supermarket(corroboration(Point(0, 0), [], surveyed=False))
+    assert not licenses_supermarket(corroboration(Point(0, 0), [], surveyed=True))
+    assert not licenses_supermarket(corroboration(Point(0, 0), [], surveyed=None))
+
+
+def test_a_surveyed_empty_site_is_still_refuted():
+    """Where the data IS present and nothing big stands there, the verdict is unchanged. This is
+    the case the floor was calibrated for."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import REFUTED, corroboration
+
+    got = corroboration(Point(0, 0), [small_building()], surveyed=True)
+    assert got.verdict == REFUTED
+
+
+def test_not_saying_whether_a_place_is_surveyed_keeps_the_old_answer():
+    """Every existing caller passes no such argument, and silently reclassifying their refusals
+    would rewrite conclusions nobody re-measured. Absence of the claim is not the claim."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import REFUTED, corroboration
+
+    assert corroboration(Point(0, 0), []).verdict == REFUTED
+    assert corroboration(Point(0, 0), [], surveyed=None).verdict == REFUTED
+
+
+def test_claiming_unsurveyed_while_offering_a_building_is_refused():
+    """A building in hand proves the area HAS data. A caller saying both is confused, and guessing
+    which half it meant is how a silent wrong verdict gets published."""
+    import pytest
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import corroboration
+
+    with pytest.raises(ValueError, match="surveyed"):
+        corroboration(Point(0, 0), [small_building()], surveyed=False)
+
+
+def test_the_unsurveyed_sentence_does_not_say_nothing_is_there():
+    """The sentence is the whole point of the verdict. `why_not_corroborated` already keeps *we
+    cannot tell* apart from *nothing is here*; this is a third thing, and it must not be readable
+    as either."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import corroboration, why_not_corroborated
+
+    sentence = why_not_corroborated(corroboration(Point(0, 0), [], surveyed=False))
+    assert sentence
+    lowered = sentence.lower()
+    assert "no supermarket stands here" not in lowered
+    assert "no building data" in lowered or "not covered" in lowered
+    assert "supports no conclusion" in lowered or "says nothing" in lowered
+
+
+def test_the_refuted_sentence_now_states_what_it_assumes():
+    """It asserted "No supermarket stands here, whatever this record calls itself" with no
+    qualifier, and that sentence was written into a sheet for three large chain stores that our
+    building data does not cover. The claim is sound only where the data is present, so it says
+    so."""
+    from shapely.geometry import Point
+
+    from locfinder.places.footprint import corroboration, why_not_corroborated
+
+    sentence = why_not_corroborated(corroboration(Point(0, 0), [small_building()], surveyed=True))
+    assert "No supermarket stands here" in sentence
+    assert "building data" in sentence.lower()

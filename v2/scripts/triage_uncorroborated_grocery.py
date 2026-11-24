@@ -35,6 +35,8 @@ from locfinder.places.footprint import (  # noqa: E402
     NEAR_LOOK_M,
     NEIGHBOUR,
     REFUTED,
+    SURVEY_LOOK_M,
+    UNSURVEYED,
     corroboration,
 )
 
@@ -97,7 +99,14 @@ def main() -> None:
         pid = str(rec["id"])
         nm, addr = name_of(rec), address_of(rec)
         near = list(bidx.query(rec.geometry.buffer(NEAR_LOOK_M), predicate="intersects"))
-        got = corroboration(rec.geometry, [bld.geometry.iloc[h] for h in near])
+        # Does our building data cover this place AT ALL? An empty `near` means either that
+        # nothing big stands here or that the download does not reach here, and before 2026-11-23
+        # both came back `REFUTED`. 15 of the 30 refusals in the first run of this sheet were the
+        # second kind.
+        surveyed = bool(list(bidx.query(rec.geometry.buffer(SURVEY_LOOK_M),
+                                        predicate="intersects")))
+        got = corroboration(rec.geometry, [bld.geometry.iloc[h] for h in near],
+                            surveyed=surveyed)
         out.append({
             "id": pid, "name": nm, "address": addr,
             "cells": cells.get(pid, 0),
@@ -112,11 +121,20 @@ def main() -> None:
 
     print()
     print("=== what the FOOTPRINT says about the 76 ===")
-    for v in (CORROBORATED, NEIGHBOUR, REFUTED):
+    verdicts = (CORROBORATED, NEIGHBOUR, REFUTED, UNSURVEYED)
+    for v in verdicts:
         sel = [r for r in out if r["verdict"] == v]
         c = sum(r["cells"] for r in sel)
         print(f"  {v:<13} {len(sel):>3} records   {c:>7,} cells answered")
-    print(f"  (floor {FLOOR_M2:.0f} m2, look {NEAR_LOOK_M:.0f} m)")
+    print(f"  (floor {FLOOR_M2:.0f} m2, look {NEAR_LOOK_M:.0f} m, "
+          f"survey look {SURVEY_LOOK_M:.0f} m)")
+    # The first run after UNSURVEYED existed printed 23 + 23 + 15 = 61 of 76 records and said
+    # nothing about the missing 15, because this loop named three verdicts and the data now has
+    # four. A summary that does not add up to its population is not a summary.
+    counted = sum(len([r for r in out if r["verdict"] == v]) for v in verdicts)
+    assert counted == len(out), (
+        f"{counted} of {len(out)} records are covered by the summary, so a verdict is missing "
+        f"from it: {sorted({r['verdict'] for r in out} - set(verdicts))}")
 
     print()
     print("=== the name/address signals, which cost nothing ===")
@@ -129,7 +147,15 @@ def main() -> None:
               f"{sum(r['cells'] for r in sel):>7,} cells")
 
     print()
-    print("=== REFUTED by footprint: nothing big enough stands there ===")
+    uns = sorted((r for r in out if r["verdict"] == UNSURVEYED), key=lambda r: -r["cells"])
+    if uns:
+        print("=== UNSURVEYED: we hold no building data here, so the footprint says NOTHING ===")
+        print(f"{'cells':>7}  name / address")
+        for r in uns:
+            print(f"{r['cells']:>7,}  {r['name'][:36]:<36} {r['address'][:44]}")
+        print()
+
+    print("=== REFUTED: nothing big enough stands there, and our data DOES cover the place ===")
     ref = sorted((r for r in out if r["verdict"] == REFUTED), key=lambda r: -r["cells"])
     print(f"{'cells':>7}  {'host m2':>8} {'near m2':>8}  name / address")
     for r in ref:

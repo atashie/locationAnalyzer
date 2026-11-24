@@ -76,6 +76,8 @@ from locfinder.places.footprint import (  # noqa: E402
     FLOOR_M2,
     NEAR_LOOK_M,
     NEIGHBOUR,
+    SURVEY_LOOK_M,
+    UNSURVEYED,
     corroboration,
     licenses_supermarket,
     why_not_corroborated,
@@ -147,7 +149,14 @@ def main() -> None:
         pid = str(rec.get("id"))
 
         near = list(bidx.query(rec.geometry.buffer(NEAR_LOOK_M), predicate="intersects"))
-        geom = corroboration(rec.geometry, [bld.geometry.iloc[h] for h in near])
+        # See `SURVEY_LOOK_M`. This sheet recorded "No supermarket stands here, whatever this
+        # record calls itself" for two Publix stores and a Walmart Supercenter whose nearest
+        # building of ANY size is 203 m, 2.8 km and 10.6 km away. That was the instrument
+        # asserting absence from missing data, and this is the question that separates the two.
+        surveyed = bool(list(bidx.query(rec.geometry.buffer(SURVEY_LOOK_M),
+                                        predicate="intersects")))
+        geom = corroboration(rec.geometry, [bld.geometry.iloc[h] for h in near],
+                             surveyed=surveyed)
 
         reached["service"] += 1
         if names_a_service_point(name):
