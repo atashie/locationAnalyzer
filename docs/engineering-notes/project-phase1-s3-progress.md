@@ -41,7 +41,133 @@ it was built, at the top of the document a resuming session reads first.
 
 ## In flight right now, and what comes next
 
-### CURRENT STATE, 2026-11-19. Read this block first; everything below it is older.
+### CURRENT STATE, 2026-11-24. Read this block first; everything below it is older.
+
+**Nothing is running.** `v2-rethink` at **`d53f5b5`**, pushed, working tree clean. V2 suite
+**1,848 passed, 0 failed, 26 skipped**, plus **9 card checks** in `card_selftest.mjs`.
+*(`pyproject.toml` sets `addopts = "-q"`, so `pytest -q` prints no summary line -- use
+`--junitxml` for totals.)*
+
+**Six owner decisions shipped on 2026-11-23.** The bundle was **republished twice that day**; the
+second one ships, and every figure in this block is the second unless it says otherwise.
+
+| ask | decision | where |
+|---|---|---|
+| 13(a) | the layer a household opens with becomes `supermarket`, broader set switchable | `5152cd0`, `bd87cc2` |
+| 14 | remove the two records `classify_grocery` refuses | `053dc97` |
+| 15 | remove 11 records that are not shops you can walk into | `59a589f` |
+| 16 | rebuild the drive layer and give it a destination plane | `aed88c8`, `890856c` |
+| 17 | grocery scope is a CHOICE, not a second checkbox | `035bf2c` |
+| 18 | admit the 3 chain stores whose Overture `brand` is empty | `1c281a1` |
+
+**LIVE NUMBERS, AND WHAT THEY ARE NUMBERS OF.** Never write a bare "grocery is N".
+
+| | count | what it counts |
+|---|---:|---|
+| `grocery`, selected | **542** | 555 -> 553 (ask 14) -> 542 (ask 15) |
+| `grocery`, published | **542** | bundle rebuilt 2026-11-23 23:30, so selected and published AGREE for the first time since 2026-11-14 |
+| `supermarket`, selected | **265** | 242 -> 262 (inclusions reaching it) -> 265 (ask 18) |
+| `supermarket`, **inside the published grid** | **209** | **56 of the 265 are OUTSIDE it** |
+| `specialty_grocery`, selected | **32** | one ask-15 removal was published as a specialty grocer |
+| cells answered, `supermarket_walk` | **246,950** | the layer that opens on |
+| cells answered, `grocery_walk` | **258,048** | switchable; 449 fewer than before ask 15 |
+| cells answered, either drive layer | **267,317** | both now carry a destination plane |
+
+Table sizes, which have been wrong in prose before: `EXCLUDED_PLACE_IDS` **27**,
+`PENDING_CLOSURES` **6** (was 8; two superseded by ask 15), `FSQ_CONFIRMED_CLOSURES` **12**,
+`INCLUDED_PLACE_IDS["grocery"]` **23** (all 23 now reach `supermarket`),
+`CURATED_CHAIN_SUPERMARKETS` **3**, `CURATED_INDEPENDENT_SUPERMARKETS` **2**,
+`NAME_CONFIRMED_SUPERMARKETS` **7**, `OSM_CONFIRMED_SUPERMARKETS` **28**,
+`SUPERMARKET_BRANDS` **17**.
+
+**THE FOUR THINGS MOST LIKELY TO BE MISREAD AFTER COMPACTION.**
+
+1. **"265 supermarkets" is not 265 shops on the map.** 56 of them lie outside the published grid
+   (lat 35.7000..36.1500, lon -79.2000..-78.5000); 209 are inside. The 56 still serve cells near
+   the edge, so the selection count is the right routing input and the wrong thing to call
+   "published". `Publix Super Market at Middle Creek Crossings`, admitted under ask 18, is ~11 km
+   south of the southern edge and appears in NO destination table -- ask 18 admitted all three and
+   one of them cannot change what a household here sees.
+2. **The cost of 13(a) is a FAILED THRESHOLD, not a lost answer.** At the layer's 20-minute
+   opening value, 66,929 buildings that pass under `grocery` fail under `supermarket`. They still
+   have an answer; 19 minutes became 21. Only **6,832** lose an answer entirely, at the 120-minute
+   horizon. The denominator is **512,633 structures**, and Overture carries no residential flag
+   here, so a shed and a tower block count alike -- it cannot be restated as households. These are
+   also **source-grid** counts, taken before the exporter reprojects.
+3. **`footprint.REFUTED` changed meaning on 2026-11-23.** It now also asserts that our building
+   data COVERS the place; where it does not, the verdict is **`UNSURVEYED`**, which supports no
+   conclusion either way. **15 of the 30 records the 2026-11-22 triage called REFUTED were
+   missing data**, so any prose quoting "30 refuted" is superseded. The real split is 23
+   corroborated / 23 neighbour / 15 refuted / 15 unsurveyed.
+4. **The bundle was republished twice on 2026-11-23.** The first carried 13(a), 14 and 16 and is
+   where "303 cells changed shop" comes from -- exactly ask 14's 44 + 259. The second added 15, 17
+   and 18 and is where "449 cells lost, 3,733 changed shop" comes from. The two are not the same
+   measurement.
+
+**WHAT IS NEW IN THE CODE** and would be re-derived expensively:
+
+* `locfinder/places/footprint.py` -- `UNSURVEYED`, `SURVEY_LOOK_M = 500.0`, and
+  `corroboration(..., surveyed=None|True|False)`. `surveyed=None` behaves exactly as before, on
+  purpose: silently reclassifying an existing caller's refusals would rewrite conclusions nobody
+  re-measured. Passing `surveyed=False` with a building in hand raises.
+* `locfinder/traveltime/speeds.py` -- `symmetrise_for_mode(G, mode)` and `GRAPH_MODES`. Adding a
+  reverse edge to every one-way road is valid for walking ONLY. The rule previously lived in
+  comments at 26 call sites in three spellings, two with no condition at all. **25 call sites are
+  still on the old pattern**; all are walk-mode and correct today.
+* `locfinder/places/grocery.py` -- `CURATED_CHAIN_SUPERMARKETS`, hand-curated, written by no
+  script (a test scans `scripts/` to prove it). `NAME_CONFIRMED_SUPERMARKETS` and
+  `OSM_CONFIRMED_SUPERMARKETS` are REGENERABLE and an entry put in either is erased by the next
+  data refresh.
+* `locfinder/places/categories.py` -- `inclusions_from` on `supermarket` and `specialty_grocery`,
+  and inclusions are now admitted BEFORE the class filter. An admission answers *is this a
+  grocery*, not *is this a weekly shop*.
+* `scripts/export_published_layers.py` -- refuses BEFORE writing anything when the bundle
+  directory holds a file belonging to no layer it publishes (`files_outside_these_layers`), and
+  again after (`undeclared_files`). `--allow-undeclared` overrides. This caught two orphan
+  `cell200` files served since 2026-11-13 with no manifest record or licence entry.
+* `scripts/persist_selected_destination.py` and `scripts/flag_restricted_routes.py` -- both take
+  `--category` and `--mode`, defaulting to today's values, with the surface checked for on disk
+  before the graph build.
+* `spikes/g3-render/card.js` -- `enabledAfterToggle` and `scopeSiblings`, with `scope_group` in
+  the manifest. Criteria are INTERSECTED, so alternative scopes must never both be on.
+
+**STILL OPEN, and none of it is blocked on work rather than a decision except where said.**
+
+1. **Four farms held under ask 15**: `Homestead Harvest Farm` (3,590 cells), `Currin Farm`
+   (1,618), `Wilkerson Farms` (0), `Hamm's Greenhouse` (0). Held rather than removed because two
+   others were checked and KEPT -- `Funny Girl Farm` has a farm stand with posted hours and
+   `Allen Powell Memorial Collard Patch` is an operating family farm selling direct. A farm is not
+   a category this project removes without checking the individual place.
+2. **The flag writer stamps a surface fingerprint it has not verified** --
+   `flag_restricted_routes.py` fingerprints whatever stored surface sits at the stem without
+   checking its own recomputation matches, which the destination writer does check. Mine to fix.
+3. **The ask-14 contradiction guard skips on a clean checkout**, because the accepted-places
+   parquet is gitignored. A green suite on a fresh clone does not establish that it ran.
+4. **Nothing has rendered either 2026-11-23 bundle in a browser.** Two republishes with no human
+   looking at the map. The overlay still needs a panel-scrollbar drag to first paint.
+5. **`measure_drawn_pixel.py` and the walked-cell record still read `own_triangle_grocery_walk`**,
+   which is no longer the layer a household opens with.
+6. Carried from before: the 43 WEAK rows, the three remaining held bays, the pharmacy shortlist,
+   FSQ promotion to the identity pass, a reading test with a non-technical person, one click of
+   Auto-bench, one repeat walk of `band15min_pass-03`, the Apache §4(b) publication question, the
+   band choice for §12 item 6, E1c's interval method and the exact-distance cap, the 30-second-unit
+   encoding decision, 28 candidate destinations and 4 masked identities.
+
+**Reviews.** The 2026-11-23 Codex pass is in `docs/reviews/2026-11-23-supermarket-default-layer-*`
+-- prompt, raw reply and findings, with the findings recorded before any repair. Every checkable
+claim was reproduced locally first; all reproduced. The risk ledger
+[[feedback-verify-the-shape-of-the-risk]] is at **64 instances**; 64 is a saturated coverage number
+priced at a twentieth of its real cost, and
+[[feedback-a-coverage-total-can-measure-the-wrong-thing]] is its write-up.
+
+**Communication.** The owner corrected the reply style a third time on 2026-11-23:
+[[feedback-write-for-a-reader-who-was-not-here]]. Every ask must carry what is being asked, what
+goes wrong if it is left alone, and the recommendation, and must be answerable without scrolling.
+Run reports through the `plain-english` skill.
+
+---
+
+### CURRENT STATE, 2026-11-19. Superseded by the block above; kept for its own history.
 
 **Nothing is running.** `v2-rethink` at **`7bed67b`**, pushed, working tree clean. V2 suite
 **1,722 passed, 24 skipped**. *(`pyproject.toml` sets `addopts = "-q"`, so `pytest -q` becomes
