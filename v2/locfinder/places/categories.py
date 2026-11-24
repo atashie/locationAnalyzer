@@ -28,6 +28,13 @@ WEDGE_CATEGORIES: dict[str, dict] = {
         "exclude_primary": {"farmers_market"},
         "osm": {("shop", "supermarket")},
         "grocery_classes": {"supermarket"},
+        # The 23 owner admissions are keyed on `grocery`, and they exist BECAUSE Overture files
+        # those records outside `grocery_store` -- an Aldi as `discount_store`, a Walmart as
+        # `department_store`. Without this key the taxonomy mask drops all 23 and the default
+        # layer loses 20 of the metro's largest shops. Named rather than inherited by prefix, so
+        # a future category cannot pick up somebody else's admissions by being called
+        # `grocery_something`.
+        "inclusions_from": "grocery",
     },
     "specialty_grocery": {
         "overture_primary": set(),
@@ -35,6 +42,7 @@ WEDGE_CATEGORIES: dict[str, dict] = {
         "exclude_primary": {"farmers_market"},
         "osm": {("shop", "greengrocer")},
         "grocery_classes": {"specialty"},
+        "inclusions_from": "grocery",
     },
     "park": {
         "overture_primary": {"park", "state_park", "national_park"},
@@ -123,6 +131,27 @@ def select_overture(gdf, category: str):
     """
     spec = WEDGE_CATEGORIES[category]
     mask = gdf["taxonomy"].apply(lambda t: taxonomy_matches(t, spec)).to_numpy(dtype=bool)
+    # Owner decisions about what a record IS, applied at the one chokepoint every builder and
+    # script goes through, so none can route around them by accident. See `exclusions`.
+    #
+    # INCLUSIONS FIRST, THEN THE CLASS FILTER, THEN EXCLUSIONS. Each step of that order is a
+    # decision:
+    #
+    # * An inclusion is admitted ahead of the class filter rather than OR-ed in after it, because
+    #   an admission answers *is this record a grocery*, which is not the same question as *is
+    #   this a shop you could do a weekly shop at*. A specialty grocer the owner admitted belongs
+    #   in the switchable layer, not in the default one. Before 2026-11-23 the inclusion was
+    #   OR-ed in last, which both missed the narrow categories entirely and would have let an
+    #   admission skip the class filter had it reached them.
+    # * A record in both tables is DROPPED. `EXCLUDED_PLACE_IDS` is the owner saying "this is not
+    #   the thing it claims to be", which is a stronger statement than "count this one in", and a
+    #   test asserts the precedence so a later reordering cannot quietly reverse it.
+    forced = forced_into(category)
+    inherits = spec.get("inclusions_from")
+    if inherits:
+        forced = forced | forced_into(inherits)
+    if forced and "id" in getattr(gdf, "columns", ()):
+        mask = mask | gdf["id"].isin(forced).to_numpy(dtype=bool)
     # A category may narrow the taxonomy match by what the record IS rather than how it is tagged.
     wanted = spec.get("grocery_classes")
     if wanted:
@@ -130,16 +159,6 @@ def select_overture(gdf, category: str):
         from .grocery import classify_grocery
         keep = _np.array([classify_grocery(r) in wanted for _, r in gdf.iterrows()], dtype=bool)
         mask = mask & keep
-    # Owner decisions about what a record IS, applied at the one chokepoint every builder and
-    # script goes through, so none can route around them by accident. See `exclusions`.
-    #
-    # INCLUSIONS FIRST, THEN EXCLUSIONS, and the order is the decision: a record in both tables is
-    # dropped. `EXCLUDED_PLACE_IDS` is the owner saying "this is not the thing it claims to be",
-    # which is a stronger statement than "count this one in", and a test asserts the precedence so
-    # a later reordering cannot quietly reverse it.
-    forced = forced_into(category)
-    if forced and "id" in getattr(gdf, "columns", ()):
-        mask = mask | gdf["id"].isin(forced).to_numpy(dtype=bool)
     out = drop_excluded(gdf[mask])
     return out.sort_values("id") if "id" in out.columns else out
 

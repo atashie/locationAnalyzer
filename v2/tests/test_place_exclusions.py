@@ -577,13 +577,53 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     """A count quoted without a date is meaningless, so the number the notes carry is pinned here.
 
     **This is a count of what the SELECTOR returns, not of what the published bundle contains.**
-    The bundle has not been rebuilt since 2026-11-14 and contains a different population; both
-    sixth-pass reviewers ranked that gap above every other finding. If this test and the published
-    artifact ever need to agree, that is a rebuild, not an edit to this number.
+    The published walk bundle was rebuilt from this selector on 2026-11-22 (ask 7) and agrees with
+    the 555; the published DRIVE layer was built on 2026-11-16 and does not. If this test and a
+    published artifact disagree, that is a rebuild, not an edit to these numbers.
+
+    `supermarket` moved from 242 to 262 on 2026-11-23, and the reason is a decision rather than
+    drift. Owner ask 13(a) made `supermarket` the layer a household is served by default, which
+    made it a published category for the first time; the 23 owner admissions had been keyed on
+    `grocery` alone, so the narrow selector could not see them. 20 of the 23 are Aldi, Walmart and
+    Publix records our own classifier calls supermarkets, and they now select. The other three
+    carry no `brand` field and are pinned separately below.
     """
     places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
     assert len(select_overture(places, "grocery")) == 555
-    assert len(select_overture(places, "supermarket")) == 242
+    assert len(select_overture(places, "supermarket")) == 262
+    assert len(select_overture(places, "specialty_grocery")) == 33
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_every_admission_a_supermarket_reaches_the_default_layer():
+    """The fixture test in `test_categories` pins the MECHANISM on a hand-built frame. This pins
+    the OUTCOME on the real data, because the mechanism working on a fixture is not the claim --
+    the claim is that no record the owner admitted by hand is missing from the layer a household
+    actually gets.
+
+    The three that stay out are brandless records whose names carry a chain already in
+    `SUPERMARKET_BRANDS`. They are listed by name, not counted, so that promoting one shows up
+    here as a decision instead of a number moving.
+    """
+    from locfinder.places.grocery import classify_grocery
+
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    admitted = set(INCLUDED_PLACE_IDS["grocery"])
+    in_default = set(select_overture(places, "supermarket")["id"])
+    rows = places[places["id"].isin(admitted)]
+
+    def primary_name(record):
+        names = record.get("names")
+        return str(names.get("primary") or "") if hasattr(names, "get") else ""
+
+    out = sorted(primary_name(r) for _, r in rows.iterrows() if str(r["id"]) not in in_default)
+    assert out == ["Publix Super Market at Buffaloe Bend",
+                   "Publix Super Market at Middle Creek Crossings",
+                   "Walmart Supercenter"], out
+    for _, record in rows.iterrows():
+        if str(record["id"]) in in_default:
+            assert classify_grocery(record) == "supermarket", primary_name(record)
 
 
 def test_nothing_is_both_held_and_dropped():

@@ -619,9 +619,14 @@ INCLUDED_PLACE_IDS: dict[str, dict[str, str]] = {
 def forced_into(category: str) -> frozenset[str]:
     """Ids an owner decision admits to `category`, whatever their taxonomy says.
 
-    Answers cleanly for a category with no inclusions, which is every category today -- a seam is
-    only worth having if it survives its first user leaving, the same reason
-    `flagged_closure_reason` stayed when its table emptied.
+    Answers cleanly for a category with no inclusions of its own, which is every category but
+    `grocery` -- a seam is only worth having if it survives its first user leaving, the same
+    reason `flagged_closure_reason` stayed when its table emptied.
+
+    This answers for ONE category name. A category that inherits another's admissions says so
+    with `inclusions_from` in `WEDGE_CATEGORIES`, and `select_overture` asks for both; keeping the
+    inheritance out of here means a caller reading this table by hand sees exactly what was
+    decided, and not a union assembled somewhere else.
     """
     return frozenset(INCLUDED_PLACE_IDS.get(category, {}))
 
