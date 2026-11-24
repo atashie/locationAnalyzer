@@ -181,6 +181,36 @@ def symmetrise(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
     return G
 
 
+#: Every mode this model can build a graph for. `MODE_SPEED_MPS` holds only walk and bike,
+#: because drive takes its speed per edge from `drive_speed_mps`, so it is not the mode list.
+GRAPH_MODES: frozenset[str] = frozenset({"walk", "bike", "drive"})
+
+
+def symmetrise_for_mode(G: nx.MultiDiGraph, mode: str) -> nx.MultiDiGraph:
+    """`symmetrise` for a walk graph, and a no-op for any other mode.
+
+    The rule is `symmetrise`'s own, and it was written down there from the start: adding a reverse
+    edge to every one-way road is valid for pedestrians and wrong for cyclists and drivers. It
+    lived only in comments at 26 call sites in three spellings -- `if args.mode == "walk"`,
+    `if MODE == "walk"`, and at two of them no condition at all. The unconditional calls were
+    correct only because a module constant beside them read `"walk"`.
+
+    The failure that makes this worth a function is silent. A drive graph built through an
+    unconditional `symmetrise` has every one-way street in the metro reversed; it still yields a
+    complete raster, with times that are too short, and nothing in the artifact to say so. Reading
+    the result would not reveal it, because there is no missing-data signal to notice -- which is
+    the same shape as the stale drive layer this was found while fixing.
+
+    An unrecognised mode raises rather than defaulting. Defaulting either way is a silent decision
+    about one-way streets, and `"walking"`, `"car"` and `"Drive"` are all plausible typos.
+    """
+    if mode not in GRAPH_MODES:
+        raise ValueError(
+            f"unknown mode {mode!r}: expected one of {sorted(GRAPH_MODES)}. Whether to symmetrise "
+            "decides if one-way streets are honoured, so it is not guessed from an unknown name")
+    return symmetrise(G) if mode == "walk" else G
+
+
 def access_speed_mps(mode: str) -> float:
     base = DEFAULT_DRIVE_FRICTION_MPH * MPH_TO_MPS if mode == "drive" else MODE_SPEED_MPS[mode]
     return ACCESS_SPEED_FACTOR[mode] * base

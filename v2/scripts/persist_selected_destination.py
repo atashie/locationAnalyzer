@@ -56,7 +56,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from _common import ACCEPTED_PLACES, METRO, load_roads_graph, stamp      # noqa: E402
 from locfinder import wire                                               # noqa: E402
-from locfinder.places.categories import select_overture                  # noqa: E402
+from locfinder.places.categories import (WEDGE_CATEGORIES,               # noqa: E402
+                                         select_overture)
 from locfinder.status import ENGINES, node_reasons                       # noqa: E402
 from locfinder.traveltime.arrival import (arrival_seconds,               # noqa: E402
                                           arrival_with_selected_destination)
@@ -65,8 +66,12 @@ from locfinder.traveltime.csr import graph_to_cost_time_csr              # noqa:
 from locfinder.traveltime.snap import (EdgeIndex,                        # noqa: E402
                                        cell_seconds_from_arrival,
                                        cell_selected_destination)
-from locfinder.traveltime.speeds import add_travel_times, symmetrise     # noqa: E402
+from locfinder.traveltime.speeds import (GRAPH_MODES,                    # noqa: E402
+                                         add_travel_times,
+                                         symmetrise_for_mode)
 
+#: DEFAULTS. `main` overwrites the first two from its arguments; everything that reads them
+#: does so inside `main`, after that assignment.
 MODE = "walk"
 CATEGORY = "grocery"
 POI_SNAP_MAX_M = 300.0
@@ -74,6 +79,15 @@ MAX_ACCESS_M = 200.0
 HORIZON_S = 7200.0
 #: The published layer this destination plane belongs to, beside its surface triple.
 STEM = "own_triangle_grocery_walk"
+
+
+def layer_stem(category: str, mode: str) -> str:
+    """The stem of the surface triple this destination plane belongs beside.
+
+    One expression, so a destination plane cannot be written next to a surface it was not
+    measured against -- which is the whole failure mode of a destination plane.
+    """
+    return f"own_triangle_{category}_{mode}"
 
 V2 = pathlib.Path(__file__).resolve().parents[1]
 LAYERS = V2 / "data" / "layers"
@@ -192,9 +206,19 @@ def place_record(row) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Declared before the argument parser, because `--mode` and `--category` take their DEFAULTS
+    # from these same names: Python refuses a `global` that follows a use in the same function.
+    global MODE, CATEGORY, STEM
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--out", type=pathlib.Path, default=ARTIFACT)
+    ap.add_argument("--out", type=pathlib.Path, default=None,
+                    help="where to write the run report. Defaults to the s3-9 artifact for "
+                         "the grocery walk, and to a per-layer file for anything else, so a "
+                         "second layer cannot overwrite the first layer's record")
+    ap.add_argument("--category", default=CATEGORY,
+                    help="the wedge category to measure to (default: %(default)s)")
+    ap.add_argument("--mode", default=MODE, choices=sorted(GRAPH_MODES),
+                    help="travel mode (default: %(default)s)")
     ap.add_argument("--write-raster", action="store_true",
                     help="persist the per-cell destination ordinal and the side table beside the "
                          "layer's surface triple, which is what 'published in the layer bundle' "
@@ -206,12 +230,34 @@ def main(argv: list[str] | None = None) -> int:
                          "same argmin and it is SHOWN to a household, so it matters more")
     args = ap.parse_args(argv)
 
+    # Set before any of the fourteen reads below. The graph build takes minutes, so the
+    # arguments are checked against what is on disk FIRST: a typo in --category otherwise
+    # costs a full graph build before failing, and a surface that is not there cannot be
+    # the one this plane was measured against.
+    MODE, CATEGORY = args.mode, args.category
+    STEM = layer_stem(CATEGORY, MODE)
+    if CATEGORY not in WEDGE_CATEGORIES:
+        raise SystemExit(f"unknown category {CATEGORY!r}: "
+                         f"expected one of {sorted(WEDGE_CATEGORIES)}")
+    surface = LAYERS / f"{STEM}.npy"
+    if not surface.exists():
+        raise SystemExit(
+            f"{surface} is not on disk, so there is no surface for this destination plane "
+            f"to belong to. Build it first with: uv run python "
+            f"spikes/s2_building_weighted_coverage.py {CATEGORY} {MODE}")
+    if args.out is None:
+        args.out = (ARTIFACT if (CATEGORY, MODE) == ("grocery", "walk")
+                    else ARTIFACT.with_name(
+                        f"{ARTIFACT.stem}-{CATEGORY}-{MODE}{ARTIFACT.suffix}"))
+
     grid = METRO.grid()
     t0 = time.perf_counter()
     G = load_roads_graph()
     G = ox.project_graph(G, to_crs=grid.crs)
     G = add_travel_times(G, mode=MODE)
-    G = symmetrise(G)
+    # Walk only. An unconditional call here made every one-way street two-way the moment
+    # this script took a --mode, and would have shortened drive times with no sign of it.
+    G = symmetrise_for_mode(G, MODE)
     G.remove_nodes_from([n for n, d in G.degree() if d == 0])
     G, _comp = largest_component(G)
     cost_csr, time_csr, index = graph_to_cost_time_csr(G)
