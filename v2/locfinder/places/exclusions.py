@@ -197,6 +197,130 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
         "AND DOES NOT SAY: the point sits inside a 1,864 m2 building (largest within 120 m: 3,596 m2), so "
         "`corroboration` returns CORROBORATED, which means a large building stands there and says nothing "
         "about whether the thing at that address is a shop or a landlord's leasing office.",
+    # ---- owner ask 15, 2026-11-23 ----
+    #
+    # *"yes"* to removing the records that are plainly not shops you can walk into, adjudicated
+    # PER RECORD with its evidence, and explicitly NOT touching any tienda, tortilleria or ethnic
+    # market: all three of our sources under-record shops in exactly those neighbourhoods, so a
+    # missing record there is evidence about the sources and not about the shop.
+    #
+    # WHAT MAY COUNT AS EVIDENCE HERE. Owner decision 2026-11-18 forbids parsing a name to guess
+    # what KIND of shop something is, so no entry below rests on its name. Each rests on the
+    # record's OWN fields -- the `websites` value Overture carries, and the address shape -- plus,
+    # for the four largest, a check against a public source. None of them carries a `brand` at
+    # all, which is why the brand tables could never reach them.
+    #
+    # THE EVIDENCE SHRANK THE SET TWICE, and that is the point of adjudicating per record.
+    #
+    #   * `Funny Girl Farm` (1,875 cells) is NOT removed. LocalHarvest and Durham Magazine both
+    #     describe a farm stand with posted hours -- Tue-Fri 2-6, Sat 9-3 -- selling produce, eggs,
+    #     cheeses, meats and preserves. That is a shop a household walks into.
+    #   * `Allen Powell Memorial Collard Patch` (3,228 cells) is NOT removed. WRAL reports an
+    #     operating family collard farm at 2107 Hamlin Road selling direct to customers, run by
+    #     John Powell since his father died, with a memorial sign on the road.
+    #   * `Homestead Harvest Farm` (3,590), `Currin Farm` (1,618), `Wilkerson Farms` (0) and
+    #     `Hamm's Greenhouse` (0) are HELD, not removed. Homestead Harvest takes phone orders with
+    #     "call the farm to schedule a visit", which is not a walk-in shop, but after the two
+    #     above a farm is no longer something this table removes without checking the individual
+    #     place. They are owed as an ask. The last two answer 0 cells, so holding them costs
+    #     nothing.
+    #
+    # Published `grocery` 553 -> 542. 3,879 answered cells change hands.
+    "dc09b073-d0ac-4141-8275-3127c748878d":
+        "'Roofing Inc.', taxonomy hierarchy=grocery_store, confidence 0.650, 206 New Edition Ct, Cary, "
+        "16 answered cells. The record's OWN `websites` field reads ncbestroof.com -- a roofing "
+        "contractor. No `brand`, and the address is a cul-de-sac unit rather than a retail frontage. "
+        "Nothing is inferred from the word 'Roofing': the evidence is the website the record itself "
+        "carries. Nearest surviving grocery 524.6 m, 'Food Lion', so the site is not orphaned. "
+        "Owner ask 15, 2026-11-23.",
+    "4f318935-7d66-4a5e-833a-1131fdf4b4fe":
+        "'Longview Poole Road', taxonomy hierarchy=grocery_store, confidence 0.650, 2405 Poole Rd, "
+        "Raleigh, 332 answered cells. The record's OWN `websites` field reads raleighnc.gov -- the City "
+        "of Raleigh, which is not a grocery's website. A municipal web address on a record named after "
+        "a road is a municipal ASSET record that has been filed under a shop taxonomy. Nearest "
+        "surviving grocery 507.7 m, 'Family Fare'. Owner ask 15, 2026-11-23.",
+    "f4f83562-7244-4d65-9f15-7c7a02a9c700":
+        "'McKee Foods Corp', taxonomy hierarchy=grocery_store, confidence 0.755, 106 Gibson Rd, Mebane, "
+        "0 answered cells. The record's OWN `websites` field reads mckeefoods.com -- a national snack "
+        "MANUFACTURER. A plant or office is not a shop, the same reading that removed the Weaver Street "
+        "Food House on 2026-11-18. Nearest surviving grocery 2,698.3 m, 'Food Lion' -- far, and it "
+        "costs nothing here because this record answers no cells. Owner ask 15, 2026-11-23.",
+    "7864cc9b-c5d6-462b-aede-057a51a97cb8":
+        "'Bar S Foods', taxonomy hierarchy=grocery_store, confidence 0.650, 1001 Corporation Pkwy "
+        "**Ste 106**, Raleigh, 163 answered cells. Two own-field signals agree: the `websites` value is "
+        "bar-sfoods.com, a meat PROCESSOR's brand site, and the address is a SUITE on a street called "
+        "Corporation Parkway -- a unit inside a business park, which is why its CORROBORATED footprint "
+        "verdict (4,642 m2 host) is void. A big host building corroborates nothing when the record is a "
+        "unit inside it. Nearest surviving grocery 878.5 m, 'La Estrella'. Owner ask 15, 2026-11-23.",
+    "96516656-b397-4e5c-ad1b-1696f91fc364":
+        "'Insain Hot Sauce', taxonomy hierarchy=grocery_store, confidence 0.958, 1717 Shallow Water Dr, "
+        "Knightdale, 241 answered cells. The record's OWN `websites` field is a PRODUCT PAGE on the "
+        "brand's own shop, insainhotsauce.com/products/wicked-chocol..., and the address is a "
+        "residential street. A sauce brand selling online from a house is not a grocery a household "
+        "walks to. Nearest surviving grocery 664.2 m, 'Paul's Grill and Grocery'. Owner ask 15, "
+        "2026-11-23.",
+    "c2b874a3-cff2-42a9-a889-e2b1206f5e85":
+        "'KismetCrackers', taxonomy hierarchy=grocery_store, confidence 0.716, 9522 Hampton Rd, "
+        "Rougemont, 499 answered cells. The record's OWN `websites` field reads kismetcrackers.com -- a "
+        "cracker BRAND -- at a rural residential address. **THE CONSEQUENCE IS STATED BECAUSE IT IS "
+        "LARGE**: Nearest surviving grocery 8,883.2 m, 'Los Portales De Butner', so the 499 "
+        "cells this record answers do not get a nearer answer -- most will become BEYOND_HORIZON on "
+        "foot. That is the correct outcome if there is no shop there, and the website is the reason to "
+        "think there is not. Its `REFUTED` footprint verdict is NOT part of this: it is one of the 15 "
+        "the 2026-11-23 review found to be missing building data, now `UNSURVEYED`. Owner ask 15, "
+        "2026-11-23.",
+    "2d238ae6-285f-4965-b51f-d41e4293f8d0":
+        "'Seal The Seasons', taxonomy hierarchy=grocery_store, confidence 0.950, 501 W Franklin St "
+        "**Ste 106**, Chapel Hill, 757 answered cells. A flash-frozen local produce COMPANY: it sets up "
+        "freezing facilities on partner farms and distributes to retail -- UNC and the Daily Tar Heel "
+        "both describe the business, and it reports reaching thousands of retail locations. So it is a "
+        "SUPPLIER of groceries rather than a place to buy them, the Weaver Street Food House reading "
+        "again. The address is a SUITE, which also voids the 1,870 m2 CORROBORATED host building. "
+        "Nearest surviving grocery 202.5 m, 'Hill's Family Asian Markets'. Owner ask 15, 2026-11-23.",
+    "8665f77f-7c89-4d1a-badb-853e5c99159a":
+        "'Seal The Seasons', taxonomy hierarchy=grocery_store, confidence 0.750, 4426 S Miami Blvd, "
+        "Durham, 1,320 answered cells. Seal the Seasons is a flash-frozen local produce COMPANY: it "
+        "installs freezing facilities on partner farms and distributes packaged frozen produce to "
+        "retail, which UNC and the Daily Tar Heel both describe and which the company says reaches "
+        "thousands of retail locations. So it SUPPLIES groceries rather than selling them to a "
+        "household, the same reading that removed the Weaver Street Food House on 2026-11-18. This "
+        "record carries NO `websites` value and no `brand`, so unlike the other removals in this ask "
+        "its own fields name nothing; the evidence is the public record of what the company is, plus "
+        "an address on an industrial boulevard. Its 1,741 m2 CORROBORATED host building is consistent "
+        "with the freezing and warehousing the company describes and is NOT offered as support either "
+        "way -- a footprint is an upper bound on what is inside it. Stated in full rather than by "
+        "reference to the company's other record in this table, because an entry that defers to its "
+        "neighbour cannot be re-checked without it, and a version of one inclusion reason in this "
+        "repository once said 'same shape as the record above' when the record above was a different "
+        "chain. Nearest surviving grocery 2,038.6 m, 'Snowie of NC'. Owner ask 15, 2026-11-23.",
+    "6098ae5b-2002-4844-91a6-8400c7f739c6":
+        "'Body Agape Holistic', taxonomy primary=organic_grocery_store, confidence 0.650, 1003 Mulford "
+        "Ct **# 751**, Knightdale, 0 answered cells. The record's OWN `websites` field reads "
+        "bodyagapeholistic.com, a holistic health business, and the address is a MAILBOX number -- "
+        "`# 751` at a single court address is a mail drop, not a shopfront, which is also why its 775 "
+        "m2 CORROBORATED host building says nothing. **THE ONLY ONE OF THE ELEVEN THAT WAS NOT MERELY "
+        "`unclassified`**: Overture's primary is `organic_grocery_store`, which is in "
+        "`SPECIALTY_PRIMARIES`, so `classify_grocery` called it `specialty` and it was published as a "
+        "specialty GROCER rather than as something nobody had checked. It answers 0 cells, so no "
+        "published number moves with it. Nearest surviving grocery 250.4 m, 'Walmart'. Owner ask 15, "
+        "2026-11-23.",
+    "80916e67-4f04-4a5e-a6c5-fee8bf7e1aad":
+        "'Tower Market Place Partners', taxonomy hierarchy=grocery_store, confidence 0.482 -- the "
+        "lowest in the uncorroborated set -- 3511 Maitland Dr, Raleigh, 11 answered cells. No website "
+        "and no brand, so the own-field evidence here is thin and the owner named this record "
+        "specifically in ask 15. What the data does say: an 8,890 m2 host building and 11 answered "
+        "cells, which is a record sitting in a large retail property while almost no household is "
+        "routed to it. Nearest surviving grocery 142.5 m, 'Food Lion', in the same place. Same structure as "
+        "`Market at Colonnade Center`, removed under ask 14: the property is not the shop, and removing "
+        "the property does not remove the shop. Owner ask 15, 2026-11-23.",
+    "d2f1e817-cb2f-4a48-b6d3-75765a460fc0":
+        "'No longer', taxonomy hierarchy=grocery_store, confidence 0.541, 1025 Blue Ridge Rd, Raleigh, "
+        "540 answered cells. The `names.primary` field contains the string 'No longer'. This is NOT a "
+        "name being parsed for what KIND of shop it is, which 2026-11-18 forbids -- it is the "
+        "observation that the field does not contain a business name at all, which is a different "
+        "statement and the only one being made. The owner named this record specifically in ask 15. "
+        "Nearest surviving grocery 1,479.3 m, 'Harris Teeter', so the 540 cells get a more distant "
+        "answer. Owner ask 15, 2026-11-23.",
 }
 
 #: Closures Overture asserts that we are NOT acting on, with why. Recorded rather than applied.
@@ -206,9 +330,34 @@ EXCLUDED_PLACE_IDS: dict[str, str] = {
 #: an observation of a storefront. An entity can deregister while the shop trades on under new
 #: ownership, and it can be registered at an address that was never a shop.
 #:
-#: Of the eight, two have a different shop within 100 m in OSM and six have no OSM shop within
-#: 100 m at all -- which is weak evidence in both directions, because OSM's coverage of small
+#: Of the original eight, two have a different shop within 100 m in OSM and six have no OSM shop
+#: within 100 m at all -- which is weak evidence in both directions, because OSM's coverage of small
 #: independent grocers is itself patchy.
+#:
+#: **SIX REMAIN. Two were superseded on 2026-11-23**, and both supersessions are recorded here
+#: rather than by quietly shortening the table.
+#:
+#: `4f318935-7d66-4a5e-833a-1131fdf4b4fe`, *Longview Poole Road*, left the published layer under
+#: owner ask 15. Its hold said *"The name is a street, not a shop, which is what a registry record
+#: looks like"*, and the removal AGREES with that fact while resting on different and stronger
+#: grounds: the record's own `websites` field reads raleighnc.gov, so it is a municipal asset record
+#: filed under a shop taxonomy. That is a statement about what the record IS, which does not depend
+#: on whether a registry entity deregistered -- so the closure question this table was holding no
+#: longer arises for it. BrightQuery's assertion at confidence 0.65 and the decision not to act on
+#: it are kept in this note because a decision that was overtaken is still part of the record.
+#:
+#: `dc09b073-d0ac-4141-8275-3127c748878d`, *Roofing Inc.*, also left under ask 15. Its hold had
+#: ALREADY reached the right diagnosis -- *"Not a grocery under any definition -- it is a roofing
+#: company classified as a grocery store, and the closure flag is incidental to the real defect"* --
+#: and then held the record anyway, because this table's job was to decide closures and not
+#: classifications. So the defect sat correctly described and unacted on for five days. Ask 15 acted
+#: on it, with the record's own `websites` field, ncbestroof.com, as the evidence. BrightQuery's
+#: assertion at confidence 0.65 is kept here for the same reason as above.
+#:
+#: Both supersessions share a shape worth naming: a table scoped to ONE question (did this entity
+#: deregister?) saw the answer to a different and more important one (is this a shop at all?) and
+#: had nowhere to put it. The note is the record of that, so the next table written with a narrow
+#: scope carries the same door out.
 #:
 #: Owner decision 2026-11-17: hold them as pending. The owner also raised building a closure
 #: **likelihood index** from several sources (OSM, Google, Yelp) rather than a yes/no list; that
@@ -224,18 +373,11 @@ PENDING_CLOSURES: dict[str, str] = {
     "3fed30d2-7538-4f0f-aece-e77ab3a4d484":
         "Carolina Cupboard. BrightQuery, confidence 0.55 -- the lowest of the nine. No OSM shop "
         "within 100 m.",
-    "4f318935-7d66-4a5e-833a-1131fdf4b4fe":
-        "Longview Poole Road. BrightQuery, confidence 0.65. The name is a street, not a shop, "
-        "which is what a registry record looks like. No OSM shop within 100 m.",
     "a4cd9c69-95d2-4170-8433-c5e48adc9406":
         "Bell Tower Mart. BrightQuery, confidence 0.65. No OSM shop within 100 m.",
     "b7b9f517-7f58-4a53-abd2-ac8620a93726":
         "Jinja Fair Trade Llc. BrightQuery, confidence 0.65. 'Llc' in the name is the registry "
         "showing through. No OSM shop within 100 m.",
-    "dc09b073-d0ac-4141-8275-3127c748878d":
-        "Roofing Inc. BrightQuery, confidence 0.65. **Not a grocery under any definition** -- it "
-        "is a roofing company classified as a grocery store, and the closure flag is incidental "
-        "to the real defect. See `scripts/measure_classification_errors.py`.",
     "fa488537-1065-4f10-80e6-8e7d978375fb":
         "La Nueva Mexicana. BrightQuery, confidence 0.65. No OSM shop within 100 m.",
 }

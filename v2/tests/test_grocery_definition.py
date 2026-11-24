@@ -116,14 +116,49 @@ def test_the_confirmed_kroger_closure_is_excluded():
     assert any("Kroger" in r for r in EXCLUDED_PLACE_IDS.values())
 
 
-def test_the_eight_registry_closures_are_pending_not_applied():
+#: Held on 2026-11-17, then removed under owner ask 15 on 2026-11-23 for a different and stronger
+#: reason. Named here so the table shrinking from eight to seven is a fact a test knows, not a
+#: number that moved.
+SUPERSEDED_PENDING_CLOSURES = (
+    "4f318935-7d66-4a5e-833a-1131fdf4b4fe",   # Longview Poole Road -- a municipal asset record
+    "dc09b073-d0ac-4141-8275-3127c748878d",   # Roofing Inc. -- a roofing contractor
+)
+
+
+def test_the_registry_closures_are_pending_not_applied():
     """BrightQuery is a business registry. A deregistered entity is not a closed storefront, so
-    these are recorded for triage and deliberately NOT removed."""
+    these are recorded for triage and deliberately NOT removed.
+
+    Six, not the original eight. `Longview Poole Road` and `Roofing Inc.` left the layer under ask
+    15, on what the records ARE rather than on whether a registry entity deregistered. A record
+    cannot be both held and removed, and the next test asserts both supersessions are written down
+    rather than the count merely being smaller.
+    """
     from locfinder.places.exclusions import EXCLUDED_PLACE_IDS, PENDING_CLOSURES
-    assert len(PENDING_CLOSURES) == 8, f"{len(PENDING_CLOSURES)} pending, expected 8"
+    assert len(PENDING_CLOSURES) == 6, f"{len(PENDING_CLOSURES)} pending, expected 6"
     for place_id, reason in PENDING_CLOSURES.items():
         assert place_id not in EXCLUDED_PLACE_IDS, f"{place_id} is pending AND excluded"
         assert "BrightQuery" in reason, f"{place_id} does not record its source"
+
+
+def test_the_superseded_hold_is_recorded_and_not_merely_dropped():
+    """A table that quietly loses a row has lost the decision with it. The record must be out of
+    the pending table, in the excluded table, and its history must still be readable."""
+    import inspect
+
+    from locfinder.places import exclusions
+    from locfinder.places.exclusions import EXCLUDED_PLACE_IDS, PENDING_CLOSURES
+
+    for place_id in SUPERSEDED_PENDING_CLOSURES:
+        assert place_id not in PENDING_CLOSURES, place_id
+        assert place_id in EXCLUDED_PLACE_IDS, place_id
+    module = inspect.getsource(exclusions)
+    assert "SIX REMAIN" in module, "the supersessions are not recorded beside the table"
+    note = module.split("SIX REMAIN")[1][:3000]
+    assert note.count("BrightQuery") >= 2, (
+        "the note does not keep what BrightQuery asserted for both records")
+    for place_id in SUPERSEDED_PENDING_CLOSURES:
+        assert place_id in note, f"{place_id} is not named in the supersession note"
 # ----------------------------------------------------------------------------------------------
 # Owner ask 18, 2026-11-23: the three admitted chain stores the automatic routes cannot see.
 

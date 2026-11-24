@@ -581,9 +581,12 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     the 555; the published DRIVE layer was built on 2026-11-16 and does not. If this test and a
     published artifact disagree, that is a rebuild, not an edit to these numbers.
 
-    `grocery` moved from 555 to 553 on 2026-11-23: owner ask 14 removed `Pet Dairy` and
-    `Market at Colonnade Center`, both of which `classify_grocery` already refused. Neither was in
-    `supermarket`, so that count does not move with them.
+    `grocery` moved 555 -> 553 -> 542 on 2026-11-23. Ask 14 removed `Pet Dairy` and
+    `Market at Colonnade Center`, both of which `classify_grocery` already refused; ask 15 removed
+    eleven records that are not shops you can walk into. Neither ask touched a `supermarket`, so
+    that count does not move with them. `specialty_grocery` 33 -> 32 because one of the eleven,
+    `Body Agape Holistic`, carried Overture primary `organic_grocery_store` and was therefore
+    published as a specialty grocer rather than as unclassified.
 
     `supermarket` moved 242 -> 262 -> 265 on 2026-11-23, and every step is a decision rather than
     drift. Ask 18 added the last three: two Publix and a Walmart Supercenter whose Overture `brand`
@@ -596,9 +599,9 @@ def test_the_published_grocery_count_is_the_one_recorded_in_the_notes():
     carry no `brand` field and are pinned separately below.
     """
     places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
-    assert len(select_overture(places, "grocery")) == 553
+    assert len(select_overture(places, "grocery")) == 542
     assert len(select_overture(places, "supermarket")) == 265
-    assert len(select_overture(places, "specialty_grocery")) == 33
+    assert len(select_overture(places, "specialty_grocery")) == 32
 
 
 @pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
@@ -663,6 +666,57 @@ def test_no_published_grocery_record_is_one_our_own_classifier_refuses():
                if classify_grocery(record) == "not_a_grocery"]
     assert not refused, (
         "published as a grocery while `classify_grocery` refuses them: " + "; ".join(refused))
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_every_ask_fifteen_removal_is_gone_and_names_its_own_evidence():
+    """Owner ask 15, 2026-11-23: eleven records that are not shops you can walk into.
+
+    The 2026-11-18 decision forbids parsing a name to guess what KIND of shop something is, so
+    each reason has to rest on something else. Every one of these rests on the record's OWN fields
+    -- the `websites` value Overture carries, or the address shape -- and the four largest were
+    also checked against a public source. This asserts the shape of that evidence rather than its
+    content, because content is what a reader checks and shape is what a test can.
+    """
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    published = set(select_overture(places, "grocery")["id"])
+    ask15 = {pid: why for pid, why in EXCLUDED_PLACE_IDS.items() if "ask 15, 2026-11-23" in why}
+    assert len(ask15) == 11, f"{len(ask15)} ask-15 removals, expected 11"
+    for place_id, why in ask15.items():
+        assert place_id not in published, f"{place_id} is still published"
+        assert "2026-11-23" in why, place_id
+        assert "answered cells" in why, f"{place_id} does not say what it was answering"
+        assert "Nearest surviving grocery" in why, (
+            f"{place_id} does not say whether removing it orphans the site")
+        # The evidence must be a field of the record or an external check -- never the name alone.
+        assert ("websites" in why or "address" in why.lower() or "names.primary" in why
+                or "owner named this record" in why), f"{place_id} names no evidence"
+
+
+@pytest.mark.skipif(not ACCEPTED_PLACES_PARQUET.exists(),
+                    reason="the accepted places frame is not on this machine")
+def test_no_tienda_tortilleria_or_ethnic_market_was_removed():
+    """The explicit condition on ask 15, and the one worth a test of its own.
+
+    All three of our sources under-record shops in the neighbourhoods these serve, so a missing
+    record there is evidence about the sources and not about the shop. The owner excluded them by
+    name when approving the removal; this asserts no removal reaches one, matching on the words
+    that actually appear in this metro's records rather than on a general idea of "ethnic".
+    """
+    places = gpd.read_parquet(ACCEPTED_PLACES_PARQUET)
+    ask15 = {pid for pid, why in EXCLUDED_PLACE_IDS.items() if "ask 15, 2026-11-23" in why}
+    rows = places[places["id"].isin(ask15)]
+
+    def primary_name(record):
+        names = record.get("names")
+        return str(names.get("primary") or "") if hasattr(names, "get") else ""
+
+    protected = ("tienda", "tortill", "halal", "carniceria", "mercado", "oriental", "asian",
+                 "african", "caribbean", "mexican", "latino", "ranchito", "variedades")
+    hits = [primary_name(r) for _, r in rows.iterrows()
+            if any(word in primary_name(r).lower() for word in protected)]
+    assert hits == [], f"ask 15 removed a protected record: {hits}"
 
 
 def test_nothing_is_both_held_and_dropped():
